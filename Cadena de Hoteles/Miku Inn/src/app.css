@@ -1,0 +1,414 @@
+/* ================================
+   APP.CSS - MIKU INN
+   Estilos base de la aplicación
+================================ */
+
+/* ================================
+   VARIABLES GLOBALES
+================================ */
+:root {
+  /* Colores Miku Inn - Marca */
+  --primary: #667eea;
+  --primary-light: #8099f0;
+  --primary-dark: #5568d3;
+  --secondary: #764ba2;
+  --accent: #d4af37;
+  
+  /* Colores de fondo */
+  --color-bg: #f8fafc;
+  --color-bg-dark: #020617;
+  --color-surface: #ffffff;
+  
+  /* Colores de texto */
+  --color-primary: #0f172a;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  
+  /* Estados */
+  --success: #4caf50;
+  --error: #f44336;
+  --warning: #ff9800;
+  --info: #2196f3;
+  
+  /* Grises */
+  --gray-50: #fafafa;
+  --gray-100: #f8f9fa;
+  --gray-200: #e0e0e0;
+  --gray-300: #d0d0d0;
+  --gray-500: #888888;
+  --gray-700: #555555;
+  --gray-900: #1a1a1a;
+
+  /* Tipografía */
+  --font-base: "Avenir", "Helvetica Neue", -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  /* Layout */
+  --max-width: 1400px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --spacing-base: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  /* Transiciones */
+  --transition: all 0.25s ease-in-out;
+  --transition-fast: all 0.15s ease;
+
+  /* Aplicar configuración base */
+  font-family: var(--font-base);
+  line-height: 1.6;
+  font-weight: 400;
+  color-scheme: light dark;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ================================
+   RESET BÁSICO
+================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-base);
+  overflow-x: hidden;
+}
+
+/* ================================
+   CONTENEDOR PRINCIPAL
+================================ */
+#app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================================
+   TIPOGRAFÍA
+================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: var(--font-size-3xl);
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+}
+
+h4 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+}
+
+strong, b {
+  font-weight: 700;
+}
+
+/* ================================
+   ENLACES
+================================ */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ================================
+   BOTONES BASE
+================================ */
+button {
+  border-radius: var(--radius);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(102, 126, 234, 0.3);
+  outline-offset: 2px;
+}
+
+/* Botón primario con gradiente Miku Inn */
+.btn-primary,
+button.primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover,
+button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Botón secundario */
+.btn-secondary,
+button.secondary {
+  background: var(--gray-200);
+  color: var(--color-text);
+  border: none;
+}
+
+.btn-secondary:hover,
+button.secondary:hover {
+  background: var(--gray-300);
+}
+
+/* ================================
+   TARJETAS / SECCIONES
+================================ */
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-base);
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* ================================
+   CONTENEDOR
+================================ */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--spacing-base);
+  }
+}
+
+/* ================================
+   UTILIDADES
+================================ */
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ================================
+   SCROLLBAR PERSONALIZADO
+================================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-500);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-700);
+}
+
+/* ================================
+   SELECCIÓN DE TEXTO
+================================ */
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+/* ================================
+   MODO OSCURO
+================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f172a;
+    --color-bg-dark: #020617;
+    --color-surface: #1e293b;
+    --color-primary: #f8fafc;
+    --color-text: #e2e8f0;
+    --color-muted: #94a3b8;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-primary);
+  }
+
+  p {
+    color: var(--color-text);
+  }
+
+  a {
+    color: var(--primary-light);
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  .card {
+    background-color: var(--color-surface);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+
+  button {
+    background-color: var(--color-surface);
+  }
+
+  .btn-secondary,
+  button.secondary {
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+}
+
+/* ================================
+   ANIMACIONES GLOBALES
+================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    padding: var(--spacing-base);
+  }
+}
