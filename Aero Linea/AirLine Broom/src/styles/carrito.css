@@ -1,0 +1,355 @@
+/* --- Estilos para el Carrito de Compras --- */
+
+.carrito {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    padding: 2rem 1rem 8rem;
+    font-family: inherit;
+}
+
+.carrito__container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- Header con la línea de acento del sistema --- */
+.carrito__header {
+    margin-bottom: 3rem;
+    border-left: 6px solid var(--primary-color);
+    padding-left: 2rem;
+}
+
+.carrito__back {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.carrito__back:hover {
+    color: var(--primary-color);
+    transform: translateX(-5px);
+}
+
+.carrito__title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.carrito__subtitle {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-top: 0.5rem;
+}
+
+/* --- Layout Principal --- */
+.carrito__content {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 3rem;
+    align-items: start;
+}
+
+/* --- Lista de Ítems --- */
+.carrito__items {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.cart-item {
+    background: var(--white);
+    border-radius: 4px 40px 4px 40px; /* Asimetría del perfil */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.03);
+    padding: 2rem;
+    border: 1px solid rgba(235, 230, 224, 0.5);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.cart-item__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--perla-dark);
+}
+
+.cart-item__type-badge {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--primary-color);
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 0 10px 0 10px;
+}
+
+.cart-item__type-badge--return {
+    background: rgba(43, 45, 66, 0.05);
+    color: var(--secondary-color);
+}
+
+.cart-item__remove {
+    background: transparent;
+    border: none;
+    color: #c62828;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition);
+    opacity: 0.6;
+}
+
+.cart-item__remove:hover {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* Info del Vuelo */
+.cart-item__flight-number {
+    font-size: 1.2rem;
+    color: var(--secondary-color);
+    margin-bottom: 0.3rem;
+    font-weight: 400;
+}
+
+.cart-item__route {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 2rem;
+}
+
+/* Detalles Grid */
+.cart-item__details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.cart-item__detail-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    letter-spacing: 1px;
+}
+
+.cart-item__detail-value {
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+}
+
+.cart-item__detail-value--class {
+    text-transform: capitalize;
+    color: var(--primary-color);
+}
+
+/* Precios e Inputs */
+.cart-item__pricing {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    background: #fcfbf9;
+    padding: 1.5rem;
+    border-radius: 20px 4px 20px 4px;
+}
+
+.cart-item__passengers-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+.cart-item__passengers-select {
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--perla-dark);
+    border-radius: 0 10px 0 10px;
+    background: var(--white);
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.cart-item__price-breakdown {
+    text-align: right;
+}
+
+.price-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.price-row__label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.price-row__value {
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--secondary-color);
+}
+
+.price-row--total .price-row__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* --- Resumen (Summary) --- */
+.carrito__summary {
+    position: sticky;
+    top: 2rem;
+}
+
+.cart-summary {
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 3rem 2rem;
+    border-radius: 40px 4px 40px 4px; /* Asimetría invertida respecto al ítem */
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.cart-summary__title {
+    font-size: 1.5rem;
+    font-weight: 300;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.cart-summary__divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 1.5rem 0;
+}
+
+.tax-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.cart-summary__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.cart-summary__total-label {
+    font-size: 1.2rem;
+    font-weight: 300;
+}
+
+.cart-summary__total-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.cart-summary__btn-checkout {
+    width: 100%;
+    margin-top: 2.5rem;
+    padding: 1.2rem;
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 0 15px 0 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cart-summary__btn-checkout:hover {
+    background: var(--white);
+    color: var(--secondary-color);
+    transform: translateY(-3px);
+}
+
+.cart-summary__note {
+    font-size: 0.7rem;
+    text-align: center;
+    margin-top: 1.5rem;
+    opacity: 0.5;
+}
+
+/* --- Estado Vacío --- */
+.carrito__empty {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: var(--white);
+    border-radius: 20px;
+}
+
+.carrito__empty-message {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.carrito__empty-btn {
+    padding: 1rem 2.5rem;
+    background: var(--secondary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 0 15px 0 15px;
+    cursor: pointer;
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+    .carrito__content {
+        grid-template-columns: 1fr;
+    }
+    
+    .carrito__summary {
+        position: relative;
+        top: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .cart-item {
+        padding: 1.5rem;
+    }
+    
+    .cart-item__pricing {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+    
+    .cart-item__price-breakdown {
+        text-align: left;
+        width: 100%;
+    }
+}

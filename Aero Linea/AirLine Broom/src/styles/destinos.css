@@ -1,0 +1,453 @@
+/* --- Página de Destinos Destacados --- */
+.destinos-destacados {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    padding: 3rem 1rem 6rem;
+}
+
+.destinos-destacados__container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* --- Header con asimetría --- */
+.destinos-destacados__header {
+    margin-bottom: 4rem;
+    border-left: 6px solid var(--primary-color);
+    padding-left: 2rem;
+}
+
+.destinos-destacados__back {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    margin-bottom: 1.5rem;
+}
+
+.destinos-destacados__back:hover {
+    color: var(--secondary-color);
+    transform: translateX(-5px);
+}
+
+.destinos-destacados__title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.1;
+}
+
+.destinos-destacados__subtitle {
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-size: 0.95rem;
+    margin: 0;
+    max-width: 600px;
+}
+
+/* --- Grid de Destinos --- */
+.destinos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 3rem;
+}
+
+/* --- Tarjeta de Destino --- */
+.destino-card {
+    background: var(--white);
+    border-radius: 4px 32px 4px 32px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(28, 26, 24, 0.05);
+    border: 1px solid rgba(235, 230, 224, 0.5);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.destino-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px rgba(28, 26, 24, 0.12);
+}
+
+/* --- Imagen del Destino --- */
+.destino-card__image-container {
+    position: relative;
+    height: 280px;
+    overflow: hidden;
+}
+
+.destino-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s ease;
+}
+
+.destino-card:hover .destino-card__image {
+    transform: scale(1.1);
+}
+
+/* Badge de precio */
+.destino-card__badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: var(--white);
+    padding: 0.8rem 1.5rem;
+    border-radius: 0 12px 0 12px;
+    font-weight: 600;
+    color: var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(28, 26, 24, 0.15);
+    font-size: 1.1rem;
+}
+
+/* --- Contenido de la Tarjeta --- */
+.destino-card__content {
+    padding: 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex: 1;
+}
+
+.destino-card__header {
+    border-bottom: 1px solid var(--perla-dark);
+    padding-bottom: 1rem;
+}
+
+.destino-card__title {
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin: 0 0 0.3rem 0;
+}
+
+.destino-card__country {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+.destino-card__description {
+    color: var(--text-muted);
+    line-height: 1.7;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* --- Lugares Destacados --- */
+.destino-card__highlights {
+    background: #fcfbf9;
+    padding: 1.5rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.destino-card__highlights-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--secondary-color);
+    font-weight: 600;
+    margin: 0 0 0.8rem 0;
+}
+
+.highlights-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.highlights-list__item {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.highlights-list__item::before {
+    content: '✈';
+    color: var(--primary-color);
+    font-size: 0.8rem;
+}
+
+/* --- Información del Vuelo --- */
+.destino-card__info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: #fcfbf9;
+    border-radius: 4px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.info-item__label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.info-item__value {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+/* --- Botones de Acción --- */
+.destino-card__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.destino-card__btn {
+    padding: 1rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+
+.destino-card__btn--primary {
+    background: var(--secondary-color);
+    color: var(--white);
+    border-radius: 0 15px 0 15px;
+}
+
+.destino-card__btn--primary:hover {
+    background: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(28, 26, 24, 0.2);
+}
+
+.destino-card__btn--secondary {
+    background: transparent;
+    color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+    border-radius: 0 15px 0 15px;
+}
+
+.destino-card__btn--secondary:hover {
+    background: var(--secondary-color);
+    color: var(--white);
+    transform: translateY(-3px);
+}
+
+/* --- Detalles del Destino --- */
+.destino-card__details {
+    padding: 2rem 2.5rem;
+    background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
+    border-top: 1px solid var(--perla-dark);
+}
+
+.destino-card__details-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--secondary-color);
+    font-weight: 600;
+    margin: 0 0 1.2rem 0;
+}
+
+.destino-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.detail-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.detail-box__label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.detail-box__value {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+/* --- Animación de Entrada --- */
+.destino-card {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.destino-card:nth-child(1) { animation-delay: 0.1s; }
+.destino-card:nth-child(2) { animation-delay: 0.2s; }
+.destino-card:nth-child(3) { animation-delay: 0.3s; }
+.destino-card:nth-child(4) { animation-delay: 0.4s; }
+.destino-card:nth-child(5) { animation-delay: 0.5s; }
+.destino-card:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+    .destinos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        gap: 2.5rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .destinos-destacados {
+        padding: 2.5rem 1rem 5rem;
+    }
+
+    .destinos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+    }
+
+    .destino-card__content {
+        padding: 1.8rem 2rem;
+    }
+
+    .destino-card__details {
+        padding: 1.8rem 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .destinos-destacados {
+        padding: 2rem 1rem 4rem;
+    }
+
+    .destinos-destacados__header {
+        margin-bottom: 2.5rem;
+        padding-left: 1rem;
+    }
+
+    .destinos-destacados__title {
+        font-size: 1.8rem;
+    }
+
+    .destinos-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .destino-card__image-container {
+        height: 220px;
+    }
+
+    .destino-card__content {
+        padding: 1.5rem 1.8rem;
+    }
+
+    .destino-card__details {
+        padding: 1.5rem 1.8rem;
+    }
+
+    .destino-card__title {
+        font-size: 1.6rem;
+    }
+
+    .destino-card__actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .destinos-destacados {
+        padding: 1.5rem 0.5rem 3rem;
+    }
+
+    .destinos-destacados__header {
+        padding-left: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .destino-card {
+        border-radius: 4px 24px 4px 24px;
+    }
+
+    .destino-card__image-container {
+        height: 200px;
+    }
+
+    .destino-card__badge {
+        top: 1rem;
+        right: 1rem;
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+    }
+
+    .destino-card__content {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .destino-card__details {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .destino-card__title {
+        font-size: 1.4rem;
+    }
+
+    .destino-card__info {
+        grid-template-columns: 1fr;
+    }
+
+    .destino-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .destino-card__btn {
+        padding: 0.9rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .destino-card__content {
+        padding: 1rem 1.2rem;
+    }
+
+    .destino-card__details {
+        padding: 1rem 1.2rem;
+    }
+}

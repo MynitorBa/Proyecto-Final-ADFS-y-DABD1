@@ -1,0 +1,350 @@
+/* --- Página de Información de Asientos --- */
+.info-asientos {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #F2EFEA;
+    padding: 3rem 1rem 6rem;
+}
+
+.info-asientos__container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* --- Header con asimetría --- */
+.info-asientos__header {
+    margin-bottom: 4rem;
+    border-left: 6px solid #B89A7A;
+    padding-left: 2rem;
+}
+
+.info-asientos__back {
+    background: transparent;
+    border: none;
+    color: #6B5D52;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.info-asientos__back:hover {
+    color: #1C1A18;
+    transform: translateX(-5px);
+}
+
+.info-asientos__title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 300;
+    color: #1C1A18;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.1;
+}
+
+.info-asientos__subtitle {
+    color: #6B5D52;
+    letter-spacing: 0.5px;
+    font-size: 0.95rem;
+    margin: 0;
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+/* --- Grid de Asientos --- */
+.asientos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 3rem;
+}
+
+/* --- Tarjeta de Asiento --- */
+.asiento-card {
+    background: #FFFFFF;
+    border-radius: 4px 32px 4px 32px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(28, 26, 24, 0.05);
+    border: 1px solid rgba(235, 230, 224, 0.5);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.asiento-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 25px 50px rgba(28, 26, 24, 0.12);
+}
+
+/* --- Header de la Tarjeta --- */
+.asiento-card__header {
+    padding: 2rem 2.5rem 1.5rem;
+    border-bottom: 1px solid #E6E1DA;
+    background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
+}
+
+.asiento-card__name {
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: #1C1A18;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+/* --- Galería de Imágenes --- */
+.asiento-card__gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    height: 260px;
+}
+
+.gallery-item {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+}
+
+.gallery-item__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.asiento-card:hover .gallery-item__image {
+    transform: scale(1.1);
+}
+
+/* --- Descripción Breve --- */
+.asiento-card__description {
+    padding: 2rem 2.5rem;
+    background: #FFFFFF;
+}
+
+.description-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.description-list__item {
+    color: #1C1A18;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 500;
+}
+
+.description-list__item::before {
+    content: '✓';
+    color: #B89A7A;
+    font-size: 1.2rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* --- Detalles del Asiento --- */
+.asiento-card__details {
+    padding: 2rem 2.5rem 2.5rem;
+    background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
+    border-top: 1px solid #E6E1DA;
+}
+
+.asiento-card__details-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #1C1A18;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+}
+
+.details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #E6E1DA;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.detail-item__label {
+    font-size: 0.75rem;
+    color: #6B5D52;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.detail-item__value {
+    font-size: 0.95rem;
+    color: #1C1A18;
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* --- Animación de Entrada --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+    .asientos-grid {
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 2.5rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .info-asientos {
+        padding: 2.5rem 1rem 5rem;
+    }
+
+    .asientos-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+
+    .asiento-card__gallery {
+        height: 240px;
+    }
+}
+
+@media (max-width: 768px) {
+    .info-asientos {
+        padding: 2rem 1rem 4rem;
+    }
+
+    .info-asientos__header {
+        margin-bottom: 2.5rem;
+        padding-left: 1rem;
+    }
+
+    .info-asientos__title {
+        font-size: 1.8rem;
+    }
+
+    .asientos-grid {
+        gap: 2rem;
+    }
+
+    .asiento-card__header {
+        padding: 1.8rem 2rem 1.3rem;
+    }
+
+    .asiento-card__name {
+        font-size: 1.9rem;
+    }
+
+    .asiento-card__gallery {
+        height: 200px;
+    }
+
+    .asiento-card__description {
+        padding: 1.8rem 2rem;
+    }
+
+    .asiento-card__details {
+        padding: 1.8rem 2rem 2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .asiento-card__gallery {
+        grid-template-columns: 1fr;
+        height: 220px;
+    }
+
+    .gallery-item:nth-child(2),
+    .gallery-item:nth-child(3) {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .info-asientos {
+        padding: 1.5rem 0.5rem 3rem;
+    }
+
+    .info-asientos__header {
+        padding-left: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .asiento-card {
+        border-radius: 4px 24px 4px 24px;
+    }
+
+    .asiento-card__header {
+        padding: 1.5rem 1.5rem 1.2rem;
+    }
+
+    .asiento-card__name {
+        font-size: 1.7rem;
+    }
+
+    .asiento-card__gallery {
+        height: 200px;
+    }
+
+    .asiento-card__description {
+        padding: 1.5rem 1.5rem;
+    }
+
+    .description-list__item {
+        font-size: 0.95rem;
+    }
+
+    .asiento-card__details {
+        padding: 1.5rem 1.5rem 1.8rem;
+    }
+
+    .detail-item__value {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .asiento-card__header {
+        padding: 1.25rem 1.25rem 1rem;
+    }
+
+    .asiento-card__description {
+        padding: 1.25rem 1.25rem;
+    }
+
+    .asiento-card__details {
+        padding: 1.25rem 1.25rem 1.5rem;
+    }
+}

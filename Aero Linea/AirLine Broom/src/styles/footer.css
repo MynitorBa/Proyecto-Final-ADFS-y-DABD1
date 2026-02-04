@@ -1,0 +1,202 @@
+/* footer.css - Adaptado para Broom Air Line */
+
+.broom-footer,
+.broom-footer * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Container principal del footer - Usando Negro Profundo Suave */
+.broom-footer {
+    background-color: #1C1A18; 
+    color: #F2EFEA; /* Texto en Perla para contraste suave */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-top: auto;
+}
+
+.broom-footer__container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 3rem;
+}
+
+/* Sección de promociones - Un toque mágico y sutil */
+.broom-promo__Footer {
+    position: relative;
+    width: 100%;
+    height: 300px; 
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #8B6B4A; /* Fallback en Marrón Cálido */
+}
+
+.broom-promo__img__Footer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    object-position: center;
+    opacity: 0.7; /* Suaviza la imagen para resaltar el texto */
+}
+
+.broom-promo__overlay__Footer {
+    position: relative;
+    z-index: 2; 
+    text-align: center;
+    padding: 20px;
+}
+
+.broom-promo__title__Footer {
+    color: #F2EFEA;
+    font-size: 2.2rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 8px; /* Elegancia en el espaciado */
+    font-weight: 300; /* Más ligero para mayor sofisticación */
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Secciones del footer */
+.broom-footer__section {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Sección de marca y logo */
+.broom-footer__brand {
+    max-width: 350px;
+}
+
+.broom-footer__logo {
+    margin-bottom: 1.5rem;
+}
+
+.broom-footer__logo-img {
+    height: 45px;
+    width: auto;
+    display: block;
+    /* Ajuste para que el logo se vea en tono Perla sobre fondo oscuro */
+    filter: brightness(0) saturate(100%) invert(98%) sepia(3%) saturate(354%) hue-rotate(352deg) brightness(101%) contrast(92%);
+}
+
+.broom-footer__description {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: #E6E1DA; /* Perla oscurecido para jerarquía secundaria */
+    margin-bottom: 2rem;
+}
+
+/* Social links - Estilo circular y orgánico */
+.broom-footer__social {
+    display: flex;
+    gap: 1.2rem;
+}
+
+.broom-footer__social-link {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #3A3531; /* Negro atenuado */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #F2EFEA;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.broom-footer__social-link:hover {
+    background-color: #8B6B4A; /* Cambio a Marrón Cálido */
+    border-color: #8B6B4A;
+    transform: translateY(-5px);
+    color: #ffffff;
+}
+
+/* Títulos de secciones */
+.broom-footer__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.8rem;
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+/* Enlaces del Footer */
+.broom-footer__links {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.broom-footer__link {
+    color: #B89A7A; /* Marrón claro para los links por defecto */
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.broom-footer__link:hover {
+    color: #F2EFEA; /* Resalta a Perla */
+    padding-left: 8px;
+}
+
+/* Sección de copyright */
+.broom-footer__bottom {
+    border-top: 1px solid #3A3531;
+    background-color: #161412; /* Un tono aún más profundo que el principal */
+}
+
+.broom-footer__bottom-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.broom-footer__copyright {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #3A3531; /* Negro atenuado */
+    letter-spacing: 0.5px;
+}
+
+/* Elementos responsivos */
+@media (max-width: 968px) {
+    .broom-footer__container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 3rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .broom-footer__container {
+        grid-template-columns: 1fr;
+        padding: 3rem 1.5rem;
+        text-align: center;
+    }
+
+    .broom-footer__logo-img {
+        margin: 0 auto;
+    }
+
+    .broom-footer__social {
+        justify-content: center;
+    }
+
+    .broom-footer__links {
+        align-items: center;
+    }
+
+    .broom-footer__link:hover {
+        padding-left: 0;
+    }
+}

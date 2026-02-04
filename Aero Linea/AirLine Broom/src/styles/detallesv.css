@@ -1,0 +1,881 @@
+/* --- Modal Backdrop --- */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow-y: auto;
+    padding: 2rem 0;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.detalle-vuelo-modal {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: var(--bg-color);
+    border-radius: 8px;
+    box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+/* --- Estilos para Detalle de Vuelo --- */
+.detalle-vuelo__container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* --- Header & Botón Cerrar --- */
+.detalle-vuelo__header {
+    padding: 1.5rem 0;
+    text-align: right;
+}
+
+.detalle-vuelo__close {
+    background: transparent;
+    border: 2px solid var(--text-muted);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.detalle-vuelo__close:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+/* --- Hero Section (Asimétrica) --- */
+.detalle-vuelo__hero {
+    position: relative;
+    height: 400px;
+    border-radius: 4px 80px 4px 80px;
+    overflow: hidden;
+    margin-bottom: 4rem;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+}
+
+.detalle-vuelo__hero-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7);
+    transition: transform 10s linear;
+}
+
+.detalle-vuelo__hero:hover .detalle-vuelo__hero-image {
+    transform: scale(1.1);
+}
+
+.detalle-vuelo__hero-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 3rem;
+    background: linear-gradient(to top, rgba(28, 26, 24, 0.9), transparent);
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hero-title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 300;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+/* --- Grid Principal --- */
+.detalle-vuelo__content {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 4rem;
+    align-items: start;
+    padding-bottom: 3rem;
+}
+
+/* --- Secciones de Información --- */
+.flight-info-section, 
+.aircraft-info-section,
+.class-selection-section, 
+.reviews-section,
+.crew-section,
+.policies-section {
+    margin-bottom: 5rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 3rem;
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1.5rem;
+    font-weight: 400;
+}
+
+/* --- Timeline del Vuelo (Diseño Moderno) --- */
+.flight-timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    padding: 3rem;
+    border-radius: 4px 32px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.03);
+    margin-bottom: 3rem;
+}
+
+.timeline-point {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.timeline-point__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.timeline-time {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--secondary-color);
+}
+
+.timeline-location {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.timeline-duration {
+    flex: 1;
+    padding: 0 3rem;
+    text-align: center;
+    position: relative;
+}
+
+.timeline-duration__line {
+    height: 2px;
+    background: var(--perla-dark);
+    width: 100%;
+    position: relative;
+}
+
+.timeline-duration__line::after {
+    content: '✈';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--white);
+    padding: 0 10px;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.timeline-duration__info {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.timeline-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* --- Specs del Avión --- */
+.flight-specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+}
+
+.spec-item {
+    padding: 1.5rem;
+    background: #fcfbf9;
+    border-bottom: 2px solid var(--perla-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.spec-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.spec-value {
+    font-weight: 600;
+    color: var(--secondary-color);
+    font-size: 1rem;
+}
+
+/* --- Información del Avión --- */
+.aircraft-card {
+    background: var(--white);
+    padding: 3rem;
+    border-radius: 4px 60px 4px 60px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+}
+
+.aircraft-card__header {
+    margin-bottom: 2.5rem;
+    border-bottom: 2px solid var(--perla-dark);
+    padding-bottom: 1.5rem;
+}
+
+.aircraft-model {
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.aircraft-manufacturer {
+    font-size: 1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.aircraft-specs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2rem;
+}
+
+.aircraft-spec {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.aircraft-spec .spec-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.aircraft-spec .spec-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* --- Tarjetas de Clase (Solo 2 clases) --- */
+.class-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.class-card {
+    background: var(--white);
+    border: 2px solid var(--perla-dark);
+    padding: 2.5rem;
+    border-radius: 0 30px 0 30px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+}
+
+.class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.class-card--selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    transform: translateY(-10px);
+}
+
+.class-card--selected::before {
+    content: '✓ SELECCIONADO';
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 6px 14px;
+    font-size: 0.7rem;
+    border-radius: 20px;
+    letter-spacing: 1px;
+}
+
+.class-card--featured {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--white) 0%, #fcfbf9 100%);
+}
+
+.class-card__header {
+    margin-bottom: 1.5rem;
+}
+
+.class-name {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.class-availability {
+    font-size: 0.75rem;
+    color: #e67e22;
+}
+
+.class-card__price {
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.price-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.price-value {
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--primary-color);
+}
+
+.price-sublabel {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.class-amenities {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: 1px solid var(--perla-dark);
+    padding-top: 1.5rem;
+}
+
+.amenity-item {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.5;
+}
+
+.amenity-item::before {
+    content: '•';
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+/* --- Reseñas --- */
+.reviews-summary {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: 4px 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.reviews-summary__rating {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.rating-number {
+    font-size: 4rem;
+    font-weight: 300;
+    color: var(--primary-color);
+}
+
+.reviews-summary__stars {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.star {
+    font-size: 2rem;
+    color: #e0e0e0;
+    transition: var(--transition);
+}
+
+.star--filled {
+    color: #f39c12;
+}
+
+.star--half {
+    background: linear-gradient(90deg, #f39c12 50%, #e0e0e0 50%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.star--small {
+    font-size: 1.2rem;
+}
+
+.reviews-count {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.reviews-list {
+    display: grid;
+    gap: 2rem;
+}
+
+.review-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 4px 30px 4px 30px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.04);
+    transition: var(--transition);
+}
+
+.review-card:hover {
+    box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+}
+
+.review-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.review-card__author-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.review-author {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.review-card__rating {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.review-card__meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.review-class {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.review-date {
+    color: var(--text-muted);
+}
+
+.review-comment {
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* --- Sidebar Informativo --- */
+.detalle-vuelo__sidebar {
+    position: sticky;
+    top: 2rem;
+}
+
+.booking-summary {
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 2.5rem;
+    border-radius: 4px 40px 4px 40px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+}
+
+.summary-title {
+    font-size: 1.4rem;
+    font-weight: 300;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 1rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+    font-size: 0.9rem;
+}
+
+.summary-label {
+    opacity: 0.7;
+}
+
+.summary-value {
+    font-weight: 500;
+}
+
+.summary-row--highlighted {
+    background: rgba(255,255,255,0.05);
+    padding: 1rem;
+    margin: 1.5rem -1rem;
+    border-left: 3px solid var(--primary-color);
+}
+
+.booking-summary__divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 2rem 0;
+}
+
+.summary-note {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+.booking-disclaimer {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2rem;
+    text-align: center;
+    line-height: 1.6;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+    .detalle-vuelo__content {
+        grid-template-columns: 1fr;
+    }
+    
+    .detalle-vuelo__sidebar {
+        position: static;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-backdrop {
+        padding: 0;
+    }
+
+    .detalle-vuelo-modal {
+        border-radius: 0;
+    }
+
+    .class-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .flight-timeline {
+        flex-direction: column;
+        gap: 2rem;
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .timeline-duration {
+        padding: 1rem 0;
+        width: 100%;
+    }
+
+    .detalle-vuelo__hero {
+        height: 300px;
+        border-radius: 0;
+    }
+
+    .detalle-vuelo__hero-overlay {
+        padding: 2rem;
+    }
+
+    .aircraft-specs-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .aircraft-card {
+        padding: 2rem;
+    }
+    
+    .rating-number {
+        font-size: 3rem;
+    }
+
+    .detalle-vuelo__header {
+        padding: 1rem 0;
+    }
+
+    .crew-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Sección: Tripulación --- */
+.crew-section {
+    margin-bottom: 5rem;
+}
+
+.crew-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.crew-card {
+    background: var(--white);
+    border-radius: 4px 40px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    transition: var(--transition);
+}
+
+.crew-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+}
+
+.crew-card--main {
+    grid-column: span 1;
+}
+
+.crew-card__image-wrapper {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+}
+
+.crew-card__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(20%);
+    transition: var(--transition);
+}
+
+.crew-card:hover .crew-card__image {
+    transform: scale(1.05);
+    filter: grayscale(0%);
+}
+
+.crew-card__info {
+    padding: 2rem;
+}
+
+.crew-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-bottom: 0.8rem;
+}
+
+.crew-detail {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+}
+
+.crew-role {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+/* --- Estilos para la sección de escalas --- */
+.stops-section {
+  margin-bottom: 5rem;
+}
+
+.stops-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stop-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 2px solid #e9ecef;
+  border-radius: 4px 40px 4px 40px;
+  padding: 2rem;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.stop-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 15px 35px rgba(0, 102, 204, 0.1);
+  transform: translateY(-3px);
+}
+
+.stop-card__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--perla-dark);
+}
+
+.stop-number {
+  background: linear-gradient(135deg, var(--primary-color), #d19a60);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stop-city {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+.stop-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stop-detail-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.stop-detail {
+  background: var(--white);
+  padding: 1.2rem;
+  border-radius: 4px 20px;
+  border: 1px solid var(--perla-dark);
+  transition: var(--transition);
+}
+
+.stop-detail:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.08);
+}
+
+.stop-detail__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stop-detail__value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+.stop-detail__value--highlight {
+  color: var(--primary-color);
+  font-size: 1.4rem;
+}
+
+.stop-card__info {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px 15px;
+  padding: 0.9rem 1.2rem;
+  font-size: 0.875rem;
+  color: #856404;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stop-card__info::before {
+  font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+  .stop-detail-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .stop-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stop-card {
+    padding: 1.5rem;
+  }
+}

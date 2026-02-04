@@ -1,0 +1,534 @@
+/* --- Estilos para Datos de Pasajeros --- */
+
+.datos-pasajeros {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    padding: 2rem 1rem 8rem;
+}
+
+.datos-pasajeros__container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- Header --- */
+.datos-pasajeros__header {
+    margin-bottom: 3rem;
+    border-left: 6px solid var(--primary-color);
+    padding-left: 2rem;
+}
+
+.datos-pasajeros__back {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.datos-pasajeros__back:hover {
+    color: var(--primary-color);
+    transform: translateX(-5px);
+}
+
+.datos-pasajeros__title {
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+.datos-pasajeros__subtitle {
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+/* --- Layout --- */
+.datos-pasajeros__content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 3rem;
+    align-items: start;
+}
+
+/* --- Cuadro de Notas/Avisos --- */
+.datos-pasajeros__notice {
+    background: #fdfaf0;
+    border: 1px solid #faeecb;
+    padding: 2rem;
+    border-radius: 4px 20px 4px 20px;
+    margin-bottom: 3rem;
+}
+
+.notice__title {
+    font-size: 1rem;
+    color: #856404;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.notice__list {
+    margin: 0;
+    padding-left: 1.2rem;
+    color: #665c40;
+    font-size: 0.9rem;
+}
+
+.notice__item {
+    margin-bottom: 0.5rem;
+}
+
+/* --- Pestañas de Pasajeros --- */
+.passenger-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 4px 30px 4px 30px;
+    box-shadow: 0 10px 30px rgba(28, 26, 24, 0.05);
+}
+
+.passenger-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1rem 1.5rem;
+    background: #fcfbf9;
+    border: 2px solid var(--perla-dark);
+    border-radius: 0 15px 0 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 100px;
+}
+
+.passenger-tab:hover {
+    border-color: var(--primary-color);
+    background: var(--white);
+    transform: translateY(-2px);
+}
+
+.passenger-tab--active {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.passenger-tab--active .passenger-tab__number,
+.passenger-tab--active .passenger-tab__label {
+    color: var(--white);
+}
+
+.passenger-tab--completed {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.passenger-tab--completed .passenger-tab__number,
+.passenger-tab--completed .passenger-tab__label {
+    color: var(--white);
+}
+
+.passenger-tab__number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    transition: var(--transition);
+}
+
+.passenger-tab__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+/* --- Secciones de Vuelo --- */
+.flight-passengers-section {
+    margin-bottom: 2rem;
+}
+
+.flight-passengers-section__header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+.flight-passengers-section__title {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    font-weight: 400;
+}
+
+.flight-passengers-section__info {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* --- Tarjeta de Pasajero Individual --- */
+.passenger-form-card {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: 4px 40px 4px 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    border: 1px solid rgba(235, 230, 224, 0.5);
+    animation: slideUp 0.5s ease-out;
+}
+
+.passenger-form-card__title {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--white);
+    background: var(--secondary-color);
+    display: inline-block;
+    padding: 0.5rem 2rem;
+    margin-bottom: 2.5rem;
+    border-radius: 0 10px 0 10px;
+    margin-left: -2.5rem; /* Efecto de solapa */
+}
+
+/* Form Grid */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-field__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+    letter-spacing: 1px;
+}
+
+.form-field__input {
+    padding: 0.9rem 1.2rem;
+    background: #fcfbf9;
+    border: 1px solid var(--perla-dark);
+    border-radius: 0 10px 0 10px;
+    font-size: 1rem;
+    color: var(--secondary-color);
+    transition: var(--transition);
+}
+
+.form-field__input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--white);
+}
+
+/* Navegación de Formulario */
+.passengers-form__navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    gap: 1rem;
+}
+
+.passengers-form__btn-prev,
+.passengers-form__btn-next {
+    padding: 1.2rem 3rem;
+    background: transparent;
+    color: var(--secondary-color);
+    border: 2px solid var(--secondary-color);
+    border-radius: 0 15px 0 15px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.passengers-form__btn-prev:hover:not(:disabled),
+.passengers-form__btn-next:hover {
+    background: var(--secondary-color);
+    color: var(--white);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(28, 26, 24, 0.15);
+}
+
+.passengers-form__btn-prev:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.passengers-form__btn-submit {
+    padding: 1.2rem 3rem;
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 0 20px 0 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+}
+
+.passengers-form__btn-submit:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(212, 175, 55, 0.3);
+    background: var(--secondary-color);
+}
+
+/* --- Barra Lateral de Recapitulación --- */
+.booking-recap {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 40px 4px 40px 4px;
+    border: 1px solid var(--perla-dark);
+    position: sticky;
+    top: 2rem;
+}
+
+.booking-recap__title {
+    font-size: 1.2rem;
+    color: var(--secondary-color);
+    margin-bottom: 2rem;
+    font-weight: 300;
+}
+
+.recap-flight {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--perla-dark);
+}
+
+.recap-flight__header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.recap-flight__type {
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+}
+
+.recap-flight__number {
+    color: var(--text-muted);
+}
+
+.recap-flight__route {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin: 0.2rem 0;
+}
+
+.recap-flight__date, .recap-flight__passengers {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.booking-recap__divider {
+    height: 1px;
+    background: var(--perla-dark);
+    margin: 2rem 0;
+}
+
+.booking-recap__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.booking-recap__total-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.booking-recap__total-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+
+.booking-recap__help {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 15px;
+}
+
+.booking-recap__help-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.booking-recap__help-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* --- Animaciones --- */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Responsive --- */
+@media (max-width: 992px) {
+    .datos-pasajeros__content {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-recap {
+        position: relative;
+        top: 0;
+        margin-top: 3rem;
+    }
+
+    .passenger-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .passenger-tab {
+        min-width: 90px;
+    }
+}
+
+@media (max-width: 768px) {
+    .datos-pasajeros {
+        padding: 2rem 1rem 6rem;
+    }
+
+    .datos-pasajeros__header {
+        margin-bottom: 2rem;
+        padding-left: 1rem;
+    }
+
+    .datos-pasajeros__notice {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .passenger-tabs {
+        padding: 1rem;
+        gap: 0.4rem;
+        border-radius: 4px 20px 4px 20px;
+    }
+
+    .passenger-tab {
+        min-width: 80px;
+        padding: 0.8rem 1rem;
+    }
+
+    .passenger-tab__number {
+        font-size: 1.2rem;
+    }
+
+    .passenger-tab__label {
+        font-size: 0.65rem;
+    }
+
+    .passenger-form-card {
+        padding: 2rem;
+        border-radius: 4px 30px 4px 30px;
+    }
+
+    .passenger-form-card__title {
+        margin-left: -2rem;
+    }
+
+    .passengers-form__navigation {
+        flex-direction: column;
+    }
+
+    .passengers-form__btn-prev,
+    .passengers-form__btn-next,
+    .passengers-form__btn-submit {
+        width: 100%;
+        padding: 1rem 2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .datos-pasajeros {
+        padding: 1.5rem 0.5rem 5rem;
+    }
+
+    .datos-pasajeros__header {
+        padding-left: 0.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .passenger-form-card {
+        padding: 1.5rem;
+    }
+    
+    .passenger-form-card__title {
+        margin-left: -1.5rem;
+        padding: 0.4rem 1.5rem;
+        font-size: 0.8rem;
+    }
+
+    .passenger-tabs {
+        padding: 0.8rem;
+    }
+
+    .passenger-tab {
+        min-width: 70px;
+        padding: 0.7rem 0.8rem;
+    }
+
+    .passenger-tab__number {
+        font-size: 1.1rem;
+    }
+
+    .passenger-tab__label {
+        font-size: 0.6rem;
+    }
+
+    .form-field__input {
+        padding: 0.8rem 1rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .passenger-tab {
+        min-width: 60px;
+        padding: 0.6rem 0.5rem;
+    }
+
+    .passenger-tab__number {
+        font-size: 1rem;
+    }
+
+    .passenger-tab__label {
+        font-size: 0.55rem;
+    }
+}
