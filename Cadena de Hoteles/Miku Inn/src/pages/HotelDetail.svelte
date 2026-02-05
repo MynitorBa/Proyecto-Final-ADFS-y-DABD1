@@ -15,7 +15,7 @@
     stars: 5,
     rating: 4.8,
     reviews: 1247,
-    guestScore: 9.2,
+    guestScore: 5,
     guestScoreText: "Excepcional",
     propertyType: "Hotel",
     description: "Ubicado en el corazón de París, el Grand Miku Palace ofrece una experiencia única combinando elegancia moderna con el encanto parisino tradicional. Disfrute de vistas espectaculares, servicio excepcional y habitaciones de lujo en uno de los hoteles más prestigiosos de la ciudad.",
@@ -82,7 +82,7 @@
   let roomTypes = [
     {
       id: 1,
-      name: "Habitación Deluxe",
+      name: "Doble",
       description: "Habitación elegante con cama king size y vistas a la ciudad",
       size: 28,
       maxGuests: 2,
@@ -140,7 +140,7 @@
     },
     {
       id: 3,
-      name: "Executive Suite",
+      name: "Suite",
       description: "Suite ejecutiva de lujo con sala de estar, comedor y vista panorámica",
       size: 65,
       maxGuests: 4,
@@ -172,7 +172,7 @@
     },
     {
       id: 4,
-      name: "Presidential Suite",
+      name: "Grand Suite",
       description: "Suite presidencial con vistas espectaculares de la Torre Eiffel",
       size: 120,
       maxGuests: 6,
@@ -216,7 +216,7 @@
       avatar: "👩",
       date: "2026-01-25",
       rating: 5,
-      guestScore: 10.0,
+      guestScore: 5,
       roomType: "Executive Suite",
       stayDuration: "3 noches",
       verifiedStay: true,
@@ -239,7 +239,7 @@
       avatar: "👨",
       date: "2026-01-20",
       rating: 5,
-      guestScore: 9.5,
+      guestScore: 4.7,
       roomType: "Junior Suite",
       stayDuration: "5 noches",
       verifiedStay: true,
@@ -258,7 +258,7 @@
       avatar: "👩",
       date: "2026-01-15",
       rating: 4,
-      guestScore: 8.5,
+      guestScore: 4.3,
       roomType: "Habitación Deluxe",
       stayDuration: "2 noches",
       verifiedStay: true,
@@ -443,18 +443,18 @@
   }
   
   function getScoreColor(score) {
-    if (score >= 9.0) return '#10b981';
-    if (score >= 8.0) return '#3b82f6';
-    if (score >= 7.0) return '#f59e0b';
+    if (score >= 5.0) return '#10b981';
+    if (score >= 4.5) return '#3b82f6';
+    if (score >= 4.0) return '#f59e0b';
     return '#64748b';
   }
   
   function getScoreText(score) {
-    if (score >= 9.5) return 'Extraordinario';
-    if (score >= 9.0) return 'Excepcional';
-    if (score >= 8.5) return 'Fabuloso';
-    if (score >= 8.0) return 'Muy bueno';
-    if (score >= 7.0) return 'Bueno';
+    if (score >= 5.0) return 'Extraordinario';
+    if (score >= 4.5) return 'Excepcional';
+    if (score >= 4.0) return 'Fabuloso';
+    if (score >= 8.5) return 'Muy bueno';
+    if (score >= 3.0) return 'Bueno';
     return 'Aceptable';
   }
 </script>
@@ -823,28 +823,28 @@
                         <div class="rating-bar">
                           <div class="rating-bar-fill" style="width: 95%"></div>
                         </div>
-                        <span class="rating-score">9.5</span>
+                        <span class="rating-score">4.7</span>
                       </div>
                       <div class="rating-bar-item">
                         <span>Confort</span>
                         <div class="rating-bar">
                           <div class="rating-bar-fill" style="width: 92%"></div>
                         </div>
-                        <span class="rating-score">9.2</span>
+                        <span class="rating-score">5</span>
                       </div>
                       <div class="rating-bar-item">
                         <span>Ubicación</span>
                         <div class="rating-bar">
                           <div class="rating-bar-fill" style="width: 98%"></div>
                         </div>
-                        <span class="rating-score">9.8</span>
+                        <span class="rating-score">4.9</span>
                       </div>
                       <div class="rating-bar-item">
                         <span>Personal</span>
                         <div class="rating-bar">
                           <div class="rating-bar-fill" style="width: 94%"></div>
                         </div>
-                        <span class="rating-score">9.4</span>
+                        <span class="rating-score">4.5</span>
                       </div>
                     </div>
                   </div>

@@ -5,7 +5,7 @@
   let cartItems = [
     {
       hotelName: "Grand Miku Palace Paris",
-      roomType: "Habitación Deluxe",
+      roomType: "Habitación Doble",
       checkIn: "2026-02-15",
       checkOut: "2026-02-18",
       nights: 3,

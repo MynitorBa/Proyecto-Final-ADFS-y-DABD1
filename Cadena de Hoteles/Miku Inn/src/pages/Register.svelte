@@ -270,7 +270,7 @@
   function getDocumentLabel() {
     switch(formData.documentType) {
       case 'passport': return 'Número de Pasaporte';
-      case 'dni': return 'DNI / Cédula';
+      case 'dni': return 'DPI / Cédula';
       case 'license': return 'Licencia de Conducir';
       default: return 'Número de Documento';
     }
@@ -526,19 +526,10 @@
                       bind:group={formData.documentType}
                     />
                     <span class="radio-icon">🪪</span>
-                    <span class="radio-label">DNI/Cédula</span>
+                    <span class="radio-label">Documento de Identidficación</span>
                   </label>
                   
-                  <label class="radio-card" class:selected={formData.documentType === 'license'}>
-                    <input 
-                      type="radio" 
-                      name="documentType" 
-                      value="license"
-                      bind:group={formData.documentType}
-                    />
-                    <span class="radio-icon">🚗</span>
-                    <span class="radio-label">Licencia</span>
-                  </label>
+                 
                 </div>
               </div>
 

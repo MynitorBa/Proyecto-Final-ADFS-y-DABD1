@@ -304,29 +304,7 @@
     </div>
 
     <!-- Additional Info -->
-    <div class="info-cards">
-      <div class="info-card">
-        <div class="info-icon">🔒</div>
-        <div class="info-text">
-          <strong>Seguro</strong>
-          <span>Conexión encriptada</span>
-        </div>
-      </div>
-      <div class="info-card">
-        <div class="info-icon">⚡</div>
-        <div class="info-text">
-          <strong>Rápido</strong>
-          <span>Acceso instantáneo</span>
-        </div>
-      </div>
-      <div class="info-card">
-        <div class="info-icon">💼</div>
-        <div class="info-text">
-          <strong>Reservas</strong>
-          <span>Gestiona fácilmente</span>
-        </div>
-      </div>
-    </div>
+    
   </div>
 </div>
 
@@ -822,23 +800,8 @@
     text-decoration: underline;
   }
   
-  /* Info Cards */
-  .info-cards {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-  
-  .info-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: rgba(30, 41, 59, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-  }
+
+
   
   .info-icon {
     font-size: 1.5rem;
@@ -883,9 +846,7 @@
       grid-template-columns: 1fr;
     }
     
-    .info-cards {
-      grid-template-columns: 1fr;
-    }
+
     
     .form-options {
       flex-direction: column;

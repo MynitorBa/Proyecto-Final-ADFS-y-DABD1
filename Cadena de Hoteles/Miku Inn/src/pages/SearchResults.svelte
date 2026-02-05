@@ -1,4 +1,4 @@
-<script>
+ <script>
   export let navigateTo;
   export let searchParams = null;
   
@@ -43,7 +43,7 @@
   
   // Opciones de filtros
   const starOptions = [5, 4, 3, 2, 1];
-  const roomTypeOptions = ['Suite Ejecutiva', 'Suite', 'Junior Suite', 'Habitación Doble', 'Habitación Simple'];
+  const roomTypeOptions = ['Gran Suite', 'Suite', 'Junior Suite', 'Habitación Doble', 'Habitación Simple'];
   const amenityOptions = [
     { id: 'wifi', label: 'WiFi Gratis', icon: '📶' },
     { id: 'piscina', label: 'Piscina', icon: '🏊' },
@@ -75,18 +75,18 @@
       stars: 5,
       rating: 4.8,
       reviews: 1247,
-      guestScore: 9.2,
-      guestScoreText: "Excepcional",
+      guestScore: 5,
+      guestScoreText: "Extraordinario",
       propertyType: "Hotel",
       images: [
         "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800",
         "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800",
         "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800"
       ],
-      roomType: "Suite Ejecutiva",
-      pricePerNight: 320,
-      totalPrice: 1600,
-      originalPrice: 1920,
+      roomType: "Doble",
+      pricePerNight: 280,
+      totalPrice: 1400,
+      originalPrice: 1750,
       discount: 17,
       amenities: ['wifi', 'piscina', 'spa', 'gym', 'parking', 'restaurant', 'bar', 'breakfast', 'aircon', 'room-service', 'airport'],
       amenitiesDisplay: ["WiFi Gratis", "Piscina", "Spa", "Gimnasio", "Desayuno incluido"],
@@ -110,7 +110,7 @@
       stars: 4,
       rating: 4.6,
       reviews: 856,
-      guestScore: 8.9,
+      guestScore: 4.6,
       guestScoreText: "Fabuloso",
       propertyType: "Boutique Hotel",
       images: [
@@ -144,7 +144,7 @@
       stars: 5,
       rating: 4.9,
       reviews: 2134,
-      guestScore: 9.5,
+      guestScore: 5,
       guestScoreText: "Extraordinario",
       propertyType: "Resort",
       images: [
@@ -153,7 +153,7 @@
         "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800",
         "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800"
       ],
-      roomType: "Suite Ejecutiva",
+      roomType: "Gran Suite",
       pricePerNight: 450,
       totalPrice: 2250,
       originalPrice: 2700,
@@ -180,7 +180,7 @@
       stars: 4,
       rating: 4.5,
       reviews: 623,
-      guestScore: 8.6,
+      guestScore: 4.5,
       guestScoreText: "Muy bueno",
       propertyType: "Hotel",
       images: [
@@ -214,7 +214,7 @@
       stars: 5,
       rating: 4.7,
       reviews: 945,
-      guestScore: 9.0,
+      guestScore: 4.7,
       guestScoreText: "Sobresaliente",
       propertyType: "Hotel",
       images: [
@@ -248,8 +248,8 @@
       stars: 4,
       rating: 4.4,
       reviews: 534,
-      guestScore: 8.4,
-      guestScoreText: "Muy bueno",
+      guestScore: 4,
+      guestScoreText: "Bueno",
       propertyType: "Apart Hotel",
       images: [
         "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800",
