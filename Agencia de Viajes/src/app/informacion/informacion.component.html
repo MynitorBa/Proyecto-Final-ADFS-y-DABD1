@@ -1,0 +1,76 @@
+<div class="site-container">
+  <app-encabezado></app-encabezado>
+
+  <main class="content">
+    <header class="page-title">
+      <h1>Centro de Información</h1>
+      <div class="divider"></div>
+    </header>
+
+    <div class="info-layout">
+      <nav class="side-menu">
+        <button [class.selected]="seccion === 'socios'" (click)="setTab('socios')">Socios</button>
+        <button [class.selected]="seccion === 'cancelacion'" (click)="setTab('cancelacion')">Cancelación</button>
+        <button [class.selected]="seccion === 'cambios'" (click)="setTab('cambios')">Modificaciones</button>
+        <button [class.selected]="seccion === 'ayuda'" (click)="setTab('ayuda')">Asistencia</button>
+      </nav>
+
+      <section class="display-area">
+        
+        <div *ngIf="seccion === 'socios'" class="tab-content">
+          <h2>Nuestras Alianzas</h2>
+          <div class="partner-list">
+            <div class="partner-card" *ngFor="let item of aerolineas">
+              <img [src]="item.img" alt="Socio">
+              <div class="partner-details">
+                <h3>{{item.nombre}}</h3>
+                <p>{{item.descripcion}}</p>
+                <div class="tags">
+                  <span *ngFor="let t of item.tags">{{t}}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="seccion === 'cancelacion'" class="tab-content">
+          <h2>Políticas de Cancelación</h2>
+          <div class="info-text">
+            <p>Gestiona reembolsos desde el panel de "Mis Reservaciones". El proceso es automático con tu código de reserva.</p>
+            <p>Aplica reembolso completo si avisas con 48 horas de antelación.</p>
+          </div>
+          <div class="alert-box">
+            Aviso: Cancelar entre 24 y 48 horas antes genera un cargo del 15%.
+          </div>
+        </div>
+
+        <div *ngIf="seccion === 'cambios'" class="tab-content">
+          <h2>Modificación de Viajes</h2>
+          <div class="info-text">
+            <p>Los cambios de fecha dependen de la disponibilidad de nuestros socios. Pueden aplicar diferencias de tarifa.</p>
+          </div>
+          <div class="price-notice">
+            Costo por trámite administrativo: <strong>Q150.00</strong> por pasajero.
+          </div>
+        </div>
+
+        <div *ngIf="seccion === 'ayuda'" class="tab-content">
+          <h2>Canales de Soporte</h2>
+          <div class="contact-methods">
+            <div class="method">
+              <small>Línea Telefónica</small>
+              <span>+502 2345-6789</span>
+            </div>
+            <div class="method">
+              <small>E-mail</small>
+              <span>soporte@movent.com</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <app-piepagina></app-piepagina>
+</div>

@@ -1,0 +1,83 @@
+.movent-footer {
+  background: #FFCC00;
+  padding: 25px 0; /* Altura reducida a lo mínimo necesario */
+  border-top: 2px solid #000;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Marca y Logo */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand img {
+  height: 38px; /* Tamaño controlado y elegante */
+  width: auto;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #000;
+  opacity: 0.8;
+}
+
+/* Información de Contacto */
+.contact-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #000;
+}
+
+.sep {
+  opacity: 0.3;
+}
+
+/* Legales */
+.legal-text {
+  display: flex;
+  gap: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #000;
+}
+
+.legal-text span {
+  opacity: 0.6;
+}
+
+.year {
+  opacity: 1 !important;
+  color: #D40511; /* Un toque de rojo para destacar el año */
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+  .wrap {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+  
+  .contact-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

@@ -1,0 +1,131 @@
+.site-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 50px 20px;
+  width: 100%;
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.page-title h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.divider {
+  width: 50px;
+  height: 4px;
+  background: #FFCC00;
+  margin: 10px auto;
+}
+
+.info-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 50px;
+}
+
+.side-menu {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #eee;
+}
+
+.side-menu button {
+  background: none;
+  border: none;
+  padding: 15px 0;
+  text-align: left;
+  font-weight: 700;
+  color: #bbb;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  transition: 0.2s;
+}
+
+.side-menu button.selected {
+  color: #000;
+  border-right: 3px solid #FFCC00;
+}
+
+.tab-content h2 {
+  margin-bottom: 30px;
+  font-size: 1.5rem;
+}
+
+.partner-card {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  align-items: center;
+}
+
+.partner-card img {
+  width: 150px;
+  height: 90px;
+  object-fit: cover;
+  border: 1px solid #eee;
+}
+
+.tags span {
+  font-size: 10px;
+  background: #000;
+  color: #fff;
+  padding: 3px 8px;
+  margin-right: 5px;
+  font-weight: 600;
+}
+
+.info-text p {
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.alert-box {
+  background: #f9f9f9;
+  padding: 20px;
+  border-left: 4px solid #FFCC00;
+  margin-top: 20px;
+}
+
+.price-notice {
+  background: #000;
+  color: #fff;
+  padding: 20px;
+  display: inline-block;
+}
+
+.contact-methods .method {
+  margin-bottom: 20px;
+}
+
+.method small {
+  display: block;
+  color: #888;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.method span {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .info-layout { grid-template-columns: 1fr; }
+  .side-menu { flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid #eee; }
+  .side-nav button { padding: 10px 15px; }
+}

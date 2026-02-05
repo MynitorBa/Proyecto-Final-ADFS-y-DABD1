@@ -1,0 +1,111 @@
+<div class="page">
+  <app-encabezado></app-encabezado>
+
+  <main>
+    <section class="hero">
+      <div class="hero-overlay">
+        <h1>Tu Próxima Aventura Comienza Aquí</h1>
+
+        <div class="search-box">
+          <div class="search-tabs">
+            <button [class.active]="searchType === 'flights'" (click)="setSearchType('flights')">Vuelos</button>
+            <button [class.active]="searchType === 'hotels'" (click)="setSearchType('hotels')">Hoteles</button>
+          </div>
+
+          <ng-container *ngIf="searchType === 'flights'">
+            <div class="trip-type">
+              <button [class.active]="tripType === 'roundtrip'" (click)="setTripType('roundtrip')">Ida y Vuelta</button>
+              <button [class.active]="tripType === 'oneway'" (click)="setTripType('oneway')">Solo Ida</button>
+            </div>
+            <div class="search-fields">
+              <div class="field-row">
+                <input type="text" placeholder="Origen" [(ngModel)]="searchData.origen" />
+                <input type="text" placeholder="Destino" [(ngModel)]="searchData.destino" />
+                <input type="date" [(ngModel)]="searchData.fechaIda" />
+              </div>
+              <div class="field-row">
+                <input *ngIf="tripType === 'roundtrip'" type="date" [(ngModel)]="searchData.fechaVuelta" />
+                <select [(ngModel)]="searchData.tipoAsiento">
+                  <option value="Turista">Turista</option>
+                  <option value="Business">Business</option>
+                </select>
+                <input type="number" placeholder="Pasajeros" [(ngModel)]="searchData.pasajeros" min="1" />
+              </div>
+            </div>
+            <button class="search-btn" routerLink="/reservar">Buscar Vuelos</button>
+          </ng-container>
+
+          <ng-container *ngIf="searchType === 'hotels'">
+            <div class="search-fields">
+              <div class="field-row">
+                <input type="text" placeholder="¿A dónde vas?" [(ngModel)]="searchData.destino" />
+                <input type="date" [(ngModel)]="searchData.checkIn" />
+                <input type="date" [(ngModel)]="searchData.checkOut" />
+              </div>
+              <div class="field-row">
+                <input type="number" placeholder="Huéspedes" [(ngModel)]="searchData.huespedes" min="1" />
+              </div>
+            </div>
+            <button class="search-btn" routerLink="/reservar">Buscar Hoteles</button>
+          </ng-container>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <div class="features-container">
+        <div class="feature-card">
+          <div class="feature-image">
+            <img src="empleada.png" alt="Vuelos Globales">
+          </div>
+          <div class="feature-content">
+            <h2>Vuelos Globales</h2>
+            <p>Explora cada rincón del mundo con las mejores tarifas. Trabajamos con aerolíneas de primer nivel para garantizar que tu viaje sea cómodo y seguro desde el despegue.</p>
+            <button class="cta-btn" routerLink="/reservar">Ver Ofertas</button>
+          </div>
+        </div>
+
+        <div class="feature-card reverse">
+          <div class="feature-content">
+            <h2>Hospedaje Premium</h2>
+            <p>Desde resorts de lujo hasta hoteles boutique en el corazón de las ciudades más vibrantes. Encuentra el refugio perfecto para tus noches de aventura.</p>
+            <button class="cta-btn" routerLink="/reservar">Ver Hoteles</button>
+          </div>
+          <div class="feature-image">
+            <img src="compañeros.png" alt="Hospedaje Premium">
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-image">
+            <img src="agentes.png" alt="Atención Experta">
+          </div>
+          <div class="feature-content">
+            <h2>Atención Experta</h2>
+            <p>Nuestro equipo de asesores apasionados por los viajes está listo para ayudarte a planificar cada detalle de tu itinerario personalizado.</p>
+            <button class="cta-btn" routerLink="/informacion">Contactar</button>
+          </div>
+        </div>
+
+        <div class="feature-card reverse">
+          <div class="feature-content">
+            <h2>Flexibilidad Total</h2>
+            <p>Entendemos que los planes pueden cambiar. Por eso, ofrecemos opciones de cancelación y cambios flexibles para que viajes sin preocupaciones.</p>
+            <button class="cta-btn" routerLink="/informacion">Centro de Ayuda</button>
+          </div>
+          <div class="feature-image">
+            <img src="cancelacion.png" alt="Flexibilidad">
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <button *ngIf="showScrollTop" class="scroll-top" (click)="scrollToTop()">
+    <svg viewBox="0 0 24 24" class="avion-icon">
+      <path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z" />
+    </svg>
+  </button>
+
+  <app-piepagina></app-piepagina>
+</div>

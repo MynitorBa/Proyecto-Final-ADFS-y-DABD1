@@ -1,0 +1,63 @@
+<div class="site-container">
+  <app-encabezado></app-encabezado>
+
+  <main class="content">
+    <header class="page-title">
+      <h1>Mis Reservaciones</h1>
+      <div class="divider"></div>
+      <div class="top-action">
+        <button routerLink="/reservar" class="btn-new-res">Nueva Reserva</button>
+      </div>
+    </header>
+
+    <div class="info-layout">
+      <nav class="side-menu">
+        <button [class.selected]="filtro === 'todas'" (click)="filtro = 'todas'">Todas</button>
+        <button [class.selected]="filtro === 'proximas'" (click)="filtro = 'proximas'">Próximas</button>
+        <button [class.selected]="filtro === 'canceladas'" (click)="filtro = 'canceladas'">Canceladas</button>
+      </nav>
+
+      <section class="display-area">
+        <div class="reservation-list">
+          <div class="res-card" *ngFor="let item of reservaciones">
+            <div class="status-tag" [class]="item.estado">{{item.estado}}</div>
+            
+            <div class="res-content">
+              <div class="res-header">
+                <h3>{{item.tipo}}</h3>
+                <span class="ref-code">REF: {{item.codigo}}</span>
+              </div>
+
+              <div class="res-details">
+                <div class="detail-box">
+                  <small>Ruta</small>
+                  <p>{{item.ruta}}</p>
+                </div>
+                <div class="detail-box">
+                  <small>Fecha</small>
+                  <p>{{item.fecha}}</p>
+                </div>
+                <div class="detail-box">
+                  <small>Pasajeros</small>
+                  <p>{{item.pasajeros}}</p>
+                </div>
+                <div class="detail-box">
+                  <small>Monto</small>
+                  <p class="amount">Q{{item.total}}</p>
+                </div>
+              </div>
+
+              <div class="res-actions">
+                <button class="btn-action-main">Gestionar</button>
+                <button class="btn-action-alt">Voucher</button>
+                <button class="btn-action-danger" *ngIf="item.estado === 'confirmada'">Anular</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <app-piepagina></app-piepagina>
+</div>

@@ -1,0 +1,136 @@
+.site-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  background: #fafafa;
+}
+
+.auth-wrapper {
+  width: 100%;
+  max-width: 500px;
+}
+
+.auth-box {
+  background: #fff;
+  padding: 40px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  border-radius: 8px;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.auth-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.divider {
+  width: 50px;
+  height: 4px;
+  background: #FFCC00;
+  margin: 10px auto 15px;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.auth-form {
+  margin-bottom: 25px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #eee;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #FFCC00;
+  outline: none;
+  background: #fffef5;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 15px;
+  background: #FFCC00;
+  color: #000;
+  border: 2px solid #000;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s ease;
+  margin-top: 10px;
+}
+
+.btn-submit:hover {
+  background: #000;
+  color: #FFCC00;
+}
+
+.auth-footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.auth-footer p {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.auth-footer a {
+  color: #D40511;
+  font-weight: 800;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.auth-footer a:hover {
+  color: #000;
+}
+
+@media (max-width: 600px) {
+  .auth-box {
+    padding: 30px 20px;
+  }
+
+  .auth-header h1 {
+    font-size: 1.5rem;
+  }
+}

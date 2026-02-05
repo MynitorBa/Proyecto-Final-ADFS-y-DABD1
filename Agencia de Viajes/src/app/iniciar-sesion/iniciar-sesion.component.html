@@ -1,0 +1,45 @@
+<div class="site-container">
+  <app-encabezado></app-encabezado>
+
+  <main class="content">
+    <div class="auth-wrapper">
+      <div class="auth-box">
+        <header class="auth-header">
+          <h1>Iniciar Sesión</h1>
+          <div class="divider"></div>
+          <p class="subtitle">Accede a tu cuenta Movent</p>
+        </header>
+
+        <form (ngSubmit)="onSubmit()" class="auth-form">
+          <div class="input-group">
+            <label>Correo Electrónico</label>
+            <input 
+              type="email" 
+              name="email" 
+              [(ngModel)]="loginData.email" 
+              placeholder="tu@correo.com"
+              required>
+          </div>
+
+          <div class="input-group">
+            <label>Contraseña</label>
+            <input 
+              type="password" 
+              name="password" 
+              [(ngModel)]="loginData.password" 
+              placeholder="••••••••"
+              required>
+          </div>
+
+          <button type="submit" class="btn-submit">Ingresar</button>
+        </form>
+
+        <div class="auth-footer">
+          <p>¿No tienes cuenta? <a routerLink="/registro">Regístrate aquí</a></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-piepagina></app-piepagina>
+</div>

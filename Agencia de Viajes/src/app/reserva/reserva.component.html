@@ -1,0 +1,67 @@
+<div class="site-container">
+  <app-encabezado></app-encabezado>
+
+  <main class="content">
+    <header class="page-title">
+      <h1>Catálogo de Viajes</h1>
+      <div class="divider"></div>
+      <p class="subtitle">Encuentra tu próximo destino</p>
+    </header>
+
+    <div class="info-layout">
+      <nav class="side-menu">
+        <button [class.selected]="filtro === 'todos'" (click)="filtro = 'todos'">Todos</button>
+        <button [class.selected]="filtro === 'paquetes'" (click)="filtro = 'paquetes'">Paquetes</button>
+        <button [class.selected]="filtro === 'vuelos'" (click)="filtro = 'vuelos'">Solo Vuelos</button>
+        <button [class.selected]="filtro === 'hoteles'" (click)="filtro = 'hoteles'">Solo Hoteles</button>
+      </nav>
+
+      <section class="display-area">
+        <div class="reservation-list">
+          <div class="res-card" *ngFor="let item of catalogo">
+            <div class="status-tag disponible">Disponible</div>
+            
+            <div class="res-content">
+              <div class="res-header">
+                <h3>{{item.nombre}}</h3>
+                <span class="ref-code">{{item.descripcion}}</span>
+              </div>
+
+              <div class="res-details">
+                <div class="detail-box">
+                  <small>Destino</small>
+                  <p>{{item.destino}}</p>
+                </div>
+                <div class="detail-box">
+                  <small>Duración</small>
+                  <p>{{item.duracion}}</p>
+                </div>
+                <div class="detail-box">
+                  <small>Incluye</small>
+                  <p>{{item.incluye}}</p>
+                </div>
+                <div class="detail-box">
+                  <small>Precio por persona</small>
+                  <p class="amount">Q{{item.precio}}</p>
+                </div>
+              </div>
+
+              <div class="res-actions">
+                <button routerLink="/checkout" class="btn-action-main">Reservar Ahora</button>
+                <button class="btn-action-alt">Ver Detalles</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <button class="cart-float" routerLink="/checkout">
+    <svg viewBox="0 0 24 24" class="cart-icon">
+      <path fill="currentColor" d="M17,18A2,2 0 0,1 19,20A2,2 0 0,1 17,22C15.89,22 15,21.1 15,20C15,18.89 15.89,18 17,18M1,2H4.27L5.21,4H20A1,1 0 0,1 21,5C21,5.17 20.95,5.34 20.88,5.5L17.3,11.97C16.96,12.58 16.3,13 15.55,13H8.1L7.2,14.63L7.17,14.75A0.25,0.25 0 0,0 7.42,15H19V17H7C5.89,17 5,16.1 5,15C5,14.65 5.09,14.32 5.24,14.04L6.6,11.59L3,4H1V2M7,18A2,2 0 0,1 9,20A2,2 0 0,1 7,22C5.89,22 5,21.1 5,20C5,18.89 5.89,18 7,18M16,11L18.78,6H6.14L8.5,11H16Z"/>
+    </svg>
+  </button>
+
+  <app-piepagina></app-piepagina>
+</div>
