@@ -1,5 +1,36 @@
 [
   {
+    "ContainingType": "Aerolinea.API.Controllers.AeropuertosController",
+    "Method": "ObtenerAeropuertos",
+    "RelativePath": "api/aeropuertos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.AeropuertosController",
+    "Method": "ObtenerFechasDisponibles",
+    "RelativePath": "api/aeropuertos/fechas-disponibles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "origenId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "destinoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.AuthController",
     "Method": "Login",
     "RelativePath": "api/auth/login",
