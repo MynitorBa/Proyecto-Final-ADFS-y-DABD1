@@ -30,28 +30,36 @@
   let suggestedDestination = null;
   let currentFlightId = null;
   let searchParams = null;
+  let pageKey = Date.now();
   
   onMount(() => {
+    // Cargar página desde URL al inicio
     actualizarPaginaDesdeURL();
-    window.addEventListener('hashchange', actualizarPaginaDesdeURL);
+    
+    // Escuchar cambios de URL (botón atrás/adelante del navegador)
+    window.addEventListener('popstate', actualizarPaginaDesdeURL);
     
     setTimeout(() => {
       isLoading = false;
     }, 3000);
     
     return () => {
-      window.removeEventListener('hashchange', actualizarPaginaDesdeURL);
+      window.removeEventListener('popstate', actualizarPaginaDesdeURL);
     };
   });
   
   function actualizarPaginaDesdeURL() {
-    const hash = window.location.hash.slice(1) || 'home';
-    currentPage = hash;
+    const path = window.location.pathname.slice(1) || 'home';
+    currentPage = path;
+    pageKey = Date.now();
   }
   
   function navigateTo(page, data = null) {
     currentPage = page;
-    window.location.hash = page;
+    pageKey = Date.now();
+    
+    // Cambiar URL sin recargar página (History API)
+    window.history.pushState({}, '', `/${page}`);
     
     if (page === 'detalle-vuelo') {
       currentFlightId = data;
@@ -125,9 +133,13 @@
     {:else if currentPage === 'datos-pasajeros'}
       <DatosPasajeros {navigateTo} />
     {:else if currentPage === 'login'}
-      <Login {navigateTo} />
+      {#key pageKey}
+        <Login {navigateTo} />
+      {/key}
     {:else if currentPage === 'register'}
-      <Register {navigateTo} />
+      {#key pageKey}
+        <Register {navigateTo} />
+      {/key}
     {:else if currentPage === 'profile'}
       <Profile {navigateTo} />
     {:else if currentPage === 'admin'}

@@ -1,5 +1,6 @@
 <script>
   import '../styles/reslog.css';
+  import { onMount } from 'svelte';
   export let navigateTo;
 
   let loginData = {
@@ -10,6 +11,17 @@
   let rememberMe = false;
   let loginError = '';
   let submitting = false;
+
+  // LIMPIAR TODO AL MONTAR
+  onMount(() => {
+    sessionStorage.clear();
+    loginData = {
+      correoOUsername: '',
+      contrasena: ''
+    };
+    rememberMe = false;
+    loginError = '';
+  });
 
   async function handleLogin() {
     loginError = '';
@@ -74,6 +86,7 @@
                 class="login-form__input"
                 bind:value={loginData.correoOUsername}
                 placeholder="correo@ejemplo.com o usuario123"
+                autocomplete="off"
                 required
               />
             </div>
@@ -86,6 +99,7 @@
                 class="login-form__input"
                 bind:value={loginData.contrasena}
                 placeholder="Tu contraseña"
+                autocomplete="off"
                 required
               />
             </div>

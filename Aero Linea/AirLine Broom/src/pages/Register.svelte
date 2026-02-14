@@ -51,18 +51,13 @@
   let todosNacionalidades = [];
   let nacionalidadesSeleccionadas = [false];
 
-  // LIMPIAR TODOS LOS CAMPOS AL MONTAR EL COMPONENTE
+  // RECARGAR PÁGINA COMPLETA AL ENTRAR PARA LIMPIAR TODO
   onMount(async () => {
-    // FORZAR LIMPIEZA COMPLETA
-    setTimeout(() => {
-      limpiarFormulario();
-      // Limpiar físicamente los inputs del DOM
-      document.querySelectorAll('input').forEach(input => {
-        if (input.type !== 'checkbox') {
-          input.value = '';
-        }
-      });
-    }, 0);
+    // Si hay datos guardados en sessionStorage, limpiar
+    sessionStorage.clear();
+    
+    // Limpiar el formulario
+    limpiarFormulario();
 
     // Países y ciudades
     try {
@@ -330,11 +325,11 @@
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="nombre" class="register-form__label">Nombre</label>
-                  <input type="text" id="nombre" class="register-form__input" bind:value={registerData.nombre} placeholder="Tu nombre" required />
+                  <input type="text" id="nombre" class="register-form__input" bind:value={registerData.nombre} placeholder="Tu nombre" autocomplete="off" required />
                 </div>
                 <div class="register-form__field">
                   <label for="apellido" class="register-form__label">Apellido</label>
-                  <input type="text" id="apellido" class="register-form__input" bind:value={registerData.apellido} placeholder="Tu apellido" required />
+                  <input type="text" id="apellido" class="register-form__input" bind:value={registerData.apellido} placeholder="Tu apellido" autocomplete="off" required />
                 </div>
               </div>
 
@@ -342,12 +337,12 @@
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="username" class="register-form__label">Username</label>
-                  <input type="text" id="username" class="register-form__input {errores.username ? 'register-form__input--error' : ''}" bind:value={registerData.username} placeholder="usuario123" required />
+                  <input type="text" id="username" class="register-form__input {errores.username ? 'register-form__input--error' : ''}" bind:value={registerData.username} placeholder="usuario123" autocomplete="off" required />
                   {#if errores.username}<span class="register-form__field-error">{errores.username}</span>{/if}
                 </div>
                 <div class="register-form__field">
                   <label for="telefono" class="register-form__label">Teléfono</label>
-                  <input type="tel" id="telefono" class="register-form__input" bind:value={registerData.telefono} placeholder="50211223344" required />
+                  <input type="tel" id="telefono" class="register-form__input" bind:value={registerData.telefono} placeholder="50211223344" autocomplete="off" required />
                 </div>
               </div>
 
@@ -355,7 +350,7 @@
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="correo" class="register-form__label">Correo electrónico</label>
-                  <input type="email" id="correo" class="register-form__input {errores.correo ? 'register-form__input--error' : ''}" value={registerData.correo} on:input={onCorreoInput} placeholder="correo@ejemplo.com" required />
+                  <input type="email" id="correo" class="register-form__input {errores.correo ? 'register-form__input--error' : ''}" value={registerData.correo} on:input={onCorreoInput} placeholder="correo@ejemplo.com" autocomplete="off" required />
                   {#if errores.correo}<span class="register-form__field-error">{errores.correo}</span>{/if}
                 </div>
               </div>
@@ -364,11 +359,11 @@
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="fechaNacimiento" class="register-form__label">Fecha de nacimiento</label>
-                  <input type="date" id="fechaNacimiento" class="register-form__input" bind:value={registerData.fechaNacimiento} required />
+                  <input type="date" id="fechaNacimiento" class="register-form__input" bind:value={registerData.fechaNacimiento} autocomplete="off" required />
                 </div>
                 <div class="register-form__field">
                   <label for="pasaporte" class="register-form__label">Pasaporte (solo números)</label>
-                  <input type="text" id="pasaporte" class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}" value={registerData.pasaporte} on:input={onPasaporteInput} placeholder="12345678" required />
+                  <input type="text" id="pasaporte" class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}" value={registerData.pasaporte} on:input={onPasaporteInput} placeholder="12345678" autocomplete="off" required />
                   {#if errores.pasaporte}<span class="register-form__field-error">{errores.pasaporte}</span>{/if}
                 </div>
               </div>
@@ -436,37 +431,42 @@
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <span class="register-form__label">Nacionalidad(es)</span>
-                  {#each nacionalidades as nac, i}
-                    <div class="nacionalidad-row">
-                      <div class="autocomplete" style="flex:1">
-                        <input
-                          type="text"
-                          id="nac-{i}"
-                          class="register-form__input"
-                          bind:value={nacionalidades[i]}
-                          on:input={() => onNacInput(i)}
-                          on:blur={() => validarNacionalidadSeleccionada(i)}
-                          placeholder="Ej: Guatemalteco"
-                          autocomplete="off"
-                        />
-                        {#if sugerenciasNac[i]?.length > 0}
-                          <ul class="autocomplete__list">
-                            {#each sugerenciasNac[i] as s}
-                              <li class="autocomplete__item">
-                                <button type="button" class="autocomplete__btn" on:click={() => seleccionarNac(i, s.demonym)}>
-                                  {s.pais} — {s.demonym}
-                                </button>
-                              </li>
-                            {/each}
-                          </ul>
-                        {/if}
+                  <div class="nacionalidades-grid">
+                    {#each nacionalidades as nac, i}
+                      <div class="nacionalidad-item">
+                        <span class="nacionalidad-number">Nacionalidad {i + 1}</span>
+                        <div class="nacionalidad-input-wrapper">
+                          <div class="autocomplete">
+                            <input
+                              type="text"
+                              id="nac-{i}"
+                              class="register-form__input"
+                              bind:value={nacionalidades[i]}
+                              on:input={() => onNacInput(i)}
+                              on:blur={() => validarNacionalidadSeleccionada(i)}
+                              placeholder="Ej: Guatemalteco"
+                              autocomplete="off"
+                            />
+                            {#if sugerenciasNac[i]?.length > 0}
+                              <ul class="autocomplete__list">
+                                {#each sugerenciasNac[i] as s}
+                                  <li class="autocomplete__item">
+                                    <button type="button" class="autocomplete__btn" on:click={() => seleccionarNac(i, s.demonym)}>
+                                      {s.pais} — {s.demonym}
+                                    </button>
+                                  </li>
+                                {/each}
+                              </ul>
+                            {/if}
+                          </div>
+                          {#if i > 0}
+                            <button type="button" class="nacionalidad-remove" on:click={() => quitarNac(i)}>✕</button>
+                          {/if}
+                        </div>
                       </div>
-                      {#if i > 0}
-                        <button type="button" class="nacionalidad-remove" on:click={() => quitarNac(i)}>✕</button>
-                      {/if}
-                    </div>
-                  {/each}
-                  <button type="button" class="nacionalidad-add" on:click={agregarNac}>+ Agregar otra nacionalidad</button>
+                    {/each}
+                  </div>
+                  <button type="button" class="nacionalidad-add" on:click={agregarNac}>Agregar otra nacionalidad</button>
                   {#if errores.nacionalidad}<span class="register-form__field-error">{errores.nacionalidad}</span>{/if}
                 </div>
               </div>
