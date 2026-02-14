@@ -19,9 +19,12 @@ builder.Services.AddScoped<NacionalidadService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<AuthService>();
 
-// Servicios de tu amigo (Aeropuerto)
+
 builder.Services.AddScoped<AeropuertoService>();
 builder.Services.AddScoped<AeropuertoRepository>();
+
+builder.Services.AddScoped<VueloService>();
+builder.Services.AddScoped<VueloRepository>();
 
 // CORS abierto para desarrollo local
 builder.Services.AddCors(options =>
