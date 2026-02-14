@@ -3,16 +3,41 @@
   export let navigateTo;
 
   let loginData = {
-    email: '',
-    password: ''
+    correoOUsername: '',
+    contrasena: ''
   };
 
   let rememberMe = false;
+  let loginError = '';
+  let submitting = false;
 
-  function handleLogin() {
-    console.log('Intentando login:', loginData);
-    // Aquí irá la lógica de autenticación con backend
-    navigateTo('home');
+  async function handleLogin() {
+    loginError = '';
+    submitting = true;
+
+    try {
+      const response = await fetch('http://localhost:5190/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          correoOUsername: loginData.correoOUsername,
+          contrasena: loginData.contrasena
+        })
+      });
+
+      if (!response.ok) {
+        loginError = 'Correo, username o contraseña incorrectos.';
+        return;
+      }
+
+      navigateTo('home');
+
+    } catch (error) {
+      loginError = 'No se pudo conectar con el servidor.';
+      console.error('Error en login:', error);
+    } finally {
+      submitting = false;
+    }
   }
 </script>
 
@@ -35,37 +60,40 @@
           </button>
 
           <div class="login__header">
-            <h1 class="login__title">Iniciar sesion</h1>
+            <h1 class="login__title">Iniciar sesión</h1>
             <p class="login__subtitle">Ingresa tus credenciales para continuar</p>
           </div>
 
           <form class="login-form" on:submit|preventDefault={handleLogin}>
+
             <div class="login-form__field">
-              <label for="email" class="login-form__label">Email</label>
-              <input 
-                type="email" 
-                id="email"
+              <label for="correoOUsername" class="login-form__label">Correo o Username</label>
+              <input
+                type="text"
+                id="correoOUsername"
                 class="login-form__input"
-                bind:value={loginData.email}
-                placeholder="correo@ejemplo.com"
+                bind:value={loginData.correoOUsername}
+                placeholder="correo@ejemplo.com o usuario123"
+                required
               />
             </div>
 
             <div class="login-form__field">
-              <label for="password" class="login-form__label">Contraseña</label>
-              <input 
-                type="password" 
-                id="password"
+              <label for="contrasena" class="login-form__label">Contraseña</label>
+              <input
+                type="password"
+                id="contrasena"
                 class="login-form__input"
-                bind:value={loginData.password}
+                bind:value={loginData.contrasena}
                 placeholder="Tu contraseña"
+                required
               />
             </div>
 
             <div class="login-form__options">
               <label class="login-form__checkbox">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   bind:checked={rememberMe}
                   class="login-form__checkbox-input"
                 />
@@ -73,20 +101,25 @@
               </label>
             </div>
 
-            <button type="submit" class="login-form__submit">
-              Iniciar sesion
+            {#if loginError}
+              <div class="login-form__error">{loginError}</div>
+            {/if}
+
+            <button type="submit" class="login-form__submit" disabled={submitting}>
+              {submitting ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
+
           </form>
 
           <div class="login__register">
             <p class="login__register-text">
-              No tienes una cuenta?
-              <button 
-                type="button" 
+              ¿No tienes una cuenta?
+              <button
+                type="button"
                 class="login__register-link"
                 on:click={() => navigateTo('register')}
               >
-                Registrate aqui
+                Regístrate aquí
               </button>
             </p>
           </div>
@@ -95,9 +128,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  h2 {
-    color: white;
-}
-</style>

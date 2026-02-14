@@ -24,9 +24,11 @@ namespace Aerolinea.API.Services
                 Username = dto.Username,
                 Nombre = dto.Nombre,
                 Apellido = dto.Apellido,
-                Edad = dto.Edad,
-                NumeroEmergencia = dto.NumeroEmergencia,
-                NacionalidadId = dto.NacionalidadId
+                Telefono = dto.Telefono,
+                FechaNacimiento = dto.FechaNacimiento,
+                Ciudad = dto.Ciudad,
+                NacionalidadId = dto.NacionalidadId,
+                RolID = dto.RolID
             };
 
             await _repository.CrearUsuario(usuario);

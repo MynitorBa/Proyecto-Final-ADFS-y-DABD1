@@ -514,3 +514,117 @@
         align-self: center;
     }
 }
+
+/* --- Errores de campo individuales --- */
+.register-form__input--error {
+    border-color: #e53e3e;
+    background-color: #fff5f5;
+}
+
+.register-form__field-error {
+    font-size: 0.78rem;
+    color: #c53030;
+    margin-top: 0.3rem;
+}
+
+/* --- Error de login --- */
+.login-form__error {
+    background-color: #fff5f5;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.login-form__submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* --- Ajuste de densidad del formulario de registro --- */
+.register__form-section {
+    padding: 2rem 3rem;
+    justify-content: flex-start;
+    padding-top: 1.5rem;
+}
+
+.register__form-container {
+    max-width: 560px;
+}
+
+.register__back {
+    margin-bottom: 1rem;
+}
+
+.register__header {
+    margin-bottom: 1.5rem;
+}
+
+.register__title {
+    font-size: 2rem;
+}
+
+.register-form {
+    gap: 0.9rem;
+}
+
+.register-form__row {
+    gap: 1rem;
+}
+
+.login-form__field,
+.register-form__field {
+    gap: 0.4rem;
+}
+
+.login-form__input,
+.register-form__input {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+}
+
+.register-form__label,
+.login-form__label {
+    font-size: 0.7rem;
+}
+
+.register-form__checkboxes {
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+}
+
+.register-form__captcha {
+    margin: 0.8rem 0;
+}
+
+.captcha-box {
+    padding: 0.7rem 1rem;
+}
+
+.login-form__submit,
+.register-form__submit {
+    margin-top: 0.5rem;
+    padding: 1rem;
+}
+
+/* --- Indicadores de fortaleza de contraseña --- */
+.password-strength {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+}
+
+.password-strength__item {
+    font-size: 0.75rem;
+    color: #e53e3e;
+    transition: color 0.2s;
+}
+
+.password-strength__item.ok {
+    color: #38a169;
+}

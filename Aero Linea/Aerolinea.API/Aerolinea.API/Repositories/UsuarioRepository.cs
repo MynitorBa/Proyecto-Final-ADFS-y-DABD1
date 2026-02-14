@@ -20,20 +20,20 @@ namespace Aerolinea.API.Repositories
 
             string sql = @"
                 INSERT INTO Usuario
-                (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Edad, NumeroEmergencia, NacionalidadId, RolID)
+                (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Telefono, FechaNacimiento, Ciudad, NacionalidadId, RolID)
                 VALUES
-                (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, @Edad, @NumeroEmergencia, @NacionalidadId, @RolID)";
+                (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, @Telefono, @FechaNacimiento, @Ciudad, @NacionalidadId, @RolID)";
 
             using var command = new SqlCommand(sql, connection);
-
             command.Parameters.AddWithValue("@Correo", usuario.Correo);
             command.Parameters.AddWithValue("@ContrasenaHash", usuario.ContrasenaHash);
             command.Parameters.AddWithValue("@Pasaporte", usuario.Pasaporte);
             command.Parameters.AddWithValue("@Username", usuario.Username);
             command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
             command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
-            command.Parameters.AddWithValue("@Edad", usuario.Edad);
-            command.Parameters.AddWithValue("@NumeroEmergencia", usuario.NumeroEmergencia ?? "");
+            command.Parameters.AddWithValue("@Telefono", usuario.Telefono ?? "");
+            command.Parameters.AddWithValue("@FechaNacimiento", usuario.FechaNacimiento);
+            command.Parameters.AddWithValue("@Ciudad", usuario.Ciudad ?? "");
             command.Parameters.AddWithValue("@NacionalidadId", usuario.NacionalidadId);
             command.Parameters.AddWithValue("@RolID", usuario.RolID);
 
@@ -76,7 +76,6 @@ namespace Aerolinea.API.Repositories
 
             var constraint = new RegisterConstraint();
 
-            // Verificar correo
             string queryCorreo = "SELECT COUNT(*) FROM Usuario WHERE Correo = @correo";
             using (var command = new SqlCommand(queryCorreo, connection))
             {
@@ -84,7 +83,6 @@ namespace Aerolinea.API.Repositories
                 constraint.CorreoExiste = (int)await command.ExecuteScalarAsync() > 0;
             }
 
-            // Verificar username
             string queryUsername = "SELECT COUNT(*) FROM Usuario WHERE Username = @username";
             using (var command = new SqlCommand(queryUsername, connection))
             {
@@ -92,7 +90,6 @@ namespace Aerolinea.API.Repositories
                 constraint.UsernameExiste = (int)await command.ExecuteScalarAsync() > 0;
             }
 
-            // Verificar pasaporte
             string queryPasaporte = "SELECT COUNT(*) FROM Usuario WHERE Pasaporte = @pasaporte";
             using (var command = new SqlCommand(queryPasaporte, connection))
             {
