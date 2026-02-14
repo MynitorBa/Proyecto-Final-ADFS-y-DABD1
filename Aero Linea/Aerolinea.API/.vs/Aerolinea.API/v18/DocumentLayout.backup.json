@@ -94,20 +94,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 4,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "NacionalidadRepository.cs",
-              "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
-              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
-              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
-              "RelativeToolTip": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
-              "ViewState": "AgIAABwAAAAAAAAAAAAUwCgAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-14T19:05:43.958Z"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 4,
@@ -163,12 +151,24 @@
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Program.cs",
-              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs*",
-              "RelativeToolTip": "Aerolinea.API\\Program.cs*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAAKAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs",
+              "RelativeToolTip": "Aerolinea.API\\Program.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAACMAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:49.545Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "NacionalidadRepository.cs",
+              "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
+              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
+              "RelativeToolTip": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAUwCgAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-14T19:05:43.958Z"
             },
             {
               "$type": "Document",
