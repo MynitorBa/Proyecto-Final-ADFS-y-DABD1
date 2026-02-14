@@ -97,5 +97,21 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.VuelosController",
+    "Method": "BuscarVuelos",
+    "RelativePath": "api/vuelos/buscar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.BuscarVueloDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]
