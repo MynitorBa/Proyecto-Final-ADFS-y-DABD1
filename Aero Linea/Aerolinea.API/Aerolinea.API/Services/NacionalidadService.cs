@@ -14,13 +14,8 @@ namespace Aerolinea.API.Services
 
         public async Task<List<NacionalidadDto>> ObtenerTodas()
         {
-            var nacionalidades = await _repository.ObtenerTodas();
-
-            return nacionalidades.Select(n => new NacionalidadDto
-            {
-                Id = n.Id,
-                Pais = n.Pais
-            }).ToList();
+            var lista = await _repository.ObtenerTodas();
+            return lista.Select(n => new NacionalidadDto { Id = n.Id, Nombre = n.Nombre }).ToList();
         }
     }
 }

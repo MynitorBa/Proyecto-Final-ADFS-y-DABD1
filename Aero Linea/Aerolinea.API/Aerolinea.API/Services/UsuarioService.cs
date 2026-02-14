@@ -27,11 +27,14 @@ namespace Aerolinea.API.Services
                 Telefono = dto.Telefono,
                 FechaNacimiento = dto.FechaNacimiento,
                 Ciudad = dto.Ciudad,
-                NacionalidadId = dto.NacionalidadId,
+                Pais = dto.Pais,
                 RolID = dto.RolID
             };
 
-            await _repository.CrearUsuario(usuario);
+            int usuarioId = await _repository.CrearUsuario(usuario);
+
+            if (dto.Nacionalidades != null && dto.Nacionalidades.Count > 0)
+                await _repository.AgregarNacionalidades(usuarioId, dto.Nacionalidades);
         }
 
         public async Task<RegisterConstraint> VerificarConstraints(CrearUsuarioDTO dto)

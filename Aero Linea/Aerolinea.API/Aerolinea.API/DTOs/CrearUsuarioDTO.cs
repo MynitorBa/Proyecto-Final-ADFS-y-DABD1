@@ -11,7 +11,8 @@
         public string Telefono { get; set; }
         public DateTime FechaNacimiento { get; set; }
         public string Ciudad { get; set; }
-        public int NacionalidadId { get; set; }
+        public string Pais { get; set; }
+        public List<string> Nacionalidades { get; set; } = new();
         public int RolID { get; set; } = 1;
     }
 }

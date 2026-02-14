@@ -7,22 +7,25 @@ namespace Aerolinea.API.Repositories
     public class UsuarioRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
+        private readonly NacionalidadRepository _nacRepository;
 
-        public UsuarioRepository(DbConnectionFactory connectionFactory)
+        public UsuarioRepository(DbConnectionFactory connectionFactory, NacionalidadRepository nacRepository)
         {
             _connectionFactory = connectionFactory;
+            _nacRepository = nacRepository;
         }
 
-        public async Task CrearUsuario(Usuario usuario)
+        public async Task<int> CrearUsuario(Usuario usuario)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string sql = @"
                 INSERT INTO Usuario
-                (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Telefono, FechaNacimiento, Ciudad, NacionalidadId, RolID)
+                (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Telefono, FechaNacimiento, Ciudad, Pais, RolID)
+                OUTPUT INSERTED.Id
                 VALUES
-                (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, @Telefono, @FechaNacimiento, @Ciudad, @NacionalidadId, @RolID)";
+                (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, @Telefono, @FechaNacimiento, @Ciudad, @Pais, @RolID)";
 
             using var command = new SqlCommand(sql, connection);
             command.Parameters.AddWithValue("@Correo", usuario.Correo);
@@ -34,10 +37,28 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@Telefono", usuario.Telefono ?? "");
             command.Parameters.AddWithValue("@FechaNacimiento", usuario.FechaNacimiento);
             command.Parameters.AddWithValue("@Ciudad", usuario.Ciudad ?? "");
-            command.Parameters.AddWithValue("@NacionalidadId", usuario.NacionalidadId);
+            command.Parameters.AddWithValue("@Pais", usuario.Pais ?? "");
             command.Parameters.AddWithValue("@RolID", usuario.RolID);
 
-            await command.ExecuteNonQueryAsync();
+            return (int)await command.ExecuteScalarAsync();
+        }
+
+        public async Task AgregarNacionalidades(int usuarioId, List<string> nacionalidades)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            foreach (var nombre in nacionalidades.Where(n => !string.IsNullOrWhiteSpace(n)))
+            {
+                // Obtener o crear el Id de la nacionalidad
+                int nacId = await _nacRepository.ObtenerOCrearId(nombre, connection);
+
+                string sql = "INSERT INTO UsuarioNacionalidad (UsuarioId, NacionalidadId) VALUES (@UsuarioId, @NacionalidadId)";
+                using var cmd = new SqlCommand(sql, connection);
+                cmd.Parameters.AddWithValue("@UsuarioId", usuarioId);
+                cmd.Parameters.AddWithValue("@NacionalidadId", nacId);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
 
         public async Task<Usuario?> ObtenerPorCorreoOUsername(string valor)
@@ -45,16 +66,12 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            string query = @"
-                SELECT Id, Correo, Username, ContrasenaHash
-                FROM Usuario
-                WHERE Correo = @valor OR Username = @valor";
-
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@valor", valor);
+            using var command = new SqlCommand(
+                "SELECT Id, Correo, Username, ContrasenaHash FROM Usuario WHERE Correo = @v OR Username = @v",
+                connection);
+            command.Parameters.AddWithValue("@v", valor);
 
             using var reader = await command.ExecuteReaderAsync();
-
             if (await reader.ReadAsync())
             {
                 return new Usuario
@@ -65,7 +82,6 @@ namespace Aerolinea.API.Repositories
                     ContrasenaHash = reader.GetString(3)
                 };
             }
-
             return null;
         }
 
@@ -74,30 +90,18 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            var constraint = new RegisterConstraint();
+            var c = new RegisterConstraint();
 
-            string queryCorreo = "SELECT COUNT(*) FROM Usuario WHERE Correo = @correo";
-            using (var command = new SqlCommand(queryCorreo, connection))
-            {
-                command.Parameters.AddWithValue("@correo", correo);
-                constraint.CorreoExiste = (int)await command.ExecuteScalarAsync() > 0;
-            }
+            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Usuario WHERE Correo = @v", connection))
+            { cmd.Parameters.AddWithValue("@v", correo); c.CorreoExiste = (int)await cmd.ExecuteScalarAsync() > 0; }
 
-            string queryUsername = "SELECT COUNT(*) FROM Usuario WHERE Username = @username";
-            using (var command = new SqlCommand(queryUsername, connection))
-            {
-                command.Parameters.AddWithValue("@username", username);
-                constraint.UsernameExiste = (int)await command.ExecuteScalarAsync() > 0;
-            }
+            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Usuario WHERE Username = @v", connection))
+            { cmd.Parameters.AddWithValue("@v", username); c.UsernameExiste = (int)await cmd.ExecuteScalarAsync() > 0; }
 
-            string queryPasaporte = "SELECT COUNT(*) FROM Usuario WHERE Pasaporte = @pasaporte";
-            using (var command = new SqlCommand(queryPasaporte, connection))
-            {
-                command.Parameters.AddWithValue("@pasaporte", pasaporte);
-                constraint.PasaporteExiste = (int)await command.ExecuteScalarAsync() > 0;
-            }
+            using (var cmd = new SqlCommand("SELECT COUNT(*) FROM Usuario WHERE Pasaporte = @v", connection))
+            { cmd.Parameters.AddWithValue("@v", pasaporte); c.PasaporteExiste = (int)await cmd.ExecuteScalarAsync() > 0; }
 
-            return constraint;
+            return c;
         }
     }
 }

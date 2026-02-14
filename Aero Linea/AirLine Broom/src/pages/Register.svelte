@@ -14,71 +14,125 @@
     telefono: '',
     fechaNacimiento: '',
     ciudad: '',
-    nacionalidadId: ''
+    pais: ''
   };
 
   let acceptTerms = false;
   let receivePromotions = false;
   let captchaVerified = false;
-
-  let nacionalidades = [];
-  let loadingNacionalidades = true;
-  let errorNacionalidades = '';
   let submitError = '';
   let submitSuccess = false;
   let submitting = false;
 
-  let errores = {
-    correo: '',
-    username: '',
-    pasaporte: '',
-    contrasena: ''
-  };
+  let errores = { correo: '', username: '', pasaporte: '', contrasena: '' };
 
-  $: passwordStrength = {
+  // Validación contraseña
+  $: ps = {
     length:    registerData.contrasena.length >= 8,
     uppercase: /[A-Z]/.test(registerData.contrasena),
     number:    /[0-9]/.test(registerData.contrasena)
   };
+  $: passwordValid = ps.length && ps.uppercase && ps.number;
 
-  $: passwordValid = passwordStrength.length && passwordStrength.uppercase && passwordStrength.number;
+  // País autocomplete
+  let todosLosPaises = [];
+  let paisQuery = '';
+  let paisesSugeridos = [];
+  let paisSeleccionado = null;
+
+  // Ciudad autocomplete
+  let ciudadQuery = '';
+  let ciudadesSugeridas = [];
+
+  // Nacionalidades múltiples
+  let nacionalidades = [''];
+  let sugerenciasNac = [[]];
+  let todosNacionalidades = [];
 
   onMount(async () => {
+    // Países y ciudades
     try {
-      const response = await fetch('http://localhost:5190/api/nacionalidades');
-      if (!response.ok) throw new Error('Error al cargar nacionalidades');
-      nacionalidades = await response.json();
-    } catch (error) {
-      errorNacionalidades = 'No se pudieron cargar los países. Intenta de nuevo.';
-    } finally {
-      loadingNacionalidades = false;
-    }
+      const res = await fetch('https://countriesnow.space/api/v0.1/countries');
+      const data = await res.json();
+      todosLosPaises = data.data;
+    } catch { console.error('Error cargando países'); }
+
+    // Nacionalidades (demonyms)
+    try {
+      const res = await fetch('https://restcountries.com/v3.1/all?fields=name,demonyms');
+      const data = await res.json();
+      todosNacionalidades = data
+        .filter(p => p.demonyms?.eng?.m)
+        .map(p => ({ pais: p.name.common, demonym: p.demonyms.eng.m }))
+        .sort((a, b) => a.pais.localeCompare(b.pais));
+    } catch { console.error('Error cargando nacionalidades'); }
   });
+
+  // País
+  function onPaisInput() {
+    const q = paisQuery.toLowerCase();
+    paisesSugeridos = q.length < 2 ? [] : todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
+  }
+
+  function seleccionarPais(p) {
+    paisSeleccionado = p;
+    paisQuery = p.country;
+    registerData.pais = p.country;
+    paisesSugeridos = [];
+    ciudadQuery = '';
+    registerData.ciudad = '';
+    ciudadesSugeridas = [];
+  }
+
+  // Ciudad
+  function onCiudadInput() {
+    if (!paisSeleccionado) return;
+    const q = ciudadQuery.toLowerCase();
+    ciudadesSugeridas = q.length < 2 ? [] : paisSeleccionado.cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  }
+
+  function seleccionarCiudad(c) {
+    ciudadQuery = c;
+    registerData.ciudad = c;
+    ciudadesSugeridas = [];
+  }
+
+  // Nacionalidades
+  function onNacInput(i) {
+    const q = nacionalidades[i].toLowerCase();
+    sugerenciasNac[i] = q.length < 2 ? [] : todosNacionalidades
+      .filter(n => n.pais.toLowerCase().includes(q) || n.demonym.toLowerCase().includes(q))
+      .slice(0, 6);
+    sugerenciasNac = [...sugerenciasNac];
+  }
+
+  function seleccionarNac(i, demonym) {
+    nacionalidades[i] = demonym;
+    nacionalidades = [...nacionalidades];
+    sugerenciasNac[i] = [];
+    sugerenciasNac = [...sugerenciasNac];
+  }
+
+  function agregarNac() {
+    nacionalidades = [...nacionalidades, ''];
+    sugerenciasNac = [...sugerenciasNac, []];
+  }
+
+  function quitarNac(i) {
+    nacionalidades = nacionalidades.filter((_, idx) => idx !== i);
+    sugerenciasNac = sugerenciasNac.filter((_, idx) => idx !== i);
+  }
 
   async function handleRegister() {
     submitError = '';
     errores = { correo: '', username: '', pasaporte: '', contrasena: '' };
 
-    if (!passwordValid) {
-      errores.contrasena = 'La contraseña debe tener mínimo 8 caracteres, 1 mayúscula y 1 número.';
-      return;
-    }
-    if (registerData.contrasena !== registerData.confirmPassword) {
-      submitError = 'Las contraseñas no coinciden.';
-      return;
-    }
-    if (!acceptTerms) {
-      submitError = 'Debes aceptar los términos y condiciones.';
-      return;
-    }
-    if (!captchaVerified) {
-      submitError = 'Por favor confirma que no eres un robot.';
-      return;
-    }
-    if (!registerData.nacionalidadId) {
-      submitError = 'Selecciona tu país de nacionalidad.';
-      return;
-    }
+    if (!passwordValid) { errores.contrasena = 'Mínimo 8 caracteres, 1 mayúscula y 1 número.'; return; }
+    if (registerData.contrasena !== registerData.confirmPassword) { submitError = 'Las contraseñas no coinciden.'; return; }
+    if (!acceptTerms) { submitError = 'Debes aceptar los términos y condiciones.'; return; }
+    if (!captchaVerified) { submitError = 'Confirma que no eres un robot.'; return; }
+    if (!registerData.pais) { submitError = 'Selecciona tu país de la lista.'; return; }
+    if (!registerData.ciudad) { submitError = 'Selecciona tu ciudad de la lista.'; return; }
 
     submitting = true;
 
@@ -92,59 +146,44 @@
       telefono:        registerData.telefono,
       fechaNacimiento: registerData.fechaNacimiento,
       ciudad:          registerData.ciudad,
-      nacionalidadId:  parseInt(registerData.nacionalidadId)
+      pais:            registerData.pais,
+      nacionalidades:  nacionalidades.filter(n => n.trim() !== '')
     };
 
     try {
-      const verificar = await fetch('http://localhost:5190/api/usuarios/verificar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const vRes = await fetch('http://localhost:5190/api/usuarios/verificar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
+      const c = await vRes.json();
 
-      const constraints = await verificar.json();
+      if (c.correoExiste)    errores.correo    = 'Este correo ya está registrado.';
+      if (c.usernameExiste)  errores.username  = 'Este username ya está en uso.';
+      if (c.pasaporteExiste) errores.pasaporte = 'Este pasaporte ya está registrado.';
+      if (c.correoExiste || c.usernameExiste || c.pasaporteExiste) { submitting = false; return; }
 
-      if (constraints.correoExiste)   errores.correo   = 'Este correo ya está registrado.';
-      if (constraints.usernameExiste) errores.username = 'Este username ya está en uso.';
-      if (constraints.pasaporteExiste) errores.pasaporte = 'Este pasaporte ya está registrado.';
-
-      if (constraints.correoExiste || constraints.usernameExiste || constraints.pasaporteExiste) {
-        submitting = false;
-        return;
-      }
-
-      const response = await fetch('http://localhost:5190/api/usuarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const res = await fetch('http://localhost:5190/api/usuarios', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
-
-      if (!response.ok) throw new Error('Error al crear usuario');
+      if (!res.ok) throw new Error();
 
       submitSuccess = true;
       setTimeout(() => navigateTo('login'), 2000);
-
-    } catch (error) {
-      submitError = 'No se pudo crear la cuenta. Verifica tus datos e intenta de nuevo.';
+    } catch {
+      submitError = 'No se pudo crear la cuenta. Intenta de nuevo.';
     } finally {
       submitting = false;
     }
-  }
-
-  function handleCaptchaClick() {
-    captchaVerified = !captchaVerified;
   }
 </script>
 
 <div class="register">
   <div class="register__container">
     <div class="register__content">
+
       <div class="register__image-section">
         <div class="register__image-overlay">
           <h2 class="register__image-title">Unete a Broom AirLine</h2>
-          <p class="register__image-subtitle">
-            Crea tu cuenta y empieza a disfrutar de vuelos increibles con ofertas exclusivas
-          </p>
+          <p class="register__image-subtitle">Crea tu cuenta y empieza a disfrutar de vuelos increibles con ofertas exclusivas</p>
           <ul class="register__benefits">
             <li class="register__benefit">Acumula puntos en cada vuelo</li>
             <li class="register__benefit">Acceso a promociones exclusivas</li>
@@ -156,9 +195,7 @@
 
       <div class="register__form-section">
         <div class="register__form-container">
-          <button class="register__back" on:click={() => navigateTo('home')}>
-            Volver al inicio
-          </button>
+          <button class="register__back" on:click={() => navigateTo('home')}>Volver al inicio</button>
 
           <div class="register__header">
             <h1 class="register__title">Crear cuenta</h1>
@@ -166,9 +203,7 @@
           </div>
 
           {#if submitSuccess}
-            <div class="register-form__success">
-              ¡Cuenta creada exitosamente! Redirigiendo al login...
-            </div>
+            <div class="register-form__success">¡Cuenta creada exitosamente! Redirigiendo al login...</div>
           {:else}
             <form class="register-form" on:submit|preventDefault={handleRegister}>
 
@@ -176,13 +211,11 @@
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="nombre" class="register-form__label">Nombre</label>
-                  <input type="text" id="nombre" class="register-form__input"
-                    bind:value={registerData.nombre} placeholder="Tu nombre" required />
+                  <input type="text" id="nombre" class="register-form__input" bind:value={registerData.nombre} placeholder="Tu nombre" required />
                 </div>
                 <div class="register-form__field">
                   <label for="apellido" class="register-form__label">Apellido</label>
-                  <input type="text" id="apellido" class="register-form__input"
-                    bind:value={registerData.apellido} placeholder="Tu apellido" required />
+                  <input type="text" id="apellido" class="register-form__input" bind:value={registerData.apellido} placeholder="Tu apellido" required />
                 </div>
               </div>
 
@@ -190,17 +223,12 @@
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="username" class="register-form__label">Username</label>
-                  <input type="text" id="username"
-                    class="register-form__input {errores.username ? 'register-form__input--error' : ''}"
-                    bind:value={registerData.username} placeholder="usuario123" required />
-                  {#if errores.username}
-                    <span class="register-form__field-error">{errores.username}</span>
-                  {/if}
+                  <input type="text" id="username" class="register-form__input {errores.username ? 'register-form__input--error' : ''}" bind:value={registerData.username} placeholder="usuario123" required />
+                  {#if errores.username}<span class="register-form__field-error">{errores.username}</span>{/if}
                 </div>
                 <div class="register-form__field">
                   <label for="telefono" class="register-form__label">Teléfono</label>
-                  <input type="tel" id="telefono" class="register-form__input"
-                    bind:value={registerData.telefono} placeholder="50211223344" required />
+                  <input type="tel" id="telefono" class="register-form__input" bind:value={registerData.telefono} placeholder="50211223344" required />
                 </div>
               </div>
 
@@ -208,59 +236,96 @@
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="correo" class="register-form__label">Correo electrónico</label>
-                  <input type="email" id="correo"
-                    class="register-form__input {errores.correo ? 'register-form__input--error' : ''}"
-                    bind:value={registerData.correo} placeholder="correo@ejemplo.com" required />
-                  {#if errores.correo}
-                    <span class="register-form__field-error">{errores.correo}</span>
-                  {/if}
+                  <input type="email" id="correo" class="register-form__input {errores.correo ? 'register-form__input--error' : ''}" bind:value={registerData.correo} placeholder="correo@ejemplo.com" required />
+                  {#if errores.correo}<span class="register-form__field-error">{errores.correo}</span>{/if}
                 </div>
               </div>
 
-              <!-- Fecha de nacimiento y Ciudad -->
+              <!-- Fecha nacimiento y Pasaporte -->
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="fechaNacimiento" class="register-form__label">Fecha de nacimiento</label>
-                  <input type="date" id="fechaNacimiento" class="register-form__input"
-                    bind:value={registerData.fechaNacimiento} required />
+                  <input type="date" id="fechaNacimiento" class="register-form__input" bind:value={registerData.fechaNacimiento} required />
                 </div>
                 <div class="register-form__field">
-                  <label for="ciudad" class="register-form__label">Ciudad</label>
-                  <input type="text" id="ciudad" class="register-form__input"
-                    bind:value={registerData.ciudad} placeholder="Tu ciudad" required />
+                  <label for="pasaporte" class="register-form__label">Pasaporte</label>
+                  <input type="text" id="pasaporte" class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}" bind:value={registerData.pasaporte} placeholder="AB123456" required />
+                  {#if errores.pasaporte}<span class="register-form__field-error">{errores.pasaporte}</span>{/if}
                 </div>
               </div>
 
-              <!-- Pasaporte y País -->
+              <!-- País autocomplete -->
               <div class="register-form__row">
-                <div class="register-form__field">
-                  <label for="pasaporte" class="register-form__label">Pasaporte</label>
-                  <input type="text" id="pasaporte"
-                    class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}"
-                    bind:value={registerData.pasaporte} placeholder="AB123456" required />
-                  {#if errores.pasaporte}
-                    <span class="register-form__field-error">{errores.pasaporte}</span>
-                  {/if}
+                <div class="register-form__field register-form__field--full">
+                  <label for="paisInput" class="register-form__label">País</label>
+                  <div class="autocomplete">
+                    <input type="text" id="paisInput" class="register-form__input" bind:value={paisQuery} on:input={onPaisInput} placeholder="Escribe tu país..." autocomplete="off" />
+                    {#if paisesSugeridos.length > 0}
+                      <ul class="autocomplete__list">
+                        {#each paisesSugeridos as p}
+                          <li class="autocomplete__item">
+                            <button type="button" class="autocomplete__btn" on:click={() => seleccionarPais(p)}>{p.country}</button>
+                          </li>
+                        {/each}
+                      </ul>
+                    {/if}
+                  </div>
                 </div>
-                <div class="register-form__field">
-                  <label for="nacionalidadId" class="register-form__label">País</label>
-                  {#if loadingNacionalidades}
-                    <select id="nacionalidadId" class="register-form__input register-form__select" disabled>
-                      <option>Cargando países...</option>
-                    </select>
-                  {:else if errorNacionalidades}
-                    <select id="nacionalidadId" class="register-form__input register-form__select register-form__select--error" disabled>
-                      <option>{errorNacionalidades}</option>
-                    </select>
-                  {:else}
-                    <select id="nacionalidadId" class="register-form__input register-form__select"
-                      bind:value={registerData.nacionalidadId} required>
-                      <option value="" disabled selected>Selecciona tu país</option>
-                      {#each nacionalidades as nac}
-                        <option value={nac.id}>{nac.pais}</option>
-                      {/each}
-                    </select>
-                  {/if}
+              </div>
+
+              <!-- Ciudad autocomplete -->
+              <div class="register-form__row">
+                <div class="register-form__field register-form__field--full">
+                  <label for="ciudadInput" class="register-form__label">Ciudad</label>
+                  <div class="autocomplete">
+                    <input type="text" id="ciudadInput" class="register-form__input" bind:value={ciudadQuery} on:input={onCiudadInput} placeholder={paisSeleccionado ? 'Escribe tu ciudad...' : 'Primero selecciona un país'} disabled={!paisSeleccionado} autocomplete="off" />
+                    {#if ciudadesSugeridas.length > 0}
+                      <ul class="autocomplete__list">
+                        {#each ciudadesSugeridas as c}
+                          <li class="autocomplete__item">
+                            <button type="button" class="autocomplete__btn" on:click={() => seleccionarCiudad(c)}>{c}</button>
+                          </li>
+                        {/each}
+                      </ul>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nacionalidades múltiples -->
+              <div class="register-form__row">
+                <div class="register-form__field register-form__field--full">
+                  <span class="register-form__label">Nacionalidad(es)</span>
+                  {#each nacionalidades as nac, i}
+                    <div class="nacionalidad-row">
+                      <div class="autocomplete" style="flex:1">
+                        <input
+                          type="text"
+                          id="nac-{i}"
+                          class="register-form__input"
+                          bind:value={nacionalidades[i]}
+                          on:input={() => onNacInput(i)}
+                          placeholder="Ej: Guatemalteco"
+                          autocomplete="off"
+                        />
+                        {#if sugerenciasNac[i]?.length > 0}
+                          <ul class="autocomplete__list">
+                            {#each sugerenciasNac[i] as s}
+                              <li class="autocomplete__item">
+                                <button type="button" class="autocomplete__btn" on:click={() => seleccionarNac(i, s.demonym)}>
+                                  {s.pais} — {s.demonym}
+                                </button>
+                              </li>
+                            {/each}
+                          </ul>
+                        {/if}
+                      </div>
+                      {#if i > 0}
+                        <button type="button" class="nacionalidad-remove" on:click={() => quitarNac(i)}>✕</button>
+                      {/if}
+                    </div>
+                  {/each}
+                  <button type="button" class="nacionalidad-add" on:click={agregarNac}>+ Agregar otra nacionalidad</button>
                 </div>
               </div>
 
@@ -268,30 +333,19 @@
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="contrasena" class="register-form__label">Contraseña</label>
-                  <input type="password" id="contrasena"
-                    class="register-form__input {errores.contrasena ? 'register-form__input--error' : ''}"
-                    bind:value={registerData.contrasena} placeholder="Mínimo 8 caracteres" required />
+                  <input type="password" id="contrasena" class="register-form__input {errores.contrasena ? 'register-form__input--error' : ''}" bind:value={registerData.contrasena} placeholder="Mínimo 8 caracteres" required />
                   {#if registerData.contrasena.length > 0}
                     <div class="password-strength">
-                      <span class="password-strength__item" class:ok={passwordStrength.length}>
-                        {passwordStrength.length ? '✓' : '✗'} 8 caracteres mínimo
-                      </span>
-                      <span class="password-strength__item" class:ok={passwordStrength.uppercase}>
-                        {passwordStrength.uppercase ? '✓' : '✗'} 1 letra mayúscula
-                      </span>
-                      <span class="password-strength__item" class:ok={passwordStrength.number}>
-                        {passwordStrength.number ? '✓' : '✗'} 1 número
-                      </span>
+                      <span class="password-strength__item" class:ok={ps.length}>{ps.length ? '✓' : '✗'} 8 caracteres mínimo</span>
+                      <span class="password-strength__item" class:ok={ps.uppercase}>{ps.uppercase ? '✓' : '✗'} 1 mayúscula</span>
+                      <span class="password-strength__item" class:ok={ps.number}>{ps.number ? '✓' : '✗'} 1 número</span>
                     </div>
                   {/if}
-                  {#if errores.contrasena}
-                    <span class="register-form__field-error">{errores.contrasena}</span>
-                  {/if}
+                  {#if errores.contrasena}<span class="register-form__field-error">{errores.contrasena}</span>{/if}
                 </div>
                 <div class="register-form__field">
                   <label for="confirmPassword" class="register-form__label">Confirmar contraseña</label>
-                  <input type="password" id="confirmPassword" class="register-form__input"
-                    bind:value={registerData.confirmPassword} placeholder="Repite tu contraseña" required />
+                  <input type="password" id="confirmPassword" class="register-form__input" bind:value={registerData.confirmPassword} placeholder="Repite tu contraseña" required />
                   {#if registerData.confirmPassword.length > 0 && registerData.contrasena !== registerData.confirmPassword}
                     <span class="register-form__field-error">Las contraseñas no coinciden.</span>
                   {/if}
@@ -302,15 +356,11 @@
               <div class="register-form__checkboxes">
                 <label class="register-form__checkbox">
                   <input type="checkbox" bind:checked={acceptTerms} class="register-form__checkbox-input" />
-                  <span class="register-form__checkbox-label">
-                    Acepto los términos y condiciones y la política de privacidad
-                  </span>
+                  <span class="register-form__checkbox-label">Acepto los términos y condiciones y la política de privacidad</span>
                 </label>
                 <label class="register-form__checkbox">
                   <input type="checkbox" bind:checked={receivePromotions} class="register-form__checkbox-input" />
-                  <span class="register-form__checkbox-label">
-                    Deseo recibir promociones y ofertas por correo electrónico
-                  </span>
+                  <span class="register-form__checkbox-label">Deseo recibir promociones y ofertas por correo electrónico</span>
                 </label>
               </div>
 
@@ -318,8 +368,7 @@
               <div class="register-form__captcha">
                 <div class="captcha-box">
                   <label class="captcha-box__checkbox">
-                    <input type="checkbox" bind:checked={captchaVerified}
-                      class="captcha-box__input" on:click={handleCaptchaClick} />
+                    <input type="checkbox" bind:checked={captchaVerified} class="captcha-box__input" />
                     <span class="captcha-box__label">No soy un robot</span>
                   </label>
                   <div class="captcha-box__logo">
@@ -347,11 +396,10 @@
           <div class="register__login">
             <p class="register__login-text">
               ¿Ya tienes una cuenta?
-              <button type="button" class="register__login-link" on:click={() => navigateTo('login')}>
-                Inicia sesión
-              </button>
+              <button type="button" class="register__login-link" on:click={() => navigateTo('login')}>Inicia sesión</button>
             </p>
           </div>
+
         </div>
       </div>
     </div>
