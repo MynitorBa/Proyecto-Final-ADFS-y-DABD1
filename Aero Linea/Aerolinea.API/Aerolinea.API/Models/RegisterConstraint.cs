@@ -1,4 +1,4 @@
-﻿namespace Aerolinea.API.Models
+﻿namespace Aerolinea.API.DTOs
 {
     public class RegisterConstraint
     {

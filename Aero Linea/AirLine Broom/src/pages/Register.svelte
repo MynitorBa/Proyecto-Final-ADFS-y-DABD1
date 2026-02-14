@@ -24,7 +24,7 @@
   let submitSuccess = false;
   let submitting = false;
 
-  let errores = { correo: '', username: '', pasaporte: '', contrasena: '' };
+  let errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '' };
 
   // Validación contraseña
   $: ps = {
@@ -43,13 +43,27 @@
   // Ciudad autocomplete
   let ciudadQuery = '';
   let ciudadesSugeridas = [];
+  let ciudadSeleccionada = false;
 
   // Nacionalidades múltiples
   let nacionalidades = [''];
   let sugerenciasNac = [[]];
   let todosNacionalidades = [];
+  let nacionalidadesSeleccionadas = [false];
 
+  // LIMPIAR TODOS LOS CAMPOS AL MONTAR EL COMPONENTE
   onMount(async () => {
+    // FORZAR LIMPIEZA COMPLETA
+    setTimeout(() => {
+      limpiarFormulario();
+      // Limpiar físicamente los inputs del DOM
+      document.querySelectorAll('input').forEach(input => {
+        if (input.type !== 'checkbox') {
+          input.value = '';
+        }
+      });
+    }, 0);
+
     // Países y ciudades
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
@@ -68,10 +82,57 @@
     } catch { console.error('Error cargando nacionalidades'); }
   });
 
+  function limpiarFormulario() {
+    registerData = {
+      correo: '',
+      contrasena: '',
+      confirmPassword: '',
+      pasaporte: '',
+      username: '',
+      nombre: '',
+      apellido: '',
+      telefono: '',
+      fechaNacimiento: '',
+      ciudad: '',
+      pais: ''
+    };
+    acceptTerms = false;
+    receivePromotions = false;
+    captchaVerified = false;
+    submitError = '';
+    submitSuccess = false;
+    errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '' };
+    paisQuery = '';
+    ciudadQuery = '';
+    paisSeleccionado = null;
+    ciudadSeleccionada = false;
+    nacionalidades = [''];
+    nacionalidadesSeleccionadas = [false];
+    sugerenciasNac = [[]];
+    paisesSugeridos = [];
+    ciudadesSugeridas = [];
+  }
+
+  // CONVERTIR EMAIL A MINÚSCULAS AUTOMÁTICAMENTE
+  function onCorreoInput(e) {
+    registerData.correo = e.target.value.toLowerCase();
+  }
+
+  // VALIDAR QUE PASAPORTE SOLO TENGA NÚMEROS
+  function onPasaporteInput(e) {
+    registerData.pasaporte = e.target.value.replace(/[^0-9]/g, '');
+  }
+
   // País
   function onPaisInput() {
     const q = paisQuery.toLowerCase();
     paisesSugeridos = q.length < 2 ? [] : todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
+    
+    // Si el usuario escribe pero no selecciona de la lista
+    if (paisQuery && !paisSeleccionado) {
+      registerData.pais = '';
+      errores.pais = '';
+    }
   }
 
   function seleccionarPais(p) {
@@ -82,6 +143,15 @@
     ciudadQuery = '';
     registerData.ciudad = '';
     ciudadesSugeridas = [];
+    ciudadSeleccionada = false;
+    errores.pais = '';
+  }
+
+  function validarPaisSeleccionado() {
+    if (paisQuery && !paisSeleccionado) {
+      errores.pais = 'Debes seleccionar un país de la lista';
+      paisQuery = '';
+    }
   }
 
   // Ciudad
@@ -89,12 +159,27 @@
     if (!paisSeleccionado) return;
     const q = ciudadQuery.toLowerCase();
     ciudadesSugeridas = q.length < 2 ? [] : paisSeleccionado.cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+    
+    // Si el usuario escribe pero no selecciona de la lista
+    if (ciudadQuery && !ciudadSeleccionada) {
+      registerData.ciudad = '';
+      errores.ciudad = '';
+    }
   }
 
   function seleccionarCiudad(c) {
     ciudadQuery = c;
     registerData.ciudad = c;
     ciudadesSugeridas = [];
+    ciudadSeleccionada = true;
+    errores.ciudad = '';
+  }
+
+  function validarCiudadSeleccionada() {
+    if (ciudadQuery && !ciudadSeleccionada) {
+      errores.ciudad = 'Debes seleccionar una ciudad de la lista';
+      ciudadQuery = '';
+    }
   }
 
   // Nacionalidades
@@ -104,35 +189,69 @@
       .filter(n => n.pais.toLowerCase().includes(q) || n.demonym.toLowerCase().includes(q))
       .slice(0, 6);
     sugerenciasNac = [...sugerenciasNac];
+    
+    // Si el usuario escribe pero no selecciona de la lista
+    if (nacionalidades[i] && !nacionalidadesSeleccionadas[i]) {
+      errores.nacionalidad = '';
+    }
   }
 
   function seleccionarNac(i, demonym) {
     nacionalidades[i] = demonym;
     nacionalidades = [...nacionalidades];
+    nacionalidadesSeleccionadas[i] = true;
+    nacionalidadesSeleccionadas = [...nacionalidadesSeleccionadas];
     sugerenciasNac[i] = [];
     sugerenciasNac = [...sugerenciasNac];
+    errores.nacionalidad = '';
+  }
+
+  function validarNacionalidadSeleccionada(i) {
+    if (nacionalidades[i] && !nacionalidadesSeleccionadas[i]) {
+      errores.nacionalidad = 'Debes seleccionar una nacionalidad de la lista';
+      nacionalidades[i] = '';
+      nacionalidades = [...nacionalidades];
+    }
   }
 
   function agregarNac() {
     nacionalidades = [...nacionalidades, ''];
     sugerenciasNac = [...sugerenciasNac, []];
+    nacionalidadesSeleccionadas = [...nacionalidadesSeleccionadas, false];
   }
 
   function quitarNac(i) {
     nacionalidades = nacionalidades.filter((_, idx) => idx !== i);
     sugerenciasNac = sugerenciasNac.filter((_, idx) => idx !== i);
+    nacionalidadesSeleccionadas = nacionalidadesSeleccionadas.filter((_, idx) => idx !== i);
   }
 
   async function handleRegister() {
     submitError = '';
-    errores = { correo: '', username: '', pasaporte: '', contrasena: '' };
+    errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '' };
 
+    // Validaciones
     if (!passwordValid) { errores.contrasena = 'Mínimo 8 caracteres, 1 mayúscula y 1 número.'; return; }
     if (registerData.contrasena !== registerData.confirmPassword) { submitError = 'Las contraseñas no coinciden.'; return; }
     if (!acceptTerms) { submitError = 'Debes aceptar los términos y condiciones.'; return; }
     if (!captchaVerified) { submitError = 'Confirma que no eres un robot.'; return; }
-    if (!registerData.pais) { submitError = 'Selecciona tu país de la lista.'; return; }
-    if (!registerData.ciudad) { submitError = 'Selecciona tu ciudad de la lista.'; return; }
+    
+    // Validar que se haya seleccionado de la lista
+    if (!paisSeleccionado || !registerData.pais) { 
+      errores.pais = 'Debes seleccionar un país de la lista.'; 
+      return; 
+    }
+    if (!ciudadSeleccionada || !registerData.ciudad) { 
+      errores.ciudad = 'Debes seleccionar una ciudad de la lista.'; 
+      return; 
+    }
+
+    // Validar nacionalidades seleccionadas
+    const nacionalidadesValidas = nacionalidades.filter((n, i) => n.trim() !== '' && nacionalidadesSeleccionadas[i]);
+    if (nacionalidadesValidas.length === 0) {
+      errores.nacionalidad = 'Debes seleccionar al menos una nacionalidad de la lista.';
+      return;
+    }
 
     submitting = true;
 
@@ -147,7 +266,7 @@
       fechaNacimiento: registerData.fechaNacimiento,
       ciudad:          registerData.ciudad,
       pais:            registerData.pais,
-      nacionalidades:  nacionalidades.filter(n => n.trim() !== '')
+      nacionalidades:  nacionalidadesValidas
     };
 
     try {
@@ -232,34 +351,43 @@
                 </div>
               </div>
 
-              <!-- Correo -->
+              <!-- Correo (CONVERTIR A MINÚSCULAS) -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="correo" class="register-form__label">Correo electrónico</label>
-                  <input type="email" id="correo" class="register-form__input {errores.correo ? 'register-form__input--error' : ''}" bind:value={registerData.correo} placeholder="correo@ejemplo.com" required />
+                  <input type="email" id="correo" class="register-form__input {errores.correo ? 'register-form__input--error' : ''}" value={registerData.correo} on:input={onCorreoInput} placeholder="correo@ejemplo.com" required />
                   {#if errores.correo}<span class="register-form__field-error">{errores.correo}</span>{/if}
                 </div>
               </div>
 
-              <!-- Fecha nacimiento y Pasaporte -->
+              <!-- Fecha nacimiento y Pasaporte (SOLO NÚMEROS) -->
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="fechaNacimiento" class="register-form__label">Fecha de nacimiento</label>
                   <input type="date" id="fechaNacimiento" class="register-form__input" bind:value={registerData.fechaNacimiento} required />
                 </div>
                 <div class="register-form__field">
-                  <label for="pasaporte" class="register-form__label">Pasaporte</label>
-                  <input type="text" id="pasaporte" class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}" bind:value={registerData.pasaporte} placeholder="AB123456" required />
+                  <label for="pasaporte" class="register-form__label">Pasaporte (solo números)</label>
+                  <input type="text" id="pasaporte" class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}" value={registerData.pasaporte} on:input={onPasaporteInput} placeholder="12345678" required />
                   {#if errores.pasaporte}<span class="register-form__field-error">{errores.pasaporte}</span>{/if}
                 </div>
               </div>
 
-              <!-- País autocomplete -->
+              <!-- País autocomplete (VALIDAR SELECCIÓN) -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="paisInput" class="register-form__label">País</label>
                   <div class="autocomplete">
-                    <input type="text" id="paisInput" class="register-form__input" bind:value={paisQuery} on:input={onPaisInput} placeholder="Escribe tu país..." autocomplete="off" />
+                    <input 
+                      type="text" 
+                      id="paisInput" 
+                      class="register-form__input {errores.pais ? 'register-form__input--error' : ''}" 
+                      bind:value={paisQuery} 
+                      on:input={onPaisInput} 
+                      on:blur={validarPaisSeleccionado}
+                      placeholder="Escribe tu país..." 
+                      autocomplete="off" 
+                    />
                     {#if paisesSugeridos.length > 0}
                       <ul class="autocomplete__list">
                         {#each paisesSugeridos as p}
@@ -270,15 +398,26 @@
                       </ul>
                     {/if}
                   </div>
+                  {#if errores.pais}<span class="register-form__field-error">{errores.pais}</span>{/if}
                 </div>
               </div>
 
-              <!-- Ciudad autocomplete -->
+              <!-- Ciudad autocomplete (VALIDAR SELECCIÓN) -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="ciudadInput" class="register-form__label">Ciudad</label>
                   <div class="autocomplete">
-                    <input type="text" id="ciudadInput" class="register-form__input" bind:value={ciudadQuery} on:input={onCiudadInput} placeholder={paisSeleccionado ? 'Escribe tu ciudad...' : 'Primero selecciona un país'} disabled={!paisSeleccionado} autocomplete="off" />
+                    <input 
+                      type="text" 
+                      id="ciudadInput" 
+                      class="register-form__input {errores.ciudad ? 'register-form__input--error' : ''}" 
+                      bind:value={ciudadQuery} 
+                      on:input={onCiudadInput} 
+                      on:blur={validarCiudadSeleccionada}
+                      placeholder={paisSeleccionado ? 'Escribe tu ciudad...' : 'Primero selecciona un país'} 
+                      disabled={!paisSeleccionado} 
+                      autocomplete="off" 
+                    />
                     {#if ciudadesSugeridas.length > 0}
                       <ul class="autocomplete__list">
                         {#each ciudadesSugeridas as c}
@@ -289,10 +428,11 @@
                       </ul>
                     {/if}
                   </div>
+                  {#if errores.ciudad}<span class="register-form__field-error">{errores.ciudad}</span>{/if}
                 </div>
               </div>
 
-              <!-- Nacionalidades múltiples -->
+              <!-- Nacionalidades múltiples (VALIDAR SELECCIÓN) -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <span class="register-form__label">Nacionalidad(es)</span>
@@ -305,6 +445,7 @@
                           class="register-form__input"
                           bind:value={nacionalidades[i]}
                           on:input={() => onNacInput(i)}
+                          on:blur={() => validarNacionalidadSeleccionada(i)}
                           placeholder="Ej: Guatemalteco"
                           autocomplete="off"
                         />
@@ -326,6 +467,7 @@
                     </div>
                   {/each}
                   <button type="button" class="nacionalidad-add" on:click={agregarNac}>+ Agregar otra nacionalidad</button>
+                  {#if errores.nacionalidad}<span class="register-form__field-error">{errores.nacionalidad}</span>{/if}
                 </div>
               </div>
 

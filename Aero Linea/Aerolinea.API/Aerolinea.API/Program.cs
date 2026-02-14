@@ -7,15 +7,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddSingleton<DbConnectionFactory>();
+
+// Repositories - en orden de dependencia
+builder.Services.AddScoped<PaisRepository>();
+builder.Services.AddScoped<CiudadRepository>();
 builder.Services.AddScoped<NacionalidadRepository>();
-builder.Services.AddScoped<NacionalidadService>();
 builder.Services.AddScoped<UsuarioRepository>();
+
+// Services
+builder.Services.AddScoped<NacionalidadService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<AuthService>();
+
+// Servicios de tu amigo (Aeropuerto)
 builder.Services.AddScoped<AeropuertoService>();
 builder.Services.AddScoped<AeropuertoRepository>();
-builder.Services.AddScoped<VueloService>();
-builder.Services.AddScoped<VueloRepository>();
 
 // CORS abierto para desarrollo local
 builder.Services.AddCors(options =>

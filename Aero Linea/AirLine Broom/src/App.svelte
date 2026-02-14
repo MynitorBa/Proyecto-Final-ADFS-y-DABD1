@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import Header from './components/Header.svelte';
   import HeaderSimple from './components/HeaderSimple.svelte';
   import Footer from './components/Footer.svelte';
@@ -30,12 +31,27 @@
   let currentFlightId = null;
   let searchParams = null;
   
-  setTimeout(() => {
-    isLoading = false;
-  }, 3000);
+  onMount(() => {
+    actualizarPaginaDesdeURL();
+    window.addEventListener('hashchange', actualizarPaginaDesdeURL);
+    
+    setTimeout(() => {
+      isLoading = false;
+    }, 3000);
+    
+    return () => {
+      window.removeEventListener('hashchange', actualizarPaginaDesdeURL);
+    };
+  });
+  
+  function actualizarPaginaDesdeURL() {
+    const hash = window.location.hash.slice(1) || 'home';
+    currentPage = hash;
+  }
   
   function navigateTo(page, data = null) {
     currentPage = page;
+    window.location.hash = page;
     
     if (page === 'detalle-vuelo') {
       currentFlightId = data;
@@ -63,13 +79,8 @@
     }, 100);
   }
 
-  // Páginas que usan el header simple (sin menú completo)
   const simpleHeaderPages = ['vuelos', 'carrito', 'datos-pasajeros', 'checkout', 'confirmacion'];
-  
-  // Páginas que NO muestran footer
   const noFooterPages = ['profile', 'admin', 'login', 'register', ...simpleHeaderPages];
-  
-  // Páginas que NO muestran ningún header
   const noHeaderPages = ['login', 'register'];
 
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
