@@ -14,7 +14,7 @@ namespace Aerolinea.API.Services
 
         public async Task<List<VueloDetalleDTO>> BuscarVuelos(BuscarVueloDTO dto)
         {
-            return await _repository.BuscarVuelos(dto.OrigenId, dto.DestinoId, dto.Fecha);
+            return await _repository.BuscarVuelos(dto.OrigenId, dto.DestinoId, dto.Fecha, dto.CantidadPasajeros);
         }
     }
 }

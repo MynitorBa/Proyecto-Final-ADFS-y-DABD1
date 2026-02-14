@@ -8,6 +8,7 @@
         public TimeSpan HoraSalida { get; set; }
         public TimeSpan HoraLlegada { get; set; }
         public int DuracionMinutos { get; set; }
+        public int BoletosDisponibles { get; set; }
 
         // Estado
         public int EstadoId { get; set; }

@@ -13,7 +13,7 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<List<VueloDetalleDTO>> BuscarVuelos(int origenId, int destinoId, DateTime fecha)
+        public async Task<List<VueloDetalleDTO>> BuscarVuelos(int origenId, int destinoId, DateTime fecha, int cantidadPasajeros)
         {
             var vuelos = new List<VueloDetalleDTO>();
 
@@ -27,6 +27,7 @@ namespace Aerolinea.API.Repositories
                     v.Fecha,
                     v.HoraSalida,
                     v.HoraLlegada,
+                    v.BoletosDisponibles,
                     
                     -- Estado
                     e.ID AS EstadoId,
@@ -71,6 +72,7 @@ namespace Aerolinea.API.Repositories
                   AND r.DestinoID = @destinoId
                   AND v.Fecha = @fecha
                   AND e.Estatus = 'A tiempo'
+                  AND v.BoletosDisponibles >= @cantidadPasajeros
                   
                 ORDER BY v.HoraSalida";
 
@@ -78,6 +80,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@origenId", origenId);
             command.Parameters.AddWithValue("@destinoId", destinoId);
             command.Parameters.AddWithValue("@fecha", fecha.Date);
+            command.Parameters.AddWithValue("@cantidadPasajeros", cantidadPasajeros);
 
             using var reader = await command.ExecuteReaderAsync();
 
@@ -90,34 +93,35 @@ namespace Aerolinea.API.Repositories
                     Fecha = reader.GetDateTime(2),
                     HoraSalida = reader.GetTimeSpan(3),
                     HoraLlegada = reader.GetTimeSpan(4),
+                    BoletosDisponibles = reader.GetInt32(5),
 
                     // Estado
-                    EstadoId = reader.GetInt32(5),
-                    Estado = reader.GetString(6),
+                    EstadoId = reader.GetInt32(6),
+                    Estado = reader.GetString(7),
 
                     // Avión
-                    AvionId = reader.GetInt32(7),
-                    AvionModelo = reader.GetString(8),
-                    AvionMarca = reader.GetString(9),
-                    CapacidadPasajeros = reader.GetInt32(10),
+                    AvionId = reader.GetInt32(8),
+                    AvionModelo = reader.GetString(9),
+                    AvionMarca = reader.GetString(10),
+                    CapacidadPasajeros = reader.GetInt32(11),
 
                     // Origen
-                    OrigenId = reader.GetInt32(11),
-                    OrigenNombre = reader.GetString(12),
-                    OrigenCodigo = reader.GetString(13),
-                    OrigenCiudad = reader.GetString(14),
-                    OrigenPais = reader.GetString(15),
+                    OrigenId = reader.GetInt32(12),
+                    OrigenNombre = reader.GetString(13),
+                    OrigenCodigo = reader.GetString(14),
+                    OrigenCiudad = reader.GetString(15),
+                    OrigenPais = reader.GetString(16),
 
                     // Destino
-                    DestinoId = reader.GetInt32(16),
-                    DestinoNombre = reader.GetString(17),
-                    DestinoCodigo = reader.GetString(18),
-                    DestinoCiudad = reader.GetString(19),
-                    DestinoPais = reader.GetString(20),
+                    DestinoId = reader.GetInt32(17),
+                    DestinoNombre = reader.GetString(18),
+                    DestinoCodigo = reader.GetString(19),
+                    DestinoCiudad = reader.GetString(20),
+                    DestinoPais = reader.GetString(21),
 
                     // Ruta
-                    RutaId = reader.GetInt32(21),
-                    DuracionMinutos = reader.GetInt32(22)
+                    RutaId = reader.GetInt32(22),
+                    DuracionMinutos = reader.GetInt32(23)
                 });
             }
 

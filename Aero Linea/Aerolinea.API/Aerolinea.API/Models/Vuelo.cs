@@ -10,5 +10,6 @@
         public int EstadoId { get; set; }
         public int AvionId { get; set; }
         public int RutaId { get; set; }
+        public int BoletosDisponibles { get; set; }
     }
 }
