@@ -11,6 +11,7 @@ builder.Services.AddScoped<UsuarioRepository>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<NacionalidadRepository>();
 builder.Services.AddScoped<NacionalidadService>();
+<<<<<<< HEAD
 
 // CORS abierto para desarrollo local
 builder.Services.AddCors(options =>
@@ -22,6 +23,11 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+=======
+builder.Services.AddScoped<AuthService>();
+
+
+>>>>>>> 754cf0650aa2d0cbe8f8a1ecfb8c4c1684b727ba
 
 var app = builder.Build();
 
