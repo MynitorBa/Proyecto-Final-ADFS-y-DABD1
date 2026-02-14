@@ -20,9 +20,9 @@ namespace Aerolinea.API.Repositories
 
             string sql = @"
                 INSERT INTO Usuario
-                (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Edad, NumeroEmergencia, NacionalidadId)
+                (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Edad, NumeroEmergencia, NacionalidadId, RolID)
                 VALUES
-                (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, @Edad, @NumeroEmergencia, @NacionalidadId)";
+                (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, @Edad, @NumeroEmergencia, @NacionalidadId, @RolID)";
 
             using var command = new SqlCommand(sql, connection);
 
@@ -35,6 +35,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@Edad", usuario.Edad);
             command.Parameters.AddWithValue("@NumeroEmergencia", usuario.NumeroEmergencia ?? "");
             command.Parameters.AddWithValue("@NacionalidadId", usuario.NacionalidadId);
+            command.Parameters.AddWithValue("@RolID", usuario.RolID);
 
             await command.ExecuteNonQueryAsync();
         }

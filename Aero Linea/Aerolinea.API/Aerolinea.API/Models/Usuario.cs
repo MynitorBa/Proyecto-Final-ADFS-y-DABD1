@@ -12,5 +12,6 @@
         public int Edad { get; set; }
         public string NumeroEmergencia { get; set; }
         public int NacionalidadId { get; set; }
+        public int RolID { get; set; } = 1; 
     }
 }
