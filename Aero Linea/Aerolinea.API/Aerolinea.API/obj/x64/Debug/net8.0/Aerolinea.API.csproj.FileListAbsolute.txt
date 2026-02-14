@@ -1,3 +1,11 @@
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.csproj.AssemblyReference.cache
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.AssemblyInfoInputs.cache
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.AssemblyInfo.cs
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.csproj.CoreCompileInputs.cache
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.sourcelink.json
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\bin\x64\Debug\net8.0\appsettings.Development.json
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\bin\x64\Debug\net8.0\appsettings.json
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\bin\x64\Debug\net8.0\Aerolinea.API.staticwebassets.endpoints.json
@@ -51,14 +59,6 @@ C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\bin\x64\Debug\net8.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\bin\x64\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\bin\x64\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.csproj.AssemblyReference.cache
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\rpswa.dswa.cache.json
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.AssemblyInfoInputs.cache
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.AssemblyInfo.cs
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.csproj.CoreCompileInputs.cache
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\Aerolinea.API.sourcelink.json
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\rjimswa.dswa.cache.json
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\rjsmrazor.dswa.cache.json
 C:\Users\memit\OneDrive - Universidad del Istmo\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API\obj\x64\Debug\net8.0\rjsmcshtml.dswa.cache.json
