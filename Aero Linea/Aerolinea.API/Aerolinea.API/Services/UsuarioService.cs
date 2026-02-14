@@ -31,5 +31,10 @@ namespace Aerolinea.API.Services
 
             await _repository.CrearUsuario(usuario);
         }
+
+        public async Task<RegisterConstraint> VerificarConstraints(CrearUsuarioDTO dto)
+        {
+            return await _repository.VerificarExistencia(dto.Correo, dto.Username, dto.Pasaporte);
+        }
     }
 }

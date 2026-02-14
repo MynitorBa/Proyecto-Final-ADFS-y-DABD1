@@ -38,5 +38,68 @@ namespace Aerolinea.API.Repositories
 
             await command.ExecuteNonQueryAsync();
         }
+
+        public async Task<Usuario?> ObtenerPorCorreoOUsername(string valor)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            string query = @"
+                SELECT Id, Correo, Username, ContrasenaHash
+                FROM Usuario
+                WHERE Correo = @valor OR Username = @valor";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@valor", valor);
+
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new Usuario
+                {
+                    Id = reader.GetInt32(0),
+                    Correo = reader.GetString(1),
+                    Username = reader.GetString(2),
+                    ContrasenaHash = reader.GetString(3)
+                };
+            }
+
+            return null;
+        }
+
+        public async Task<RegisterConstraint> VerificarExistencia(string correo, string username, string pasaporte)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var constraint = new RegisterConstraint();
+
+            // Verificar correo
+            string queryCorreo = "SELECT COUNT(*) FROM Usuario WHERE Correo = @correo";
+            using (var command = new SqlCommand(queryCorreo, connection))
+            {
+                command.Parameters.AddWithValue("@correo", correo);
+                constraint.CorreoExiste = (int)await command.ExecuteScalarAsync() > 0;
+            }
+
+            // Verificar username
+            string queryUsername = "SELECT COUNT(*) FROM Usuario WHERE Username = @username";
+            using (var command = new SqlCommand(queryUsername, connection))
+            {
+                command.Parameters.AddWithValue("@username", username);
+                constraint.UsernameExiste = (int)await command.ExecuteScalarAsync() > 0;
+            }
+
+            // Verificar pasaporte
+            string queryPasaporte = "SELECT COUNT(*) FROM Usuario WHERE Pasaporte = @pasaporte";
+            using (var command = new SqlCommand(queryPasaporte, connection))
+            {
+                command.Parameters.AddWithValue("@pasaporte", pasaporte);
+                constraint.PasaporteExiste = (int)await command.ExecuteScalarAsync() > 0;
+            }
+
+            return constraint;
+        }
     }
 }

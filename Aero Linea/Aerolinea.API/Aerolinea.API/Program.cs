@@ -12,7 +12,7 @@ builder.Services.AddScoped<UsuarioRepository>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<NacionalidadRepository>();
 builder.Services.AddScoped<NacionalidadService>();
-
+builder.Services.AddScoped<AuthService>();
 
 
 
