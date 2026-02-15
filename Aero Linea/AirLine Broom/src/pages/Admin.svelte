@@ -1,8 +1,8 @@
 <script>
 // @ts-nocheck
-
   import '../styles/admin.css';
   import DetalleVueloAdmin from './DetalleVueloAdmin.svelte';
+  import { onMount } from 'svelte';
 
   export let navigateTo;
 
@@ -12,6 +12,9 @@
 
   let modoAgregarVuelo = 'nuevo';
   let vueloBaseSeleccionado = null;
+
+  let usuarios = [];
+  let loadingUsuarios = false;
 
   let nuevoVuelo = {
     numeroVuelo: '',
@@ -131,48 +134,36 @@
     }
   ];
 
-  const usuarios = [
-    {
-      id: 1,
-      nombre: 'Juan Carlos Lopez',
-      email: 'juan.lopez@ejemplo.com',
-      rol: 'Administrador/empleado',
-      fechaRegistro: '2025-01-15',
-      reservasRealizadas: 12
-    },
-    {
-      id: 2,
-      nombre: 'Maria Rodriguez',
-      email: 'maria.rodriguez@ejemplo.com',
-      rol: 'Usuario Normal',
-      fechaRegistro: '2025-06-20',
-      reservasRealizadas: 5
-    },
-    {
-      id: 3,
-      nombre: 'Carlos Martinez',
-      email: 'carlos.martinez@ejemplo.com',
-      rol: 'Usuario WebService',
-      fechaRegistro: '2025-03-10',
-      reservasRealizadas: 28
-    },
-    {
-      id: 4,
-      nombre: 'Ana Hernandez',
-      email: 'ana.hernandez@ejemplo.com',
-      rol: 'Usuario Normal',
-      fechaRegistro: '2025-09-05',
-      reservasRealizadas: 3
-    },
-    {
-      id: 5,
-      nombre: 'Roberto Jimenez',
-      email: 'roberto.jimenez@ejemplo.com',
-      rol: 'Administrador/empleado',
-      fechaRegistro: '2024-11-30',
-      reservasRealizadas: 7
+  onMount(async () => {
+    const isAdmin = parseInt(sessionStorage.getItem('rolId')) === 2;
+    if (!isAdmin) {
+      navigateTo('acceso-denegado');
+      return;
     }
-  ];
+    await cargarUsuarios();
+  });
+
+  async function cargarUsuarios() {
+    loadingUsuarios = true;
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      const response = await fetch('http://localhost:5190/api/usuarios', {
+        headers: {
+          'X-RolId': rolId
+        }
+      });
+
+      if (response.ok) {
+        usuarios = await response.json();
+      } else {
+        console.error('Error al cargar usuarios');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      loadingUsuarios = false;
+    }
+  }
 
   function viewVueloDetails(vuelo) {
     detailVuelo = vuelo;
@@ -222,8 +213,28 @@
     vueloBaseSeleccionado = null;
   }
 
-  function handleCambiarRol(userId, nuevoRol) {
-    console.log('Cambiando rol del usuario:', userId, 'a', nuevoRol);
+  async function handleCambiarRol(userId, nuevoRolId) {
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      const response = await fetch(`http://localhost:5190/api/usuarios/${userId}/rol`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RolId': rolId
+        },
+        body: JSON.stringify({ nuevoRolId: parseInt(nuevoRolId) })
+      });
+
+      if (response.ok) {
+        alert('Rol actualizado correctamente');
+        await cargarUsuarios();
+      } else {
+        alert('Error al cambiar el rol');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al cambiar el rol');
+    }
   }
 
   function handleCambiarEstadoVuelo(vueloId, nuevoEstado) {
@@ -642,50 +653,52 @@
             <h2 class="admin-section__title">Gestion de Usuarios</h2>
             <p class="admin-section__subtitle">Administra los roles de los usuarios del sistema</p>
 
-            <div class="vuelos-table">
-              <table class="table">
-                <thead class="table__head">
-                  <tr class="table__row">
-                    <th class="table__header">ID</th>
-                    <th class="table__header">Nombre</th>
-                    <th class="table__header">Email</th>
-                    <th class="table__header">Rol</th>
-                    <th class="table__header">Fecha Registro</th>
-                    <th class="table__header">Reservas</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each usuarios as usuario}
+            {#if loadingUsuarios}
+              <p>Cargando usuarios...</p>
+            {:else}
+              <div class="vuelos-table">
+                <table class="table">
+                  <thead class="table__head">
                     <tr class="table__row">
-                      <td class="table__cell">{usuario.id}</td>
-                      <td class="table__cell">{usuario.nombre}</td>
-                      <td class="table__cell">{usuario.email}</td>
-                      <td class="table__cell">
-                        <span class="rol-badge rol-badge--{usuario.rol.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-')}">
-                          {usuario.rol}
-                        </span>
-                      </td>
-                      <td class="table__cell">{usuario.fechaRegistro}</td>
-                      <td class="table__cell">{usuario.reservasRealizadas}</td>
-                      <td class="table__cell">
-                        <div class="table__actions">
-                          <select 
-                            class="rol-selector"
-                            value={usuario.rol}
-                            on:change={(e) => handleCambiarRol(usuario.id, e.target.value)}
-                          >
-                            <option value="Administrador/empleado">Administrador/empleado</option>
-                            <option value="Usuario WebService">Usuario WebService</option>
-                            <option value="Usuario Normal">Usuario Normal</option>
-                          </select>
-                        </div>
-                      </td>
+                      <th class="table__header">ID</th>
+                      <th class="table__header">Nombre</th>
+                      <th class="table__header">Email</th>
+                      <th class="table__header">Username</th>
+                      <th class="table__header">Rol</th>
+                      <th class="table__header">Acciones</th>
                     </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody class="table__body">
+                    {#each usuarios as usuario}
+                      <tr class="table__row">
+                        <td class="table__cell">{usuario.id}</td>
+                        <td class="table__cell">{usuario.nombre} {usuario.apellido}</td>
+                        <td class="table__cell">{usuario.correo}</td>
+                        <td class="table__cell">{usuario.username}</td>
+                        <td class="table__cell">
+                          <span class="rol-badge rol-badge--{usuario.rolNombre.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-')}">
+                            {usuario.rolNombre}
+                          </span>
+                        </td>
+                        <td class="table__cell">
+                          <div class="table__actions">
+                            <select 
+                              class="rol-selector"
+                              value={usuario.rolId}
+                              on:change={(e) => handleCambiarRol(usuario.id, e.target.value)}
+                            >
+                              <option value="1">Usuario Registrado</option>
+                              <option value="2">Administrador/empleado</option>
+                              <option value="3">Usuario WebService</option>
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
           </section>
 
         {:else if activeSection === 'metricas'}
