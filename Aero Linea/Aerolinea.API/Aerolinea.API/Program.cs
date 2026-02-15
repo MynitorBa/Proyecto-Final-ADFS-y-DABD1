@@ -8,20 +8,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddSingleton<DbConnectionFactory>();
 
-// Repositories - en orden de dependencia
+// Repositorios
 builder.Services.AddScoped<PaisRepository>();
 builder.Services.AddScoped<CiudadRepository>();
 builder.Services.AddScoped<NacionalidadRepository>();
 builder.Services.AddScoped<UsuarioRepository>();
+builder.Services.AddScoped<AeropuertoRepository>();
+builder.Services.AddScoped<VueloRepository>();
+builder.Services.AddScoped<ReservacionRepository>();
 
-// Services
+// Servicios
 builder.Services.AddScoped<NacionalidadService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<AuthService>();
-
-// Servicios de tu amigo (Aeropuerto)
 builder.Services.AddScoped<AeropuertoService>();
-builder.Services.AddScoped<AeropuertoRepository>();
+builder.Services.AddScoped<VueloService>();
+builder.Services.AddScoped<ReservacionService>();
+
+// *** BACKGROUND SERVICE PARA LIMPIAR RESERVAS EXPIRADAS ***
+builder.Services.AddHostedService<ReservasCleanupService>();
 
 // CORS abierto para desarrollo local
 builder.Services.AddCors(options =>

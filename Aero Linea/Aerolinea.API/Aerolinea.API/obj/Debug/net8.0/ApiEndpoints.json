@@ -67,6 +67,59 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.ReservacionesController",
+    "Method": "CrearReservacion",
+    "RelativePath": "api/reservaciones",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.CrearReservacionDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.ReservacionesController",
+    "Method": "ConfirmarReservacion",
+    "RelativePath": "api/reservaciones/{id}/confirmar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.ReservacionesController",
+    "Method": "AgregarPasajeros",
+    "RelativePath": "api/reservaciones/{id}/pasajeros",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "pasajeros",
+        "Type": "System.Collections.Generic.List\u00601[[Aerolinea.API.DTOs.DatosPasajeroDTO, Aerolinea.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.UsuariosController",
     "Method": "CrearUsuario",
     "RelativePath": "api/usuarios",
