@@ -1,19 +1,19 @@
 <script>
   import '../styles/profile.css';
+  import { onMount } from 'svelte';
   export let navigateTo;
 
   let activeTab = 'personal';
-
   let userData = {
-    nombre: 'Juan Carlos',
-    apellido: 'Lopez Garcia',
-    email: 'juancarlos@ejemplo.com',
-    telefono: '+502 1234-5678',
-    fechaNacimiento: '1990-05-15',
-    pais: 'Guatemala',
-    ciudad: 'Ciudad de Guatemala',
-    direccion: 'Zona 10, Ciudad de Guatemala',
-    codigoPostal: '01010'
+    nombre: '',
+    apellido: '',
+    email: '',
+    telefono: '',
+    fechaNacimiento: '',
+    pais: '',
+    ciudad: '',
+    direccion: '',
+    codigoPostal: ''
   };
 
   let passwordData = {
@@ -21,6 +21,17 @@
     newPassword: '',
     confirmPassword: ''
   };
+
+  onMount(() => {
+    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
+    if (!isLoggedIn) {
+      navigateTo('acceso-denegado');
+      return;
+    }
+
+    userData.nombre = sessionStorage.getItem('nombre') || '';
+    userData.email = sessionStorage.getItem('correo') || '';
+  });
 
   function handleUpdateProfile() {
     console.log('Actualizando perfil:', userData);
@@ -42,7 +53,7 @@
   }
 
   function handleLogout() {
-    console.log('Cerrando sesion');
+    sessionStorage.clear();
     navigateTo('home');
   }
 </script>

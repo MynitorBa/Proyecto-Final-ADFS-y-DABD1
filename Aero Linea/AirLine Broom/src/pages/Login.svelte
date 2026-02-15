@@ -12,7 +12,6 @@
   let loginError = '';
   let submitting = false;
 
-  // LIMPIAR TODO AL MONTAR
   onMount(() => {
     sessionStorage.clear();
     loginData = {
@@ -41,6 +40,14 @@
         loginError = 'Correo, username o contraseña incorrectos.';
         return;
       }
+
+      const result = await response.json();
+      
+      sessionStorage.setItem('usuarioId', result.usuarioId);
+      sessionStorage.setItem('nombre', result.nombre);
+      sessionStorage.setItem('correo', result.correo);
+      sessionStorage.setItem('rolId', result.rolId);
+      sessionStorage.setItem('rolNombre', result.rolNombre);
 
       navigateTo('home');
 

@@ -1,13 +1,20 @@
 <script>
 // @ts-nocheck
-
   import '../styles/misreservaciones.css';
   import DetallesReservaModal from './DetallesReserva.svelte';
+  import { onMount } from 'svelte';
 
   export let navigateTo;
 
   let showDetailModal = false;
   let detailReservation = null;
+
+  onMount(() => {
+    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
+    if (!isLoggedIn) {
+      navigateTo('acceso-denegado');
+    }
+  });
 
   const reservasActivas = [
     {
@@ -291,6 +298,10 @@
 
   function handleCheckIn(reservationId) {
     console.log('Check-in para reserva:', reservationId);
+  }
+
+  function handleCancelReservation(reservationId) {
+    console.log('Cancelando reserva:', reservationId);
   }
 </script>
 

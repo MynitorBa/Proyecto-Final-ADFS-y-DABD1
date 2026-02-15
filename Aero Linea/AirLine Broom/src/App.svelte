@@ -22,21 +22,19 @@
   import DestinosDestacados from './pages/DestinosDestacados.svelte';
   import InformacionAsientos from './pages/InformacionAsientos.svelte';
   import InformacionSeguridad from './pages/InformacionSeguridad.svelte';
-  
+  import AccesoDenegado from './pages/Accesodenegado.svelte';
   import './app.css';
   
   let isLoading = true;
   let currentPage = 'home';
   let suggestedDestination = null;
   let currentFlightId = null;
-  let searchParams = null;  // Ahora solo contendrá busquedaId
+  let searchParams = null;
   let pageKey = Date.now();
   
   onMount(() => {
-    // Cargar página desde URL al inicio
     actualizarPaginaDesdeURL();
     
-    // Escuchar cambios de URL (botón atrás/adelante del navegador)
     window.addEventListener('popstate', actualizarPaginaDesdeURL);
     
     setTimeout(() => {
@@ -58,14 +56,12 @@
     currentPage = page;
     pageKey = Date.now();
     
-    // Cambiar URL sin recargar página (History API)
     window.history.pushState({}, '', `/${page}`);
     
     if (page === 'detalle-vuelo') {
       currentFlightId = data;
     }
     
-    // 🔥 CAMBIO: Solo guardamos el busquedaId para vuelos
     if (page === 'vuelos' && data?.busquedaId) {
       searchParams = { busquedaId: data.busquedaId };
       console.log('✅ App.svelte - navegando a vuelos con busquedaId:', data.busquedaId);
@@ -94,7 +90,7 @@
   }
 
   const simpleHeaderPages = ['vuelos', 'carrito', 'datos-pasajeros', 'checkout', 'confirmacion'];
-  const noFooterPages = ['profile', 'admin', 'login', 'register', ...simpleHeaderPages];
+  const noFooterPages = ['profile', 'admin', 'login', 'register', 'acceso-denegado', ...simpleHeaderPages];
   const noHeaderPages = ['login', 'register'];
 
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
@@ -158,6 +154,8 @@
       <InformacionAsientos {navigateTo} />
     {:else if currentPage === 'info-seguridad'}
       <InformacionSeguridad {navigateTo} />
+    {:else if currentPage === 'acceso-denegado'}
+      <AccesoDenegado {navigateTo} />
     {:else}
       <Home {navigateTo} />
     {/if}
