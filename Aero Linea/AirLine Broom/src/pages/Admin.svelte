@@ -15,6 +15,10 @@
 
   let usuarios = [];
   let loadingUsuarios = false;
+  let rolesDisponibles = [
+    { id: 1, nombre: 'Usuario' },
+    { id: 2, nombre: 'Administrador' }
+  ];
 
   let nuevoVuelo = {
     numeroVuelo: '',
@@ -216,24 +220,28 @@
   async function handleCambiarRol(userId, nuevoRolId) {
     try {
       const rolId = sessionStorage.getItem('rolId');
-      const response = await fetch(`http://localhost:5190/api/usuarios/${userId}/rol`, {
-        method: 'PUT',
+      const response = await fetch('http://localhost:5190/api/usuarios/cambiar-rol', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-RolId': rolId
         },
-        body: JSON.stringify({ nuevoRolId: parseInt(nuevoRolId) })
+        body: JSON.stringify({ 
+          usuarioId: parseInt(userId),
+          nuevoRolId: parseInt(nuevoRolId) 
+        })
       });
 
       if (response.ok) {
-        alert('Rol actualizado correctamente');
-        await cargarUsuarios();
+        const result = await response.json();
+        await cargarUsuarios(); // Recargar la lista de usuarios
       } else {
-        alert('Error al cambiar el rol');
+        const error = await response.json();
+        alert(error.message || 'Error al cambiar el rol');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al cambiar el rol');
+      alert('Error de conexión al cambiar el rol');
     }
   }
 
@@ -664,8 +672,8 @@
                       <th class="table__header">Nombre</th>
                       <th class="table__header">Email</th>
                       <th class="table__header">Username</th>
-                      <th class="table__header">Rol</th>
-                      <th class="table__header">Acciones</th>
+                      <th class="table__header">Rol Actual</th>
+                      <th class="table__header">Cambiar Rol</th>
                     </tr>
                   </thead>
                   <tbody class="table__body">
@@ -676,12 +684,24 @@
                         <td class="table__cell">{usuario.correo}</td>
                         <td class="table__cell">{usuario.username}</td>
                         <td class="table__cell">
-                          <span class="rol-badge rol-badge--{usuario.rolNombre.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-')}">
+                          <span class="rol-badge rol-badge--{usuario.rolNombre.toLowerCase().replace(/\s+/g, '-')}">
                             {usuario.rolNombre}
                           </span>
                         </td>
                         <td class="table__cell">
-                          {usuario.rolNombre}
+                          <div class="table__actions">
+                            <select 
+                              class="rol-select"
+                              value={usuario.rolId}
+                              on:change={(e) => handleCambiarRol(usuario.id, e.target.value)}
+                            >
+                              {#each rolesDisponibles as rol}
+                                <option value={rol.id}>
+                                  {rol.nombre}
+                                </option>
+                              {/each}
+                            </select>
+                          </div>
                         </td>
                       </tr>
                     {/each}

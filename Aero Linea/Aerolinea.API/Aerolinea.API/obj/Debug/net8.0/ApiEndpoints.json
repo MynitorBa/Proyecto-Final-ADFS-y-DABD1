@@ -47,6 +47,32 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.AvionesController",
+    "Method": "ObtenerTodos",
+    "RelativePath": "api/aviones",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.AvionesController",
+    "Method": "ObtenerPorId",
+    "RelativePath": "api/aviones/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.BusquedaController",
     "Method": "ObtenerBusqueda",
     "RelativePath": "api/busquedas/{id}",
@@ -121,6 +147,80 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "CancelarReservacion",
+    "RelativePath": "api/mis-reservaciones/{reservacionId}/cancelar/usuario/{usuarioId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "reservacionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "ObtenerDetalleReservacion",
+    "RelativePath": "api/mis-reservaciones/{reservacionId}/usuario/{usuarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "reservacionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "ObtenerResumen",
+    "RelativePath": "api/mis-reservaciones/resumen/usuario/{usuarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "ObtenerMisReservaciones",
+    "RelativePath": "api/mis-reservaciones/usuario/{usuarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.NacionalidadesController",
     "Method": "Get",
     "RelativePath": "api/nacionalidades",
@@ -178,6 +278,32 @@
       {
         "Name": "pasajeros",
         "Type": "System.Collections.Generic.List\u00601[[Aerolinea.API.DTOs.DatosPasajeroDTO, Aerolinea.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.TripulacionController",
+    "Method": "ObtenerTodos",
+    "RelativePath": "api/tripulacion",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.TripulacionController",
+    "Method": "ObtenerPorId",
+    "RelativePath": "api/tripulacion/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],

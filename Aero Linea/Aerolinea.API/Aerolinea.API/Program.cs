@@ -18,6 +18,9 @@ builder.Services.AddScoped<VueloRepository>();
 builder.Services.AddScoped<ReservacionRepository>();
 builder.Services.AddScoped<ComentarioRepository>();
 builder.Services.AddScoped<DownRepository>();
+builder.Services.AddScoped<AvionRepository>();
+builder.Services.AddScoped<TripulacionRepository>();
+
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -28,6 +31,8 @@ builder.Services.AddScoped<VueloService>();
 builder.Services.AddScoped<ReservacionService>();
 builder.Services.AddScoped<ComentarioService>();
 builder.Services.AddScoped<DownService>();
+builder.Services.AddScoped<AvionService>();
+builder.Services.AddScoped<TripulacionService>();
 
 // Servicio de búsquedas temporales (Singleton)
 builder.Services.AddSingleton<BusquedaTemporalService>();
