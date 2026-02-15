@@ -18,9 +18,13 @@ builder.Services.AddScoped<VueloRepository>();
 builder.Services.AddScoped<ReservacionRepository>();
 builder.Services.AddScoped<ComentarioRepository>();
 builder.Services.AddScoped<DownRepository>();
+<<<<<<< HEAD
 builder.Services.AddScoped<AvionRepository>();
 builder.Services.AddScoped<TripulacionRepository>();
 
+=======
+builder.Services.AddScoped<GestionReservacionRepository>();
+>>>>>>> 1cc955300ce9870a54c96119929bbcc8ee57abbc
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -31,8 +35,12 @@ builder.Services.AddScoped<VueloService>();
 builder.Services.AddScoped<ReservacionService>();
 builder.Services.AddScoped<ComentarioService>();
 builder.Services.AddScoped<DownService>();
+<<<<<<< HEAD
 builder.Services.AddScoped<AvionService>();
 builder.Services.AddScoped<TripulacionService>();
+=======
+builder.Services.AddScoped<GestionReservacionService>();
+>>>>>>> 1cc955300ce9870a54c96119929bbcc8ee57abbc
 
 // Servicio de búsquedas temporales (Singleton)
 builder.Services.AddSingleton<BusquedaTemporalService>();

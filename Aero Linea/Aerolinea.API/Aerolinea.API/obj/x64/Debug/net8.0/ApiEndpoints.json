@@ -121,6 +121,80 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "CancelarReservacion",
+    "RelativePath": "api/mis-reservaciones/{reservacionId}/cancelar/usuario/{usuarioId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "reservacionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "ObtenerDetalleReservacion",
+    "RelativePath": "api/mis-reservaciones/{reservacionId}/usuario/{usuarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "reservacionId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "ObtenerResumen",
+    "RelativePath": "api/mis-reservaciones/resumen/usuario/{usuarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.MisReservacionesController",
+    "Method": "ObtenerMisReservaciones",
+    "RelativePath": "api/mis-reservaciones/usuario/{usuarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.NacionalidadesController",
     "Method": "Get",
     "RelativePath": "api/nacionalidades",
