@@ -29,7 +29,7 @@
   let currentPage = 'home';
   let suggestedDestination = null;
   let currentFlightId = null;
-  let searchParams = null;
+  let searchParams = null;  // Ahora solo contendrá busquedaId
   let pageKey = Date.now();
   
   onMount(() => {
@@ -65,8 +65,14 @@
       currentFlightId = data;
     }
     
-    if (page === 'resultados-busqueda') {
+    // 🔥 CAMBIO: Solo guardamos el busquedaId para vuelos
+    if (page === 'vuelos' && data?.busquedaId) {
+      searchParams = { busquedaId: data.busquedaId };
+      console.log('✅ App.svelte - navegando a vuelos con busquedaId:', data.busquedaId);
+    } else if (page === 'resultados-busqueda') {
       searchParams = data;
+    } else if (page !== 'vuelos') {
+      searchParams = null;
     }
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -121,7 +127,9 @@
     {:else if currentPage === 'reservas'}
       <MisReservas {navigateTo} />
     {:else if currentPage === 'vuelos'}
-      <Vuelos {navigateTo} />
+      {#key searchParams?.busquedaId}
+        <Vuelos {navigateTo} {searchParams} />
+      {/key}
     {:else if currentPage === 'confirmacion'}
       <Comfirmacion {navigateTo} />
     {:else if currentPage === 'resultados-busqueda'}

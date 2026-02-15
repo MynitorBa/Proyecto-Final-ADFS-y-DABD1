@@ -75,6 +75,10 @@
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\controllers\\healthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\models\\guardarbusquedadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\models\\guardarbusquedadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\data\\dbconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\data\\dbconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -89,6 +93,18 @@
     {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\models\\ciudad.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\models\\ciudad.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\models\\busquedavuelo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\models\\busquedavuelo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\services\\busquedatemporalservice .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\services\\busquedatemporalservice .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\controllers\\busquedacontroller .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\controllers\\busquedacontroller .cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\memit\\onedrive - universidad del istmo\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -120,7 +136,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Models\\Usuario.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Usuario.cs",
               "RelativeToolTip": "Aerolinea.API\\Models\\Usuario.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAywBEAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwBEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:42.504Z",
               "EditorCaption": ""
@@ -133,7 +149,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Models\\UsuarioNacionalidad.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\UsuarioNacionalidad.cs",
               "RelativeToolTip": "Aerolinea.API\\Models\\UsuarioNacionalidad.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAUwAgAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T20:34:23.408Z",
               "EditorCaption": ""
@@ -146,7 +162,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\UsuarioRepository.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\UsuarioRepository.cs",
               "RelativeToolTip": "Aerolinea.API\\Repositories\\UsuarioRepository.cs",
-              "ViewState": "AgIAAIIAAAAAAAAAAAAAAIkAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAHoAAAAAAAAAAAAAwIkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:44.922Z",
               "EditorCaption": ""
@@ -159,7 +175,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\UsuariosController.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\UsuariosController.cs",
               "RelativeToolTip": "Aerolinea.API\\Controllers\\UsuariosController.cs",
-              "ViewState": "AgIAACgAAAAAAAAAAAAqwC8AAAABAAAAAAAAAA==",
+              "ViewState": "AgIAACAAAAAAAAAAAAAuwC8AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:35.464Z",
               "EditorCaption": ""
@@ -172,7 +188,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Services\\UsuarioService.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\UsuarioService.cs",
               "RelativeToolTip": "Aerolinea.API\\Services\\UsuarioService.cs",
-              "ViewState": "AgIAADkAAAAAAAAAAAAqwEAAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAADQAAAAAAAAAAAAswEAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:48.299Z",
               "EditorCaption": ""
@@ -185,7 +201,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Models\\RegisterConstraint.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\RegisterConstraint.cs",
               "RelativeToolTip": "Aerolinea.API\\Models\\RegisterConstraint.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAUwAgAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:41.766Z",
               "EditorCaption": ""
@@ -198,7 +214,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Program.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs",
               "RelativeToolTip": "Aerolinea.API\\Program.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAAACsAAAAKAAAAAAAAAA==",
+              "ViewState": "AgIAABwAAAAAAAAAAAAAwCsAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:49.545Z",
               "EditorCaption": ""
@@ -211,7 +227,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Helpers\\PasswordHasher.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Helpers\\PasswordHasher.cs",
               "RelativeToolTip": "Aerolinea.API\\Helpers\\PasswordHasher.cs",
-              "ViewState": "AgIAAAoAAAAAAAAAAAAqwBEAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAcwBEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:39.755Z",
               "EditorCaption": ""
@@ -224,7 +240,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\PaisRepository.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\PaisRepository.cs",
               "RelativeToolTip": "Aerolinea.API\\Repositories\\PaisRepository.cs",
-              "ViewState": "AgIAABgAAAAAAAAAAAAAAB8AAAABAAAAAAAAAA==",
+              "ViewState": "AgIAABAAAAAAAAAAAAAAwB8AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T21:32:37.724Z",
               "EditorCaption": ""
@@ -237,7 +253,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Models\\Pais.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Pais.cs",
               "RelativeToolTip": "Aerolinea.API\\Models\\Pais.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAUwAcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T21:30:43.951Z",
               "EditorCaption": ""
@@ -250,7 +266,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Services\\NacionalidadService.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\NacionalidadService.cs",
               "RelativeToolTip": "Aerolinea.API\\Services\\NacionalidadService.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAqwBQAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAmwBQAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:47.533Z",
               "EditorCaption": ""
@@ -263,7 +279,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
               "RelativeToolTip": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
-              "ViewState": "AgIAACgAAAAAAAAAAAAAAC8AAAABAAAAAAAAAA==",
+              "ViewState": "AgIAACAAAAAAAAAAAAAAwC8AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:43.958Z",
               "EditorCaption": ""
@@ -276,7 +292,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\NacionalidadesController.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\NacionalidadesController.cs",
               "RelativeToolTip": "Aerolinea.API\\Controllers\\NacionalidadesController.cs",
-              "ViewState": "AgIAABAAAAAAAAAAAAAqwBcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAmwBcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:33.218Z",
               "EditorCaption": ""
@@ -289,7 +305,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\NacionalidadDto.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\NacionalidadDto.cs",
               "RelativeToolTip": "Aerolinea.API\\DTOs\\NacionalidadDto.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAUwAcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:37.411Z",
               "EditorCaption": ""
@@ -302,7 +318,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Models\\Nacionalidad.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Nacionalidad.cs",
               "RelativeToolTip": "Aerolinea.API\\Models\\Nacionalidad.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAUwAcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:41.159Z",
               "EditorCaption": ""
@@ -315,7 +331,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\LoginRequestDto.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\LoginRequestDto.cs",
               "RelativeToolTip": "Aerolinea.API\\DTOs\\LoginRequestDto.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAA2wAgAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:37.102Z",
               "EditorCaption": ""
@@ -328,7 +344,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Properties\\launchSettings.json",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Properties\\launchSettings.json",
               "RelativeToolTip": "Aerolinea.API\\Properties\\launchSettings.json",
-              "ViewState": "AgIAACEAAAAAAAAAAAAswCkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAABkAAAAAAAAAAAAwwCkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-02-14T19:05:30.422Z",
               "EditorCaption": ""
@@ -341,7 +357,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\HealthController.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\HealthController.cs",
               "RelativeToolTip": "Aerolinea.API\\Controllers\\HealthController.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAmwBQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:32.554Z",
               "EditorCaption": ""
@@ -349,90 +365,142 @@
             {
               "$type": "Document",
               "DocumentIndex": 18,
+              "Title": "Guardarbusquedadto.cs",
+              "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Guardarbusquedadto.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Models\\Guardarbusquedadto.cs",
+              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Guardarbusquedadto.cs",
+              "RelativeToolTip": "Aerolinea.API\\Models\\Guardarbusquedadto.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAQwA8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-15T04:34:14.846Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
               "Title": "DbConnectionFactory.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Data\\DbConnectionFactory.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Data\\DbConnectionFactory.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Data\\DbConnectionFactory.cs",
               "RelativeToolTip": "Aerolinea.API\\Data\\DbConnectionFactory.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAqwBMAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAmwBMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:35.935Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 20,
               "Title": "CrearUsuarioDTO.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\CrearUsuarioDTO.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\CrearUsuarioDTO.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\CrearUsuarioDTO.cs",
               "RelativeToolTip": "Aerolinea.API\\DTOs\\CrearUsuarioDTO.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAAywBEAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwBEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:36.237Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 21,
               "Title": "CiudadRepository.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\CiudadRepository.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\CiudadRepository.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\CiudadRepository.cs",
               "RelativeToolTip": "Aerolinea.API\\Repositories\\CiudadRepository.cs",
-              "ViewState": "AgIAABsAAAAAAAAAAAAAACIAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAABMAAAAAAAAAAAAAwCIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T21:35:07.761Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 22,
               "Title": "Ciudad.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Ciudad.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Models\\Ciudad.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\Ciudad.cs",
               "RelativeToolTip": "Aerolinea.API\\Models\\Ciudad.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAUwAgAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T21:31:25.385Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 23,
+              "Title": "BusquedaVuelo.cs",
+              "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\BusquedaVuelo.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Models\\BusquedaVuelo.cs",
+              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Models\\BusquedaVuelo.cs",
+              "RelativeToolTip": "Aerolinea.API\\Models\\BusquedaVuelo.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwBEAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-15T04:31:58.284Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "Busquedatemporalservice .cs",
+              "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\Busquedatemporalservice .cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Services\\Busquedatemporalservice .cs",
+              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\Busquedatemporalservice .cs",
+              "RelativeToolTip": "Aerolinea.API\\Services\\Busquedatemporalservice .cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAuwCoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-15T04:33:37.925Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "Busquedacontroller .cs",
+              "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\Busquedacontroller .cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\Busquedacontroller .cs",
+              "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\Busquedacontroller .cs",
+              "RelativeToolTip": "Aerolinea.API\\Controllers\\Busquedacontroller .cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAuwC8AAAAhAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-15T04:34:47.047Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
               "Title": "AuthService.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\AuthService.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Services\\AuthService.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\AuthService.cs",
               "RelativeToolTip": "Aerolinea.API\\Services\\AuthService.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAAAB0AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAuwB0AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:46.929Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 27,
               "Title": "AuthController.cs",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\AuthController.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\AuthController.cs",
               "RelativeToolTip": "Aerolinea.API\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAAAB0AAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAuwB0AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T18:22:58.803Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 28,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.json",
               "RelativeDocumentMoniker": "Aerolinea.API\\appsettings.json",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.json",
               "RelativeToolTip": "Aerolinea.API\\appsettings.json",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAswAwAAAACAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2026-02-14T19:05:48.892Z",
               "EditorCaption": ""

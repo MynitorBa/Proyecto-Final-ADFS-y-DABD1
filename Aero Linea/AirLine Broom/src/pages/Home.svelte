@@ -18,19 +18,28 @@
   let toQuery = '';
   let toSugeridos = [];
   let toSeleccionado = null;
-  let fechasDisponibles = [];
+  
+  // SEPARAR fechas disponibles para IDA y VUELTA
+  let fechasDisponiblesIda = [];
+  let fechasDisponiblesVuelta = [];
+  
   let loadingFechas = false;
   let mostrarCalendarios = false;
   let mesIda = new Date();
   let mesVuelta = new Date();
   let searchError = '';
+  let guardandoBusqueda = false;
 
   onMount(async () => {
     try {
       const res = await fetch('https://localhost:7107/api/aeropuertos');
       aeropuertos = await res.json();
-    } catch { console.error('Error cargando aeropuertos'); }
-    finally { loadingAeropuertos = false; }
+      console.log('✅ Aeropuertos cargados:', aeropuertos.length);
+    } catch (err) { 
+      console.error('❌ Error cargando aeropuertos:', err); 
+    } finally { 
+      loadingAeropuertos = false; 
+    }
   });
 
   $: if (suggestedDestination) {
@@ -82,7 +91,8 @@
   }
 
   function resetCalendarios() {
-    fechasDisponibles = [];
+    fechasDisponiblesIda = [];
+    fechasDisponiblesVuelta = [];
     departureDate = '';
     returnDate = '';
     mostrarCalendarios = false;
@@ -92,28 +102,62 @@
     if (!fromSeleccionado || !toSeleccionado) return;
     loadingFechas = true;
     resetCalendarios();
+    
     try {
-      const res = await fetch(
+      // CARGAR FECHAS DE IDA (origen → destino)
+      console.log('📅 Cargando fechas de IDA...');
+      const resIda = await fetch(
         `https://localhost:7107/api/aeropuertos/fechas-disponibles?origenId=${fromSeleccionado.id}&destinoId=${toSeleccionado.id}`
       );
-      const data = await res.json();
-      fechasDisponibles = data.map(f => f.split('T')[0]);
+      const dataIda = await resIda.json();
+      fechasDisponiblesIda = dataIda.map(f => f.split('T')[0]);
+      console.log('✅ Fechas IDA:', fechasDisponiblesIda);
 
-      if (fechasDisponibles.length > 0) {
-        const primera = new Date(fechasDisponibles[0] + 'T00:00:00');
-        mesIda = new Date(primera.getFullYear(), primera.getMonth(), 1);
-        mesVuelta = new Date(primera.getFullYear(), primera.getMonth() + 1, 1);
+      // CARGAR FECHAS DE VUELTA (destino → origen)
+      console.log('📅 Cargando fechas de VUELTA...');
+      const resVuelta = await fetch(
+        `https://localhost:7107/api/aeropuertos/fechas-disponibles?origenId=${toSeleccionado.id}&destinoId=${fromSeleccionado.id}`
+      );
+      const dataVuelta = await resVuelta.json();
+      fechasDisponiblesVuelta = dataVuelta.map(f => f.split('T')[0]);
+      console.log('✅ Fechas VUELTA:', fechasDisponiblesVuelta);
+
+      // Configurar meses del calendario
+      if (fechasDisponiblesIda.length > 0) {
+        const primeraIda = new Date(fechasDisponiblesIda[0] + 'T00:00:00');
+        mesIda = new Date(primeraIda.getFullYear(), primeraIda.getMonth(), 1);
       } else {
         const hoy = new Date();
         mesIda = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        mesVuelta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
       }
+
+      // Calendario de vuelta debe iniciar en el primer vuelo de vuelta disponible
+      if (fechasDisponiblesVuelta.length > 0) {
+        const primeraVuelta = new Date(fechasDisponiblesVuelta[0] + 'T00:00:00');
+        mesVuelta = new Date(primeraVuelta.getFullYear(), primeraVuelta.getMonth(), 1);
+      } else {
+        // Si no hay fechas de vuelta, usar mes siguiente a IDA como fallback
+        mesVuelta = new Date(mesIda.getFullYear(), mesIda.getMonth() + 1, 1);
+      }
+      
       mostrarCalendarios = true;
-    } catch { console.error('Error cargando fechas'); }
-    finally { loadingFechas = false; }
+      
+    } catch (err) { 
+      console.error('❌ Error cargando fechas:', err); 
+    } finally { 
+      loadingFechas = false; 
+    }
   }
 
-  function esFechaDisponible(f) { return fechasDisponibles.includes(f); }
+  // Validar si fecha de IDA está disponible
+  function esFechaDisponibleIda(f) { 
+    return fechasDisponiblesIda.includes(f); 
+  }
+
+  // Validar si fecha de VUELTA está disponible
+  function esFechaDisponibleVuelta(f) { 
+    return fechasDisponiblesVuelta.includes(f); 
+  }
 
   const diasSemana = ['LU','MA','MI','JU','VI','SA','DO'];
   const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -146,38 +190,82 @@
   function nextVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() + 1, 1); }
 
   function pickIda(f) {
-    if (!esFechaDisponible(f)) return;
+    if (!esFechaDisponibleIda(f)) return;
     departureDate = f;
     searchError = '';
   }
 
   function pickVuelta(f) {
+    // Validar que sea después de la fecha de ida Y que haya vuelos disponibles
     if (departureDate && f < departureDate) return;
+    if (!esFechaDisponibleVuelta(f)) return;
     returnDate = f;
     searchError = '';
   }
 
-  function handleSearchFlight() {
+  async function handleSearchFlight() {
     searchError = '';
-    if (!fromSeleccionado) { searchError = 'Selecciona el aeropuerto de origen.'; return; }
-    if (!toSeleccionado) { searchError = 'Selecciona el aeropuerto de destino.'; return; }
-    if (!departureDate) { searchError = 'Selecciona la fecha de ida.'; return; }
+    
+    // Validaciones
+    if (!fromSeleccionado) { 
+      searchError = 'Selecciona el aeropuerto de origen.'; 
+      return; 
+    }
+    if (!toSeleccionado) { 
+      searchError = 'Selecciona el aeropuerto de destino.'; 
+      return; 
+    }
+    if (!departureDate) { 
+      searchError = 'Selecciona la fecha de ida.'; 
+      return; 
+    }
     if (tripType === 'roundtrip' && !returnDate) {
-      searchError = 'Selecciona la fecha de regreso.'; return;
+      searchError = 'Selecciona la fecha de regreso.'; 
+      return;
     }
 
-    navigateTo('vuelos', {
-      origenId: fromSeleccionado.id,
-      destinoId: toSeleccionado.id,
-      origenNombre: fromSeleccionado.ciudad,
-      destinoNombre: toSeleccionado.ciudad,
-      origenCodigo: fromSeleccionado.codigo,
-      destinoCodigo: toSeleccionado.codigo,
-      fechaIda: departureDate,
-      fechaVuelta: returnDate,
-      pasajeros: passengers,
-      tripType
-    });
+    guardandoBusqueda = true;
+    
+    try {
+      const busquedaData = {
+        origenId: fromSeleccionado.id,
+        destinoId: toSeleccionado.id,
+        origenNombre: fromSeleccionado.ciudad,
+        destinoNombre: toSeleccionado.ciudad,
+        origenCodigo: fromSeleccionado.codigo,
+        destinoCodigo: toSeleccionado.codigo,
+        fechaIda: departureDate,
+        fechaVuelta: returnDate || '',
+        pasajeros: passengers,
+        tripType: tripType
+      };
+
+      console.log('📤 Guardando búsqueda en backend:', busquedaData);
+
+      const response = await fetch('https://localhost:7107/api/busquedas/guardar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(busquedaData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error del servidor:', response.status, errorText);
+        throw new Error('Error al guardar la búsqueda');
+      }
+
+      const resultado = await response.json();
+      console.log('✅ Búsqueda guardada con ID:', resultado.id);
+
+      // Navegar a vuelos pasando solo el ID
+      navigateTo('vuelos', { busquedaId: resultado.id });
+
+    } catch (error) {
+      console.error('❌ Error guardando búsqueda:', error);
+      searchError = 'Error al procesar la búsqueda. Intenta nuevamente.';
+    } finally {
+      guardandoBusqueda = false;
+    }
   }
 </script>
 
@@ -258,12 +346,12 @@
 
           <div class="broom-home__form-group broom-home__form-group--btn">
             <div class="broom-home__form-label broom-home__form-label--hidden" aria-hidden="true">·</div>
-            <button type="submit" class="broom-home__search-btn">
+            <button type="submit" class="broom-home__search-btn" disabled={guardandoBusqueda}>
               <svg class="broom-home__search-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
-              Buscar vuelo
+              {guardandoBusqueda ? 'Procesando...' : 'Buscar vuelo'}
             </button>
           </div>
         </div>
@@ -273,7 +361,7 @@
         {:else if mostrarCalendarios}
           <div class="cal-wrapper">
             <div class="cal-header-info">
-              {#if fechasDisponibles.length > 0}
+              {#if fechasDisponiblesIda.length > 0 || fechasDisponiblesVuelta.length > 0}
                 <span class="cal-info-text">✈ Días con vuelo están marcados — selecciona tu fecha</span>
               {:else}
                 <span class="cal-info-text cal-info-text--empty">No hay vuelos disponibles en esta ruta</span>
@@ -281,6 +369,7 @@
             </div>
 
             <div class="cal-dual" class:cal-dual--single={tripType === 'oneway'}>
+              <!-- CALENDARIO DE IDA -->
               <div class="cal-container">
                 <div class="cal-label">✈ Fecha de ida</div>
                 <div class="cal-nav">
@@ -296,7 +385,7 @@
                     {#if item === null}
                       <span class="cal-day cal-day--empty"></span>
                     {:else}
-                      {@const disp = esFechaDisponible(item.fecha)}
+                      {@const disp = esFechaDisponibleIda(item.fecha)}
                       {@const sel = departureDate === item.fecha}
                       <button type="button" class="cal-day"
                         class:cal-day--disponible={disp && !sel}
@@ -315,6 +404,7 @@
                 {/if}
               </div>
 
+              <!-- CALENDARIO DE VUELTA -->
               {#if tripType === 'roundtrip'}
                 <div class="cal-container">
                   <div class="cal-label">↩ Fecha de regreso</div>
@@ -331,15 +421,19 @@
                       {#if item === null}
                         <span class="cal-day cal-day--empty"></span>
                       {:else}
-                        {@const bloq = departureDate && item.fecha < departureDate}
+                        <!-- Fecha posterior a ida Y con vuelos disponibles -->
+                        {@const bloqPorIda = departureDate && item.fecha < departureDate}
+                        {@const bloqPorNoDisponible = !esFechaDisponibleVuelta(item.fecha)}
+                        {@const bloq = bloqPorIda || bloqPorNoDisponible}
                         {@const sel = returnDate === item.fecha}
+                        
                         <button type="button" class="cal-day"
                           class:cal-day--disponible-vuelta={!bloq && !sel}
                           class:cal-day--seleccionado-vuelta={sel}
-                          class:cal-day--bloqueado={!!bloq}
+                          class:cal-day--bloqueado={bloq}
                           on:click={() => pickVuelta(item.fecha)}
-                          disabled={!!bloq}
-                          title={bloq ? 'Fecha anterior a la ida' : ''}>
+                          disabled={bloq}
+                          title={bloqPorIda ? 'Fecha anterior a la ida' : bloqPorNoDisponible ? 'Sin vuelos de regreso' : 'Vuelo disponible'}>
                           {item.dia}
                         </button>
                       {/if}
@@ -371,7 +465,7 @@
           </div>
           <div class="broom-home__destination-content">
             <h3 class="broom-home__destination-name">París, Francia</h3>
-            <p class="broom-home__destination-description">Descubre la ciudad del amor y sus icónicos monumentos. Disfruta de la Torre Eiffel, el Louvre y la exquisita gastronomía francesa.</p>
+            <p class="broom-home__destination-description">Descubre la ciudad del amor y sus icónicos monumentos.</p>
           </div>
         </article>
         <article class="broom-home__destination-card">
@@ -380,7 +474,7 @@
           </div>
           <div class="broom-home__destination-content">
             <h3 class="broom-home__destination-name">Tokio, Japón</h3>
-            <p class="broom-home__destination-description">Experimenta la perfecta fusión entre tradición y modernidad. Templos ancestrales, tecnología de vanguardia y cultura única.</p>
+            <p class="broom-home__destination-description">Experimenta la perfecta fusión entre tradición y modernidad.</p>
           </div>
         </article>
       </div>

@@ -1,5 +1,5 @@
 <script>
-// @ts-nocheck
+  // @ts-nocheck
   import '../styles/vuelos.css';
   import DetalleVueloModal from './DetalleVuelo.svelte';
   import { onMount } from 'svelte';
@@ -7,207 +7,125 @@
   export let navigateTo;
   export let searchParams = null;
 
-  // ⚡ FIX: Datos de búsqueda - inicialización con defaults
   let searchData = {
-    origenNombre: '',
-    destinoNombre: '',
-    origenCodigo: '',
-    destinoCodigo: '',
-    fechaIda: '',
-    fechaVuelta: '',
-    pasajeros: 1,
-    tripType: 'roundtrip',
-    origenId: null,
-    destinoId: null
+    origenNombre: '', destinoNombre: '',
+    origenCodigo: '', destinoCodigo: '',
+    fechaIda: '', fechaVuelta: '',
+    pasajeros: 1, tripType: 'roundtrip',
+    origenId: null, destinoId: null
   };
-
-  // ⚡ FIX: Actualizar cuando lleguen searchParams
-  $: if (searchParams) {
-    searchData = { ...searchData, ...searchParams };
-    console.log('✅ Vuelos.svelte recibió searchParams:', searchData);
-  }
 
   let currentView = 'outbound';
   let selectedOutbound = { flight: null, clase: null };
-  let selectedReturn = { flight: null, clase: null };
-
-  let showDetailModal = false;
-  let detailFlight = null;
-
-  // Vuelos del backend
-  let vuelosIda = [];
-  let vuelosVuelta = [];
-  let loadingIda = true;
-  let loadingVuelta = false;
-  let errorIda = '';
-  let errorVuelta = '';
-
-  // Clases disponibles del backend
-  let clases = [];
-  let loadingClases = true;
-
-  // Filtros
+  let selectedReturn   = { flight: null, clase: null };
+  let showDetailModal  = false;
+  let detailFlight     = null;
+  let vuelosIda        = [];
+  let vuelosVuelta     = [];
+  let loadingIda       = true;
+  let loadingVuelta    = false;
+  let errorIda         = '';
+  let errorVuelta      = '';
+  let clases = [
+    { id: 1, tipoDeClase: 'Turista' },
+    { id: 2, tipoDeClase: 'Ejecutiva' }
+  ];
   let precioMin = '';
   let precioMax = '';
 
   onMount(async () => {
-    console.log('🔄 Vuelos.svelte montado. searchParams:', searchParams);
-    await Promise.all([cargarClases(), buscarVuelosIda()]);
+    if (searchParams?.busquedaId) {
+      await cargarBusquedaDesdeBackend(searchParams.busquedaId);
+    } else {
+      errorIda = 'No se encontró información de búsqueda. Por favor, realiza una nueva búsqueda desde el inicio.';
+      loadingIda = false;
+    }
   });
 
-  async function cargarClases() {
+  async function cargarBusquedaDesdeBackend(busquedaId) {
     try {
-      const res = await fetch('http://localhost:5190/api/clases');
-      if (res.ok) {
-        clases = await res.json();
-        console.log('✅ Clases cargadas:', clases);
-      }
-    } catch (err) {
-      console.error('❌ Error cargando clases:', err);
-      // Si no existe el endpoint, usamos clases por defecto
-      clases = [
-        { id: 1, tipoDeClase: 'Turista' },
-        { id: 2, tipoDeClase: 'Ejecutiva' }
-      ];
-    } finally {
-      loadingClases = false;
+      const response = await fetch(`https://localhost:7107/api/busquedas/${busquedaId}`);
+      if (!response.ok) throw new Error('Búsqueda no encontrada o expirada');
+      const busqueda = await response.json();
+      searchData = {
+        origenNombre: busqueda.origenNombre || '', destinoNombre: busqueda.destinoNombre || '',
+        origenCodigo: busqueda.origenCodigo || '', destinoCodigo: busqueda.destinoCodigo || '',
+        fechaIda: busqueda.fechaIda || '', fechaVuelta: busqueda.fechaVuelta || '',
+        pasajeros: busqueda.pasajeros || 1, tripType: busqueda.tripType || 'roundtrip',
+        origenId: busqueda.origenId || null, destinoId: busqueda.destinoId || null
+      };
+      await buscarVuelosIda();
+    } catch (error) {
+      errorIda = 'La búsqueda ha expirado o no existe. Por favor, realiza una nueva búsqueda desde el inicio.';
+      loadingIda = false;
     }
   }
 
   async function buscarVuelosIda() {
-    console.log('🔍 Intentando buscar vuelos de ida...');
-    console.log('   origenId:', searchData.origenId);
-    console.log('   destinoId:', searchData.destinoId);
-    console.log('   fechaIda:', searchData.fechaIda);
-    console.log('   pasajeros:', searchData.pasajeros);
-
     if (!searchData.origenId || !searchData.destinoId || !searchData.fechaIda) {
       errorIda = 'Parámetros de búsqueda incompletos. Vuelve al inicio y busca un vuelo.';
       loadingIda = false;
-      console.error('❌ Parámetros incompletos:', searchData);
       return;
     }
-    
-    loadingIda = true;
-    errorIda = '';
-    
+    loadingIda = true; errorIda = '';
     try {
-      const requestBody = {
-        origenId: searchData.origenId,
-        destinoId: searchData.destinoId,
-        fecha: searchData.fechaIda,
-        cantidadPasajeros: searchData.pasajeros
-      };
-      
-      console.log('📤 Enviando búsqueda de vuelos:', requestBody);
-      
-      const res = await fetch('http://localhost:5190/api/vuelos/buscar', {
+      const res = await fetch('https://localhost:7107/api/vuelos/buscar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({ origenId: searchData.origenId, destinoId: searchData.destinoId, fecha: searchData.fechaIda, cantidadPasajeros: searchData.pasajeros })
       });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error('❌ Error en respuesta:', res.status, errorText);
-        throw new Error(`Error ${res.status}`);
-      }
-      
+      if (!res.ok) throw new Error(`Error ${res.status}`);
       vuelosIda = await res.json();
-      console.log('✅ Vuelos de ida recibidos:', vuelosIda.length, 'vuelos');
-      console.log('   Primer vuelo:', vuelosIda[0]);
-      
     } catch (err) {
-      console.error('❌ Error buscando vuelos:', err);
       errorIda = 'No se pudieron cargar los vuelos de ida.';
-    } finally {
-      loadingIda = false;
-    }
+    } finally { loadingIda = false; }
   }
 
   async function buscarVuelosVuelta() {
-    if (searchData.tripType !== 'roundtrip' || !searchData.fechaVuelta) {
-      console.log('⏭️ Saltando búsqueda de vuelta (no es ida y vuelta)');
-      return;
-    }
-    
-    loadingVuelta = true;
-    errorVuelta = '';
-    
+    if (searchData.tripType !== 'roundtrip' || !searchData.fechaVuelta) return;
+    loadingVuelta = true; errorVuelta = '';
     try {
-      const requestBody = {
-        origenId: searchData.destinoId,
-        destinoId: searchData.origenId,
-        fecha: searchData.fechaVuelta,
-        cantidadPasajeros: searchData.pasajeros
-      };
-      
-      console.log('📤 Enviando búsqueda de vuelos de vuelta:', requestBody);
-      
-      const res = await fetch('http://localhost:5190/api/vuelos/buscar', {
+      const res = await fetch('https://localhost:7107/api/vuelos/buscar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({ origenId: searchData.destinoId, destinoId: searchData.origenId, fecha: searchData.fechaVuelta, cantidadPasajeros: searchData.pasajeros })
       });
-      
-      if (!res.ok) throw new Error();
-      
+      if (!res.ok) throw new Error('Error buscando vuelos de vuelta');
       vuelosVuelta = await res.json();
-      console.log('✅ Vuelos de vuelta recibidos:', vuelosVuelta.length);
-      
     } catch (err) {
-      console.error('❌ Error buscando vuelos de vuelta:', err);
       errorVuelta = 'No se pudieron cargar los vuelos de vuelta.';
-    } finally {
-      loadingVuelta = false;
-    }
+    } finally { loadingVuelta = false; }
   }
 
-  // Filtrado reactivo por precio
-  $: vuelosFiltradosIda = aplicarFiltros(vuelosIda);
+  $: vuelosFiltradosIda    = aplicarFiltros(vuelosIda);
   $: vuelosFiltradosVuelta = aplicarFiltros(vuelosVuelta);
-  $: currentFlights = currentView === 'outbound' ? vuelosFiltradosIda : vuelosFiltradosVuelta;
-  $: loading = currentView === 'outbound' ? loadingIda : loadingVuelta;
-  $: errorActual = currentView === 'outbound' ? errorIda : errorVuelta;
-  $: selectedFlight = currentView === 'outbound' ? selectedOutbound : selectedReturn;
-  $: canProceed = selectedFlight.flight !== null && selectedFlight.clase !== null;
+  $: currentFlights  = currentView === 'outbound' ? vuelosFiltradosIda : vuelosFiltradosVuelta;
+  $: loading         = currentView === 'outbound' ? loadingIda    : loadingVuelta;
+  $: errorActual     = currentView === 'outbound' ? errorIda      : errorVuelta;
+  $: selectedFlight  = currentView === 'outbound' ? selectedOutbound : selectedReturn;
+  $: canProceed      = selectedFlight.flight !== null && selectedFlight.clase !== null;
 
   function aplicarFiltros(lista) {
+    if (!lista || lista.length === 0) return [];
     return lista.filter(v => {
-      if (precioMin !== '' && (v.precio ?? 0) < parseFloat(precioMin)) return false;
-      if (precioMax !== '' && (v.precio ?? 0) > parseFloat(precioMax)) return false;
+      const precio = v.precio || 0;
+      if (precioMin !== '' && precio < parseFloat(precioMin)) return false;
+      if (precioMax !== '' && precio > parseFloat(precioMax)) return false;
       return true;
     });
   }
 
-  function limpiarFiltros() {
-    precioMin = '';
-    precioMax = '';
-  }
-
+  function limpiarFiltros()        { precioMin = ''; precioMax = ''; }
   function selectFlight(vuelo, clase) {
-    console.log('✅ Vuelo seleccionado:', vuelo.numeroVuelo, 'Clase:', clase.tipoDeClase);
-    if (currentView === 'outbound') {
-      selectedOutbound = { flight: vuelo, clase };
-    } else {
-      selectedReturn = { flight: vuelo, clase };
-    }
+    if (currentView === 'outbound') selectedOutbound = { flight: vuelo, clase };
+    else selectedReturn = { flight: vuelo, clase };
   }
-
   function isSelected(vuelo, clase) {
     const s = currentView === 'outbound' ? selectedOutbound : selectedReturn;
     return s.flight?.id === vuelo.id && s.clase?.id === clase.id;
   }
-
-  function viewDetails(vuelo) {
-    detailFlight = vuelo;
-    showDetailModal = true;
-  }
-
-  function closeModal() {
-    showDetailModal = false;
-    detailFlight = null;
-  }
+  function viewDetails(vuelo) { detailFlight = vuelo; showDetailModal = true; }
+  function closeModal()       { showDetailModal = false; detailFlight = null; }
 
   async function nextStep() {
     if (currentView === 'outbound' && selectedOutbound.flight) {
@@ -216,32 +134,23 @@
         await buscarVuelosVuelta();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        console.log('➡️ Navegando a datos-pasajeros con:', { outbound: selectedOutbound, searchData });
         navigateTo('datos-pasajeros', { outbound: selectedOutbound, searchData });
       }
     } else if (currentView === 'return' && selectedReturn.flight) {
-      console.log('➡️ Navegando a datos-pasajeros con:', { outbound: selectedOutbound, return: selectedReturn, searchData });
       navigateTo('datos-pasajeros', { outbound: selectedOutbound, return: selectedReturn, searchData });
     }
   }
 
   function goBack() {
-    if (currentView === 'return') {
-      currentView = 'outbound';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      navigateTo('home');
-    }
+    if (currentView === 'return') { currentView = 'outbound'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    else navigateTo('home');
   }
 
   function formatDuracion(min) {
     if (!min) return '';
-    return `${Math.floor(min / 60)}h ${min % 60}m`;
+    return `${Math.floor(min/60)}h ${min%60}m`;
   }
-
-  function formatHora(h) {
-    return h ? h.substring(0, 5) : '';
-  }
+  function formatHora(h) { return h ? h.substring(0,5) : ''; }
 </script>
 
 {#if showDetailModal && detailFlight}
@@ -250,11 +159,9 @@
 
 <div class="vuelos-page">
   <div class="vuelos-page__container">
-    
-    <!-- Header con resumen de búsqueda -->
+
     <div class="vuelos-page__header">
       <button class="vuelos-page__back" on:click={goBack}>Volver</button>
-      
       <div class="search-summary">
         <div class="search-summary__route">
           <span class="search-summary__origin">{searchData.origenNombre || 'Origen'}</span>
@@ -278,8 +185,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Indicador de paso actual -->
       <div class="step-indicator">
         <div class="step-indicator__item"
           class:step-indicator__item--active={currentView === 'outbound'}
@@ -299,17 +204,13 @@
       </div>
     </div>
 
-    <!-- Contenido principal -->
     <div class="vuelos-page__content">
-      
-      <!-- Filtros laterales -->
       <aside class="vuelos-page__filters">
         <div class="filters-panel">
           <div class="filters-panel__header">
             <h3 class="filters-panel__title">Filtros</h3>
             <button class="filters-panel__clear" on:click={limpiarFiltros}>Limpiar</button>
           </div>
-
           <div class="filter-group">
             <label class="filter-group__label" for="precioMin">Rango de Precio</label>
             <div class="filter-group__price-range">
@@ -318,31 +219,26 @@
               <input type="number" class="filter-group__input" placeholder="Max" bind:value={precioMax} />
             </div>
           </div>
-
           <div class="filter-group">
             <label class="filter-group__label" for="filtroClase">Clase</label>
-            <select id="filtroClase" class="filter-group__select">
-              <option value="">Todas</option>
-              {#each clases as c}
-                <option value={c.id}>{c.tipoDeClase}</option>
-              {/each}
-            </select>
+            <div class="filter-group__select">
+              <select id="filtroClase" class="filter-group__select-element">
+                <option value="">Todas</option>
+                {#each clases as c}
+                  <option value={c.id}>{c.tipoDeClase}</option>
+                {/each}
+              </select>
+            </div>
           </div>
         </div>
       </aside>
 
-      <!-- Lista de vuelos -->
       <div class="vuelos-page__main">
         <div class="flights-header">
-          <h2 class="flights-header__title">
-            {currentView === 'outbound' ? 'Vuelos de Ida' : 'Vuelos de Regreso'}
-          </h2>
-          <p class="flights-header__subtitle">
-            {loading ? 'Buscando vuelos...' : `${currentFlights.length} vuelos disponibles`}
-          </p>
+          <h2 class="flights-header__title">{currentView === 'outbound' ? 'Vuelos de Ida' : 'Vuelos de Regreso'}</h2>
+          <p class="flights-header__subtitle">{loading ? 'Buscando vuelos...' : `${currentFlights.length} vuelos disponibles`}</p>
         </div>
 
-        <!-- Estados de carga / error / vacío -->
         {#if loading}
           <div class="vuelos-estado">Buscando vuelos...</div>
         {:else if errorActual}
@@ -355,35 +251,50 @@
               {@const estaSeleccionado = (currentView === 'outbound' ? selectedOutbound : selectedReturn).flight?.id === vuelo.id}
 
               <div class="flight-card" class:flight-card--selected={estaSeleccionado}>
+
+                <svg class="flight-card__deco" viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <circle cx="190" cy="15"  r="90" stroke="#c9a96e" stroke-width="0.6"/>
+                  <circle cx="190" cy="15"  r="62" stroke="#c9a96e" stroke-width="0.6"/>
+                  <circle cx="190" cy="15"  r="36" stroke="#c9a96e" stroke-width="0.6"/>
+                  <path d="M95 72 L148 48 L160 53 L142 66 L156 62 L160 68 L128 79 Z" fill="#c9a96e" opacity="0.18"/>
+                  <line x1="60" y1="125" x2="200" y2="125" stroke="#c9a96e" stroke-width="0.5" stroke-dasharray="4 7"/>
+                  <line x1="80" y1="135" x2="200" y2="135" stroke="#c9a96e" stroke-width="0.4" stroke-dasharray="3 8"/>
+                </svg>
+
                 <div class="flight-card__content">
                   <div class="flight-card__header">
                     <div class="flight-card__code-info">
-                      <span class="flight-card__code">{vuelo.numeroVuelo}</span>
-                      <span class="flight-card__airline">{vuelo.avionMarca} {vuelo.avionModelo}</span>
+                      <span class="flight-card__code">{vuelo.numeroVuelo || 'N/A'}</span>
+                      <span class="flight-card__airline">{vuelo.avionMarca || ''} {vuelo.avionModelo || ''}</span>
                     </div>
                     <div class="flight-card__rating">
-                      <span class="flight-card__rating-value">{vuelo.boletosDisponibles}</span>
-                      <span class="flight-card__airline">asientos</span>
+                      <span class="flight-card__rating-value">{vuelo.boletosDisponibles || 0}</span>
+                      <span class="flight-card__rating-label">asientos</span>
                     </div>
                   </div>
 
                   <div class="flight-card__schedule">
                     <div class="schedule-point">
                       <span class="schedule-point__time">{formatHora(vuelo.horaSalida)}</span>
-                      <span class="schedule-point__code">{vuelo.origenCodigo}</span>
+                      <span class="schedule-point__code">{vuelo.origenCodigo || ''}</span>
                     </div>
                     <div class="schedule-duration">
-                      <div class="schedule-duration__line"></div>
+                      <div class="schedule-duration__track">
+                        <div class="schedule-duration__dot"></div>
+                        <div class="schedule-duration__line"></div>
+                        <span class="schedule-duration__plane">✈</span>
+                        <div class="schedule-duration__line"></div>
+                        <div class="schedule-duration__dot"></div>
+                      </div>
                       <span class="schedule-duration__time">{formatDuracion(vuelo.duracionMinutos)}</span>
                       <span class="schedule-duration__type">Directo</span>
                     </div>
                     <div class="schedule-point">
                       <span class="schedule-point__time">{formatHora(vuelo.horaLlegada)}</span>
-                      <span class="schedule-point__code">{vuelo.destinoCodigo}</span>
+                      <span class="schedule-point__code">{vuelo.destinoCodigo || ''}</span>
                     </div>
                   </div>
 
-                  <!-- Selección de Clase -->
                   <div class="flight-card__class-selection">
                     {#each clases as clase}
                       <button
@@ -392,11 +303,9 @@
                         on:click={() => selectFlight(vuelo, clase)}
                       >
                         <span class="class-option__name">{clase.tipoDeClase}</span>
-                        {#if estaSeleccionado && isSelected(vuelo, clase)}
-                          <span class="class-option__label">Seleccionado ✓</span>
-                        {:else}
-                          <span class="class-option__label">por persona</span>
-                        {/if}
+                        <span class="class-option__label">
+                          {estaSeleccionado && isSelected(vuelo, clase) ? 'Seleccionado ✓' : 'por persona'}
+                        </span>
                       </button>
                     {/each}
                   </div>
@@ -415,9 +324,7 @@
     {#if canProceed}
       <div class="vuelos-page__next-step">
         <button class="next-step-btn" on:click={nextStep}>
-          {currentView === 'outbound' && searchData.tripType === 'roundtrip'
-            ? 'Seleccionar Vuelo de Vuelta'
-            : 'Siguiente Paso'}
+          {currentView === 'outbound' && searchData.tripType === 'roundtrip' ? 'Seleccionar Vuelo de Vuelta' : 'Siguiente Paso'}
         </button>
       </div>
     {/if}

@@ -3,7 +3,7 @@
     background-color: var(--bg-color);
 }
 
-/* ── Hero ─────────────────────────────────────── */
+/* Hero */
 .broom-home__hero {
     position: relative;
     height: 85vh;
@@ -52,7 +52,7 @@
     opacity: .95;
 }
 
-/* ── Search Section ───────────────────────────── */
+/* Search Section */
 .broom-home__search-section {
     position: relative;
     margin-top: -80px;
@@ -77,7 +77,7 @@
     text-transform: uppercase;
 }
 
-/* ── Tipo de viaje ────────────────────────────── */
+/* Tipo de viaje */
 .broom-home__trip-type {
     display: flex;
     gap: 2rem;
@@ -102,7 +102,7 @@
     font-weight: 500;
 }
 
-/* ── Form Grid — 3 campos + botón en misma fila ── */
+/* Form Grid */
 .broom-home__form-grid {
     display: grid;
     grid-template-columns: 1.4fr 1.4fr 1fr auto;
@@ -147,7 +147,7 @@
     cursor: not-allowed;
 }
 
-/* ── Botón Buscar (inline) ────────────────────── */
+/* Botón Buscar */
 .broom-home__search-btn {
     background-color: var(--secondary-color);
     color: var(--white);
@@ -174,7 +174,7 @@
 }
 .broom-home__search-btn-icon { width: 18px; height: 18px; }
 
-/* ── Error búsqueda ───────────────────────────── */
+/* Error búsqueda */
 .broom-home__search-error {
     color: var(--text-muted);
     font-size: .82rem;
@@ -185,7 +185,7 @@
     border-radius: 0 4px 4px 0;
 }
 
-/* ── Highlight animado ────────────────────────── */
+/* Highlight animado */
 .broom-home__form-input--highlighted {
     animation: fieldHighlight 2s ease-in-out;
 }
@@ -194,7 +194,7 @@
     50%      { background-color: rgba(139,107,74,.1); box-shadow: 0 0 0 4px rgba(139,107,74,.3); }
 }
 
-/* ── Autocomplete aeropuertos ─────────────────── */
+/* Autocomplete aeropuertos */
 .home-autocomplete__list {
     position: absolute;
     top: 100%; left: 0; right: 0;
@@ -225,9 +225,7 @@
 .home-autocomplete__ciudad { font-size: .9rem; color: var(--secondary-color); font-weight: 500; }
 .home-autocomplete__nombre { font-size: .75rem; color: var(--text-muted); }
 
-/* ═══════════════════════════════════════════════
-   CALENDARIOS
-   ═══════════════════════════════════════════════ */
+/* Calendarios */
 .cal-loading {
     text-align: center;
     padding: 1rem;
@@ -246,7 +244,7 @@
 .cal-info-text       { font-size: .78rem; color: var(--text-muted); letter-spacing: .5px; }
 .cal-info-text--empty { color: var(--primary-color); }
 
-/* Dual: 2 calendarios lado a lado, o 1 si es solo ida */
+/* Dual calendarios */
 .cal-dual {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -254,7 +252,7 @@
 }
 .cal-dual--single {
     grid-template-columns: 1fr;
-    max-width: 480px;        /* solo ida: no ocupa el 100% de ancho */
+    max-width: 100%;
 }
 
 /* Contenedor de cada calendario con líneas de matriz */
@@ -264,10 +262,6 @@
     border-radius: 8px 0 8px 0;
     padding: 1.2rem 1.5rem;
     width: 100%;
-    background-image:
-        linear-gradient(rgba(226,218,208,.35) 1px, transparent 1px);
-    background-size: 100% 38px;
-    background-position: 0 72px;
 }
 
 /* Label IDA / REGRESO */
@@ -285,7 +279,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: .8rem;
+    margin-bottom: 1.8rem;
 }
 .cal-nav__title {
     font-size: .88rem;
@@ -313,8 +307,14 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 3px;
+    background-image: linear-gradient(rgba(226,218,208,.35) 1px, transparent 1px);
+    background-size: 100% 38px;
+    background-position: 0 0;
 }
-.cal-grid--header { margin-bottom: 4px; }
+.cal-grid--header { 
+    margin-bottom: 4px; 
+    background-image: none;
+}
 .cal-day-name {
     text-align: center;
     font-size: .65rem;
@@ -325,7 +325,7 @@
     padding: .3rem 0;
 }
 
-/* ── Días base ── */
+/* Días base */
 .cal-day {
     width: 100%;
     border: none;
@@ -346,7 +346,7 @@
 /* Sin vuelo */
 .cal-day--bloqueado { color: #ddd; cursor: not-allowed; opacity: .4; }
 
-/* ── CON VUELO DE IDA — café/marrón oscuro ── */
+/* Días con vuelo disponible ida */
 .cal-day--disponible {
     background: #7a5c3f;
     color: var(--white);
@@ -356,7 +356,7 @@
 }
 .cal-day--disponible:hover { background: #5e4430; transform: scale(1.08); }
 
-/* ── SELECCIONADO IDA — dorado ── */
+/* Día seleccionado ida */
 .cal-day--seleccionado-ida {
     background: var(--primary-color) !important;
     color: var(--white) !important;
@@ -366,7 +366,7 @@
     box-shadow: 0 4px 14px rgba(201,169,97,.5);
 }
 
-/* ── CON VUELO VUELTA — azul pizarra oscuro ── */
+/* Días con vuelo disponible vuelta */
 .cal-day--disponible-vuelta {
     background: #3b4f6b;
     color: var(--white);
@@ -376,7 +376,7 @@
 }
 .cal-day--disponible-vuelta:hover { background: #2a3a52; transform: scale(1.08); }
 
-/* ── SELECCIONADO VUELTA — verde oscuro ── */
+/* Día seleccionado vuelta */
 .cal-day--seleccionado-vuelta {
     background: #2a4a3e !important;
     color: var(--white) !important;
@@ -397,9 +397,7 @@
 .cal-selected-info strong { color: var(--secondary-color); }
 .cal-selected-info--vuelta strong { color: #2a4a3e; }
 
-/* ═══════════════════════════════════════════════
-   DESTINOS DESTACADOS
-   ═══════════════════════════════════════════════ */
+/* Destinos destacados */
 .broom-home__destinations {
     padding: 7rem 2rem 6rem;
     background: linear-gradient(to bottom, var(--bg-color), var(--perla-dark));
@@ -467,9 +465,7 @@
 }
 .broom-home__destinations-btn:hover { background: var(--secondary-color); color: var(--white); transform: translateX(-5px); }
 
-/* ═══════════════════════════════════════════════
-   ADMINISTRAR RESERVAS
-   ═══════════════════════════════════════════════ */
+/* Administrar reservas */
 .broom-home__manage-booking {
     background: var(--white);
     padding: 6rem 2rem;
@@ -512,9 +508,7 @@
 }
 .broom-home__manage-booking-btn:hover { background-color: var(--secondary-color); transform: translateY(-3px); }
 
-/* ═══════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════ */
+/* Responsive */
 @media (max-width: 1200px) {
     .broom-home__form-grid { grid-template-columns: 1fr 1fr 1fr auto; }
 }
