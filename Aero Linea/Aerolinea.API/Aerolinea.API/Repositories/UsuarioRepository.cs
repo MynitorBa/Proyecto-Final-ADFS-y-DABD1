@@ -146,6 +146,47 @@ namespace Aerolinea.API.Repositories
             return result?.ToString();
         }
 
+        public async Task<bool> ActualizarRol(int usuarioId, int nuevoRolId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "UPDATE Usuario SET RolID = @NuevoRolId WHERE Id = @UsuarioId";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            command.Parameters.AddWithValue("@NuevoRolId", nuevoRolId);
+
+            int filasAfectadas = await command.ExecuteNonQueryAsync();
+            return filasAfectadas > 0;
+        }
+
+        public async Task<bool> UsuarioExiste(int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT COUNT(*) FROM Usuario WHERE Id = @UsuarioId", connection);
+            command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+
+            int count = (int)await command.ExecuteScalarAsync();
+            return count > 0;
+        }
+
+        public async Task<bool> RolExiste(int rolId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT COUNT(*) FROM Rol WHERE Id = @RolId", connection);
+            command.Parameters.AddWithValue("@RolId", rolId);
+
+            int count = (int)await command.ExecuteScalarAsync();
+            return count > 0;
+        }
+
         public async Task<List<Usuario>> ObtenerTodos()
         {
             using var connection = _connectionFactory.CreateConnection();

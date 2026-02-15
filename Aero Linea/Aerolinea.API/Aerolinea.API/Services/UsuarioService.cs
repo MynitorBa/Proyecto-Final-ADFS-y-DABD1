@@ -59,6 +59,37 @@ namespace Aerolinea.API.Services
             return await _repository.VerificarExistencia(dto.Correo, dto.Username, dto.Pasaporte);
         }
 
+        // Agregar este método al final de la clase UsuarioService (antes del último })
+
+        public async Task<(bool exito, string mensaje)> CambiarRol(CambiarRolDTO dto)
+        {
+            // Validar que el usuario existe
+            bool usuarioExiste = await _repository.UsuarioExiste(dto.UsuarioId);
+            if (!usuarioExiste)
+            {
+                return (false, "El usuario no existe");
+            }
+
+            // Validar que el rol existe
+            bool rolExiste = await _repository.RolExiste(dto.NuevoRolId);
+            if (!rolExiste)
+            {
+                return (false, "El rol especificado no existe");
+            }
+
+            // Actualizar el rol
+            bool actualizado = await _repository.ActualizarRol(dto.UsuarioId, dto.NuevoRolId);
+
+            if (actualizado)
+            {
+                return (true, "Rol actualizado correctamente");
+            }
+            else
+            {
+                return (false, "No se pudo actualizar el rol");
+            }
+        }
+
         public async Task<List<object>> ObtenerTodos()
         {
             var usuarios = await _repository.ObtenerTodos();
