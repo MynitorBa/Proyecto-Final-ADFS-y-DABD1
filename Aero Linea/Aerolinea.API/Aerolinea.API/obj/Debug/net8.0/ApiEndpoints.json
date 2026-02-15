@@ -47,6 +47,32 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.AvionesController",
+    "Method": "ObtenerTodos",
+    "RelativePath": "api/aviones",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.AvionesController",
+    "Method": "ObtenerPorId",
+    "RelativePath": "api/aviones/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.BusquedaController",
     "Method": "ObtenerBusqueda",
     "RelativePath": "api/busquedas/{id}",
@@ -252,6 +278,32 @@
       {
         "Name": "pasajeros",
         "Type": "System.Collections.Generic.List\u00601[[Aerolinea.API.DTOs.DatosPasajeroDTO, Aerolinea.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.TripulacionController",
+    "Method": "ObtenerTodos",
+    "RelativePath": "api/tripulacion",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.TripulacionController",
+    "Method": "ObtenerPorId",
+    "RelativePath": "api/tripulacion/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
