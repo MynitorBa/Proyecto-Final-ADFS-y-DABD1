@@ -28,6 +28,7 @@
     cursor: pointer;
     transition: var(--transition);
     margin-bottom: 2rem;
+    font-family: inherit;
 }
 
 .vuelos-page__back:hover {
@@ -198,6 +199,7 @@
     cursor: pointer;
     text-decoration: underline;
     transition: var(--transition);
+    font-family: inherit;
 }
 
 .filters-panel__clear:hover {
@@ -265,6 +267,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 0.8rem;
+    font-family: inherit;
 }
 
 .filters-panel__apply:hover {
@@ -304,6 +307,29 @@
     gap: 1.5rem;
 }
 
+/* --- Estado vacío / info / carga --- */
+.vuelos-estado {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px dashed var(--perla-dark);
+    border-radius: 4px 24px 4px 24px;
+    background: #fcfbf9;
+}
+
+.vuelos-estado--info {
+    border-color: var(--primary-color);
+    border-style: solid;
+    color: var(--secondary-color);
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    font-size: 0.88rem;
+}
+
 /* --- Tarjeta de Vuelo --- */
 .flight-card {
     background: var(--white);
@@ -314,6 +340,7 @@
     border: 2px solid transparent;
     display: grid;
     grid-template-columns: 200px 1fr;
+    animation: fadeInUp 0.5s ease-out forwards;
 }
 
 .flight-card:hover {
@@ -503,6 +530,7 @@
     border-radius: 8px;
     cursor: pointer;
     transition: var(--transition);
+    font-family: inherit;
 }
 
 .class-option:hover {
@@ -546,7 +574,7 @@
     color: rgba(255, 255, 255, 0.8);
 }
 
-/* --- Botón de Ver Detalles --- */
+/* --- Botón Ver Detalles --- */
 .flight-card__details-btn {
     width: 100%;
     padding: 0.9rem;
@@ -560,6 +588,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 0.8rem;
+    font-family: inherit;
 }
 
 .flight-card__details-btn:hover {
@@ -567,7 +596,7 @@
     color: var(--white);
 }
 
-/* --- Botón de Siguiente Paso --- */
+/* --- Botón Siguiente Paso (fixed) --- */
 .vuelos-page__next-step {
     position: fixed;
     bottom: 2rem;
@@ -589,12 +618,25 @@
     letter-spacing: 1.5px;
     font-size: 0.95rem;
     box-shadow: 0 15px 40px rgba(201, 169, 97, 0.3);
+    font-family: inherit;
 }
 
 .next-step-btn:hover {
     background: var(--secondary-color);
     transform: translateY(-3px);
     box-shadow: 0 20px 50px rgba(42, 54, 74, 0.3);
+}
+
+/* --- Animación --- */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* --- Responsive --- */
@@ -609,17 +651,17 @@
     .vuelos-page__content {
         grid-template-columns: 1fr;
     }
-    
+
     .vuelos-page__filters {
         position: relative;
         top: 0;
         margin-bottom: 2rem;
     }
-    
+
     .step-indicator {
         gap: 1rem;
     }
-    
+
     .step-indicator__line {
         width: 50px;
     }
@@ -629,68 +671,68 @@
     .vuelos-page {
         padding: 1.5rem 1rem 10rem;
     }
-    
+
     .search-summary {
         padding: 1.5rem;
     }
-    
+
     .search-summary__route {
         flex-direction: column;
         gap: 0.5rem;
         align-items: flex-start;
     }
-    
+
     .search-summary__origin,
     .search-summary__destination {
         font-size: 1.2rem;
     }
-    
+
     .search-summary__details {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .step-indicator {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .step-indicator__line {
         width: 2px;
         height: 30px;
     }
-    
+
     .flight-card {
         grid-template-columns: 1fr;
     }
-    
+
     .flight-card__image {
         height: 180px;
         min-height: 180px;
     }
-    
+
     .flight-card__content {
         padding: 1.5rem;
     }
-    
+
     .flight-card__schedule {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .schedule-point:last-child {
         align-items: flex-start;
     }
-    
+
     .schedule-duration {
         order: -1;
     }
-    
+
     .schedule-duration__line {
         height: 40px;
         width: 2px;
     }
-    
+
     .schedule-duration__line::after {
         content: '↓';
         bottom: -10px;
@@ -698,7 +740,7 @@
         right: 50%;
         transform: translateX(50%);
     }
-    
+
     .flight-card__class-selection {
         grid-template-columns: 1fr;
     }
@@ -708,56 +750,40 @@
     .vuelos-page {
         padding: 1rem 0.5rem 10rem;
     }
-    
+
     .search-summary {
         padding: 1.2rem;
         border-radius: 4px 20px 4px 20px;
     }
-    
+
     .filters-panel {
         padding: 1.5rem;
         border-radius: 4px 20px 4px 20px;
     }
-    
+
     .flight-card {
         border-radius: 4px 20px 4px 20px;
     }
-    
+
     .flight-card__content {
         padding: 1.2rem;
     }
-    
+
     .flight-card__code {
         font-size: 1.1rem;
     }
-    
+
     .schedule-point__time {
         font-size: 1.2rem;
     }
-    
+
     .class-option__price {
         font-size: 1.3rem;
     }
-    
+
     .next-step-btn {
         padding: 1rem 2rem;
         font-size: 0.85rem;
         border-radius: 4px 16px 4px 16px;
-    }
-}
-
-/* --- Animación --- */
-.flight-card {
-    animation: fadeInUp 0.5s ease-out forwards;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
     }
 }
