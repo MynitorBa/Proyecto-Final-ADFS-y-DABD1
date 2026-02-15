@@ -36,5 +36,11 @@
 
         // Ruta
         public int RutaId { get; set; }
+
+        // Precios por clase
+        public decimal? PrecioTurista { get; set; }
+        public decimal? PrecioEjecutiva { get; set; }
+        public int? BoletosDisponiblesTurista { get; set; }
+        public int? BoletosDisponiblesEjecutiva { get; set; }
     }
 }

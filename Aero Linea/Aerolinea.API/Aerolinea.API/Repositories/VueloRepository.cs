@@ -55,7 +55,35 @@ namespace Aerolinea.API.Repositories
                     
                     -- Ruta
                     r.ID AS RutaId,
-                    r.DuracionEstimada
+                    r.DuracionEstimada,
+                    
+                    -- Precios por clase (primer boleto disponible de cada clase)
+                    (SELECT TOP 1 b.Precio 
+                     FROM Boleto b 
+                     WHERE b.VueloID = v.ID 
+                       AND b.ClaseID = 1
+                       AND b.EstadoBoletoID = 1
+                     ORDER BY b.Precio ASC) AS PrecioTurista,
+                    
+                    (SELECT TOP 1 b.Precio 
+                     FROM Boleto b 
+                     WHERE b.VueloID = v.ID 
+                       AND b.ClaseID = 2
+                       AND b.EstadoBoletoID = 1
+                     ORDER BY b.Precio ASC) AS PrecioEjecutiva,
+                    
+                    -- Boletos disponibles por clase
+                    (SELECT COUNT(*) 
+                     FROM Boleto b 
+                     WHERE b.VueloID = v.ID 
+                       AND b.ClaseID = 1
+                       AND b.EstadoBoletoID = 1) AS BoletosDisponiblesTurista,
+                    
+                    (SELECT COUNT(*) 
+                     FROM Boleto b 
+                     WHERE b.VueloID = v.ID 
+                       AND b.ClaseID = 2
+                       AND b.EstadoBoletoID = 1) AS BoletosDisponiblesEjecutiva
                     
                 FROM Vuelo v
                 INNER JOIN Estado e ON v.EstadoID = e.ID
@@ -121,7 +149,13 @@ namespace Aerolinea.API.Repositories
 
                     // Ruta
                     RutaId = reader.GetInt32(22),
-                    DuracionMinutos = reader.GetInt32(23)
+                    DuracionMinutos = reader.GetInt32(23),
+
+                    // Precios por clase
+                    PrecioTurista = reader.IsDBNull(24) ? null : reader.GetDecimal(24),
+                    PrecioEjecutiva = reader.IsDBNull(25) ? null : reader.GetDecimal(25),
+                    BoletosDisponiblesTurista = reader.IsDBNull(26) ? null : reader.GetInt32(26),
+                    BoletosDisponiblesEjecutiva = reader.IsDBNull(27) ? null : reader.GetInt32(27)
                 });
             }
 

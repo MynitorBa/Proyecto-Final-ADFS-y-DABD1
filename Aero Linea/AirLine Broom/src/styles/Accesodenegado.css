@@ -5,41 +5,38 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 4rem 2rem;
-  background: linear-gradient(135deg, #f5f1ed 0%, #ffffff 100%);
-}
-
-.acceso-denegado__icon {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
+  padding: 3rem 2rem;
+  background: #F5F1ED;
 }
 
 .acceso-denegado__title {
-  font-size: 2.5rem;
-  font-weight: 300;
+  font-size: 2rem;
+  font-weight: 400;
   color: #1C1A18;
   margin-bottom: 1rem;
-  letter-spacing: -0.5px;
 }
 
 .acceso-denegado__message {
   color: #6b6b6b;
   max-width: 450px;
-  margin-bottom: 2.5rem;
-  line-height: 1.7;
-  font-size: 1.125rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.acceso-denegado__image {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 2.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.acceso-denegado__image img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .acceso-denegado__actions {
@@ -50,55 +47,59 @@
 }
 
 .acceso-denegado__btn {
-  padding: 0.875rem 2rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  border: none;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
 }
 
 .acceso-denegado__btn--primary {
   background: #8B6B4A;
   color: white;
+  border-color: #8B6B4A;
 }
 
 .acceso-denegado__btn--primary:hover {
   background: #6d523a;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 107, 74, 0.3);
+  border-color: #6d523a;
 }
 
 .acceso-denegado__btn--secondary {
   background: transparent;
   color: #8B6B4A;
-  border: 2px solid #8B6B4A;
+  border-color: #8B6B4A;
 }
 
 .acceso-denegado__btn--secondary:hover {
   background: #8B6B4A;
   color: white;
-  transform: translateY(-2px);
 }
 
 @media (max-width: 640px) {
-  .acceso-denegado__icon {
-    font-size: 4rem;
+  .acceso-denegado {
+    padding: 2rem 1.5rem;
   }
 
   .acceso-denegado__title {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
 
   .acceso-denegado__message {
-    font-size: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .acceso-denegado__image {
+    margin-bottom: 2rem;
+    border-radius: 8px;
   }
 
   .acceso-denegado__actions {
     flex-direction: column;
     width: 100%;
+    max-width: 300px;
   }
 
   .acceso-denegado__btn {

@@ -47,6 +47,70 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.BusquedaController",
+    "Method": "ObtenerBusqueda",
+    "RelativePath": "api/busquedas/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.BusquedaController",
+    "Method": "GuardarBusqueda",
+    "RelativePath": "api/busquedas/guardar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.GuardarBusquedaDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.ComentariosController",
+    "Method": "CrearComentario",
+    "RelativePath": "api/comentarios",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.CrearComentarioDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.ComentariosController",
+    "Method": "ObtenerComentariosPorRuta",
+    "RelativePath": "api/comentarios/ruta/{rutaId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "rutaId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.HealthController",
     "Method": "Get",
     "RelativePath": "api/health",
@@ -137,6 +201,43 @@
   },
   {
     "ContainingType": "Aerolinea.API.Controllers.UsuariosController",
+    "Method": "ObtenerTodos",
+    "RelativePath": "api/usuarios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "X-RolId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.UsuariosController",
+    "Method": "CambiarRol",
+    "RelativePath": "api/usuarios/cambiar-rol",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "X-RolId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.CambiarRolDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.UsuariosController",
     "Method": "VerificarConstraints",
     "RelativePath": "api/usuarios/verificar",
     "HttpMethod": "POST",
@@ -146,6 +247,64 @@
       {
         "Name": "dto",
         "Type": "Aerolinea.API.DTOs.CrearUsuarioDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.VotosController",
+    "Method": "VotarComentario",
+    "RelativePath": "api/votos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.VotarComentarioDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.VotosController",
+    "Method": "QuitarVoto",
+    "RelativePath": "api/votos/{usuarioId}/{comentarioId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "comentarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.VotosController",
+    "Method": "ObtenerVotoUsuario",
+    "RelativePath": "api/votos/{usuarioId}/{comentarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "comentarioId",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
