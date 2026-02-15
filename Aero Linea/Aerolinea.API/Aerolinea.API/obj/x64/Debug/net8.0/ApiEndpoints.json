@@ -232,6 +232,64 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Aerolinea.API.Controllers.VotosController",
+    "Method": "VotarComentario",
+    "RelativePath": "api/votos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "Aerolinea.API.DTOs.VotarComentarioDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.VotosController",
+    "Method": "QuitarVoto",
+    "RelativePath": "api/votos/{usuarioId}/{comentarioId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "comentarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aerolinea.API.Controllers.VotosController",
+    "Method": "ObtenerVotoUsuario",
+    "RelativePath": "api/votos/{usuarioId}/{comentarioId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "usuarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "comentarioId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Aerolinea.API.Controllers.VuelosController",
     "Method": "BuscarVuelos",
     "RelativePath": "api/vuelos/buscar",
