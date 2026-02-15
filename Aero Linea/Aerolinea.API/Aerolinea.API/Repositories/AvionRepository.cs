@@ -21,7 +21,7 @@ namespace Aerolinea.API.Repositories
             var query = @"
                 SELECT ID, Modelo, Marca, CapacidadPasajeros
                 FROM Avion 
-                ORDER BY Marca, Modelo";
+                ORDER BY ID";
 
             using var command = new SqlCommand(query, connection);
             using var reader = await command.ExecuteReaderAsync();
