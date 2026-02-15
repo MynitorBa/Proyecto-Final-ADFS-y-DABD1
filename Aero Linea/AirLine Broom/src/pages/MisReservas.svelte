@@ -8,282 +8,96 @@
 
   let showDetailModal = false;
   let detailReservation = null;
+  let usuarioId = null;
+  let loading = true;
+  let error = null;
+  
+  let reservasActivas = [];
+  let reservasFinalizadas = [];
+  
+  let cancelando = false;
+  let errorCancelacion = null;
 
-  onMount(() => {
+  onMount(async () => {
     const isLoggedIn = !!sessionStorage.getItem('usuarioId');
     if (!isLoggedIn) {
       navigateTo('acceso-denegado');
+      return;
     }
+    
+    usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
+    await cargarReservaciones();
   });
 
-  const reservasActivas = [
-    {
-      id: 'VGT-2026-A7B9C2',
-      type: 'ida-vuelta',
-      flights: [
-        {
-          type: 'ida',
-          flightNumber: 'AF 1234',
-          origin: 'Ciudad de Guatemala',
-          destination: 'Paris',
-          departureDate: '2026-02-15',
-          departureTime: '08:00',
-          arrivalTime: '18:30',
-          duration: '10h 30m',
-          airline: 'Air France',
-          terminal: 'Terminal 2E',
-          gate: 'K45',
-          class: 'ejecutivo'
-        },
-        {
-          type: 'regreso',
-          flightNumber: 'AF 5678',
-          origin: 'Paris',
-          destination: 'Ciudad de Guatemala',
-          departureDate: '2026-02-25',
-          departureTime: '10:00',
-          arrivalTime: '16:30',
-          duration: '10h 30m',
-          airline: 'Air France',
-          terminal: 'Terminal 2E',
-          gate: 'M12',
-          class: 'ejecutivo'
-        }
-      ],
-      passengers: [
-        {
-          nombre: 'Juan Carlos',
-          apellido: 'Lopez Garcia',
-          numeroDocumento: 'A12345678',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1990-05-15',
-          genero: 'masculino',
-          email: 'juan.lopez@ejemplo.com',
-          telefono: '+502 1234-5678'
-        },
-        {
-          nombre: 'Maria Elena',
-          apellido: 'Rodriguez Perez',
-          numeroDocumento: 'B98765432',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1992-08-20',
-          genero: 'femenino',
-          email: 'maria.rodriguez@ejemplo.com',
-          telefono: '+502 9876-5432'
-        }
-      ],
-      status: 'confirmado',
-      total: 7448,
-      paymentMethod: 'Tarjeta de credito',
-      bookingDate: '2026-01-20',
-      confirmationCode: 'VGT-2026-A7B9C2'
-    },
-    {
-      id: 'VGT-2026-B3K8L5',
-      type: 'ida',
-      flights: [
-        {
-          type: 'ida',
-          flightNumber: 'IB 9876',
-          origin: 'Ciudad de Guatemala',
-          destination: 'Madrid',
-          departureDate: '2026-03-10',
-          departureTime: '14:00',
-          arrivalTime: '00:30',
-          duration: '10h 30m',
-          airline: 'Iberia',
-          terminal: 'Terminal 4',
-          gate: 'D12',
-          class: 'economico'
-        }
-      ],
-      passengers: [
-        {
-          nombre: 'Carlos Alberto',
-          apellido: 'Martinez Gonzalez',
-          numeroDocumento: 'C45678901',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1985-03-25',
-          genero: 'masculino',
-          email: 'carlos.martinez@ejemplo.com',
-          telefono: '+502 5555-1234'
-        }
-      ],
-      status: 'confirmado',
-      total: 1700,
-      paymentMethod: 'Tarjeta de debito',
-      bookingDate: '2026-01-25',
-      confirmationCode: 'VGT-2026-B3K8L5'
+  async function cargarReservaciones() {
+    loading = true;
+    error = null;
+    
+    try {
+      const response = await fetch(`http://localhost:5190/api/mis-reservaciones/usuario/${usuarioId}`);
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar las reservaciones');
+      }
+      
+      const reservaciones = await response.json();
+      console.log('Reservaciones cargadas:', reservaciones);
+      
+      // Separar reservaciones activas (Pendiente o Confirmada) de finalizadas (Cancelada, Expirada)
+      reservasActivas = reservaciones.filter(r => 
+        r.estadoReservaId === 1 || r.estadoReservaId === 2
+      );
+      
+      reservasFinalizadas = reservaciones.filter(r => 
+        r.estadoReservaId === 3 || r.estadoReservaId === 4
+      );
+      
+    } catch (err) {
+      console.error('Error cargando reservaciones:', err);
+      error = 'No se pudieron cargar las reservaciones. Intenta de nuevo.';
+    } finally {
+      loading = false;
     }
-  ];
-
-  const reservasFinalizadas = [
-    {
-      id: 'VGT-2025-X9Y2Z7',
-      type: 'ida-vuelta',
-      flights: [
-        {
-          type: 'ida',
-          flightNumber: 'LA 7890',
-          origin: 'Ciudad de Guatemala',
-          destination: 'Lima',
-          departureDate: '2025-12-15',
-          departureTime: '06:00',
-          arrivalTime: '11:30',
-          airline: 'LATAM',
-          class: 'economico'
-        },
-        {
-          type: 'regreso',
-          flightNumber: 'LA 7891',
-          origin: 'Lima',
-          destination: 'Ciudad de Guatemala',
-          departureDate: '2025-12-25',
-          departureTime: '13:00',
-          arrivalTime: '18:30',
-          airline: 'LATAM',
-          class: 'economico'
-        }
-      ],
-      passengers: [
-        {
-          nombre: 'Juan Carlos',
-          apellido: 'Lopez Garcia',
-          numeroDocumento: 'A12345678',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1990-05-15',
-          genero: 'masculino',
-          email: 'juan.lopez@ejemplo.com',
-          telefono: '+502 1234-5678'
-        }
-      ],
-      status: 'completado',
-      total: 850,
-      paymentMethod: 'Tarjeta de credito',
-      bookingDate: '2025-11-10',
-      completedDate: '2025-12-25',
-      confirmationCode: 'VGT-2025-X9Y2Z7'
-    },
-    {
-      id: 'VGT-2025-P4Q7R1',
-      type: 'ida',
-      flights: [
-        {
-          type: 'ida',
-          flightNumber: 'CM 4521',
-          origin: 'Ciudad de Guatemala',
-          destination: 'Panama',
-          departureDate: '2025-10-05',
-          departureTime: '09:00',
-          arrivalTime: '11:15',
-          airline: 'Copa Airlines',
-          class: 'economico'
-        }
-      ],
-      passengers: [
-        {
-          nombre: 'Ana Sofia',
-          apellido: 'Hernandez Castro',
-          numeroDocumento: 'D78901234',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1988-11-30',
-          genero: 'femenino',
-          email: 'ana.hernandez@ejemplo.com',
-          telefono: '+502 7777-8888'
-        }
-      ],
-      status: 'completado',
-      total: 450,
-      paymentMethod: 'PayPal',
-      bookingDate: '2025-09-15',
-      completedDate: '2025-10-05',
-      confirmationCode: 'VGT-2025-P4Q7R1'
-    },
-    {
-      id: 'VGT-2025-W5E8T2',
-      type: 'ida-vuelta',
-      flights: [
-        {
-          type: 'ida',
-          flightNumber: 'AA 2134',
-          origin: 'Ciudad de Guatemala',
-          destination: 'Miami',
-          departureDate: '2025-08-20',
-          departureTime: '11:00',
-          arrivalTime: '15:30',
-          airline: 'American Airlines',
-          class: 'ejecutivo'
-        },
-        {
-          type: 'regreso',
-          flightNumber: 'AA 2135',
-          origin: 'Miami',
-          destination: 'Ciudad de Guatemala',
-          departureDate: '2025-08-30',
-          departureTime: '08:00',
-          arrivalTime: '12:30',
-          airline: 'American Airlines',
-          class: 'ejecutivo'
-        }
-      ],
-      passengers: [
-        {
-          nombre: 'Laura Patricia',
-          apellido: 'Morales Alvarez',
-          numeroDocumento: 'E23456789',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1995-07-12',
-          genero: 'femenino',
-          email: 'laura.morales@ejemplo.com',
-          telefono: '+502 4444-9999'
-        },
-        {
-          nombre: 'Roberto',
-          apellido: 'Jimenez Torres',
-          numeroDocumento: 'F87654321',
-          tipoPasaporte: 'ordinario',
-          nacionalidad: 'Guatemala',
-          fechaNacimiento: '1993-12-05',
-          genero: 'masculino',
-          email: 'roberto.jimenez@ejemplo.com',
-          telefono: '+502 6666-3333'
-        }
-      ],
-      status: 'completado',
-      total: 4500,
-      paymentMethod: 'Tarjeta de credito',
-      bookingDate: '2025-07-10',
-      completedDate: '2025-08-30',
-      confirmationCode: 'VGT-2025-W5E8T2'
-    }
-  ];
-
-  function getStatusClass(status) {
-    const statusMap = {
-      'completado': 'status--completed',
-      'confirmado': 'status--confirmed',
-      'cancelado': 'status--cancelled'
-    };
-    return statusMap[status] || '';
   }
 
-  function getStatusText(status) {
+  function getStatusClass(estadoReserva) {
     const statusMap = {
-      'completado': 'Completado',
-      'confirmado': 'Confirmado',
-      'cancelado': 'Cancelado'
+      'Pendiente': 'reserva-card__status--pending',
+      'Confirmada': 'reserva-card__status--confirmed',
+      'Cancelada': 'reserva-card__status--cancelled',
+      'Expirada': 'reserva-card__status--expired'
     };
-    return statusMap[status] || status;
+    return statusMap[estadoReserva] || '';
   }
 
-  function viewDetails(reservation) {
-    detailReservation = reservation;
+  function getStatusText(estadoReserva) {
+    return estadoReserva;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    });
+  }
+
+  function formatTime(timeSpan) {
+    if (!timeSpan) return '';
+    const parts = timeSpan.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+
+  function formatDuration(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  }
+
+  function viewDetails(reserva) {
+    detailReservation = reserva;
     showDetailModal = true;
   }
 
@@ -292,16 +106,100 @@
     detailReservation = null;
   }
 
-  function handleDownloadTicket(reservationId) {
-    console.log('Descargando boleto:', reservationId);
+  function handleDownloadTicket(reservacionId) {
+    console.log('Descargar boleto para reserva:', reservacionId);
+    // Funcion pendiente - proximamente
   }
 
-  function handleCheckIn(reservationId) {
-    console.log('Check-in para reserva:', reservationId);
+  async function handleCancelReservation(reservacionId) {
+    if (!confirm('¿Estas seguro de que deseas cancelar esta reservacion? Esta accion no se puede deshacer.')) {
+      return;
+    }
+    
+    cancelando = true;
+    errorCancelacion = null;
+    
+    try {
+      const response = await fetch(
+        `http://localhost:5190/api/mis-reservaciones/${reservacionId}/cancelar/usuario/${usuarioId}`,
+        { method: 'POST' }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al cancelar la reservacion');
+      }
+      
+      alert('Reservacion cancelada exitosamente');
+      await cargarReservaciones();
+      
+    } catch (err) {
+      console.error('Error cancelando reservacion:', err);
+      errorCancelacion = err.message;
+      alert(errorCancelacion);
+    } finally {
+      cancelando = false;
+    }
   }
 
-  function handleCancelReservation(reservationId) {
-    console.log('Cancelando reserva:', reservationId);
+  function getTipoReserva(boletos) {
+    if (!boletos || boletos.length === 0) return 'Sin vuelos';
+    
+    const origenes = new Set(boletos.map(b => b.origenCodigo));
+    const destinos = new Set(boletos.map(b => b.destinoCodigo));
+    
+    if (origenes.size > 1 && destinos.size > 1) {
+      return 'Ida y Vuelta';
+    }
+    return 'Solo Ida';
+  }
+
+  function agruparVuelosPorRuta(boletos) {
+    if (!boletos || boletos.length === 0) return [];
+    
+    const vuelos = {};
+    
+    boletos.forEach(boleto => {
+      const key = `${boleto.vueloId}-${boleto.origenCodigo}-${boleto.destinoCodigo}`;
+      
+      if (!vuelos[key]) {
+        vuelos[key] = {
+          vueloId: boleto.vueloId,
+          numeroVuelo: boleto.numeroVuelo,
+          origen: boleto.origenCiudad,
+          origenCodigo: boleto.origenCodigo,
+          destino: boleto.destinoCiudad,
+          destinoCodigo: boleto.destinoCodigo,
+          fecha: boleto.fechaVuelo,
+          horaSalida: boleto.horaSalida,
+          horaLlegada: boleto.horaLlegada,
+          duracion: boleto.duracionMinutos,
+          avion: `${boleto.avionMarca} ${boleto.avionModelo}`,
+          clase: boleto.clase,
+          cantidadPasajeros: 0
+        };
+      }
+      
+      vuelos[key].cantidadPasajeros++;
+    });
+    
+    return Object.values(vuelos);
+  }
+
+  function obtenerPasajerosUnicos(boletos) {
+    if (!boletos || boletos.length === 0) return [];
+    
+    const pasajerosMap = new Map();
+    
+    boletos.forEach(boleto => {
+      if (boleto.pasajero && boleto.pasajero.id) {
+        if (!pasajerosMap.has(boleto.pasajero.id)) {
+          pasajerosMap.set(boleto.pasajero.id, boleto.pasajero);
+        }
+      }
+    });
+    
+    return Array.from(pasajerosMap.values());
   }
 </script>
 
@@ -319,193 +217,226 @@
       <p class="mis-reservas__subtitle">Gestiona todas tus reservas de vuelo</p>
     </div>
 
-    <div class="mis-reservas__content">
-      <section class="reservas-section">
-        <h2 class="reservas-section__title">Reservas Activas</h2>
-        <p class="reservas-section__subtitle">
-          {reservasActivas.length} reserva{reservasActivas.length !== 1 ? 's' : ''} activa{reservasActivas.length !== 1 ? 's' : ''}
-        </p>
+    {#if loading}
+      <div class="loading-state">
+        <p>Cargando tus reservaciones...</p>
+      </div>
+    {:else if error}
+      <div class="error-state">
+        <p>{error}</p>
+        <button class="action-btn action-btn--primary" on:click={cargarReservaciones}>
+          Reintentar
+        </button>
+      </div>
+    {:else}
+      <div class="mis-reservas__content">
+        <section class="reservas-section">
+          <h2 class="reservas-section__title">Reservas Activas</h2>
+          <p class="reservas-section__subtitle">
+            {reservasActivas.length} reserva{reservasActivas.length !== 1 ? 's' : ''} activa{reservasActivas.length !== 1 ? 's' : ''}
+          </p>
 
-        <div class="reservas-grid">
-          {#each reservasActivas as reserva}
-            <article class="reserva-card">
-              <div class="reserva-card__header">
-                <div class="reserva-card__id-section">
-                  <h3 class="reserva-card__id">#{reserva.id}</h3>
-                  <span class="reserva-card__type">
-                    {reserva.type === 'ida-vuelta' ? 'Ida y Vuelta' : 'Solo Ida'}
-                  </span>
-                </div>
-                <span class="reserva-card__status {getStatusClass(reserva.status)}">
-                  {getStatusText(reserva.status)}
-                </span>
-              </div>
-
-              <div class="reserva-card__flights">
-                {#each reserva.flights as flight}
-                  <div class="flight-info">
-                    <div class="flight-info__badge">
-                      {flight.type === 'ida' ? 'Ida' : 'Regreso'}
+          {#if reservasActivas.length === 0}
+            <div class="empty-state">
+              <p>No tienes reservas activas en este momento</p>
+              <button class="action-btn action-btn--primary" on:click={() => navigateTo('home')}>
+                Buscar Vuelos
+              </button>
+            </div>
+          {:else}
+            <div class="reservas-grid">
+              {#each reservasActivas as reserva}
+                {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
+                {@const pasajeros = obtenerPasajerosUnicos(reserva.boletos)}
+                
+                <article class="reserva-card">
+                  <div class="reserva-card__header">
+                    <div class="reserva-card__id-section">
+                      <h3 class="reserva-card__id">#{reserva.noReservacion}</h3>
+                      <span class="reserva-card__type">
+                        {getTipoReserva(reserva.boletos)}
+                      </span>
                     </div>
-                    <div class="flight-info__main">
-                      <div class="flight-info__route">
-                        <span class="flight-info__airport">{flight.origin}</span>
-                        <span class="flight-info__arrow">→</span>
-                        <span class="flight-info__airport">{flight.destination}</span>
-                      </div>
-                      <div class="flight-info__details">
-                        <span class="flight-info__detail">{flight.airline} {flight.flightNumber}</span>
-                        <span class="flight-info__detail">{flight.departureDate}</span>
-                        <span class="flight-info__detail">{flight.departureTime} - {flight.arrivalTime}</span>
-                        <span class="flight-info__detail">Clase {flight.class}</span>
-                      </div>
-                      {#if flight.terminal}
-                        <div class="flight-info__terminal">
-                          <span>{flight.terminal}</span>
-                          <span>Puerta {flight.gate}</span>
+                    <span class="reserva-card__status {getStatusClass(reserva.estadoReserva)}">
+                      {getStatusText(reserva.estadoReserva)}
+                    </span>
+                  </div>
+
+                  <div class="reserva-card__flights">
+                    {#each vuelos as vuelo}
+                      <div class="flight-info">
+                        <div class="flight-info__badge">
+                          Vuelo
                         </div>
+                        <div class="flight-info__main">
+                          <div class="flight-info__route">
+                            <span class="flight-info__airport">{vuelo.origen} ({vuelo.origenCodigo})</span>
+                            <span class="flight-info__arrow">→</span>
+                            <span class="flight-info__airport">{vuelo.destino} ({vuelo.destinoCodigo})</span>
+                          </div>
+                          <div class="flight-info__details">
+                            <span class="flight-info__detail">{vuelo.avion} - {vuelo.numeroVuelo}</span>
+                            <span class="flight-info__detail">{formatDate(vuelo.fecha)}</span>
+                            <span class="flight-info__detail">{formatTime(vuelo.horaSalida)} - {formatTime(vuelo.horaLlegada)}</span>
+                            <span class="flight-info__detail">Clase {vuelo.clase}</span>
+                            <span class="flight-info__detail">Duracion: {formatDuration(vuelo.duracion)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+
+                  <div class="reserva-card__passengers">
+                    <h4 class="reserva-card__passengers-title">Pasajeros ({pasajeros.length})</h4>
+                    <ul class="passengers-list">
+                      {#if pasajeros.length > 0}
+                        {#each pasajeros as pasajero}
+                          <li class="passenger-item">
+                            <span class="passenger-item__name">{pasajero.nombre} {pasajero.apellido}</span>
+                            <span class="passenger-item__doc">Pasaporte: {pasajero.pasaporte}</span>
+                          </li>
+                        {/each}
+                      {:else}
+                        <li class="passenger-item">
+                          <span class="passenger-item__name">Datos de pasajeros pendientes</span>
+                        </li>
                       {/if}
-                    </div>
+                    </ul>
                   </div>
-                {/each}
-              </div>
 
-              <div class="reserva-card__passengers">
-                <h4 class="reserva-card__passengers-title">Pasajeros ({reserva.passengers.length})</h4>
-                <ul class="passengers-list">
-                  {#each reserva.passengers as passenger}
-                    <li class="passenger-item">
-                      <span class="passenger-item__name">{passenger.nombre} {passenger.apellido}</span>
-                      <span class="passenger-item__doc">Doc: {passenger.numeroDocumento}</span>
-                    </li>
-                  {/each}
-                </ul>
-              </div>
-
-              <div class="reserva-card__details">
-                <div class="detail-row">
-                  <span class="detail-row__label">Codigo de confirmacion</span>
-                  <span class="detail-row__value">{reserva.confirmationCode}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-row__label">Fecha de reserva</span>
-                  <span class="detail-row__value">{reserva.bookingDate}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-row__label">Metodo de pago</span>
-                  <span class="detail-row__value">{reserva.paymentMethod}</span>
-                </div>
-                <div class="detail-row detail-row--total">
-                  <span class="detail-row__label">Total pagado</span>
-                  <span class="detail-row__value">${reserva.total}</span>
-                </div>
-              </div>
-
-              <div class="reserva-card__actions">
-                <button class="action-btn action-btn--primary" on:click={() => viewDetails(reserva)}>
-                  Ver Detalles
-                </button>
-                <button class="action-btn" on:click={() => handleDownloadTicket(reserva.id)}>
-                  Descargar Boleto
-                </button>
-                <button class="action-btn" on:click={() => handleCancelReservation(reserva.id)}>
-                  Cancelar Reserva
-                </button>
-              </div>
-            </article>
-          {/each}
-        </div>
-      </section>
-
-      <section class="reservas-section">
-        <h2 class="reservas-section__title">Historial</h2>
-        <p class="reservas-section__subtitle">Reservas completadas y canceladas</p>
-
-        <div class="reservas-grid">
-          {#each reservasFinalizadas as reserva}
-            <article class="reserva-card reserva-card--completed">
-              <div class="reserva-card__header">
-                <div class="reserva-card__id-section">
-                  <h3 class="reserva-card__id">#{reserva.id}</h3>
-                  <span class="reserva-card__type">
-                    {reserva.type === 'ida-vuelta' ? 'Ida y Vuelta' : 'Solo Ida'}
-                  </span>
-                </div>
-                <span class="reserva-card__status {getStatusClass(reserva.status)}">
-                  {getStatusText(reserva.status)}
-                </span>
-              </div>
-
-              <div class="reserva-card__flights">
-                {#each reserva.flights as flight}
-                  <div class="flight-info">
-                    <div class="flight-info__badge">
-                      {flight.type === 'ida' ? 'Ida' : 'Regreso'}
+                  <div class="reserva-card__details">
+                    <div class="detail-row">
+                      <span class="detail-row__label">Codigo de confirmacion</span>
+                      <span class="detail-row__value">{reserva.noReservacion}</span>
                     </div>
-                    <div class="flight-info__main">
-                      <div class="flight-info__route">
-                        <span class="flight-info__airport">{flight.origin}</span>
-                        <span class="flight-info__arrow">→</span>
-                        <span class="flight-info__airport">{flight.destination}</span>
+                    <div class="detail-row">
+                      <span class="detail-row__label">Fecha de reserva</span>
+                      <span class="detail-row__value">{formatDate(reserva.fechaCreacion)}</span>
+                    </div>
+                    {#if reserva.fechaExpiracion}
+                      <div class="detail-row">
+                        <span class="detail-row__label">Expira el</span>
+                        <span class="detail-row__value">{formatDate(reserva.fechaExpiracion)}</span>
                       </div>
-                      <div class="flight-info__details">
-                        <span class="flight-info__detail">{flight.airline} {flight.flightNumber}</span>
-                        <span class="flight-info__detail">{flight.departureDate}</span>
-                        <span class="flight-info__detail">Clase {flight.class}</span>
-                      </div>
+                    {/if}
+                    <div class="detail-row detail-row--total">
+                      <span class="detail-row__label">Total</span>
+                      <span class="detail-row__value">${reserva.total.toFixed(2)}</span>
                     </div>
                   </div>
-                {/each}
-              </div>
 
-              <div class="reserva-card__passengers">
-                <h4 class="reserva-card__passengers-title">Pasajeros ({reserva.passengers.length})</h4>
-                <ul class="passengers-list">
-                  {#each reserva.passengers as passenger}
-                    <li class="passenger-item">
-                      <span class="passenger-item__name">{passenger.nombre} {passenger.apellido}</span>
-                      <span class="passenger-item__doc">Doc: {passenger.numeroDocumento}</span>
-                    </li>
-                  {/each}
-                </ul>
-              </div>
-
-              <div class="reserva-card__details">
-                <div class="detail-row">
-                  <span class="detail-row__label">Fecha de reserva</span>
-                  <span class="detail-row__value">{reserva.bookingDate}</span>
-                </div>
-                {#if reserva.status === 'completado'}
-                  <div class="detail-row">
-                    <span class="detail-row__label">Completado el</span>
-                    <span class="detail-row__value">{reserva.completedDate}</span>
+                  <div class="reserva-card__actions">
+                    <button class="action-btn action-btn--primary" on:click={() => viewDetails(reserva)}>
+                      Ver Detalles
+                    </button>
+                    <button class="action-btn" on:click={() => handleDownloadTicket(reserva.reservacionId)}>
+                      Descargar Boleto
+                    </button>
+                    <button 
+                      class="action-btn" 
+                      on:click={() => handleCancelReservation(reserva.reservacionId)}
+                      disabled={cancelando}>
+                      {cancelando ? 'Cancelando...' : 'Cancelar Reserva'}
+                    </button>
                   </div>
-                {:else if reserva.status === 'cancelado'}
-                  <div class="detail-row">
-                    <span class="detail-row__label">Cancelado el</span>
-                    <span class="detail-row__value">{reserva.cancelledDate}</span>
-                  </div>
-                {/if}
-                <div class="detail-row detail-row--total">
-                  <span class="detail-row__label">Total</span>
-                  <span class="detail-row__value">${reserva.total}</span>
-                </div>
-              </div>
+                </article>
+              {/each}
+            </div>
+          {/if}
+        </section>
 
-              <div class="reserva-card__actions">
-                <button class="action-btn action-btn--primary" on:click={() => viewDetails(reserva)}>
-                  Ver Detalles
-                </button>
-                {#if reserva.status === 'completado'}
-                  <button class="action-btn" on:click={() => handleDownloadTicket(reserva.id)}>
-                    Descargar Recibo
-                  </button>
-                {/if}
-              </div>
-            </article>
-          {/each}
-        </div>
-      </section>
-    </div>
+        <section class="reservas-section">
+          <h2 class="reservas-section__title">Historial</h2>
+          <p class="reservas-section__subtitle">Reservas completadas, canceladas y expiradas</p>
+
+          {#if reservasFinalizadas.length === 0}
+            <div class="empty-state">
+              <p>No tienes reservas en tu historial</p>
+            </div>
+          {:else}
+            <div class="reservas-grid">
+              {#each reservasFinalizadas as reserva}
+                {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
+                {@const pasajeros = obtenerPasajerosUnicos(reserva.boletos)}
+                
+                <article class="reserva-card reserva-card--completed">
+                  <div class="reserva-card__header">
+                    <div class="reserva-card__id-section">
+                      <h3 class="reserva-card__id">#{reserva.noReservacion}</h3>
+                      <span class="reserva-card__type">
+                        {getTipoReserva(reserva.boletos)}
+                      </span>
+                    </div>
+                    <span class="reserva-card__status {getStatusClass(reserva.estadoReserva)}">
+                      {getStatusText(reserva.estadoReserva)}
+                    </span>
+                  </div>
+
+                  <div class="reserva-card__flights">
+                    {#each vuelos as vuelo}
+                      <div class="flight-info">
+                        <div class="flight-info__badge">
+                          Vuelo
+                        </div>
+                        <div class="flight-info__main">
+                          <div class="flight-info__route">
+                            <span class="flight-info__airport">{vuelo.origen} ({vuelo.origenCodigo})</span>
+                            <span class="flight-info__arrow">→</span>
+                            <span class="flight-info__airport">{vuelo.destino} ({vuelo.destinoCodigo})</span>
+                          </div>
+                          <div class="flight-info__details">
+                            <span class="flight-info__detail">{vuelo.avion} - {vuelo.numeroVuelo}</span>
+                            <span class="flight-info__detail">{formatDate(vuelo.fecha)}</span>
+                            <span class="flight-info__detail">Clase {vuelo.clase}</span>
+                          </div>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+
+                  <div class="reserva-card__passengers">
+                    <h4 class="reserva-card__passengers-title">Pasajeros ({pasajeros.length})</h4>
+                    <ul class="passengers-list">
+                      {#if pasajeros.length > 0}
+                        {#each pasajeros as pasajero}
+                          <li class="passenger-item">
+                            <span class="passenger-item__name">{pasajero.nombre} {pasajero.apellido}</span>
+                            <span class="passenger-item__doc">Pasaporte: {pasajero.pasaporte}</span>
+                          </li>
+                        {/each}
+                      {:else}
+                        <li class="passenger-item">
+                          <span class="passenger-item__name">Sin datos de pasajeros</span>
+                        </li>
+                      {/if}
+                    </ul>
+                  </div>
+
+                  <div class="reserva-card__details">
+                    <div class="detail-row">
+                      <span class="detail-row__label">Fecha de reserva</span>
+                      <span class="detail-row__value">{formatDate(reserva.fechaCreacion)}</span>
+                    </div>
+                    <div class="detail-row detail-row--total">
+                      <span class="detail-row__label">Total</span>
+                      <span class="detail-row__value">${reserva.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div class="reserva-card__actions">
+                    <button class="action-btn action-btn--primary" on:click={() => viewDetails(reserva)}>
+                      Ver Detalles
+                    </button>
+                    <button class="action-btn" on:click={() => handleDownloadTicket(reserva.reservacionId)}>
+                      Descargar Recibo
+                    </button>
+                  </div>
+                </article>
+              {/each}
+            </div>
+          {/if}
+        </section>
+      </div>
+    {/if}
   </div>
 </div>
