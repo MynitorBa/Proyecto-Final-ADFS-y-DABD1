@@ -42,6 +42,31 @@ namespace Aerolinea.API.Controllers
             return Ok(constraints);
         }
 
+
+        [HttpPost("cambiar-rol")]
+        public async Task<IActionResult> CambiarRol(
+            [FromHeader(Name = "X-RolId")] int rolId,
+            [FromBody] CambiarRolDTO dto)
+        {
+            // Solo administradores (RolId = 2) pueden cambiar roles
+            if (rolId != 2)
+            {
+                return StatusCode(403, new { message = "Acceso denegado. Solo administradores pueden cambiar roles." });
+            }
+
+            var (exito, mensaje) = await _service.CambiarRol(dto);
+
+            if (exito)
+            {
+                return Ok(new { message = mensaje });
+            }
+            else
+            {
+                return BadRequest(new { message = mensaje });
+            }
+        }
+
+
         [HttpGet]
         public async Task<IActionResult> ObtenerTodos([FromHeader(Name = "X-RolId")] int rolId)
         {
