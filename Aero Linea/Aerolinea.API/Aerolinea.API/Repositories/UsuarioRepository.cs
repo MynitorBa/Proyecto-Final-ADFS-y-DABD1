@@ -59,10 +59,8 @@ namespace Aerolinea.API.Repositories
 
             foreach (var nacionalidad in nacionalidades)
             {
-                // Obtener o crear el Id de la nacionalidad
                 int nacionalidadId = await _nacionalidadRepository.ObtenerOCrearId(nacionalidad, connection);
 
-                // Insertar en UsuarioNacionalidad
                 using var command = new SqlCommand(
                     "INSERT INTO UsuarioNacionalidad (UsuarioId, NacionalidadId) VALUES (@UsuarioId, @NacionalidadId)",
                     connection);
@@ -97,7 +95,7 @@ namespace Aerolinea.API.Repositories
             return constraint;
         }
 
-        public async Task<Usuario> ObtenerPorCorreoOUsername(string correoOUsername)
+        public async Task<Usuario?> ObtenerPorCorreoOUsername(string correoOUsername)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
@@ -133,6 +131,52 @@ namespace Aerolinea.API.Repositories
             }
 
             return null;
+        }
+
+        public async Task<string?> ObtenerNombreRol(int rolId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT RolNombre FROM Rol WHERE ID = @RolId", connection);
+            command.Parameters.AddWithValue("@RolId", rolId);
+
+            var result = await command.ExecuteScalarAsync();
+            return result?.ToString();
+        }
+
+        public async Task<List<Usuario>> ObtenerTodos()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var lista = new List<Usuario>();
+            using var command = new SqlCommand(
+                "SELECT Id, Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Telefono, FechaNacimiento, PaisId, CiudadId, RolID FROM Usuario ORDER BY Id",
+                connection);
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new Usuario
+                {
+                    Id = reader.GetInt32(0),
+                    Correo = reader.GetString(1),
+                    ContrasenaHash = reader.GetString(2),
+                    Pasaporte = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    Username = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    Nombre = reader.GetString(5),
+                    Apellido = reader.GetString(6),
+                    Telefono = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                    FechaNacimiento = reader.IsDBNull(8) ? DateTime.MinValue : reader.GetDateTime(8),
+                    PaisId = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                    CiudadId = reader.IsDBNull(10) ? 0 : reader.GetInt32(10),
+                    RolID = reader.GetInt32(11)
+                });
+            }
+
+            return lista;
         }
     }
 }

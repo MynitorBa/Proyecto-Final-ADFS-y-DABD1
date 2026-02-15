@@ -12,18 +12,28 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
-        public async Task<bool> Login(LoginRequestDto request)
+        public async Task<LoginResponseDto?> Login(LoginRequestDto request)
         {
-            var usuario = await _repository
-                .ObtenerPorCorreoOUsername(request.CorreoOUsername);
+            var usuario = await _repository.ObtenerPorCorreoOUsername(request.CorreoOUsername);
 
             if (usuario == null)
-                return false;
+                return null;
 
-            return BCrypt.Net.BCrypt.Verify(
-                request.Contrasena,
-                usuario.ContrasenaHash
-            );
+            bool passwordOk = BCrypt.Net.BCrypt.Verify(request.Contrasena, usuario.ContrasenaHash);
+
+            if (!passwordOk)
+                return null;
+
+            var rolNombre = await _repository.ObtenerNombreRol(usuario.RolID);
+
+            return new LoginResponseDto
+            {
+                UsuarioId = usuario.Id,
+                Nombre = usuario.Nombre,
+                Correo = usuario.Correo,
+                RolId = usuario.RolID,
+                RolNombre = rolNombre ?? "Usuario Registrado"
+            };
         }
     }
 }

@@ -1,6 +1,15 @@
 <script>
   import '../styles/checkout.css';
+  import { onMount } from 'svelte';
   export let navigateTo;
+
+  onMount(() => {
+    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
+    if (!isLoggedIn) {
+      navigateTo('acceso-denegado');
+      return;
+    }
+  });
 
   let paymentMethod = 'tarjeta';
   let billingInfo = {

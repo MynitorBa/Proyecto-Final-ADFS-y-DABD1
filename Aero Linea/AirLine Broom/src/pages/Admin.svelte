@@ -681,17 +681,7 @@
                           </span>
                         </td>
                         <td class="table__cell">
-                          <div class="table__actions">
-                            <select 
-                              class="rol-selector"
-                              value={usuario.rolId}
-                              on:change={(e) => handleCambiarRol(usuario.id, e.target.value)}
-                            >
-                              <option value="1">Usuario Registrado</option>
-                              <option value="2">Administrador/empleado</option>
-                              <option value="3">Usuario WebService</option>
-                            </select>
-                          </div>
+                          {usuario.rolNombre}
                         </td>
                       </tr>
                     {/each}

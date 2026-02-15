@@ -1,8 +1,16 @@
 <script>
 // @ts-nocheck
-
   import '../styles/carrito.css';
+  import { onMount } from 'svelte';
   export let navigateTo;
+
+  onMount(() => {
+    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
+    if (!isLoggedIn) {
+      navigateTo('acceso-denegado');
+      return;
+    }
+  });
 
   let cartItems = [
     {

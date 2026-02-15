@@ -27,14 +27,12 @@ namespace Aerolinea.API.Services
 
         public async Task CrearUsuario(CrearUsuarioDTO dto)
         {
-            // Obtener o crear los IDs de Pais y Ciudad
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             int paisId = await _paisRepository.ObtenerOCrearId(dto.Pais, connection);
             int ciudadId = await _ciudadRepository.ObtenerOCrearId(dto.Ciudad, paisId, connection);
 
-            // Crear el usuario con los IDs
             var usuario = new Usuario
             {
                 Correo = dto.Correo,
@@ -47,12 +45,11 @@ namespace Aerolinea.API.Services
                 FechaNacimiento = dto.FechaNacimiento,
                 PaisId = paisId,
                 CiudadId = ciudadId,
-                RolID = dto.RolID
+                RolID = 1
             };
 
             int usuarioId = await _repository.CrearUsuario(usuario);
 
-            // Agregar nacionalidades si hay
             if (dto.Nacionalidades != null && dto.Nacionalidades.Count > 0)
                 await _repository.AgregarNacionalidades(usuarioId, dto.Nacionalidades);
         }
@@ -60,6 +57,29 @@ namespace Aerolinea.API.Services
         public async Task<RegisterConstraint> VerificarConstraints(CrearUsuarioDTO dto)
         {
             return await _repository.VerificarExistencia(dto.Correo, dto.Username, dto.Pasaporte);
+        }
+
+        public async Task<List<object>> ObtenerTodos()
+        {
+            var usuarios = await _repository.ObtenerTodos();
+            var resultado = new List<object>();
+
+            foreach (var u in usuarios)
+            {
+                var rolNombre = await _repository.ObtenerNombreRol(u.RolID);
+                resultado.Add(new
+                {
+                    id = u.Id,
+                    nombre = u.Nombre,
+                    apellido = u.Apellido,
+                    correo = u.Correo,
+                    username = u.Username,
+                    rolId = u.RolID,
+                    rolNombre = rolNombre ?? "Desconocido"
+                });
+            }
+
+            return resultado;
         }
     }
 }

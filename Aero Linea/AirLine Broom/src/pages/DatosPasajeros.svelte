@@ -1,6 +1,15 @@
 <script>
   import '../styles/pasajeros.css';
+  import { onMount } from 'svelte';
   export let navigateTo;
+
+  onMount(() => {
+    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
+    if (!isLoggedIn) {
+      navigateTo('acceso-denegado');
+      return;
+    }
+  });
 
   const flights = [
     {
@@ -24,7 +33,6 @@
   let passengerData = {};
   let currentPassengerIndex = 0;
 
-  // Crear array de todos los pasajeros
   let allPassengers = [];
   flights.forEach(flight => {
     for (let i = 0; i < flight.passengers; i++) {
@@ -40,7 +48,6 @@
     }
   });
 
-  // Inicializar datos de pasajeros
   allPassengers.forEach(passenger => {
     passengerData[passenger.key] = {
       nombre: '',
@@ -104,7 +111,6 @@
           </ul>
         </div>
 
-        <!-- Progress Tabs -->
         <div class="passenger-tabs">
           {#each allPassengers as passenger, index}
             <button 

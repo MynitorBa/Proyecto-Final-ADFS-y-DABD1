@@ -18,10 +18,8 @@ namespace Aerolinea.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDTO dto)
         {
-            // Verificar constraints primero
             var constraints = await _service.VerificarConstraints(dto);
 
-            // Si algo ya existe, devolver error
             if (constraints.CorreoExiste || constraints.UsernameExiste || constraints.PasaporteExiste)
             {
                 return BadRequest(new
@@ -33,7 +31,6 @@ namespace Aerolinea.API.Controllers
                 });
             }
 
-            // Si todo está libre, crear el usuario
             await _service.CrearUsuario(dto);
             return Ok(new { message = "Usuario creado correctamente" });
         }
@@ -43,6 +40,16 @@ namespace Aerolinea.API.Controllers
         {
             var constraints = await _service.VerificarConstraints(dto);
             return Ok(constraints);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ObtenerTodos([FromHeader(Name = "X-RolId")] int rolId)
+        {
+            if (rolId != 2)
+                return StatusCode(403, new { message = "Acceso denegado. Solo administradores." });
+
+            var usuarios = await _service.ObtenerTodos();
+            return Ok(usuarios);
         }
     }
 }

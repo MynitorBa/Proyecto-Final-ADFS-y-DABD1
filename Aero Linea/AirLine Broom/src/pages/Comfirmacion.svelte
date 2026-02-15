@@ -1,6 +1,15 @@
 <script>
   import '../styles/confirmacion.css';
+  import { onMount } from 'svelte';
   export let navigateTo;
+
+  onMount(() => {
+    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
+    if (!isLoggedIn) {
+      navigateTo('acceso-denegado');
+      return;
+    }
+  });
 
   const reservationCode = 'VGT-2026-A7B9C2';
   
@@ -54,7 +63,6 @@
 
 <div class="confirmacion">
   <div class="confirmacion__container">
-    <!-- Success Header -->
     <div class="confirmacion__header">
       <div class="confirmacion__icon">
         <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
@@ -72,7 +80,6 @@
       </div>
     </div>
 
-    <!-- Flight Summary -->
     <div class="confirmacion__content">
       <section class="confirmacion__flight-summary">
         <h2 class="confirmacion__section-title">Resumen de tu vuelo</h2>
@@ -127,7 +134,6 @@
         </div>
       </section>
 
-      <!-- Actions -->
       <div class="confirmacion__actions">
         <button class="confirmacion__btn confirmacion__btn--primary" on:click={handleDownloadPDF}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -146,7 +152,6 @@
       </div>
     </div>
 
-    <!-- Hotels Section -->
     <section class="confirmacion__hotels">
       <div class="confirmacion__hotels-header">
         <h2 class="confirmacion__section-title">Hoteles recomendados en Paris</h2>

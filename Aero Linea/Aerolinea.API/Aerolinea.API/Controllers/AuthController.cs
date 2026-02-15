@@ -18,12 +18,12 @@ namespace Aerolinea.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
         {
-            var success = await _service.Login(request);
+            var result = await _service.Login(request);
 
-            if (!success)
+            if (result == null)
                 return Unauthorized("Credenciales inválidas");
 
-            return Ok("Login correcto");
+            return Ok(result);
         }
     }
 }
