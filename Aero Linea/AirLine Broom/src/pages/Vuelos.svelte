@@ -32,6 +32,7 @@
   ];
   let precioMin = '';
   let precioMax = '';
+  let claseSeleccionada = '';
 
   onMount(async () => {
     if (searchParams?.busquedaId) {
@@ -69,10 +70,22 @@
     }
     loadingIda = true; errorIda = '';
     try {
+      const body = {
+        origenId: searchData.origenId,
+        destinoId: searchData.destinoId,
+        fecha: searchData.fechaIda,
+        cantidadPasajeros: searchData.pasajeros
+      };
+
+      // Agregar filtros opcionales
+      if (precioMin !== '') body.precioMinimo = parseFloat(precioMin);
+      if (precioMax !== '') body.precioMaximo = parseFloat(precioMax);
+      if (claseSeleccionada !== '') body.claseId = parseInt(claseSeleccionada);
+
       const res = await fetch('https://localhost:7107/api/vuelos/buscar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origenId: searchData.origenId, destinoId: searchData.destinoId, fecha: searchData.fechaIda, cantidadPasajeros: searchData.pasajeros })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       vuelosIda = await res.json();
@@ -85,10 +98,22 @@
     if (searchData.tripType !== 'roundtrip' || !searchData.fechaVuelta) return;
     loadingVuelta = true; errorVuelta = '';
     try {
+      const body = {
+        origenId: searchData.destinoId,
+        destinoId: searchData.origenId,
+        fecha: searchData.fechaVuelta,
+        cantidadPasajeros: searchData.pasajeros
+      };
+
+      // Agregar filtros opcionales
+      if (precioMin !== '') body.precioMinimo = parseFloat(precioMin);
+      if (precioMax !== '') body.precioMaximo = parseFloat(precioMax);
+      if (claseSeleccionada !== '') body.claseId = parseInt(claseSeleccionada);
+
       const res = await fetch('https://localhost:7107/api/vuelos/buscar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origenId: searchData.destinoId, destinoId: searchData.origenId, fecha: searchData.fechaVuelta, cantidadPasajeros: searchData.pasajeros })
+        body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('Error buscando vuelos de vuelta');
       vuelosVuelta = await res.json();
@@ -97,33 +122,37 @@
     } finally { loadingVuelta = false; }
   }
 
-  $: vuelosFiltradosIda    = aplicarFiltros(vuelosIda);
-  $: vuelosFiltradosVuelta = aplicarFiltros(vuelosVuelta);
-  $: currentFlights  = currentView === 'outbound' ? vuelosFiltradosIda : vuelosFiltradosVuelta;
+  async function aplicarFiltros() {
+    if (currentView === 'outbound') {
+      await buscarVuelosIda();
+    } else {
+      await buscarVuelosVuelta();
+    }
+  }
+
+  $: currentFlights  = currentView === 'outbound' ? vuelosIda : vuelosVuelta;
   $: loading         = currentView === 'outbound' ? loadingIda    : loadingVuelta;
   $: errorActual     = currentView === 'outbound' ? errorIda      : errorVuelta;
   $: selectedFlight  = currentView === 'outbound' ? selectedOutbound : selectedReturn;
   $: canProceed      = selectedFlight.flight !== null && selectedFlight.clase !== null;
 
-  function aplicarFiltros(lista) {
-    if (!lista || lista.length === 0) return [];
-    return lista.filter(v => {
-      const precio = v.precio || 0;
-      if (precioMin !== '' && precio < parseFloat(precioMin)) return false;
-      if (precioMax !== '' && precio > parseFloat(precioMax)) return false;
-      return true;
-    });
+  function limpiarFiltros() {
+    precioMin = '';
+    precioMax = '';
+    claseSeleccionada = '';
+    aplicarFiltros();
   }
 
-  function limpiarFiltros()        { precioMin = ''; precioMax = ''; }
   function selectFlight(vuelo, clase) {
     if (currentView === 'outbound') selectedOutbound = { flight: vuelo, clase };
     else selectedReturn = { flight: vuelo, clase };
   }
+
   function isSelected(vuelo, clase) {
     const s = currentView === 'outbound' ? selectedOutbound : selectedReturn;
     return s.flight?.id === vuelo.id && s.clase?.id === clase.id;
   }
+
   function viewDetails(vuelo) { detailFlight = vuelo; showDetailModal = true; }
   function closeModal()       { showDetailModal = false; detailFlight = null; }
 
@@ -150,7 +179,25 @@
     if (!min) return '';
     return `${Math.floor(min/60)}h ${min%60}m`;
   }
+
   function formatHora(h) { return h ? h.substring(0,5) : ''; }
+
+  function getPrecioClase(vuelo, claseId) {
+    if (claseId === 1) return vuelo.precioTurista;
+    if (claseId === 2) return vuelo.precioEjecutiva;
+    return null;
+  }
+
+  function getBoletosDisponiblesClase(vuelo, claseId) {
+    if (claseId === 1) return vuelo.boletosDisponiblesTurista || 0;
+    if (claseId === 2) return vuelo.boletosDisponiblesEjecutiva || 0;
+    return 0;
+  }
+
+  function formatPrecio(precio) {
+    if (!precio) return 'No disponible';
+    return `$ ${precio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 </script>
 
 {#if showDetailModal && detailFlight}
@@ -212,7 +259,7 @@
             <button class="filters-panel__clear" on:click={limpiarFiltros}>Limpiar</button>
           </div>
           <div class="filter-group">
-            <label class="filter-group__label" for="precioMin">Rango de Precio</label>
+            <label class="filter-group__label" for="precioMin">Rango de Precio (USD)</label>
             <div class="filter-group__price-range">
               <input id="precioMin" type="number" class="filter-group__input" placeholder="Min" bind:value={precioMin} />
               <span>-</span>
@@ -222,7 +269,7 @@
           <div class="filter-group">
             <label class="filter-group__label" for="filtroClase">Clase</label>
             <div class="filter-group__select">
-              <select id="filtroClase" class="filter-group__select-element">
+              <select id="filtroClase" class="filter-group__select-element" bind:value={claseSeleccionada}>
                 <option value="">Todas</option>
                 {#each clases as c}
                   <option value={c.id}>{c.tipoDeClase}</option>
@@ -230,6 +277,7 @@
               </select>
             </div>
           </div>
+          <button class="filters-panel__apply" on:click={aplicarFiltros}>Aplicar Filtros</button>
         </div>
       </aside>
 
@@ -297,15 +345,26 @@
 
                   <div class="flight-card__class-selection">
                     {#each clases as clase}
+                      {@const precio = getPrecioClase(vuelo, clase.id)}
+                      {@const boletosDisp = getBoletosDisponiblesClase(vuelo, clase.id)}
+                      {@const disponible = precio !== null && precio > 0 && boletosDisp >= searchData.pasajeros}
+
                       <button
                         class="class-option"
                         class:class-option--selected={isSelected(vuelo, clase)}
-                        on:click={() => selectFlight(vuelo, clase)}
+                        class:class-option--disabled={!disponible}
+                        disabled={!disponible}
+                        on:click={() => disponible && selectFlight(vuelo, clase)}
                       >
                         <span class="class-option__name">{clase.tipoDeClase}</span>
-                        <span class="class-option__label">
-                          {estaSeleccionado && isSelected(vuelo, clase) ? 'Seleccionado ✓' : 'por persona'}
-                        </span>
+                        {#if disponible}
+                          <span class="class-option__price">{formatPrecio(precio)}</span>
+                          <span class="class-option__label">
+                            {estaSeleccionado && isSelected(vuelo, clase) ? 'Seleccionado ✓' : 'por persona'}
+                          </span>
+                        {:else}
+                          <span class="class-option__label class-option__label--unavailable">No disponible</span>
+                        {/if}
                       </button>
                     {/each}
                   </div>
@@ -330,3 +389,39 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .filters-panel__apply {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #c9a96e;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background-color 0.2s;
+  }
+
+  .filters-panel__apply:hover {
+    background-color: #b89860;
+  }
+
+  .class-option__price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #c9a96e;
+    margin: 0.25rem 0;
+  }
+
+  .class-option--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .class-option__label--unavailable {
+    color: #dc2626;
+    font-weight: 600;
+  }
+</style>

@@ -110,6 +110,9 @@ namespace Aerolinea.API.Repositories
 
                 using var readerBoletos = await cmdBoletos.ExecuteReaderAsync();
 
+                // Primero leer todos los boletos y guardar los IDs de pasajeros
+                var boletosTemp = new List<(BoletoDetalleDTO boleto, int? pasajeroId)>();
+
                 while (await readerBoletos.ReadAsync())
                 {
                     var boleto = new BoletoDetalleDTO
@@ -136,13 +139,24 @@ namespace Aerolinea.API.Repositories
                         AvionMarca = readerBoletos.GetString(19)
                     };
 
-                    // Obtener datos del pasajero si existe
+                    int? pasajeroId = null;
                     if (!readerBoletos.IsDBNull(20))
                     {
-                        int pasajeroId = readerBoletos.GetInt32(20);
-                        boleto.Pasajero = await ObtenerDatosPasajero(pasajeroId, connection);
+                        pasajeroId = readerBoletos.GetInt32(20);
                     }
 
+                    boletosTemp.Add((boleto, pasajeroId));
+                }
+
+                readerBoletos.Close();
+
+                // Ahora obtener los datos de los pasajeros
+                foreach (var (boleto, pasajeroId) in boletosTemp)
+                {
+                    if (pasajeroId.HasValue)
+                    {
+                        boleto.Pasajero = await ObtenerDatosPasajero(pasajeroId.Value, connection);
+                    }
                     reservacion.Boletos.Add(boleto);
                 }
             }
@@ -202,7 +216,7 @@ namespace Aerolinea.API.Repositories
 
             reader.Close();
 
-            // Obtener boletos
+            // Obtener boletos (reutilizamos la misma lógica)
             string queryBoletos = @"
                 SELECT 
                     b.ID AS BoletoID,
@@ -244,6 +258,8 @@ namespace Aerolinea.API.Repositories
 
             using var readerBoletos = await cmdBoletos.ExecuteReaderAsync();
 
+            var boletosTemp = new List<(BoletoDetalleDTO boleto, int? pasajeroId)>();
+
             while (await readerBoletos.ReadAsync())
             {
                 var boleto = new BoletoDetalleDTO
@@ -270,12 +286,24 @@ namespace Aerolinea.API.Repositories
                     AvionMarca = readerBoletos.GetString(19)
                 };
 
+                int? pasajeroId = null;
                 if (!readerBoletos.IsDBNull(20))
                 {
-                    int pasajeroId = readerBoletos.GetInt32(20);
-                    boleto.Pasajero = await ObtenerDatosPasajero(pasajeroId, connection);
+                    pasajeroId = readerBoletos.GetInt32(20);
                 }
 
+                boletosTemp.Add((boleto, pasajeroId));
+            }
+
+            readerBoletos.Close();
+
+            // Ahora obtener los datos de los pasajeros
+            foreach (var (boleto, pasajeroId) in boletosTemp)
+            {
+                if (pasajeroId.HasValue)
+                {
+                    boleto.Pasajero = await ObtenerDatosPasajero(pasajeroId.Value, connection);
+                }
                 reservacion.Boletos.Add(boleto);
             }
 
@@ -357,7 +385,7 @@ namespace Aerolinea.API.Repositories
 
                 // 3. Verificar que todos los vuelos son al menos 24 horas después
                 string queryVuelos = @"
-                    SELECT MIN(DATEDIFF(HOUR, GETDATE(), CAST(CONCAT(v.Fecha, ' ', v.HoraSalida) AS DATETIME))) AS HorasHastaVuelo
+                    SELECT MIN(DATEDIFF(HOUR, GETDATE(), DATEADD(HOUR, DATEPART(HOUR, v.HoraSalida), DATEADD(MINUTE, DATEPART(MINUTE, v.HoraSalida), CAST(v.Fecha AS DATETIME))))) AS HorasHastaVuelo
                     FROM Boleto b
                     INNER JOIN Vuelo v ON b.VueloID = v.ID
                     WHERE b.ReservacionID = @reservacionId";

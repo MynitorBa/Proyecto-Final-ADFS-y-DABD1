@@ -40,10 +40,19 @@
     return `${horas}h ${minutos}m`;
   }
 
-  $: precioTurista   = flight.precio ?? 0;
-  $: precioEjecutiva = flight.precioEjecutiva ?? Math.round(precioTurista * 2.5);
+  function formatPrecio(precio) {
+    if (!precio) return 'No disponible';
+    return precio.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  $: precioTurista   = flight.precioTurista ?? 0;
+  $: precioEjecutiva = flight.precioEjecutiva ?? 0;
   $: precioMostrado  = selectedClass === 'economico' ? precioTurista : precioEjecutiva;
-  $: asientos        = flight.boletosDisponibles ?? 0;
+  $: asientosTurista = flight.boletosDisponiblesTurista ?? 0;
+  $: asientosEjecutiva = flight.boletosDisponiblesEjecutiva ?? 0;
+  $: asientosMostrados = selectedClass === 'economico' ? asientosTurista : asientosEjecutiva;
+  $: turistaDisponible = precioTurista > 0 && asientosTurista > 0;
+  $: ejecutivaDisponible = precioEjecutiva > 0 && asientosEjecutiva > 0;
 
   function handleBackdropClick(e) {
     if (e.target === e.currentTarget) onClose();
@@ -117,7 +126,7 @@
             </div>
             <div class="dv-spec">
               <div class="dv-spec-label">Asientos disponibles</div>
-              <div class="dv-spec-value dv-spec-value--gold">{asientos}</div>
+              <div class="dv-spec-value dv-spec-value--gold">{flight.boletosDisponibles ?? 0}</div>
             </div>
             <div class="dv-spec">
               <div class="dv-spec-label">Tipo de vuelo</div>
@@ -131,18 +140,24 @@
             <button
               class="dv-clase"
               class:dv-clase--selected={selectedClass === 'economico'}
-              on:click={() => selectedClass = 'economico'}
+              class:dv-clase--disabled={!turistaDisponible}
+              disabled={!turistaDisponible}
+              on:click={() => turistaDisponible && (selectedClass = 'economico')}
             >
-              {#if selectedClass === 'economico'}
+              {#if selectedClass === 'economico' && turistaDisponible}
                 <div class="dv-clase-badge">✓ Seleccionada</div>
               {/if}
               <div class="dv-clase-name">Clase Turista</div>
-              <div class="dv-clase-avail">{asientos} asientos disponibles</div>
-              <div class="dv-clase-price">
-                <span class="dv-clase-desde">Desde</span>
-                <span class="dv-clase-amount">${precioTurista.toLocaleString('es-GT')}</span>
-                <span class="dv-clase-pp">/ persona</span>
-              </div>
+              {#if turistaDisponible}
+                <div class="dv-clase-avail">{asientosTurista} asientos disponibles</div>
+                <div class="dv-clase-price">
+                  <span class="dv-clase-desde">Desde</span>
+                  <span class="dv-clase-amount">$ {formatPrecio(precioTurista)}</span>
+                  <span class="dv-clase-pp">/ persona</span>
+                </div>
+              {:else}
+                <div class="dv-clase-unavailable">No disponible</div>
+              {/if}
               <ul class="dv-amenities">
                 {#each amenidades.economico as a}<li>{a}</li>{/each}
               </ul>
@@ -151,19 +166,25 @@
             <button
               class="dv-clase dv-clase--premium"
               class:dv-clase--selected={selectedClass === 'ejecutivo'}
-              on:click={() => selectedClass = 'ejecutivo'}
+              class:dv-clase--disabled={!ejecutivaDisponible}
+              disabled={!ejecutivaDisponible}
+              on:click={() => ejecutivaDisponible && (selectedClass = 'ejecutivo')}
             >
-              {#if selectedClass === 'ejecutivo'}
+              {#if selectedClass === 'ejecutivo' && ejecutivaDisponible}
                 <div class="dv-clase-badge">✓ Seleccionada</div>
               {/if}
               <div class="dv-clase-ribbon">Premium</div>
               <div class="dv-clase-name">Clase Ejecutiva</div>
-              <div class="dv-clase-avail">Asientos disponibles</div>
-              <div class="dv-clase-price">
-                <span class="dv-clase-desde">Desde</span>
-                <span class="dv-clase-amount">${precioEjecutiva.toLocaleString('es-GT')}</span>
-                <span class="dv-clase-pp">/ persona</span>
-              </div>
+              {#if ejecutivaDisponible}
+                <div class="dv-clase-avail">{asientosEjecutiva} asientos disponibles</div>
+                <div class="dv-clase-price">
+                  <span class="dv-clase-desde">Desde</span>
+                  <span class="dv-clase-amount">$ {formatPrecio(precioEjecutiva)}</span>
+                  <span class="dv-clase-pp">/ persona</span>
+                </div>
+              {:else}
+                <div class="dv-clase-unavailable">No disponible</div>
+              {/if}
               <ul class="dv-amenities">
                 {#each amenidades.ejecutivo as a}<li>{a}</li>{/each}
               </ul>
@@ -188,10 +209,20 @@
               <span>{selectedClass === 'economico' ? 'Turista' : 'Ejecutiva'}</span>
             </div>
             <div class="dv-summary-divider"></div>
-            <div class="dv-summary-row">
-              <span>Precio / persona</span>
-              <span class="dv-summary-price">${precioMostrado.toLocaleString('es-GT')}</span>
-            </div>
+            {#if precioMostrado > 0}
+              <div class="dv-summary-row">
+                <span>Precio / persona</span>
+                <span class="dv-summary-price">$ {formatPrecio(precioMostrado)}</span>
+              </div>
+              <div class="dv-summary-row">
+                <span>Asientos disponibles</span>
+                <span class="dv-summary-seats">{asientosMostrados}</span>
+              </div>
+            {:else}
+              <div class="dv-summary-row">
+                <span class="dv-summary-unavailable">Clase no disponible</span>
+              </div>
+            {/if}
             <div class="dv-summary-note">Precio referencial · sujeto a cambios</div>
             <div class="dv-summary-disclaimer">Vista informativa. Para reservar, selecciona el vuelo en la lista principal.</div>
           </div>
@@ -202,3 +233,29 @@
 
   </div>
 </div>
+
+<style>
+  .dv-clase--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .dv-clase-unavailable {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 1rem 0;
+  }
+
+  .dv-summary-seats {
+    color: #c9a96e;
+    font-weight: 700;
+  }
+
+  .dv-summary-unavailable {
+    color: #dc2626;
+    font-weight: 600;
+    text-align: center;
+  }
+</style>
