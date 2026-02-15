@@ -83,6 +83,7 @@ namespace Aerolinea.API.Repositories
                         v.HoraSalida,
                         v.HoraLlegada,
                         r.DuracionEstimada,
+                        r.ID AS RutaID,
                         ao.Codigo AS OrigenCodigo,
                         ao.Nombre AS OrigenNombre,
                         co.Nombre AS OrigenCiudad,
@@ -129,20 +130,21 @@ namespace Aerolinea.API.Repositories
                         HoraSalida = readerBoletos.GetTimeSpan(9),
                         HoraLlegada = readerBoletos.GetTimeSpan(10),
                         DuracionMinutos = readerBoletos.GetInt32(11),
-                        OrigenCodigo = readerBoletos.GetString(12),
-                        OrigenNombre = readerBoletos.GetString(13),
-                        OrigenCiudad = readerBoletos.GetString(14),
-                        DestinoCodigo = readerBoletos.GetString(15),
-                        DestinoNombre = readerBoletos.GetString(16),
-                        DestinoCiudad = readerBoletos.GetString(17),
-                        AvionModelo = readerBoletos.GetString(18),
-                        AvionMarca = readerBoletos.GetString(19)
+                        RutaId = readerBoletos.GetInt32(12),
+                        OrigenCodigo = readerBoletos.GetString(13),
+                        OrigenNombre = readerBoletos.GetString(14),
+                        OrigenCiudad = readerBoletos.GetString(15),
+                        DestinoCodigo = readerBoletos.GetString(16),
+                        DestinoNombre = readerBoletos.GetString(17),
+                        DestinoCiudad = readerBoletos.GetString(18),
+                        AvionModelo = readerBoletos.GetString(19),
+                        AvionMarca = readerBoletos.GetString(20)
                     };
 
                     int? pasajeroId = null;
-                    if (!readerBoletos.IsDBNull(20))
+                    if (!readerBoletos.IsDBNull(21))
                     {
-                        pasajeroId = readerBoletos.GetInt32(20);
+                        pasajeroId = readerBoletos.GetInt32(21);
                     }
 
                     boletosTemp.Add((boleto, pasajeroId));
@@ -231,6 +233,7 @@ namespace Aerolinea.API.Repositories
                     v.HoraSalida,
                     v.HoraLlegada,
                     r.DuracionEstimada,
+                    r.ID AS RutaID,
                     ao.Codigo AS OrigenCodigo,
                     ao.Nombre AS OrigenNombre,
                     co.Nombre AS OrigenCiudad,
@@ -276,20 +279,21 @@ namespace Aerolinea.API.Repositories
                     HoraSalida = readerBoletos.GetTimeSpan(9),
                     HoraLlegada = readerBoletos.GetTimeSpan(10),
                     DuracionMinutos = readerBoletos.GetInt32(11),
-                    OrigenCodigo = readerBoletos.GetString(12),
-                    OrigenNombre = readerBoletos.GetString(13),
-                    OrigenCiudad = readerBoletos.GetString(14),
-                    DestinoCodigo = readerBoletos.GetString(15),
-                    DestinoNombre = readerBoletos.GetString(16),
-                    DestinoCiudad = readerBoletos.GetString(17),
-                    AvionModelo = readerBoletos.GetString(18),
-                    AvionMarca = readerBoletos.GetString(19)
+                    RutaId = readerBoletos.GetInt32(12),
+                    OrigenCodigo = readerBoletos.GetString(13),
+                    OrigenNombre = readerBoletos.GetString(14),
+                    OrigenCiudad = readerBoletos.GetString(15),
+                    DestinoCodigo = readerBoletos.GetString(16),
+                    DestinoNombre = readerBoletos.GetString(17),
+                    DestinoCiudad = readerBoletos.GetString(18),
+                    AvionModelo = readerBoletos.GetString(19),
+                    AvionMarca = readerBoletos.GetString(20)
                 };
 
                 int? pasajeroId = null;
-                if (!readerBoletos.IsDBNull(20))
+                if (!readerBoletos.IsDBNull(21))
                 {
-                    pasajeroId = readerBoletos.GetInt32(20);
+                    pasajeroId = readerBoletos.GetInt32(21);
                 }
 
                 boletosTemp.Add((boleto, pasajeroId));

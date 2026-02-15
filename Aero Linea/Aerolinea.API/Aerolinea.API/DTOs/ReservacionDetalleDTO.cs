@@ -37,6 +37,7 @@
         public int DuracionMinutos { get; set; }
 
         // Información de la ruta
+        public int RutaId { get; set; }
         public string OrigenCodigo { get; set; }
         public string OrigenNombre { get; set; }
         public string OrigenCiudad { get; set; }
