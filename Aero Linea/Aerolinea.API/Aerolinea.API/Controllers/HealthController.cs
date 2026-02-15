@@ -8,7 +8,7 @@ namespace Aerolinea.API.Controllers
     {
         [HttpGet]
         public IActionResult Get()
-        {
+        { 
             return Ok(new
             {
                 status = "OK",
