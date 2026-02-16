@@ -25,7 +25,7 @@
     error = null;
     
     try {
-      const response = await fetch(`https://localhost:7107/api/mis-reservaciones/usuario/${usuarioId}`);
+      const response = await fetch(`http://localhost:5190/api/mis-reservaciones/usuario/${usuarioId}`);
       
       if (!response.ok) {
         throw new Error('Error al cargar las reservaciones');
@@ -73,9 +73,12 @@
     submitting = true;
     
     try {
+      // Guardar las reservaciones ANTES de confirmarlas para tener toda la info
+      const reservacionesParaConfirmacion = JSON.parse(JSON.stringify(reservacionesPendientes));
+      
       // Confirmar cada reservación pendiente
       const promises = reservacionesPendientes.map(reserva => 
-        fetch(`https://localhost:7107/api/reservaciones/${reserva.reservacionId}/confirmar`, {
+        fetch(`http://localhost:5190/api/reservaciones/${reserva.reservacionId}/confirmar`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         })
@@ -88,13 +91,17 @@
       
       if (allSuccess) {
         // Navegar a confirmación con los datos de las reservaciones confirmadas
+        // Usamos las reservaciones que guardamos ANTES de confirmar
         navigateTo('confirmacion', { 
-          reservaciones: reservacionesPendientes 
+          reservaciones: reservacionesParaConfirmacion
         });
+      } else {
+        alert('Hubo un error al confirmar algunas reservaciones. Por favor intenta de nuevo.');
       }
       
     } catch (err) {
       console.error('Error al confirmar reservaciones:', err);
+      alert('Error al procesar el pago. Por favor intenta de nuevo.');
     } finally {
       submitting = false;
     }
@@ -163,7 +170,7 @@
     <div class="checkout__content">
       <div class="checkout__main">
         <section class="checkout-section">
-          <h2 class="checkout-section__title">Informacion de facturacion</h2>
+          <h2 class="checkout-section__title">Información de facturación</h2>
           
           <form class="billing-form">
             <div class="billing-form__row">
@@ -206,7 +213,7 @@
               </div>
 
               <div class="form-field">
-                <label for="telefono" class="form-field__label">Telefono</label>
+                <label for="telefono" class="form-field__label">Teléfono</label>
                 <input 
                   type="tel" 
                   id="telefono"
@@ -220,7 +227,7 @@
 
             <div class="billing-form__row">
               <div class="form-field">
-                <label for="pais" class="form-field__label">Pais</label>
+                <label for="pais" class="form-field__label">País</label>
                 <input 
                   type="text" 
                   id="pais"
@@ -246,13 +253,13 @@
 
             <div class="billing-form__row">
               <div class="form-field form-field--full">
-                <label for="direccion" class="form-field__label">Direccion</label>
+                <label for="direccion" class="form-field__label">Dirección</label>
                 <input 
                   type="text" 
                   id="direccion"
                   class="form-field__input"
                   bind:value={billingInfo.direccion}
-                  placeholder="Calle, numero, zona"
+                  placeholder="Calle, número, zona"
                   required
                 />
               </div>
@@ -260,7 +267,7 @@
 
             <div class="billing-form__row">
               <div class="form-field">
-                <label for="codigoPostal" class="form-field__label">Codigo Postal</label>
+                <label for="codigoPostal" class="form-field__label">Código Postal</label>
                 <input 
                   type="text" 
                   id="codigoPostal"
@@ -275,7 +282,7 @@
         </section>
 
         <section class="checkout-section">
-          <h2 class="checkout-section__title">Metodo de pago</h2>
+          <h2 class="checkout-section__title">Método de pago</h2>
           
           <div class="payment-methods">
             <label class="payment-method">
@@ -287,7 +294,7 @@
                 class="payment-method__radio"
               />
               <div class="payment-method__content">
-                <span class="payment-method__name">Tarjeta de credito/debito</span>
+                <span class="payment-method__name">Tarjeta de crédito/débito</span>
                 <div class="payment-method__icons">
                   <span class="payment-icon">VISA</span>
                   <span class="payment-icon">MC</span>
@@ -326,7 +333,7 @@
           {#if paymentMethod === 'tarjeta'}
             <form class="card-form">
               <div class="form-field form-field--full">
-                <label for="cardNumber" class="form-field__label">Numero de tarjeta</label>
+                <label for="cardNumber" class="form-field__label">Número de tarjeta</label>
                 <input 
                   type="text" 
                   id="cardNumber"
@@ -352,7 +359,7 @@
 
               <div class="card-form__row">
                 <div class="form-field">
-                  <label for="cardExpiry" class="form-field__label">Fecha de expiracion</label>
+                  <label for="cardExpiry" class="form-field__label">Fecha de expiración</label>
                   <input 
                     type="text" 
                     id="cardExpiry"
@@ -381,13 +388,13 @@
           {:else if paymentMethod === 'paypal'}
             <div class="payment-info">
               <p class="payment-info__text">
-                Seras redirigido a PayPal para completar tu pago de forma segura.
+                Serás redirigido a PayPal para completar tu pago de forma segura.
               </p>
             </div>
           {:else if paymentMethod === 'transferencia'}
             <div class="payment-info">
               <p class="payment-info__text">
-                Recibiras las instrucciones de transferencia por correo electronico despues de confirmar tu pedido.
+                Recibirás las instrucciones de transferencia por correo electrónico después de confirmar tu pedido.
               </p>
             </div>
           {/if}
@@ -459,7 +466,7 @@
 
             <div class="order-summary__security">
               <p class="security-badge">Pago 100% seguro</p>
-              <p class="security-note">Tus datos estan protegidos con encriptacion SSL</p>
+              <p class="security-note">Tus datos están protegidos con encriptación SSL</p>
             </div>
           </div>
         {/if}

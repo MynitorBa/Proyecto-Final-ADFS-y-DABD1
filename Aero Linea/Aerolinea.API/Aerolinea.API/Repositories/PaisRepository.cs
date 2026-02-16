@@ -13,18 +13,17 @@ namespace Aerolinea.API.Repositories
         }
 
         // Busca o crea el país y devuelve su Id
-        public async Task<int> ObtenerOCrearId(string nombre, SqlConnection connection)
+        public async Task<int> ObtenerOCrearId(string nombre, SqlConnection connection, SqlTransaction transaction = null)
         {
             // Buscar si ya existe
-            using var selectCmd = new SqlCommand("SELECT ID FROM Pais WHERE Nombre = @Nombre", connection);
+            using var selectCmd = new SqlCommand("SELECT ID FROM Pais WHERE Nombre = @Nombre", connection, transaction);
             selectCmd.Parameters.AddWithValue("@Nombre", nombre);
             var result = await selectCmd.ExecuteScalarAsync();
-
             if (result != null) return (int)result;
 
             // Si no existe, crearlo
             using var insertCmd = new SqlCommand(
-                "INSERT INTO Pais (Nombre) OUTPUT INSERTED.ID VALUES (@Nombre)", connection);
+                "INSERT INTO Pais (Nombre) OUTPUT INSERTED.ID VALUES (@Nombre)", connection, transaction);
             insertCmd.Parameters.AddWithValue("@Nombre", nombre);
             return (int)await insertCmd.ExecuteScalarAsync();
         }

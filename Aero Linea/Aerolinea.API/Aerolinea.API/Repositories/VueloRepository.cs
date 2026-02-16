@@ -114,7 +114,7 @@ namespace Aerolinea.API.Repositories
 
             while (await reader.ReadAsync())
             {
-                vuelos.Add(new VueloDetalleDTO
+                var vuelo = new VueloDetalleDTO
                 {
                     Id = reader.GetInt32(0),
                     NumeroVuelo = reader.GetString(1),
@@ -156,10 +156,59 @@ namespace Aerolinea.API.Repositories
                     PrecioEjecutiva = reader.IsDBNull(25) ? null : reader.GetDecimal(25),
                     BoletosDisponiblesTurista = reader.IsDBNull(26) ? null : reader.GetInt32(26),
                     BoletosDisponiblesEjecutiva = reader.IsDBNull(27) ? null : reader.GetInt32(27)
-                });
+                };
+
+                vuelos.Add(vuelo);
+            }
+
+            // Cerrar el reader antes de obtener tripulantes
+            reader.Close();
+
+            // Obtener tripulantes para cada vuelo
+            foreach (var vuelo in vuelos)
+            {
+                vuelo.Tripulantes = await ObtenerTripulantesPorVuelo(connection, vuelo.Id);
             }
 
             return vuelos;
+        }
+
+        private async Task<List<TripulanteDTO>> ObtenerTripulantesPorVuelo(SqlConnection connection, int vueloId)
+        {
+            var tripulantes = new List<TripulanteDTO>();
+
+            string query = @"
+                SELECT 
+                    mt.ID,
+                    mt.Nombre,
+                    mt.Apellido,
+                    mt.RolID,
+                    rt.Cargo AS NombreRol
+                FROM EquipoPivote ep
+                INNER JOIN MiembroTripulacion mt ON ep.MiembroTripulacionID = mt.ID
+                INNER JOIN RolTripulacion rt ON mt.RolID = rt.ID
+                WHERE ep.VueloID = @vueloId
+                ORDER BY rt.Cargo, mt.Nombre";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@vueloId", vueloId);
+
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                tripulantes.Add(new TripulanteDTO
+                {
+                    Id = reader.GetInt32(0),
+                    Nombre = reader.GetString(1),
+                    Apellido = reader.GetString(2),
+                    RolID = reader.GetInt32(3),
+                    NombreRol = reader.GetString(4),
+                    NombreCompleto = $"{reader.GetString(1)} {reader.GetString(2)}"
+                });
+            }
+
+            return tripulantes;
         }
     }
 }
