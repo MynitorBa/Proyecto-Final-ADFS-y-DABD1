@@ -2,6 +2,7 @@
   import '../styles/confirmacion.css';
   import { onMount } from 'svelte';
   export let navigateTo;
+  export let reservaciones = [];
 
   onMount(() => {
     const isLoggedIn = !!sessionStorage.getItem('usuarioId');
@@ -9,21 +10,79 @@
       navigateTo('acceso-denegado');
       return;
     }
+
+    // Si no hay reservaciones, redirigir
+    if (!reservaciones || reservaciones.length === 0) {
+      navigateTo('home');
+    }
   });
 
-  const reservationCode = 'VGT-2026-A7B9C2';
-  
-  const flight = {
-    route: 'Ciudad de Guatemala → Paris',
-    departureDate: '15 de Febrero, 2026',
-    departureTime: '08:30 AM',
-    arrivalDate: '16 de Febrero, 2026',
-    arrivalTime: '10:45 AM',
-    flightNumber: 'AF 1234',
-    passengers: 2,
-    class: 'Económica',
-    totalPaid: '$7,448'
-  };
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }
+
+  function formatTime(timeSpan) {
+    if (!timeSpan) return '';
+    const parts = timeSpan.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+
+  function agruparVuelosPorRuta(boletos) {
+    if (!boletos || boletos.length === 0) return [];
+    
+    const vuelos = {};
+    
+    boletos.forEach(boleto => {
+      const key = `${boleto.vueloId}-${boleto.origenCodigo}-${boleto.destinoCodigo}`;
+      
+      if (!vuelos[key]) {
+        vuelos[key] = {
+          vueloId: boleto.vueloId,
+          numeroVuelo: boleto.numeroVuelo,
+          origen: boleto.origenCiudad,
+          origenCodigo: boleto.origenCodigo,
+          destino: boleto.destinoCiudad,
+          destinoCodigo: boleto.destinoCodigo,
+          fecha: boleto.fechaVuelo,
+          horaSalida: boleto.horaSalida,
+          horaLlegada: boleto.horaLlegada,
+          duracion: boleto.duracionMinutos,
+          clase: boleto.clase,
+          cantidadPasajeros: 0
+        };
+      }
+      
+      vuelos[key].cantidadPasajeros++;
+    });
+    
+    return Object.values(vuelos);
+  }
+
+  function obtenerPasajerosUnicos(boletos) {
+    if (!boletos || boletos.length === 0) return [];
+    
+    const pasajerosMap = new Map();
+    
+    boletos.forEach(boleto => {
+      if (boleto.pasajero && boleto.pasajero.id) {
+        if (!pasajerosMap.has(boleto.pasajero.id)) {
+          pasajerosMap.set(boleto.pasajero.id, boleto.pasajero);
+        }
+      }
+    });
+    
+    return Array.from(pasajerosMap.values());
+  }
+
+  function handleDownloadPDF() {
+    console.log('Descargando PDF...');
+  }
 
   const hotels = [
     {
@@ -52,13 +111,11 @@
     },
   ];
 
-  function handleDownloadPDF() {
-    console.log('Descargando PDF...');
-  }
-
   function handleHotelClick(hotelName) {
     console.log('Hotel seleccionado:', hotelName);
   }
+
+  $: totalGeneral = reservaciones.reduce((sum, r) => sum + r.total, 0);
 </script>
 
 <div class="confirmacion">
@@ -70,79 +127,123 @@
           <path d="M25 40L35 50L55 30" stroke="#8B6B4A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <h1 class="confirmacion__title">¡Reserva confirmada!</h1>
+      <h1 class="confirmacion__title">¡Reserva{reservaciones.length > 1 ? 's' : ''} confirmada{reservaciones.length > 1 ? 's' : ''}!</h1>
       <p class="confirmacion__subtitle">
-        Tu vuelo ha sido reservado exitosamente. Hemos enviado los detalles a tu correo electrónico.
+        Tu{reservaciones.length > 1 ? 's' : ''} vuelo{reservaciones.length > 1 ? 's han' : ' ha'} sido reservado{reservaciones.length > 1 ? 's' : ''} exitosamente. Hemos enviado los detalles a tu correo electrónico.
       </p>
-      <div class="confirmacion__code">
-        <span class="confirmacion__code-label">Código de reservación</span>
-        <span class="confirmacion__code-value">{reservationCode}</span>
+      <div class="confirmacion__codes">
+        {#each reservaciones as reserva}
+          <div class="confirmacion__code">
+            <span class="confirmacion__code-label">Código de reservación</span>
+            <span class="confirmacion__code-value">{reserva.noReservacion}</span>
+          </div>
+        {/each}
       </div>
     </div>
 
     <div class="confirmacion__content">
-      <section class="confirmacion__flight-summary">
-        <h2 class="confirmacion__section-title">Resumen de tu vuelo</h2>
+      {#each reservaciones as reserva, index}
+        {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
+        {@const pasajeros = obtenerPasajerosUnicos(reserva.boletos)}
         
-        <div class="flight-summary-card">
-          <div class="flight-summary-card__header">
-            <div class="flight-summary-card__route">
-              <span class="flight-summary-card__airport">GUA</span>
-              <div class="flight-summary-card__arrow">
-                <svg width="40" height="20" viewBox="0 0 40 20">
-                  <path d="M0 10 L35 10 M25 3 L35 10 L25 17" stroke="#1C1A18" stroke-width="2" fill="none"/>
-                </svg>
+        <section class="confirmacion__flight-summary">
+          <h2 class="confirmacion__section-title">
+            Resumen de Reservación {index + 1}
+            {#if reservaciones.length > 1}
+              <span class="section-subtitle">({reserva.noReservacion})</span>
+            {/if}
+          </h2>
+          
+          {#each vuelos as vuelo}
+            <div class="flight-summary-card">
+              <div class="flight-summary-card__header">
+                <div class="flight-summary-card__route">
+                  <span class="flight-summary-card__airport">{vuelo.origenCodigo}</span>
+                  <div class="flight-summary-card__arrow">
+                    <svg width="40" height="20" viewBox="0 0 40 20">
+                      <path d="M0 10 L35 10 M25 3 L35 10 L25 17" stroke="#1C1A18" stroke-width="2" fill="none"/>
+                    </svg>
+                  </div>
+                  <span class="flight-summary-card__airport">{vuelo.destinoCodigo}</span>
+                </div>
+                <span class="flight-summary-card__flight-number">{vuelo.numeroVuelo}</span>
               </div>
-              <span class="flight-summary-card__airport">CDG</span>
-            </div>
-            <span class="flight-summary-card__flight-number">{flight.flightNumber}</span>
-          </div>
 
-          <div class="flight-summary-card__details">
-            <div class="flight-detail">
-              <span class="flight-detail__label">Ruta</span>
-              <span class="flight-detail__value">{flight.route}</span>
+              <div class="flight-summary-card__details">
+                <div class="flight-detail">
+                  <span class="flight-detail__label">Ruta</span>
+                  <span class="flight-detail__value">
+                    {vuelo.origen} → {vuelo.destino}
+                  </span>
+                </div>
+                
+                <div class="flight-detail">
+                  <span class="flight-detail__label">Fecha</span>
+                  <span class="flight-detail__value">{formatDate(vuelo.fecha)}</span>
+                </div>
+                
+                <div class="flight-detail">
+                  <span class="flight-detail__label">Salida</span>
+                  <span class="flight-detail__time">{formatTime(vuelo.horaSalida)}</span>
+                </div>
+                
+                <div class="flight-detail">
+                  <span class="flight-detail__label">Llegada</span>
+                  <span class="flight-detail__time">{formatTime(vuelo.horaLlegada)}</span>
+                </div>
+                
+                <div class="flight-detail">
+                  <span class="flight-detail__label">Pasajeros</span>
+                  <span class="flight-detail__value">
+                    {vuelo.cantidadPasajeros} pasajero{vuelo.cantidadPasajeros > 1 ? 's' : ''}
+                  </span>
+                </div>
+                
+                <div class="flight-detail">
+                  <span class="flight-detail__label">Clase</span>
+                  <span class="flight-detail__value">{vuelo.clase}</span>
+                </div>
+              </div>
             </div>
-            
-            <div class="flight-detail">
-              <span class="flight-detail__label">Salida</span>
-              <span class="flight-detail__value">{flight.departureDate}</span>
-              <span class="flight-detail__time">{flight.departureTime}</span>
+          {/each}
+
+          {#if pasajeros.length > 0}
+            <div class="passengers-summary">
+              <h3 class="passengers-summary__title">Pasajeros</h3>
+              <ul class="passengers-list">
+                {#each pasajeros as pasajero}
+                  <li class="passenger-item">
+                    <span class="passenger-name">{pasajero.nombre} {pasajero.apellido}</span>
+                    <span class="passenger-passport">Pasaporte: {pasajero.pasaporte}</span>
+                  </li>
+                {/each}
+              </ul>
             </div>
-            
-            <div class="flight-detail">
-              <span class="flight-detail__label">Llegada</span>
-              <span class="flight-detail__value">{flight.arrivalDate}</span>
-              <span class="flight-detail__time">{flight.arrivalTime}</span>
-            </div>
-            
-            <div class="flight-detail">
-              <span class="flight-detail__label">Pasajeros</span>
-              <span class="flight-detail__value">{flight.passengers} pasajero{flight.passengers > 1 ? 's' : ''}</span>
-            </div>
-            
-            <div class="flight-detail">
-              <span class="flight-detail__label">Clase</span>
-              <span class="flight-detail__value">{flight.class}</span>
-            </div>
-          </div>
+          {/if}
 
           <div class="flight-summary-card__footer">
             <span class="flight-summary-card__total-label">Total pagado</span>
-            <span class="flight-summary-card__total-value">{flight.totalPaid}</span>
+            <span class="flight-summary-card__total-value">${reserva.total.toFixed(2)}</span>
           </div>
+        </section>
+      {/each}
+
+      {#if reservaciones.length > 1}
+        <div class="total-general">
+          <span class="total-general__label">Total General</span>
+          <span class="total-general__value">${totalGeneral.toFixed(2)}</span>
         </div>
-      </section>
+      {/if}
 
       <div class="confirmacion__actions">
         <button class="confirmacion__btn confirmacion__btn--primary" on:click={handleDownloadPDF}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M6 9L10 13M10 13L14 9M10 13V3M3 17H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          Descargar boleto en PDF
+          Descargar boleto{reservaciones.length > 1 ? 's' : ''} en PDF
         </button>
         
-        <button class="confirmacion__btn confirmacion__btn--secondary" on:click={() => navigateTo('reservas')}>
+        <button class="confirmacion__btn confirmacion__btn--secondary" on:click={() => navigateTo('mis-reservas')}>
           Ver mis reservaciones
         </button>
         
@@ -154,7 +255,7 @@
 
     <section class="confirmacion__hotels">
       <div class="confirmacion__hotels-header">
-        <h2 class="confirmacion__section-title">Hoteles recomendados en Paris</h2>
+        <h2 class="confirmacion__section-title">Hoteles recomendados</h2>
         <p class="confirmacion__hotels-subtitle">
           Completa tu viaje reservando un hotel en tu destino
         </p>
@@ -197,3 +298,82 @@
     </section>
   </div>
 </div>
+
+<style>
+  .confirmacion__codes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .section-subtitle {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #666;
+    margin-left: 0.5rem;
+  }
+
+  .passengers-summary {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 0.5rem;
+  }
+
+  .passengers-summary__title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #333;
+  }
+
+  .passengers-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .passenger-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .passenger-item:last-child {
+    border-bottom: none;
+  }
+
+  .passenger-name {
+    font-weight: 500;
+    color: #333;
+  }
+
+  .passenger-passport {
+    font-size: 0.875rem;
+    color: #666;
+  }
+
+  .total-general {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background-color: #8B6B4A;
+    color: white;
+    border-radius: 0.5rem;
+    margin: 2rem 0;
+  }
+
+  .total-general__label {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .total-general__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+</style>
