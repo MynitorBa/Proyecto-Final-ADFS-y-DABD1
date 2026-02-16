@@ -17,6 +17,7 @@
   let loadingAviones = false;
   let loadingTripulantes = false;
   let loadingAeropuertos = false;
+  let loadingHistorialVuelos = false;
 
   // Variables para búsqueda
   let busquedaOrigen = '';
@@ -41,13 +42,16 @@
     { id: 2, nombre: 'Administrador' }
   ];
 
-  let rolesTripulacion = [
-    { id: 1, nombre: 'Piloto' },
-    { id: 2, nombre: 'Copiloto' },
-    { id: 3, nombre: 'Sobrecargo' },
-    { id: 4, nombre: 'Jefe de Cabina' },
-    { id: 5, nombre: 'Auxiliar de Vuelo' }
-  ];
+  let rolesTripulacion = [];
+  
+  // Variables para autocomplete de ciudad/país en formulario de aeropuerto
+  let todosLosPaises = [];
+  let paisQueryAeropuerto = '';
+  let paisesSugeridosAeropuerto = [];
+  let paisSeleccionadoAeropuerto = null;
+  let ciudadQueryAeropuerto = '';
+  let ciudadesSugeridasAeropuerto = [];
+  let ciudadSeleccionadaAeropuerto = false;
 
   // Objeto para nuevo vuelo
   let nuevoVuelo = {
@@ -88,63 +92,7 @@
     pais: ''
   };
 
-  const historialVuelos = [
-    {
-      id: 'VH-2026-001',
-      numeroVuelo: 'AF 1234',
-      ruta: 'Ciudad de Guatemala → Paris',
-      fecha: '2026-02-15',
-      horaSalida: '08:00',
-      horaLlegada: '18:30',
-      estado: 'activo',
-      asientosVendidos: 185,
-      asientosTotales: 240
-    },
-    {
-      id: 'VH-2026-002',
-      numeroVuelo: 'IB 9876',
-      ruta: 'Ciudad de Guatemala → Madrid',
-      fecha: '2026-03-10',
-      horaSalida: '14:00',
-      horaLlegada: '00:30',
-      estado: 'activo',
-      asientosVendidos: 142,
-      asientosTotales: 255
-    },
-    {
-      id: 'VH-2025-087',
-      numeroVuelo: 'LA 7890',
-      ruta: 'Ciudad de Guatemala → Lima',
-      fecha: '2025-12-15',
-      horaSalida: '06:00',
-      horaLlegada: '11:30',
-      estado: 'completado',
-      asientosVendidos: 170,
-      asientosTotales: 170
-    },
-    {
-      id: 'VH-2025-065',
-      numeroVuelo: 'AF 1234',
-      ruta: 'Ciudad de Guatemala → Paris',
-      fecha: '2025-11-20',
-      horaSalida: '08:00',
-      horaLlegada: '18:30',
-      estado: 'completado',
-      asientosVendidos: 240,
-      asientosTotales: 240
-    },
-    {
-      id: 'VH-2025-043',
-      numeroVuelo: 'CM 4521',
-      ruta: 'Ciudad de Guatemala → Panama',
-      fecha: '2025-10-05',
-      horaSalida: '09:00',
-      horaLlegada: '11:15',
-      estado: 'cancelado',
-      asientosVendidos: 0,
-      asientosTotales: 180
-    }
-  ];
+  let historialVuelos = [];
 
   onMount(async () => {
     const isAdmin = parseInt(sessionStorage.getItem('rolId')) === 2;
@@ -160,7 +108,10 @@
       cargarUsuarios(),
       cargarAviones(),
       cargarTripulantes(),
-      cargarAeropuertos()
+      cargarAeropuertos(),
+      cargarRolesTripulacion(),
+      cargarPaises(),
+      cargarHistorialVuelos()
     ]);
   }
 
@@ -237,6 +188,109 @@
     }
   }
 
+  async function cargarRolesTripulacion() {
+    try {
+      const response = await fetch('http://localhost:5190/api/tripulacion/roles');
+
+      if (response.ok) {
+        const roles = await response.json();
+        rolesTripulacion = roles.map(rol => ({
+          id: rol.id,
+          nombre: rol.cargo
+        }));
+      } else {
+        console.error('Error al cargar roles de tripulación');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  async function cargarPaises() {
+    try {
+      const response = await fetch('https://countriesnow.space/api/v0.1/countries');
+      const data = await response.json();
+      todosLosPaises = data.data;
+    } catch (error) {
+      console.error('Error cargando países:', error);
+    }
+  }
+
+  async function cargarHistorialVuelos() {
+    loadingHistorialVuelos = true;
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      const response = await fetch('http://localhost:5190/api/admin/vuelos/historial', {
+        headers: {
+          'X-RolId': rolId
+        }
+      });
+
+      if (response.ok) {
+        historialVuelos = await response.json();
+        console.log('Vuelos cargados:', historialVuelos);
+        console.log('Estados de los vuelos:', historialVuelos.map(v => ({ id: v.id, estado: v.estado })));
+      } else {
+        console.error('Error al cargar historial de vuelos');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      loadingHistorialVuelos = false;
+    }
+  }
+
+  // Funciones para autocompletado de país en aeropuertos
+  function onPaisAeropuertoInput() {
+    const q = paisQueryAeropuerto.toLowerCase();
+    paisesSugeridosAeropuerto = q.length < 2 ? [] : todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
+    
+    if (paisQueryAeropuerto && !paisSeleccionadoAeropuerto) {
+      aeropuertoForm.pais = '';
+    }
+  }
+
+  function seleccionarPaisAeropuerto(p) {
+    paisSeleccionadoAeropuerto = p;
+    paisQueryAeropuerto = p.country;
+    aeropuertoForm.pais = p.country;
+    paisesSugeridosAeropuerto = [];
+    ciudadQueryAeropuerto = '';
+    aeropuertoForm.ciudad = '';
+    ciudadesSugeridasAeropuerto = [];
+    ciudadSeleccionadaAeropuerto = false;
+  }
+
+  function validarPaisAeropuertoSeleccionado() {
+    if (paisQueryAeropuerto && !paisSeleccionadoAeropuerto) {
+      paisQueryAeropuerto = '';
+    }
+  }
+
+  // Funciones para autocompletado de ciudad en aeropuertos
+  function onCiudadAeropuertoInput() {
+    if (!paisSeleccionadoAeropuerto) return;
+    const q = ciudadQueryAeropuerto.toLowerCase();
+    ciudadesSugeridasAeropuerto = q.length < 2 ? [] : paisSeleccionadoAeropuerto.cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+    
+    if (ciudadQueryAeropuerto && !ciudadSeleccionadaAeropuerto) {
+      aeropuertoForm.ciudad = '';
+    }
+  }
+
+  function seleccionarCiudadAeropuerto(c) {
+    ciudadQueryAeropuerto = c;
+    aeropuertoForm.ciudad = c;
+    ciudadesSugeridasAeropuerto = [];
+    ciudadSeleccionadaAeropuerto = true;
+  }
+
+  function validarCiudadAeropuertoSeleccionada() {
+    if (ciudadQueryAeropuerto && !ciudadSeleccionadaAeropuerto) {
+      ciudadQueryAeropuerto = '';
+    }
+  }
+
   // Filtrar aeropuertos según búsqueda
   $: aeropuertosFiltradosOrigen = aeropuertos.filter(a => 
     a.nombre.toLowerCase().includes(busquedaOrigen.toLowerCase()) ||
@@ -298,15 +352,86 @@
     nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== tripulanteId);
   }
 
-  function handleCrearVuelo() {
-    const datosVuelo = {
-      ...nuevoVuelo,
-      tripulantes: nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
-    };
-    
-    console.log('Creando nuevo vuelo:', datosVuelo);
-    alert('Datos del vuelo listos para enviar (aún no se guarda en BD)');
-    limpiarFormulario();
+  async function handleCrearVuelo() {
+    // Validar que todos los campos obligatorios estén llenos
+    if (!nuevoVuelo.numeroVuelo) {
+      alert('Por favor ingresa el número de vuelo');
+      return;
+    }
+
+    if (!nuevoVuelo.aeropuertoOrigenId) {
+      alert('Por favor selecciona el aeropuerto de origen');
+      return;
+    }
+
+    if (!nuevoVuelo.aeropuertoDestinoId) {
+      alert('Por favor selecciona el aeropuerto de destino');
+      return;
+    }
+
+    if (!nuevoVuelo.avionId) {
+      alert('Por favor selecciona un avión');
+      return;
+    }
+
+    if (!nuevoVuelo.fecha) {
+      alert('Por favor selecciona la fecha del vuelo');
+      return;
+    }
+
+    if (!nuevoVuelo.horaSalida || !nuevoVuelo.horaLlegada) {
+      alert('Por favor ingresa las horas de salida y llegada');
+      return;
+    }
+
+    if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) {
+      alert('Por favor ingresa los precios');
+      return;
+    }
+
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      
+      const datosVuelo = {
+        numeroVuelo: nuevoVuelo.numeroVuelo,
+        aeropuertoOrigenId: parseInt(nuevoVuelo.aeropuertoOrigenId),
+        aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
+        avionId: parseInt(nuevoVuelo.avionId),
+        fecha: nuevoVuelo.fecha,
+        horaSalida: nuevoVuelo.horaSalida,
+        horaLlegada: nuevoVuelo.horaLlegada,
+        precioTurista: parseFloat(nuevoVuelo.precioTurista),
+        precioEjecutiva: parseFloat(nuevoVuelo.precioEjecutiva),
+        tripulantesIds: nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
+      };
+
+      const response = await fetch('http://localhost:5190/api/admin/vuelos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RolId': rolId
+        },
+        body: JSON.stringify(datosVuelo)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('¡Vuelo creado exitosamente!');
+        limpiarFormulario();
+        
+        // Recargar el historial de vuelos
+        await cargarHistorialVuelos();
+        
+        // Cambiar a la pestaña de historial
+        activeSection = 'historial';
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error al crear el vuelo');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al crear el vuelo');
+    }
   }
 
   function limpiarFormulario() {
@@ -344,8 +469,7 @@
       });
 
       if (response.ok) {
-        await cargarUsuarios();
-        alert('Rol actualizado correctamente');
+
       } else {
         const error = await response.json();
         alert(error.message || 'Error al cambiar el rol');
@@ -356,8 +480,33 @@
     }
   }
 
-  function handleCambiarEstadoVuelo(vueloId, nuevoEstado) {
-    console.log('Cambiando estado del vuelo:', vueloId, 'a', nuevoEstado);
+  async function handleCambiarEstadoVuelo(vueloId, nuevoEstado) {
+    if (!confirm('¿Estás seguro de que deseas cancelar este vuelo?')) {
+      return;
+    }
+
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      
+      const response = await fetch(`http://localhost:5190/api/admin/vuelos/${vueloId}/cancelar`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RolId': rolId
+        }
+      });
+
+      if (response.ok) {
+        alert('Vuelo cancelado exitosamente');
+        await cargarHistorialVuelos();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error al cancelar el vuelo');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al cancelar el vuelo');
+    }
   }
 
   // ===== FUNCIONES PARA AVIONES =====
@@ -394,17 +543,63 @@
     };
   }
 
-  function handleGuardarAvion() {
-    console.log(modoEdicion ? 'Editando avión:' : 'Creando avión:', avionForm);
-    alert(`Avión ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
-    cerrarFormularioAvion();
-    // Aquí irá el POST o PUT cuando tengas el backend
+  async function handleGuardarAvion() {
+    try {
+      if (modoEdicion) {
+        // Actualizar avión existente
+        const response = await fetch(`http://localhost:5190/api/aviones/${avionForm.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            marca: avionForm.marca,
+            modelo: avionForm.modelo,
+            capacidadPasajeros: parseInt(avionForm.capacidadPasajeros)
+          })
+        });
+
+        if (response.ok) {
+          alert('Avión actualizado correctamente');
+          await cargarAviones();
+          cerrarFormularioAvion();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al actualizar el avión');
+        }
+      } else {
+        // Crear nuevo avión
+        const response = await fetch('http://localhost:5190/api/aviones', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            marca: avionForm.marca,
+            modelo: avionForm.modelo,
+            capacidadPasajeros: parseInt(avionForm.capacidadPasajeros)
+          })
+        });
+
+        if (response.ok) {
+          alert('Avión creado correctamente');
+          await cargarAviones();
+          cerrarFormularioAvion();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al crear el avión');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al guardar el avión');
+    }
   }
 
-  function handleEliminarAvion(avionId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este avión?')) {
+  async function handleEliminarAvion(avionId) {
+     if (confirm('¿Estás seguro de que deseas eliminar este avión?')) {
       console.log('Eliminando avión:', avionId);
-      alert('Avión eliminado (backend pendiente)');
+      alert('avión eliminado (backend pendiente)');
       // Aquí irá el DELETE cuando tengas el backend
     }
   }
@@ -443,11 +638,57 @@
     };
   }
 
-  function handleGuardarTripulante() {
-    console.log(modoEdicion ? 'Editando tripulante:' : 'Creando tripulante:', tripulanteForm);
-    alert(`Tripulante ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
-    cerrarFormularioTripulante();
-    // Aquí irá el POST o PUT cuando tengas el backend
+  async function handleGuardarTripulante() {
+    try {
+      if (modoEdicion) {
+        // Actualizar tripulante existente
+        const response = await fetch(`http://localhost:5190/api/tripulacion/${tripulanteForm.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: tripulanteForm.nombre,
+            apellido: tripulanteForm.apellido,
+            rolID: parseInt(tripulanteForm.rolID)
+          })
+        });
+
+        if (response.ok) {
+          alert('Tripulante actualizado correctamente');
+          await cargarTripulantes();
+          cerrarFormularioTripulante();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al actualizar el tripulante');
+        }
+      } else {
+        // Crear nuevo tripulante
+        const response = await fetch('http://localhost:5190/api/tripulacion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: tripulanteForm.nombre,
+            apellido: tripulanteForm.apellido,
+            rolID: parseInt(tripulanteForm.rolID)
+          })
+        });
+
+        if (response.ok) {
+          alert('Tripulante creado correctamente');
+          await cargarTripulantes();
+          cerrarFormularioTripulante();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al crear el tripulante');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al guardar el tripulante');
+    }
   }
 
   function handleEliminarTripulante(tripulanteId) {
@@ -469,19 +710,57 @@
       ciudad: '',
       pais: ''
     };
+    paisQueryAeropuerto = '';
+    ciudadQueryAeropuerto = '';
+    paisSeleccionadoAeropuerto = null;
+    ciudadSeleccionadaAeropuerto = false;
+    paisesSugeridosAeropuerto = [];
+    ciudadesSugeridasAeropuerto = [];
     mostrarFormularioAeropuerto = true;
   }
 
-  function abrirFormularioEditarAeropuerto(aeropuerto) {
+  async function abrirFormularioEditarAeropuerto(aeropuerto) {
     modoEdicion = true;
-    aeropuertoForm = {
-      id: aeropuerto.id,
-      codigo: aeropuerto.codigo,
-      nombre: aeropuerto.nombre,
-      ciudad: aeropuerto.ciudad,
-      pais: aeropuerto.pais
-    };
-    mostrarFormularioAeropuerto = true;
+    
+    // Cargar el aeropuerto completo desde el servidor
+    try {
+      const response = await fetch(`http://localhost:5190/api/aeropuertos/${aeropuerto.id}`);
+      
+      if (response.ok) {
+        const aeropuertoCompleto = await response.json();
+        
+        aeropuertoForm = {
+          id: aeropuertoCompleto.id,
+          codigo: aeropuertoCompleto.codigo,
+          nombre: aeropuertoCompleto.nombre,
+          ciudad: aeropuertoCompleto.ciudad,
+          pais: aeropuertoCompleto.pais
+        };
+
+        // Pre-cargar los valores del autocomplete
+        paisQueryAeropuerto = aeropuertoCompleto.pais;
+        ciudadQueryAeropuerto = aeropuertoCompleto.ciudad;
+        
+        // Buscar el país en la lista para poder seleccionar ciudad
+        const paisEncontrado = todosLosPaises.find(p => 
+          p.country.toLowerCase() === aeropuertoCompleto.pais.toLowerCase()
+        );
+        
+        if (paisEncontrado) {
+          paisSeleccionadoAeropuerto = paisEncontrado;
+        }
+        
+        ciudadSeleccionadaAeropuerto = true;
+        
+        mostrarFormularioAeropuerto = true;
+      } else {
+        console.error('Error al cargar el aeropuerto');
+        alert('Error al cargar los datos del aeropuerto');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al cargar el aeropuerto');
+    }
   }
 
   function cerrarFormularioAeropuerto() {
@@ -493,13 +772,78 @@
       ciudad: '',
       pais: ''
     };
+    paisQueryAeropuerto = '';
+    ciudadQueryAeropuerto = '';
+    paisSeleccionadoAeropuerto = null;
+    ciudadSeleccionadaAeropuerto = false;
+    paisesSugeridosAeropuerto = [];
+    ciudadesSugeridasAeropuerto = [];
   }
 
-  function handleGuardarAeropuerto() {
-    console.log(modoEdicion ? 'Editando aeropuerto:' : 'Creando aeropuerto:', aeropuertoForm);
-    alert(`Aeropuerto ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
-    cerrarFormularioAeropuerto();
-    // Aquí irá el POST o PUT cuando tengas el backend
+  async function handleGuardarAeropuerto() {
+    // Validar que se haya seleccionado país y ciudad de la lista
+    if (!paisSeleccionadoAeropuerto || !aeropuertoForm.pais) {
+      alert('Debes seleccionar un país de la lista');
+      return;
+    }
+    
+    if (!ciudadSeleccionadaAeropuerto || !aeropuertoForm.ciudad) {
+      alert('Debes seleccionar una ciudad de la lista');
+      return;
+    }
+
+    try {
+      if (modoEdicion) {
+        // Actualizar aeropuerto existente
+        const response = await fetch(`http://localhost:5190/api/aeropuertos/${aeropuertoForm.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: aeropuertoForm.nombre,
+            codigo: aeropuertoForm.codigo.toUpperCase(),
+            ciudad: aeropuertoForm.ciudad,
+            pais: aeropuertoForm.pais
+          })
+        });
+
+        if (response.ok) {
+          alert('Aeropuerto actualizado correctamente');
+          await cargarAeropuertos();
+          cerrarFormularioAeropuerto();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al actualizar el aeropuerto');
+        }
+      } else {
+        // Crear nuevo aeropuerto
+        const response = await fetch('http://localhost:5190/api/aeropuertos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: aeropuertoForm.nombre,
+            codigo: aeropuertoForm.codigo.toUpperCase(),
+            ciudad: aeropuertoForm.ciudad,
+            pais: aeropuertoForm.pais
+          })
+        });
+
+        if (response.ok) {
+          alert('Aeropuerto creado correctamente');
+          await cargarAeropuertos();
+          cerrarFormularioAeropuerto();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al crear el aeropuerto');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al guardar el aeropuerto');
+    }
   }
 
   function handleEliminarAeropuerto(aeropuertoId) {
@@ -652,7 +996,7 @@
                         {/if}
                         {#if aeropuertoOrigen}
                           <p class="selected-item">
-                            ✓ Seleccionado: {aeropuertoOrigen.codigo} - {aeropuertoOrigen.nombre}
+                            âœ“ Seleccionado: {aeropuertoOrigen.codigo} - {aeropuertoOrigen.nombre}
                           </p>
                         {/if}
                       </div>
@@ -692,7 +1036,7 @@
                         {/if}
                         {#if aeropuertoDestino}
                           <p class="selected-item">
-                            ✓ Seleccionado: {aeropuertoDestino.codigo} - {aeropuertoDestino.nombre}
+                            âœ“ Seleccionado: {aeropuertoDestino.codigo} - {aeropuertoDestino.nombre}
                           </p>
                         {/if}
                       </div>
@@ -946,12 +1290,7 @@
                             >
                               Editar
                             </button>
-                            <button 
-                              class="table__action-btn table__action-btn--delete"
-                              on:click={() => handleEliminarAvion(avion.id)}
-                            >
-                              Eliminar
-                            </button>
+                            
                           </div>
                         </td>
                       </tr>
@@ -1008,12 +1347,7 @@
                             >
                               Editar
                             </button>
-                            <button 
-                              class="table__action-btn table__action-btn--delete"
-                              on:click={() => handleEliminarTripulante(tripulante.id)}
-                            >
-                              Eliminar
-                            </button>
+                            
                           </div>
                         </td>
                       </tr>
@@ -1068,12 +1402,7 @@
                             >
                               Editar
                             </button>
-                            <button 
-                              class="table__action-btn table__action-btn--delete"
-                              on:click={() => handleEliminarAeropuerto(aeropuerto.id)}
-                            >
-                              Eliminar
-                            </button>
+                            
                           </div>
                         </td>
                       </tr>
@@ -1089,51 +1418,61 @@
             <h2 class="admin-section__title">Historial de Vuelos</h2>
             <p class="admin-section__subtitle">Todos los vuelos programados, activos, completados y cancelados</p>
 
-            <div class="vuelos-table">
-              <table class="table">
-                <thead class="table__head">
-                  <tr class="table__row">
-                    <th class="table__header">ID</th>
-                    <th class="table__header">Numero de Vuelo</th>
-                    <th class="table__header">Ruta</th>
-                    <th class="table__header">Fecha</th>
-                    <th class="table__header">Horario</th>
-                    <th class="table__header">Ocupacion</th>
-                    <th class="table__header">Estado</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each historialVuelos as vuelo}
+            {#if loadingHistorialVuelos}
+              <p class="loading-text">Cargando historial de vuelos...</p>
+            {:else if historialVuelos.length === 0}
+              <div class="placeholder-card">
+                <p class="placeholder-card__text">
+                  No hay vuelos registrados. Crea tu primer vuelo desde la pestaña "Crear Vuelo".
+                </p>
+              </div>
+            {:else}
+              <div class="vuelos-table">
+                <table class="table">
+                  <thead class="table__head">
                     <tr class="table__row">
-                      <td class="table__cell">{vuelo.id}</td>
-                      <td class="table__cell">{vuelo.numeroVuelo}</td>
-                      <td class="table__cell">{vuelo.ruta}</td>
-                      <td class="table__cell">{vuelo.fecha}</td>
-                      <td class="table__cell">{vuelo.horaSalida} - {vuelo.horaLlegada}</td>
-                      <td class="table__cell">{vuelo.asientosVendidos}/{vuelo.asientosTotales}</td>
-                      <td class="table__cell">
-                        <span class="status-badge status-badge--{vuelo.estado}">
-                          {vuelo.estado}
-                        </span>
-                      </td>
-                      <td class="table__cell">
-                        <div class="table__actions">
-                          {#if vuelo.estado === 'activo'}
-                            <button 
-                              class="table__action-btn table__action-btn--cancel"
-                              on:click={() => handleCambiarEstadoVuelo(vuelo.id, 'cancelado')}
-                            >
-                              Cancelar
-                            </button>
-                          {/if}
-                        </div>
-                      </td>
+                      <th class="table__header">ID</th>
+                      <th class="table__header">Numero de Vuelo</th>
+                      <th class="table__header">Ruta</th>
+                      <th class="table__header">Fecha</th>
+                      <th class="table__header">Horario</th>
+                      <th class="table__header">Ocupacion</th>
+                      <th class="table__header">Estado</th>
+                      <th class="table__header">Acciones</th>
                     </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody class="table__body">
+                    {#each historialVuelos as vuelo}
+                      <tr class="table__row">
+                        <td class="table__cell">{vuelo.id}</td>
+                        <td class="table__cell">{vuelo.numeroVuelo}</td>
+                        <td class="table__cell">{vuelo.ruta}</td>
+                        <td class="table__cell">{vuelo.fecha}</td>
+                        <td class="table__cell">{vuelo.horaSalida} - {vuelo.horaLlegada}</td>
+                        <td class="table__cell">{vuelo.asientosVendidos}/{vuelo.asientosTotales}</td>
+                        <td class="table__cell">
+                          <span class="status-badge status-badge--{vuelo.estado}">
+                            {vuelo.estado}
+                          </span>
+                        </td>
+                        <td class="table__cell">
+                          <div class="table__actions">
+                            {#if vuelo.estado === 'activo'}
+                              <button 
+                                class="table__action-btn table__action-btn--cancel"
+                                on:click={() => handleCambiarEstadoVuelo(vuelo.id, 'cancelado')}
+                              >
+                                Cancelar
+                              </button>
+                            {/if}
+                          </div>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
           </section>
 
         {:else if activeSection === 'usuarios'}
@@ -1367,27 +1706,56 @@
         </div>
 
         <div class="form-field">
-          <label for="ciudad-aeropuerto" class="form-label">Ciudad *</label>
-          <input 
-            type="text" 
-            id="ciudad-aeropuerto"
-            class="form-input"
-            bind:value={aeropuertoForm.ciudad}
-            placeholder="Ej: Ciudad de Guatemala"
-            required
-          />
+          <label for="pais-aeropuerto" class="form-label">País *</label>
+          <div class="autocomplete">
+            <input 
+              type="text" 
+              id="pais-aeropuerto" 
+              class="form-input" 
+              bind:value={paisQueryAeropuerto} 
+              on:input={onPaisAeropuertoInput} 
+              on:blur={validarPaisAeropuertoSeleccionado}
+              placeholder="Escribe el país..." 
+              autocomplete="off"
+              required
+            />
+            {#if paisesSugeridosAeropuerto.length > 0}
+              <ul class="autocomplete__list">
+                {#each paisesSugeridosAeropuerto as p}
+                  <li class="autocomplete__item">
+                    <button type="button" class="autocomplete__btn" on:click={() => seleccionarPaisAeropuerto(p)}>{p.country}</button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
         </div>
 
         <div class="form-field">
-          <label for="pais-aeropuerto" class="form-label">Pais *</label>
-          <input 
-            type="text" 
-            id="pais-aeropuerto"
-            class="form-input"
-            bind:value={aeropuertoForm.pais}
-            placeholder="Ej: Guatemala"
-            required
-          />
+          <label for="ciudad-aeropuerto" class="form-label">Ciudad *</label>
+          <div class="autocomplete">
+            <input 
+              type="text" 
+              id="ciudad-aeropuerto" 
+              class="form-input" 
+              bind:value={ciudadQueryAeropuerto} 
+              on:input={onCiudadAeropuertoInput} 
+              on:blur={validarCiudadAeropuertoSeleccionada}
+              placeholder={paisSeleccionadoAeropuerto ? 'Escribe la ciudad...' : 'Primero selecciona un país'} 
+              disabled={!paisSeleccionadoAeropuerto} 
+              autocomplete="off"
+              required
+            />
+            {#if ciudadesSugeridasAeropuerto.length > 0}
+              <ul class="autocomplete__list">
+                {#each ciudadesSugeridasAeropuerto as c}
+                  <li class="autocomplete__item">
+                    <button type="button" class="autocomplete__btn" on:click={() => seleccionarCiudadAeropuerto(c)}>{c}</button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
         </div>
 
         <div class="modal__actions">
