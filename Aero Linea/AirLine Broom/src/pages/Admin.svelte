@@ -17,6 +17,7 @@
   let loadingAviones = false;
   let loadingTripulantes = false;
   let loadingAeropuertos = false;
+  let loadingHistorialVuelos = false;
 
   // Variables para búsqueda
   let busquedaOrigen = '';
@@ -91,63 +92,7 @@
     pais: ''
   };
 
-  const historialVuelos = [
-    {
-      id: 'VH-2026-001',
-      numeroVuelo: 'AF 1234',
-      ruta: 'Ciudad de Guatemala → Paris',
-      fecha: '2026-02-15',
-      horaSalida: '08:00',
-      horaLlegada: '18:30',
-      estado: 'activo',
-      asientosVendidos: 185,
-      asientosTotales: 240
-    },
-    {
-      id: 'VH-2026-002',
-      numeroVuelo: 'IB 9876',
-      ruta: 'Ciudad de Guatemala → Madrid',
-      fecha: '2026-03-10',
-      horaSalida: '14:00',
-      horaLlegada: '00:30',
-      estado: 'activo',
-      asientosVendidos: 142,
-      asientosTotales: 255
-    },
-    {
-      id: 'VH-2025-087',
-      numeroVuelo: 'LA 7890',
-      ruta: 'Ciudad de Guatemala → Lima',
-      fecha: '2025-12-15',
-      horaSalida: '06:00',
-      horaLlegada: '11:30',
-      estado: 'completado',
-      asientosVendidos: 170,
-      asientosTotales: 170
-    },
-    {
-      id: 'VH-2025-065',
-      numeroVuelo: 'AF 1234',
-      ruta: 'Ciudad de Guatemala → Paris',
-      fecha: '2025-11-20',
-      horaSalida: '08:00',
-      horaLlegada: '18:30',
-      estado: 'completado',
-      asientosVendidos: 240,
-      asientosTotales: 240
-    },
-    {
-      id: 'VH-2025-043',
-      numeroVuelo: 'CM 4521',
-      ruta: 'Ciudad de Guatemala → Panama',
-      fecha: '2025-10-05',
-      horaSalida: '09:00',
-      horaLlegada: '11:15',
-      estado: 'cancelado',
-      asientosVendidos: 0,
-      asientosTotales: 180
-    }
-  ];
+  let historialVuelos = [];
 
   onMount(async () => {
     const isAdmin = parseInt(sessionStorage.getItem('rolId')) === 2;
@@ -165,7 +110,8 @@
       cargarTripulantes(),
       cargarAeropuertos(),
       cargarRolesTripulacion(),
-      cargarPaises()
+      cargarPaises(),
+      cargarHistorialVuelos()
     ]);
   }
 
@@ -267,6 +213,30 @@
       todosLosPaises = data.data;
     } catch (error) {
       console.error('Error cargando países:', error);
+    }
+  }
+
+  async function cargarHistorialVuelos() {
+    loadingHistorialVuelos = true;
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      const response = await fetch('http://localhost:5190/api/admin/vuelos/historial', {
+        headers: {
+          'X-RolId': rolId
+        }
+      });
+
+      if (response.ok) {
+        historialVuelos = await response.json();
+        console.log('Vuelos cargados:', historialVuelos);
+        console.log('Estados de los vuelos:', historialVuelos.map(v => ({ id: v.id, estado: v.estado })));
+      } else {
+        console.error('Error al cargar historial de vuelos');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      loadingHistorialVuelos = false;
     }
   }
 
@@ -382,15 +352,86 @@
     nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== tripulanteId);
   }
 
-  function handleCrearVuelo() {
-    const datosVuelo = {
-      ...nuevoVuelo,
-      tripulantes: nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
-    };
-    
-    console.log('Creando nuevo vuelo:', datosVuelo);
-    alert('Datos del vuelo listos para enviar (aún no se guarda en BD)');
-    limpiarFormulario();
+  async function handleCrearVuelo() {
+    // Validar que todos los campos obligatorios estén llenos
+    if (!nuevoVuelo.numeroVuelo) {
+      alert('Por favor ingresa el número de vuelo');
+      return;
+    }
+
+    if (!nuevoVuelo.aeropuertoOrigenId) {
+      alert('Por favor selecciona el aeropuerto de origen');
+      return;
+    }
+
+    if (!nuevoVuelo.aeropuertoDestinoId) {
+      alert('Por favor selecciona el aeropuerto de destino');
+      return;
+    }
+
+    if (!nuevoVuelo.avionId) {
+      alert('Por favor selecciona un avión');
+      return;
+    }
+
+    if (!nuevoVuelo.fecha) {
+      alert('Por favor selecciona la fecha del vuelo');
+      return;
+    }
+
+    if (!nuevoVuelo.horaSalida || !nuevoVuelo.horaLlegada) {
+      alert('Por favor ingresa las horas de salida y llegada');
+      return;
+    }
+
+    if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) {
+      alert('Por favor ingresa los precios');
+      return;
+    }
+
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      
+      const datosVuelo = {
+        numeroVuelo: nuevoVuelo.numeroVuelo,
+        aeropuertoOrigenId: parseInt(nuevoVuelo.aeropuertoOrigenId),
+        aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
+        avionId: parseInt(nuevoVuelo.avionId),
+        fecha: nuevoVuelo.fecha,
+        horaSalida: nuevoVuelo.horaSalida,
+        horaLlegada: nuevoVuelo.horaLlegada,
+        precioTurista: parseFloat(nuevoVuelo.precioTurista),
+        precioEjecutiva: parseFloat(nuevoVuelo.precioEjecutiva),
+        tripulantesIds: nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
+      };
+
+      const response = await fetch('http://localhost:5190/api/admin/vuelos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RolId': rolId
+        },
+        body: JSON.stringify(datosVuelo)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert('¡Vuelo creado exitosamente!');
+        limpiarFormulario();
+        
+        // Recargar el historial de vuelos
+        await cargarHistorialVuelos();
+        
+        // Cambiar a la pestaña de historial
+        activeSection = 'historial';
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error al crear el vuelo');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al crear el vuelo');
+    }
   }
 
   function limpiarFormulario() {
@@ -439,8 +480,33 @@
     }
   }
 
-  function handleCambiarEstadoVuelo(vueloId, nuevoEstado) {
-    console.log('Cambiando estado del vuelo:', vueloId, 'a', nuevoEstado);
+  async function handleCambiarEstadoVuelo(vueloId, nuevoEstado) {
+    if (!confirm('¿Estás seguro de que deseas cancelar este vuelo?')) {
+      return;
+    }
+
+    try {
+      const rolId = sessionStorage.getItem('rolId');
+      
+      const response = await fetch(`http://localhost:5190/api/admin/vuelos/${vueloId}/cancelar`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-RolId': rolId
+        }
+      });
+
+      if (response.ok) {
+        alert('Vuelo cancelado exitosamente');
+        await cargarHistorialVuelos();
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Error al cancelar el vuelo');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al cancelar el vuelo');
+    }
   }
 
   // ===== FUNCIONES PARA AVIONES =====
@@ -531,23 +597,10 @@
   }
 
   async function handleEliminarAvion(avionId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este avión?')) {
-      try {
-        const response = await fetch(`http://localhost:5190/api/aviones/${avionId}`, {
-          method: 'DELETE'
-        });
-
-        if (response.ok) {
-          alert('Avión eliminado correctamente');
-          await cargarAviones();
-        } else {
-          const error = await response.json();
-          alert(error.message || 'Error al eliminar el avión');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error de conexión al eliminar el avión');
-      }
+     if (confirm('¿Estás seguro de que deseas eliminar este avión?')) {
+      console.log('Eliminando avión:', avionId);
+      alert('avión eliminado (backend pendiente)');
+      // Aquí irá el DELETE cuando tengas el backend
     }
   }
 
@@ -943,7 +996,7 @@
                         {/if}
                         {#if aeropuertoOrigen}
                           <p class="selected-item">
-                            ✓ Seleccionado: {aeropuertoOrigen.codigo} - {aeropuertoOrigen.nombre}
+                            âœ“ Seleccionado: {aeropuertoOrigen.codigo} - {aeropuertoOrigen.nombre}
                           </p>
                         {/if}
                       </div>
@@ -983,7 +1036,7 @@
                         {/if}
                         {#if aeropuertoDestino}
                           <p class="selected-item">
-                            ✓ Seleccionado: {aeropuertoDestino.codigo} - {aeropuertoDestino.nombre}
+                            âœ“ Seleccionado: {aeropuertoDestino.codigo} - {aeropuertoDestino.nombre}
                           </p>
                         {/if}
                       </div>
@@ -1237,12 +1290,7 @@
                             >
                               Editar
                             </button>
-                            <button 
-                              class="table__action-btn table__action-btn--delete"
-                              on:click={() => handleEliminarAvion(avion.id)}
-                            >
-                              Eliminar
-                            </button>
+                            
                           </div>
                         </td>
                       </tr>
@@ -1299,12 +1347,7 @@
                             >
                               Editar
                             </button>
-                            <button 
-                              class="table__action-btn table__action-btn--delete"
-                              on:click={() => handleEliminarTripulante(tripulante.id)}
-                            >
-                              Eliminar
-                            </button>
+                            
                           </div>
                         </td>
                       </tr>
@@ -1359,12 +1402,7 @@
                             >
                               Editar
                             </button>
-                            <button 
-                              class="table__action-btn table__action-btn--delete"
-                              on:click={() => handleEliminarAeropuerto(aeropuerto.id)}
-                            >
-                              Eliminar
-                            </button>
+                            
                           </div>
                         </td>
                       </tr>
@@ -1380,51 +1418,61 @@
             <h2 class="admin-section__title">Historial de Vuelos</h2>
             <p class="admin-section__subtitle">Todos los vuelos programados, activos, completados y cancelados</p>
 
-            <div class="vuelos-table">
-              <table class="table">
-                <thead class="table__head">
-                  <tr class="table__row">
-                    <th class="table__header">ID</th>
-                    <th class="table__header">Numero de Vuelo</th>
-                    <th class="table__header">Ruta</th>
-                    <th class="table__header">Fecha</th>
-                    <th class="table__header">Horario</th>
-                    <th class="table__header">Ocupacion</th>
-                    <th class="table__header">Estado</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each historialVuelos as vuelo}
+            {#if loadingHistorialVuelos}
+              <p class="loading-text">Cargando historial de vuelos...</p>
+            {:else if historialVuelos.length === 0}
+              <div class="placeholder-card">
+                <p class="placeholder-card__text">
+                  No hay vuelos registrados. Crea tu primer vuelo desde la pestaña "Crear Vuelo".
+                </p>
+              </div>
+            {:else}
+              <div class="vuelos-table">
+                <table class="table">
+                  <thead class="table__head">
                     <tr class="table__row">
-                      <td class="table__cell">{vuelo.id}</td>
-                      <td class="table__cell">{vuelo.numeroVuelo}</td>
-                      <td class="table__cell">{vuelo.ruta}</td>
-                      <td class="table__cell">{vuelo.fecha}</td>
-                      <td class="table__cell">{vuelo.horaSalida} - {vuelo.horaLlegada}</td>
-                      <td class="table__cell">{vuelo.asientosVendidos}/{vuelo.asientosTotales}</td>
-                      <td class="table__cell">
-                        <span class="status-badge status-badge--{vuelo.estado}">
-                          {vuelo.estado}
-                        </span>
-                      </td>
-                      <td class="table__cell">
-                        <div class="table__actions">
-                          {#if vuelo.estado === 'activo'}
-                            <button 
-                              class="table__action-btn table__action-btn--cancel"
-                              on:click={() => handleCambiarEstadoVuelo(vuelo.id, 'cancelado')}
-                            >
-                              Cancelar
-                            </button>
-                          {/if}
-                        </div>
-                      </td>
+                      <th class="table__header">ID</th>
+                      <th class="table__header">Numero de Vuelo</th>
+                      <th class="table__header">Ruta</th>
+                      <th class="table__header">Fecha</th>
+                      <th class="table__header">Horario</th>
+                      <th class="table__header">Ocupacion</th>
+                      <th class="table__header">Estado</th>
+                      <th class="table__header">Acciones</th>
                     </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody class="table__body">
+                    {#each historialVuelos as vuelo}
+                      <tr class="table__row">
+                        <td class="table__cell">{vuelo.id}</td>
+                        <td class="table__cell">{vuelo.numeroVuelo}</td>
+                        <td class="table__cell">{vuelo.ruta}</td>
+                        <td class="table__cell">{vuelo.fecha}</td>
+                        <td class="table__cell">{vuelo.horaSalida} - {vuelo.horaLlegada}</td>
+                        <td class="table__cell">{vuelo.asientosVendidos}/{vuelo.asientosTotales}</td>
+                        <td class="table__cell">
+                          <span class="status-badge status-badge--{vuelo.estado}">
+                            {vuelo.estado}
+                          </span>
+                        </td>
+                        <td class="table__cell">
+                          <div class="table__actions">
+                            {#if vuelo.estado === 'activo'}
+                              <button 
+                                class="table__action-btn table__action-btn--cancel"
+                                on:click={() => handleCambiarEstadoVuelo(vuelo.id, 'cancelado')}
+                              >
+                                Cancelar
+                              </button>
+                            {/if}
+                          </div>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
           </section>
 
         {:else if activeSection === 'usuarios'}
