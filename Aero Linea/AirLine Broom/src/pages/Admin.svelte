@@ -33,6 +33,7 @@
   // Variables para modales y formularios
   let mostrarFormularioAvion = false;
   let mostrarFormularioTripulante = false;
+  let mostrarFormularioAeropuerto = false;
   let modoEdicion = false; // false = crear, true = editar
 
   let rolesDisponibles = [
@@ -76,6 +77,15 @@
     nombre: '',
     apellido: '',
     rolID: ''
+  };
+
+  // Objeto para aeropuerto (crear/editar)
+  let aeropuertoForm = {
+    id: null,
+    codigo: '',
+    nombre: '',
+    ciudad: '',
+    pais: ''
   };
 
   const historialVuelos = [
@@ -447,6 +457,58 @@
       // Aquí irá el DELETE cuando tengas el backend
     }
   }
+
+  // ===== FUNCIONES PARA AEROPUERTOS =====
+  
+  function abrirFormularioNuevoAeropuerto() {
+    modoEdicion = false;
+    aeropuertoForm = {
+      id: null,
+      codigo: '',
+      nombre: '',
+      ciudad: '',
+      pais: ''
+    };
+    mostrarFormularioAeropuerto = true;
+  }
+
+  function abrirFormularioEditarAeropuerto(aeropuerto) {
+    modoEdicion = true;
+    aeropuertoForm = {
+      id: aeropuerto.id,
+      codigo: aeropuerto.codigo,
+      nombre: aeropuerto.nombre,
+      ciudad: aeropuerto.ciudad,
+      pais: aeropuerto.pais
+    };
+    mostrarFormularioAeropuerto = true;
+  }
+
+  function cerrarFormularioAeropuerto() {
+    mostrarFormularioAeropuerto = false;
+    aeropuertoForm = {
+      id: null,
+      codigo: '',
+      nombre: '',
+      ciudad: '',
+      pais: ''
+    };
+  }
+
+  function handleGuardarAeropuerto() {
+    console.log(modoEdicion ? 'Editando aeropuerto:' : 'Creando aeropuerto:', aeropuertoForm);
+    alert(`Aeropuerto ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
+    cerrarFormularioAeropuerto();
+    // Aquí irá el POST o PUT cuando tengas el backend
+  }
+
+  function handleEliminarAeropuerto(aeropuertoId) {
+    if (confirm('¿Estás seguro de que deseas eliminar este aeropuerto?')) {
+      console.log('Eliminando aeropuerto:', aeropuertoId);
+      alert('Aeropuerto eliminado (backend pendiente)');
+      // Aquí irá el DELETE cuando tengas el backend
+    }
+  }
 </script>
 
 <div class="admin">
@@ -482,6 +544,13 @@
             on:click={() => activeSection = 'gestionar-tripulantes'}
           >
             Gestionar Tripulantes
+          </button>
+          <button 
+            class="admin-nav__item" 
+            class:admin-nav__item--active={activeSection === 'gestionar-aeropuertos'}
+            on:click={() => activeSection = 'gestionar-aeropuertos'}
+          >
+            Gestionar Aeropuertos
           </button>
           <button 
             class="admin-nav__item" 
@@ -955,6 +1024,66 @@
             {/if}
           </section>
 
+        {:else if activeSection === 'gestionar-aeropuertos'}
+          <section class="admin-section">
+            <div class="section-header">
+              <div>
+                <h2 class="admin-section__title">Gestionar Aeropuertos</h2>
+                <p class="admin-section__subtitle">Administra los aeropuertos disponibles</p>
+              </div>
+              <button class="btn-add" on:click={abrirFormularioNuevoAeropuerto}>
+                <span class="btn-add__icon">+</span>
+                Agregar Aeropuerto
+              </button>
+            </div>
+
+            {#if loadingAeropuertos}
+              <p class="loading-text">Cargando aeropuertos...</p>
+            {:else}
+              <div class="vuelos-table">
+                <table class="table">
+                  <thead class="table__head">
+                    <tr class="table__row">
+                      <th class="table__header">ID</th>
+                      <th class="table__header">Codigo</th>
+                      <th class="table__header">Nombre</th>
+                      <th class="table__header">Ciudad</th>
+                      <th class="table__header">Pais</th>
+                      <th class="table__header">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="table__body">
+                    {#each aeropuertos as aeropuerto}
+                      <tr class="table__row">
+                        <td class="table__cell">{aeropuerto.id}</td>
+                        <td class="table__cell"><strong>{aeropuerto.codigo}</strong></td>
+                        <td class="table__cell">{aeropuerto.nombre}</td>
+                        <td class="table__cell">{aeropuerto.ciudad}</td>
+                        <td class="table__cell">{aeropuerto.pais}</td>
+                        <td class="table__cell">
+                          <div class="table__actions">
+                            <button 
+                              class="table__action-btn table__action-btn--edit"
+                              on:click={() => abrirFormularioEditarAeropuerto(aeropuerto)}
+                            >
+                              Editar
+                            </button>
+                            <button 
+                              class="table__action-btn table__action-btn--delete"
+                              on:click={() => handleEliminarAeropuerto(aeropuerto.id)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            {/if}
+          </section>
+
         {:else if activeSection === 'historial'}
           <section class="admin-section">
             <h2 class="admin-section__title">Historial de Vuelos</h2>
@@ -1193,6 +1322,79 @@
             {modoEdicion ? 'Actualizar' : 'Crear'} Tripulante
           </button>
           <button type="button" class="btn-secondary" on:click={cerrarFormularioTripulante}>
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal para Aeropuerto -->
+{#if mostrarFormularioAeropuerto}
+  <div class="modal-overlay" on:click={cerrarFormularioAeropuerto}>
+    <div class="modal" on:click|stopPropagation>
+      <div class="modal__header">
+        <h3 class="modal__title">{modoEdicion ? 'Editar' : 'Agregar'} Aeropuerto</h3>
+        <button class="modal__close" on:click={cerrarFormularioAeropuerto}>×</button>
+      </div>
+      
+      <form class="modal__form" on:submit|preventDefault={handleGuardarAeropuerto}>
+        <div class="form-field">
+          <label for="codigo-aeropuerto" class="form-label">Codigo IATA *</label>
+          <input 
+            type="text" 
+            id="codigo-aeropuerto"
+            class="form-input"
+            bind:value={aeropuertoForm.codigo}
+            placeholder="Ej: GUA"
+            maxlength="3"
+            style="text-transform: uppercase;"
+            required
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="nombre-aeropuerto" class="form-label">Nombre del Aeropuerto *</label>
+          <input 
+            type="text" 
+            id="nombre-aeropuerto"
+            class="form-input"
+            bind:value={aeropuertoForm.nombre}
+            placeholder="Ej: La Aurora"
+            required
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="ciudad-aeropuerto" class="form-label">Ciudad *</label>
+          <input 
+            type="text" 
+            id="ciudad-aeropuerto"
+            class="form-input"
+            bind:value={aeropuertoForm.ciudad}
+            placeholder="Ej: Ciudad de Guatemala"
+            required
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="pais-aeropuerto" class="form-label">Pais *</label>
+          <input 
+            type="text" 
+            id="pais-aeropuerto"
+            class="form-input"
+            bind:value={aeropuertoForm.pais}
+            placeholder="Ej: Guatemala"
+            required
+          />
+        </div>
+
+        <div class="modal__actions">
+          <button type="submit" class="btn-primary">
+            {modoEdicion ? 'Actualizar' : 'Crear'} Aeropuerto
+          </button>
+          <button type="button" class="btn-secondary" on:click={cerrarFormularioAeropuerto}>
             Cancelar
           </button>
         </div>
