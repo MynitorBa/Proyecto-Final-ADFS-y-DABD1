@@ -163,10 +163,80 @@
         await buscarVuelosVuelta();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        navigateTo('datos-pasajeros', { outbound: selectedOutbound, searchData });
+        // Solo ida - intentar crear reserva si está logueado
+        await crearReserva();
       }
     } else if (currentView === 'return' && selectedReturn.flight) {
-      navigateTo('datos-pasajeros', { outbound: selectedOutbound, return: selectedReturn, searchData });
+      // Ida y vuelta - intentar crear reserva si está logueado
+      await crearReserva();
+    }
+  }
+
+  async function crearReserva() {
+    const usuarioId = sessionStorage.getItem('usuarioId');
+    
+    // Si no está logueado, ir directo a datos-pasajeros
+    if (!usuarioId) {
+      if (searchData.tripType === 'roundtrip') {
+        navigateTo('datos-pasajeros', { outbound: selectedOutbound, return: selectedReturn, searchData });
+      } else {
+        navigateTo('datos-pasajeros', { outbound: selectedOutbound, searchData });
+      }
+      return;
+    }
+
+    // Construir el array de vuelos
+    const vuelos = [];
+    
+    // Agregar vuelo de ida
+    vuelos.push({
+      vueloId: selectedOutbound.flight.id,
+      claseId: selectedOutbound.clase.id,
+      cantidadPasajeros: searchData.pasajeros
+    });
+    
+    // Agregar vuelo de vuelta si existe
+    if (selectedReturn.flight) {
+      vuelos.push({
+        vueloId: selectedReturn.flight.id,
+        claseId: selectedReturn.clase.id,
+        cantidadPasajeros: searchData.pasajeros
+      });
+    }
+
+    // Hacer POST a /api/reservaciones
+    try {
+      const response = await fetch('https://localhost:7107/api/reservaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          usuarioId: parseInt(usuarioId),
+          vuelos: vuelos
+        })
+      });
+
+      if (response.ok) {
+        const reservaData = await response.json();
+        // Si la reserva fue exitosa, navegar a datos-pasajeros con la info de la reserva
+        if (searchData.tripType === 'roundtrip') {
+          navigateTo('datos-pasajeros', { 
+            outbound: selectedOutbound, 
+            return: selectedReturn, 
+            searchData,
+            reserva: reservaData 
+          });
+        } else {
+          navigateTo('datos-pasajeros', { 
+            outbound: selectedOutbound, 
+            searchData,
+            reserva: reservaData 
+          });
+        }
+      }
+      // Si falla, no hacer nada (sin alert)
+    } catch (error) {
+      // Si hay error, no hacer nada (sin alert)
+      console.error('Error al crear reserva:', error);
     }
   }
 

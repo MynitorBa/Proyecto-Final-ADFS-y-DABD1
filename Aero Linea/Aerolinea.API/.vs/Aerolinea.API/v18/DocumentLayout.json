@@ -262,8 +262,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\VueloDetalleDTO.cs",
               "ViewState": "AgIAAB8AAAAAAAAAAAAswCMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:16:00.82Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:16:00.82Z"
             },
             {
               "$type": "Document",
@@ -275,8 +274,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\VueloRepository.cs",
               "ViewState": "AgIAAJYAAAAAAAAAAADwv50AAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:21:35.573Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:21:35.573Z"
             },
             {
               "$type": "Document",
@@ -288,8 +286,7 @@
               "RelativeToolTip": "Aerolinea.API\\Models\\BusquedaVuelo.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAADwvwcAAAAwAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T04:31:58.284Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T04:31:58.284Z"
             },
             {
               "$type": "Document",
@@ -301,8 +298,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\BuscarVueloDTO.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAcwAYAAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:12:31.289Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:12:31.289Z"
             },
             {
               "$type": "Document",
@@ -314,8 +310,7 @@
               "RelativeToolTip": "Aerolinea.API\\Services\\VueloService.cs",
               "ViewState": "AgIAADYAAAAAAAAAAADwvz4AAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:23:57.617Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:23:57.617Z"
             },
             {
               "$type": "Document",
@@ -327,8 +322,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\VuelosController.cs",
               "ViewState": "AgIAAAoAAAAAAAAAAADwvw4AAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:11:08.35Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:11:08.35Z"
             },
             {
               "$type": "Document",
@@ -340,8 +334,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
               "ViewState": "AgIAAPgBAAAAAAAAAADwvwMCAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T19:17:30.839Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T19:17:30.839Z"
             },
             {
               "$type": "Document",
@@ -353,8 +346,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\ReservacionRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T19:17:28.922Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T19:17:28.922Z"
             },
             {
               "$type": "Document",
@@ -378,8 +370,7 @@
               "RelativeToolTip": "Aerolinea.API\\Program.cs",
               "ViewState": "AgIAABYAAAAAAAAAAAAAwB4AAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-14T19:05:49.545Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-14T19:05:49.545Z"
             },
             {
               "$type": "Document",

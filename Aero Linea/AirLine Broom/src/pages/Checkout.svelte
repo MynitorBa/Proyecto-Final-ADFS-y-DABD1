@@ -3,13 +3,52 @@
   import { onMount } from 'svelte';
   export let navigateTo;
 
-  onMount(() => {
+  let usuarioId = null;
+  let loading = true;
+  let error = null;
+  let reservacionesPendientes = [];
+  let submitting = false;
+
+  onMount(async () => {
     const isLoggedIn = !!sessionStorage.getItem('usuarioId');
     if (!isLoggedIn) {
       navigateTo('acceso-denegado');
       return;
     }
+    
+    usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
+    await cargarReservacionesPendientes();
   });
+
+  async function cargarReservacionesPendientes() {
+    loading = true;
+    error = null;
+    
+    try {
+      const response = await fetch(`https://localhost:7107/api/mis-reservaciones/usuario/${usuarioId}`);
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar las reservaciones');
+      }
+      
+      const reservaciones = await response.json();
+      
+      // Filtrar solo las pendientes (estadoReservaId === 1)
+      reservacionesPendientes = reservaciones.filter(r => r.estadoReservaId === 1);
+      
+      // Si no hay reservaciones pendientes, redirigir
+      if (reservacionesPendientes.length === 0) {
+        navigateTo('home');
+        return;
+      }
+      
+    } catch (err) {
+      console.error('Error cargando reservaciones:', err);
+      error = 'No se pudieron cargar las reservaciones pendientes.';
+    } finally {
+      loading = false;
+    }
+  }
 
   let paymentMethod = 'tarjeta';
   let billingInfo = {
@@ -30,45 +69,93 @@
     cvv: ''
   };
 
-  const orderSummary = {
-    items: [
-      {
-        type: 'ida',
-        route: 'Ciudad de Guatemala → Paris',
-        date: '2026-02-15',
-        passengers: 2,
-        class: 'ejecutivo',
-        subtotal: 2900
-      },
-      {
-        type: 'regreso',
-        route: 'Paris → Ciudad de Guatemala',
-        date: '2026-02-25',
-        passengers: 2,
-        class: 'ejecutivo',
-        subtotal: 2900
-      },
-    ],
-    subtotal: 5800,
-    taxes: 696,
-    total: 6496
-  };
-
-  function handlePayment() {
-    console.log('Procesando pago:', {
-      paymentMethod,
-      billingInfo,
-      cardInfo: paymentMethod === 'tarjeta' ? cardInfo : null
-    });
-    navigateTo('confirmacion');
+  async function handlePayment() {
+    submitting = true;
+    
+    try {
+      // Confirmar cada reservación pendiente
+      const promises = reservacionesPendientes.map(reserva => 
+        fetch(`https://localhost:7107/api/reservaciones/${reserva.reservacionId}/confirmar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      
+      const responses = await Promise.all(promises);
+      
+      // Verificar que todas fueron exitosas
+      const allSuccess = responses.every(r => r.ok);
+      
+      if (allSuccess) {
+        // Navegar a confirmación con los datos de las reservaciones confirmadas
+        navigateTo('confirmacion', { 
+          reservaciones: reservacionesPendientes 
+        });
+      }
+      
+    } catch (err) {
+      console.error('Error al confirmar reservaciones:', err);
+    } finally {
+      submitting = false;
+    }
   }
+
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }
+
+  function formatTime(timeSpan) {
+    if (!timeSpan) return '';
+    const parts = timeSpan.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+
+  function agruparVuelosPorRuta(boletos) {
+    if (!boletos || boletos.length === 0) return [];
+    
+    const vuelos = {};
+    
+    boletos.forEach(boleto => {
+      const key = `${boleto.vueloId}-${boleto.origenCodigo}-${boleto.destinoCodigo}`;
+      
+      if (!vuelos[key]) {
+        vuelos[key] = {
+          vueloId: boleto.vueloId,
+          numeroVuelo: boleto.numeroVuelo,
+          origen: boleto.origenCiudad,
+          origenCodigo: boleto.origenCodigo,
+          destino: boleto.destinoCiudad,
+          destinoCodigo: boleto.destinoCodigo,
+          fecha: boleto.fechaVuelo,
+          horaSalida: boleto.horaSalida,
+          horaLlegada: boleto.horaLlegada,
+          clase: boleto.clase,
+          cantidadPasajeros: 0,
+          precioTotal: 0
+        };
+      }
+      
+      vuelos[key].cantidadPasajeros++;
+      vuelos[key].precioTotal += boleto.precio;
+    });
+    
+    return Object.values(vuelos);
+  }
+
+  $: totalGeneral = reservacionesPendientes.reduce((sum, r) => sum + r.total, 0);
 </script>
 
 <div class="checkout">
   <div class="checkout__container">
     <div class="checkout__header">
-      <button class="checkout__back" on:click={() => navigateTo('carrito')}>
-        Volver al carrito
+      <button class="checkout__back" on:click={() => navigateTo('datos-pasajeros')}>
+        Volver a datos de pasajeros
       </button>
       <h1 class="checkout__title">Finalizar compra</h1>
     </div>
@@ -308,56 +395,103 @@
       </div>
 
       <aside class="checkout__sidebar">
-        <div class="order-summary">
-          <h2 class="order-summary__title">Resumen del pedido</h2>
+        {#if loading}
+          <div class="order-summary">
+            <p>Cargando resumen...</p>
+          </div>
+        {:else if error}
+          <div class="order-summary">
+            <p style="color: #dc2626;">{error}</p>
+          </div>
+        {:else}
+          <div class="order-summary">
+            <h2 class="order-summary__title">Resumen del pedido</h2>
 
-          <div class="order-summary__items">
-            {#each orderSummary.items as item}
-              <div class="order-item">
-                <div class="order-item__header">
-                  <span class="order-item__type">{item.type === 'ida' ? 'Ida' : 'Regreso'}</span>
-                  <span class="order-item__class">{item.class}</span>
+            <div class="order-summary__items">
+              {#each reservacionesPendientes as reserva}
+                {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
+                
+                <div class="reserva-group">
+                  <div class="reserva-group__header">
+                    <strong>Reservación:</strong> {reserva.noReservacion}
+                  </div>
+                  
+                  {#each vuelos as vuelo}
+                    <div class="order-item">
+                      <div class="order-item__header">
+                        <span class="order-item__type">{vuelo.numeroVuelo}</span>
+                        <span class="order-item__class">{vuelo.clase}</span>
+                      </div>
+                      <p class="order-item__route">
+                        {vuelo.origen} ({vuelo.origenCodigo}) → {vuelo.destino} ({vuelo.destinoCodigo})
+                      </p>
+                      <div class="order-item__details">
+                        <span class="order-item__date">{formatDate(vuelo.fecha)}</span>
+                        <span class="order-item__passengers">
+                          {vuelo.cantidadPasajeros} pasajero{vuelo.cantidadPasajeros > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div class="order-item__price">${vuelo.precioTotal.toFixed(2)}</div>
+                    </div>
+                  {/each}
+                  
+                  <div class="reserva-group__total">
+                    Subtotal: ${reserva.total.toFixed(2)}
+                  </div>
                 </div>
-                <p class="order-item__route">{item.route}</p>
-                <div class="order-item__details">
-                  <span class="order-item__date">{item.date}</span>
-                  <span class="order-item__passengers">{item.passengers} pasajero{item.passengers > 1 ? 's' : ''}</span>
-                </div>
-                <div class="order-item__price">${item.subtotal}</div>
-              </div>
-            {/each}
-          </div>
-
-          <div class="order-summary__divider"></div>
-
-          <div class="order-summary__totals">
-            <div class="total-row">
-              <span class="total-row__label">Subtotal</span>
-              <span class="total-row__value">${orderSummary.subtotal}</span>
+              {/each}
             </div>
-            <div class="total-row">
-              <span class="total-row__label">Impuestos y cargos</span>
-              <span class="total-row__value">${orderSummary.taxes}</span>
+
+            <div class="order-summary__divider"></div>
+
+            <div class="order-summary__total">
+              <span class="order-summary__total-label">Total a pagar</span>
+              <span class="order-summary__total-value">${totalGeneral.toFixed(2)}</span>
+            </div>
+
+            <button 
+              class="order-summary__btn-pay" 
+              on:click={handlePayment}
+              disabled={submitting}
+            >
+              {submitting ? 'Procesando...' : 'Pagar'}
+            </button>
+
+            <div class="order-summary__security">
+              <p class="security-badge">Pago 100% seguro</p>
+              <p class="security-note">Tus datos estan protegidos con encriptacion SSL</p>
             </div>
           </div>
-
-          <div class="order-summary__divider"></div>
-
-          <div class="order-summary__total">
-            <span class="order-summary__total-label">Total a pagar</span>
-            <span class="order-summary__total-value">${orderSummary.total}</span>
-          </div>
-
-          <button class="order-summary__btn-pay" on:click={handlePayment}>
-            Pagar
-          </button>
-
-          <div class="order-summary__security">
-            <p class="security-badge">Pago 100% seguro</p>
-            <p class="security-note">Tus datos estan protegidos con encriptacion SSL</p>
-          </div>
-        </div>
+        {/if}
       </aside>
     </div>
   </div>
 </div>
+
+<style>
+  .reserva-group {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .reserva-group__header {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.75rem;
+  }
+
+  .reserva-group__total {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #c9a96e;
+    margin-top: 0.75rem;
+    text-align: right;
+  }
+
+  .order-summary__btn-pay:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>

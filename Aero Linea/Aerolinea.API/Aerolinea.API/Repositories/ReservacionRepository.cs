@@ -25,8 +25,8 @@ namespace Aerolinea.API.Repositories
                 // 1. Generar número de reservación único
                 string noReservacion = GenerarNoReservacion();
 
-                // 2. Calcular fecha de expiración (15 minutos desde ahora)
-                DateTime fechaExpiracion = DateTime.Now.AddMinutes(15);
+                // 2. Calcular fecha de expiración (10 minutos desde ahora)
+                DateTime fechaExpiracion = DateTime.Now.AddMinutes(10);
 
                 // 3. Calcular total y obtener boletos
                 decimal total = 0;
