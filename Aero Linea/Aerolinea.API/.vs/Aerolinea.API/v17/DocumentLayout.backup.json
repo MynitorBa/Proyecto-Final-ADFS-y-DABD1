@@ -321,8 +321,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\AdminVuelosController.cs",
               "ViewState": "AgIAAEkAAAAAAAAAAAAUwGAAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-16T02:13:39.91Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-16T02:13:39.91Z"
             },
             {
               "$type": "Document",
@@ -332,7 +331,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\AdminVueloRepository.cs",
               "ToolTip": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\AdminVueloRepository.cs",
               "RelativeToolTip": "Aerolinea.API\\Repositories\\AdminVueloRepository.cs",
-              "ViewState": "AgIAANwAAAAAAAAAAADwvwEBAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAsBAAAAAAAAAADwvycBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-16T02:12:23.04Z",
               "EditorCaption": ""
@@ -347,8 +346,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\VueloHistorialDTO.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-16T02:11:41.749Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-16T02:11:41.749Z"
             },
             {
               "$type": "Document",
@@ -360,8 +358,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\CrearVueloAdminDTO.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-16T02:10:49.353Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-16T02:10:49.353Z"
             },
             {
               "$type": "Document",
@@ -397,8 +394,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\CrearAeropuerto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-16T00:58:22.295Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-16T00:58:22.295Z"
             },
             {
               "$type": "Document",
@@ -434,8 +430,7 @@
               "RelativeToolTip": "Aerolinea.API\\Program.cs",
               "ViewState": "AgIAABcAAAAAAAAAAAAiwCYAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-12T00:14:08.769Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-12T00:14:08.769Z"
             },
             {
               "$type": "Document",
@@ -447,8 +442,7 @@
               "RelativeToolTip": "Aerolinea.API\\Services\\AdminVueloService.cs",
               "ViewState": "AgIAAB8AAAAAAAAAAAAiwEAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-16T02:12:57.782Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-16T02:12:57.782Z"
             },
             {
               "$type": "Document",

@@ -242,17 +242,57 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Estado 3 = Cancelado (o el ID que corresponda en tu BD)
-            var query = @"
-                UPDATE Vuelo 
-                SET EstadoID = 3
-                WHERE ID = @VueloId AND EstadoID != 3";
+            using var transaction = connection.BeginTransaction();
 
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@VueloId", vueloId);
+            try
+            {
+                // 1️⃣ Cancelar vuelo
+                var queryVuelo = @"
+            UPDATE Vuelo 
+            SET EstadoID = 3
+            WHERE ID = @VueloId AND EstadoID != 3";
 
-            var filasAfectadas = await command.ExecuteNonQueryAsync();
-            return filasAfectadas > 0;
+                using var commandVuelo = new SqlCommand(queryVuelo, connection, transaction);
+                commandVuelo.Parameters.AddWithValue("@VueloId", vueloId);
+
+                var filasVuelo = await commandVuelo.ExecuteNonQueryAsync();
+
+
+                // 2️⃣ Cancelar boletos del vuelo
+                var queryBoletos = @"
+            UPDATE Boleto
+            SET EstadoBoletoID = 4
+            WHERE VueloID = @VueloId";
+
+                using var commandBoletos = new SqlCommand(queryBoletos, connection, transaction);
+                commandBoletos.Parameters.AddWithValue("@VueloId", vueloId);
+
+                await commandBoletos.ExecuteNonQueryAsync();
+
+
+                // 3️⃣ Cancelar reservaciones asociadas a esos boletos
+                var queryReservaciones = @"
+            UPDATE r
+            SET r.EstadoReservaID = 3
+            FROM Reservacion r
+            INNER JOIN Boleto b ON b.ReservacionID = r.ID
+            WHERE b.VueloID = @VueloId";
+
+                using var commandReservas = new SqlCommand(queryReservaciones, connection, transaction);
+                commandReservas.Parameters.AddWithValue("@VueloId", vueloId);
+
+                await commandReservas.ExecuteNonQueryAsync();
+
+
+                transaction.Commit();
+                return filasVuelo > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
+
     }
 }
