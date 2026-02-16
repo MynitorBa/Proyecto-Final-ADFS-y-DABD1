@@ -1,10 +1,12 @@
 ﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Models;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
     public class TripulacionService
     {
+
         private readonly TripulacionRepository _repository;
 
         public TripulacionService(TripulacionRepository repository)
@@ -39,7 +41,7 @@ namespace Aerolinea.API.Services
         public async Task<TripulanteDTO?> ObtenerPorId(int id)
         {
             var tripulante = await _repository.ObtenerPorId(id);
-            
+
             if (tripulante == null)
                 return null;
 
@@ -55,6 +57,46 @@ namespace Aerolinea.API.Services
                 NombreRol = nombreRol ?? "Desconocido",
                 NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}"
             };
+        }
+
+        public async Task<TripulanteDTO> Crear(CrearTripulanteDTO crearTripulanteDTO)
+        {
+            var tripulante = new Tripulante
+            {
+                Nombre = crearTripulanteDTO.Nombre,
+                Apellido = crearTripulanteDTO.Apellido,
+                RolID = crearTripulanteDTO.RolID
+            };
+
+            var nuevoId = await _repository.Crear(tripulante);
+            tripulante.Id = nuevoId;
+
+            return new TripulanteDTO
+            {
+                Id = tripulante.Id,
+                Nombre = tripulante.Nombre,
+                Apellido = tripulante.Apellido,
+                RolID = tripulante.RolID,
+                NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}"
+            };
+        }
+
+        public async Task<bool> Actualizar(int id, CrearTripulanteDTO actualizarTripulanteDto)
+        {
+            var tripulante = new Tripulante
+            {
+                Id = id,
+                Nombre = actualizarTripulanteDto.Nombre,
+                Apellido = actualizarTripulanteDto.Apellido,
+                RolID = actualizarTripulanteDto.RolID
+            };
+
+            return await _repository.Actualizar(tripulante);
+        }
+
+        public async Task<List<RolTripulacion>> ObtenerRoles()
+        {
+            return await _repository.ObtenerRoles();
         }
     }
 }

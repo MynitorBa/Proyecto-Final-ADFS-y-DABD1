@@ -41,13 +41,16 @@
     { id: 2, nombre: 'Administrador' }
   ];
 
-  let rolesTripulacion = [
-    { id: 1, nombre: 'Piloto' },
-    { id: 2, nombre: 'Copiloto' },
-    { id: 3, nombre: 'Sobrecargo' },
-    { id: 4, nombre: 'Jefe de Cabina' },
-    { id: 5, nombre: 'Auxiliar de Vuelo' }
-  ];
+  let rolesTripulacion = [];
+  
+  // Variables para autocomplete de ciudad/país en formulario de aeropuerto
+  let todosLosPaises = [];
+  let paisQueryAeropuerto = '';
+  let paisesSugeridosAeropuerto = [];
+  let paisSeleccionadoAeropuerto = null;
+  let ciudadQueryAeropuerto = '';
+  let ciudadesSugeridasAeropuerto = [];
+  let ciudadSeleccionadaAeropuerto = false;
 
   // Objeto para nuevo vuelo
   let nuevoVuelo = {
@@ -160,7 +163,9 @@
       cargarUsuarios(),
       cargarAviones(),
       cargarTripulantes(),
-      cargarAeropuertos()
+      cargarAeropuertos(),
+      cargarRolesTripulacion(),
+      cargarPaises()
     ]);
   }
 
@@ -234,6 +239,85 @@
       console.error('Error:', error);
     } finally {
       loadingAeropuertos = false;
+    }
+  }
+
+  async function cargarRolesTripulacion() {
+    try {
+      const response = await fetch('http://localhost:5190/api/tripulacion/roles');
+
+      if (response.ok) {
+        const roles = await response.json();
+        rolesTripulacion = roles.map(rol => ({
+          id: rol.id,
+          nombre: rol.cargo
+        }));
+      } else {
+        console.error('Error al cargar roles de tripulación');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  async function cargarPaises() {
+    try {
+      const response = await fetch('https://countriesnow.space/api/v0.1/countries');
+      const data = await response.json();
+      todosLosPaises = data.data;
+    } catch (error) {
+      console.error('Error cargando países:', error);
+    }
+  }
+
+  // Funciones para autocompletado de país en aeropuertos
+  function onPaisAeropuertoInput() {
+    const q = paisQueryAeropuerto.toLowerCase();
+    paisesSugeridosAeropuerto = q.length < 2 ? [] : todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
+    
+    if (paisQueryAeropuerto && !paisSeleccionadoAeropuerto) {
+      aeropuertoForm.pais = '';
+    }
+  }
+
+  function seleccionarPaisAeropuerto(p) {
+    paisSeleccionadoAeropuerto = p;
+    paisQueryAeropuerto = p.country;
+    aeropuertoForm.pais = p.country;
+    paisesSugeridosAeropuerto = [];
+    ciudadQueryAeropuerto = '';
+    aeropuertoForm.ciudad = '';
+    ciudadesSugeridasAeropuerto = [];
+    ciudadSeleccionadaAeropuerto = false;
+  }
+
+  function validarPaisAeropuertoSeleccionado() {
+    if (paisQueryAeropuerto && !paisSeleccionadoAeropuerto) {
+      paisQueryAeropuerto = '';
+    }
+  }
+
+  // Funciones para autocompletado de ciudad en aeropuertos
+  function onCiudadAeropuertoInput() {
+    if (!paisSeleccionadoAeropuerto) return;
+    const q = ciudadQueryAeropuerto.toLowerCase();
+    ciudadesSugeridasAeropuerto = q.length < 2 ? [] : paisSeleccionadoAeropuerto.cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+    
+    if (ciudadQueryAeropuerto && !ciudadSeleccionadaAeropuerto) {
+      aeropuertoForm.ciudad = '';
+    }
+  }
+
+  function seleccionarCiudadAeropuerto(c) {
+    ciudadQueryAeropuerto = c;
+    aeropuertoForm.ciudad = c;
+    ciudadesSugeridasAeropuerto = [];
+    ciudadSeleccionadaAeropuerto = true;
+  }
+
+  function validarCiudadAeropuertoSeleccionada() {
+    if (ciudadQueryAeropuerto && !ciudadSeleccionadaAeropuerto) {
+      ciudadQueryAeropuerto = '';
     }
   }
 
@@ -344,8 +428,7 @@
       });
 
       if (response.ok) {
-        await cargarUsuarios();
-        alert('Rol actualizado correctamente');
+
       } else {
         const error = await response.json();
         alert(error.message || 'Error al cambiar el rol');
@@ -394,18 +477,77 @@
     };
   }
 
-  function handleGuardarAvion() {
-    console.log(modoEdicion ? 'Editando avión:' : 'Creando avión:', avionForm);
-    alert(`Avión ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
-    cerrarFormularioAvion();
-    // Aquí irá el POST o PUT cuando tengas el backend
+  async function handleGuardarAvion() {
+    try {
+      if (modoEdicion) {
+        // Actualizar avión existente
+        const response = await fetch(`http://localhost:5190/api/aviones/${avionForm.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            marca: avionForm.marca,
+            modelo: avionForm.modelo,
+            capacidadPasajeros: parseInt(avionForm.capacidadPasajeros)
+          })
+        });
+
+        if (response.ok) {
+          alert('Avión actualizado correctamente');
+          await cargarAviones();
+          cerrarFormularioAvion();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al actualizar el avión');
+        }
+      } else {
+        // Crear nuevo avión
+        const response = await fetch('http://localhost:5190/api/aviones', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            marca: avionForm.marca,
+            modelo: avionForm.modelo,
+            capacidadPasajeros: parseInt(avionForm.capacidadPasajeros)
+          })
+        });
+
+        if (response.ok) {
+          alert('Avión creado correctamente');
+          await cargarAviones();
+          cerrarFormularioAvion();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al crear el avión');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al guardar el avión');
+    }
   }
 
-  function handleEliminarAvion(avionId) {
+  async function handleEliminarAvion(avionId) {
     if (confirm('¿Estás seguro de que deseas eliminar este avión?')) {
-      console.log('Eliminando avión:', avionId);
-      alert('Avión eliminado (backend pendiente)');
-      // Aquí irá el DELETE cuando tengas el backend
+      try {
+        const response = await fetch(`http://localhost:5190/api/aviones/${avionId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          alert('Avión eliminado correctamente');
+          await cargarAviones();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al eliminar el avión');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión al eliminar el avión');
+      }
     }
   }
 
@@ -443,11 +585,57 @@
     };
   }
 
-  function handleGuardarTripulante() {
-    console.log(modoEdicion ? 'Editando tripulante:' : 'Creando tripulante:', tripulanteForm);
-    alert(`Tripulante ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
-    cerrarFormularioTripulante();
-    // Aquí irá el POST o PUT cuando tengas el backend
+  async function handleGuardarTripulante() {
+    try {
+      if (modoEdicion) {
+        // Actualizar tripulante existente
+        const response = await fetch(`http://localhost:5190/api/tripulacion/${tripulanteForm.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: tripulanteForm.nombre,
+            apellido: tripulanteForm.apellido,
+            rolID: parseInt(tripulanteForm.rolID)
+          })
+        });
+
+        if (response.ok) {
+          alert('Tripulante actualizado correctamente');
+          await cargarTripulantes();
+          cerrarFormularioTripulante();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al actualizar el tripulante');
+        }
+      } else {
+        // Crear nuevo tripulante
+        const response = await fetch('http://localhost:5190/api/tripulacion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: tripulanteForm.nombre,
+            apellido: tripulanteForm.apellido,
+            rolID: parseInt(tripulanteForm.rolID)
+          })
+        });
+
+        if (response.ok) {
+          alert('Tripulante creado correctamente');
+          await cargarTripulantes();
+          cerrarFormularioTripulante();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al crear el tripulante');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al guardar el tripulante');
+    }
   }
 
   function handleEliminarTripulante(tripulanteId) {
@@ -469,19 +657,57 @@
       ciudad: '',
       pais: ''
     };
+    paisQueryAeropuerto = '';
+    ciudadQueryAeropuerto = '';
+    paisSeleccionadoAeropuerto = null;
+    ciudadSeleccionadaAeropuerto = false;
+    paisesSugeridosAeropuerto = [];
+    ciudadesSugeridasAeropuerto = [];
     mostrarFormularioAeropuerto = true;
   }
 
-  function abrirFormularioEditarAeropuerto(aeropuerto) {
+  async function abrirFormularioEditarAeropuerto(aeropuerto) {
     modoEdicion = true;
-    aeropuertoForm = {
-      id: aeropuerto.id,
-      codigo: aeropuerto.codigo,
-      nombre: aeropuerto.nombre,
-      ciudad: aeropuerto.ciudad,
-      pais: aeropuerto.pais
-    };
-    mostrarFormularioAeropuerto = true;
+    
+    // Cargar el aeropuerto completo desde el servidor
+    try {
+      const response = await fetch(`http://localhost:5190/api/aeropuertos/${aeropuerto.id}`);
+      
+      if (response.ok) {
+        const aeropuertoCompleto = await response.json();
+        
+        aeropuertoForm = {
+          id: aeropuertoCompleto.id,
+          codigo: aeropuertoCompleto.codigo,
+          nombre: aeropuertoCompleto.nombre,
+          ciudad: aeropuertoCompleto.ciudad,
+          pais: aeropuertoCompleto.pais
+        };
+
+        // Pre-cargar los valores del autocomplete
+        paisQueryAeropuerto = aeropuertoCompleto.pais;
+        ciudadQueryAeropuerto = aeropuertoCompleto.ciudad;
+        
+        // Buscar el país en la lista para poder seleccionar ciudad
+        const paisEncontrado = todosLosPaises.find(p => 
+          p.country.toLowerCase() === aeropuertoCompleto.pais.toLowerCase()
+        );
+        
+        if (paisEncontrado) {
+          paisSeleccionadoAeropuerto = paisEncontrado;
+        }
+        
+        ciudadSeleccionadaAeropuerto = true;
+        
+        mostrarFormularioAeropuerto = true;
+      } else {
+        console.error('Error al cargar el aeropuerto');
+        alert('Error al cargar los datos del aeropuerto');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al cargar el aeropuerto');
+    }
   }
 
   function cerrarFormularioAeropuerto() {
@@ -493,13 +719,78 @@
       ciudad: '',
       pais: ''
     };
+    paisQueryAeropuerto = '';
+    ciudadQueryAeropuerto = '';
+    paisSeleccionadoAeropuerto = null;
+    ciudadSeleccionadaAeropuerto = false;
+    paisesSugeridosAeropuerto = [];
+    ciudadesSugeridasAeropuerto = [];
   }
 
-  function handleGuardarAeropuerto() {
-    console.log(modoEdicion ? 'Editando aeropuerto:' : 'Creando aeropuerto:', aeropuertoForm);
-    alert(`Aeropuerto ${modoEdicion ? 'actualizado' : 'creado'} (backend pendiente)`);
-    cerrarFormularioAeropuerto();
-    // Aquí irá el POST o PUT cuando tengas el backend
+  async function handleGuardarAeropuerto() {
+    // Validar que se haya seleccionado país y ciudad de la lista
+    if (!paisSeleccionadoAeropuerto || !aeropuertoForm.pais) {
+      alert('Debes seleccionar un país de la lista');
+      return;
+    }
+    
+    if (!ciudadSeleccionadaAeropuerto || !aeropuertoForm.ciudad) {
+      alert('Debes seleccionar una ciudad de la lista');
+      return;
+    }
+
+    try {
+      if (modoEdicion) {
+        // Actualizar aeropuerto existente
+        const response = await fetch(`http://localhost:5190/api/aeropuertos/${aeropuertoForm.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: aeropuertoForm.nombre,
+            codigo: aeropuertoForm.codigo.toUpperCase(),
+            ciudad: aeropuertoForm.ciudad,
+            pais: aeropuertoForm.pais
+          })
+        });
+
+        if (response.ok) {
+          alert('Aeropuerto actualizado correctamente');
+          await cargarAeropuertos();
+          cerrarFormularioAeropuerto();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al actualizar el aeropuerto');
+        }
+      } else {
+        // Crear nuevo aeropuerto
+        const response = await fetch('http://localhost:5190/api/aeropuertos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nombre: aeropuertoForm.nombre,
+            codigo: aeropuertoForm.codigo.toUpperCase(),
+            ciudad: aeropuertoForm.ciudad,
+            pais: aeropuertoForm.pais
+          })
+        });
+
+        if (response.ok) {
+          alert('Aeropuerto creado correctamente');
+          await cargarAeropuertos();
+          cerrarFormularioAeropuerto();
+        } else {
+          const error = await response.json();
+          alert(error.message || 'Error al crear el aeropuerto');
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al guardar el aeropuerto');
+    }
   }
 
   function handleEliminarAeropuerto(aeropuertoId) {
@@ -1367,27 +1658,56 @@
         </div>
 
         <div class="form-field">
-          <label for="ciudad-aeropuerto" class="form-label">Ciudad *</label>
-          <input 
-            type="text" 
-            id="ciudad-aeropuerto"
-            class="form-input"
-            bind:value={aeropuertoForm.ciudad}
-            placeholder="Ej: Ciudad de Guatemala"
-            required
-          />
+          <label for="pais-aeropuerto" class="form-label">País *</label>
+          <div class="autocomplete">
+            <input 
+              type="text" 
+              id="pais-aeropuerto" 
+              class="form-input" 
+              bind:value={paisQueryAeropuerto} 
+              on:input={onPaisAeropuertoInput} 
+              on:blur={validarPaisAeropuertoSeleccionado}
+              placeholder="Escribe el país..." 
+              autocomplete="off"
+              required
+            />
+            {#if paisesSugeridosAeropuerto.length > 0}
+              <ul class="autocomplete__list">
+                {#each paisesSugeridosAeropuerto as p}
+                  <li class="autocomplete__item">
+                    <button type="button" class="autocomplete__btn" on:click={() => seleccionarPaisAeropuerto(p)}>{p.country}</button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
         </div>
 
         <div class="form-field">
-          <label for="pais-aeropuerto" class="form-label">Pais *</label>
-          <input 
-            type="text" 
-            id="pais-aeropuerto"
-            class="form-input"
-            bind:value={aeropuertoForm.pais}
-            placeholder="Ej: Guatemala"
-            required
-          />
+          <label for="ciudad-aeropuerto" class="form-label">Ciudad *</label>
+          <div class="autocomplete">
+            <input 
+              type="text" 
+              id="ciudad-aeropuerto" 
+              class="form-input" 
+              bind:value={ciudadQueryAeropuerto} 
+              on:input={onCiudadAeropuertoInput} 
+              on:blur={validarCiudadAeropuertoSeleccionada}
+              placeholder={paisSeleccionadoAeropuerto ? 'Escribe la ciudad...' : 'Primero selecciona un país'} 
+              disabled={!paisSeleccionadoAeropuerto} 
+              autocomplete="off"
+              required
+            />
+            {#if ciudadesSugeridasAeropuerto.length > 0}
+              <ul class="autocomplete__list">
+                {#each ciudadesSugeridasAeropuerto as c}
+                  <li class="autocomplete__item">
+                    <button type="button" class="autocomplete__btn" on:click={() => seleccionarCiudadAeropuerto(c)}>{c}</button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
         </div>
 
         <div class="modal__actions">

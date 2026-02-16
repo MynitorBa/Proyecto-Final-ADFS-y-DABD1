@@ -18,7 +18,7 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-          
+
             var query = @"
                 SELECT ID, Nombre, Apellido, RolID
                 FROM MiembroTripulacion 
@@ -84,5 +84,70 @@ namespace Aerolinea.API.Repositories
             var result = await command.ExecuteScalarAsync();
             return result?.ToString();
         }
+
+        public async Task<int> Crear(Tripulante tripulante)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                INSERT INTO MiembroTripulacion (Nombre, Apellido, RolID)
+                VALUES (@Nombre, @Apellido, @RolID);
+                SELECT CAST(SCOPE_IDENTITY() as int);";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Nombre", tripulante.Nombre);
+            command.Parameters.AddWithValue("@Apellido", tripulante.Apellido);
+            command.Parameters.AddWithValue("@RolID", tripulante.RolID);
+
+            var nuevoId = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(nuevoId);
+        }
+
+        public async Task<bool> Actualizar(Tripulante tripulante)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                UPDATE MiembroTripulacion 
+                SET Nombre = @Nombre,
+                    Apellido = @Apellido,
+                    RolID = @RolID
+                WHERE ID = @Id";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Id", tripulante.Id);
+            command.Parameters.AddWithValue("@Nombre", tripulante.Nombre);
+            command.Parameters.AddWithValue("@Apellido", tripulante.Apellido);
+            command.Parameters.AddWithValue("@RolID", tripulante.RolID);
+
+            var filasAfectadas = await command.ExecuteNonQueryAsync();
+            return filasAfectadas > 0;
+        }
+
+        public async Task<List<RolTripulacion>> ObtenerRoles()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "SELECT ID, Cargo FROM RolTripulacion ORDER BY ID";
+
+            using var command = new SqlCommand(query, connection);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var roles = new List<RolTripulacion>();
+            while (await reader.ReadAsync())
+            {
+                roles.Add(new RolTripulacion
+                {
+                    Id = reader.GetInt32(0),
+                    Cargo = reader.GetString(1)
+                });
+            }
+
+            return roles;
+        }
+
     }
 }

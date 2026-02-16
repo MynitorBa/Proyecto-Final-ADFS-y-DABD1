@@ -1,4 +1,5 @@
-﻿using Aerolinea.API.Services;
+﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -30,6 +31,37 @@ namespace Aerolinea.API.Controllers
                 return NotFound(new { message = "Tripulante no encontrado" });
 
             return Ok(tripulante);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Crear([FromBody] CrearTripulanteDTO crearTripulanteDTO)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var tripulante = await _service.Crear(crearTripulanteDTO);
+            return CreatedAtAction(nameof(ObtenerPorId), new { id = tripulante.Id }, tripulante);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Actualizar(int id, [FromBody] CrearTripulanteDTO actualizarTripulanteDto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var resultado = await _service.Actualizar(id, actualizarTripulanteDto);
+
+            if (!resultado)
+                return NotFound(new { message = "Tripulante no encontrado" });
+
+            return Ok(new { message = "Tripulante actualizado correctamente" });
+        }
+
+        [HttpGet("roles")]
+        public async Task<IActionResult> ObtenerRoles()
+        {
+            var roles = await _service.ObtenerRoles();
+            return Ok(roles);
         }
     }
 }
