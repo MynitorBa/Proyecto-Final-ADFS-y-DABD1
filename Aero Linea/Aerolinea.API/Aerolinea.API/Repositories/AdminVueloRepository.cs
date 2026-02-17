@@ -61,7 +61,6 @@ namespace Aerolinea.API.Repositories
 
         private async Task<int> ObtenerOCrearRuta(int origenId, int destinoId, SqlConnection connection, SqlTransaction transaction)
         {
-            // Primero intentar obtener la ruta existente
             var queryBuscar = @"
                 SELECT ID FROM Ruta 
                 WHERE OrigenID = @OrigenId AND DestinoID = @DestinoId";
@@ -77,7 +76,6 @@ namespace Aerolinea.API.Repositories
                 return (int)resultado;
             }
 
-            // Si no existe, crear la ruta con duración estimada por defecto
             var queryCrear = @"
                 INSERT INTO Ruta (OrigenID, DestinoID, DuracionEstimada)
                 OUTPUT INSERTED.ID
@@ -86,8 +84,6 @@ namespace Aerolinea.API.Repositories
             using var commandCrear = new SqlCommand(queryCrear, connection, transaction);
             commandCrear.Parameters.AddWithValue("@OrigenId", origenId);
             commandCrear.Parameters.AddWithValue("@DestinoId", destinoId);
-            // Duración estimada por defecto de 120 minutos (2 horas)
-            // El administrador puede actualizar esto después si es necesario
             commandCrear.Parameters.AddWithValue("@DuracionEstimada", 120);
 
             return (int)await commandCrear.ExecuteScalarAsync();
@@ -105,7 +101,6 @@ namespace Aerolinea.API.Repositories
 
         private async Task CrearBoletos(int vueloId, int capacidadAvion, decimal precioTurista, decimal precioEjecutiva, SqlConnection connection, SqlTransaction transaction)
         {
-            // Calcular distribución de asientos: 25% Ejecutiva, 75% Turista
             int asientosEjecutiva = (int)(capacidadAvion * 0.25);
             int asientosTurista = capacidadAvion - asientosEjecutiva;
 
@@ -113,12 +108,11 @@ namespace Aerolinea.API.Repositories
                 INSERT INTO Boleto (NoBoleto, NoAsiento, Precio, VueloID, ClaseID, EstadoBoletoID, ReservacionID, DatosPasajeroID)
                 VALUES (@NoBoleto, @NoAsiento, @Precio, @VueloId, @ClaseId, @EstadoBoletoId, NULL, NULL)";
 
-            // Crear boletos de Clase Ejecutiva
             for (int i = 1; i <= asientosEjecutiva; i++)
             {
                 using var command = new SqlCommand(query, connection, transaction);
                 command.Parameters.AddWithValue("@NoBoleto", $"BOL-{vueloId}-{i:D4}");
-                command.Parameters.AddWithValue("@NoAsiento", $"{i}{(char)('A' + (i - 1) % 6)}"); // 1A, 2B, 3C, etc.
+                command.Parameters.AddWithValue("@NoAsiento", $"{i}{(char)('A' + (i - 1) % 6)}");
                 command.Parameters.AddWithValue("@Precio", precioEjecutiva);
                 command.Parameters.AddWithValue("@VueloId", vueloId);
                 command.Parameters.AddWithValue("@ClaseId", 2); // Ejecutiva
@@ -126,7 +120,6 @@ namespace Aerolinea.API.Repositories
                 await command.ExecuteNonQueryAsync();
             }
 
-            // Crear boletos de Clase Turista
             for (int i = asientosEjecutiva + 1; i <= capacidadAvion; i++)
             {
                 using var command = new SqlCommand(query, connection, transaction);
@@ -155,7 +148,6 @@ namespace Aerolinea.API.Repositories
                     v.HoraSalida,
                     v.HoraLlegada,
                     v.EstadoID,
-                    e.Estatus,
                     av.CapacidadPasajeros,
                     v.BoletosDisponibles,
                     (av.CapacidadPasajeros - v.BoletosDisponibles) AS AsientosVendidos
@@ -165,7 +157,6 @@ namespace Aerolinea.API.Repositories
                 INNER JOIN Aeropuerto adestino ON r.DestinoID = adestino.ID
                 INNER JOIN Ciudad corigen ON aorigen.CiudadID = corigen.ID
                 INNER JOIN Ciudad cdestino ON adestino.CiudadID = cdestino.ID
-                INNER JOIN Estado e ON v.EstadoID = e.ID
                 INNER JOIN Avion av ON v.AvionID = av.ID
                 ORDER BY v.Fecha DESC, v.HoraSalida DESC";
 
@@ -177,48 +168,23 @@ namespace Aerolinea.API.Repositories
             while (await reader.ReadAsync())
             {
                 var fecha = reader.GetDateTime(4);
+                var horaSalida = reader.GetTimeSpan(5);
+                var horaLlegada = reader.GetTimeSpan(6);
                 var estadoId = reader.GetInt32(7);
-                var estadoRaw = reader.GetString(8).ToLower();
-                string estado;
 
-                // Determinar el estado basándose en EstadoID y fecha
-                if (estadoId == 3 || estadoRaw.Contains("cancel"))
+                // Estados:
+                // 1 = Activo
+                // 2 = En curso
+                // 3 = Finalizado
+                // 4 = Cancelado
+                string estado = estadoId switch
                 {
-                    // Vuelo cancelado
-                    estado = "cancelado";
-                }
-                else if (estadoId == 2 || estadoRaw.Contains("complet"))
-                {
-                    // Vuelo completado
-                    estado = "completado";
-                }
-                else if (estadoId == 1 || estadoRaw.Contains("activ") || estadoRaw.Contains("program") || estadoRaw.Contains("tiempo"))
-                {
-                    // Verificar si el vuelo ya pasó (comparar fecha + hora)
-                    var horaSalida = reader.GetTimeSpan(5);
-                    var fechaHoraSalida = fecha.Date.Add(horaSalida);
-
-                    if (fechaHoraSalida < DateTime.Now)
-                    {
-                        estado = "completado";
-                    }
-                    else
-                    {
-                        estado = "activo";
-                    }
-                }
-                else
-                {
-                    // Por defecto, verificar por fecha
-                    if (fecha.Date < DateTime.Now.Date)
-                    {
-                        estado = "completado";
-                    }
-                    else
-                    {
-                        estado = "activo";
-                    }
-                }
+                    1 => "activo",
+                    2 => "en-curso",
+                    3 => "finalizado",
+                    4 => "cancelado",
+                    _ => "activo"
+                };
 
                 vuelos.Add(new VueloHistorialDTO
                 {
@@ -226,11 +192,11 @@ namespace Aerolinea.API.Repositories
                     NumeroVuelo = reader.GetString(1),
                     Ruta = $"{reader.GetString(2)} → {reader.GetString(3)}",
                     Fecha = fecha.ToString("yyyy-MM-dd"),
-                    HoraSalida = reader.GetTimeSpan(5).ToString(@"hh\:mm"),
-                    HoraLlegada = reader.GetTimeSpan(6).ToString(@"hh\:mm"),
+                    HoraSalida = horaSalida.ToString(@"hh\:mm"),
+                    HoraLlegada = horaLlegada.ToString(@"hh\:mm"),
                     Estado = estado,
-                    AsientosTotales = reader.GetInt32(9),
-                    AsientosVendidos = reader.GetInt32(11)
+                    AsientosTotales = reader.GetInt32(8),
+                    AsientosVendidos = reader.GetInt32(10)
                 });
             }
 
@@ -246,43 +212,39 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                // 1️⃣ Cancelar vuelo
+                // 1. Cancelar vuelo — EstadoID = 4 (Cancelado)
+                // Solo se puede cancelar si está Activo (1) o En curso (2)
                 var queryVuelo = @"
-            UPDATE Vuelo 
-            SET EstadoID = 3
-            WHERE ID = @VueloId AND EstadoID != 3";
+                    UPDATE Vuelo 
+                    SET EstadoID = 4
+                    WHERE ID = @VueloId AND EstadoID IN (1, 2)";
 
                 using var commandVuelo = new SqlCommand(queryVuelo, connection, transaction);
                 commandVuelo.Parameters.AddWithValue("@VueloId", vueloId);
 
                 var filasVuelo = await commandVuelo.ExecuteNonQueryAsync();
 
-
-                // 2️⃣ Cancelar boletos del vuelo
+                // 2. Cancelar boletos del vuelo
                 var queryBoletos = @"
-            UPDATE Boleto
-            SET EstadoBoletoID = 4
-            WHERE VueloID = @VueloId";
+                    UPDATE Boleto
+                    SET EstadoBoletoID = 4
+                    WHERE VueloID = @VueloId";
 
                 using var commandBoletos = new SqlCommand(queryBoletos, connection, transaction);
                 commandBoletos.Parameters.AddWithValue("@VueloId", vueloId);
-
                 await commandBoletos.ExecuteNonQueryAsync();
 
-
-                // 3️⃣ Cancelar reservaciones asociadas a esos boletos
+                // 3. Cancelar reservaciones asociadas
                 var queryReservaciones = @"
-            UPDATE r
-            SET r.EstadoReservaID = 3
-            FROM Reservacion r
-            INNER JOIN Boleto b ON b.ReservacionID = r.ID
-            WHERE b.VueloID = @VueloId";
+                    UPDATE r
+                    SET r.EstadoReservaID = 3
+                    FROM Reservacion r
+                    INNER JOIN Boleto b ON b.ReservacionID = r.ID
+                    WHERE b.VueloID = @VueloId";
 
                 using var commandReservas = new SqlCommand(queryReservaciones, connection, transaction);
                 commandReservas.Parameters.AddWithValue("@VueloId", vueloId);
-
                 await commandReservas.ExecuteNonQueryAsync();
-
 
                 transaction.Commit();
                 return filasVuelo > 0;
@@ -293,6 +255,5 @@ namespace Aerolinea.API.Repositories
                 throw;
             }
         }
-
     }
 }
