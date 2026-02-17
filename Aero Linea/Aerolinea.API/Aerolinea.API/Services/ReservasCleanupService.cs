@@ -7,6 +7,10 @@ namespace Aerolinea.API.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ReservasCleanupService> _logger;
 
+        // Contador para saber cuántos ciclos de 1 min han pasado
+        private int _ciclos = 0;
+        private const int CiclosParaActualizarVuelos = 30; // cada 30 min
+
         public ReservasCleanupService(
             IServiceProvider serviceProvider,
             ILogger<ReservasCleanupService> logger)
@@ -19,19 +23,36 @@ namespace Aerolinea.API.Services
         {
             _logger.LogInformation("Servicio de limpieza de reservas iniciado.");
 
+            await LiberarReservasExpiradas();
+            await ActualizarEstadosVuelos();
+
             while (!stoppingToken.IsCancellationRequested)
             {
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                _ciclos++;
+
                 try
                 {
                     await LiberarReservasExpiradas();
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error al liberar reservas expiradas");
+                    _logger.LogError(ex, "Error al liberar reservas expiradas.");
                 }
 
-                // Esperar 1 minuto antes de la siguiente ejecución
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                if (_ciclos >= CiclosParaActualizarVuelos)
+                {
+                    try
+                    {
+                        await ActualizarEstadosVuelos();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al actualizar estados de vuelos.");
+                    }
+
+                    _ciclos = 0;
+                }
             }
 
             _logger.LogInformation("Servicio de limpieza de reservas detenido.");
@@ -41,13 +62,23 @@ namespace Aerolinea.API.Services
         {
             using var scope = _serviceProvider.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<ReservacionRepository>();
-
             int reservasLiberadas = await repository.LiberarReservasExpiradas();
 
             if (reservasLiberadas > 0)
-            {
-                _logger.LogInformation($"Se liberaron {reservasLiberadas} reservas expiradas.");
-            }
+                _logger.LogInformation("Se liberaron {Count} reservas expiradas.", reservasLiberadas);
+        }
+
+        private async Task ActualizarEstadosVuelos()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<VueloAdminInternoRepository>();
+            var (enTranscurso, finalizados) = await repository.ActualizarEstadosVuelos();
+
+            if (enTranscurso > 0)
+                _logger.LogInformation("{Count} vuelo(s) pasaron a estado En Transcurso.", enTranscurso);
+
+            if (finalizados > 0)
+                _logger.LogInformation("{Count} vuelo(s) pasaron a estado Finalizado.", finalizados);
         }
     }
 }

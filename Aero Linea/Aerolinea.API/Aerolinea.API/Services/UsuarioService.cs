@@ -59,8 +59,6 @@ namespace Aerolinea.API.Services
             return await _repository.VerificarExistencia(dto.Correo, dto.Username, dto.Pasaporte);
         }
 
-        // Agregar este método al final de la clase UsuarioService (antes del último })
-
         public async Task<(bool exito, string mensaje)> CambiarRol(CambiarRolDTO dto)
         {
             // Validar que el usuario existe
