@@ -8,10 +8,17 @@ namespace Aerolinea.API.Repositories
     public class ReservacionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
+        private readonly PaisRepository _paisRepository;
+        private readonly CiudadRepository _ciudadRepository;
 
-        public ReservacionRepository(DbConnectionFactory connectionFactory)
+        public ReservacionRepository(
+            DbConnectionFactory connectionFactory,
+            PaisRepository paisRepository,
+            CiudadRepository ciudadRepository)
         {
             _connectionFactory = connectionFactory;
+            _paisRepository = paisRepository;
+            _ciudadRepository = ciudadRepository;
         }
 
         public async Task<ReservacionCreadaDTO> CrearReservacion(int usuarioId, List<SeleccionVueloDTO> vuelos)
@@ -25,8 +32,8 @@ namespace Aerolinea.API.Repositories
                 // 1. Generar número de reservación único
                 string noReservacion = GenerarNoReservacion();
 
-                // 2. Calcular fecha de expiración (10 minutos desde ahora)
-                DateTime fechaExpiracion = DateTime.Now.AddMinutes(10);
+                // 2. Calcular fecha de expiración (15 minutos desde ahora)
+                DateTime fechaExpiracion = DateTime.Now.AddMinutes(15);
 
                 // 3. Calcular total y obtener boletos
                 decimal total = 0;
@@ -349,7 +356,11 @@ namespace Aerolinea.API.Repositories
                         throw new Exception($"El boleto {pasajero.BoletoId} no pertenece a esta reservación.");
                     }
 
-                    // 2.2 Crear o actualizar datos del pasajero
+                    // 2.2 Obtener o crear IDs de País y Ciudad (pasando la transacción)
+                    int paisId = await _paisRepository.ObtenerOCrearId(pasajero.Pais, connection, transaction);
+                    int ciudadId = await _ciudadRepository.ObtenerOCrearId(pasajero.Ciudad, paisId, connection, transaction);
+
+                    // 2.3 Crear o actualizar datos del pasajero
                     int datosPasajeroId;
 
                     if (pasajeroExistente.HasValue)
@@ -371,8 +382,8 @@ namespace Aerolinea.API.Repositories
                         cmd.Parameters.AddWithValue("@apellido", pasajero.Apellido);
                         cmd.Parameters.AddWithValue("@pasaporte", pasajero.Pasaporte);
                         cmd.Parameters.AddWithValue("@telefono", pasajero.Telefono);
-                        cmd.Parameters.AddWithValue("@paisId", pasajero.PaisId);
-                        cmd.Parameters.AddWithValue("@ciudadId", pasajero.CiudadId);
+                        cmd.Parameters.AddWithValue("@paisId", paisId);
+                        cmd.Parameters.AddWithValue("@ciudadId", ciudadId);
                         await cmd.ExecuteNonQueryAsync();
 
                         datosPasajeroId = pasajeroExistente.Value;
@@ -390,12 +401,12 @@ namespace Aerolinea.API.Repositories
                         cmd.Parameters.AddWithValue("@apellido", pasajero.Apellido);
                         cmd.Parameters.AddWithValue("@pasaporte", pasajero.Pasaporte);
                         cmd.Parameters.AddWithValue("@telefono", pasajero.Telefono);
-                        cmd.Parameters.AddWithValue("@paisId", pasajero.PaisId);
-                        cmd.Parameters.AddWithValue("@ciudadId", pasajero.CiudadId);
+                        cmd.Parameters.AddWithValue("@paisId", paisId);
+                        cmd.Parameters.AddWithValue("@ciudadId", ciudadId);
                         datosPasajeroId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                     }
 
-                    // 2.3 Asociar el pasajero al boleto
+                    // 2.4 Asociar el pasajero al boleto
                     string updateBoleto = @"
                         UPDATE Boleto
                         SET DatosPasajeroID = @datosPasajeroId

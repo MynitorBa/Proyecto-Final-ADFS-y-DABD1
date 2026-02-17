@@ -12,6 +12,15 @@
   let currentPassengerIndex = 0;
   let submitting = false;
 
+  // API de países y ciudades - UN ESTADO POR CADA BOLETO
+  let todosLosPaises = [];
+  let paisQueries = {};           // paisQuery por cada boletoId
+  let paisesSugeridos = {};       // array de sugerencias por boletoId
+  let paisesSeleccionados = {};   // país seleccionado por boletoId
+  let ciudadQueries = {};         // ciudadQuery por cada boletoId
+  let ciudadesSugeridas = {};     // array de sugerencias por boletoId
+  let ciudadesSeleccionadas = {}; // boolean por boletoId
+
   onMount(async () => {
     const isLoggedIn = !!sessionStorage.getItem('usuarioId');
     if (!isLoggedIn) {
@@ -20,6 +29,16 @@
     }
     
     usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
+    
+    // Cargar países desde la API
+    try {
+      const res = await fetch('https://countriesnow.space/api/v0.1/countries');
+      const data = await res.json();
+      todosLosPaises = data.data;
+    } catch (err) {
+      console.error('Error cargando países:', err);
+    }
+    
     await cargarReservacionesPendientes();
   });
 
@@ -28,7 +47,7 @@
     error = null;
     
     try {
-      const response = await fetch(`https://localhost:7107/api/mis-reservaciones/usuario/${usuarioId}`);
+      const response = await fetch(`http://localhost:5190/api/mis-reservaciones/usuario/${usuarioId}`);
       
       if (!response.ok) {
         throw new Error('Error al cargar las reservaciones');
@@ -73,10 +92,16 @@
           pasaporte: '',
           telefono: '',
           pais: '',
-          ciudad: '',
-          paisId: 1,
-          ciudadId: 1
+          ciudad: ''
         };
+        
+        // Inicializar estado de autocomplete para cada boleto
+        paisQueries[boleto.boletoId] = '';
+        paisesSugeridos[boleto.boletoId] = [];
+        paisesSeleccionados[boleto.boletoId] = null;
+        ciudadQueries[boleto.boletoId] = '';
+        ciudadesSugeridas[boleto.boletoId] = [];
+        ciudadesSeleccionadas[boleto.boletoId] = false;
       });
       
     } catch (err) {
@@ -84,6 +109,80 @@
       error = 'No se pudieron cargar las reservaciones pendientes.';
     } finally {
       loading = false;
+    }
+  }
+
+  // Funciones de autocomplete para País (igual que en el registro)
+  function onPaisInput(boletoId) {
+    const q = paisQueries[boletoId].toLowerCase();
+    paisesSugeridos[boletoId] = q.length < 2 ? [] : todosLosPaises
+      .filter(p => p.country.toLowerCase().includes(q))
+      .slice(0, 6);
+    paisesSugeridos = { ...paisesSugeridos };
+    
+    // Si el usuario escribe pero no selecciona de la lista
+    if (paisQueries[boletoId] && !paisesSeleccionados[boletoId]) {
+      passengerData[boletoId].pais = '';
+    }
+  }
+
+  function seleccionarPais(boletoId, pais) {
+    paisesSeleccionados[boletoId] = pais;
+    paisQueries[boletoId] = pais.country;
+    passengerData[boletoId].pais = pais.country;
+    paisesSugeridos[boletoId] = [];
+    
+    // Limpiar ciudad al cambiar país
+    ciudadQueries[boletoId] = '';
+    passengerData[boletoId].ciudad = '';
+    ciudadesSugeridas[boletoId] = [];
+    ciudadesSeleccionadas[boletoId] = false;
+    
+    paisQueries = { ...paisQueries };
+    paisesSeleccionados = { ...paisesSeleccionados };
+    paisesSugeridos = { ...paisesSugeridos };
+    ciudadQueries = { ...ciudadQueries };
+    ciudadesSugeridas = { ...ciudadesSugeridas };
+    ciudadesSeleccionadas = { ...ciudadesSeleccionadas };
+  }
+
+  function validarPaisSeleccionado(boletoId) {
+    if (paisQueries[boletoId] && !paisesSeleccionados[boletoId]) {
+      paisQueries[boletoId] = '';
+      paisQueries = { ...paisQueries };
+    }
+  }
+
+  // Funciones de autocomplete para Ciudad (igual que en el registro)
+  function onCiudadInput(boletoId) {
+    if (!paisesSeleccionados[boletoId]) return;
+    const q = ciudadQueries[boletoId].toLowerCase();
+    ciudadesSugeridas[boletoId] = q.length < 2 ? [] : paisesSeleccionados[boletoId].cities
+      .filter(c => c.toLowerCase().includes(q))
+      .slice(0, 6);
+    ciudadesSugeridas = { ...ciudadesSugeridas };
+    
+    // Si el usuario escribe pero no selecciona de la lista
+    if (ciudadQueries[boletoId] && !ciudadesSeleccionadas[boletoId]) {
+      passengerData[boletoId].ciudad = '';
+    }
+  }
+
+  function seleccionarCiudad(boletoId, ciudad) {
+    ciudadQueries[boletoId] = ciudad;
+    passengerData[boletoId].ciudad = ciudad;
+    ciudadesSugeridas[boletoId] = [];
+    ciudadesSeleccionadas[boletoId] = true;
+    
+    ciudadQueries = { ...ciudadQueries };
+    ciudadesSugeridas = { ...ciudadesSugeridas };
+    ciudadesSeleccionadas = { ...ciudadesSeleccionadas };
+  }
+
+  function validarCiudadSeleccionada(boletoId) {
+    if (ciudadQueries[boletoId] && !ciudadesSeleccionadas[boletoId]) {
+      ciudadQueries[boletoId] = '';
+      ciudadQueries = { ...ciudadQueries };
     }
   }
 
@@ -117,7 +216,19 @@
       for (const reservacionId in boletosAgrupados) {
         const body = boletosAgrupados[reservacionId];
         
-        const promise = fetch(`https://localhost:7107/api/reservaciones/${reservacionId}/pasajeros`, {
+        // Validar que todos los campos estén completos
+        for (const pasajero of body) {
+          if (!pasajero.nombre || !pasajero.apellido || !pasajero.pasaporte || 
+              !pasajero.telefono || !pasajero.pais || !pasajero.ciudad) {
+            alert('Por favor completa todos los campos de todos los pasajeros');
+            submitting = false;
+            return;
+          }
+        }
+        
+        console.log('Enviando datos para reservación', reservacionId, ':', body);
+        
+        const promise = fetch(`http://localhost:5190/api/reservaciones/${reservacionId}/pasajeros`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -135,10 +246,13 @@
       if (allSuccess) {
         // Navegar a checkout
         navigateTo('checkout');
+      } else {
+        alert('Hubo un error al procesar algunos datos. Por favor intenta de nuevo.');
       }
       
     } catch (err) {
       console.error('Error al enviar datos de pasajeros:', err);
+      alert('Error al enviar los datos. Por favor intenta de nuevo.');
     } finally {
       submitting = false;
     }
@@ -196,7 +310,7 @@
             <ul class="notice__list">
               <li class="notice__item">Los nombres deben coincidir exactamente con el pasaporte</li>
               <li class="notice__item">Verifica que los datos sean correctos antes de enviar</li>
-              <li class="notice__item">Tienes 10 minutos para completar los datos antes de que expire la reserva</li>
+              <li class="notice__item">Tienes 15 minutos para completar los datos antes de que expire la reserva</li>
             </ul>
           </div>
 
@@ -248,6 +362,7 @@
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].nombre}
                         placeholder="Nombre(s)"
+                        autocomplete="off"
                         required
                       />
                     </div>
@@ -262,6 +377,7 @@
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].apellido}
                         placeholder="Apellido(s)"
+                        autocomplete="off"
                         required
                       />
                     </div>
@@ -278,6 +394,7 @@
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].pasaporte}
                         placeholder="A12345678"
+                        autocomplete="off"
                         required
                       />
                     </div>
@@ -292,6 +409,7 @@
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].telefono}
                         placeholder="+502 1234-5678"
+                        autocomplete="off"
                         required
                       />
                     </div>
@@ -302,28 +420,69 @@
                       <label for="pais-{currentBoleto.boletoId}" class="form-field__label">
                         País *
                       </label>
-                      <input 
-                        type="text" 
-                        id="pais-{currentBoleto.boletoId}"
-                        class="form-field__input"
-                        bind:value={passengerData[currentBoleto.boletoId].pais}
-                        placeholder="Guatemala"
-                        required
-                      />
+                      <div class="autocomplete">
+                        <input 
+                          type="text" 
+                          id="pais-{currentBoleto.boletoId}"
+                          class="form-field__input"
+                          bind:value={paisQueries[currentBoleto.boletoId]}
+                          on:input={() => onPaisInput(currentBoleto.boletoId)}
+                          on:blur={() => validarPaisSeleccionado(currentBoleto.boletoId)}
+                          placeholder="Escribe tu país..."
+                          autocomplete="off"
+                          required
+                        />
+                        {#if paisesSugeridos[currentBoleto.boletoId]?.length > 0}
+                          <ul class="autocomplete__list">
+                            {#each paisesSugeridos[currentBoleto.boletoId] as pais}
+                              <li class="autocomplete__item">
+                                <button 
+                                  type="button" 
+                                  class="autocomplete__btn" 
+                                  on:click={() => seleccionarPais(currentBoleto.boletoId, pais)}
+                                >
+                                  {pais.country}
+                                </button>
+                              </li>
+                            {/each}
+                          </ul>
+                        {/if}
+                      </div>
                     </div>
 
                     <div class="form-field">
                       <label for="ciudad-{currentBoleto.boletoId}" class="form-field__label">
                         Ciudad *
                       </label>
-                      <input 
-                        type="text" 
-                        id="ciudad-{currentBoleto.boletoId}"
-                        class="form-field__input"
-                        bind:value={passengerData[currentBoleto.boletoId].ciudad}
-                        placeholder="Ciudad de Guatemala"
-                        required
-                      />
+                      <div class="autocomplete">
+                        <input 
+                          type="text" 
+                          id="ciudad-{currentBoleto.boletoId}"
+                          class="form-field__input"
+                          bind:value={ciudadQueries[currentBoleto.boletoId]}
+                          on:input={() => onCiudadInput(currentBoleto.boletoId)}
+                          on:blur={() => validarCiudadSeleccionada(currentBoleto.boletoId)}
+                          placeholder={paisesSeleccionados[currentBoleto.boletoId] ? 'Escribe tu ciudad...' : 'Primero selecciona un país'}
+                          disabled={!paisesSeleccionados[currentBoleto.boletoId]}
+                          autocomplete="off"
+                          required
+                        />
+                        {#if ciudadesSugeridas[currentBoleto.boletoId]?.length > 0}
+                          <ul class="autocomplete__list">
+                            {#each ciudadesSugeridas[currentBoleto.boletoId] as ciudad}
+                              <li class="autocomplete__item">
+                                <button 
+                                  type="button" 
+                                  class="autocomplete__btn" 
+                                  on:click={() => seleccionarCiudad(currentBoleto.boletoId, ciudad)}
+                                >
+                                  {ciudad}
+                                </button>
+                              </li>
+                            {/each}
+                          </ul>
+                        {/if}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -453,5 +612,51 @@
   .recap-reservation__boletos {
     font-size: 0.875rem;
     color: #666;
+  }
+
+  /* Estilos para autocomplete */
+  .autocomplete {
+    position: relative;
+  }
+
+  .autocomplete__list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 0.25rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    list-style: none;
+    padding: 0;
+  }
+
+  .autocomplete__item {
+    list-style: none;
+  }
+
+  .autocomplete__btn {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+  }
+
+  .autocomplete__btn:hover {
+    background-color: #f3f4f6;
+  }
+
+  .autocomplete__btn:focus {
+    background-color: #e5e7eb;
+    outline: none;
   }
 </style>

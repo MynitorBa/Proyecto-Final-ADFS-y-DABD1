@@ -30,6 +30,7 @@
   let suggestedDestination = null;
   let currentFlightId = null;
   let searchParams = null;
+  let reservacionesConfirmadas = [];
   let pageKey = Date.now();
   
   onMount(() => {
@@ -67,6 +68,10 @@
       console.log('✅ App.svelte - navegando a vuelos con busquedaId:', data.busquedaId);
     } else if (page === 'resultados-busqueda') {
       searchParams = data;
+    } else if (page === 'confirmacion' && data?.reservaciones) {
+      // NUEVO: Guardar las reservaciones confirmadas
+      reservacionesConfirmadas = data.reservaciones;
+      console.log('✅ App.svelte - reservaciones para confirmación:', reservacionesConfirmadas);
     } else if (page !== 'vuelos') {
       searchParams = null;
     }
@@ -127,7 +132,7 @@
         <Vuelos {navigateTo} {searchParams} />
       {/key}
     {:else if currentPage === 'confirmacion'}
-      <Comfirmacion {navigateTo} />
+      <Comfirmacion {navigateTo} reservaciones={reservacionesConfirmadas} />
     {:else if currentPage === 'resultados-busqueda'}
       <ResultadosBusqueda {navigateTo} {searchParams} />
     {:else if currentPage === 'carrito'}

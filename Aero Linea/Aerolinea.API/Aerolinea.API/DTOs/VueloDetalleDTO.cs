@@ -1,4 +1,6 @@
-﻿namespace Aerolinea.API.DTOs
+﻿using Aerolinea.API.DTOs;
+
+namespace Aerolinea.API.DTOs
 {
     public class VueloDetalleDTO
     {
@@ -42,5 +44,8 @@
         public decimal? PrecioEjecutiva { get; set; }
         public int? BoletosDisponiblesTurista { get; set; }
         public int? BoletosDisponiblesEjecutiva { get; set; }
+
+        // Tripulantes
+        public List<TripulanteDTO> Tripulantes { get; set; } = new List<TripulanteDTO>();
     }
 }

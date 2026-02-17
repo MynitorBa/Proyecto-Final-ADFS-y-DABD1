@@ -7,7 +7,7 @@
         public string Apellido { get; set; }
         public string Pasaporte { get; set; }
         public string Telefono { get; set; }
-        public int PaisId { get; set; }
-        public int CiudadId { get; set; }
+        public string Pais { get; set; }
+        public string Ciudad { get; set; }
     }
 }

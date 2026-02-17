@@ -1,36 +1,64 @@
 <script lang="ts">
   import '../styles/flight-notification.css';
   import avionPath from '../assets/AvionB.png';
+  import { onMount } from 'svelte';
 
   export let onDestinationClick = (city: string) => {};
 
-  // Lista de destinos que se mostrarán aleatoriamente
-  const destinations = [
-    { city: 'París', country: 'Francia' },
-    { city: 'Tokio', country: 'Japón' },
-    { city: 'Nueva York', country: 'Estados Unidos' },
-    { city: 'Barcelona', country: 'España' },
-    { city: 'Londres', country: 'Inglaterra' },
-    { city: 'Roma', country: 'Italia' },
-    { city: 'Dubái', country: 'Emiratos Árabes' },
-    { city: 'Cancún', country: 'México' }
-  ];
-
+  let destinations = [];
+  let loadingDestinations = true;
   let showNotification = false;
-  let currentDestination = destinations[0];
+  let currentDestination = null;
   let isVisible = false;
 
+  onMount(async () => {
+    try {
+      const res = await fetch('https://localhost:7107/api/aeropuertos');
+      const aeropuertos = await res.json();
+      
+      destinations = aeropuertos.map(a => ({
+        city: `${a.ciudad} (${a.codigo})`,
+        country: a.pais || 'Destino internacional',
+        codigo: a.codigo,
+        id: a.id
+      }));
+      
+      console.log('Destinos cargados para notificaciones:', destinations.length);
+      
+      if (destinations.length > 0) {
+        setTimeout(() => {
+          startAnimation();
+        }, 3000);
+
+        setInterval(() => {
+          if (!showNotification) {
+            startAnimation();
+          }
+        }, 15000);
+      }
+      
+    } catch (err) {
+      console.error('Error cargando destinos:', err);
+    } finally {
+      loadingDestinations = false;
+    }
+  });
+
   function getRandomDestination() {
+    if (destinations.length === 0) return null;
     const randomIndex = Math.floor(Math.random() * destinations.length);
     return destinations[randomIndex];
   }
 
   function startAnimation() {
+    if (destinations.length === 0) return;
+    
     currentDestination = getRandomDestination();
+    if (!currentDestination) return;
+    
     showNotification = true;
     isVisible = true;
 
-    // Ocultar después de que termine la animación
     setTimeout(() => {
       isVisible = false;
       setTimeout(() => {
@@ -40,32 +68,21 @@
   }
 
   function handleDestinationClick() {
-    onDestinationClick(currentDestination.city);
-    isVisible = false;
-    setTimeout(() => {
-      showNotification = false;
-    }, 500);
-  }
-
-  // Iniciar la primera animación después de un delay
-  setTimeout(() => {
-    startAnimation();
-  }, 3000);
-
-  // Repetir cada 15 segundos
-  setInterval(() => {
-    if (!showNotification) {
-      startAnimation();
+    if (currentDestination) {
+      onDestinationClick(currentDestination.city);
+      isVisible = false;
+      setTimeout(() => {
+        showNotification = false;
+      }, 500);
     }
-  }, 15000);
+  }
 </script>
 
-{#if showNotification}
+{#if showNotification && currentDestination}
   <div 
     class="broom-flight-notification" 
     class:broom-flight-notification--visible={isVisible}
   >
-    <!-- Avión -->
     <div class="broom-flight-notification__plane">
       <img 
         src={avionPath} 
@@ -74,7 +91,6 @@
       >
     </div>
 
-    <!-- Burbuja de texto -->
     <div class="broom-flight-notification__bubble">
       <button 
         class="broom-flight-notification__bubble-content"
@@ -90,11 +106,9 @@
         </span>
       </button>
       
-      <!-- Piquito de la burbuja -->
       <div class="broom-flight-notification__bubble-tail"></div>
     </div>
 
-    <!-- Botón para cerrar -->
     <button 
       class="broom-flight-notification__close"
       on:click={() => { isVisible = false; setTimeout(() => showNotification = false, 500); }}

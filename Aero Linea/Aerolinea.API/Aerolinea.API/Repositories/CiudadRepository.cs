@@ -13,20 +13,19 @@ namespace Aerolinea.API.Repositories
         }
 
         // Busca o crea la ciudad y devuelve su Id
-        public async Task<int> ObtenerOCrearId(string nombre, int paisId, SqlConnection connection)
+        public async Task<int> ObtenerOCrearId(string nombre, int paisId, SqlConnection connection, SqlTransaction transaction = null)
         {
             // Buscar si ya existe en ese país
             using var selectCmd = new SqlCommand(
-                "SELECT ID FROM Ciudad WHERE Nombre = @Nombre AND PaisID = @PaisId", connection);
+                "SELECT ID FROM Ciudad WHERE Nombre = @Nombre AND PaisID = @PaisId", connection, transaction);
             selectCmd.Parameters.AddWithValue("@Nombre", nombre);
             selectCmd.Parameters.AddWithValue("@PaisId", paisId);
             var result = await selectCmd.ExecuteScalarAsync();
-
             if (result != null) return (int)result;
 
             // Si no existe, crearla
             using var insertCmd = new SqlCommand(
-                "INSERT INTO Ciudad (Nombre, PaisID) OUTPUT INSERTED.ID VALUES (@Nombre, @PaisId)", connection);
+                "INSERT INTO Ciudad (Nombre, PaisID) OUTPUT INSERTED.ID VALUES (@Nombre, @PaisId)", connection, transaction);
             insertCmd.Parameters.AddWithValue("@Nombre", nombre);
             insertCmd.Parameters.AddWithValue("@PaisId", paisId);
             return (int)await insertCmd.ExecuteScalarAsync();
