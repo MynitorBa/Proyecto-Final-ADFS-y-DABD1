@@ -16,12 +16,10 @@ public class DatabaseManager {
     private static final String PASSWORD =
             System.getenv().getOrDefault("DB_PASS", "meme1234");
 
-
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
-    // SELECT con mapper y parámetros
     public static <T> List<T> executeQuery(
             String sql,
             ResultSetMapper<T> mapper,
@@ -31,15 +29,12 @@ public class DatabaseManager {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             setParameters(stmt, params);
-
             ResultSet rs = stmt.executeQuery();
 
             List<T> results = new ArrayList<>();
-
             while (rs.next()) {
                 results.add(mapper.map(rs));
             }
-
             return results;
 
         } catch (Exception e) {
@@ -47,7 +42,6 @@ public class DatabaseManager {
         }
     }
 
-    // INSERT, UPDATE, DELETE
     public static int executeUpdate(
             String sql,
             Object... params) {
@@ -56,7 +50,6 @@ public class DatabaseManager {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             setParameters(stmt, params);
-
             return stmt.executeUpdate();
 
         } catch (Exception e) {
@@ -64,7 +57,6 @@ public class DatabaseManager {
         }
     }
 
-    // INSERT retornando el ID generado (para Oracle usamos RETURNING INTO)
     public static int executeInsertReturnId(
             String sql,
             String idColumnName,
@@ -77,7 +69,6 @@ public class DatabaseManager {
             stmt.executeUpdate();
 
             ResultSet generatedKeys = stmt.getGeneratedKeys();
-
             if (generatedKeys.next()) {
                 return generatedKeys.getInt(1);
             }
@@ -91,13 +82,33 @@ public class DatabaseManager {
         }
     }
 
-    // Método privado para parámetros dinámicos
     private static void setParameters(
             PreparedStatement stmt,
             Object... params) throws SQLException {
 
         for (int i = 0; i < params.length; i++) {
-            stmt.setObject(i + 1, params[i]);
+            Object param = params[i];
+            if (param == null) {
+                stmt.setNull(i + 1, Types.NULL);
+            } else if (param instanceof Integer) {
+                stmt.setInt(i + 1, (Integer) param);
+            } else if (param instanceof Long) {
+                stmt.setLong(i + 1, (Long) param);
+            } else if (param instanceof Double) {
+                stmt.setDouble(i + 1, (Double) param);
+            } else if (param instanceof Float) {
+                stmt.setFloat(i + 1, (Float) param);
+            } else if (param instanceof Boolean) {
+                stmt.setBoolean(i + 1, (Boolean) param);
+            } else if (param instanceof java.sql.Date) {
+                stmt.setDate(i + 1, (java.sql.Date) param);
+            } else if (param instanceof java.sql.Timestamp) {
+                stmt.setTimestamp(i + 1, (java.sql.Timestamp) param);
+            } else if (param instanceof byte[]) {
+                stmt.setBytes(i + 1, (byte[]) param);
+            } else {
+                stmt.setString(i + 1, param.toString());
+            }
         }
     }
 }

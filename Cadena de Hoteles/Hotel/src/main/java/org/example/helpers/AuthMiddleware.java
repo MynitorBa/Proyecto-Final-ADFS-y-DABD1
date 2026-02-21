@@ -15,7 +15,8 @@ public class AuthMiddleware {
             "/auth/login",
             "/auth/logout",
             "/usuarios/registrar",
-            "/usuarios/validar"
+            "/usuarios/validar",
+            "/busqueda"
     );
 
     public static void registrar(Javalin app) {
