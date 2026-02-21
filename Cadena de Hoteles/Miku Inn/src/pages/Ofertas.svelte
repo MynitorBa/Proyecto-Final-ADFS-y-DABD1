@@ -1,5 +1,6 @@
 <script>
   export let navigateTo;
+  import '../styles/ofertas.css';
   
   // Categorías de ofertas
   let selectedCategory = 'all';
@@ -165,13 +166,13 @@
 
 <div class="ofertas-page">
   <!-- Hero Section Profesional -->
-  <section class="hero-section">
+  <section class="ofertas__hero-section">
     <div class="hero-background"></div>
     <div class="hero-container">
-      <div class="hero-content">
+      <div class="ofertas__hero-content">
         <span class="hero-label">Descuentos Exclusivos</span>
-        <h1 class="hero-title">Ofertas Especiales</h1>
-        <p class="hero-description">
+        <h1 class="ofertas__hero-title">Ofertas Especiales</h1>
+        <p class="ofertas__hero-description">
           Descubre nuestras promociones seleccionadas con descuentos de hasta 45%
         </p>
       </div>
@@ -216,7 +217,7 @@
       <div class="filters-wrapper">
         {#each categories as category}
           <button 
-            class="filter-btn"
+            class="ofertas__filter-btn"
             class:active={selectedCategory === category.id}
             on:click={() => selectedCategory = category.id}
           >
@@ -236,8 +237,8 @@
 
     <!-- Ofertas Grid Profesional -->
     <section class="offers-section">
-      <div class="section-header">
-        <h2 class="section-title">
+      <div class="ofertas__section-header">
+        <h2 class="ofertas__section-title">
           {selectedCategory === 'all' ? 'Todas las Ofertas' : categories.find(c => c.id === selectedCategory).name}
         </h2>
         <p class="section-subtitle">{filteredOfertas.length} {filteredOfertas.length === 1 ? 'oferta disponible' : 'ofertas disponibles'}</p>
@@ -252,11 +253,11 @@
               
               <!-- Badges -->
               <div class="badges-container">
-                <div class="discount-badge">
+                <div class="ofertas__discount-badge">
                   <span class="discount-value">-{oferta.discount}%</span>
                 </div>
                 {#if oferta.featured}
-                  <div class="featured-badge">
+                  <div class="ofertas__featured-badge">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
@@ -271,8 +272,8 @@
               <!-- Header -->
               <div class="offer-header">
                 <div class="hotel-info">
-                  <h3 class="hotel-name">{oferta.name}</h3>
-                  <div class="hotel-location">
+                  <h3 class="ofertas__hotel-name">{oferta.name}</h3>
+                  <div class="ofertas__hotel-location">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                       <circle cx="12" cy="10" r="3"></circle>
@@ -332,7 +333,7 @@
                 <div class="price-section">
                   <div class="price-original">{formatPrice(oferta.originalPrice)}</div>
                   <div class="price-current">
-                    <span class="amount">{formatPrice(oferta.offerPrice)}</span>
+                    <span class="ofertas__amount">{formatPrice(oferta.offerPrice)}</span>
                     <span class="period">/ noche</span>
                   </div>
                   <div class="savings-text">Ahorra {formatPrice(oferta.originalPrice - oferta.offerPrice)}</div>
@@ -355,11 +356,11 @@
     <!-- CTA Final Profesional -->
     <section class="final-cta">
       <div class="cta-card">
-        <div class="cta-content">
-          <h2 class="cta-title">¿No encontraste lo que buscabas?</h2>
-          <p class="cta-description">Explora nuestra colección completa de hoteles alrededor del mundo</p>
+        <div class="ofertas__cta-content">
+          <h2 class="ofertas__cta-title">¿No encontraste lo que buscabas?</h2>
+          <p class="ofertas__cta-description">Explora nuestra colección completa de hoteles alrededor del mundo</p>
         </div>
-        <button class="cta-button" on:click={() => navigateTo('search-results')}>
+        <button class="ofertas__cta-button" on:click={() => navigateTo('search-results')}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.35-4.35"></path>
@@ -370,696 +371,3 @@
     </section>
   </div>
 </div>
-
-<style>
-  /* ============================================
-     DISEÑO PROFESIONAL - OFERTAS ESPECIALES
-     ============================================ */
-  
-  /* Variables Globales */
-  :root {
-    --primary: #667eea;
-    --primary-dark: #5568d3;
-    --secondary: #764ba2;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --info: #3b82f6;
-    
-    --gray-50: #f8fafc;
-    --gray-100: #f1f5f9;
-    --gray-200: #e2e8f0;
-    --gray-300: #cbd5e1;
-    --gray-400: #94a3b8;
-    --gray-500: #64748b;
-    --gray-600: #475569;
-    --gray-700: #334155;
-    --gray-800: #1e293b;
-    --gray-900: #0f172a;
-    
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    
-    --radius-sm: 6px;
-    --radius: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-    
-    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  /* Base Page */
-  .ofertas-page {
-    min-height: 100vh;
-    background: var(--gray-50);
-  }
-  
-  /* ====================
-     HERO SECTION
-     ==================== */
-  .hero-section {
-    position: relative;
-    padding: 5rem 2rem 4rem;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    overflow: hidden;
-  }
-  
-  .hero-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-      radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-    opacity: 0.5;
-  }
-  
-  .hero-container {
-    position: relative;
-    max-width: 1200px;
-    margin: 0 auto;
-    z-index: 1;
-  }
-  
-  .hero-content {
-    text-align: center;
-    color: white;
-    margin-bottom: 3rem;
-  }
-  
-  .hero-label {
-    display: inline-block;
-    padding: 0.5rem 1.25rem;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    border-radius: 50px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 1.5rem;
-  }
-  
-  .hero-title {
-    font-size: clamp(2.5rem, 5vw, 3.5rem);
-    font-weight: 700;
-    margin: 0 0 1rem;
-    letter-spacing: -0.02em;
-  }
-  
-  .hero-description {
-    font-size: clamp(1rem, 2vw, 1.125rem);
-    opacity: 0.95;
-    max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.6;
-  }
-  
-  .hero-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  .stat-card {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    text-align: center;
-    color: white;
-    transition: var(--transition);
-  }
-  
-  .stat-card:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-  }
-  
-  .stat-icon {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius-md);
-  }
-  
-  .stat-value {
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-  }
-  
-  .stat-label {
-    font-size: 0.875rem;
-    opacity: 0.9;
-    font-weight: 500;
-  }
-  
-  /* ====================
-     MAIN CONTAINER
-     ==================== */
-  .main-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 3rem 2rem;
-  }
-  
-  /* ====================
-     FILTERS SECTION
-     ==================== */
-  .filters-section {
-    margin-bottom: 3rem;
-  }
-  
-  .filters-wrapper {
-    display: flex;
-    gap: 0.75rem;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
-    scrollbar-width: thin;
-    scrollbar-color: var(--gray-300) transparent;
-  }
-  
-  .filters-wrapper::-webkit-scrollbar {
-    height: 6px;
-  }
-  
-  .filters-wrapper::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .filters-wrapper::-webkit-scrollbar-thumb {
-    background: var(--gray-300);
-    border-radius: 3px;
-  }
-  
-  .filter-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.75rem 1.25rem;
-    background: white;
-    border: 2px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    color: var(--gray-700);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: var(--transition);
-    flex-shrink: 0;
-  }
-  
-  .filter-btn:hover {
-    border-color: var(--primary);
-    background: var(--gray-50);
-    transform: translateY(-1px);
-  }
-  
-  .filter-btn.active {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-color: var(--primary);
-    color: white;
-    box-shadow: var(--shadow-md);
-  }
-  
-  .filter-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .filter-text {
-    font-weight: 600;
-  }
-  
-  .filter-count {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 0.5rem;
-    background: var(--gray-100);
-    color: var(--gray-700);
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-  }
-  
-  .filter-btn.active .filter-count {
-    background: rgba(255, 255, 255, 0.25);
-    color: white;
-  }
-  
-  /* ====================
-     OFFERS SECTION
-     ==================== */
-  .offers-section {
-    margin-bottom: 4rem;
-  }
-  
-  .section-header {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-  
-  .section-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin: 0 0 0.5rem;
-  }
-  
-  .section-subtitle {
-    font-size: 1rem;
-    color: var(--gray-500);
-    margin: 0;
-  }
-  
-  .offers-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 2rem;
-  }
-  
-  /* ====================
-     OFFER CARDS
-     ==================== */
-  .offer-card {
-    background: white;
-    border-radius: var(--radius-xl);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: var(--transition);
-    cursor: pointer;
-    border: 1px solid var(--gray-200);
-  }
-  
-  .offer-card:hover {
-    box-shadow: var(--shadow-xl);
-    transform: translateY(-4px);
-    border-color: var(--primary);
-  }
-  
-  .offer-image-wrapper {
-    position: relative;
-    height: 240px;
-    overflow: hidden;
-  }
-  
-  .offer-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .offer-card:hover .offer-image {
-    transform: scale(1.08);
-  }
-  
-  .badges-container {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  
-  .discount-badge {
-    padding: 0.625rem 1rem;
-    background: var(--danger);
-    color: white;
-    border-radius: var(--radius);
-    font-weight: 700;
-    font-size: 1.125rem;
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .discount-value {
-    display: block;
-    line-height: 1;
-  }
-  
-  .featured-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.875rem;
-    background: var(--warning);
-    color: white;
-    border-radius: var(--radius);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .featured-badge svg {
-    width: 14px;
-    height: 14px;
-  }
-  
-  .offer-body {
-    padding: 1.5rem;
-  }
-  
-  .offer-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  .hotel-info {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .hotel-name {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--gray-900);
-    margin: 0 0 0.375rem;
-    line-height: 1.3;
-  }
-  
-  .hotel-location {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    color: var(--gray-600);
-    font-size: 0.9375rem;
-  }
-  
-  .hotel-location svg {
-    flex-shrink: 0;
-  }
-  
-  .rating-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--warning);
-    color: white;
-    border-radius: var(--radius);
-    font-weight: 700;
-    font-size: 0.9375rem;
-    flex-shrink: 0;
-  }
-  
-  .hotel-details {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--gray-200);
-  }
-  
-  .stars {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-  
-  .star-icon {
-    width: 14px;
-    height: 14px;
-    fill: var(--warning);
-  }
-  
-  .reviews-count {
-    margin-left: 0.25rem;
-    color: var(--gray-500);
-    font-size: 0.875rem;
-  }
-  
-  .category-tag {
-    padding: 0.375rem 0.75rem;
-    background: var(--gray-100);
-    color: var(--gray-700);
-    border-radius: var(--radius);
-    font-size: 0.8125rem;
-    font-weight: 600;
-  }
-  
-  .perks-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    margin-bottom: 1rem;
-  }
-  
-  .perk-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--gray-600);
-    font-size: 0.875rem;
-  }
-  
-  .perk-item svg {
-    flex-shrink: 0;
-    color: var(--success);
-  }
-  
-  .countdown-banner {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    background: rgba(239, 68, 68, 0.08);
-    border-left: 3px solid var(--danger);
-    border-radius: var(--radius);
-    color: var(--danger);
-    font-size: 0.875rem;
-    margin-bottom: 1rem;
-  }
-  
-  .countdown-banner svg {
-    flex-shrink: 0;
-  }
-  
-  .countdown-banner strong {
-    font-weight: 700;
-  }
-  
-  .offer-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--gray-200);
-  }
-  
-  .price-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .price-original {
-    color: var(--gray-400);
-    font-size: 0.875rem;
-    text-decoration: line-through;
-  }
-  
-  .price-current {
-    display: flex;
-    align-items: baseline;
-    gap: 0.375rem;
-  }
-  
-  .price-current .amount {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: var(--gray-900);
-    line-height: 1;
-  }
-  
-  .price-current .period {
-    font-size: 0.875rem;
-    color: var(--gray-500);
-  }
-  
-  .savings-text {
-    color: var(--success);
-    font-size: 0.875rem;
-    font-weight: 600;
-  }
-  
-  .view-offer-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
-    font-weight: 700;
-    font-size: 0.9375rem;
-    cursor: pointer;
-    transition: var(--transition);
-    box-shadow: var(--shadow-md);
-    white-space: nowrap;
-  }
-  
-  .view-offer-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .view-offer-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-  
-  /* ====================
-     FINAL CTA
-     ==================== */
-  .final-cta {
-    margin-top: 4rem;
-  }
-  
-  .cta-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-    padding: 3rem;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-radius: var(--radius-xl);
-    color: white;
-  }
-  
-  .cta-content {
-    flex: 1;
-  }
-  
-  .cta-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem;
-  }
-  
-  .cta-description {
-    font-size: 1.125rem;
-    margin: 0;
-    opacity: 0.95;
-  }
-  
-  .cta-button {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 1.125rem 2rem;
-    background: white;
-    color: var(--primary);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: 1.0625rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: var(--transition);
-    box-shadow: var(--shadow-lg);
-    white-space: nowrap;
-  }
-  
-  .cta-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.3);
-  }
-  
-  /* ====================
-     RESPONSIVE
-     ==================== */
-  @media (max-width: 1024px) {
-    .offers-grid {
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .hero-section {
-      padding: 3rem 1.5rem 2.5rem;
-    }
-    
-    .hero-title {
-      font-size: 2rem;
-    }
-    
-    .hero-description {
-      font-size: 1rem;
-    }
-    
-    .hero-stats-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-    
-    .main-container {
-      padding: 2rem 1rem;
-    }
-    
-    .offers-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-    
-    .section-title {
-      font-size: 1.5rem;
-    }
-    
-    .cta-card {
-      flex-direction: column;
-      text-align: center;
-      padding: 2rem 1.5rem;
-    }
-    
-    .cta-title {
-      font-size: 1.5rem;
-    }
-    
-    .cta-description {
-      font-size: 1rem;
-    }
-    
-    .cta-button {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .offer-footer {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .view-offer-btn {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-</style>
