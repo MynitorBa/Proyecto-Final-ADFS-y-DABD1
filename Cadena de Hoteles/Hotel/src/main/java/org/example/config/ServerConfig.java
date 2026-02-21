@@ -12,6 +12,12 @@ public class ServerConfig {
 
         return Javalin.create(config -> {
             config.showJavalinBanner = false;
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> {
+                    it.anyHost();
+                    it.allowCredentials = false;
+                });
+            });
         }).start(port);
     }
 }
