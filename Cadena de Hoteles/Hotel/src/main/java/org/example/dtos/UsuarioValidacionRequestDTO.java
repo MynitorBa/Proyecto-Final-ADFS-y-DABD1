@@ -1,21 +1,28 @@
 package org.example.dtos;
 
+import java.util.List;
+
 public class UsuarioValidacionRequestDTO {
     private String username;
     private String correo;
+    private String contrasena;
     private String pasaporte;
     private String nombre;
     private String apellido;
     private String telefono;
-    private String fechaNacimiento; // "YYYY-MM-DD"
-    private Integer ciudadId;
-    private Integer rolId;
+    private String fechaNacimiento;      // "YYYY-MM-DD"
+    private String pais;                 // nombre del país como string
+    private String ciudad;               // nombre de la ciudad como string
+    private List<String> nacionalidades; // lista de nombres como strings
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
     public String getCorreo() { return correo; }
     public void setCorreo(String correo) { this.correo = correo; }
+
+    public String getContrasena() { return contrasena; }
+    public void setContrasena(String contrasena) { this.contrasena = contrasena; }
 
     public String getPasaporte() { return pasaporte; }
     public void setPasaporte(String pasaporte) { this.pasaporte = pasaporte; }
@@ -32,9 +39,12 @@ public class UsuarioValidacionRequestDTO {
     public String getFechaNacimiento() { return fechaNacimiento; }
     public void setFechaNacimiento(String fechaNacimiento) { this.fechaNacimiento = fechaNacimiento; }
 
-    public Integer getCiudadId() { return ciudadId; }
-    public void setCiudadId(Integer ciudadId) { this.ciudadId = ciudadId; }
+    public String getPais() { return pais; }
+    public void setPais(String pais) { this.pais = pais; }
 
-    public Integer getRolId() { return rolId; }
-    public void setRolId(Integer rolId) { this.rolId = rolId; }
+    public String getCiudad() { return ciudad; }
+    public void setCiudad(String ciudad) { this.ciudad = ciudad; }
+
+    public List<String> getNacionalidades() { return nacionalidades; }
+    public void setNacionalidades(List<String> nacionalidades) { this.nacionalidades = nacionalidades; }
 }

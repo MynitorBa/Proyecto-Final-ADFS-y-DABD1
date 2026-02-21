@@ -12,8 +12,10 @@ public class DatabaseManager {
 
     private static final String USER =
             System.getenv().getOrDefault("DB_USER", "system");
+
     private static final String PASSWORD =
             System.getenv().getOrDefault("DB_PASS", "meme1234");
+
 
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
@@ -59,6 +61,33 @@ public class DatabaseManager {
 
         } catch (Exception e) {
             throw new DataAccessException("Error ejecutando update", e);
+        }
+    }
+
+    // INSERT retornando el ID generado (para Oracle usamos RETURNING INTO)
+    public static int executeInsertReturnId(
+            String sql,
+            String idColumnName,
+            Object... params) {
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, new String[]{idColumnName})) {
+
+            setParameters(stmt, params);
+            stmt.executeUpdate();
+
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+
+            if (generatedKeys.next()) {
+                return generatedKeys.getInt(1);
+            }
+
+            throw new DataAccessException("No se obtuvo ID generado tras el INSERT", null);
+
+        } catch (DataAccessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DataAccessException("Error ejecutando insert con ID retornado", e);
         }
     }
 
