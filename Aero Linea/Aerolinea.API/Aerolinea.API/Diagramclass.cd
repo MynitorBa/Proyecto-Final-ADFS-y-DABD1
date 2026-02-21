@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Aerolinea.API.Controllers.UsuariosController">
+    <Position X="4" Y="4.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAAAAAAgQAAAAAAAAAAAACAAAAAAAAAgAAAA=</HashCode>
+      <FileName>Controllers\UsuariosController.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_service" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Aerolinea.API.Services.UsuarioService">
+    <Position X="7.5" Y="4" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAABAAAgAAAAAAGAIAAAACAAAAAAAAAgAAAA=</HashCode>
+      <FileName>Services\UsuarioService.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_ciudadRepository" />
+      <Field Name="_connectionFactory" />
+      <Field Name="_paisRepository" />
+      <Field Name="_repository" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Aerolinea.API.Repositories.UsuarioRepository">
+    <Position X="12.5" Y="6" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAEAAAAAgCABEAAGAIAAAAAACgAAAAAAgAABA=</HashCode>
+      <FileName>Repositories\UsuarioRepository.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_ciudadRepository" />
+      <Field Name="_connectionFactory" />
+      <Field Name="_nacionalidadRepository" />
+      <Field Name="_paisRepository" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Aerolinea.API.Repositories.CiudadRepository">
+    <Position X="10" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAACAAAAAAgAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\CiudadRepository.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_connectionFactory" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Aerolinea.API.Data.DbConnectionFactory">
+    <Position X="13.75" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAIAAAAAAAAAAA=</HashCode>
+      <FileName>Data\DbConnectionFactory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Repositories.PaisRepository">
+    <Position X="10" Y="1.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAACAAAAAAgAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\PaisRepository.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_connectionFactory" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Aerolinea.API.Repositories.NacionalidadRepository">
+    <Position X="17.25" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAACAAAAAAgAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Repositories\NacionalidadRepository.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_connectionFactory" />
+    </ShowAsAssociation>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Aeropuerto">
+    <Position X="3.5" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAECAAAAAQAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Aeropuerto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Avion">
+    <Position X="5.25" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACABAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAA=</HashCode>
+      <FileName>Models\Avion.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Boleto">
+    <Position X="8.75" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAGAAAEAAAAAAAAAAAJAAASACAAAAgAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Boleto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.BusquedaVuelo">
+    <Position X="10.5" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAiAAASIAABAAAAAAAAAAAAAAAAAAAAAEAAAAAAAiQ=</HashCode>
+      <FileName>Models\BusquedaVuelo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Ciudad">
+    <Position X="12.25" Y="9.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAACAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Ciudad.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Comentario">
+    <Position X="3.25" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAEAAAAAAABABIAAAAAAAAAQAAAgAAA=</HashCode>
+      <FileName>Models\Comentario.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.DatosPasajero">
+    <Position X="5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAQAAAAEAAAAgAgAAAAAAAAAAAAAAgAAAAA=</HashCode>
+      <FileName>Models\DatosPasajero.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Down">
+    <Position X="6.75" Y="13.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAABAAAAIAAAAAAAAAAEAIAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Down.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Nacionalidad">
+    <Position X="3.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Nacionalidad.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Pais">
+    <Position X="7" Y="8.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Pais.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Reservacion">
+    <Position X="14.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAgAIAAAAAIAAAAAAAAgAIAAQAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Reservacion.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.RolTripulacion">
+    <Position X="14" Y="11.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\RolTripulacion.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Tripulante">
+    <Position X="5" Y="13.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAEEAAAgAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Tripulante.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Usuario">
+    <Position X="8.75" Y="11.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>kAECAAAAAAQAAAAEEQAAgAAAAJAAAAAAAAAAAgAAAAA=</HashCode>
+      <FileName>Models\Usuario.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.UsuarioNacionalidad">
+    <Position X="10.5" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAAAAAAACAAAIAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\UsuarioNacionalidad.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.Models.Vuelo">
+    <Position X="12.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAEAAAAAAkAAAAAAAAAAAAAABIAAQAAAAAgAEA=</HashCode>
+      <FileName>Models\Vuelo.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.DTOs.GuardarBusquedaDto">
+    <Position X="7" Y="10.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAiAAASIAABAAAAAAAAAAAAAAAAAAAAAEAAAAAAAiQ=</HashCode>
+      <FileName>Models\Guardarbusquedadto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.DTOs.LoginResponseDto">
+    <Position X="12.25" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAgAAAAIAAAAAAAEAAAAAAABA=</HashCode>
+      <FileName>Models\Loginresponsedto.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Aerolinea.API.DTOs.RegisterConstraint">
+    <Position X="14" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAABAAAAgAAAAAAAAAAAEAA=</HashCode>
+      <FileName>Models\RegisterConstraint.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
