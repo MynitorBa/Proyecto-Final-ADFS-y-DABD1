@@ -1,8 +1,9 @@
 <script>
   import logo from '../assets/mikuinn-logo.png';
-  
+  import '../styles/Footer.css';
+
   const currentYear = new Date().getFullYear();
-  
+
   const quickLinks = [
     { name: 'Inicio', href: '#/' },
     { name: 'Sobre Nosotros', href: '#/about' },
@@ -10,7 +11,7 @@
     { name: 'Destinos', href: '#/destinations' },
     { name: 'Ofertas', href: '#/offers' }
   ];
-  
+
   const services = [
     { name: 'Reservaciones', href: '#/reservations' },
     { name: 'Programa de Lealtad', href: '#/loyalty' },
@@ -18,15 +19,15 @@
     { name: 'Grupos y Eventos', href: '#/groups' },
     { name: 'Gift Cards', href: '#/giftcards' }
   ];
-  
+
   const support = [
     { name: 'Centro de Ayuda', href: '#/help' },
-    { name: 'Contáctanos', href: '#/contact' },
+    { name: 'Contactanos', href: '#/contact' },
     { name: 'Preguntas Frecuentes', href: '#/faq' },
-    { name: 'Política de Cancelación', href: '#/cancellation' },
-    { name: 'Términos y Condiciones', href: '#/terms' }
+    { name: 'Politica de Cancelacion', href: '#/cancellation' },
+    { name: 'Terminos y Condiciones', href: '#/terms' }
   ];
-  
+
   const socialLinks = [
     {
       name: 'Facebook',
@@ -49,90 +50,69 @@
       icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`
     }
   ];
+
+  const legalLinks = [
+    { name: 'Privacidad', href: '#/privacy' },
+    { name: 'Terminos', href: '#/terms' },
+    { name: 'Cookies', href: '#/cookies' },
+    { name: 'Mapa del Sitio', href: '#/sitemap' }
+  ];
+
+  const chevronRight = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 </script>
 
 <footer class="footer">
-  <!-- Main Footer -->
   <div class="footer-main">
     <div class="footer-container">
-      <!-- Company Info -->
+
+      <!-- Empresa -->
       <div class="footer-section company-section">
-        <div class="footer-logo">
-          <img src={logo} alt="Miku Inn" class="footer-logo-image" />
-        </div>
+        <img src={logo} alt="Miku Inn" class="footer-logo" />
         <p class="company-description">
-          Experiencias de lujo en los destinos más exclusivos del mundo. Más de 20 años de excelencia hotelera.
+          Experiencias de lujo en los destinos mas exclusivos del mundo. Mas de 20 anos de excelencia hotelera.
         </p>
         <div class="social-links">
           {#each socialLinks as social}
-            <a 
-              href={social.href} 
-              class="social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={social.name}
-            >
+            <a href={social.href} class="social-link" target="_blank" rel="noopener noreferrer" aria-label={social.name}>
               {@html social.icon}
             </a>
           {/each}
         </div>
       </div>
-      
-      <!-- Quick Links -->
+
+      <!-- Enlaces Rapidos -->
       <div class="footer-section">
-        <h3 class="footer-title">Enlaces Rápidos</h3>
+        <h3 class="footer-title">Enlaces Rapidos</h3>
         <ul class="footer-links">
           {#each quickLinks as link}
-            <li>
-              <a href={link.href} class="footer-link">
-                <svg class="link-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-                {link.name}
-              </a>
-            </li>
+            <li><a href={link.href} class="footer-link">{@html chevronRight}{link.name}</a></li>
           {/each}
         </ul>
       </div>
-      
-      <!-- Services -->
+
+      <!-- Servicios -->
       <div class="footer-section">
         <h3 class="footer-title">Servicios</h3>
         <ul class="footer-links">
           {#each services as link}
-            <li>
-              <a href={link.href} class="footer-link">
-                <svg class="link-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-                {link.name}
-              </a>
-            </li>
+            <li><a href={link.href} class="footer-link">{@html chevronRight}{link.name}</a></li>
           {/each}
         </ul>
       </div>
-      
-      <!-- Support -->
+
+      <!-- Soporte -->
       <div class="footer-section">
         <h3 class="footer-title">Soporte</h3>
         <ul class="footer-links">
           {#each support as link}
-            <li>
-              <a href={link.href} class="footer-link">
-                <svg class="link-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-                {link.name}
-              </a>
-            </li>
+            <li><a href={link.href} class="footer-link">{@html chevronRight}{link.name}</a></li>
           {/each}
         </ul>
       </div>
-      
-      <!-- Contact Info -->
+
+      <!-- Contacto -->
       <div class="footer-section contact-section">
-        <h3 class="footer-title">Contáctanos</h3>
-        
+        <h3 class="footer-title">Contactanos</h3>
         <div class="contact-items">
           <div class="contact-item">
             <div class="contact-icon">
@@ -141,11 +121,10 @@
               </svg>
             </div>
             <div class="contact-details">
-              <strong>Atención 24/7</strong>
+              <strong>Atencion 24/7</strong>
               <p>+502 4276-8687</p>
             </div>
           </div>
-          
           <div class="contact-item">
             <div class="contact-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -158,7 +137,6 @@
               <p>info@mikuinn.com</p>
             </div>
           </div>
-          
           <div class="contact-item">
             <div class="contact-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -172,18 +150,13 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Newsletter -->
         <div class="newsletter">
-          <h4 class="newsletter-title">Suscríbete a nuestro boletín</h4>
+          <h4 class="newsletter-title">Suscribete a nuestro boletin</h4>
           <form class="newsletter-form">
-            <input 
-              type="email" 
-              placeholder="Tu correo electrónico" 
-              class="newsletter-input"
-              required
-            />
-            <button type="submit" class="newsletter-button">
+            <input type="email" placeholder="Tu correo electronico" class="newsletter-input" required />
+            <button type="submit" class="newsletter-button" aria-label="Suscribirse">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="22" y1="2" x2="11" y2="13"></line>
                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -192,375 +165,28 @@
           </form>
         </div>
       </div>
+
     </div>
   </div>
-  
+
   <!-- Bottom Bar -->
   <div class="footer-bottom">
-    <div class="footer-container">
-      <div class="footer-bottom-content">
-        <p class="copyright">
-          © {currentYear} <strong>Miku Inn</strong>. Todos los derechos reservados.
-        </p>
-        
-        <div class="footer-legal">
-          <a href="#/privacy" class="legal-link">Privacidad</a>
-          <span class="separator">•</span>
-          <a href="#/terms" class="legal-link">Términos</a>
-          <span class="separator">•</span>
-          <a href="#/cookies" class="legal-link">Cookies</a>
-          <span class="separator">•</span>
-          <a href="#/sitemap" class="legal-link">Mapa del Sitio</a>
-        </div>
-        
-        <div class="payment-methods">
-          <span class="payment-label">Aceptamos:</span>
-          <div class="payment-icons">
-            <div class="payment-icon">💳</div>
-            <div class="payment-icon">🏦</div>
-            <div class="payment-icon">💰</div>
-          </div>
+    <div class="footer-container footer-bottom-content">
+      <p class="copyright">© {currentYear} <strong>Miku Inn</strong>. Todos los derechos reservados.</p>
+      <nav class="footer-legal" aria-label="Legal">
+        {#each legalLinks as link, i}
+          <a href={link.href} class="legal-link">{link.name}</a>
+          {#if i < legalLinks.length - 1}<span class="separator" aria-hidden="true">•</span>{/if}
+        {/each}
+      </nav>
+      <div class="payment-methods">
+        <span class="payment-label">Aceptamos:</span>
+        <div class="payment-icons">
+          <div class="payment-icon" aria-label="Tarjeta">💳</div>
+          <div class="payment-icon" aria-label="Banco">🏦</div>
+          <div class="payment-icon" aria-label="Efectivo">💰</div>
         </div>
       </div>
     </div>
   </div>
 </footer>
-
-<style>
-  /* ========== FOOTER PRINCIPAL ========== */
-  .footer {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    color: #e2e8f0;
-    margin-top: auto;
-  }
-  
-  .footer-main {
-    padding: 4rem 0 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .footer-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem;
-  }
-  
-  /* ========== GRID DE SECCIONES ========== */
-  .footer-main .footer-container {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1fr 1.5fr;
-    gap: 3rem;
-  }
-  
-  /* ========== COMPANY SECTION ========== */
-  .company-section {
-    padding-right: 2rem;
-  }
-  
-  .footer-logo {
-    margin-bottom: 1.5rem;
-  }
-  
-  .footer-logo-image {
-    height: 200px;
-    width: auto;
-    object-fit: contain;
-    filter: brightness(0) invert(1);
-  }
-  
-  .company-description {
-    color: #cbd5e1;
-    line-height: 1.7;
-    margin-bottom: 2rem;
-    font-size: 0.95rem;
-  }
-  
-  /* ========== SOCIAL LINKS ========== */
-  .social-links {
-    display: flex;
-    gap: 0.75rem;
-  }
-  
-  .social-link {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    color: #e2e8f0;
-    transition: all 0.3s ease;
-  }
-  
-  .social-link:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-  }
-  
-  .social-link svg {
-    width: 20px;
-    height: 20px;
-  }
-  
-  /* ========== FOOTER SECTIONS ========== */
-  .footer-section {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .footer-title {
-    color: #f8fafc;
-    font-size: 1.125rem;
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-    letter-spacing: 0.02em;
-  }
-  
-  .footer-links {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .footer-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #cbd5e1;
-    text-decoration: none;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-    padding: 0.25rem 0;
-  }
-  
-  .footer-link:hover {
-    color: #667eea;
-    padding-left: 0.5rem;
-  }
-  
-  .link-icon {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  
-  .footer-link:hover .link-icon {
-    opacity: 1;
-  }
-  
-  /* ========== CONTACT SECTION ========== */
-  .contact-section {
-    padding-left: 2rem;
-  }
-  
-  .contact-items {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-  
-  .contact-item {
-    display: flex;
-    align-items: start;
-    gap: 1rem;
-  }
-  
-  .contact-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(102, 126, 234, 0.15);
-    border-radius: 10px;
-    color: #667eea;
-    flex-shrink: 0;
-  }
-  
-  .contact-details strong {
-    color: #f8fafc;
-    font-size: 0.95rem;
-    display: block;
-    margin-bottom: 0.25rem;
-  }
-  
-  .contact-details p {
-    color: #cbd5e1;
-    font-size: 0.9rem;
-    margin: 0;
-  }
-  
-  /* ========== NEWSLETTER ========== */
-  .newsletter {
-    margin-top: 2rem;
-  }
-  
-  .newsletter-title {
-    color: #f8fafc;
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  
-  .newsletter-form {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .newsletter-input {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    color: white;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-  }
-  
-  .newsletter-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-  
-  .newsletter-input:focus {
-    outline: none;
-    background: rgba(255, 255, 255, 0.15);
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-  }
-  
-  .newsletter-button {
-    padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 8px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .newsletter-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-  }
-  
-  /* ========== FOOTER BOTTOM ========== */
-  .footer-bottom {
-    padding: 2rem 0;
-    background: rgba(0, 0, 0, 0.2);
-  }
-  
-  .footer-bottom-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-  }
-  
-  .copyright {
-    color: #94a3b8;
-    font-size: 0.9rem;
-    margin: 0;
-  }
-  
-  .copyright strong {
-    color: #e2e8f0;
-  }
-  
-  .footer-legal {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .legal-link {
-    color: #94a3b8;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-  }
-  
-  .legal-link:hover {
-    color: #667eea;
-  }
-  
-  .separator {
-    color: rgba(148, 163, 184, 0.5);
-  }
-  
-  .payment-methods {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  
-  .payment-label {
-    color: #94a3b8;
-    font-size: 0.85rem;
-  }
-  
-  .payment-icons {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .payment-icon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    font-size: 1rem;
-  }
-  
-  /* ========== RESPONSIVE ========== */
-  @media (max-width: 1200px) {
-    .footer-main .footer-container {
-      grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .company-section,
-    .contact-section {
-      grid-column: span 3;
-      padding: 0;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .footer-main {
-      padding: 3rem 0 1.5rem;
-    }
-    
-    .footer-main .footer-container {
-      grid-template-columns: 1fr;
-      gap: 2.5rem;
-    }
-    
-    .footer-bottom-content {
-      flex-direction: column;
-      text-align: center;
-    }
-    
-    .footer-legal {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    
-    .payment-methods {
-      justify-content: center;
-    }
-  }
-  
-  /* ========== DARK MODE (ya está oscuro) ========== */
-</style>

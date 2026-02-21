@@ -1,115 +1,73 @@
 <script>
   export let navigateTo;
   import '../styles/login.css';
-  
-  // Form data
-  let formData = {
-    email: '',
-    password: ''
-  };
-  
-  // UI States
+  import { onMount } from 'svelte';
+
+  let formData = { email: '', password: '' };
   let showPassword = false;
   let rememberMe = false;
   let errors = {};
   let isSubmitting = false;
   let loginSuccess = false;
   let serverError = '';
-  let attemptCount = 0;
-  
-  // Validaciones
-  function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  }
-  
+
+  onMount(() => {
+    const saved = localStorage.getItem('rememberEmail');
+    if (saved) { formData.email = saved; rememberMe = true; }
+  });
+
   function validateForm() {
     errors = {};
-    serverError = '';
-    
-    if (!formData.email.trim()) {
-      errors.email = 'El email es requerido';
-    } else if (!validateEmail(formData.email)) {
-      errors.email = 'Email inválido';
-    }
-    
-    if (!formData.password) {
-      errors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      errors.password = 'La contraseña debe tener al menos 6 caracteres';
-    }
-    
+    if (!formData.email.trim()) errors.email = 'El usuario o email es requerido';
+    if (!formData.password) errors.password = 'La contrasena es requerida';
     return Object.keys(errors).length === 0;
   }
-  
-  // Manejo de envío
+
   async function handleLogin(e) {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
+    if (!validateForm()) return;
+
     isSubmitting = true;
-    attemptCount++;
-    
-    // Simular llamada al backend
-    setTimeout(() => {
-      isSubmitting = false;
-      
-      // Simulación: 80% éxito, 20% login__error para demo
-      if (Math.random() > 0.2 || attemptCount > 2) {
-        // Login exitoso
-        loginSuccess = true;
-        
-        console.log('Login exitoso:', {
-          email: formData.email,
-          rememberMe,
-          timestamp: new Date().toISOString()
-        });
-        
-        // En producción, aquí se guardaría el token
-        if (rememberMe) {
-          localStorage.setItem('rememberEmail', formData.email);
-        }
-        
-        // Redirigir al home después de 1.5 segundos
-        setTimeout(() => {
-          navigateTo('home');
-        }, 1500);
-      } else {
-        // Login fallido
-        serverError = 'Email o contraseña incorrectos. Por favor verifica tus credenciales.';
-        formData.password = ''; // Limpiar contraseña
+    serverError = '';
+
+    try {
+      const res = await fetch('http://localhost:7000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identificador: formData.email, contrasena: formData.password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        serverError = data.mensaje ?? 'Usuario o contrasena incorrectos';
+        formData.password = '';
+        return;
       }
-    }, 2000);
-  }
-  
-  // Verificar si hay email guardado
-  function checkRememberedEmail() {
-    const savedEmail = localStorage.getItem('rememberEmail');
-    if (savedEmail) {
-      formData.email = savedEmail;
-      rememberMe = true;
+
+      if (rememberMe) localStorage.setItem('rememberEmail', formData.email);
+      else localStorage.removeItem('rememberEmail');
+
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('rolId', data.rolId);
+
+      loginSuccess = true;
+      setTimeout(() => navigateTo('home'), 1500);
+
+    } catch (err) {
+      serverError = `Error de conexion: ${err.message}`;
+    } finally {
+      isSubmitting = false;
     }
   }
-  
-  // Cargar email guardado al montar
-  import { onMount } from 'svelte';
-  onMount(() => {
-    checkRememberedEmail();
-  });
-  
-  // Limpiar errores cuando el usuario empieza a escribir
-  $: if (formData.email || formData.password) {
-    serverError = '';
-  }
+
+  $: if (formData.email || formData.password) serverError = '';
 </script>
 
 <div class="login-page">
   <div class="login-container">
     <div class="login-card">
-      <!-- Back Button -->
+
       <button class="login__back-link" on:click={() => navigateTo('home')}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -117,17 +75,15 @@
         Volver al inicio
       </button>
 
-      <!-- Header -->
       <div class="login__header">
         <div class="login__logo-section">
           <img src="/src/assets/mikuinn-logo.png" alt="Miku Inn" class="login__logo-image" />
         </div>
-        <h2 class="login__title">Iniciar Sesión</h2>
+        <h2 class="login__title">Iniciar Sesion</h2>
         <p class="login__subtitle">Accede a tu cuenta y gestiona tus reservas</p>
       </div>
 
       {#if loginSuccess}
-        <!-- Success Message -->
         <div class="login__success-message">
           <div class="login__success-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,18 +91,16 @@
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
           </div>
-          <h3>¡Bienvenido de vuelta!</h3>
-          <p>Iniciando sesión...</p>
+          <h3>Bienvenido de vuelta!</h3>
+          <p>Iniciando sesion...</p>
           <div class="login__loading-dots">
-            <span></span>
-            <span></span>
-            <span></span>
+            <span></span><span></span><span></span>
           </div>
         </div>
+
       {:else}
-        <!-- Login Form -->
         <form on:submit={handleLogin} class="login-form">
-          <!-- Server Error Alert -->
+
           {#if serverError}
             <div class="alert alert-error">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -158,50 +112,27 @@
             </div>
           {/if}
 
-          <!-- Email Field -->
           <div class="login__form-field">
-            <label for="email">
-              Correo Electrónico
-            </label>
+            <label for="email">Usuario o Correo Electronico</label>
             <div class="login__input-with-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
               </svg>
-              <input
-                type="email"
-                id="email"
-                bind:value={formData.email}
-                placeholder="tu@email.com"
-                class:error={errors.email}
-                autocomplete="email"
-              />
+              <input type="text" id="email" bind:value={formData.email}
+                placeholder="usuario o tu@email.com" class:error={errors.email} autocomplete="username" />
             </div>
-            {#if errors.email}
-              <span class="login__error-text">{errors.email}</span>
-            {/if}
+            {#if errors.email}<span class="login__error-text">{errors.email}</span>{/if}
           </div>
 
-          <!-- Password Field -->
           <div class="login__form-field">
-            <label for="password">
-              Contraseña
-            </label>
+            <label for="password">Contrasena</label>
             <div class="login__password-field">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                bind:value={formData.password}
-                placeholder="Ingresa tu contraseña"
-                class:error={errors.password}
-                autocomplete="current-password"
-              />
-              <button
-                type="button"
-                class="login__toggle-btn"
-                on:click={() => showPassword = !showPassword}
-                tabindex="-1"
-              >
+              <input type={showPassword ? 'text' : 'password'} id="password"
+                bind:value={formData.password} placeholder="Ingresa tu contrasena"
+                class:error={errors.password} autocomplete="current-password" />
+              <button type="button" class="login__toggle-btn"
+                on:click={() => showPassword = !showPassword} tabindex="-1">
                 {#if showPassword}
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -215,58 +146,38 @@
                 {/if}
               </button>
             </div>
-            {#if errors.password}
-              <span class="login__error-text">{errors.password}</span>
-            {/if}
+            {#if errors.password}<span class="login__error-text">{errors.password}</span>{/if}
           </div>
 
-          <!-- Remember Me & Forgot Password -->
           <div class="form-options">
             <label class="login__checkbox-label">
-              <input 
-                type="checkbox" 
-                bind:checked={rememberMe}
-              />
+              <input type="checkbox" bind:checked={rememberMe} />
               <span class="login__checkbox-custom"></span>
               <span class="login__checkbox-text">Recordarme</span>
             </label>
-            
-            <button 
-              type="button" 
-              class="forgot-link"
-              on:click={() => navigateTo('forgot-password')}
-            >
-              ¿Olvidaste tu contraseña?
+            <button type="button" class="forgot-link" on:click={() => navigateTo('forgot-password')}>
+              Olvidaste tu contrasena?
             </button>
           </div>
 
-          <!-- Submit Button -->
-          <button 
-            type="submit" 
-            class="login__submit-btn"
-            disabled={isSubmitting}
-          >
+          <button type="submit" class="login__submit-btn" disabled={isSubmitting}>
             {#if isSubmitting}
               <svg class="login__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
-              Iniciando sesión...
+              Iniciando sesion...
             {:else}
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                 <polyline points="10 17 15 12 10 7"></polyline>
                 <line x1="15" y1="12" x2="3" y2="12"></line>
               </svg>
-              Iniciar Sesión
+              Iniciar Sesion
             {/if}
           </button>
 
-          <!-- Divider -->
-          <div class="divider">
-            <span>o continúa con</span>
-          </div>
+          <div class="divider"><span>o continua con</span></div>
 
-          <!-- Social Login Buttons -->
           <div class="social-buttons">
             <button type="button" class="social-btn" on:click={() => alert('Google login en desarrollo')}>
               <svg width="20" height="20" viewBox="0 0 24 24">
@@ -277,14 +188,12 @@
               </svg>
               Google
             </button>
-            
             <button type="button" class="social-btn" on:click={() => alert('Facebook login en desarrollo')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
               Facebook
             </button>
-
             <button type="button" class="social-btn" on:click={() => alert('Apple login en desarrollo')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
@@ -293,18 +202,17 @@
             </button>
           </div>
 
-          <!-- Register Link -->
-          <div class="login__footer-text">
-            ¿No tienes una cuenta? 
-            <button type="button" class="login__link-btn" on:click={() => navigateTo('register')}>
-              Regístrate aquí
-            </button>
-          </div>
         </form>
+
+        <!-- ✅ FUERA del form — esto es el fix -->
+        <div class="login__footer-text">
+          No tienes una cuenta?
+          <button type="button" class="login__link-btn" on:click={() => navigateTo('register')}>
+            Registrate aqui
+          </button>
+        </div>
+
       {/if}
     </div>
-
-    <!-- Additional Info -->
-    
   </div>
 </div>

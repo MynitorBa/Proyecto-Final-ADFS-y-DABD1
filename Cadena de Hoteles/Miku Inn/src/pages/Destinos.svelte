@@ -1,7 +1,7 @@
 <script>
   export let navigateTo;
   import '../styles/destinos.css';
-  // Destinos populares
+
   const destinos = [
     {
       id: 'paris',
@@ -13,7 +13,7 @@
       hotelsCount: 1250,
       startingPrice: 89,
       featured: true,
-      hasRecommendedFlight: true // Solo París tiene vuelo recomendado
+      hasRecommendedFlight: true
     },
     {
       id: 'tokyo',
@@ -85,7 +85,7 @@
     <div class="hero-content">
       <h1 class="hero-title">Descubre tu Próximo Destino</h1>
       <p class="hero-subtitle">Explora los mejores hoteles en los destinos más populares del mundo</p>
-      
+
       <div class="hero-stats">
         <div class="stat">
           <div class="stat-number">1,250+</div>
@@ -112,36 +112,37 @@
 
     <div class="destinos-grid">
       {#each destinos as destino}
-        <div 
-          class="destino-card" 
+        <button
+          class="destino-card"
           class:featured={destino.featured}
           on:click={() => navigateTo('destino-detail', destino.id)}
+          aria-label="Explorar {destino.name}, {destino.country}"
         >
           <!-- Image -->
           <div class="destino-image">
             <img src={destino.image} alt={destino.name} />
-            <div class="destino-overlay">
-              <button class="view-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="destino-overlay" aria-hidden="true">
+              <span class="view-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.35-4.35"></path>
                 </svg>
                 Explorar
-              </button>
+              </span>
             </div>
-            
+
             {#if destino.featured}
-              <div class="featured-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <div class="featured-badge" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
                 Popular
               </div>
             {/if}
-            
+
             {#if destino.hasRecommendedFlight}
-              <div class="flight-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <div class="flight-badge" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                   <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
                   <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
@@ -158,7 +159,7 @@
           <div class="destino-content">
             <div class="destino-header">
               <div class="destino-name-wrapper">
-                <span class="flag">{destino.flag}</span>
+                <span class="flag" aria-hidden="true">{destino.flag}</span>
                 <div>
                   <h3 class="destino-name">{destino.name}</h3>
                   <p class="destino-country">{destino.country}</p>
@@ -170,7 +171,7 @@
 
             <div class="destino-info">
               <div class="destinos__info-item">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                   <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
@@ -183,7 +184,7 @@
               </div>
             </div>
           </div>
-        </div>
+        </button>
       {/each}
     </div>
   </div>

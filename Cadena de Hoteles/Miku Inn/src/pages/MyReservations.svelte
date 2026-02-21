@@ -1,6 +1,8 @@
 <script>
-import '../styles/myreservations.css';
-  // Datos de ejemplo de reservaciones
+  import '../styles/myreservations.css';
+
+  export let navigateTo = (page, data = null) => {};
+
   let reservations = [
     {
       id: "MIKU-12345678",
@@ -43,189 +45,109 @@ import '../styles/myreservations.css';
       cancellationDate: "2026-01-22"
     }
   ];
-  
-  let selectedFilter = 'all';
-  let searchQuery = '';
-  
-  $: filteredReservations = reservations.filter(r => {
-    const matchesFilter = selectedFilter === 'all' || r.status === selectedFilter;
-    const matchesSearch = r.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         r.hotelName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-  
-  function getStatusBadge(status) {
-    const badges = {
-      confirmed: { text: 'Confirmada', class: 'status-confirmed', icon: '✓' },
-      completed: { text: 'Completada', class: 'status-completed', icon: '✓' },
-      cancelled: { text: 'Cancelada', class: 'status-cancelled', icon: '✕' }
-    };
-    return badges[status] || badges.confirmed;
-  }
-  
-  function viewDetails(reservationId) {
-    console.log('Ver detalles de:', reservationId);
-  }
-  
-  function downloadReceipt(reservationId) {
-    console.log('Descargar comprobante:', reservationId);
-  }
-  
-  function cancelReservation(reservationId) {
-    if (confirm('¿Estás seguro de que deseas cancelar esta reserva?')) {
-      console.log('Cancelando reserva:', reservationId);
-      // Aquí iría la lógica de cancelación
+
+  const STATUS = {
+    confirmed: { text: 'Confirmada', cls: 'confirmed', icon: '✓' },
+    completed:  { text: 'Completada', cls: 'completed', icon: '✓' },
+    cancelled:  { text: 'Cancelada',  cls: 'cancelled', icon: '✕' }
+  };
+
+  const FILTERS = [['all','Todas'],['confirmed','Confirmadas'],['completed','Completadas'],['cancelled','Canceladas']];
+
+  let filter = 'all';
+  let search = '';
+
+  $: filtered = reservations.filter(r =>
+    (filter === 'all' || r.status === filter) &&
+    (r.id.toLowerCase().includes(search.toLowerCase()) ||
+     r.hotelName.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  function cancel(id) {
+    if (confirm('¿Cancelar esta reserva?')) {
+      reservations = reservations.map(r =>
+        r.id === id ? { ...r, status: 'cancelled', cancellationDate: new Date().toISOString().split('T')[0] } : r
+      );
     }
   }
 </script>
 
-<div class="reservations-container">
-  <div class="myres__container">
-    <!-- Header -->
-    <div class="page-header">
+<div class="wrap">
+  <div class="inner">
+
+    <header class="hdr">
       <div>
         <h1>Mis Reservas</h1>
-        <p class="myres__subtitle">Gestiona todas tus reservaciones en un solo lugar</p>
+        <p class="sub">Gestiona todas tus reservaciones en un solo lugar</p>
       </div>
-      
-      <button class="btn-new-booking" on:click={() => window.location.href = '#/'}>
-        + Nueva Reserva
-      </button>
-    </div>
-    
-    <!-- Filters and Search -->
+      <button class="btn-new" on:click={() => navigateTo('home')}>+ Nueva Reserva</button>
+    </header>
+
     <div class="controls">
       <div class="filters">
-        <button
-          class="myres__filter-btn"
-          class:active={selectedFilter === 'all'}
-          on:click={() => selectedFilter = 'all'}
-        >
-          Todas
-        </button>
-        <button
-          class="myres__filter-btn"
-          class:active={selectedFilter === 'confirmed'}
-          on:click={() => selectedFilter = 'confirmed'}
-        >
-          Confirmadas
-        </button>
-        <button
-          class="myres__filter-btn"
-          class:active={selectedFilter === 'completed'}
-          on:click={() => selectedFilter = 'completed'}
-        >
-          Completadas
-        </button>
-        <button
-          class="myres__filter-btn"
-          class:active={selectedFilter === 'cancelled'}
-          on:click={() => selectedFilter = 'cancelled'}
-        >
-          Canceladas
-        </button>
+        {#each FILTERS as [val, label]}
+          <button class="fbtn" class:active={filter === val} on:click={() => filter = val}>{label}</button>
+        {/each}
       </div>
-      
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input
-          type="text"
-          bind:value={searchQuery}
-          placeholder="Buscar por código o nombre de hotel..."
-        />
+      <div class="search">
+        <span>🔍</span>
+        <input bind:value={search} placeholder="Buscar por código o nombre de hotel..." />
       </div>
     </div>
-    
-    <!-- Reservations List -->
-    <div class="reservations-list">
-      {#if filteredReservations.length === 0}
-        <div class="myres__no-results">
-          <div class="myres__no-results-icon">📋</div>
+
+    <div class="list">
+      {#if filtered.length === 0}
+        <div class="empty">
+          <div class="empty-icon">📋</div>
           <h2>No se encontraron reservas</h2>
-          <p>Intenta ajustar tus filtros o realiza una nueva búsqueda</p>
+          <p>Intenta ajustar los filtros o realiza una nueva búsqueda</p>
         </div>
       {:else}
-        {#each filteredReservations as reservation}
-          <div class="reservation-card">
-            <div class="reservation-image">
-              <img src={reservation.image} alt={reservation.hotelName} />
-              <div class="status-badge {getStatusBadge(reservation.status).class}">
-                {getStatusBadge(reservation.status).icon} {getStatusBadge(reservation.status).text}
-              </div>
+        {#each filtered as r}
+          {@const s = STATUS[r.status]}
+          <div class="card">
+            <div class="img-wrap">
+              <img src={r.image} alt={r.hotelName} />
+              <span class="badge {s.cls}">{s.icon} {s.text}</span>
             </div>
-            
-            <div class="reservation-info">
-              <div class="myres__info-header">
+
+            <div class="info">
+              <div class="info-hdr">
                 <div>
-                  <h3>{reservation.hotelName}</h3>
-                  <p class="room-type">{reservation.roomType}</p>
+                  <h3>{r.hotelName}</h3>
+                  <p class="room">{r.roomType}</p>
                 </div>
-                <div class="reservation-code">
+                <div class="code">
                   <small>Código de Reserva</small>
-                  <strong>{reservation.id}</strong>
+                  <strong>{r.id}</strong>
                 </div>
               </div>
-              
-              <div class="myres__info-grid">
-                <div class="myres__info-item">
-                  <span class="myres__info-label">📅 Check-in</span>
-                  <span class="myres__info-value">{reservation.checkIn}</span>
-                </div>
-                
-                <div class="myres__info-item">
-                  <span class="myres__info-label">📅 Check-out</span>
-                  <span class="myres__info-value">{reservation.checkOut}</span>
-                </div>
-                
-                <div class="myres__info-item">
-                  <span class="myres__info-label">🌙 Noches</span>
-                  <span class="myres__info-value">{reservation.nights}</span>
-                </div>
-                
-                <div class="myres__info-item">
-                  <span class="myres__info-label">👥 Huéspedes</span>
-                  <span class="myres__info-value">{reservation.guests}</span>
-                </div>
-                
-                <div class="myres__info-item">
-                  <span class="myres__info-label">💰 Total Pagado</span>
-                  <span class="myres__info-value myres__price">${reservation.totalPrice}</span>
-                </div>
-                
-                <div class="myres__info-item">
-                  <span class="myres__info-label">📆 Fecha de Reserva</span>
-                  <span class="myres__info-value">{reservation.bookingDate}</span>
-                </div>
+
+              <div class="grid">
+                {#each [['📅 Check-in', r.checkIn],['📅 Check-out', r.checkOut],['🌙 Noches', r.nights],['👥 Huéspedes', r.guests],['💰 Total', `$${r.totalPrice}`],['📆 Reservado', r.bookingDate]] as [label, val]}
+                  <div class="cell">
+                    <span class="lbl">{label}</span>
+                    <span class="val">{val}</span>
+                  </div>
+                {/each}
               </div>
-              
-              {#if reservation.cancellationDate}
-                <div class="myres__cancellation-info">
-                  ⚠️ Cancelada el {reservation.cancellationDate}
-                </div>
+
+              {#if r.cancellationDate}
+                <div class="cancel-note">⚠️ Cancelada el {r.cancellationDate}</div>
               {/if}
             </div>
-            
-            <div class="reservation-actions">
-              <button class="myres__action-btn btn-details" on:click={() => viewDetails(reservation.id)}>
-                Ver Detalles
-              </button>
-              
-              <button class="myres__action-btn btn-download" on:click={() => downloadReceipt(reservation.id)}>
-                📄 Descargar
-              </button>
-              
-              {#if reservation.status === 'confirmed'}
-                <button
-                  class="myres__action-btn btn-cancel"
-                  on:click={() => cancelReservation(reservation.id)}
-                >
-                  Cancelar Reserva
-                </button>
+
+            <div class="actions">
+              <button class="abtn primary">Ver Detalles</button>
+              <button class="abtn">📄 Descargar</button>
+              {#if r.status === 'confirmed'}
+                <button class="abtn danger" on:click={() => cancel(r.id)}>Cancelar Reserva</button>
               {/if}
             </div>
           </div>
         {/each}
       {/if}
     </div>
+
   </div>
 </div>
