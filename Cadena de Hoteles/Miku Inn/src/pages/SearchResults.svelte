@@ -1,6 +1,7 @@
- <script>
+<script>
   export let navigateTo;
   export let searchParams = null;
+  import '../styles/searchresults.css';
   
   // Estados de UI
   let isLoading = false;
@@ -401,7 +402,7 @@
 <div class="search-results-page">
   <!-- Barra de modificación de búsqueda -->
   <div class="search-modify-bar">
-    <div class="container">
+    <div class="search__container">
       <div class="search-modify-content">
         <div class="search-summary-inline">
           <div class="search-item">
@@ -437,7 +438,7 @@
   </div>
   
   <!-- Contenedor principal -->
-  <div class="container">
+  <div class="search__container">
     <div class="results-header">
       <div class="results-info">
         <h1>{search.destination}: {filteredHotels.length} hoteles encontrados</h1>
@@ -572,13 +573,13 @@
           </h3>
           <div class="checkbox-group">
             {#each starOptions as stars}
-              <label class="checkbox-label">
+              <label class="search__checkbox-label">
                 <input 
                   type="checkbox" 
                   checked={filters.stars.includes(stars)}
                   on:change={() => toggleFilter(filters.stars, stars)}
                 />
-                <span class="checkbox-text">
+                <span class="search__checkbox-text">
                   <span class="stars-display">{getStars(stars)}</span>
                   <span>{stars} {stars === 1 ? 'estrella' : 'estrellas'}</span>
                 </span>
@@ -598,13 +599,13 @@
           </h3>
           <div class="checkbox-group">
             {#each amenityOptions as amenity}
-              <label class="checkbox-label">
+              <label class="search__checkbox-label">
                 <input 
                   type="checkbox" 
                   checked={filters.amenities.includes(amenity.id)}
                   on:change={() => toggleFilter(filters.amenities, amenity.id)}
                 />
-                <span class="checkbox-text">
+                <span class="search__checkbox-text">
                   <span class="amenity-icon">{amenity.icon}</span>
                   {amenity.label}
                 </span>
@@ -623,13 +624,13 @@
           </h3>
           <div class="checkbox-group">
             {#each roomTypeOptions as roomType}
-              <label class="checkbox-label">
+              <label class="search__checkbox-label">
                 <input 
                   type="checkbox" 
                   checked={filters.roomTypes.includes(roomType)}
                   on:change={() => toggleFilter(filters.roomTypes, roomType)}
                 />
-                <span class="checkbox-text">{roomType}</span>
+                <span class="search__checkbox-text">{roomType}</span>
               </label>
             {/each}
           </div>
@@ -646,13 +647,13 @@
           </h3>
           <div class="checkbox-group">
             {#each propertyTypeOptions as propertyType}
-              <label class="checkbox-label">
+              <label class="search__checkbox-label">
                 <input 
                   type="checkbox" 
                   checked={filters.propertyTypes.includes(propertyType)}
                   on:change={() => toggleFilter(filters.propertyTypes, propertyType)}
                 />
-                <span class="checkbox-text">{propertyType}</span>
+                <span class="search__checkbox-text">{propertyType}</span>
               </label>
             {/each}
           </div>
@@ -668,7 +669,7 @@
             Política de cancelación
           </h3>
           <div class="radio-group">
-            <label class="radio-label">
+            <label class="search__radio-label">
               <input 
                 type="radio" 
                 bind:group={filters.cancellationPolicy} 
@@ -676,7 +677,7 @@
               />
               <span>Todas</span>
             </label>
-            <label class="radio-label">
+            <label class="search__radio-label">
               <input 
                 type="radio" 
                 bind:group={filters.cancellationPolicy} 
@@ -774,9 +775,9 @@
         <!-- Lista de hoteles -->
         {#if isLoading}
           <!-- Skeleton Loader -->
-          <div class="hotels-grid" class:list-view={viewMode === 'list'}>
+          <div class="search__hotels-grid" class:list-view={viewMode === 'list'}>
             {#each Array(3) as _}
-              <div class="hotel-card skeleton">
+              <div class="search__hotel-card skeleton">
                 <div class="skeleton-image"></div>
                 <div class="skeleton-content">
                   <div class="skeleton-line"></div>
@@ -788,8 +789,8 @@
           </div>
         {:else if filteredHotels.length === 0}
           <!-- No results -->
-          <div class="no-results">
-            <div class="no-results-icon">
+          <div class="search__no-results">
+            <div class="search__no-results-icon">
               <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
@@ -805,15 +806,15 @@
           </div>
         {:else}
           <!-- Hoteles -->
-          <div class="hotels-grid" class:list-view={viewMode === 'list'} class:grid-view={viewMode === 'grid'}>
+          <div class="search__hotels-grid" class:list-view={viewMode === 'list'} class:grid-view={viewMode === 'grid'}>
             {#each filteredHotels as hotel (hotel.id)}
-              <article class="hotel-card" on:click={() => goToHotelDetail(hotel.id)}>
+              <article class="search__hotel-card" on:click={() => goToHotelDetail(hotel.id)}>
                 <!-- Galería de imágenes -->
                 <div class="hotel-gallery">
-                  <div class="gallery-main-image">
+                  <div class="search__gallery-main-image">
                     <img src={hotel.images[0]} alt={hotel.name} />
                     {#if hotel.discount > 0}
-                      <div class="discount-badge">
+                      <div class="search__discount-badge">
                         -{hotel.discount}%
                       </div>
                     {/if}
@@ -824,14 +825,14 @@
                     {/if}
                   </div>
                   {#if hotel.images.length > 1}
-                    <div class="gallery-thumbnails">
+                    <div class="search__gallery-thumbnails">
                       {#each hotel.images.slice(1, 4) as image, i}
-                        <div class="gallery-thumb">
+                        <div class="search__gallery-thumb">
                           <img src={image} alt="{hotel.name} - imagen {i + 2}" />
                         </div>
                       {/each}
                       {#if hotel.images.length > 4}
-                        <div class="gallery-more">
+                        <div class="search__gallery-more">
                           +{hotel.images.length - 4}
                         </div>
                       {/if}
@@ -845,7 +846,7 @@
                 </div>
                 
                 <!-- Información del hotel -->
-                <div class="hotel-content">
+                <div class="search__hotel-content">
                   <div class="hotel-header-row">
                     <div class="hotel-title-section">
                       <div class="hotel-badges-row">
@@ -853,17 +854,17 @@
                           <span class="hotel-badge">{badge}</span>
                         {/each}
                       </div>
-                      <h2 class="hotel-name">{hotel.name}</h2>
-                      <div class="hotel-stars">
+                      <h2 class="search__hotel-name">{hotel.name}</h2>
+                      <div class="search__hotel-stars">
                         {getStars(hotel.stars)}
-                        <span class="property-type">{hotel.propertyType}</span>
+                        <span class="search__property-type">{hotel.propertyType}</span>
                       </div>
                     </div>
                     
                     <div class="hotel-rating-box">
-                      <div class="rating-score">{hotel.guestScore}</div>
-                      <div class="rating-text">{hotel.guestScoreText}</div>
-                      <div class="rating-reviews">{hotel.reviews} opiniones</div>
+                      <div class="search__rating-score">{hotel.guestScore}</div>
+                      <div class="search__rating-text">{hotel.guestScoreText}</div>
+                      <div class="search__rating-reviews">{hotel.reviews} opiniones</div>
                     </div>
                   </div>
                   
@@ -926,7 +927,7 @@
                           <div class="original-price">{formatPrice(hotel.originalPrice)}</div>
                         {/if}
                         <div class="current-price">
-                          <span class="price-amount">{formatPrice(hotel.totalPrice)}</span>
+                          <span class="search__price-amount">{formatPrice(hotel.totalPrice)}</span>
                           <span class="price-label">total</span>
                         </div>
                         <div class="price-per-night">
@@ -958,7 +959,7 @@
             </button>
             
             <div class="pagination-numbers">
-              <button class="pagination-number active">1</button>
+              <button class="pagination-number search__active">1</button>
               <button class="pagination-number">2</button>
               <button class="pagination-number">3</button>
               <span class="pagination-dots">...</span>
@@ -980,14 +981,14 @@
   <!-- Mapa (simulado) -->
   {#if showMap}
     <div class="map-overlay">
-      <div class="map-container">
+      <div class="search__map-container">
         <button class="map-close-btn" on:click={() => showMap = false}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
-        <div class="map-placeholder">
+        <div class="search__map-placeholder">
           <div class="map-icon">
             <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
@@ -1002,1247 +1003,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  /* ========== VARIABLES ========== */
-  :root {
-    --primary-color: #667eea;
-    --primary-dark: #5568d3;
-    --secondary-color: #764ba2;
-    --success-color: #10b981;
-    --danger-color: #ef4444;
-    --warning-color: #f59e0b;
-    --text-dark: #1e293b;
-    --text-medium: #475569;
-    --text-light: #64748b;
-    --border-color: #e2e8f0;
-    --bg-light: #f8fafc;
-    --bg-white: #ffffff;
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-  }
-  
-  /* ========== BASE ========== */
-  .search-results-page {
-    min-height: 100vh;
-    background: var(--bg-light);
-  }
-  
-  .container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem;
-  }
-  
-  /* ========== SEARCH MODIFY BAR ========== */
-  .search-modify-bar {
-    background: var(--bg-white);
-    border-bottom: 1px solid var(--border-color);
-    padding: 1rem 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .search-modify-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 2rem;
-  }
-  
-  .search-summary-inline {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    flex: 1;
-  }
-  
-  .search-item {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-  }
-  
-  .search-label {
-    color: var(--text-light);
-    font-size: 0.875rem;
-  }
-  
-  .search-item strong {
-    color: var(--text-dark);
-    font-weight: 600;
-  }
-  
-  .modify-search-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--bg-light);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-dark);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-  
-  .modify-search-btn:hover {
-    background: var(--bg-white);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-  }
-  
-  /* ========== RESULTS HEADER ========== */
-  .results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2rem 0 1.5rem;
-    gap: 2rem;
-  }
-  
-  .results-info h1 {
-    color: var(--text-dark);
-    font-size: 2rem;
-    margin: 0 0 0.5rem 0;
-    font-weight: 700;
-  }
-  
-  .results-subtitle {
-    color: var(--text-light);
-    font-size: 1rem;
-    margin: 0;
-  }
-  
-  .results-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .view-mode-toggle {
-    display: flex;
-    background: var(--bg-white);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-  }
-  
-  .view-mode-btn {
-    padding: 0.625rem 0.875rem;
-    background: var(--bg-white);
-    border: none;
-    color: var(--text-medium);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .view-mode-btn:not(:last-child) {
-    border-right: 1px solid var(--border-color);
-  }
-  
-  .view-mode-btn.active,
-  .view-mode-btn:hover {
-    background: var(--primary-color);
-    color: white;
-  }
-  
-  .map-toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    background: var(--bg-white);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-dark);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .map-toggle-btn:hover,
-  .map-toggle-btn.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-  }
-  
-  /* ========== LAYOUT ========== */
-  .results-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 2rem;
-    align-items: start;
-    margin-bottom: 3rem;
-  }
-  
-  /* ========== FILTERS PANEL ========== */
-  .filters-panel {
-    background: var(--bg-white);
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    position: sticky;
-    top: 100px;
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-  }
-  
-  .filters-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-color);
-  }
-  
-  .filters-header h2 {
-    color: var(--text-dark);
-    font-size: 1.25rem;
-    margin: 0;
-  }
-  
-  .reset-all-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
-    background: transparent;
-    border: none;
-    color: var(--primary-color);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-  }
-  
-  .reset-all-btn:hover {
-    background: rgba(102, 126, 234, 0.1);
-  }
-  
-  .filter-group {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-  }
-  
-  .filter-group:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-  }
-  
-  .filter-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-dark);
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 1rem 0;
-  }
-  
-  /* Price filter */
-  .price-filter {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .price-inputs-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  
-  .price-input-group {
-    flex: 1;
-  }
-  
-  .price-input-group label {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--text-medium);
-    margin-bottom: 0.375rem;
-    font-weight: 600;
-  }
-  
-  .input-with-currency {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  
-  .currency {
-    position: absolute;
-    left: 0.75rem;
-    color: var(--text-medium);
-    font-weight: 600;
-  }
-  
-  .price-input {
-    width: 100%;
-    padding: 0.625rem 0.75rem 0.625rem 2rem;
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    background: var(--bg-white);
-  }
-  
-  .price-input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    background: var(--bg-white);
-  }
-  
-  .price-separator {
-    color: var(--text-light);
-    margin-top: 1.5rem;
-  }
-  
-  .price-range-display {
-    color: var(--text-medium);
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-align: center;
-    padding: 0.5rem;
-    background: var(--bg-light);
-    border-radius: var(--radius-sm);
-    margin-top: 0.5rem;
-  }
-  
-  .price-range-visual {
-    padding-top: 0.5rem;
-  }
-  
-  .price-range-bar {
-    position: relative;
-    height: 4px;
-    background: var(--border-color);
-    border-radius: 2px;
-  }
-  
-  .price-range-fill {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    border-radius: 2px;
-  }
-  
-  /* Checkbox group */
-  .checkbox-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    cursor: pointer;
-    padding: 0.375rem 0;
-  }
-  
-  .checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--primary-color);
-  }
-  
-  .checkbox-text {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-medium);
-    font-size: 0.9rem;
-  }
-  
-  .stars-display {
-    font-size: 0.75rem;
-  }
-  
-  .amenity-icon {
-    font-size: 1rem;
-  }
-  
-  /* Radio group */
-  .radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .radio-label {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    cursor: pointer;
-    padding: 0.375rem 0;
-  }
-  
-  .radio-label input[type="radio"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--primary-color);
-  }
-  
-  .radio-label span {
-    color: var(--text-medium);
-    font-size: 0.9rem;
-  }
-  
-  /* Rating slider */
-  .rating-slider {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  
-  .rating-chip {
-    padding: 0.5rem 1rem;
-    background: var(--bg-light);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-medium);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .rating-chip.active,
-  .rating-chip:hover {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-  }
-  
-  /* ========== RESULTS MAIN ========== */
-  .results-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  /* Sort bar */
-  .sort-bar {
-    background: var(--bg-white);
-    border-radius: var(--radius-md);
-    padding: 1rem 1.5rem;
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-  
-  .sort-label {
-    color: var(--text-medium);
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-  
-  .sort-options {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    flex: 1;
-  }
-  
-  .sort-option {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-    padding: 0.5rem 1rem;
-    background: var(--bg-light);
-    border: 1.5px solid transparent;
-    border-radius: var(--radius-sm);
-    color: var(--text-medium);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-  
-  .sort-option.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-  }
-  
-  .sort-option:not(.active):hover {
-    background: var(--bg-white);
-    border-color: var(--border-color);
-    color: var(--primary-color);
-  }
-  
-  /* ========== HOTELS GRID ========== */
-  .hotels-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  .hotels-grid.grid-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-  
-  /* ========== HOTEL CARD ========== */
-  .hotel-card {
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .list-view .hotel-card {
-    flex-direction: row;
-  }
-  
-  .grid-view .hotel-card {
-    flex-direction: column;
-  }
-  
-  .hotel-card:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
-  }
-  
-  /* Gallery */
-  .hotel-gallery {
-    position: relative;
-    flex-shrink: 0;
-  }
-  
-  .list-view .hotel-gallery {
-    width: 350px;
-    height: 280px;
-  }
-  
-  .grid-view .hotel-gallery {
-    width: 100%;
-    height: 220px;
-  }
-  
-  .gallery-main-image {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-  
-  .gallery-main-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .discount-badge {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    padding: 0.5rem 0.875rem;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 0.875rem;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-  }
-  
-  .sustainable-badge {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 0.5rem;
-    border-radius: 50%;
-    font-size: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-  
-  .gallery-thumbnails {
-    position: absolute;
-    bottom: 0.75rem;
-    right: 0.75rem;
-    display: flex;
-    gap: 0.375rem;
-  }
-  
-  .gallery-thumb {
-    width: 50px;
-    height: 50px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .gallery-thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .gallery-more {
-    width: 50px;
-    height: 50px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.875rem;
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .favorite-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.95);
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-  
-  .favorite-btn:hover {
-    background: white;
-    transform: scale(1.1);
-  }
-  
-  .favorite-btn svg {
-    color: var(--text-medium);
-    transition: all 0.2s ease;
-  }
-  
-  .favorite-btn:hover svg {
-    color: #ef4444;
-    fill: #ef4444;
-  }
-  
-  /* Content */
-  .hotel-content {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    flex: 1;
-  }
-  
-  .hotel-header-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  
-  .hotel-title-section {
-    flex: 1;
-  }
-  
-  .hotel-badges-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 0.625rem;
-  }
-  
-  .hotel-badge {
-    padding: 0.25rem 0.75rem;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
-    color: var(--primary-color);
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .hotel-name {
-    color: var(--text-dark);
-    font-size: 1.5rem;
-    margin: 0 0 0.5rem 0;
-    font-weight: 700;
-    line-height: 1.3;
-  }
-  
-  .hotel-stars {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    font-size: 0.875rem;
-  }
-  
-  .property-type {
-    color: var(--text-light);
-    font-weight: 500;
-  }
-  
-  .hotel-rating-box {
-    flex-shrink: 0;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius-md);
-    text-align: center;
-    min-width: 90px;
-  }
-  
-  .rating-score {
-    color: white;
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: 0.25rem;
-  }
-  
-  .rating-text {
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  
-  .rating-reviews {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.7rem;
-  }
-  
-  .hotel-location-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    flex-wrap: wrap;
-  }
-  
-  .distance-pill {
-    padding: 0.25rem 0.625rem;
-    background: var(--bg-light);
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-medium);
-  }
-  
-  .hotel-description {
-    color: var(--text-medium);
-    font-size: 0.95rem;
-    line-height: 1.5;
-    margin: 0;
-  }
-  
-  .hotel-amenities-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  .amenity-pill {
-    padding: 0.375rem 0.875rem;
-    background: rgba(102, 126, 234, 0.08);
-    color: var(--primary-color);
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-  
-  .amenity-more {
-    padding: 0.375rem 0.875rem;
-    background: var(--bg-light);
-    color: var(--text-medium);
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-  
-  .hotel-room-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text-medium);
-    font-size: 0.9rem;
-  }
-  
-  .urgency-text {
-    color: #ef4444;
-    font-weight: 600;
-  }
-  
-  .hotel-cancellation {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .cancellation-free {
-    color: var(--success-color);
-    font-weight: 600;
-  }
-  
-  .cancellation-non-refundable {
-    color: var(--text-light);
-  }
-  
-  .hotel-footer-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 1rem;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1.5px solid var(--border-color);
-  }
-  
-  .hotel-provider {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .provider-logo {
-    font-size: 1.5rem;
-  }
-  
-  .provider-name {
-    color: var(--text-light);
-    font-size: 0.85rem;
-  }
-  
-  .hotel-pricing {
-    display: flex;
-    align-items: flex-end;
-    gap: 1rem;
-  }
-  
-  .pricing-details {
-    text-align: right;
-  }
-  
-  .original-price {
-    color: var(--text-light);
-    font-size: 0.875rem;
-    text-decoration: line-through;
-  }
-  
-  .current-price {
-    display: flex;
-    align-items: baseline;
-    gap: 0.375rem;
-    justify-content: flex-end;
-  }
-  
-  .price-amount {
-    color: var(--text-dark);
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-  
-  .price-label {
-    color: var(--text-light);
-    font-size: 0.875rem;
-  }
-  
-  .price-per-night {
-    color: var(--text-medium);
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-  }
-  
-  .btn-view-hotel {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-weight: 700;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    white-space: nowrap;
-  }
-  
-  .btn-view-hotel:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-  }
-  
-  /* ========== PAGINATION ========== */
-  .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-    padding: 2rem 0;
-  }
-  
-  .pagination-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: var(--bg-white);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-dark);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .pagination-btn:not(:disabled):hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-  }
-  
-  .pagination-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .pagination-numbers {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .pagination-number {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-white);
-    border: 1.5px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-dark);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .pagination-number:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-  }
-  
-  .pagination-number.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-  }
-  
-  .pagination-dots {
-    color: var(--text-light);
-    padding: 0 0.5rem;
-  }
-  
-  /* ========== SKELETON LOADER ========== */
-  .hotel-card.skeleton {
-    pointer-events: none;
-  }
-  
-  .skeleton-image {
-    width: 350px;
-    height: 280px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-  
-  .skeleton-content {
-    padding: 1.5rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .skeleton-line {
-    height: 20px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 4px;
-  }
-  
-  .skeleton-line.short {
-    width: 60%;
-  }
-  
-  .skeleton-line.medium {
-    width: 80%;
-  }
-  
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
-  }
-  
-  /* ========== NO RESULTS ========== */
-  .no-results {
-    background: var(--bg-white);
-    padding: 4rem 2rem;
-    border-radius: var(--radius-lg);
-    text-align: center;
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .no-results-icon {
-    color: var(--text-light);
-    margin-bottom: 1.5rem;
-  }
-  
-  .no-results h2 {
-    color: var(--text-dark);
-    font-size: 1.5rem;
-    margin: 0 0 0.75rem 0;
-  }
-  
-  .no-results p {
-    color: var(--text-medium);
-    font-size: 1.05rem;
-    margin: 0 0 2rem 0;
-  }
-  
-  .btn-primary {
-    padding: 0.875rem 2rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-  
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-  }
-  
-  /* ========== MAP OVERLAY ========== */
-  .map-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    animation: fadeIn 0.3s ease;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  
-  .map-container {
-    position: relative;
-    width: 100%;
-    max-width: 1200px;
-    height: 80vh;
-    background: var(--bg-white);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .map-close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 40px;
-    height: 40px;
-    background: white;
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 10;
-    transition: all 0.2s ease;
-  }
-  
-  .map-close-btn:hover {
-    background: var(--bg-light);
-    transform: scale(1.1);
-  }
-  
-  .map-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-light);
-  }
-  
-  .map-icon {
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-  }
-  
-  .map-placeholder h3 {
-    color: var(--text-dark);
-    font-size: 1.5rem;
-    margin: 0 0 0.5rem 0;
-  }
-  
-  .map-placeholder p {
-    color: var(--text-medium);
-    font-size: 1rem;
-    margin: 0;
-  }
-  
-  /* ========== RESPONSIVE ========== */
-  @media (max-width: 1200px) {
-    .results-layout {
-      grid-template-columns: 260px 1fr;
-    }
-  }
-  
-  @media (max-width: 1024px) {
-    .results-layout {
-      grid-template-columns: 1fr;
-    }
-    
-    .filters-panel {
-      position: static;
-      max-height: none;
-    }
-    
-    .list-view .hotel-card {
-      flex-direction: column;
-    }
-    
-    .list-view .hotel-gallery {
-      width: 100%;
-      height: 250px;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .container {
-      padding: 0 1rem;
-    }
-    
-    .search-modify-content {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .search-summary-inline {
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-    
-    .results-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    .results-actions {
-      width: 100%;
-      justify-content: space-between;
-    }
-    
-    .sort-bar {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    .sort-options {
-      width: 100%;
-    }
-    
-    .hotels-grid.grid-view {
-      grid-template-columns: 1fr;
-    }
-    
-    .hotel-footer-row {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-    }
-    
-    .hotel-pricing {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .pricing-details {
-      text-align: left;
-    }
-    
-    .current-price {
-      justify-content: flex-start;
-    }
-    
-    .btn-view-hotel {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-</style>

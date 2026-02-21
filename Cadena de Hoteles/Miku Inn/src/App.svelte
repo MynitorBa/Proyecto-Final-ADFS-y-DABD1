@@ -21,6 +21,16 @@
   import './styles/global.css';
   import './styles/forms.css';
   import './styles/animations.css';
+  import './styles/home.css';
+  import './styles/searchresults.css';
+  import './styles/hoteldetail.css';
+  import './styles/checkout.css';
+  import './styles/login.css';
+  import './styles/register.css';
+  import './styles/myreservations.css';
+  import './styles/destinodetail.css';
+  import './styles/destinos.css';
+  import './styles/ofertas.css';
   import './app.css';
   
   // Estado de la aplicación

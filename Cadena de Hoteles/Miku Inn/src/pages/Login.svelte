@@ -1,5 +1,6 @@
 <script>
   export let navigateTo;
+  import '../styles/login.css';
   
   // Form data
   let formData = {
@@ -56,7 +57,7 @@
     setTimeout(() => {
       isSubmitting = false;
       
-      // Simulación: 80% éxito, 20% error para demo
+      // Simulación: 80% éxito, 20% login__error para demo
       if (Math.random() > 0.2 || attemptCount > 2) {
         // Login exitoso
         loginSuccess = true;
@@ -109,7 +110,7 @@
   <div class="login-container">
     <div class="login-card">
       <!-- Back Button -->
-      <button class="back-link" on:click={() => navigateTo('home')}>
+      <button class="login__back-link" on:click={() => navigateTo('home')}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
@@ -117,18 +118,18 @@
       </button>
 
       <!-- Header -->
-      <div class="header">
-        <div class="logo-section">
-          <img src="/src/assets/mikuinn-logo.png" alt="Miku Inn" class="logo-image" />
+      <div class="login__header">
+        <div class="login__logo-section">
+          <img src="/src/assets/mikuinn-logo.png" alt="Miku Inn" class="login__logo-image" />
         </div>
-        <h2 class="title">Iniciar Sesión</h2>
-        <p class="subtitle">Accede a tu cuenta y gestiona tus reservas</p>
+        <h2 class="login__title">Iniciar Sesión</h2>
+        <p class="login__subtitle">Accede a tu cuenta y gestiona tus reservas</p>
       </div>
 
       {#if loginSuccess}
         <!-- Success Message -->
-        <div class="success-message">
-          <div class="success-icon">
+        <div class="login__success-message">
+          <div class="login__success-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -136,7 +137,7 @@
           </div>
           <h3>¡Bienvenido de vuelta!</h3>
           <p>Iniciando sesión...</p>
-          <div class="loading-dots">
+          <div class="login__loading-dots">
             <span></span>
             <span></span>
             <span></span>
@@ -158,11 +159,11 @@
           {/if}
 
           <!-- Email Field -->
-          <div class="form-field">
+          <div class="login__form-field">
             <label for="email">
               Correo Electrónico
             </label>
-            <div class="input-with-icon">
+            <div class="login__input-with-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
@@ -177,16 +178,16 @@
               />
             </div>
             {#if errors.email}
-              <span class="error-text">{errors.email}</span>
+              <span class="login__error-text">{errors.email}</span>
             {/if}
           </div>
 
           <!-- Password Field -->
-          <div class="form-field">
+          <div class="login__form-field">
             <label for="password">
               Contraseña
             </label>
-            <div class="password-field">
+            <div class="login__password-field">
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
@@ -197,7 +198,7 @@
               />
               <button
                 type="button"
-                class="toggle-btn"
+                class="login__toggle-btn"
                 on:click={() => showPassword = !showPassword}
                 tabindex="-1"
               >
@@ -215,19 +216,19 @@
               </button>
             </div>
             {#if errors.password}
-              <span class="error-text">{errors.password}</span>
+              <span class="login__error-text">{errors.password}</span>
             {/if}
           </div>
 
           <!-- Remember Me & Forgot Password -->
           <div class="form-options">
-            <label class="checkbox-label">
+            <label class="login__checkbox-label">
               <input 
                 type="checkbox" 
                 bind:checked={rememberMe}
               />
-              <span class="checkbox-custom"></span>
-              <span class="checkbox-text">Recordarme</span>
+              <span class="login__checkbox-custom"></span>
+              <span class="login__checkbox-text">Recordarme</span>
             </label>
             
             <button 
@@ -242,11 +243,11 @@
           <!-- Submit Button -->
           <button 
             type="submit" 
-            class="submit-btn"
+            class="login__submit-btn"
             disabled={isSubmitting}
           >
             {#if isSubmitting}
-              <svg class="spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="login__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
               Iniciando sesión...
@@ -293,9 +294,9 @@
           </div>
 
           <!-- Register Link -->
-          <div class="footer-text">
+          <div class="login__footer-text">
             ¿No tienes una cuenta? 
-            <button type="button" class="link-btn" on:click={() => navigateTo('register')}>
+            <button type="button" class="login__link-btn" on:click={() => navigateTo('register')}>
               Regístrate aquí
             </button>
           </div>
@@ -307,551 +308,3 @@
     
   </div>
 </div>
-
-<style>
-  /* Variables */
-  :root {
-    --primary: #667eea;
-    --primary-dark: #5568d3;
-    --secondary: #764ba2;
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --info: #3b82f6;
-  }
-  
-  /* Base */
-  .login-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    padding: 2rem 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .login-container {
-    width: 100%;
-    max-width: 480px;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  .login-card {
-    background: rgba(30, 41, 59, 0.95);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 2.5rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Back Link */
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-bottom: 2rem;
-    transition: all 0.2s;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-  }
-  
-  .back-link:hover {
-    color: var(--primary);
-    transform: translateX(-4px);
-  }
-  
-  /* Header */
-  .header {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
-  
-  .logo-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-  }
-  
-  .logo-image {
-    height: 180px;
-    width: auto;
-    display: block;
-  }
-  
-  .title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #f8fafc;
-    margin: 0 0 0.75rem 0;
-  }
-  
-  .subtitle {
-    font-size: 1rem;
-    color: #94a3b8;
-    margin: 0;
-    line-height: 1.6;
-  }
-  
-  /* Success Message */
-  .success-message {
-    text-align: center;
-    padding: 2rem 1rem;
-  }
-  
-  .success-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 96px;
-    height: 96px;
-    background: linear-gradient(135deg, var(--success), #059669);
-    border-radius: 50%;
-    margin-bottom: 1.5rem;
-    animation: scaleIn 0.5s ease;
-  }
-  
-  .success-icon svg {
-    color: white;
-  }
-  
-  @keyframes scaleIn {
-    from {
-      transform: scale(0);
-      opacity: 0;
-    }
-    to {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-  
-  .success-message h3 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #f8fafc;
-    margin: 0 0 0.75rem 0;
-  }
-  
-  .success-message p {
-    font-size: 1rem;
-    color: #94a3b8;
-    margin: 0 0 2rem 0;
-  }
-  
-  .loading-dots {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  
-  .loading-dots span {
-    width: 10px;
-    height: 10px;
-    background: var(--primary);
-    border-radius: 50%;
-    animation: bounce 1.4s infinite ease-in-out both;
-  }
-  
-  .loading-dots span:nth-child(1) {
-    animation-delay: -0.32s;
-  }
-  
-  .loading-dots span:nth-child(2) {
-    animation-delay: -0.16s;
-  }
-  
-  @keyframes bounce {
-    0%, 80%, 100% {
-      transform: scale(0);
-    }
-    40% {
-      transform: scale(1);
-    }
-  }
-  
-  /* Form */
-  .login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-  
-  /* Alert */
-  .alert {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    animation: slideIn 0.3s ease;
-  }
-  
-  @keyframes slideIn {
-    from {
-      transform: translateY(-10px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-  
-  .alert-error {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid var(--danger);
-    color: var(--danger);
-  }
-  
-  .alert svg {
-    flex-shrink: 0;
-  }
-  
-  /* Form Fields */
-  .form-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .form-field label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #e2e8f0;
-  }
-  
-  .form-field input {
-    width: 100%;
-    padding: 0.875rem 1rem;
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    color: #f8fafc;
-    background: rgba(15, 23, 42, 0.5);
-    transition: all 0.2s;
-  }
-  
-  .form-field input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: rgba(15, 23, 42, 0.8);
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
-  }
-  
-  .form-field input.error {
-    border-color: var(--danger);
-    background: rgba(239, 68, 68, 0.1);
-  }
-  
-  .form-field input::placeholder {
-    color: #64748b;
-  }
-  
-  /* Input with icon */
-  .input-with-icon {
-    position: relative;
-  }
-  
-  .input-with-icon svg {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #64748b;
-    pointer-events: none;
-  }
-  
-  .input-with-icon input {
-    padding-left: 3rem;
-  }
-  
-  /* Password field */
-  .password-field {
-    position: relative;
-  }
-  
-  .password-field input {
-    padding-right: 3rem;
-  }
-  
-  .toggle-btn {
-    position: absolute;
-    right: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    padding: 0.5rem;
-    display: flex;
-    transition: color 0.2s;
-  }
-  
-  .toggle-btn:hover {
-    color: var(--primary);
-  }
-  
-  /* Error text */
-  .error-text {
-    display: block;
-    color: var(--danger);
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-  
-  /* Form Options */
-  .form-options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    cursor: pointer;
-  }
-  
-  .checkbox-label input {
-    position: absolute;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  
-  .checkbox-custom {
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    flex-shrink: 0;
-    transition: all 0.2s;
-    position: relative;
-    background: rgba(15, 23, 42, 0.5);
-  }
-  
-  .checkbox-label input:checked ~ .checkbox-custom {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-color: transparent;
-  }
-  
-  .checkbox-label input:checked ~ .checkbox-custom::after {
-    content: '';
-    position: absolute;
-    left: 6px;
-    top: 2px;
-    width: 4px;
-    height: 9px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-  }
-  
-  .checkbox-text {
-    font-size: 0.875rem;
-    color: #cbd5e1;
-  }
-  
-  .forgot-link {
-    background: none;
-    border: none;
-    color: var(--primary);
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0;
-  }
-  
-  .forgot-link:hover {
-    text-decoration: underline;
-  }
-  
-  /* Submit Button */
-  .submit-btn {
-    width: 100%;
-    padding: 1rem;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-  }
-  
-  .submit-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
-  }
-  
-  .submit-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-  }
-  
-  .spinner {
-    animation: spin 0.8s linear infinite;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  /* Divider */
-  .divider {
-    position: relative;
-    text-align: center;
-    margin: 1rem 0;
-  }
-  
-  .divider::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  .divider span {
-    position: relative;
-    display: inline-block;
-    padding: 0 1rem;
-    background: rgba(30, 41, 59, 0.95);
-    color: #94a3b8;
-    font-size: 0.85rem;
-    font-weight: 500;
-  }
-  
-  /* Social Buttons */
-  .social-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 0.75rem;
-  }
-  
-  .social-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.875rem 0.5rem;
-    background: rgba(15, 23, 42, 0.5);
-    border: 1.5px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    color: #e2e8f0;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
-  
-  .social-btn:hover {
-    background: rgba(15, 23, 42, 0.8);
-    border-color: var(--primary);
-    transform: translateY(-2px);
-  }
-  
-  /* Footer */
-  .footer-text {
-    text-align: center;
-    font-size: 0.9rem;
-    color: #94a3b8;
-    margin-top: 0.5rem;
-  }
-  
-  .link-btn {
-    background: none;
-    border: none;
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 0;
-    font-size: inherit;
-  }
-  
-  .link-btn:hover {
-    text-decoration: underline;
-  }
-  
-
-
-  
-  .info-icon {
-    font-size: 1.5rem;
-  }
-  
-  .info-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
-  
-  .info-text strong {
-    color: #f8fafc;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-  
-  .info-text span {
-    color: #94a3b8;
-    font-size: 0.75rem;
-  }
-  
-  /* Responsive */
-  @media (max-width: 640px) {
-    .login-page {
-      padding: 1rem;
-    }
-    
-    .login-card {
-      padding: 2rem 1.5rem;
-    }
-    
-    .logo-image {
-      height: 120px;
-    }
-    
-    .title {
-      font-size: 1.5rem;
-    }
-    
-    .social-buttons {
-      grid-template-columns: 1fr;
-    }
-    
-
-    
-    .form-options {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-  }
-</style>
