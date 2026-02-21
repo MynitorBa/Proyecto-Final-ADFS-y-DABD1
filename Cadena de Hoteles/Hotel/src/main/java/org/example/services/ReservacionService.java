@@ -1,6 +1,7 @@
 package org.example.services;
 
 import org.example.dtos.HabitacionReservaRequestDTO;
+import org.example.dtos.ReservacionDetalleDTO;
 import org.example.dtos.ReservacionRequestDTO;
 import org.example.dtos.ReservacionResponseDTO;
 import org.example.repositories.ReservacionRepository;
@@ -10,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 public class ReservacionService {
@@ -22,7 +24,7 @@ public class ReservacionService {
             throw new IllegalArgumentException("Debe incluir al menos una habitación");
         }
 
-        // Verificar traslapes y calcular totales
+        // Verificar traslapes y calcular total
         double totalGeneral = 0;
         for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
 
@@ -37,50 +39,41 @@ public class ReservacionService {
             Date fechaCheckIn  = Date.valueOf(checkIn);
             Date fechaCheckOut = Date.valueOf(checkOut);
 
-            // Verificar que la habitación no tenga traslape con otra reservación
-            boolean hayTraslape = reservacionRepository.existeTraslape(
-                    item.getHabitacionId(), fechaCheckIn, fechaCheckOut
-            );
-            if (hayTraslape) {
+            if (reservacionRepository.existeTraslape(item.getHabitacionId(), fechaCheckIn, fechaCheckOut)) {
                 throw new IllegalArgumentException(
                         "La habitación " + item.getHabitacionId() +
                                 " no está disponible para las fechas seleccionadas"
                 );
             }
 
-            double[] precios        = reservacionRepository.obtenerPrecios(item.getHabitacionId());
-            double precioPorNoche   = precios[0];
-            double precioPorPersona = precios[1];
-
-            totalGeneral += (dias * precioPorNoche) +
-                    (dias * item.getCantidadPersonas() * precioPorPersona);
+            double[] precios = reservacionRepository.obtenerPrecios(item.getHabitacionId());
+            totalGeneral += (dias * precios[0]) + (dias * item.getCantidadPersonas() * precios[1]);
         }
 
-        // Generar número de reservación único
+        // Generar número único
         String noReservacion = "RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        // fechas
+        // Fechas
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
         Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
 
-        // rear la reservación con estado Pendiente (ID=1)
+        // Crear reservación con estado Pendiente (ID=1)
         int reservacionId = reservacionRepository.crearReservacion(
                 noReservacion, totalGeneral, usuarioId, fechaCreacion, fechaExpiracion
         );
 
-        //  Insertar cada detalle
+        // Expirar otras reservaciones pendientes del mismo usuario
+        reservacionRepository.expirarPendientesDeUsuario(usuarioId, reservacionId);
+
+        // Insertar detalles
         for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
 
             LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
             LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
             long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
 
-            double[] precios        = reservacionRepository.obtenerPrecios(item.getHabitacionId());
-            double precioPorNoche   = precios[0];
-            double precioPorPersona = precios[1];
-
-            double totalHabitacion = (dias * precioPorNoche) +
-                    (dias * item.getCantidadPersonas() * precioPorPersona);
+            double[] precios       = reservacionRepository.obtenerPrecios(item.getHabitacionId());
+            double totalHabitacion = (dias * precios[0]) + (dias * item.getCantidadPersonas() * precios[1]);
 
             reservacionRepository.crearDetalle(
                     reservacionId,
@@ -103,5 +96,11 @@ public class ReservacionService {
         response.setEstado((String) datos[5]);
 
         return response;
+    }
+
+    // -------------------Obtener todas las reservaciones del usuario -------------------------
+
+    public List<ReservacionDetalleDTO> obtenerReservaciones(int usuarioId) {
+        return reservacionRepository.obtenerReservacionesDeUsuario(usuarioId);
     }
 }

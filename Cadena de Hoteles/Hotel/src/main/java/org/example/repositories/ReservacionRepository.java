@@ -1,6 +1,7 @@
 package org.example.repositories;
 
 import org.example.data.DatabaseManager;
+import org.example.dtos.ReservacionDetalleDTO;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -8,7 +9,7 @@ import java.util.List;
 
 public class ReservacionRepository {
 
-    // ------------------------Obtener precios de una habitación ------------------------------
+    // -------------------- Obtener precios de una habitación ---------------------------------
 
     public double[] obtenerPrecios(int habitacionId) {
         String sql = "SELECT Precio_por_Noche, Precio_por_Persona FROM Habitacion WHERE ID = ?";
@@ -21,7 +22,7 @@ public class ReservacionRepository {
         return result.get(0);
     }
 
-    // --------------------------------- Verificar traslape de fechas para una habitación -------
+    // -----------------------Verificar traslape ------------------------
 
     public boolean existeTraslape(int habitacionId, Date fechaCheckIn, Date fechaCheckOut) {
         String sql = "SELECT COUNT(*) AS total " +
@@ -40,7 +41,20 @@ public class ReservacionRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
-    //-------------------------------Crear reservación --------------------------------------------------------
+    // ------------------- Expirar otras reservaciones pendientes del mismo usuario -----------------------
+
+    public void expirarPendientesDeUsuario(int usuarioId, int reservacionIdExcluir) {
+        String sql = "UPDATE Reservacion " +
+                "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada'), " +
+                "    Fecha_Expiracion = SYSDATE " +
+                "WHERE Usuario_ID = ? " +
+                "AND ID != ? " +
+                "AND EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'pendiente')";
+
+        DatabaseManager.executeUpdate(sql, usuarioId, reservacionIdExcluir);
+    }
+
+    //----------------------------Crear reservación -----------------------------------
 
     public int crearReservacion(String noReservacion, double total, int usuarioId,
                                 Timestamp fechaCreacion, Timestamp fechaExpiracion) {
@@ -54,8 +68,7 @@ public class ReservacionRepository {
         );
     }
 
-    // -------------------------------- Insertar detalle ---------------------------------------------
-
+    // ---------------------------------- Insertar detalle---------------------------------
     public void crearDetalle(int reservacionId, int habitacionId,
                              Date fechaCheckIn, Date fechaCheckOut,
                              int cantidadPersonas, double total) {
@@ -68,7 +81,7 @@ public class ReservacionRepository {
         );
     }
 
-    // --------------------------- Obtener reservación para la respuesta --------------------------------
+    // -------------------obtener reservación para la respuesta------------------------------------
 
     public Object[] obtenerReservacion(int reservacionId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, r.Fecha_Creacion, r.Fecha_Expiracion, " +
@@ -81,15 +94,61 @@ public class ReservacionRepository {
                 rs.getInt("ID"),
                 rs.getString("No_Reservacion"),
                 rs.getDouble("Total"),
-                rs.getTimestamp("Fecha_Creacion").toString(),
-                rs.getTimestamp("Fecha_Expiracion").toString(),
+                rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null,
+                rs.getTimestamp("Fecha_Expiracion") != null ? rs.getTimestamp("Fecha_Expiracion").toString() : null,
                 rs.getString("Estado")
         }, reservacionId);
 
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // -------------------------- Expirar reservaciones vencidas --------------------------------------
+    // ----------------------Obtener todas las reservaciones de un usuario---------------------------
+
+    public List<ReservacionDetalleDTO> obtenerReservacionesDeUsuario(int usuarioId) {
+        String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
+                "r.Fecha_Creacion, r.Fecha_Expiracion, r.Fecha_Cancelacion, r.Motivo_Cancelacion, " +
+                "er.Estado, " +
+                "dr.ID AS DetalleID, dr.HabitacionID, dr.FechaCheckIn, dr.FechaCheckOut, " +
+                "dr.CantidadPersonas, dr.Total AS TotalDetalle, " +
+                "h.Descripcion AS DescripcionHabitacion, " +
+                "t.nombre AS TipoHabitacion, " +
+                "c.Tipo_de_clase AS TipoCama, " +
+                "hot.Nombre AS NombreHotel " +
+                "FROM Reservacion r " +
+                "JOIN EstadoReserva      er  ON r.EstadoID          = er.ID " +
+                "JOIN DetallesReservacion dr  ON dr.ReservacionID   = r.ID " +
+                "JOIN Habitacion          h   ON dr.HabitacionID    = h.ID " +
+                "JOIN TipoHabitacion      t   ON h.TipoHabitacionID = t.ID " +
+                "JOIN Cama                c   ON h.CamaID           = c.ID " +
+                "JOIN Hotel               hot ON h.HotelID          = hot.ID " +
+                "WHERE r.Usuario_ID = ? " +
+                "ORDER BY r.Fecha_Creacion DESC, r.ID, dr.ID";
+
+        return DatabaseManager.executeQuery(sql, rs -> {
+            ReservacionDetalleDTO dto = new ReservacionDetalleDTO();
+            dto.setId(rs.getInt("ID"));
+            dto.setNoReservacion(rs.getString("No_Reservacion"));
+            dto.setTotal(rs.getDouble("Total"));
+            dto.setEstado(rs.getString("Estado"));
+            dto.setFechaCreacion(rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null);
+            dto.setFechaExpiracion(rs.getTimestamp("Fecha_Expiracion") != null ? rs.getTimestamp("Fecha_Expiracion").toString() : null);
+            dto.setFechaCancelacion(rs.getDate("Fecha_Cancelacion") != null ? rs.getDate("Fecha_Cancelacion").toString() : null);
+            dto.setMotivoCancelacion(rs.getString("Motivo_Cancelacion"));
+            dto.setDetalleId(rs.getInt("DetalleID"));
+            dto.setHabitacionId(rs.getInt("HabitacionID"));
+            dto.setFechaCheckIn(rs.getDate("FechaCheckIn").toString());
+            dto.setFechaCheckOut(rs.getDate("FechaCheckOut").toString());
+            dto.setCantidadPersonas(rs.getInt("CantidadPersonas"));
+            dto.setTotalDetalle(rs.getDouble("TotalDetalle"));
+            dto.setDescripcionHabitacion(rs.getString("DescripcionHabitacion"));
+            dto.setTipoHabitacion(rs.getString("TipoHabitacion"));
+            dto.setTipoCama(rs.getString("TipoCama"));
+            dto.setNombreHotel(rs.getString("NombreHotel"));
+            return dto;
+        }, usuarioId);
+    }
+
+    // --------------- Expirar reservaciones vencidas- ----------------------
 
     public int expirarReservacionesVencidas() {
         String sql = "UPDATE Reservacion " +

@@ -12,7 +12,7 @@ public class ReservacionController {
 
     public void registerRoutes(Javalin app) {
 
-        // POST /reservaciones — requiere sesión activa
+        // POST /reservaciones — crear reservación
         app.post("/reservaciones", ctx -> {
             int usuarioId = ctx.attribute("usuarioId");
             ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
@@ -23,6 +23,12 @@ public class ReservacionController {
             } catch (RuntimeException e) {
                 ctx.status(500).json(Map.of("mensaje", e.getMessage()));
             }
+        });
+
+        // GET /reservaciones — todas las reservaciones del usuario en sesión
+        app.get("/reservaciones", ctx -> {
+            int usuarioId = ctx.attribute("usuarioId");
+            ctx.status(200).json(reservacionService.obtenerReservaciones(usuarioId));
         });
     }
 }
