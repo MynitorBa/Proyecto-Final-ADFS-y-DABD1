@@ -2,6 +2,7 @@ package org.example;
 
 import io.javalin.Javalin;
 import org.example.config.ServerConfig;
+import org.example.controllers.UsuarioController;
 import org.example.data.DatabaseTest;
 
 public class Main {
@@ -11,12 +12,10 @@ public class Main {
         DatabaseTest.testConnection();
         Javalin app = ServerConfig.createServer();
 
-        app.get("/", ctx -> {
-            ctx.json("Tengo un equipo bien gay");
-        });
+        // Controllers
+        new UsuarioController().registerRoutes(app);
 
-        app.get("/health", ctx -> {
-            ctx.json("OK");
-        });
+        app.get("/", ctx -> ctx.json("OK"));
+        app.get("/health", ctx -> ctx.json("OK"));
     }
 }
