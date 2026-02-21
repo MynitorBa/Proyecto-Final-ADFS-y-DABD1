@@ -11,11 +11,9 @@ public class DatabaseManager {
                     "jdbc:oracle:thin:@localhost:1521/XEPDB1");
 
     private static final String USER =
-            System.getenv().getOrDefault("DB_USER", "TU_USUARIO");
-
+            System.getenv().getOrDefault("DB_USER", "system");
     private static final String PASSWORD =
-            System.getenv().getOrDefault("DB_PASS", "TU_PASSWORD");
-
+            System.getenv().getOrDefault("DB_PASS", "meme1234");
 
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
