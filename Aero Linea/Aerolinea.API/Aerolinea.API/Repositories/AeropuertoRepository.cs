@@ -86,7 +86,7 @@ namespace Aerolinea.API.Repositories
                 SELECT DISTINCT v.Fecha 
                 FROM Vuelo v
                 INNER JOIN Ruta r ON v.RutaID = r.ID
-                WHERE v.Fecha >= CAST(GETDATE() AS DATE)";
+                WHERE v.Fecha >= CAST(GETDATE() AS DATE) AND EstadoID = 1";
 
             if (origenId.HasValue)
             {

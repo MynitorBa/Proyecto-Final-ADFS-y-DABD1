@@ -193,12 +193,7 @@
               </div>
 
               <div class="destino-card__actions">
-                <button 
-                  class="destino-card__btn destino-card__btn--primary"
-                  on:click={() => buscarVuelos(destino.nombre)}
-                >
-                  Buscar Vuelos
-                </button>
+                
                 
               </div>
             </div>
