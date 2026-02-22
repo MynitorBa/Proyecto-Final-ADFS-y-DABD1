@@ -1,7 +1,11 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   export let navigateTo;
   import '../styles/login.css';
   import { onMount } from 'svelte';
+
+  const dispatch = createEventDispatcher();
+  const API = 'http://localhost:7000';
 
   let formData = { email: '', password: '' };
   let showPassword = false;
@@ -10,16 +14,25 @@
   let isSubmitting = false;
   let loginSuccess = false;
   let serverError = '';
+  let errorShown = false; // flag: se mostró un error del servidor
 
   onMount(() => {
     const saved = localStorage.getItem('rememberEmail');
     if (saved) { formData.email = saved; rememberMe = true; }
   });
 
+  // Solo limpia el error cuando el usuario CAMBIA algo DESPUÉS de que se mostró
+  function onFieldChange() {
+    if (errorShown) {
+      serverError = '';
+      errorShown = false;
+    }
+  }
+
   function validateForm() {
     errors = {};
     if (!formData.email.trim()) errors.email = 'El usuario o email es requerido';
-    if (!formData.password) errors.password = 'La contrasena es requerida';
+    if (!formData.password) errors.password = 'La contraseña es requerida';
     return Object.keys(errors).length === 0;
   }
 
@@ -29,39 +42,42 @@
 
     isSubmitting = true;
     serverError = '';
+    errorShown = false;
 
     try {
-      const res = await fetch('http://localhost:7000/auth/login', {
+      const res = await fetch(`${API}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identificador: formData.email, contrasena: formData.password })
+        credentials: 'include',
+        body: JSON.stringify({
+          identificador: formData.email,
+          contrasena: formData.password
+        })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        serverError = data.mensaje ?? 'Usuario o contrasena incorrectos';
+        serverError = 'Usuario o contraseña incorrectos.';
+        errorShown = true;
         formData.password = '';
         return;
       }
 
       if (rememberMe) localStorage.setItem('rememberEmail', formData.email);
-      else localStorage.removeItem('rememberEmail');
-
-      localStorage.setItem('username', data.username);
-      localStorage.setItem('rolId', data.rolId);
+      else            localStorage.removeItem('rememberEmail');
 
       loginSuccess = true;
+      dispatch('login', { name: data.username, rolId: data.rolId });
       setTimeout(() => navigateTo('home'), 1500);
 
     } catch (err) {
-      serverError = `Error de conexion: ${err.message}`;
+      serverError = `Error de conexión: ${err.message}`;
+      errorShown = true;
     } finally {
       isSubmitting = false;
     }
   }
-
-  $: if (formData.email || formData.password) serverError = '';
 </script>
 
 <div class="login-page">
@@ -79,7 +95,7 @@
         <div class="login__logo-section">
           <img src="/src/assets/mikuinn-logo.png" alt="Miku Inn" class="login__logo-image" />
         </div>
-        <h2 class="login__title">Iniciar Sesion</h2>
+        <h2 class="login__title">Iniciar Sesión</h2>
         <p class="login__subtitle">Accede a tu cuenta y gestiona tus reservas</p>
       </div>
 
@@ -91,8 +107,8 @@
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
           </div>
-          <h3>Bienvenido de vuelta!</h3>
-          <p>Iniciando sesion...</p>
+          <h3>¡Bienvenido de vuelta!</h3>
+          <p>Iniciando sesión...</p>
           <div class="login__loading-dots">
             <span></span><span></span><span></span>
           </div>
@@ -113,24 +129,30 @@
           {/if}
 
           <div class="login__form-field">
-            <label for="email">Usuario o Correo Electronico</label>
+            <label for="email">Usuario o Correo Electrónico</label>
             <div class="login__input-with-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
               <input type="text" id="email" bind:value={formData.email}
-                placeholder="usuario o tu@email.com" class:error={errors.email} autocomplete="username" />
+                on:input={onFieldChange}
+                placeholder="usuario o tu@email.com"
+                class:error={errors.email}
+                autocomplete="username" />
             </div>
             {#if errors.email}<span class="login__error-text">{errors.email}</span>{/if}
           </div>
 
           <div class="login__form-field">
-            <label for="password">Contrasena</label>
+            <label for="password">Contraseña</label>
             <div class="login__password-field">
               <input type={showPassword ? 'text' : 'password'} id="password"
-                bind:value={formData.password} placeholder="Ingresa tu contrasena"
-                class:error={errors.password} autocomplete="current-password" />
+                bind:value={formData.password}
+                on:input={onFieldChange}
+                placeholder="Ingresa tu contraseña"
+                class:error={errors.password}
+                autocomplete="current-password" />
               <button type="button" class="login__toggle-btn"
                 on:click={() => showPassword = !showPassword} tabindex="-1">
                 {#if showPassword}
@@ -156,7 +178,7 @@
               <span class="login__checkbox-text">Recordarme</span>
             </label>
             <button type="button" class="forgot-link" on:click={() => navigateTo('forgot-password')}>
-              Olvidaste tu contrasena?
+              ¿Olvidaste tu contraseña?
             </button>
           </div>
 
@@ -165,14 +187,14 @@
               <svg class="login__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 12a9 9 0 1 1-6.219-8.56" />
               </svg>
-              Iniciando sesion...
+              Iniciando sesión...
             {:else}
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                 <polyline points="10 17 15 12 10 7"></polyline>
                 <line x1="15" y1="12" x2="3" y2="12"></line>
               </svg>
-              Iniciar Sesion
+              Iniciar Sesión
             {/if}
           </button>
 
@@ -204,11 +226,10 @@
 
         </form>
 
-        <!-- ✅ FUERA del form — esto es el fix -->
         <div class="login__footer-text">
-          No tienes una cuenta?
+          ¿No tienes una cuenta?
           <button type="button" class="login__link-btn" on:click={() => navigateTo('register')}>
-            Registrate aqui
+            Regístrate aquí
           </button>
         </div>
 

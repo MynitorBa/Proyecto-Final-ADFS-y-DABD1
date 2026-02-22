@@ -14,8 +14,8 @@ public class ServerConfig {
             config.showJavalinBanner = false;
             config.plugins.enableCors(cors -> {
                 cors.add(it -> {
-                    it.anyHost();
-                    it.allowCredentials = false;
+                    it.allowHost("http://localhost:5173");
+                    it.allowCredentials = true;
                 });
             });
         }).start(port);
