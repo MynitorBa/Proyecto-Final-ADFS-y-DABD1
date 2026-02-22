@@ -38,7 +38,7 @@ public class CancelacionService {
                 LocalDate.now().atStartOfDay(),
                 fechaCheckIn.toLocalDate().atStartOfDay()
         );
-        if (horasRestantes < 24) {
+        if (horasRestantes < 24 && estadoId != 1) {
             throw new IllegalArgumentException(
                     "No se puede cancelar con menos de 24 horas de anticipación al check-in"
             );
