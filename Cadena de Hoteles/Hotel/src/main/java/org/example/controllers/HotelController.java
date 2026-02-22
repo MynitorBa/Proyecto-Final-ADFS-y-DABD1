@@ -1,9 +1,8 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
-import org.example.dtos.EditarHabitacionRequestDTO;
-import org.example.dtos.EditarHotelRequestDTO;
-import org.example.dtos.SubirImagenRequestDTO;
+import io.javalin.http.Context;
+import org.example.dtos.*;
 import org.example.services.HotelService;
 
 import java.util.Map;
@@ -14,20 +13,34 @@ public class HotelController {
 
     public void registerRoutes(Javalin app) {
 
-        // ── Guard helper ─────────────────────────────────────────────────────
-        // Todas las rutas requieren rolId == 2 (Administrador)
+        // ════════════════════════════════════════════════════
+        //  CATÁLOGOS (para los dropdowns del frontend)
+        // ════════════════════════════════════════════════════
+
+        app.get("/admin/paises",   ctx -> { if (!esAdmin(ctx)) { deny(ctx); return; } ctx.json(hotelService.listarPaises()); });
+        app.get("/admin/ciudades", ctx -> { if (!esAdmin(ctx)) { deny(ctx); return; } ctx.json(hotelService.listarCiudades()); });
 
         // ════════════════════════════════════════════════════
         //  HOTELES
         // ════════════════════════════════════════════════════
 
-        // GET /admin/hoteles  →  lista todos los hoteles
+        // GET /admin/hoteles
         app.get("/admin/hoteles", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             ctx.json(hotelService.listarTodos());
         });
 
-        // PATCH /admin/hoteles/{id}  →  edita info del hotel
+        // POST /admin/hoteles  →  crear hotel
+        app.post("/admin/hoteles", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                ctx.status(201).json(hotelService.crearHotel(ctx.bodyAsClass(CrearHotelRequestDTO.class)));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // PATCH /admin/hoteles/{id}  →  editar hotel
         app.patch("/admin/hoteles/{id}", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             int hotelId = Integer.parseInt(ctx.pathParam("id"));
@@ -43,7 +56,6 @@ public class HotelController {
         //  IMÁGENES DE HOTEL
         // ════════════════════════════════════════════════════
 
-        // POST /admin/hoteles/{id}/imagenes  →  sube una imagen al hotel
         app.post("/admin/hoteles/{id}/imagenes", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             int hotelId = Integer.parseInt(ctx.pathParam("id"));
@@ -55,11 +67,9 @@ public class HotelController {
             }
         });
 
-        // DELETE /admin/hoteles/imagenes/{imagenId}  →  elimina una imagen del hotel
         app.delete("/admin/hoteles/imagenes/{imagenId}", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
-            int imagenId = Integer.parseInt(ctx.pathParam("imagenId"));
-            hotelService.eliminarImagenHotel(imagenId);
+            hotelService.eliminarImagenHotel(Integer.parseInt(ctx.pathParam("imagenId")));
             ctx.status(200).json(Map.of("mensaje", "Imagen eliminada correctamente"));
         });
 
@@ -67,7 +77,7 @@ public class HotelController {
         //  HABITACIONES
         // ════════════════════════════════════════════════════
 
-        // GET /admin/hoteles/{id}/habitaciones  →  lista habitaciones del hotel
+        // GET /admin/hoteles/{id}/habitaciones
         app.get("/admin/hoteles/{id}/habitaciones", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             int hotelId = Integer.parseInt(ctx.pathParam("id"));
@@ -78,7 +88,20 @@ public class HotelController {
             }
         });
 
-        // PATCH /admin/habitaciones/{id}  →  edita una habitación
+        // POST /admin/hoteles/{id}/habitaciones  →  crear habitación
+        app.post("/admin/hoteles/{id}/habitaciones", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            int hotelId = Integer.parseInt(ctx.pathParam("id"));
+            try {
+                CrearHabitacionRequestDTO req = ctx.bodyAsClass(CrearHabitacionRequestDTO.class);
+                req.setHotelId(hotelId);   // asegurar que viene del path
+                ctx.status(201).json(hotelService.crearHabitacion(req));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // PATCH /admin/habitaciones/{id}
         app.patch("/admin/habitaciones/{id}", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             int habitacionId = Integer.parseInt(ctx.pathParam("id"));
@@ -94,7 +117,6 @@ public class HotelController {
         //  IMÁGENES DE HABITACIÓN
         // ════════════════════════════════════════════════════
 
-        // POST /admin/habitaciones/{id}/imagenes  →  sube imagen a habitación
         app.post("/admin/habitaciones/{id}/imagenes", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             int habitacionId = Integer.parseInt(ctx.pathParam("id"));
@@ -106,23 +128,19 @@ public class HotelController {
             }
         });
 
-        // DELETE /admin/habitaciones/imagenes/{imagenId}  →  elimina imagen de habitación
         app.delete("/admin/habitaciones/imagenes/{imagenId}", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
-            int imagenId = Integer.parseInt(ctx.pathParam("imagenId"));
-            hotelService.eliminarImagenHabitacion(imagenId);
+            hotelService.eliminarImagenHabitacion(Integer.parseInt(ctx.pathParam("imagenId")));
             ctx.status(200).json(Map.of("mensaje", "Imagen eliminada correctamente"));
         });
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    private boolean esAdmin(io.javalin.http.Context ctx) {
+    private boolean esAdmin(Context ctx) {
         Integer rolId = ctx.attribute("rolId");
         return rolId != null && rolId == 2;
     }
 
-    private void deny(io.javalin.http.Context ctx) {
+    private void deny(Context ctx) {
         ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Administrador"));
     }
 }

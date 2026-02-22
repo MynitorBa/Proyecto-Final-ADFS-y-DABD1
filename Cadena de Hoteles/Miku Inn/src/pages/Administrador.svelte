@@ -36,7 +36,7 @@
     { label: 'Usuarios Totales', value: '1,248',    change: '+12%', icon: 'users',    color: 'blue'   },
     { label: 'Reservas Activas', value: '384',       change: '+8%',  icon: 'calendar', color: 'green'  },
     { label: 'Hoteles Activos',  value: '47',        change: '+3',   icon: 'hotel',    color: 'purple' },
-    { label: 'Ingresos del Mes', value: 'Q 284,500', change: '+21%', icon: 'money',    color: 'amber'  },
+    { label: 'Ingresos del Mes', value: '$ 284,500', change: '+21%', icon: 'money',    color: 'amber'  },
   ];
 
   // ── Carga usuarios desde el backend ──────────────────────────────────────
@@ -57,6 +57,7 @@
   onMount(() => {
     cargarUsuarios();
     cargarHoteles();
+    cargarCatalogos();
   });
 
   // ════════════════════════════════════════════════════
@@ -310,13 +311,302 @@
   }
 
 
+  // ════════════════════════════════════════════════════
+  //  CREAR HOTEL — estado
+  // ════════════════════════════════════════════════════
+  let pasos            = ['info', 'imagenes', 'habitaciones'];
+  let pasoActual       = 'info';   // 'info' | 'imagenes' | 'habitaciones'
+  let hotelCreadoId    = null;     // ID devuelto tras crear el hotel
+  let hotelCreadoNombre = '';
+
+  // Catálogos (ya no se usa la lista interna de paises para el autocomplete)
+  let ciudades = [];
+
+  // País autocomplete (usando countriesnow igual que en Register)
+  let todosLosPaisesHotel = [];   // [{country, cities}]
+  let paisQueryHotel      = '';
+  let paisesSugeridosHotel = [];
+  let paisSeleccionadoHotel = null;  // {country, cities}
+
+  // Ciudad autocomplete basada en país seleccionado
+  let ciudadQueryHotel      = '';
+  let ciudadesSugeridasHotel = [];
+  let ciudadSeleccionadaHotel = false;
+
+  // Paso 1 — info
+  let nuevoHotel = { nombre: '', direccion: '', descripcion: '', rating: 3.0, estadoId: 1, ciudadNombre: '', paisId: '' };
+  let guardandoNuevoHotel = false;
+  let mensajeNuevoHotel   = null;
+
+  // Paso 2 — imágenes del hotel
+  let imagenesNuevoHotel   = [];   // [{ id, base64Preview }]
+  let subiendoImgNuevoHotel = false;
+  let mensajeImgNuevo      = null;
+
+  // Paso 3 — habitaciones
+  let habitacionesNuevas   = [];   // habitaciones ya creadas en BD [{id, tipoHabitacion, ...}]
+  let showFormHabNueva     = false;
+  let nuevaHabitacion      = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
+  let guardandoNuevaHab    = false;
+  let mensajeNuevaHab      = null;
+  let imagenesHabNueva     = {};   // { habitacionId: [imgId, ...] }
+  let subiendoImgHabNueva  = false;
+
+  async function cargarCatalogos() {
+    try {
+      const res = await fetch('https://countriesnow.space/api/v0.1/countries');
+      const data = await res.json();
+      todosLosPaisesHotel = data.data;
+    } catch (e) { /* silencioso */ }
+  }
+
+  // Funciones autocomplete país (crear hotel)
+  function onPaisHotelInput() {
+    const q = paisQueryHotel.toLowerCase();
+    paisesSugeridosHotel = q.length < 2 ? [] : todosLosPaisesHotel.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
+    if (!paisSeleccionadoHotel) { nuevoHotel.paisId = ''; }
+  }
+
+  function seleccionarPaisHotel(p) {
+    paisSeleccionadoHotel = p;
+    paisQueryHotel = p.country;
+    nuevoHotel.paisId = p.country;
+    paisesSugeridosHotel = [];
+    ciudadQueryHotel = ''; nuevoHotel.ciudadNombre = '';
+    ciudadesSugeridasHotel = []; ciudadSeleccionadaHotel = false;
+  }
+
+  function validarPaisHotelSeleccionado() {
+    if (paisQueryHotel && !paisSeleccionadoHotel) { paisQueryHotel = ''; nuevoHotel.paisId = ''; }
+  }
+
+  // Funciones autocomplete ciudad (crear hotel)
+  function onCiudadHotelInput() {
+    if (!paisSeleccionadoHotel) return;
+    const q = ciudadQueryHotel.toLowerCase();
+    ciudadesSugeridasHotel = q.length < 2 ? [] : (paisSeleccionadoHotel.cities ?? []).filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+    if (!ciudadSeleccionadaHotel) { nuevoHotel.ciudadNombre = ''; }
+  }
+
+  function seleccionarCiudadHotel(c) {
+    ciudadQueryHotel = c; nuevoHotel.ciudadNombre = c;
+    ciudadesSugeridasHotel = []; ciudadSeleccionadaHotel = true;
+  }
+
+  function validarCiudadHotelSeleccionada() {
+    if (ciudadQueryHotel && !ciudadSeleccionadaHotel) { ciudadQueryHotel = ''; nuevoHotel.ciudadNombre = ''; }
+  }
+
+  function resetCrearHotel() {
+    pasoActual        = 'info';
+    hotelCreadoId     = null;
+    hotelCreadoNombre = '';
+    nuevoHotel        = { nombre: '', direccion: '', descripcion: '', rating: 3.0, estadoId: 1, ciudadNombre: '', paisId: '' };
+    paisQueryHotel    = ''; paisSeleccionadoHotel = null; paisesSugeridosHotel = [];
+    ciudadQueryHotel  = ''; ciudadSeleccionadaHotel = false; ciudadesSugeridasHotel = [];
+    mensajeNuevoHotel = null;
+    imagenesNuevoHotel = [];
+    mensajeImgNuevo   = null;
+    habitacionesNuevas = [];
+    showFormHabNueva  = false;
+    nuevaHabitacion   = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
+    mensajeNuevaHab   = null;
+    imagenesHabNueva  = {};
+  }
+
+  // ── Paso 1: Crear hotel ───────────────────────────
+
+  async function crearNuevoHotel() {
+    if (!nuevoHotel.nombre.trim()) { mensajeNuevoHotel = { tipo: 'error', texto: 'El nombre es obligatorio.' }; return; }
+    if (!nuevoHotel.paisId)        { mensajeNuevoHotel = { tipo: 'error', texto: 'Selecciona un país.' }; return; }
+    if (!nuevoHotel.ciudadNombre.trim()) { mensajeNuevoHotel = { tipo: 'error', texto: 'El nombre de la ciudad es obligatorio.' }; return; }
+
+    guardandoNuevoHotel = true;
+    mensajeNuevoHotel   = null;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:      nuevoHotel.nombre.trim(),
+          direccion:   nuevoHotel.direccion.trim(),
+          descripcion: nuevoHotel.descripcion.trim(),
+          rating:      Number(nuevoHotel.rating),
+          estadoId:    Number(nuevoHotel.estadoId),
+          ciudad:      nuevoHotel.ciudadNombre.trim(),
+          pais:        nuevoHotel.paisId,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+      hotelCreadoId     = data.id;
+      hotelCreadoNombre = nuevoHotel.nombre;
+      mensajeNuevoHotel = { tipo: 'ok', texto: `Hotel creado con ID #${data.id}. Ahora agrega imágenes.` };
+      pasoActual = 'imagenes';
+      await cargarHoteles(); // refresca la lista de gestión
+    } catch (e) {
+      mensajeNuevoHotel = { tipo: 'error', texto: e.message };
+    } finally {
+      guardandoNuevoHotel = false;
+    }
+  }
+
+  // ── Paso 2: Imágenes del hotel ────────────────────
+
+  async function subirImagenNuevoHotel(event) {
+    const file = event.target.files[0];
+    if (!file || !hotelCreadoId) return;
+    subiendoImgNuevoHotel = true;
+    mensajeImgNuevo       = null;
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelCreadoId}/imagenes`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+      imagenesNuevoHotel = [...imagenesNuevoHotel, { id: data.id, preview: base64 }];
+      mensajeImgNuevo = { tipo: 'ok', texto: 'Imagen subida.' };
+    } catch (e) {
+      mensajeImgNuevo = { tipo: 'error', texto: e.message };
+    } finally {
+      subiendoImgNuevoHotel = false;
+      event.target.value = '';
+    }
+  }
+
+  async function eliminarImgNuevoHotel(imgId) {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/imagenes/${imgId}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      imagenesNuevoHotel = imagenesNuevoHotel.filter(i => i.id !== imgId);
+    } catch (e) {
+      mensajeImgNuevo = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message };
+    }
+  }
+
+  // ── Paso 3: Habitaciones ──────────────────────────
+
+  async function crearNuevaHabitacion() {
+    if (!hotelCreadoId) return;
+    guardandoNuevaHab = true;
+    mensajeNuevaHab   = null;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelCreadoId}/habitaciones`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipoHabitacionId: Number(nuevaHabitacion.tipoHabitacionId),
+          camaId:           Number(nuevaHabitacion.camaId),
+          precioPorPersona: Number(nuevaHabitacion.precioPorPersona),
+          precioPorNoche:   Number(nuevaHabitacion.precioPorNoche),
+          capacidadMaxima:  Number(nuevaHabitacion.capacidadMaxima),
+          metrosCuadrados:  Number(nuevaHabitacion.metrosCuadrados),
+          descripcion:      nuevaHabitacion.descripcion,
+          estadoId:         Number(nuevaHabitacion.estadoId),
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+
+      const tipoNom  = tiposHabitacion.find(t => t.id === Number(nuevaHabitacion.tipoHabitacionId))?.nombre ?? '';
+      const camaNom  = tiposCama.find(c => c.id === Number(nuevaHabitacion.camaId))?.nombre ?? '';
+      habitacionesNuevas = [...habitacionesNuevas, { ...nuevaHabitacion, id: data.id, tipoHabitacion: tipoNom, tipoCama: camaNom, imagenesIds: [] }];
+      imagenesHabNueva = { ...imagenesHabNueva, [data.id]: [] };
+
+      mensajeNuevaHab  = { tipo: 'ok', texto: `Habitación ${tipoNom} creada (ID #${data.id}).` };
+      showFormHabNueva = false;
+      nuevaHabitacion  = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
+    } catch (e) {
+      mensajeNuevaHab = { tipo: 'error', texto: e.message };
+    } finally {
+      guardandoNuevaHab = false;
+    }
+  }
+
+  async function subirImagenHabNueva(event, habitacionId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    subiendoImgHabNueva = true;
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await fetch(`${API_BASE}/admin/habitaciones/${habitacionId}/imagenes`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      imagenesHabNueva = { ...imagenesHabNueva, [habitacionId]: [...(imagenesHabNueva[habitacionId] ?? []), { id: data.id, preview: base64 }] };
+    } catch (e) { /* silencioso */ }
+    finally { subiendoImgHabNueva = false; event.target.value = ''; }
+  }
+
+  async function eliminarImgHabNueva(habitacionId, imgId) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/habitaciones/imagenes/${imgId}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      imagenesHabNueva = { ...imagenesHabNueva, [habitacionId]: imagenesHabNueva[habitacionId].filter(i => i.id !== imgId) };
+    } catch(e) { /* silencioso */ }
+  }
+
+  // ── Añadir habitación desde GESTIÓN ──────────────
+
+  let showModalNuevaHabGestion = false;
+  let nuevaHabGestion = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
+  let guardandoNuevaHabGestion = false;
+  let mensajeNuevaHabGestion   = null;
+
+  function abrirModalNuevaHabGestion() {
+    nuevaHabGestion = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
+    mensajeNuevaHabGestion = null;
+    showModalNuevaHabGestion = true;
+  }
+
+  async function crearHabGestion() {
+    if (!hotelDetalle) return;
+    guardandoNuevaHabGestion = true;
+    mensajeNuevaHabGestion   = null;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}/habitaciones`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipoHabitacionId: Number(nuevaHabGestion.tipoHabitacionId),
+          camaId:           Number(nuevaHabGestion.camaId),
+          precioPorPersona: Number(nuevaHabGestion.precioPorPersona),
+          precioPorNoche:   Number(nuevaHabGestion.precioPorNoche),
+          capacidadMaxima:  Number(nuevaHabGestion.capacidadMaxima),
+          metrosCuadrados:  Number(nuevaHabGestion.metrosCuadrados),
+          descripcion:      nuevaHabGestion.descripcion,
+          estadoId:         Number(nuevaHabGestion.estadoId),
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+
+      const tipoNom = tiposHabitacion.find(t => t.id === Number(nuevaHabGestion.tipoHabitacionId))?.nombre ?? '';
+      const camaNom = tiposCama.find(c => c.id === Number(nuevaHabGestion.camaId))?.nombre ?? '';
+      const estNom  = nuevaHabGestion.estadoId == 1 ? 'Activa' : 'Cerrada';
+      habitaciones  = [...habitaciones, { ...nuevaHabGestion, id: data.id, tipoHabitacion: tipoNom, tipoCama: camaNom, estado: estNom, imagenesIds: [] }];
+      mensajeNuevaHabGestion = { tipo: 'ok', texto: `Habitación creada correctamente (ID #${data.id}).` };
+    } catch (e) {
+      mensajeNuevaHabGestion = { tipo: 'error', texto: e.message };
+    } finally {
+      guardandoNuevaHabGestion = false;
+    }
+  }
+
   const reservasMock = [
-    { id: 'RES-001', usuario: 'maria.g',  hotel: 'Grand Miku Paris',  checkIn: '2025-03-10', checkOut: '2025-03-15', monto: 'Q 2,250', estado: 'confirmada' },
-    { id: 'RES-002', usuario: 'carlosm',  hotel: 'Tokio Miku Palace', checkIn: '2025-04-01', checkOut: '2025-04-07', monto: 'Q 4,060', estado: 'pendiente'  },
-    { id: 'RES-003', usuario: 'sofiamt',  hotel: 'Miku NY Suite',     checkIn: '2025-02-20', checkOut: '2025-02-25', monto: 'Q 3,100', estado: 'confirmada' },
-    { id: 'RES-004', usuario: 'luisp',    hotel: 'Miku Inn Londres',  checkIn: '2025-05-05', checkOut: '2025-05-08', monto: 'Q 960',   estado: 'cancelada'  },
-    { id: 'RES-005', usuario: 'diegot',   hotel: 'Barcelona Miku',    checkIn: '2025-06-12', checkOut: '2025-06-16', monto: 'Q 1,160', estado: 'confirmada' },
-    { id: 'RES-006', usuario: 'vale.r',   hotel: 'Miku Antigua',      checkIn: '2025-01-30', checkOut: '2025-02-02', monto: 'Q 540',   estado: 'cancelada'  },
+    { id: 'RES-001', usuario: 'maria.g',  hotel: 'Grand Miku Paris',  checkIn: '2025-03-10', checkOut: '2025-03-15', monto: '$ 2,250', estado: 'confirmada' },
+    { id: 'RES-002', usuario: 'carlosm',  hotel: 'Tokio Miku Palace', checkIn: '2025-04-01', checkOut: '2025-04-07', monto: '$ 4,060', estado: 'pendiente'  },
+    { id: 'RES-003', usuario: 'sofiamt',  hotel: 'Miku NY Suite',     checkIn: '2025-02-20', checkOut: '2025-02-25', monto: '$ 3,100', estado: 'confirmada' },
+    { id: 'RES-004', usuario: 'luisp',    hotel: 'Miku Inn Londres',  checkIn: '2025-05-05', checkOut: '2025-05-08', monto: '$ 960',   estado: 'cancelada'  },
+    { id: 'RES-005', usuario: 'diegot',   hotel: 'Barcelona Miku',    checkIn: '2025-06-12', checkOut: '2025-06-16', monto: '$ 1,160', estado: 'confirmada' },
+    { id: 'RES-006', usuario: 'vale.r',   hotel: 'Miku Antigua',      checkIn: '2025-01-30', checkOut: '2025-02-02', monto: '$ 540',   estado: 'cancelada'  },
   ];
 
   $: usuariosFiltrados = usuarios.filter(u => {
@@ -400,11 +690,12 @@
 
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { id: 'usuarios',  label: 'Usuarios',  icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-    { id: 'hoteles',   label: 'Hoteles',   icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
-    { id: 'reservas',  label: 'Reservas',  icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    { id: 'reportes',  label: 'Reportes',  icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+    { id: 'dashboard',    label: 'Dashboard',     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'usuarios',     label: 'Usuarios',       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+    { id: 'hoteles',      label: 'Hoteles',        icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
+    { id: 'crear-hotel',  label: 'Crear Hotel',    icon: 'M12 4v16m8-8H4' },
+    { id: 'reservas',     label: 'Reservas',       icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { id: 'reportes',     label: 'Reportes',       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ];
 </script>
 
@@ -452,6 +743,7 @@
           {#if activeSection === 'dashboard'}Dashboard General
           {:else if activeSection === 'usuarios'}Gestión de Usuarios
           {:else if activeSection === 'hoteles'}Gestión de Hoteles
+          {:else if activeSection === 'crear-hotel'}Crear Nuevo Hotel
           {:else if activeSection === 'reservas'}Reservas
           {:else if activeSection === 'reportes'}Reportes y Estadísticas
           {/if}
@@ -866,6 +1158,15 @@
                 <button class="adm__btn adm__btn--ghost" on:click={() => cargarHabitacionesDetalle(hotelDetalle.id)}>Reintentar</button>
               </div>
             {:else}
+              <!-- Barra de acciones -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <span style="color:var(--adm-text-muted); font-size:.85rem">{habitaciones.length} habitación(es)</span>
+                <button class="adm__btn adm__btn--primary" on:click={abrirModalNuevaHabGestion}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Nueva Habitación
+                </button>
+              </div>
+
               <div class="adm__card adm__card--no-pad">
                 <div class="adm__table-wrap">
                   <table class="adm__table">
@@ -880,8 +1181,8 @@
                             <p style="font-size:.72rem; color:var(--adm-text-muted); margin:0">ID #{h.id}</p>
                           </td>
                           <td>{h.tipoCama}</td>
-                          <td class="adm__table-money">Q {h.precioPorNoche?.toFixed(2)}</td>
-                          <td class="adm__table-money">Q {h.precioPorPersona?.toFixed(2)}</td>
+                          <td class="adm__table-money">$ {h.precioPorNoche?.toFixed(2)}</td>
+                          <td class="adm__table-money">$ {h.precioPorPersona?.toFixed(2)}</td>
                           <td class="adm__table-center">{h.capacidadMaxima}</td>
                           <td class="adm__table-center">{h.metrosCuadrados}</td>
                           <td><span class="adm__badge {badge(h.estado)}">{h.estado}</span></td>
@@ -894,7 +1195,7 @@
                         </tr>
                       {/each}
                       {#if habitaciones.length === 0}
-                        <tr><td colspan="9" class="adm__empty-cell">No hay habitaciones registradas.</td></tr>
+                        <tr><td colspan="9" class="adm__empty-cell">No hay habitaciones registradas. Crea la primera.</td></tr>
                       {/if}
                     </tbody>
                   </table>
@@ -902,6 +1203,291 @@
               </div>
             {/if}
           {/if}
+        {/if}
+
+      <!-- ═══ CREAR HOTEL ═══ -->
+      {:else if activeSection === 'crear-hotel'}
+
+        <!-- Wizard pasos -->
+        <div class="adm__wizard-steps">
+          <div class="adm__wizard-step" class:adm__wizard-step--done={hotelCreadoId && pasoActual !== 'info'} class:adm__wizard-step--active={pasoActual === 'info'}>
+            <div class="adm__wizard-step-num">1</div>
+            <span>Información</span>
+          </div>
+          <div class="adm__wizard-connector"></div>
+          <div class="adm__wizard-step" class:adm__wizard-step--done={pasoActual === 'habitaciones'} class:adm__wizard-step--active={pasoActual === 'imagenes'} class:adm__wizard-step--disabled={!hotelCreadoId}>
+            <div class="adm__wizard-step-num">2</div>
+            <span>Imágenes</span>
+          </div>
+          <div class="adm__wizard-connector"></div>
+          <div class="adm__wizard-step" class:adm__wizard-step--active={pasoActual === 'habitaciones'} class:adm__wizard-step--disabled={!hotelCreadoId}>
+            <div class="adm__wizard-step-num">3</div>
+            <span>Habitaciones</span>
+          </div>
+        </div>
+
+        <!-- ── Paso 1: Info ── -->
+        {#if pasoActual === 'info'}
+          <div class="adm__wizard-card">
+            <h3 class="adm__wizard-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              Datos del nuevo hotel
+            </h3>
+            <div class="adm__form-grid adm__form-grid--wizard">
+              <div class="adm__field adm__field--full">
+                <label>Nombre del Hotel *</label>
+                <input type="text" bind:value={nuevoHotel.nombre} placeholder="Ej: Miku Inn Paris" />
+              </div>
+              <div class="adm__field">
+                <label>País *</label>
+                <div style="position:relative">
+                  <input type="text" bind:value={paisQueryHotel}
+                    on:input={onPaisHotelInput} on:blur={validarPaisHotelSeleccionado}
+                    placeholder="Escribe el país..." autocomplete="off" />
+                  {#if paisesSugeridosHotel.length > 0}
+                    <ul class="autocomplete__list">
+                      {#each paisesSugeridosHotel as p}
+                        <li class="autocomplete__item">
+                          <button type="button" class="autocomplete__btn" on:click={() => seleccionarPaisHotel(p)}>{p.country}</button>
+                        </li>
+                      {/each}
+                    </ul>
+                  {/if}
+                </div>
+              </div>
+              <div class="adm__field">
+                <label>Ciudad *</label>
+                <div style="position:relative">
+                  <input type="text" bind:value={ciudadQueryHotel}
+                    on:input={onCiudadHotelInput} on:blur={validarCiudadHotelSeleccionada}
+                    placeholder={paisSeleccionadoHotel ? 'Escribe la ciudad...' : 'Primero selecciona un país'}
+                    disabled={!paisSeleccionadoHotel} autocomplete="off" />
+                  {#if ciudadesSugeridasHotel.length > 0}
+                    <ul class="autocomplete__list">
+                      {#each ciudadesSugeridasHotel as c}
+                        <li class="autocomplete__item">
+                          <button type="button" class="autocomplete__btn" on:click={() => seleccionarCiudadHotel(c)}>{c}</button>
+                        </li>
+                      {/each}
+                    </ul>
+                  {/if}
+                </div>
+              </div>
+              <div class="adm__field adm__field--full">
+                <label>Dirección</label>
+                <input type="text" bind:value={nuevoHotel.direccion} placeholder="Calle, número, colonia..." />
+              </div>
+              <div class="adm__field">
+                <label>Rating inicial (0–5)</label>
+                <input type="number" bind:value={nuevoHotel.rating} min="0" max="5" step="0.1" />
+              </div>
+              <div class="adm__field">
+                <label>Estado</label>
+                <select bind:value={nuevoHotel.estadoId}>
+                  <option value={1}>Activo</option>
+                  <option value={2}>Cerrado</option>
+                </select>
+              </div>
+              <div class="adm__field adm__field--full">
+                <label>Descripción</label>
+                <textarea bind:value={nuevoHotel.descripcion} rows="4" placeholder="Describe el hotel..."></textarea>
+              </div>
+            </div>
+
+            {#if mensajeNuevoHotel}
+              <div class="adm__feedback adm__feedback--{mensajeNuevoHotel.tipo}" style="margin-top:1rem">
+                {mensajeNuevoHotel.texto}
+              </div>
+            {/if}
+
+            <div class="adm__wizard-actions">
+              <button class="adm__btn adm__btn--ghost" on:click={resetCrearHotel}>Limpiar</button>
+              <button class="adm__btn adm__btn--primary adm__btn--lg" on:click={crearNuevoHotel} disabled={guardandoNuevoHotel}>
+                {#if guardandoNuevoHotel}
+                  <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Creando hotel...
+                {:else}
+                  Crear Hotel y Continuar
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                {/if}
+              </button>
+            </div>
+          </div>
+
+        <!-- ── Paso 2: Imágenes ── -->
+        {:else if pasoActual === 'imagenes'}
+          <div class="adm__wizard-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem">
+              <h3 class="adm__wizard-card-title" style="margin:0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Imágenes de <strong>{hotelCreadoNombre}</strong>
+              </h3>
+              <label class="adm__btn adm__btn--primary adm__upload-btn">
+                {#if subiendoImgNuevoHotel}
+                  <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Subiendo...
+                {:else}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar imagen
+                {/if}
+                <input type="file" accept="image/*" on:change={subirImagenNuevoHotel} disabled={subiendoImgNuevoHotel} style="display:none" />
+              </label>
+            </div>
+
+            {#if mensajeImgNuevo}
+              <div class="adm__feedback adm__feedback--{mensajeImgNuevo.tipo}" style="margin-bottom:1rem">{mensajeImgNuevo.texto}</div>
+            {/if}
+
+            {#if imagenesNuevoHotel.length > 0}
+              <div class="adm__img-grid">
+                {#each imagenesNuevoHotel as img (img.id)}
+                  <div class="adm__img-card">
+                    <img src={img.preview} alt="img {img.id}" />
+                    <button class="adm__img-delete" on:click={() => eliminarImgNuevoHotel(img.id)}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <div class="adm__img-empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p>Sube al menos una imagen. Puedes omitir este paso.</p>
+              </div>
+            {/if}
+
+            <div class="adm__wizard-actions">
+              <button class="adm__btn adm__btn--ghost" on:click={() => pasoActual = 'info'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver
+              </button>
+              <button class="adm__btn adm__btn--primary adm__btn--lg" on:click={() => pasoActual = 'habitaciones'}>
+                Continuar a Habitaciones
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+        <!-- ── Paso 3: Habitaciones ── -->
+        {:else if pasoActual === 'habitaciones'}
+          <div class="adm__wizard-card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem">
+              <h3 class="adm__wizard-card-title" style="margin:0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                Habitaciones de <strong>{hotelCreadoNombre}</strong>
+              </h3>
+              <button class="adm__btn adm__btn--primary" on:click={() => { showFormHabNueva = true; mensajeNuevaHab = null; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar Habitación
+              </button>
+            </div>
+
+            <!-- Formulario nueva habitación -->
+            {#if showFormHabNueva}
+              <div class="adm__wizard-subcard">
+                <p class="adm__modal-section-title">Nueva Habitación</p>
+                <div class="adm__form-grid adm__form-grid--wizard">
+                  <div class="adm__field">
+                    <label>Tipo</label>
+                    <select bind:value={nuevaHabitacion.tipoHabitacionId}>
+                      {#each tiposHabitacion as t}<option value={t.id}>{t.nombre}</option>{/each}
+                    </select>
+                  </div>
+                  <div class="adm__field">
+                    <label>Cama</label>
+                    <select bind:value={nuevaHabitacion.camaId}>
+                      {#each tiposCama as c}<option value={c.id}>{c.nombre}</option>{/each}
+                    </select>
+                  </div>
+                  <div class="adm__field">
+                    <label>Precio/Noche ($)</label>
+                    <input type="number" bind:value={nuevaHabitacion.precioPorNoche} min="0" step="0.01" />
+                  </div>
+                  <div class="adm__field">
+                    <label>Precio/Persona ($)</label>
+                    <input type="number" bind:value={nuevaHabitacion.precioPorPersona} min="0" step="0.01" />
+                  </div>
+                  <div class="adm__field">
+                    <label>Capacidad máx.</label>
+                    <input type="number" bind:value={nuevaHabitacion.capacidadMaxima} min="1" />
+                  </div>
+                  <div class="adm__field">
+                    <label>m²</label>
+                    <input type="number" bind:value={nuevaHabitacion.metrosCuadrados} min="0" step="0.1" />
+                  </div>
+                  <div class="adm__field">
+                    <label>Estado</label>
+                    <select bind:value={nuevaHabitacion.estadoId}>
+                      <option value={1}>Activa</option>
+                      <option value={2}>Cerrada</option>
+                    </select>
+                  </div>
+                  <div class="adm__field adm__field--full">
+                    <label>Descripción</label>
+                    <textarea bind:value={nuevaHabitacion.descripcion} rows="2" placeholder="Descripción..."></textarea>
+                  </div>
+                </div>
+                {#if mensajeNuevaHab}
+                  <div class="adm__feedback adm__feedback--{mensajeNuevaHab.tipo}" style="margin:.75rem 0">{mensajeNuevaHab.texto}</div>
+                {/if}
+                <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:1rem">
+                  <button class="adm__btn adm__btn--ghost" on:click={() => showFormHabNueva = false}>Cancelar</button>
+                  <button class="adm__btn adm__btn--primary" on:click={crearNuevaHabitacion} disabled={guardandoNuevaHab}>
+                    {#if guardandoNuevaHab}
+                      <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Creando...
+                    {:else}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Crear Habitación
+                    {/if}
+                  </button>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Lista de habitaciones creadas -->
+            {#if habitacionesNuevas.length > 0}
+              <div style="display:flex; flex-direction:column; gap:1rem; margin-top:1rem">
+                {#each habitacionesNuevas as h (h.id)}
+                  <div class="adm__wizard-hab-card">
+                    <div class="adm__wizard-hab-info">
+                      <p class="adm__wizard-hab-tipo">{h.tipoHabitacion}</p>
+                      <p class="adm__wizard-hab-meta">{h.tipoCama} · {h.capacidadMaxima} pers. · {h.metrosCuadrados} m² · $ {Number(h.precioPorNoche).toFixed(2)}/noche</p>
+                    </div>
+                    <div class="adm__wizard-hab-imgs">
+                      <div class="adm__img-grid adm__img-grid--sm">
+                        {#each (imagenesHabNueva[h.id] ?? []) as img (img.id)}
+                          <div class="adm__img-card">
+                            <img src={img.preview} alt="img" />
+                            <button class="adm__img-delete" on:click={() => eliminarImgHabNueva(h.id, img.id)}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          </div>
+                        {/each}
+                        <label class="adm__wizard-add-img-btn adm__upload-btn">
+                          {#if subiendoImgHabNueva}
+                            <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                          {:else}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          {/if}
+                          <input type="file" accept="image/*" on:change={(e) => subirImagenHabNueva(e, h.id)} disabled={subiendoImgHabNueva} style="display:none" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {:else if !showFormHabNueva}
+              <div class="adm__img-empty" style="padding:2rem 0">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <p>Agrega las habitaciones del hotel.</p>
+              </div>
+            {/if}
+
+            <div class="adm__wizard-actions" style="margin-top:1.5rem">
+              <button class="adm__btn adm__btn--ghost" on:click={() => pasoActual = 'imagenes'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver
+              </button>
+              <button class="adm__btn adm__btn--success adm__btn--lg" on:click={() => { resetCrearHotel(); activeSection = 'hoteles'; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Finalizar — Ver Hoteles
+              </button>
+            </div>
+          </div>
         {/if}
 
       <!-- ═══ RESERVAS ═══ -->
@@ -979,7 +1565,7 @@
           <div class="adm__card adm__reporte-card adm__reporte-card--wide">
             <h3 class="adm__card-title">Resumen General</h3>
             <div class="adm__kpi-grid">
-              <div class="adm__kpi-item"><p class="adm__kpi-val">Q 284,500</p><p class="adm__kpi-lbl">Ingresos totales</p></div>
+              <div class="adm__kpi-item"><p class="adm__kpi-val">$ 284,500</p><p class="adm__kpi-lbl">Ingresos totales</p></div>
               <div class="adm__kpi-item"><p class="adm__kpi-val">1,248</p><p class="adm__kpi-lbl">Usuarios registrados</p></div>
               <div class="adm__kpi-item"><p class="adm__kpi-val">384</p><p class="adm__kpi-lbl">Reservas activas</p></div>
               <div class="adm__kpi-item"><p class="adm__kpi-val">78%</p><p class="adm__kpi-lbl">Tasa de ocupación</p></div>
@@ -1177,6 +1763,81 @@
   </dialog>
 {/if}
 
+{#if showModalNuevaHabGestion && hotelDetalle}
+  <div class="adm__overlay" on:click={() => { showModalNuevaHabGestion = false; }} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
+  <div class="adm__hotel-modal adm__hotel-modal--wide">
+    <div class="adm__hotel-modal__header">
+      <div class="adm__hotel-modal__thumb" style="background:#252b3b; font-size:1.4rem; display:flex; align-items:center; justify-content:center;">&#x1F6CF;</div>
+      <div class="adm__hotel-modal__info">
+        <p class="adm__hotel-modal__name">Nueva Habitación</p>
+        <p class="adm__hotel-modal__loc">{hotelDetalle.nombre}</p>
+      </div>
+      <button class="adm__rol-modal__close" on:click={() => showModalNuevaHabGestion = false} aria-label="Cerrar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="adm__hotel-modal__body">
+      <p class="adm__modal-section-title">Datos de la habitacion</p>
+      <div class="adm__form-grid">
+        <div class="adm__field">
+          <label>Tipo</label>
+          <select bind:value={nuevaHabGestion.tipoHabitacionId}>
+            {#each tiposHabitacion as t}<option value={t.id}>{t.nombre}</option>{/each}
+          </select>
+        </div>
+        <div class="adm__field">
+          <label>Cama</label>
+          <select bind:value={nuevaHabGestion.camaId}>
+            {#each tiposCama as c}<option value={c.id}>{c.nombre}</option>{/each}
+          </select>
+        </div>
+        <div class="adm__field">
+          <label>Precio/Noche ($)</label>
+          <input type="number" bind:value={nuevaHabGestion.precioPorNoche} min="0" step="0.01" />
+        </div>
+        <div class="adm__field">
+          <label>Precio/Persona ($)</label>
+          <input type="number" bind:value={nuevaHabGestion.precioPorPersona} min="0" step="0.01" />
+        </div>
+        <div class="adm__field">
+          <label>Capacidad máx.</label>
+          <input type="number" bind:value={nuevaHabGestion.capacidadMaxima} min="1" />
+        </div>
+        <div class="adm__field">
+          <label>m²</label>
+          <input type="number" bind:value={nuevaHabGestion.metrosCuadrados} min="0" step="0.1" />
+        </div>
+        <div class="adm__field">
+          <label>Estado</label>
+          <select bind:value={nuevaHabGestion.estadoId}>
+            <option value={1}>Activa</option>
+            <option value={2}>Cerrada</option>
+          </select>
+        </div>
+        <div class="adm__field adm__field--full">
+          <label>Descripcion</label>
+          <textarea bind:value={nuevaHabGestion.descripcion} rows="3" placeholder="Descripcion..."></textarea>
+        </div>
+      </div>
+      {#if mensajeNuevaHabGestion}
+        <div class="adm__feedback adm__feedback--{mensajeNuevaHabGestion.tipo}" style="margin:.75rem 0">
+          {mensajeNuevaHabGestion.texto}
+        </div>
+      {/if}
+    </div>
+    <div class="adm__hotel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={() => showModalNuevaHabGestion = false}>Cancelar</button>
+      <button class="adm__btn adm__btn--primary" on:click={crearHabGestion} disabled={guardandoNuevaHabGestion}>
+        {#if guardandoNuevaHabGestion}
+          <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Creando...
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Crear Habitacion
+        {/if}
+      </button>
+    </div>
+  </div>
+{/if}
+
 {#if showModalHabitacion && habitacionEditando}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
 
@@ -1218,11 +1879,11 @@
           </select>
         </div>
         <div class="adm__field">
-          <label>Precio por Noche (Q)</label>
+          <label>Precio por Noche ($)</label>
           <input type="number" bind:value={editHabitacion.precioPorNoche} min="0" step="0.01" />
         </div>
         <div class="adm__field">
-          <label>Precio por Persona (Q)</label>
+          <label>Precio por Persona ($)</label>
           <input type="number" bind:value={editHabitacion.precioPorPersona} min="0" step="0.01" />
         </div>
         <div class="adm__field">
