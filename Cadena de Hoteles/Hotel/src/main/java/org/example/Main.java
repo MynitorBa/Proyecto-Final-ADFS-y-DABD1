@@ -4,6 +4,10 @@ import io.javalin.Javalin;
 import org.example.config.ServerConfig;
 import org.example.controllers.AuthController;
 import org.example.controllers.BusquedaController;
+import org.example.controllers.ComentarioController;
+import org.example.controllers.CancelacionController;
+import org.example.controllers.DownsController;
+import org.example.controllers.ImagenController;
 import org.example.controllers.PagoController;
 import org.example.controllers.ReservacionController;
 import org.example.controllers.SesionController;
@@ -34,6 +38,10 @@ public class Main {
         new BusquedaController().registerRoutes(app);
         new ReservacionController().registerRoutes(app);
         new PagoController().registerRoutes(app);
+        new ComentarioController().registerRoutes(app);
+        new DownsController().registerRoutes(app);
+        new CancelacionController().registerRoutes(app);
+        new ImagenController().registerRoutes(app);
 
         //Rutas base
         app.get("/", ctx -> ctx.json("OK"));

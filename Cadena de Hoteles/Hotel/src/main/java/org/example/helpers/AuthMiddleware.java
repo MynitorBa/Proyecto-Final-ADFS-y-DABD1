@@ -16,7 +16,8 @@ public class AuthMiddleware {
             "/auth/logout",
             "/usuarios/registrar",
             "/usuarios/validar",
-            "/busqueda"
+            "/busqueda",
+            "/sesion"
     );
 
     public static void registrar(Javalin app) {
@@ -43,6 +44,12 @@ public class AuthMiddleware {
     }
 
     private static boolean esRutaPublica(Context ctx) {
-        return RUTAS_PUBLICAS.contains(ctx.path());
+        // Rutas exactas
+        if (RUTAS_PUBLICAS.contains(ctx.path())) return true;
+        // GET de comentarios por hotel es pública
+        if (ctx.method().name().equals("GET") && ctx.path().startsWith("/comentarios/hotel/")) return true;
+        // GET imágenes — siempre públicas
+        if (ctx.method().name().equals("GET") && ctx.path().startsWith("/imagenes/")) return true;
+        return false;
     }
 }

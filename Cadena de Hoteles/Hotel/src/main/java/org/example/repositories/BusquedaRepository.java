@@ -5,11 +5,12 @@ import org.example.dtos.AmenidadHotelDTO;
 import org.example.dtos.HabitacionDTO;
 import org.example.dtos.HotelResultadoDTO;
 
+import java.sql.Date;
 import java.util.List;
 
 public class BusquedaRepository {
 
-    //-------------------------------------------------busqueda de ciudades y paises id--------------------
+    // -------------------------- Buscar Ciudad por nombre y país -------------------------------------
 
     public Integer buscarCiudadId(String nombreCiudad, String nombrePais) {
         String sql = "SELECT c.ID FROM Ciudad c JOIN Pais p ON c.Pais_ID = p.ID " +
@@ -20,7 +21,23 @@ public class BusquedaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    //-------------------------------------------------busqueda hoteles--------------------
+    // ---------------Guardar búsqueda ------------------------
+
+    public void guardarBusqueda(int ciudadId, Date fechaCheckIn, Date fechaCheckOut,
+                                int cantidadPersonas, Integer usuarioId) {
+        // TipoBusquedaID = 1 (Usuario), null si no hay sesión
+        String sql = "INSERT INTO Busqueda " +
+                "(CiudadID, FechaCheckIn, FechaCheckOut, CantidadPersonas, UsuarioID, AgenciaID, TipoBusquedaID, Fecha) " +
+                "VALUES (?, ?, ?, ?, ?, NULL, ?, SYSDATE)";
+
+        Integer tipoBusquedaId = usuarioId != null ? 1 : null;
+        DatabaseManager.executeUpdate(sql,
+                ciudadId, fechaCheckIn, fechaCheckOut, cantidadPersonas, usuarioId, tipoBusquedaId
+        );
+    }
+
+    // ---------------------------------Hoteles activos de una ciudad ------------------------------------
+
     public List<HotelResultadoDTO> buscarHotelesPorCiudad(int ciudadId) {
         String sql = "SELECT h.ID, h.Nombre, h.Direccion, h.Descripcion, h.Rating, " +
                 "e.Estado, c.Nombre AS Ciudad, p.Nombre AS Pais " +
@@ -44,14 +61,10 @@ public class BusquedaRepository {
         }, ciudadId);
     }
 
-    //-------------------------------------------------imagenes por hotel--------------------
-
     public List<Integer> buscarImagenesHotel(int hotelId) {
         String sql = "SELECT ID FROM ImagenHotel WHERE HotelID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelId);
     }
-
-    //-------------------------------------------------imagenes por hotel-------------------
 
     public List<AmenidadHotelDTO> buscarAmenidadesHotel(int hotelId) {
         String sql = "SELECT ha.ID AS HotelAmenidadId, ha.AmenidadID, ha.Descripcion, " +
@@ -70,20 +83,13 @@ public class BusquedaRepository {
         }, hotelId);
     }
 
-    //-------------------------------------------------imagen por amenidad--------------------
-
     public List<Integer> buscarImagenesAmenidad(int hotelAmenidadId) {
         String sql = "SELECT ID FROM ImagenHotelAmenidad WHERE HotelAmenidadID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelAmenidadId);
     }
 
-    //-------------------------------------------------habitaciones disponibles--------------------
-
     public List<HabitacionDTO> buscarHabitacionesDisponibles(int hotelId, int cantidadPersonas,
-                                                             java.sql.Date fechaCheckIn,
-                                                             java.sql.Date fechaCheckOut) {
-        // Excluye habitaciones que tengan reservaciones Pendiente o Confirmada
-        // cuyas fechas se traslapen con el rango solicitado
+                                                             Date fechaCheckIn, Date fechaCheckOut) {
         String sql = "SELECT h.ID, h.Precio_por_Persona, h.Precio_por_Noche, " +
                 "h.Capacidad_Maxima, h.Metros_Cuadrados, h.Descripcion, " +
                 "t.nombre AS TipoHabitacion, " +
@@ -120,7 +126,6 @@ public class BusquedaRepository {
             return dto;
         }, hotelId, cantidadPersonas, fechaCheckOut, fechaCheckIn);
     }
-
 
     public List<Integer> buscarImagenesHabitacion(int habitacionId) {
         String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";

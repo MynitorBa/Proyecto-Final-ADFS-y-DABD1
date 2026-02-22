@@ -11,7 +11,8 @@ public class BusquedaService {
 
     private final BusquedaRepository busquedaRepository = new BusquedaRepository();
 
-    public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request) {
+    // usuarioId puede ser null si la búsqueda es anónima
+    public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, Integer usuarioId) {
 
         Integer ciudadId = busquedaRepository.buscarCiudadId(request.getCiudad(), request.getPais());
         if (ciudadId == null) {
@@ -24,10 +25,15 @@ public class BusquedaService {
         Date fechaCheckIn  = Date.valueOf(LocalDate.parse(request.getFechaCheckIn()));
         Date fechaCheckOut = Date.valueOf(LocalDate.parse(request.getFechaCheckOut()));
 
+        // Guardar historial — funciona con o sin sesión
+        busquedaRepository.guardarBusqueda(
+                ciudadId, fechaCheckIn, fechaCheckOut,
+                request.getCantidadPersonas(), usuarioId
+        );
+
         List<HotelResultadoDTO> hoteles = busquedaRepository.buscarHotelesPorCiudad(ciudadId);
 
         for (HotelResultadoDTO hotel : hoteles) {
-
             hotel.setImagenesIds(busquedaRepository.buscarImagenesHotel(hotel.getId()));
 
             List<AmenidadHotelDTO> amenidades = busquedaRepository.buscarAmenidadesHotel(hotel.getId());
