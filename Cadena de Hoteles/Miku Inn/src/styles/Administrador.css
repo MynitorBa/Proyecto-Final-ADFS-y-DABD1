@@ -2206,3 +2206,163 @@
   transition: border-color 0.15s, color 0.15s;
 }
 .adm__wizard-add-img-btn:hover { border-color: #7b93ff; color: #7b93ff; }
+
+
+/* ════════════════════════════════════════════
+   AMENIDAD CARDS
+   ════════════════════════════════════════════ */
+.adm__amenidad-card {
+  background: #1e2535;
+  border: 1px solid #363d52;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s;
+}
+.adm__amenidad-card:hover { border-color: #4a527a; }
+
+.adm__amenidad-header {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  margin-bottom: .75rem;
+}
+.adm__amenidad-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(123,147,255,0.12);
+  border: 1px solid rgba(123,147,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7b93ff;
+  flex-shrink: 0;
+}
+.adm__amenidad-nombre {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #e8eeff;
+  margin: 0 0 4px;
+}
+.adm__amenidad-desc {
+  font-size: .8rem;
+  color: #8b95b0;
+  margin: 0;
+  line-height: 1.4;
+}
+.adm__amenidad-desc-input {
+  background: #2d3450;
+  border: 1.5px solid #4a527a;
+  border-radius: 6px;
+  color: #fff;
+  padding: .4rem .6rem;
+  font-size: .85rem;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 52px;
+  margin-top: 4px;
+}
+.adm__amenidad-desc-input:focus {
+  outline: none;
+  border-color: #7b93ff;
+  box-shadow: 0 0 0 3px rgba(123,147,255,.2);
+}
+.adm__amenidad-imgs {
+  padding-top: .75rem;
+  border-top: 1px solid #2d3450;
+}
+
+/* Extra small btn */
+.adm__btn--xs {
+  padding: .3rem .7rem;
+  font-size: .78rem;
+}
+
+/* Delete icon btn */
+.adm__icon-btn--delete {
+  background: rgba(248,81,73,0.08);
+  border: 1px solid rgba(248,81,73,0.25);
+  color: #f85149;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.adm__icon-btn--delete:hover { background: rgba(248,81,73,0.2); }
+
+/* ════════════════════════════════════════════
+   AUTOCOMPLETE — WIZARD PAÍS / CIUDAD
+   (mismo estilo que Register.svelte)
+   ════════════════════════════════════════════ */
+.adm__autocomplete-wrap {
+  position: relative;
+}
+.adm__autocomplete-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #2d3450;
+  border: 1.5px solid #4a527a;
+  border-radius: 8px;
+  color: #ffffff;
+  padding: .65rem .9rem;
+  font-size: .9rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adm__autocomplete-wrap input:focus {
+  outline: none;
+  border-color: #7b93ff;
+  background: #323b5c;
+  box-shadow: 0 0 0 3px rgba(123,147,255,.2);
+}
+.adm__autocomplete-wrap input:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.adm__autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #252d45;
+  border: 1.5px solid #4a527a;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  z-index: 200;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.adm__autocomplete-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #c8d0e8;
+  padding: .5rem .75rem;
+  border-radius: 7px;
+  font-size: .875rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s;
+}
+.adm__autocomplete-item:hover {
+  background: rgba(123,147,255,.15);
+  color: #ffffff;
+}
+.adm__field-error {
+  display: block;
+  margin-top: 4px;
+  font-size: .72rem;
+  color: #f85149;
+  font-weight: 600;
+}

@@ -17,6 +17,8 @@ import org.example.data.DatabaseTest;
 import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
 
+import java.util.Map;
+
 public class Main {
 
     public static void main(String[] args) {
@@ -29,14 +31,26 @@ public class Main {
 
         Javalin app = ServerConfig.createServer();
 
-        // Middleware
+        // ── Manejador global de excepciones ───────────────────────────────────
+        // Garantiza que CUALQUIER error siempre devuelva JSON, nunca texto plano
+        app.exception(Exception.class, (e, ctx) -> {
+            String msg = e.getMessage() != null ? e.getMessage() : "Error interno del servidor";
+            // Simplificar mensajes de Oracle
+            if (msg.contains("ORA-00001")) {
+                msg = "Registro duplicado: ya existe un valor con esa restricción única.";
+            } else if (msg.contains("ORA-")) {
+                msg = msg.split("\n")[0].trim();
+            }
+            ctx.status(500).json(Map.of("mensaje", msg));
+        });
+
+        // ── Middleware ────────────────────────────────────────────────────────
         AuthMiddleware.registrar(app);
 
-        // Controllers
+        // ── Controllers ───────────────────────────────────────────────────────
         new AuthController().registerRoutes(app);
         new SesionController().registerRoutes(app);
         new UsuarioController().registerRoutes(app);
-        new HotelController().registerRoutes(app);
         new BusquedaController().registerRoutes(app);
         new ReservacionController().registerRoutes(app);
         new PagoController().registerRoutes(app);
@@ -44,12 +58,13 @@ public class Main {
         new DownsController().registerRoutes(app);
         new CancelacionController().registerRoutes(app);
         new ImagenController().registerRoutes(app);
+        new HotelController().registerRoutes(app);   // ← Panel de administración
 
-        // Rutas base
+        // ── Rutas base ────────────────────────────────────────────────────────
         app.get("/", ctx -> ctx.json("OK"));
         app.get("/health", ctx -> ctx.json("OK"));
 
-        // Apagar hilo al cerrar
+        // ── Apagar hilo al cerrar ─────────────────────────────────────────────
         Runtime.getRuntime().addShutdownHook(new Thread(expiracionService::detener));
     }
 }

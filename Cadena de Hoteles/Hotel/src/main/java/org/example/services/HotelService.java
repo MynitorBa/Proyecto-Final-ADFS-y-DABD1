@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class HotelService {
 
-    private final HotelRepository hotelRepository   = new HotelRepository();
+    private final HotelRepository  hotelRepository  = new HotelRepository();
     private final CiudadRepository ciudadRepository = new CiudadRepository();
     private final PaisRepository   paisRepository   = new PaisRepository();
 
@@ -19,8 +19,9 @@ public class HotelService {
     //  CATÁLOGOS
     // ════════════════════════════════════════════════════
 
-    public List<PaisDTO>   listarPaises()   { return paisRepository.listarPaises(); }
-    public List<CiudadDTO> listarCiudades() { return paisRepository.listarCiudades(); }
+    public List<AmenidadDTO>  listarAmenidades() { return hotelRepository.listarAmenidades(); }
+    public List<PaisDTO>      listarPaises()     { return paisRepository.listarPaises(); }
+    public List<CiudadDTO>    listarCiudades()   { return paisRepository.listarCiudades(); }
 
     // ════════════════════════════════════════════════════
     //  HOTEL — listar
@@ -39,26 +40,77 @@ public class HotelService {
     //  HOTEL — crear
     // ════════════════════════════════════════════════════
 
-    public Map<String, Object> crearHotel(CrearHotelRequestDTO request) {
-        validarHotel(request.getNombre(), request.getRating(), request.getEstadoId());
+    public Map<String, Object> crearHotel(CrearHotelRequestDTO req) {
+        System.out.println("=== [crearHotel] INICIO ===");
+        System.out.println("  nombre      = " + req.getNombre());
+        System.out.println("  direccion   = " + req.getDireccion());
+        System.out.println("  descripcion = " + req.getDescripcion());
+        System.out.println("  rating      = " + req.getRating());
+        System.out.println("  estadoId    = " + req.getEstadoId());
+        System.out.println("  ciudad      = " + req.getCiudad());
+        System.out.println("  paisNombre  = " + req.getPaisNombre());
 
-        if (request.getCiudad() == null || request.getCiudad().isBlank())
-            throw new IllegalArgumentException("El nombre de la ciudad no puede estar vacío");
-        if (request.getPaisId() <= 0)
-            throw new IllegalArgumentException("Debe seleccionar un país válido");
+        try {
+            validarCamposHotel(req.getNombre(), req.getRating(), req.getEstadoId());
+            System.out.println("  [OK] validarCamposHotel paso");
+        } catch (Exception e) {
+            System.out.println("  [ERROR] validarCamposHotel: " + e.getMessage());
+            throw e;
+        }
 
-        int ciudadId = ciudadRepository.buscarOCrearPorNombre(
-                request.getCiudad().trim(), request.getPaisId());
+        if (req.getCiudad() == null || req.getCiudad().isBlank())
+            throw new IllegalArgumentException("El nombre de la ciudad es obligatorio");
+        if (req.getPaisNombre() == null || req.getPaisNombre().isBlank())
+            throw new IllegalArgumentException("El nombre del país es obligatorio");
 
-        int hotelId = hotelRepository.crearHotel(
-                request.getNombre().trim(),
-                request.getDireccion()   != null ? request.getDireccion().trim()   : "",
-                request.getDescripcion() != null ? request.getDescripcion().trim() : "",
-                request.getRating(),
-                request.getEstadoId(),
-                ciudadId
-        );
+        int paisId;
+        try {
+            System.out.println("  Buscando/creando pais: '" + req.getPaisNombre().trim() + "'");
+            paisId = paisRepository.buscarOCrearPorNombre(req.getPaisNombre().trim());
+            System.out.println("  [OK] paisId = " + paisId);
+        } catch (Exception e) {
+            System.out.println("  [ERROR] buscarOCrearPorNombre (pais): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
 
+        int ciudadId;
+        try {
+            System.out.println("  Buscando/creando ciudad: '" + req.getCiudad().trim() + "' en paisId=" + paisId);
+            ciudadId = ciudadRepository.buscarOCrearPorNombre(req.getCiudad().trim(), paisId);
+            System.out.println("  [OK] ciudadId = " + ciudadId);
+        } catch (Exception e) {
+            System.out.println("  [ERROR] buscarOCrearPorNombre (ciudad): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
+        int hotelId;
+        try {
+            System.out.println("  Insertando hotel en BD...");
+            System.out.println("    nombre      = '" + req.getNombre().trim() + "'");
+            System.out.println("    direccion   = '" + safe(req.getDireccion()) + "'");
+            System.out.println("    descripcion = '" + safe(req.getDescripcion()) + "'");
+            System.out.println("    rating      = " + req.getRating());
+            System.out.println("    estadoId    = " + req.getEstadoId());
+            System.out.println("    ciudadId    = " + ciudadId);
+
+            hotelId = hotelRepository.crearHotel(
+                    req.getNombre().trim(),
+                    safe(req.getDireccion()),
+                    safe(req.getDescripcion()),
+                    req.getRating(),
+                    req.getEstadoId(),
+                    ciudadId
+            );
+            System.out.println("  [OK] hotelId = " + hotelId);
+        } catch (Exception e) {
+            System.out.println("  [ERROR] hotelRepository.crearHotel: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
+        System.out.println("=== [crearHotel] FIN OK — id=" + hotelId + " ===");
         return Map.of("id", hotelId, "mensaje", "Hotel creado correctamente");
     }
 
@@ -66,28 +118,77 @@ public class HotelService {
     //  HOTEL — editar
     // ════════════════════════════════════════════════════
 
-    public void editarHotel(int hotelId, EditarHotelRequestDTO request) {
+    public void editarHotel(int hotelId, EditarHotelRequestDTO req) {
         if (!hotelRepository.existe(hotelId))
-            throw new IllegalArgumentException("Hotel no encontrado con ID: " + hotelId);
-        validarHotel(request.getNombre(), request.getRating(), request.getEstadoId());
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        validarCamposHotel(req.getNombre(), req.getRating(), req.getEstadoId());
 
         hotelRepository.actualizarHotel(
                 hotelId,
-                request.getNombre().trim(),
-                request.getDireccion()   != null ? request.getDireccion().trim()   : "",
-                request.getDescripcion() != null ? request.getDescripcion().trim() : "",
-                request.getRating(),
-                request.getEstadoId()
+                req.getNombre().trim(),
+                safe(req.getDireccion()),
+                safe(req.getDescripcion()),
+                req.getRating(),
+                req.getEstadoId()
         );
     }
 
-    private void validarHotel(String nombre, double rating, int estadoId) {
-        if (nombre == null || nombre.isBlank())
-            throw new IllegalArgumentException("El nombre del hotel no puede estar vacío");
-        if (rating < 0 || rating > 5)
-            throw new IllegalArgumentException("El rating debe estar entre 0 y 5");
-        if (estadoId != 1 && estadoId != 2)
-            throw new IllegalArgumentException("Estado inválido. Use 1 (Activo) o 2 (Cerrado)");
+    // ════════════════════════════════════════════════════
+    //  AMENIDADES DEL HOTEL
+    // ════════════════════════════════════════════════════
+
+    public List<HotelAmenidadDTO> listarAmenidadesHotel(int hotelId) {
+        if (!hotelRepository.existe(hotelId))
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        List<HotelAmenidadDTO> lista = hotelRepository.listarAmenidadesHotel(hotelId);
+        for (HotelAmenidadDTO a : lista)
+            a.setImagenesIds(hotelRepository.obtenerImagenesAmenidadIds(a.getId()));
+        return lista;
+    }
+
+    public Map<String, Object> agregarAmenidadHotel(int hotelId, AgregarAmenidadRequestDTO req) {
+        System.out.println("=== [agregarAmenidadHotel] INICIO ===");
+        System.out.println("  hotelId    = " + hotelId);
+        System.out.println("  amenidadId = " + req.getAmenidadId());
+        System.out.println("  descripcion= " + req.getDescripcion());
+
+        if (!hotelRepository.existe(hotelId))
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        if (req.getAmenidadId() <= 0)
+            throw new IllegalArgumentException("Amenidad inválida");
+        if (hotelRepository.tieneAmenidad(hotelId, req.getAmenidadId()))
+            throw new IllegalArgumentException("Este hotel ya tiene esa amenidad asignada.");
+
+        int id;
+        try {
+            System.out.println("  Insertando HotelAmenidad...");
+            id = hotelRepository.agregarAmenidadHotel(hotelId, req.getAmenidadId(), safe(req.getDescripcion()));
+            System.out.println("  [OK] HotelAmenidad id = " + id);
+        } catch (Exception e) {
+            System.out.println("  [ERROR] agregarAmenidadHotel: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
+        System.out.println("=== [agregarAmenidadHotel] FIN OK ===");
+        return Map.of("id", id, "mensaje", "Amenidad agregada");
+    }
+
+    public void actualizarAmenidadHotel(int hotelAmenidadId, AgregarAmenidadRequestDTO req) {
+        hotelRepository.actualizarAmenidadHotel(hotelAmenidadId, safe(req.getDescripcion()));
+    }
+
+    public void eliminarAmenidadHotel(int hotelAmenidadId) {
+        hotelRepository.eliminarAmenidadHotel(hotelAmenidadId);
+    }
+
+    public Map<String, Object> agregarImagenAmenidad(int hotelAmenidadId, String base64) {
+        int nuevoId = hotelRepository.agregarImagenAmenidad(hotelAmenidadId, decodeBase64(base64));
+        return Map.of("id", nuevoId, "mensaje", "Imagen de amenidad agregada");
+    }
+
+    public void eliminarImagenAmenidad(int imagenId) {
+        hotelRepository.eliminarImagenAmenidad(imagenId);
     }
 
     // ════════════════════════════════════════════════════
@@ -96,10 +197,9 @@ public class HotelService {
 
     public Map<String, Object> agregarImagenHotel(int hotelId, String base64) {
         if (!hotelRepository.existe(hotelId))
-            throw new IllegalArgumentException("Hotel no encontrado con ID: " + hotelId);
-        byte[] bytes = decodeBase64(base64);
-        int nuevoId = hotelRepository.agregarImagenHotel(hotelId, bytes);
-        return Map.of("id", nuevoId, "mensaje", "Imagen agregada correctamente");
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        int nuevoId = hotelRepository.agregarImagenHotel(hotelId, decodeBase64(base64));
+        return Map.of("id", nuevoId, "mensaje", "Imagen agregada");
     }
 
     public void eliminarImagenHotel(int imagenId) {
@@ -112,59 +212,105 @@ public class HotelService {
 
     public List<HabitacionAdminDTO> listarHabitaciones(int hotelId) {
         if (!hotelRepository.existe(hotelId))
-            throw new IllegalArgumentException("Hotel no encontrado con ID: " + hotelId);
-        List<HabitacionAdminDTO> habitaciones = hotelRepository.listarHabitacionesPorHotel(hotelId);
-        for (HabitacionAdminDTO h : habitaciones) {
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        List<HabitacionAdminDTO> lista = hotelRepository.listarHabitacionesPorHotel(hotelId);
+        for (HabitacionAdminDTO h : lista)
             h.setImagenesIds(hotelRepository.obtenerImagenesHabitacionIds(h.getId()));
-        }
-        return habitaciones;
+        return lista;
     }
 
     // ════════════════════════════════════════════════════
     //  HABITACIONES — crear
     // ════════════════════════════════════════════════════
 
-    public Map<String, Object> crearHabitacion(CrearHabitacionRequestDTO request) {
-        if (!hotelRepository.existe(request.getHotelId()))
-            throw new IllegalArgumentException("Hotel no encontrado con ID: " + request.getHotelId());
-        validarHabitacion(request.getPrecioPorNoche(), request.getPrecioPorPersona(),
-                request.getCapacidadMaxima(), request.getEstadoId());
+    public Map<String, Object> crearHabitacion(CrearHabitacionRequestDTO req) {
+        System.out.println("=== [crearHabitacion] INICIO ===");
+        System.out.println("  hotelId          = " + req.getHotelId());
+        System.out.println("  tipoHabitacionId = " + req.getTipoHabitacionId());
+        System.out.println("  camaId           = " + req.getCamaId());
+        System.out.println("  precioPorPersona = " + req.getPrecioPorPersona());
+        System.out.println("  precioPorNoche   = " + req.getPrecioPorNoche());
+        System.out.println("  capacidadMaxima  = " + req.getCapacidadMaxima());
+        System.out.println("  metrosCuadrados  = " + req.getMetrosCuadrados());
+        System.out.println("  descripcion      = " + req.getDescripcion());
+        System.out.println("  estadoId         = " + req.getEstadoId());
 
-        int habitacionId = hotelRepository.crearHabitacion(
-                request.getHotelId(),
-                request.getTipoHabitacionId(),
-                request.getCamaId(),
-                request.getPrecioPorPersona(),
-                request.getPrecioPorNoche(),
-                request.getCapacidadMaxima(),
-                request.getMetrosCuadrados(),
-                request.getDescripcion() != null ? request.getDescripcion().trim() : "",
-                request.getEstadoId()
-        );
-        return Map.of("id", habitacionId, "mensaje", "Habitación creada correctamente");
+        if (!hotelRepository.existe(req.getHotelId()))
+            throw new IllegalArgumentException("Hotel no encontrado: " + req.getHotelId());
+
+        try {
+            validarHabitacion(req.getPrecioPorNoche(), req.getPrecioPorPersona(),
+                    req.getCapacidadMaxima(), req.getEstadoId());
+            System.out.println("  [OK] validarHabitacion paso");
+        } catch (Exception e) {
+            System.out.println("  [ERROR] validarHabitacion: " + e.getMessage());
+            throw e;
+        }
+
+        int id;
+        try {
+            System.out.println("  Insertando habitacion en BD...");
+            id = hotelRepository.crearHabitacion(
+                    req.getHotelId(), req.getTipoHabitacionId(), req.getCamaId(),
+                    req.getPrecioPorPersona(), req.getPrecioPorNoche(),
+                    req.getCapacidadMaxima(), req.getMetrosCuadrados(),
+                    safe(req.getDescripcion()), req.getEstadoId()
+            );
+            System.out.println("  [OK] habitacionId = " + id);
+        } catch (Exception e) {
+            System.out.println("  [ERROR] hotelRepository.crearHabitacion: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
+        System.out.println("=== [crearHabitacion] FIN OK — id=" + id + " ===");
+        return Map.of("id", id, "mensaje", "Habitación creada correctamente");
     }
 
     // ════════════════════════════════════════════════════
     //  HABITACIONES — editar
     // ════════════════════════════════════════════════════
 
-    public void editarHabitacion(int habitacionId, EditarHabitacionRequestDTO request) {
+    public void editarHabitacion(int habitacionId, EditarHabitacionRequestDTO req) {
         if (!hotelRepository.existeHabitacion(habitacionId))
-            throw new IllegalArgumentException("Habitación no encontrada con ID: " + habitacionId);
-        validarHabitacion(request.getPrecioPorNoche(), request.getPrecioPorPersona(),
-                request.getCapacidadMaxima(), request.getEstadoId());
+            throw new IllegalArgumentException("Habitación no encontrada: " + habitacionId);
+        validarHabitacion(req.getPrecioPorNoche(), req.getPrecioPorPersona(),
+                req.getCapacidadMaxima(), req.getEstadoId());
 
         hotelRepository.actualizarHabitacion(
-                habitacionId,
-                request.getTipoHabitacionId(),
-                request.getCamaId(),
-                request.getPrecioPorPersona(),
-                request.getPrecioPorNoche(),
-                request.getCapacidadMaxima(),
-                request.getMetrosCuadrados(),
-                request.getDescripcion() != null ? request.getDescripcion().trim() : "",
-                request.getEstadoId()
+                habitacionId, req.getTipoHabitacionId(), req.getCamaId(),
+                req.getPrecioPorPersona(), req.getPrecioPorNoche(),
+                req.getCapacidadMaxima(), req.getMetrosCuadrados(),
+                safe(req.getDescripcion()), req.getEstadoId()
         );
+    }
+
+    // ════════════════════════════════════════════════════
+    //  IMÁGENES DE HABITACIÓN
+    // ════════════════════════════════════════════════════
+
+    public Map<String, Object> agregarImagenHabitacion(int habitacionId, String base64) {
+        if (!hotelRepository.existeHabitacion(habitacionId))
+            throw new IllegalArgumentException("Habitación no encontrada: " + habitacionId);
+        int nuevoId = hotelRepository.agregarImagenHabitacion(habitacionId, decodeBase64(base64));
+        return Map.of("id", nuevoId, "mensaje", "Imagen agregada");
+    }
+
+    public void eliminarImagenHabitacion(int imagenId) {
+        hotelRepository.eliminarImagenHabitacion(imagenId);
+    }
+
+    // ════════════════════════════════════════════════════
+    //  VALIDACIONES Y UTILIDADES
+    // ════════════════════════════════════════════════════
+
+    private void validarCamposHotel(String nombre, double rating, int estadoId) {
+        if (nombre == null || nombre.isBlank())
+            throw new IllegalArgumentException("El nombre del hotel no puede estar vacío");
+        if (rating < 0 || rating > 5)
+            throw new IllegalArgumentException("El rating debe estar entre 0 y 5");
+        if (estadoId != 1 && estadoId != 2)
+            throw new IllegalArgumentException("Estado inválido: use 1 (Activo) o 2 (Cerrado)");
     }
 
     private void validarHabitacion(double precioPorNoche, double precioPorPersona,
@@ -174,28 +320,8 @@ public class HotelService {
         if (capacidadMaxima < 1)
             throw new IllegalArgumentException("La capacidad mínima es 1 persona");
         if (estadoId != 1 && estadoId != 2)
-            throw new IllegalArgumentException("Estado inválido. Use 1 (Activa) o 2 (Cerrada)");
+            throw new IllegalArgumentException("Estado inválido: use 1 (Activa) o 2 (Cerrada)");
     }
-
-    // ════════════════════════════════════════════════════
-    //  IMÁGENES DE HABITACIÓN
-    // ════════════════════════════════════════════════════
-
-    public Map<String, Object> agregarImagenHabitacion(int habitacionId, String base64) {
-        if (!hotelRepository.existeHabitacion(habitacionId))
-            throw new IllegalArgumentException("Habitación no encontrada con ID: " + habitacionId);
-        byte[] bytes = decodeBase64(base64);
-        int nuevoId = hotelRepository.agregarImagenHabitacion(habitacionId, bytes);
-        return Map.of("id", nuevoId, "mensaje", "Imagen agregada correctamente");
-    }
-
-    public void eliminarImagenHabitacion(int imagenId) {
-        hotelRepository.eliminarImagenHabitacion(imagenId);
-    }
-
-    // ════════════════════════════════════════════════════
-    //  UTIL
-    // ════════════════════════════════════════════════════
 
     private byte[] decodeBase64(String base64) {
         if (base64 == null || base64.isBlank())
@@ -203,4 +329,6 @@ public class HotelService {
         String datos = base64.contains(",") ? base64.split(",", 2)[1] : base64;
         return Base64.getDecoder().decode(datos);
     }
+
+    private String safe(String s) { return s != null ? s.trim() : ""; }
 }

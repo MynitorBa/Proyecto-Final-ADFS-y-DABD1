@@ -70,7 +70,19 @@
   // Vista lista vs detalle
   let vistaHoteles   = 'lista';   // 'lista' | 'detalle'
   let hotelDetalle   = null;      // hotel completo en vista detalle
-  let tabDetalle     = 'info';    // 'info' | 'imagenes' | 'habitaciones'
+  let tabDetalle     = 'info';    // 'info' | 'imagenes' | 'amenidades' | 'habitaciones'
+
+  // Amenidades del hotel en detalle
+  let amenidades            = [];        // catálogo (12 amenidades)
+  let amenidadesHotel       = [];        // las asignadas al hotel actual
+  let cargandoAmenidades    = false;
+  let mensajeAmenidad       = null;
+  let showFormAmenidad      = false;
+  let nuevaAmenidad         = { amenidadId: 1, descripcion: '' };
+  let amenidadEditandoId    = null;      // ID en HotelAmenidad que se está editando
+  let editDescAmenidad      = '';
+  let subiendoImgAmenidad   = false;
+  let mensajeImgAmenidad    = null;
 
   // Editar info del hotel
   let editInfoHotel   = { nombre: '', direccion: '', descripcion: '', rating: 0, estadoId: 1 };
@@ -124,12 +136,14 @@
   }
 
   function abrirDetalleHotel(h) {
-    hotelDetalle = { ...h };
+    hotelDetalle  = { ...h };
     editInfoHotel = { nombre: h.nombre ?? '', direccion: h.direccion ?? '', descripcion: h.descripcion ?? '', rating: h.rating ?? 0, estadoId: h.estadoId ?? 1 };
-    tabDetalle   = 'info';
-    mensajeInfo  = null;
-    vistaHoteles = 'detalle';
+    tabDetalle    = 'info';
+    mensajeInfo   = null;
+    vistaHoteles  = 'detalle';
+    amenidadesHotel = [];
     cargarHabitacionesDetalle(h.id);
+    cargarAmenidadesHotel(h.id);
   }
 
   function volverListaHoteles() {
@@ -217,6 +231,90 @@
     } finally {
       cargandoHabitaciones = false;
     }
+  }
+
+  // ── Amenidades del hotel ──────────────────────────
+
+  async function cargarAmenidadesHotel(hotelId) {
+    cargandoAmenidades = true;
+    mensajeAmenidad    = null;
+    try {
+      const [rA, rH] = await Promise.all([
+        fetch(`${API_BASE}/admin/amenidades`, { credentials: 'include' }),
+        fetch(`${API_BASE}/admin/hoteles/${hotelId}/amenidades`, { credentials: 'include' }),
+      ]);
+      if (rA.ok) amenidades = await rA.json();
+      if (rH.ok) amenidadesHotel = await rH.json();
+    } catch(e) { /* silencioso */ }
+    finally { cargandoAmenidades = false; }
+  }
+
+  async function agregarAmenidadHotel() {
+    mensajeAmenidad = null;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}/amenidades`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenidadId: Number(nuevaAmenidad.amenidadId), descripcion: nuevaAmenidad.descripcion })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+      const catAm = amenidades.find(a => a.id === Number(nuevaAmenidad.amenidadId));
+      amenidadesHotel = [...amenidadesHotel, { id: data.id, hotelId: hotelDetalle.id, amenidadId: Number(nuevaAmenidad.amenidadId), amenidadNombre: catAm?.nombre ?? '', descripcion: nuevaAmenidad.descripcion, imagenesIds: [] }];
+      mensajeAmenidad  = { tipo: 'ok', texto: 'Amenidad agregada.' };
+      showFormAmenidad = false;
+      nuevaAmenidad    = { amenidadId: 1, descripcion: '' };
+    } catch(e) {
+      mensajeAmenidad = { tipo: 'error', texto: e.message };
+    }
+  }
+
+  async function guardarDescAmenidad(ha) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/amenidades/${ha.id}`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenidadId: ha.amenidadId, descripcion: editDescAmenidad })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      amenidadesHotel = amenidadesHotel.map(a => a.id === ha.id ? { ...a, descripcion: editDescAmenidad } : a);
+      amenidadEditandoId = null;
+    } catch(e) { mensajeAmenidad = { tipo: 'error', texto: e.message }; }
+  }
+
+  async function eliminarAmenidadHotel(haId) {
+    if (!confirm('¿Eliminar esta amenidad?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/amenidades/${haId}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      amenidadesHotel = amenidadesHotel.filter(a => a.id !== haId);
+    } catch(e) { mensajeAmenidad = { tipo: 'error', texto: e.message }; }
+  }
+
+  async function subirImagenAmenidad(event, haId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    subiendoImgAmenidad = true;
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await fetch(`${API_BASE}/admin/hoteles/amenidades/${haId}/imagenes`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base64 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      amenidadesHotel = amenidadesHotel.map(a => a.id === haId ? { ...a, imagenesIds: [...(a.imagenesIds ?? []), data.id] } : a);
+    } catch(e) { mensajeImgAmenidad = { tipo: 'error', texto: e.message }; }
+    finally { subiendoImgAmenidad = false; event.target.value = ''; }
+  }
+
+  async function eliminarImagenAmenidad(haId, imgId) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/amenidades/imagenes/${imgId}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      amenidadesHotel = amenidadesHotel.map(a => a.id === haId ? { ...a, imagenesIds: (a.imagenesIds ?? []).filter(i => i !== imgId) } : a);
+    } catch(e) { /* silencioso */ }
   }
 
   function abrirEditarHabitacion(h) {
@@ -319,22 +417,23 @@
   let hotelCreadoId    = null;     // ID devuelto tras crear el hotel
   let hotelCreadoNombre = '';
 
-  // Catálogos (ya no se usa la lista interna de paises para el autocomplete)
+  // Catálogos
+  let paises   = [];
   let ciudades = [];
 
-  // País autocomplete (usando countriesnow igual que en Register)
-  let todosLosPaisesHotel = [];   // [{country, cities}]
-  let paisQueryHotel      = '';
-  let paisesSugeridosHotel = [];
-  let paisSeleccionadoHotel = null;  // {country, cities}
-
-  // Ciudad autocomplete basada en país seleccionado
-  let ciudadQueryHotel      = '';
-  let ciudadesSugeridasHotel = [];
-  let ciudadSeleccionadaHotel = false;
-
   // Paso 1 — info
-  let nuevoHotel = { nombre: '', direccion: '', descripcion: '', rating: 3.0, estadoId: 1, ciudadNombre: '', paisId: '' };
+  let nuevoHotel = { nombre: '', direccion: '', descripcion: '', rating: 3.0, estadoId: 1, ciudadNombre: '' };
+
+  // ── Autocomplete de país y ciudad del wizard (mismo mecanismo que Register) ──
+  let todosLosPaisesWizard   = [];   // [{ country, cities[] }] de countriesnow
+  let wizardPaisQuery        = '';
+  let wizardPaisesSugeridos  = [];
+  let wizardPaisSeleccionado = null; // { country, cities[] }
+  let wizardPaisError        = '';
+  let wizardCiudadesSugeridas  = [];
+  let wizardCiudadSeleccionada = false;
+  let wizardCiudadError        = '';
+
   let guardandoNuevoHotel = false;
   let mensajeNuevoHotel   = null;
 
@@ -342,6 +441,9 @@
   let imagenesNuevoHotel   = [];   // [{ id, base64Preview }]
   let subiendoImgNuevoHotel = false;
   let mensajeImgNuevo      = null;
+
+  // Paso 2 — amenidades del nuevo hotel
+  let amenidadesNuevoHotel = [];  // [{id (HotelAmenidad), amenidadId, amenidadNombre, descripcion}]
 
   // Paso 3 — habitaciones
   let habitacionesNuevas   = [];   // habitaciones ya creadas en BD [{id, tipoHabitacion, ...}]
@@ -352,73 +454,117 @@
   let imagenesHabNueva     = {};   // { habitacionId: [imgId, ...] }
   let subiendoImgHabNueva  = false;
 
+  // Filtro ciudad por país seleccionado
+
   async function cargarCatalogos() {
     try {
-      const res = await fetch('https://countriesnow.space/api/v0.1/countries');
-      const data = await res.json();
-      todosLosPaisesHotel = data.data;
+      const [rP, rC, rA] = await Promise.all([
+        fetch(`${API_BASE}/admin/paises`,    { credentials: 'include' }),
+        fetch(`${API_BASE}/admin/ciudades`,  { credentials: 'include' }),
+        fetch(`${API_BASE}/admin/amenidades`,{ credentials: 'include' }),
+      ]);
+      if (rP.ok) paises    = await rP.json();
+      if (rC.ok) ciudades  = await rC.json();
+      if (rA.ok) amenidades = await rA.json();
     } catch (e) { /* silencioso */ }
   }
 
-  // Funciones autocomplete país (crear hotel)
-  function onPaisHotelInput() {
-    const q = paisQueryHotel.toLowerCase();
-    paisesSugeridosHotel = q.length < 2 ? [] : todosLosPaisesHotel.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
-    if (!paisSeleccionadoHotel) { nuevoHotel.paisId = ''; }
+  // Carga países de la API externa (igual que Register)
+  async function cargarPaisesWizard() {
+    if (todosLosPaisesWizard.length > 0) return; // ya cargados
+    try {
+      const res  = await fetch('https://countriesnow.space/api/v0.1/countries');
+      const data = await res.json();
+      todosLosPaisesWizard = data.data; // [{ country, cities[] }]
+    } catch (e) { /* silencioso */ }
   }
 
-  function seleccionarPaisHotel(p) {
-    paisSeleccionadoHotel = p;
-    paisQueryHotel = p.country;
-    nuevoHotel.paisId = p.country;
-    paisesSugeridosHotel = [];
-    ciudadQueryHotel = ''; nuevoHotel.ciudadNombre = '';
-    ciudadesSugeridasHotel = []; ciudadSeleccionadaHotel = false;
+  function onWizardPaisInput() {
+    wizardPaisSeleccionado = null;
+    wizardPaisError        = '';
+    nuevoHotel.ciudadNombre  = '';
+    wizardCiudadesSugeridas  = [];
+    wizardCiudadSeleccionada = false;
+    const q = wizardPaisQuery.toLowerCase();
+    wizardPaisesSugeridos = q.length < 2
+      ? []
+      : todosLosPaisesWizard.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
   }
 
-  function validarPaisHotelSeleccionado() {
-    if (paisQueryHotel && !paisSeleccionadoHotel) { paisQueryHotel = ''; nuevoHotel.paisId = ''; }
+  function seleccionarWizardPais(p) {
+    wizardPaisSeleccionado  = p;
+    wizardPaisQuery         = p.country;
+    wizardPaisesSugeridos   = [];
+    wizardPaisError         = '';
+    nuevoHotel.ciudadNombre  = '';
+    wizardCiudadesSugeridas  = [];
+    wizardCiudadSeleccionada = false;
   }
 
-  // Funciones autocomplete ciudad (crear hotel)
-  function onCiudadHotelInput() {
-    if (!paisSeleccionadoHotel) return;
-    const q = ciudadQueryHotel.toLowerCase();
-    ciudadesSugeridasHotel = q.length < 2 ? [] : (paisSeleccionadoHotel.cities ?? []).filter(c => c.toLowerCase().includes(q)).slice(0, 6);
-    if (!ciudadSeleccionadaHotel) { nuevoHotel.ciudadNombre = ''; }
+  function validarWizardPais() {
+    if (wizardPaisQuery && !wizardPaisSeleccionado) {
+      wizardPaisError  = 'Selecciona un país de la lista.';
+      wizardPaisQuery  = '';
+    }
   }
 
-  function seleccionarCiudadHotel(c) {
-    ciudadQueryHotel = c; nuevoHotel.ciudadNombre = c;
-    ciudadesSugeridasHotel = []; ciudadSeleccionadaHotel = true;
+  function onWizardCiudadInput() {
+    wizardCiudadSeleccionada = false;
+    wizardCiudadError        = '';
+    if (!wizardPaisSeleccionado) return;
+    const q = nuevoHotel.ciudadNombre.toLowerCase();
+    wizardCiudadesSugeridas = q.length < 2
+      ? []
+      : (wizardPaisSeleccionado.cities ?? []).filter(c => c.toLowerCase().includes(q)).slice(0, 6);
   }
 
-  function validarCiudadHotelSeleccionada() {
-    if (ciudadQueryHotel && !ciudadSeleccionadaHotel) { ciudadQueryHotel = ''; nuevoHotel.ciudadNombre = ''; }
+  function seleccionarWizardCiudad(c) {
+    nuevoHotel.ciudadNombre  = c;
+    wizardCiudadesSugeridas  = [];
+    wizardCiudadSeleccionada = true;
+    wizardCiudadError        = '';
   }
 
-  function resetCrearHotel() {
-    pasoActual        = 'info';
-    hotelCreadoId     = null;
-    hotelCreadoNombre = '';
-    nuevoHotel        = { nombre: '', direccion: '', descripcion: '', rating: 3.0, estadoId: 1, ciudadNombre: '', paisId: '' };
-    paisQueryHotel    = ''; paisSeleccionadoHotel = null; paisesSugeridosHotel = [];
-    ciudadQueryHotel  = ''; ciudadSeleccionadaHotel = false; ciudadesSugeridasHotel = [];
-    mensajeNuevoHotel = null;
-    imagenesNuevoHotel = [];
-    mensajeImgNuevo   = null;
-    habitacionesNuevas = [];
-    showFormHabNueva  = false;
-    nuevaHabitacion   = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
-    mensajeNuevaHab   = null;
-    imagenesHabNueva  = {};
+  function validarWizardCiudad() {
+    // La ciudad puede ser nueva (no forzamos selección de lista)
+    wizardCiudadesSugeridas = [];
+  }
+
+  function resetWizardPaisCiudad() {
+    wizardPaisQuery          = '';
+    wizardPaisSeleccionado   = null;
+    wizardPaisError          = '';
+    wizardPaisesSugeridos    = [];
+    wizardCiudadesSugeridas  = [];
+    wizardCiudadSeleccionada = false;
+    wizardCiudadError        = '';
+  }
+
+    function resetCrearHotel() {
+    pasoActual          = 'info';
+    hotelCreadoId       = null;
+    hotelCreadoNombre   = '';
+    nuevoHotel          = { nombre: '', direccion: '', descripcion: '', rating: 3.0, estadoId: 1, ciudadNombre: '' };
+    mensajeNuevoHotel   = null;
+    imagenesNuevoHotel  = [];
+    mensajeImgNuevo     = null;
+    amenidadesNuevoHotel = [];
+    habitacionesNuevas  = [];
+    showFormHabNueva    = false;
+    showFormAmenidad    = false;
+    nuevaHabitacion     = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
+    nuevaAmenidad       = { amenidadId: 1, descripcion: '' };
+    mensajeNuevaHab     = null;
+    mensajeAmenidad     = null;
+    imagenesHabNueva    = {};
+    resetWizardPaisCiudad();
   }
 
   // ── Paso 1: Crear hotel ───────────────────────────
 
   async function crearNuevoHotel() {
     if (!nuevoHotel.nombre.trim()) { mensajeNuevoHotel = { tipo: 'error', texto: 'El nombre es obligatorio.' }; return; }
-    if (!nuevoHotel.paisId)        { mensajeNuevoHotel = { tipo: 'error', texto: 'Selecciona un país.' }; return; }
+    if (!wizardPaisSeleccionado)   { wizardPaisError = 'Selecciona un país de la lista.'; return; }
     if (!nuevoHotel.ciudadNombre.trim()) { mensajeNuevoHotel = { tipo: 'error', texto: 'El nombre de la ciudad es obligatorio.' }; return; }
 
     guardandoNuevoHotel = true;
@@ -434,7 +580,7 @@
           rating:      Number(nuevoHotel.rating),
           estadoId:    Number(nuevoHotel.estadoId),
           ciudad:      nuevoHotel.ciudadNombre.trim(),
-          pais:        nuevoHotel.paisId,
+          paisNombre:  wizardPaisSeleccionado.country,
         })
       });
       const data = await res.json();
@@ -442,7 +588,7 @@
       hotelCreadoId     = data.id;
       hotelCreadoNombre = nuevoHotel.nombre;
       mensajeNuevoHotel = { tipo: 'ok', texto: `Hotel creado con ID #${data.id}. Ahora agrega imágenes.` };
-      pasoActual = 'imagenes';
+      pasoActual = 'contenido';
       await cargarHoteles(); // refresca la lista de gestión
     } catch (e) {
       mensajeNuevoHotel = { tipo: 'error', texto: e.message };
@@ -486,6 +632,30 @@
     } catch (e) {
       mensajeImgNuevo = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message };
     }
+  }
+
+  async function agregarAmenidadNuevoHotel() {
+    if (!hotelCreadoId) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelCreadoId}/amenidades`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenidadId: Number(nuevaAmenidad.amenidadId), descripcion: nuevaAmenidad.descripcion })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+      const catAm = amenidades.find(a => a.id === Number(nuevaAmenidad.amenidadId));
+      amenidadesNuevoHotel = [...amenidadesNuevoHotel, { id: data.id, amenidadId: Number(nuevaAmenidad.amenidadId), amenidadNombre: catAm?.nombre ?? '', descripcion: nuevaAmenidad.descripcion }];
+      showFormAmenidad = false;
+      nuevaAmenidad    = { amenidadId: 1, descripcion: '' };
+    } catch(e) { mensajeAmenidad = { tipo: 'error', texto: e.message }; }
+  }
+
+  async function eliminarAmenidadHotelById(haId) {
+    try {
+      await fetch(`${API_BASE}/admin/hoteles/amenidades/${haId}`, { method: 'DELETE', credentials: 'include' });
+      amenidadesNuevoHotel = amenidadesNuevoHotel.filter(a => a.id !== haId);
+    } catch(e) { /* silencioso */ }
   }
 
   // ── Paso 3: Habitaciones ──────────────────────────
@@ -714,7 +884,7 @@
     </div>
     <nav class="adm__sidebar-nav">
       {#each navItems as item}
-        <button class="adm__nav-btn" class:adm__nav-btn--active={activeSection === item.id} on:click={() => activeSection = item.id}>
+        <button class="adm__nav-btn" class:adm__nav-btn--active={activeSection === item.id} on:click={() => { activeSection = item.id; if (item.id === 'crear-hotel') cargarPaisesWizard(); }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d={item.icon} />
           </svg>
@@ -1047,6 +1217,10 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               Imágenes ({hotelDetalle.imagenesIds?.length ?? 0})
             </button>
+            <button class="adm__tab {tabDetalle === 'amenidades' ? 'adm__tab--active' : ''}" on:click={() => tabDetalle = 'amenidades'}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Amenidades ({amenidadesHotel.length})
+            </button>
             <button class="adm__tab {tabDetalle === 'habitaciones' ? 'adm__tab--active' : ''}" on:click={() => tabDetalle = 'habitaciones'}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Habitaciones ({habitaciones.length})
@@ -1145,6 +1319,113 @@
               {/if}
             </div>
 
+          <!-- ── Tab: Amenidades ── -->
+          {:else if tabDetalle === 'amenidades'}
+            <!-- Barra acciones -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <span style="color:var(--adm-text-muted); font-size:.85rem">{amenidadesHotel.length} amenidad(es)</span>
+              <button class="adm__btn adm__btn--primary" on:click={() => { showFormAmenidad = true; mensajeAmenidad = null; }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar Amenidad
+              </button>
+            </div>
+
+            <!-- Formulario nueva amenidad -->
+            {#if showFormAmenidad}
+              <div class="adm__wizard-subcard" style="margin-bottom:1rem">
+                <p class="adm__modal-section-title">Nueva Amenidad</p>
+                <div class="adm__form-grid">
+                  <div class="adm__field">
+                    <label>Tipo de Amenidad</label>
+                    <select bind:value={nuevaAmenidad.amenidadId}>
+                      {#each amenidades.filter(a => !amenidadesHotel.some(h => h.amenidadId === a.id)) as a}<option value={a.id}>{a.nombre}</option>{/each}
+                    </select>
+                  </div>
+                  <div class="adm__field adm__field--full">
+                    <label>Descripción</label>
+                    <textarea bind:value={nuevaAmenidad.descripcion} rows="2" placeholder="Ej: WiFi de alta velocidad en todas las áreas..."></textarea>
+                  </div>
+                </div>
+                <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:.75rem">
+                  <button class="adm__btn adm__btn--ghost" on:click={() => showFormAmenidad = false}>Cancelar</button>
+                  <button class="adm__btn adm__btn--primary" on:click={agregarAmenidadHotel}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Agregar
+                  </button>
+                </div>
+              </div>
+            {/if}
+
+            {#if mensajeAmenidad}
+              <div class="adm__feedback adm__feedback--{mensajeAmenidad.tipo}" style="margin-bottom:1rem">{mensajeAmenidad.texto}</div>
+            {/if}
+
+            <!-- Lista de amenidades -->
+            {#if cargandoAmenidades}
+              <div class="adm__loading-state"><svg class="adm__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><p>Cargando...</p></div>
+            {:else if amenidadesHotel.length === 0 && !showFormAmenidad}
+              <div class="adm__img-empty" style="padding:2.5rem 0">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                <p>Este hotel no tiene amenidades. Agrega la primera.</p>
+              </div>
+            {:else}
+              <div style="display:flex; flex-direction:column; gap:.75rem">
+                {#each amenidadesHotel as ha (ha.id)}
+                  <div class="adm__amenidad-card">
+                    <!-- Encabezado -->
+                    <div class="adm__amenidad-header">
+                      <div class="adm__amenidad-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      </div>
+                      <div style="flex:1; min-width:0">
+                        <p class="adm__amenidad-nombre">{ha.amenidadNombre}</p>
+                        {#if amenidadEditandoId === ha.id}
+                          <textarea class="adm__amenidad-desc-input" bind:value={editDescAmenidad} rows="2"></textarea>
+                          <div style="display:flex; gap:.5rem; margin-top:.5rem">
+                            <button class="adm__btn adm__btn--primary adm__btn--xs" on:click={() => guardarDescAmenidad(ha)}>Guardar</button>
+                            <button class="adm__btn adm__btn--ghost adm__btn--xs" on:click={() => amenidadEditandoId = null}>Cancelar</button>
+                          </div>
+                        {:else}
+                          <p class="adm__amenidad-desc">{ha.descripcion || '—'}</p>
+                        {/if}
+                      </div>
+                      <div style="display:flex; gap:.4rem; flex-shrink:0">
+                        {#if amenidadEditandoId !== ha.id}
+                          <button class="adm__icon-btn adm__icon-btn--edit" title="Editar descripción" on:click={() => { amenidadEditandoId = ha.id; editDescAmenidad = ha.descripcion; }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                        {/if}
+                        <button class="adm__icon-btn adm__icon-btn--delete" title="Eliminar" on:click={() => eliminarAmenidadHotel(ha.id)}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Imágenes de la amenidad -->
+                    <div class="adm__amenidad-imgs">
+                      <div class="adm__img-grid adm__img-grid--sm">
+                        {#each (ha.imagenesIds ?? []) as imgId (imgId)}
+                          <div class="adm__img-card">
+                            <img src="{API_BASE}/imagenes/amenidad/{imgId}" alt="amenidad img" />
+                            <button class="adm__img-delete" on:click={() => eliminarImagenAmenidad(ha.id, imgId)}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          </div>
+                        {/each}
+                        <label class="adm__wizard-add-img-btn adm__upload-btn" title="Subir imagen">
+                          {#if subiendoImgAmenidad}
+                            <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                          {:else}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          {/if}
+                          <input type="file" accept="image/*" on:change={(e) => subirImagenAmenidad(e, ha.id)} disabled={subiendoImgAmenidad} style="display:none" />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+
           <!-- ── Tab: Habitaciones ── -->
           {:else if tabDetalle === 'habitaciones'}
             {#if cargandoHabitaciones}
@@ -1215,9 +1496,9 @@
             <span>Información</span>
           </div>
           <div class="adm__wizard-connector"></div>
-          <div class="adm__wizard-step" class:adm__wizard-step--done={pasoActual === 'habitaciones'} class:adm__wizard-step--active={pasoActual === 'imagenes'} class:adm__wizard-step--disabled={!hotelCreadoId}>
+          <div class="adm__wizard-step" class:adm__wizard-step--done={pasoActual === 'habitaciones'} class:adm__wizard-step--active={pasoActual === 'contenido'} class:adm__wizard-step--disabled={!hotelCreadoId}>
             <div class="adm__wizard-step-num">2</div>
-            <span>Imágenes</span>
+            <span>Imágenes y Amenidades</span>
           </div>
           <div class="adm__wizard-connector"></div>
           <div class="adm__wizard-step" class:adm__wizard-step--active={pasoActual === 'habitaciones'} class:adm__wizard-step--disabled={!hotelCreadoId}>
@@ -1240,38 +1521,46 @@
               </div>
               <div class="adm__field">
                 <label>País *</label>
-                <div style="position:relative">
-                  <input type="text" bind:value={paisQueryHotel}
-                    on:input={onPaisHotelInput} on:blur={validarPaisHotelSeleccionado}
-                    placeholder="Escribe el país..." autocomplete="off" />
-                  {#if paisesSugeridosHotel.length > 0}
-                    <ul class="autocomplete__list">
-                      {#each paisesSugeridosHotel as p}
-                        <li class="autocomplete__item">
-                          <button type="button" class="autocomplete__btn" on:click={() => seleccionarPaisHotel(p)}>{p.country}</button>
-                        </li>
+                <div class="adm__autocomplete-wrap">
+                  <input
+                    type="text"
+                    bind:value={wizardPaisQuery}
+                    on:input={onWizardPaisInput}
+                    on:blur={validarWizardPais}
+                    placeholder="Escribe el país..."
+                    autocomplete="off"
+                  />
+                  {#if wizardPaisesSugeridos.length > 0}
+                    <ul class="adm__autocomplete-list">
+                      {#each wizardPaisesSugeridos as p}
+                        <li><button type="button" class="adm__autocomplete-item" on:click={() => seleccionarWizardPais(p)}>{p.country}</button></li>
                       {/each}
                     </ul>
                   {/if}
                 </div>
+                {#if wizardPaisError}<span class="adm__field-error">{wizardPaisError}</span>{/if}
               </div>
               <div class="adm__field">
                 <label>Ciudad *</label>
-                <div style="position:relative">
-                  <input type="text" bind:value={ciudadQueryHotel}
-                    on:input={onCiudadHotelInput} on:blur={validarCiudadHotelSeleccionada}
-                    placeholder={paisSeleccionadoHotel ? 'Escribe la ciudad...' : 'Primero selecciona un país'}
-                    disabled={!paisSeleccionadoHotel} autocomplete="off" />
-                  {#if ciudadesSugeridasHotel.length > 0}
-                    <ul class="autocomplete__list">
-                      {#each ciudadesSugeridasHotel as c}
-                        <li class="autocomplete__item">
-                          <button type="button" class="autocomplete__btn" on:click={() => seleccionarCiudadHotel(c)}>{c}</button>
-                        </li>
+                <div class="adm__autocomplete-wrap">
+                  <input
+                    type="text"
+                    bind:value={nuevoHotel.ciudadNombre}
+                    on:input={onWizardCiudadInput}
+                    on:blur={validarWizardCiudad}
+                    placeholder={wizardPaisSeleccionado ? "Escribe la ciudad..." : "Primero selecciona un país"}
+                    disabled={!wizardPaisSeleccionado}
+                    autocomplete="off"
+                  />
+                  {#if wizardCiudadesSugeridas.length > 0}
+                    <ul class="adm__autocomplete-list">
+                      {#each wizardCiudadesSugeridas as c}
+                        <li><button type="button" class="adm__autocomplete-item" on:click={() => seleccionarWizardCiudad(c)}>{c}</button></li>
                       {/each}
                     </ul>
                   {/if}
                 </div>
+                {#if wizardCiudadError}<span class="adm__field-error">{wizardCiudadError}</span>{/if}
               </div>
               <div class="adm__field adm__field--full">
                 <label>Dirección</label>
@@ -1313,8 +1602,111 @@
             </div>
           </div>
 
-        <!-- ── Paso 2: Imágenes ── -->
-        {:else if pasoActual === 'imagenes'}
+        <!-- ── Paso 2: Imágenes y Amenidades ── -->
+        {:else if pasoActual === 'contenido'}
+          <div class="adm__wizard-card">
+            <h3 class="adm__wizard-card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Imágenes y Amenidades — <strong>{hotelCreadoNombre}</strong>
+            </h3>
+
+            <!-- Imágenes -->
+            <p class="adm__modal-section-title">Imágenes del hotel</p>
+            <div class="adm__img-section-header" style="margin-bottom:.75rem">
+              <span style="font-size:.8rem; color:var(--adm-text-muted)">{imagenesNuevoHotel.length} imagen(es)</span>
+              <label class="adm__btn adm__btn--ghost adm__upload-btn">
+                {#if subiendoImgNuevoHotel}
+                  <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Subiendo...
+                {:else}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar imagen
+                {/if}
+                <input type="file" accept="image/*" on:change={subirImagenNuevoHotel} disabled={subiendoImgNuevoHotel} style="display:none" />
+              </label>
+            </div>
+            {#if mensajeImgNuevo}<div class="adm__feedback adm__feedback--{mensajeImgNuevo.tipo}" style="margin-bottom:.75rem">{mensajeImgNuevo.texto}</div>{/if}
+            {#if imagenesNuevoHotel.length > 0}
+              <div class="adm__img-grid" style="margin-bottom:1.5rem">
+                {#each imagenesNuevoHotel as img (img.id)}
+                  <div class="adm__img-card">
+                    <img src={img.preview} alt="img" />
+                    <button class="adm__img-delete" on:click={() => eliminarImgNuevoHotel(img.id)}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <div class="adm__img-empty" style="padding:1rem 0; margin-bottom:1.5rem">
+                <p>Sin imágenes aún. Puedes omitir.</p>
+              </div>
+            {/if}
+
+            <!-- Amenidades -->
+            <div class="adm__modal-section-divider"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin:.75rem 0">
+              <p class="adm__modal-section-title" style="margin:0">Amenidades del hotel</p>
+              <button class="adm__btn adm__btn--ghost" on:click={() => showFormAmenidad = !showFormAmenidad}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Agregar
+              </button>
+            </div>
+
+            {#if showFormAmenidad}
+              <div class="adm__wizard-subcard" style="margin-bottom:1rem">
+                <div class="adm__form-grid adm__form-grid--wizard">
+                  <div class="adm__field">
+                    <label>Tipo</label>
+                    <select bind:value={nuevaAmenidad.amenidadId}>
+                      {#each amenidades.filter(a => !amenidadesNuevoHotel.some(h => h.amenidadId === a.id)) as a}<option value={a.id}>{a.nombre}</option>{/each}
+                    </select>
+                  </div>
+                  <div class="adm__field adm__field--full">
+                    <label>Descripción</label>
+                    <textarea bind:value={nuevaAmenidad.descripcion} rows="2" placeholder="Describe esta amenidad..."></textarea>
+                  </div>
+                </div>
+                <div style="display:flex; gap:.75rem; justify-content:flex-end; margin-top:.75rem">
+                  <button class="adm__btn adm__btn--ghost" on:click={() => showFormAmenidad = false}>Cancelar</button>
+                  <button class="adm__btn adm__btn--primary" on:click={agregarAmenidadNuevoHotel}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Agregar
+                  </button>
+                </div>
+              </div>
+            {/if}
+
+            {#if amenidadesNuevoHotel.length > 0}
+              <div style="display:flex; flex-direction:column; gap:.6rem; margin-bottom:1rem">
+                {#each amenidadesNuevoHotel as ha (ha.id)}
+                  <div class="adm__amenidad-card">
+                    <div class="adm__amenidad-header">
+                      <div class="adm__amenidad-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+                      <div style="flex:1">
+                        <p class="adm__amenidad-nombre">{ha.amenidadNombre}</p>
+                        <p class="adm__amenidad-desc">{ha.descripcion || '—'}</p>
+                      </div>
+                      <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => amenidadesNuevoHotel = amenidadesNuevoHotel.filter(a => a.id !== ha.id) && eliminarAmenidadHotelById(ha.id)}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {:else if !showFormAmenidad}
+              <div class="adm__img-empty" style="padding:1rem 0">
+                <p>Sin amenidades aún. Puedes omitir.</p>
+              </div>
+            {/if}
+
+            <div class="adm__wizard-actions">
+              <button class="adm__btn adm__btn--ghost" on:click={() => pasoActual = 'info'}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver
+              </button>
+              <button class="adm__btn adm__btn--primary adm__btn--lg" on:click={() => pasoActual = 'habitaciones'}>
+                Continuar a Habitaciones
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
           <div class="adm__wizard-card">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem">
               <h3 class="adm__wizard-card-title" style="margin:0">
@@ -1479,7 +1871,7 @@
             {/if}
 
             <div class="adm__wizard-actions" style="margin-top:1.5rem">
-              <button class="adm__btn adm__btn--ghost" on:click={() => pasoActual = 'imagenes'}>
+              <button class="adm__btn adm__btn--ghost" on:click={() => pasoActual = 'contenido'}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver
               </button>
               <button class="adm__btn adm__btn--success adm__btn--lg" on:click={() => { resetCrearHotel(); activeSection = 'hoteles'; }}>
