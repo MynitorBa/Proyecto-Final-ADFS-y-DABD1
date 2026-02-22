@@ -10,7 +10,6 @@
   export let isLoggedIn = false;
   export let userName = '';
   export let userRolId = null; // 1 = Usuario, 2 = Administrador
-  export let cartItemsCount = 0;
 
   let showUserMenu = false;
   let showMobileMenu = false;
@@ -68,7 +67,6 @@
         Mis Reservas
       </button>
 
-      <!-- Enlace Admin solo visible para rol 2 -->
       {#if isAdmin}
         <button class="nav-link nav-link--admin" class:active={isActivePage('administrador')} on:click={() => handleNavClick('administrador')}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -90,21 +88,17 @@
     <!-- User Actions -->
     <div class="user-actions">
 
-      <button class="action-button" on:click={() => handleNavClick('hotel-detail')} aria-label="Ver hotel">
+      <button class="action-button" on:click={() => handleNavClick('checkout')} aria-label="Ir al checkout">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
         </svg>
-        {#if cartItemsCount > 0}
-          <span class="cart-badge">{cartItemsCount}</span>
-        {/if}
       </button>
 
       {#if isLoggedIn}
         <div class="user-menu-wrapper">
           <button class="action-button user-button" on:click|stopPropagation={toggleUserMenu}
             aria-label="Menu de usuario" aria-expanded={showUserMenu}>
-            <!-- Badge de admin en el avatar -->
             <div class="user-avatar" class:user-avatar--admin={isAdmin}>
               {#if isAdmin}
                 <span class="user-avatar__icon">⚙</span>
@@ -121,7 +115,6 @@
 
           {#if showUserMenu}
             <div class="user-dropdown" role="menu" tabindex="-1" on:keydown={handleDropdownKey} on:click|stopPropagation>
-              <!-- Header del dropdown -->
               <div class="dropdown-header">
                 <div class="dropdown-user-info">
                   <div class="dropdown-avatar" class:dropdown-avatar--admin={isAdmin}>
@@ -139,7 +132,6 @@
               </div>
               <div class="dropdown-divider"></div>
 
-              <!-- Mi Perfil -->
               <button class="dropdown-item" role="menuitem" on:click={() => handleNavClick('profile')}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -148,7 +140,6 @@
                 Mi Perfil
               </button>
 
-              <!-- Panel Admin solo para rol 2 -->
               {#if isAdmin}
                 <button class="dropdown-item dropdown-item--admin" role="menuitem" on:click={() => handleNavClick('administrador')}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

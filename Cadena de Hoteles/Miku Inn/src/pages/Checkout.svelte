@@ -2,312 +2,394 @@
   import '../styles/checkout.css';
 
   export let navigateTo;
-  /** @type {{ hotel: any, room: any, checkInDate: string, checkOutDate: string, nights: number, cantidadPersonas: number, totalPrice: number } | null} */
+  /**
+   * checkoutData puede ser:
+   *   { pendingReservations: [...] }  → vino de HotelDetail con reservaciones ya creadas
+   *   null                            → entró directo desde el carrito/header, carga del backend
+   */
   export let checkoutData = null;
 
   const API = 'http://localhost:7000';
 
-  // ── Datos de la reserva ───────────────────────────────────
-  const hotel           = checkoutData?.hotel           ?? null;
-  const room            = checkoutData?.room            ?? null;
-  const checkInDate     = checkoutData?.checkInDate     ?? '';
-  const checkOutDate    = checkoutData?.checkOutDate    ?? '';
-  const nights          = checkoutData?.nights          ?? 0;
-  const cantidadPersonas = checkoutData?.cantidadPersonas ?? 1;
-  const totalPrice      = checkoutData?.totalPrice      ?? 0;
+  // ── Estado general ────────────────────────────────────────
+  let loading       = true;
+  let loadError     = '';
+  let reservations  = [];   // todas las pendientes disponibles para pagar
+  let selected      = {};   // { [id]: true/false }
 
-  // ── Estado ────────────────────────────────────────────────
-  let submitting = false;
-  let error      = '';
-  let reservacion = null;   // respuesta del backend
+  // ── Estado de pago ────────────────────────────────────────
+  let submitting  = false;
+  let payError    = '';
+  let facturas    = [];     // resultados de pago exitoso
+  let step        = 'list'; // 'list' | 'form' | 'done'
 
-  let paymentMethod = 'tarjeta';
-
-  // Datos de facturación (nombre del titular + dirección)
-  let factura = {
-    nombreTitular: '',
-    direccion:     '',
-    ciudad:        '',
-    pais:          '',
-    codigoPostal:  '',
-    email:         '',
-  };
-
-  // Datos de tarjeta
-  let cardInfo = {
-    numero:     '',
-    titular:    '',
-    expiracion: '',
-    cvv:        '',
+  // ── Datos del formulario de pago ──────────────────────────
+  let form = {
+    nit:             '',
+    codigoPostal:    '',
+    numeroTarjeta:   '',
+    nombreTitular:   '',
+    fechaVencimiento:'',
+    cvv:             '',
   };
 
   // ── Helpers ───────────────────────────────────────────────
-  const fmt = p => new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(p);
-  const formatDate = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-GT', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const fmt = p => new Intl.NumberFormat('es-GT', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2
+  }).format(p);
 
-  // ── Validación básica ─────────────────────────────────────
-  function validate() {
-    if (paymentMethod === 'tarjeta') {
-      if (!cardInfo.numero.replace(/\s/g,'') || cardInfo.numero.replace(/\s/g,'').length < 16) return 'Ingresa un número de tarjeta válido';
-      if (!cardInfo.titular.trim()) return 'Ingresa el titular de la tarjeta';
-      if (!cardInfo.expiracion.trim()) return 'Ingresa la fecha de expiración';
-      if (!cardInfo.cvv.trim()) return 'Ingresa el CVV';
-    }
-    if (!factura.nombreTitular.trim()) return 'Ingresa el nombre para facturación';
-    if (!factura.email.trim()) return 'Ingresa el email de facturación';
-    return null;
+  function fmtDate(str) {
+    if (!str) return '—';
+    return str.toString().split(' ')[0];
   }
 
-  // ── Formateo de número de tarjeta ─────────────────────────
   function formatCardNumber(e) {
-    let v = e.target.value.replace(/\D/g, '').slice(0, 16);
-    cardInfo.numero = v.replace(/(.{4})/g, '$1 ').trim();
+    let v = /** @type {HTMLInputElement} */ (e.target).value.replace(/\D/g,'').slice(0,16);
+    form.numeroTarjeta = v.replace(/(.{4})/g,'$1 ').trim();
   }
 
   function formatExpiry(e) {
-    let v = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
-    cardInfo.expiracion = v;
+    let v = /** @type {HTMLInputElement} */ (e.target).value.replace(/\D/g,'').slice(0,4);
+    if (v.length > 2) v = v.slice(0,2)+'/'+v.slice(2);
+    form.fechaVencimiento = v;
   }
 
-  // ── POST reservación ──────────────────────────────────────
-  async function handlePayment() {
-    error = '';
-    const validationError = validate();
-    if (validationError) { error = validationError; return; }
-    if (!room) { error = 'No hay habitación seleccionada'; return; }
-
-    submitting = true;
-    try {
-      const body = {
-        habitaciones: [
-          {
-            habitacionId:    room.id,
-            cantidadPersonas: cantidadPersonas,
-            fechaCheckIn:    checkInDate,
-            fechaCheckOut:   checkOutDate,
-          }
-        ]
-      };
-
-      const res = await fetch(`${API}/reservaciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
+  // ── Agrupa filas del API por id de reservación ───────────
+  function groupRows(rows) {
+    const map = new Map();
+    for (const row of rows) {
+      if (!map.has(row.id)) {
+        map.set(row.id, {
+          id:              row.id,
+          noReservacion:   row.noReservacion,
+          total:           row.total,
+          estado:          row.estado,
+          fechaCreacion:   row.fechaCreacion,
+          fechaExpiracion: row.fechaExpiracion,
+          nombreHotel:     row.nombreHotel,
+          habitaciones:    [],
+          // campos de la primera habitacion para compatibilidad
+          fechaCheckIn:    row.fechaCheckIn,
+          fechaCheckOut:   row.fechaCheckOut,
+        });
+      }
+      map.get(row.id).habitaciones.push({
+        detalleId:        row.detalleId,
+        tipoHabitacion:   row.tipoHabitacion,
+        tipoCama:         row.tipoCama,
+        cantidadPersonas: row.cantidadPersonas,
+        totalDetalle:     row.totalDetalle,
+        fechaCheckIn:     row.fechaCheckIn,
+        fechaCheckOut:    row.fechaCheckOut,
       });
+    }
+    return Array.from(map.values());
+  }
 
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg || `Error ${res.status}`);
+  // ── Carga reservaciones pendientes ────────────────────────
+  async function loadPending() {
+    loading = true; loadError = '';
+    try {
+      // Si venimos de HotelDetail con reservaciones ya creadas, úsalas directamente
+      if (checkoutData?.pendingReservations?.length > 0) {
+        reservations = checkoutData.pendingReservations;
+        // preseleccionar todas las que vengan
+        for (const r of reservations) selected[r.id] = true;
+        loading = false;
+        return;
       }
 
-      reservacion = await res.json();
-    } catch (e) {
-      error = e.message || 'Error al procesar la reservación';
+      // Si no, cargar del backend, agrupar por id y filtrar pendientes
+      const res = await fetch(`${API}/reservaciones`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const raw = await res.json();
+      const grouped = groupRows(raw);
+      reservations = grouped.filter(r =>
+        r.estado?.toLowerCase() === 'pendiente'
+      );
+      for (const r of reservations) selected[r.id] = false;
+    } catch(e) {
+      loadError = e.message || 'Error al cargar reservaciones';
     } finally {
-      submitting = false;
+      loading = false;
     }
   }
 
-  const PAYMENT_METHODS = [
-    ['tarjeta',       'Tarjeta de crédito / débito'],
-    ['paypal',        'PayPal'],
-    ['transferencia', 'Transferencia bancaria'],
-  ];
+  loadPending();
 
-  const FACTURA_FIELDS = [
-    ['nombreTitular', 'Nombre para facturación', 'Nombre completo', 'text'],
-    ['email',         'Email de facturación',    'correo@ejemplo.com', 'email'],
-    ['pais',          'País',                    'Guatemala',          'text'],
-    ['ciudad',        'Ciudad',                  'Ciudad de Guatemala','text'],
-    ['direccion',     'Dirección',               'Calle, número, zona','text'],
-    ['codigoPostal',  'Código Postal',           '01001',              'text'],
-  ];
+  $: selectedList  = reservations;
+  $: totalSelected = selectedList.reduce((s, r) => s + (r.total || 0), 0);
+  $: anySelected   = selectedList.length > 0;
+
+  // ── Validación formulario ─────────────────────────────────
+  function validate() {
+    const card = form.numeroTarjeta.replace(/\s/g,'');
+    if (!form.nit.trim())             return 'Ingresa tu NIT';
+    if (!form.codigoPostal.trim())    return 'Ingresa el código postal';
+    if (card.length < 16)             return 'Número de tarjeta inválido (16 dígitos)';
+    if (!form.nombreTitular.trim())   return 'Ingresa el nombre del titular';
+    if (!form.fechaVencimiento.trim())return 'Ingresa la fecha de vencimiento (MM/AA)';
+    if (!form.cvv.trim())             return 'Ingresa el CVV';
+    return null;
+  }
+
+  // ── Procesar pagos ────────────────────────────────────────
+  async function handlePay() {
+    payError = '';
+    const err = validate();
+    if (err) { payError = err; return; }
+
+    submitting = true; facturas = [];
+    const payload = {
+      nit:              form.nit.trim(),
+      codigoPostal:     form.codigoPostal.trim(),
+      numeroTarjeta:    form.numeroTarjeta.replace(/\s/g,''),
+      nombreTitular:    form.nombreTitular.trim(),
+      fechaVencimiento: form.fechaVencimiento.trim(),
+      cvv:              form.cvv.trim(),
+    };
+
+    const errors = [];
+    for (const r of selectedList) {
+      try {
+        const res = await fetch(`${API}/reservaciones/${r.id}/pago`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errors.push(`${r.noReservacion}: ${data.mensaje || data.message || `Error ${res.status}`}`);
+        } else {
+          facturas = [...facturas, { ...data, _reservacion: r }];
+        }
+      } catch(e) {
+        errors.push(`${r.noReservacion}: ${e.message}`);
+      }
+    }
+
+    submitting = false;
+    if (errors.length > 0) {
+      payError = errors.join(' | ');
+    }
+    if (facturas.length > 0) {
+      step = 'done';
+    }
+  }
+
+  function addMore() {
+    // Recargar para añadir más reservaciones
+    checkoutData = null;
+    step = 'list';
+    loadPending();
+  }
 </script>
 
 <div class="checkout">
   <div class="checkout__container">
 
     <div class="checkout__header">
-      <button class="checkout__back" on:click={() => navigateTo('home')}>← Volver</button>
-      <h1 class="checkout__title">Finalizar reservación</h1>
+      <button class="checkout__back" on:click={() => navigateTo('home')}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Volver al inicio
+      </button>
+      <h1 class="checkout__title">
+        {#if step === 'done'}Pago completado{:else}Pagar reservaciones{/if}
+      </h1>
     </div>
 
-    <!-- ── Confirmación ────────────────────────────────────── -->
-    {#if reservacion}
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- PASO: DONE — facturas generadas                        -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    {#if step === 'done'}
       <div class="checkout-confirm">
         <div class="confirm-icon">✓</div>
-        <h2 class="confirm-title">¡Reservación confirmada!</h2>
-        <p class="confirm-code">{reservacion.noReservacion}</p>
-        <div class="confirm-grid">
-          <div class="confirm-item">
-            <span class="confirm-lbl">Hotel</span>
-            <strong>{hotel?.nombre ?? '—'}</strong>
+        <h2 class="confirm-title">¡Pago realizado!</h2>
+        <p class="confirm-subtitle">Se generaron {facturas.length} factura{facturas.length !== 1 ? 's' : ''}</p>
+
+        {#each facturas as f}
+          <div class="factura-card">
+            <div class="factura-header">
+              <span class="factura-no">{f.noReservacion}</span>
+              <span class="factura-estado">{f.estado}</span>
+            </div>
+            <div class="confirm-grid">
+              <div class="confirm-item"><span class="confirm-lbl">Factura #</span><strong>{f.facturaId}</strong></div>
+              <div class="confirm-item"><span class="confirm-lbl">Fecha</span><strong>{f.fecha}</strong></div>
+              <div class="confirm-item"><span class="confirm-lbl">NIT</span><strong>{f.nit}</strong></div>
+              <div class="confirm-item"><span class="confirm-lbl">Cód. Postal</span><strong>{f.codigoPostal}</strong></div>
+              <div class="confirm-item confirm-item--full">
+                <span class="confirm-lbl">Total pagado</span>
+                <strong class="confirm-total">{fmt(f.total)}</strong>
+              </div>
+            </div>
           </div>
-          <div class="confirm-item">
-            <span class="confirm-lbl">Habitación</span>
-            <strong>{room?.tipoHabitacion ?? '—'}</strong>
-          </div>
-          <div class="confirm-item">
-            <span class="confirm-lbl">Check-in</span>
-            <strong>{formatDate(checkInDate)}</strong>
-          </div>
-          <div class="confirm-item">
-            <span class="confirm-lbl">Check-out</span>
-            <strong>{formatDate(checkOutDate)}</strong>
-          </div>
-          <div class="confirm-item">
-            <span class="confirm-lbl">Huéspedes</span>
-            <strong>{cantidadPersonas}</strong>
-          </div>
-          <div class="confirm-item">
-            <span class="confirm-lbl">Estado</span>
-            <strong class="confirm-estado">{reservacion.estado}</strong>
-          </div>
-          <div class="confirm-item confirm-item--full">
-            <span class="confirm-lbl">Total</span>
-            <strong class="confirm-total">{fmt(reservacion.total)}</strong>
-          </div>
-          <div class="confirm-item confirm-item--full">
-            <span class="confirm-lbl">Expira</span>
-            <strong>{reservacion.fechaExpiracion}</strong>
-          </div>
+        {/each}
+
+        <div class="confirm-actions">
+          <button class="confirm-btn" on:click={() => navigateTo('home')}>Volver al inicio</button>
+          <button class="confirm-btn confirm-btn--secondary" on:click={() => navigateTo('reservations')}>Ver mis reservaciones</button>
         </div>
-        <button class="confirm-btn" on:click={() => navigateTo('home')}>Volver al inicio</button>
       </div>
 
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- PASO: LIST + FORM                                       -->
+    <!-- ══════════════════════════════════════════════════════ -->
     {:else}
-      <!-- ── Formulario ───────────────────────────────────── -->
-      <div class="checkout__content">
-        <div class="checkout__main">
+      {#if loading}
+        <div class="checkout-loading">
+          <div class="checkout-loading__spinner"></div>
+          <p>Cargando reservaciones pendientes...</p>
+        </div>
 
-          <!-- Facturación -->
-          <section class="checkout-section">
-            <h2 class="checkout-section__title">Datos de facturación</h2>
-            <div class="billing-form">
-              {#each FACTURA_FIELDS as [key, lbl, ph, type]}
-                <div class="form-field {key === 'direccion' ? 'form-field--full' : ''}">
-                  <label for={key} class="form-field__label">{lbl}</label>
-                  <input {type} id={key} class="form-field__input"
-                    bind:value={factura[key]} placeholder={ph} />
-                </div>
-              {/each}
-            </div>
-          </section>
+      {:else if loadError}
+        <div class="checkout-empty">
+          <div class="checkout-empty__icon">⚠️</div>
+          <h2>Error al cargar</h2>
+          <p>{loadError}</p>
+          <button class="confirm-btn" on:click={loadPending}>Reintentar</button>
+        </div>
 
-          <!-- Método de pago -->
-          <section class="checkout-section">
-            <h2 class="checkout-section__title">Método de pago</h2>
-            <div class="payment-methods">
-              {#each PAYMENT_METHODS as [val, lbl]}
-                <label class="payment-method">
-                  <input type="radio" name="pm" value={val} bind:group={paymentMethod} class="payment-method__radio" />
-                  <div class="payment-method__content">
-                    <span class="payment-method__name">{lbl}</span>
-                    {#if val === 'tarjeta'}
-                      <div class="payment-method__icons">
-                        {#each ['VISA','MC','AMEX'] as ic}<span class="payment-icon">{ic}</span>{/each}
+      {:else if reservations.length === 0}
+        <div class="checkout-empty">
+          <div class="checkout-empty__icon">🧾</div>
+          <h2>No hay reservaciones pendientes</h2>
+          <p>Realiza una reservación primero para poder pagar.</p>
+          <button class="confirm-btn" on:click={() => navigateTo('home')}>Buscar hoteles</button>
+        </div>
+
+      {:else}
+        <div class="checkout__content">
+
+          <!-- ── Columna izquierda: lista + formulario ── -->
+          <div class="checkout__main">
+
+            <!-- Lista de reservaciones pendientes -->
+            <section class="checkout-section">
+              <h2 class="checkout-section__title">Reservaciones pendientes de pago</h2>
+              <p class="checkout-section__sub">Reservaciones a pagar en este momento</p>
+
+              <div class="reservations-list">
+                {#each reservations as r}
+                  <div class="reservation-item checked">
+                    <div class="reservation-item__body">
+                      <div class="reservation-item__top">
+                        <span class="reservation-item__code">{r.noReservacion}</span>
+                        <span class="reservation-item__total">{fmt(r.total)}</span>
                       </div>
-                    {/if}
+                      <div class="reservation-item__meta">
+                        {#if r.nombreHotel}
+                          <span>🏨 {r.nombreHotel}</span>
+                        {/if}
+                        {#if r.habitaciones?.length}
+                          <span>🛏 {r.habitaciones.map(h => h.tipoHabitacion).join(' · ')}</span>
+                        {/if}
+                        {#if r._checkIn}
+                          <span>📅 {r._checkIn} → {r._checkOut}</span>
+                          <span>👥 {r._guests} huésped{r._guests !== 1 ? 'es' : ''} · {r._nights} noche{r._nights !== 1 ? 's' : ''}</span>
+                        {:else}
+                          <span>📅 {fmtDate(r.fechaCheckIn)} → {fmtDate(r.fechaCheckOut)}</span>
+                        {/if}
+                      </div>
+                    </div>
                   </div>
-                </label>
-              {/each}
-            </div>
+                {/each}
+              </div>
+            </section>
 
-            {#if paymentMethod === 'tarjeta'}
+            <!-- Formulario de pago -->
+            <section class="checkout-section">
+              <h2 class="checkout-section__title">Datos de pago</h2>
+
               <div class="card-form">
+                <div class="form-field">
+                  <label for="nit" class="form-field__label">NIT</label>
+                  <input type="text" id="nit" class="form-field__input" bind:value={form.nit} placeholder="12345678" />
+                </div>
+                <div class="form-field">
+                  <label for="cp" class="form-field__label">Código Postal</label>
+                  <input type="text" id="cp" class="form-field__input" bind:value={form.codigoPostal} placeholder="01001" />
+                </div>
                 <div class="form-field form-field--full">
                   <label for="cardNum" class="form-field__label">Número de tarjeta</label>
                   <input type="text" id="cardNum" class="form-field__input"
-                    value={cardInfo.numero} on:input={formatCardNumber}
-                    placeholder="1234 5678 9012 3456" maxlength="19" />
+                    value={form.numeroTarjeta} on:input={formatCardNumber}
+                    placeholder="4111 1111 1111 1111" maxlength="19" />
                 </div>
                 <div class="form-field form-field--full">
                   <label for="cardHolder" class="form-field__label">Titular de la tarjeta</label>
                   <input type="text" id="cardHolder" class="form-field__input"
-                    bind:value={cardInfo.titular} placeholder="Nombre como aparece en la tarjeta" />
+                    bind:value={form.nombreTitular} placeholder="Nombre como aparece en la tarjeta" />
                 </div>
                 <div class="form-field">
-                  <label for="cardExp" class="form-field__label">Expiración</label>
+                  <label for="cardExp" class="form-field__label">Vencimiento</label>
                   <input type="text" id="cardExp" class="form-field__input"
-                    value={cardInfo.expiracion} on:input={formatExpiry}
+                    value={form.fechaVencimiento} on:input={formatExpiry}
                     placeholder="MM/AA" maxlength="5" />
                 </div>
                 <div class="form-field">
                   <label for="cardCvv" class="form-field__label">CVV</label>
                   <input type="password" id="cardCvv" class="form-field__input"
-                    bind:value={cardInfo.cvv} placeholder="•••" maxlength="4" />
+                    bind:value={form.cvv} placeholder="•••" maxlength="4" />
                 </div>
               </div>
-            {:else}
-              <div class="payment-info">
-                <p class="payment-info__text">
-                  {paymentMethod === 'paypal'
-                    ? 'Serás redirigido a PayPal para completar tu pago.'
-                    : 'Recibirás instrucciones de transferencia por correo electrónico.'}
-                </p>
-              </div>
-            {/if}
-          </section>
 
-          {#if error}
-            <div class="checkout-error">{error}</div>
-          {/if}
-        </div>
+              {#if payError}
+                <div class="checkout-error">{payError}</div>
+              {/if}
+            </section>
 
-        <!-- Sidebar resumen -->
-        <aside class="checkout__sidebar">
-          <div class="order-summary">
-            <h2 class="order-summary__title">Resumen</h2>
-
-            {#if hotel && room}
-              <p class="order-hotel-name">{hotel.nombre}</p>
-              <p class="order-hotel-loc">📍 {hotel.ciudad}, {hotel.pais}</p>
-              <span class="order-room-badge">🛏 {room.tipoHabitacion}</span>
-              <div class="order-rows">
-                <div class="order-row">
-                  <span>Huéspedes</span>
-                  <strong>{cantidadPersonas}</strong>
-                </div>
-                <div class="order-row">
-                  <span>Check-in</span>
-                  <strong>{formatDate(checkInDate)}</strong>
-                </div>
-                <div class="order-row">
-                  <span>Check-out</span>
-                  <strong>{formatDate(checkOutDate)}</strong>
-                </div>
-                <div class="order-row">
-                  <span>{nights} noche{nights !== 1 ? 's' : ''} × {fmt(room.precioPorNoche)}</span>
-                  <strong>{fmt(totalPrice)}</strong>
-                </div>
-              </div>
-            {:else}
-              <p style="color:#94a3b8; font-size:.9rem; margin-bottom:1.5rem;">No hay habitación seleccionada.</p>
-            {/if}
-
-            <div class="order-summary__divider"></div>
-
-            <div class="order-summary__total">
-              <span class="order-summary__total-label">Total estimado</span>
-              <span class="order-summary__total-value">{fmt(totalPrice)}</span>
-            </div>
-            <p class="order-summary__note">El total final lo calcula el servidor al confirmar.</p>
-
-            <button class="order-summary__btn-pay"
-              on:click={handlePayment}
-              disabled={submitting || !room}>
-              {submitting ? 'Procesando...' : 'Confirmar reservación'}
-            </button>
-
-            <div class="order-summary__security">
-              <p class="security-badge">✓ Pago 100% seguro</p>
-              <p class="security-note">Tus datos están protegidos con encriptación SSL</p>
-            </div>
           </div>
-        </aside>
-      </div>
+
+          <!-- ── Sidebar resumen ── -->
+          <aside class="checkout__sidebar">
+            <div class="order-summary">
+              <h2 class="order-summary__title">Resumen</h2>
+
+              {#if selectedList.length === 0}
+                <p class="order-empty-note">Cargando reservaciones...</p>
+              {:else}
+                <div class="order-rows">
+                  {#each selectedList as r}
+                    <div class="order-row">
+                      <span class="order-row__code">{r.noReservacion}</span>
+                      <strong>{fmt(r.total)}</strong>
+                    </div>
+                  {/each}
+                </div>
+
+                <div class="order-summary__divider"></div>
+
+                <div class="order-summary__total">
+                  <span class="order-summary__total-label">{selectedList.length} reservación{selectedList.length !== 1 ? 'es' : ''}</span>
+                  <span class="order-summary__total-value">{fmt(totalSelected)}</span>
+                </div>
+              {/if}
+
+              <button class="order-summary__btn-pay"
+                on:click={handlePay}
+                disabled={submitting || !anySelected}>
+                {#if submitting}
+                  <span class="btn-spinner"></span>
+                  Procesando...
+                {:else}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                  Pagar {selectedList.length > 0 ? fmt(totalSelected) : ''}
+                {/if}
+              </button>
+
+              <div class="order-summary__security">
+                <p class="security-badge">✓ Pago 100% seguro</p>
+                <p class="security-note">Tus datos están protegidos con encriptación SSL</p>
+              </div>
+            </div>
+          </aside>
+
+        </div>
+      {/if}
     {/if}
 
   </div>

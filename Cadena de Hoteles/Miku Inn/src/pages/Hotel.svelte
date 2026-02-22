@@ -1,1 +1,0 @@
-// Supongo que aquí va la creación de hoteles

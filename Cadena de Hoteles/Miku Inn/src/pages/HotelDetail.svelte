@@ -46,7 +46,6 @@
     ));
   })();
 
-  // ── Habitaciones — el backend ya las filtra por capacidad ─
   $: habitacionesDisponibles = hotel?.habitaciones || [];
 
   // ── UI state ─────────────────────────────────────────────
@@ -55,103 +54,61 @@
   let currentImageIndex = 0;
   let showImageGallery  = false;
 
-  $: totalPrice = selectedRoom ? (selectedRoom.precioPorNoche + selectedRoom.precioPorPersona * cantidadPersonas) * nights : 0;
+  $: totalPrice = selectedRoom
+    ? (selectedRoom.precioPorNoche + selectedRoom.precioPorPersona * cantidadPersonas) * nights
+    : 0;
 
   // ── Imágenes ─────────────────────────────────────────────
-  // Cada entidad trae imagenesIds: [1, 2, 3...] con los IDs reales de sus imágenes.
-  // Las URLs se construyen: /imagenes/hotel/{id_imagen}, /imagenes/habitacion/{id_imagen}, etc.
-  // Ejemplo: imagenesIds: [1, 2, 3] genera:
-  //   <img src="http://localhost:7000/imagenes/hotel/1" />
-  //   <img src="http://localhost:7000/imagenes/hotel/2" />
-  //   <img src="http://localhost:7000/imagenes/hotel/3" />
   $: images = (() => {
     if (!hotel) return [];
     const imgs = [];
-
-    // Imágenes del hotel (pueden ser varias)
     if (hotel.imagenesIds?.length > 0) {
-      for (const imgId of hotel.imagenesIds) {
-        imgs.push(`${API}/imagenes/hotel/${imgId}`);
-      }
+      for (const imgId of hotel.imagenesIds) imgs.push(`${API}/imagenes/hotel/${imgId}`);
     }
-
-    // Imágenes de cada habitación (cada una puede tener varias)
     if (hotel.habitaciones?.length > 0) {
       for (const room of hotel.habitaciones) {
         if (room.imagenesIds?.length > 0) {
-          for (const imgId of room.imagenesIds) {
-            imgs.push(`${API}/imagenes/habitacion/${imgId}`);
-          }
+          for (const imgId of room.imagenesIds) imgs.push(`${API}/imagenes/habitacion/${imgId}`);
         }
       }
     }
-
-    // Imágenes de cada amenidad (cada una puede tener varias)
     if (hotel.amenidades?.length > 0) {
       for (const am of hotel.amenidades) {
         if (am.imagenesIds?.length > 0) {
-          for (const imgId of am.imagenesIds) {
-            imgs.push(`${API}/imagenes/amenidad/${imgId}`);
-          }
+          for (const imgId of am.imagenesIds) imgs.push(`${API}/imagenes/amenidad/${imgId}`);
         }
       }
     }
-
     return imgs;
   })();
 
-  // Primera imagen de una habitación (para la tarjeta), o null si no tiene
   function roomImage(room) {
-    if (room.imagenesIds?.length > 0) {
-      return `${API}/imagenes/habitacion/${room.imagenesIds[0]}`;
-    }
+    if (room.imagenesIds?.length > 0) return `${API}/imagenes/habitacion/${room.imagenesIds[0]}`;
     return null;
   }
 
-  // Todas las imágenes de una habitación
-  function roomImages(room) {
-    return (room.imagenesIds || []).map(id => `${API}/imagenes/habitacion/${id}`);
-  }
-
-  // Primera imagen de una amenidad, o null si no tiene
   function amenityImage(amenidad) {
-    if (amenidad.imagenesIds?.length > 0) {
-      return `${API}/imagenes/amenidad/${amenidad.imagenesIds[0]}`;
-    }
+    if (amenidad.imagenesIds?.length > 0) return `${API}/imagenes/amenidad/${amenidad.imagenesIds[0]}`;
     return null;
   }
 
-  // ── Iconos de amenidades ─────────────────────────────────
+  // ── Iconos amenidades ─────────────────────────────────────
   const amenityIcons = {
-    'wifi':            '📶',
-    'piscina':         '🏊',
-    'gimnasio':        '💪',
-    'estacionamiento': '🅿️',
-    'restaurante':     '🍽️',
-    'spa':             '💆',
-    'bar':             '🍹',
-    'desayuno':        '🍳',
-    'default':         '✨',
+    'wifi':'📶','piscina':'🏊','gimnasio':'💪','estacionamiento':'🅿️',
+    'restaurante':'🍽️','spa':'💆','bar':'🍹','desayuno':'🍳','default':'✨',
   };
-
   function getAmenityIcon(nombre) {
     const key = nombre.toLowerCase();
-    for (const k of Object.keys(amenityIcons)) {
-      if (key.includes(k)) return amenityIcons[k];
-    }
+    for (const k of Object.keys(amenityIcons)) { if (key.includes(k)) return amenityIcons[k]; }
     return amenityIcons.default;
   }
 
   // ── Gallery ───────────────────────────────────────────────
   function openGallery(index = 0) {
-    currentImageIndex = index;
-    showImageGallery  = true;
+    currentImageIndex = index; showImageGallery = true;
     document.body.style.overflow = 'hidden';
   }
-  function closeGallery() {
-    showImageGallery = false;
-    document.body.style.overflow = 'auto';
-  }
+  function closeGallery() { showImageGallery = false; document.body.style.overflow = 'auto'; }
   function nextImage() { currentImageIndex = (currentImageIndex + 1) % images.length; }
   function prevImage() { currentImageIndex = (currentImageIndex - 1 + images.length) % images.length; }
 
@@ -161,23 +118,21 @@
     document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  let booking      = false;
-  let bookError    = '';
-  let reservacion  = null;
+  // ── Estado booking ────────────────────────────────────────
+  let booking     = false;
+  let bookError   = '';
+  let reservacion = null;   // respuesta del backend tras reservar
 
+  // ── Reservar (sin pagar) ──────────────────────────────────
   async function bookNow() {
     if (!selectedRoom) return;
     if (!checkInDate || !checkOutDate) {
-      bookError = 'Por favor selecciona las fechas de check-in y check-out.';
-      return;
+      bookError = 'Por favor selecciona las fechas de check-in y check-out.'; return;
     }
     if (new Date(checkOutDate) <= new Date(checkInDate)) {
-      bookError = 'La reservación es por noche — el check-out debe ser al menos un día después del check-in.';
-      return;
+      bookError = 'El check-out debe ser al menos un día después del check-in.'; return;
     }
-    bookError   = '';
-    booking     = true;
-    reservacion = null;
+    bookError = ''; booking = true; reservacion = null;
     try {
       const res = await fetch(`${API}/reservaciones`, {
         method: 'POST',
@@ -193,12 +148,10 @@
         }),
       });
       if (!res.ok) {
-        let msg = 'No se pudo completar la reservación. Intenta de nuevo.';
+        let msg = 'No se pudo completar la reservación.';
         try {
           const data = await res.json();
-          if (data.mensaje) msg = data.mensaje;
-          else if (data.message) msg = data.message;
-          else if (data.error) msg = data.error;
+          msg = data.mensaje || data.message || data.error || msg;
         } catch(_) {}
         throw new Error(msg);
       }
@@ -208,6 +161,22 @@
     } finally {
       booking = false;
     }
+  }
+
+  // ── Ir a pagar: pasa la reservación al Checkout ───────────
+  function goToCheckout() {
+    navigateTo('checkout', {
+      pendingReservations: [{
+        ...reservacion,
+        // Metadatos extra para mostrar en el checkout
+        _hotel:    hotel,
+        _room:     selectedRoom,
+        _checkIn:  checkInDate,
+        _checkOut: checkOutDate,
+        _nights:   nights,
+        _guests:   cantidadPersonas,
+      }],
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────
@@ -223,9 +192,8 @@
     alert('Enlace copiado al portapapeles');
   }
 
-  // Manejo de errores de imagen (fallback si el endpoint no tiene imagen)
   function handleImgError(e) {
-    e.target.style.display = 'none';
+    /** @type {HTMLImageElement} */ (e.target).style.display = 'none';
   }
 </script>
 
@@ -244,19 +212,6 @@
 {:else}
 <div class="hotel-detail-page">
 
-  <!-- Breadcrumb -->
-  <div class="breadcrumb-container">
-    <div class="hdet__container">
-      <nav class="breadcrumb">
-        <button class="breadcrumb-link" on:click={() => navigateTo('home')}>Inicio</button>
-        <span class="breadcrumb-separator">/</span>
-        <button class="breadcrumb-link" on:click={() => navigateTo('search-results')}>Búsqueda</button>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">{hotel.nombre}</span>
-      </nav>
-    </div>
-  </div>
-
   <!-- Hotel Header -->
   <div class="hotel-header-section">
     <div class="hdet__container">
@@ -272,7 +227,6 @@
             <span class="hdet__property-type">{hotel.ciudad}, {hotel.pais}</span>
           </div>
         </div>
-
         <div class="hotel-rating-actions">
           <div class="rating-box-large" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
             <div class="score-number">{hotel.rating}</div>
@@ -350,7 +304,7 @@
                   {#each hotel.amenidades as am}
                     <div class="amenity-card">
                       {#if am.imagenesIds?.length > 0}
-                        <img src={amenityImage(am)} alt={am.nombre} class="amenity-image" on:error={(e) => { e.target.style.display = 'none'; }} />
+                        <img src={amenityImage(am)} alt={am.nombre} class="amenity-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).style.display = 'none'; }} />
                       {:else}
                         <span class="amenity-icon-large" aria-hidden="true">{getAmenityIcon(am.nombre)}</span>
                       {/if}
@@ -370,7 +324,6 @@
           {:else if activeTab === 'rooms'}
             <section class="content-section">
               <h2 class="hdet__section-title">Habitaciones Disponibles</h2>
-
               {#if habitacionesDisponibles.length === 0}
                 <div class="hdet__no-rooms">
                   <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
@@ -379,11 +332,11 @@
                 </div>
               {:else}
                 <div class="rooms-list">
-                  {#each habitacionesDisponibles as room, idx}
+                  {#each habitacionesDisponibles as room}
                     <article class="room-detail-card" class:selected={selectedRoom?.id === room.id}>
                       <div class="room-images-section">
                         {#if room.imagenesIds?.length > 0}
-                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { e.target.parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
+                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
                         {:else}
                           <div class="room-no-image">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -401,7 +354,6 @@
                           <h3 class="room-name">{room.tipoHabitacion}</h3>
                           <p class="room-description">{room.descripcion}</p>
                         </div>
-
                         <div class="room-specs">
                           <div class="spec-item">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
@@ -416,7 +368,6 @@
                             Máx. {room.capacidadMaxima} huéspedes
                           </div>
                         </div>
-
                         <div class="room-footer">
                           <div class="room-pricing">
                             <div class="current-price-room">
@@ -428,12 +379,7 @@
                               <div class="total-nights-price">{fmt(room.precioPorNoche * nights)} por {nights} {nights === 1 ? 'noche' : 'noches'}</div>
                             {/if}
                           </div>
-
-                          <button
-                            class="btn-select-room"
-                            class:selected={selectedRoom?.id === room.id}
-                            on:click={() => selectRoom(room)}
-                          >
+                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id} on:click={() => selectRoom(room)}>
                             {#if selectedRoom?.id === room.id}
                               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                               Seleccionada
@@ -522,7 +468,7 @@
                   <span>{fmt(selectedRoom.precioPorNoche * nights)}</span>
                 </div>
                 <div class="price-row">
-                  <span>{fmt(selectedRoom.precioPorPersona)}/persona × {cantidadPersonas} × {nights} {nights === 1 ? 'noche' : 'noches'}</span>
+                  <span>{fmt(selectedRoom.precioPorPersona)}/persona × {cantidadPersonas} × {nights}</span>
                   <span>{fmt(selectedRoom.precioPorPersona * cantidadPersonas * nights)}</span>
                 </div>
                 <div class="hdet__price-divider"></div>
@@ -541,6 +487,7 @@
               </div>
             {/if}
 
+            <!-- Solo botón Reservar; el de Ir a pagar aparece en el modal tras reservar -->
             <div class="booking-actions">
               <button class="btn-book-now" on:click={bookNow} disabled={!selectedRoom || booking}>
                 {booking ? 'Procesando...' : 'Reservar Ahora'}
@@ -559,55 +506,37 @@
             </div>
           </div>
         </aside>
-
       </div>
     </div>
 
-  <!-- Modal confirmación reservación -->
-  {#if reservacion}
-    <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
-      <div class="hdet__confirm-modal">
-        <div class="hdet__confirm-icon">✓</div>
-        <h2 class="hdet__confirm-title">¡Reservación confirmada!</h2>
-        <p class="hdet__confirm-code">{reservacion.noReservacion}</p>
-        <div class="hdet__confirm-rows">
-          <div class="hdet__confirm-row">
-            <span>Hotel</span>
-            <strong>{hotel?.nombre}</strong>
+    <!-- Modal confirmación reservación - con botones Volver y Ir a pagar -->
+    {#if reservacion}
+      <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
+        <div class="hdet__confirm-modal">
+          <div class="hdet__confirm-icon">✓</div>
+          <h2 class="hdet__confirm-title">¡Reservación creada!</h2>
+          <p class="hdet__confirm-code">{reservacion.noReservacion}</p>
+          <div class="hdet__confirm-rows">
+            <div class="hdet__confirm-row"><span>Hotel</span><strong>{hotel?.nombre}</strong></div>
+            <div class="hdet__confirm-row"><span>Habitación</span><strong>{selectedRoom?.tipoHabitacion}</strong></div>
+            <div class="hdet__confirm-row"><span>Check-in</span><strong>{checkInDate}</strong></div>
+            <div class="hdet__confirm-row"><span>Check-out</span><strong>{checkOutDate}</strong></div>
+            <div class="hdet__confirm-row"><span>Huéspedes</span><strong>{cantidadPersonas}</strong></div>
+            <div class="hdet__confirm-row"><span>Estado</span><strong class="hdet__confirm-estado">{reservacion.estado}</strong></div>
+            <div class="hdet__confirm-row hdet__confirm-row--total"><span>Total</span><strong>{fmt(reservacion.total)}</strong></div>
           </div>
-          <div class="hdet__confirm-row">
-            <span>Habitación</span>
-            <strong>{selectedRoom?.tipoHabitacion}</strong>
+          <p class="hdet__confirm-expira">Expira: {reservacion.fechaExpiracion}</p>
+          <div class="hdet__confirm-btns">
+            <button class="hdet__confirm-btn-home" on:click={() => navigateTo('home')}>Volver al inicio</button>
+            <button class="hdet__confirm-btn-pay" on:click={goToCheckout}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+              Pagar ahora
+            </button>
+            <button class="hdet__confirm-btn-close" on:click={() => reservacion = null}>Cerrar</button>
           </div>
-          <div class="hdet__confirm-row">
-            <span>Check-in</span>
-            <strong>{checkInDate}</strong>
-          </div>
-          <div class="hdet__confirm-row">
-            <span>Check-out</span>
-            <strong>{checkOutDate}</strong>
-          </div>
-          <div class="hdet__confirm-row">
-            <span>Huéspedes</span>
-            <strong>{cantidadPersonas}</strong>
-          </div>
-          <div class="hdet__confirm-row">
-            <span>Estado</span>
-            <strong class="hdet__confirm-estado">{reservacion.estado}</strong>
-          </div>
-          <div class="hdet__confirm-row hdet__confirm-row--total">
-            <span>Total</span>
-            <strong>{fmt(reservacion.total)}</strong>
-          </div>
-        </div>
-        <p class="hdet__confirm-expira">Expira: {reservacion.fechaExpiracion}</p>
-        <div class="hdet__confirm-btns">
-          <button class="hdet__confirm-btn-home" on:click={() => navigateTo('home')}>Volver al inicio</button>
-          <button class="hdet__confirm-btn-close" on:click={() => reservacion = null}>Cerrar</button>
         </div>
       </div>
-    </div>
-  {/if}
+    {/if}
   </div>
 
   <!-- Gallery Modal -->

@@ -665,6 +665,18 @@
 .btn-book-now:disabled,
 .btn-add-cart:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ── NUEVO: botón "Ir a pagar" en el sidebar ───────────────── */
+.btn-pay-now {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: 1rem 1.5rem; border: 2px solid var(--primary); border-radius: var(--radius-md);
+  font-weight: 700; font-size: 1rem; cursor: pointer; transition: var(--transition);
+  background: var(--bg-white); color: var(--primary);
+}
+.btn-pay-now:hover:not(:disabled) {
+  background: rgba(102,126,234,.06); transform: translateY(-2px);
+}
+.btn-pay-now:disabled { opacity: .5; cursor: not-allowed; }
+
 .hdet__cancellation-info {
   display: flex; align-items: center; gap: .5rem;
   padding: 1rem; background: rgba(16,185,129,.08);
@@ -762,6 +774,7 @@
   .gallery-nav-btn { width: 44px; height: 44px; }
   .gallery-prev { left: .5rem; }
   .gallery-next { right: .5rem; }
+  .hdet__confirm-btns { flex-direction: column; }
 }
 
 /* Habitación sin imagen */
@@ -843,16 +856,29 @@
   font-size: .78rem; color: var(--text-light); margin-bottom: 1.5rem;
 }
 
-.hdet__confirm-btns { display: flex; gap: .75rem; }
+/* Original tenía 2 botones; ahora tiene 3: flex-wrap para que no se rompan en mobile */
+.hdet__confirm-btns { display: flex; gap: .75rem; flex-wrap: wrap; }
 
 .hdet__confirm-btn-home {
-  flex: 1; padding: .875rem;
+  flex: 1; min-width: 120px; padding: .875rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white; border: none; border-radius: 12px;
   font-weight: 700; font-size: .95rem; cursor: pointer;
   transition: all .2s ease;
 }
 .hdet__confirm-btn-home:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102,126,234,.4); }
+
+/* ── NUEVO: botón "Pagar ahora" dentro del modal ───────────── */
+.hdet__confirm-btn-pay {
+  flex: 1; min-width: 120px; padding: .875rem;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  background: #10b981; color: white;
+  border: none; border-radius: 12px;
+  font-weight: 700; font-size: .95rem; cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 4px 12px rgba(16,185,129,.35);
+}
+.hdet__confirm-btn-pay:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,.5); }
 
 .hdet__confirm-btn-close {
   padding: .875rem 1.25rem;
@@ -861,3 +887,27 @@
   font-weight: 600; cursor: pointer; transition: all .2s ease;
 }
 .hdet__confirm-btn-close:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── NUEVO: botón "Ir a pagar" en el sidebar ───────────────── */
+.btn-pay-now {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: 1rem 1.5rem; border: 2px solid var(--primary); border-radius: var(--radius-md);
+  font-weight: 700; font-size: 1rem; cursor: pointer; transition: var(--transition);
+  background: var(--bg-white); color: var(--primary);
+}
+.btn-pay-now:hover:not(:disabled) {
+  background: rgba(102,126,234,.06); transform: translateY(-2px);
+}
+.btn-pay-now:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── NUEVO: botón "Pagar ahora" dentro del modal ───────────── */
+.hdet__confirm-btn-pay {
+  flex: 1; min-width: 120px; padding: .875rem;
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  background: #10b981; color: white;
+  border: none; border-radius: 12px;
+  font-weight: 700; font-size: .95rem; cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 4px 12px rgba(16,185,129,.35);
+}
+.hdet__confirm-btn-pay:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,.5); }
