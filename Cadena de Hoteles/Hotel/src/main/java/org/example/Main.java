@@ -4,9 +4,10 @@ import io.javalin.Javalin;
 import org.example.config.ServerConfig;
 import org.example.controllers.AuthController;
 import org.example.controllers.BusquedaController;
-import org.example.controllers.ComentarioController;
 import org.example.controllers.CancelacionController;
+import org.example.controllers.ComentarioController;
 import org.example.controllers.DownsController;
+import org.example.controllers.HotelController;
 import org.example.controllers.ImagenController;
 import org.example.controllers.PagoController;
 import org.example.controllers.ReservacionController;
@@ -22,19 +23,20 @@ public class Main {
 
         DatabaseTest.testConnection();
 
-        //Hilo de expiración
+        // Hilo de expiración
         ExpiracionService expiracionService = new ExpiracionService();
         expiracionService.iniciar();
 
         Javalin app = ServerConfig.createServer();
 
-        //Middleware
+        // Middleware
         AuthMiddleware.registrar(app);
 
-        //Controllers
+        // Controllers
         new AuthController().registerRoutes(app);
         new SesionController().registerRoutes(app);
         new UsuarioController().registerRoutes(app);
+        new HotelController().registerRoutes(app);
         new BusquedaController().registerRoutes(app);
         new ReservacionController().registerRoutes(app);
         new PagoController().registerRoutes(app);
@@ -43,11 +45,11 @@ public class Main {
         new CancelacionController().registerRoutes(app);
         new ImagenController().registerRoutes(app);
 
-        //Rutas base
+        // Rutas base
         app.get("/", ctx -> ctx.json("OK"));
         app.get("/health", ctx -> ctx.json("OK"));
 
-        //Apagar hilo al cerrar
+        // Apagar hilo al cerrar
         Runtime.getRuntime().addShutdownHook(new Thread(expiracionService::detener));
     }
 }

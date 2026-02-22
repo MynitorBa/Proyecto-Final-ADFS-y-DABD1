@@ -1328,3 +1328,659 @@
 
   .adm__topbar-date { display: none; }
 }
+/* ════════════════════════════════════════════
+   OVERLAY MANUAL (reemplaza ::backdrop)
+   ════════════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   OVERLAY
+   ════════════════════════════════════════════ */
+.adm__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ════════════════════════════════════════════
+   MODAL CAMBIAR ROL — colores sólidos
+   ════════════════════════════════════════════ */
+.adm__rol-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2001;
+  width: 90%;
+  max-width: 460px;
+  background: #1e2330;
+  border: 1px solid #363d52;
+  border-radius: 20px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.9);
+  animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.adm__rol-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  background: #252b3b;
+  border-bottom: 1px solid #363d52;
+  position: relative;
+}
+
+.adm__rol-modal__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+.adm__rol-modal__user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm__rol-modal__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f0f4ff;
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm__rol-modal__username {
+  font-size: .8rem;
+  color: #7b93ff;
+  font-family: 'Fira Code', monospace;
+  margin: 0 0 2px;
+}
+
+.adm__rol-modal__email {
+  font-size: .78rem;
+  color: #8b95b0;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm__rol-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #2e3548;
+  border: 1px solid #404660;
+  border-radius: 8px;
+  color: #8b95b0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  transition: all 0.15s;
+}
+.adm__rol-modal__close:hover {
+  background: #3a4160;
+  color: #f0f4ff;
+}
+
+/* ── Body ── */
+.adm__rol-modal__body {
+  padding: 1.5rem;
+  background: #1e2330;
+}
+
+.adm__rol-modal__label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #8b95b0;
+  margin: 0 0 .875rem;
+}
+
+/* ── Cards de rol ── */
+.adm__rol-cards {
+  display: flex;
+  flex-direction: column;
+  gap: .625rem;
+}
+
+.adm__rol-card {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  padding: .9rem 1rem;
+  background: #252b3b;
+  border: 2px solid #363d52;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+  width: 100%;
+  position: relative;
+}
+.adm__rol-card:hover {
+  background: #2c3347;
+  border-color: #4a5270;
+}
+
+/* Activo — Usuario */
+.adm__rol-card--active-user {
+  background: #1a2640 !important;
+  border-color: #3b7dd8 !important;
+  box-shadow: 0 0 0 3px rgba(59,125,216,0.2);
+}
+
+/* Activo — Admin */
+.adm__rol-card--active-admin {
+  background: #2a2010 !important;
+  border-color: #d4870a !important;
+  box-shadow: 0 0 0 3px rgba(212,135,10,0.2);
+}
+
+.adm__rol-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.adm__rol-card__icon--user  { background: #1a2e50; color: #5ba3f5; }
+.adm__rol-card__icon--admin { background: #2e2010; color: #f0a030; }
+
+.adm__rol-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+.adm__rol-card__title {
+  font-size: .9rem;
+  font-weight: 600;
+  color: #e8eeff;
+}
+.adm__rol-card__desc {
+  font-size: .75rem;
+  color: #8b95b0;
+}
+
+.adm__rol-card__check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #3b7dd8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+.adm__rol-card--active-admin .adm__rol-card__check {
+  background: #d4870a;
+}
+
+/* ── Feedback ── */
+.adm__feedback {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-top: 1rem;
+  padding: .7rem 1rem;
+  border-radius: 10px;
+  font-size: .85rem;
+  font-weight: 500;
+}
+.adm__feedback--ok    { background: #0d2e18; color: #3fb950; border: 1px solid #1a5c30; }
+.adm__feedback--error { background: #2e0f0f; color: #f85149; border: 1px solid #5c1a1a; }
+
+/* ── Footer ── */
+.adm__rol-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #363d52;
+  background: #1a1f2e;
+}
+
+/* ════════════════════════════════════════════
+   TABLA HOTELES — miniatura + datos
+   ════════════════════════════════════════════ */
+.adm__hotel-mini {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.adm__hotel-mini-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #252b3b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  border: 1px solid #363d52;
+}
+.adm__hotel-mini-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm__hotel-mini-name {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--adm-text);
+  margin: 0 0 2px;
+}
+.adm__hotel-mini-id {
+  font-size: .72rem;
+  color: var(--adm-text-muted);
+  margin: 0;
+}
+
+.adm__hotel-city {
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--adm-text);
+  margin: 0 0 2px;
+}
+.adm__hotel-country {
+  font-size: .75rem;
+  color: var(--adm-text-muted);
+  margin: 0;
+}
+
+.adm__hotel-address {
+  font-size: .8rem;
+  color: var(--adm-text-muted);
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm__rating-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(240,160,48,0.12);
+  border: 1px solid rgba(240,160,48,0.3);
+  color: #f0a030;
+  font-size: .82rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.adm__table-center {
+  text-align: center;
+  font-weight: 600;
+  color: var(--adm-text);
+}
+
+/* ════════════════════════════════════════════
+   MODAL EDITAR HOTEL
+   ════════════════════════════════════════════ */
+.adm__hotel-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2001;
+  width: 90%;
+  max-width: 560px;
+  background: #1e2330;
+  border: 1px solid #363d52;
+  border-radius: 20px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.9);
+  animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.adm__hotel-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #252b3b;
+  border-bottom: 1px solid #363d52;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.adm__hotel-modal__thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1e2330;
+  border: 1px solid #363d52;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+.adm__hotel-modal__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm__hotel-modal__info { flex: 1; min-width: 0; }
+
+.adm__hotel-modal__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f0f4ff;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 2rem;
+}
+.adm__hotel-modal__loc {
+  font-size: .78rem;
+  color: #8b95b0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Body */
+.adm__hotel-modal__body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  background: #1e2330;
+}
+
+/* Footer */
+.adm__hotel-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #363d52;
+  background: #1a1f2e;
+  flex-shrink: 0;
+}
+
+/* Form fields inside hotel modal — sólidos */
+.adm__hotel-modal__body .adm__field label {
+  color: #8b95b0;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  display: block;
+  margin-bottom: .4rem;
+}
+.adm__hotel-modal__body .adm__field input,
+.adm__hotel-modal__body .adm__field select,
+.adm__hotel-modal__body .adm__field textarea {
+  background: #252b3b;
+  border: 1.5px solid #363d52;
+  border-radius: 8px;
+  color: #e8eeff;
+  padding: .6rem .875rem;
+  font-size: .875rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.adm__hotel-modal__body .adm__field input:focus,
+.adm__hotel-modal__body .adm__field select:focus,
+.adm__hotel-modal__body .adm__field textarea:focus {
+  outline: none;
+  border-color: #5ba3f5;
+  box-shadow: 0 0 0 3px rgba(91,163,245,0.15);
+}
+.adm__hotel-modal__body .adm__field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* ════════════════════════════════════════════
+   VISTA DETALLE HOTEL — header, tabs
+   ════════════════════════════════════════════ */
+.adm__detalle-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.adm__detalle-title {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.adm__detalle-title h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--adm-text);
+  margin: 0;
+}
+.adm__detalle-loc {
+  font-size: .8rem;
+  color: var(--adm-text-muted);
+}
+
+.adm__tabs {
+  display: flex;
+  gap: .25rem;
+  border-bottom: 2px solid #363d52;
+  margin-bottom: 1.25rem;
+}
+.adm__tab {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .6rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--adm-text-muted);
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  border-radius: 6px 6px 0 0;
+}
+.adm__tab:hover { color: var(--adm-text); background: rgba(255,255,255,0.04); }
+.adm__tab--active {
+  color: #7b93ff;
+  border-bottom-color: #7b93ff;
+  background: rgba(123,147,255,0.06);
+}
+
+/* ── Detalle form card ── */
+.adm__detalle-form-card {
+  max-width: 760px;
+}
+.adm__detalle-form-card .adm__field label {
+  color: var(--adm-text-muted);
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  display: block;
+  margin-bottom: .4rem;
+}
+.adm__detalle-form-card .adm__field input,
+.adm__detalle-form-card .adm__field select,
+.adm__detalle-form-card .adm__field textarea {
+  background: #252b3b;
+  border: 1.5px solid #363d52;
+  border-radius: 8px;
+  color: #e8eeff;
+  padding: .6rem .875rem;
+  font-size: .875rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.adm__detalle-form-card .adm__field input:focus,
+.adm__detalle-form-card .adm__field select:focus,
+.adm__detalle-form-card .adm__field textarea:focus {
+  outline: none;
+  border-color: #5ba3f5;
+  box-shadow: 0 0 0 3px rgba(91,163,245,0.15);
+}
+.adm__detalle-form-card .adm__field textarea { resize: vertical; min-height: 90px; }
+
+/* ════════════════════════════════════════════
+   GALERÍA DE IMÁGENES
+   ════════════════════════════════════════════ */
+.adm__img-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.adm__img-section-title {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--adm-text);
+  margin: 0 0 .5rem;
+}
+.adm__upload-btn {
+  cursor: pointer;
+}
+.adm__img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: .75rem;
+}
+.adm__img-grid--sm {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+.adm__img-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #252b3b;
+  border: 1px solid #363d52;
+  aspect-ratio: 4/3;
+}
+.adm__img-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.adm__img-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(20, 20, 30, 0.85);
+  border: 1px solid rgba(248,81,73,0.4);
+  color: #f85149;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.adm__img-card:hover .adm__img-delete { opacity: 1; }
+.adm__img-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  padding: 2.5rem 0;
+  color: var(--adm-text-muted);
+  font-size: .85rem;
+}
+.adm__img-empty p { margin: 0; }
+
+/* ════════════════════════════════════════════
+   MODAL HABITACIÓN — modal ancho
+   ════════════════════════════════════════════ */
+.adm__hotel-modal--wide {
+  max-width: 680px;
+}
+.adm__modal-section-title {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--adm-text-muted);
+  margin: 0 0 .875rem;
+}
+.adm__modal-section-divider {
+  height: 1px;
+  background: #363d52;
+  margin: 0 0 .75rem;
+}
+
+/* form fields inside hotel modal */
+.adm__hotel-modal__body .adm__field label {
+  color: var(--adm-text-muted);
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  display: block;
+  margin-bottom: .35rem;
+}
+.adm__hotel-modal__body .adm__field input,
+.adm__hotel-modal__body .adm__field select,
+.adm__hotel-modal__body .adm__field textarea {
+  background: #252b3b;
+  border: 1.5px solid #363d52;
+  border-radius: 8px;
+  color: #e8eeff;
+  padding: .55rem .8rem;
+  font-size: .875rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.adm__hotel-modal__body .adm__field input:focus,
+.adm__hotel-modal__body .adm__field select:focus,
+.adm__hotel-modal__body .adm__field textarea:focus {
+  outline: none;
+  border-color: #5ba3f5;
+  box-shadow: 0 0 0 3px rgba(91,163,245,0.15);
+}
+.adm__hotel-modal__body .adm__field textarea { resize: vertical; min-height: 70px; }
