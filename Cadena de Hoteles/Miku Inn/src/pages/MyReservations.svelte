@@ -1,76 +1,206 @@
 <script>
   import '../styles/myreservations.css';
 
-  export let navigateTo = (page, data = null) => {};
+  // navigateTo no se usa pero se mantiene por compatibilidad con App.svelte
+  export let navigateTo = (/** @type {string} */ _page, /** @type {any} */ _data = null) => {};
 
-  let reservations = [
-    {
-      id: "MIKU-12345678",
-      status: "confirmed",
-      hotelName: "Miku Inn París Centro",
-      roomType: "Suite",
-      image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=300",
-      checkIn: "2026-02-15",
-      checkOut: "2026-02-18",
-      nights: 3,
-      guests: 2,
-      totalPrice: 660,
-      bookingDate: "2026-01-20"
-    },
-    {
-      id: "MIKU-87654321",
-      status: "completed",
-      hotelName: "Miku Inn Torre Eiffel",
-      roomType: "Gran Suite",
-      image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=300",
-      checkIn: "2026-01-10",
-      checkOut: "2026-01-14",
-      nights: 4,
-      guests: 3,
-      totalPrice: 880,
-      bookingDate: "2025-12-15"
-    },
-    {
-      id: "MIKU-11223344",
-      status: "cancelled",
-      hotelName: "Miku Inn Champs-Élysées",
-      roomType: "Junior Suite",
-      image: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=300",
-      checkIn: "2026-03-20",
-      checkOut: "2026-03-25",
-      nights: 5,
-      guests: 2,
-      totalPrice: 825,
-      bookingDate: "2026-01-18",
-      cancellationDate: "2026-01-22"
+  const API = 'http://localhost:7000';
+
+  let reservations     = [];
+  let loading          = true;
+  let loadError        = '';
+  /** @type {any} */
+  let selectedReservation = null;
+
+  // IDs de hoteles donde el usuario YA tiene reseña (resena != null)
+  /** @type {Set<number>} */
+  let hotelesConResena = new Set();
+
+  // ── Comentario ────────────────────────────────────────────
+  let comentario       = { resena: 5, contenido: '' };
+  let comentarioSaving = false;
+  let comentarioError  = '';
+  let comentarioOk     = false;
+
+  // ── Agrupar filas por id de reservación ──────────────────
+  function groupReservations(rows) {
+    const map = new Map();
+    for (const row of rows) {
+      if (!map.has(row.id)) {
+        map.set(row.id, {
+          id:                row.id,
+          noReservacion:     row.noReservacion,
+          total:             row.total,
+          estado:            row.estado,
+          fechaCreacion:     row.fechaCreacion,
+          fechaExpiracion:   row.fechaExpiracion,
+          fechaCancelacion:  row.fechaCancelacion,
+          motivoCancelacion: row.motivoCancelacion,
+          nombreHotel:       row.nombreHotel,
+          hotelId:           row.hotelId,       // ← ahora viene del API
+          habitaciones:      [],
+        });
+      }
+      map.get(row.id).habitaciones.push({
+        detalleId:             row.detalleId,
+        habitacionId:          row.habitacionId,
+        hotelId:               row.hotelId,   // guardarlo aquí también
+        fechaCheckIn:          row.fechaCheckIn,
+        fechaCheckOut:         row.fechaCheckOut,
+        cantidadPersonas:      row.cantidadPersonas,
+        totalDetalle:          row.totalDetalle,
+        descripcionHabitacion: row.descripcionHabitacion,
+        tipoHabitacion:        row.tipoHabitacion,
+        tipoCama:              row.tipoCama,
+      });
     }
+    return Array.from(map.values());
+  }
+
+  // ── Carga reservaciones + comentarios del usuario ────────
+  async function fetchAll() {
+    loading = true; loadError = '';
+    try {
+      const resRes = await fetch(`${API}/reservaciones`, { credentials: 'include' });
+
+      if (!resRes.ok) {
+        let msg = `Error ${resRes.status}`;
+        try { const d = await resRes.json(); msg = d.mensaje || d.message || msg; } catch(_) {}
+        throw new Error(msg);
+      }
+
+      const rawRes = await resRes.json();
+      reservations = groupReservations(rawRes);
+
+      // Cargar comentarios del usuario (no-bloqueante si falla)
+      try {
+        const comRes = await fetch(`${API}/comentarios/usuario`, { credentials: 'include' });
+        if (comRes.ok) {
+          const comentarios = await comRes.json();
+          hotelesConResena = new Set(
+            comentarios
+              .filter((/** @type {any} */ c) => c.resena !== null && c.resena !== undefined)
+              .map((/** @type {any} */ c) => c.hotelId)
+          );
+        }
+      } catch(_) {}
+    } catch(e) {
+      loadError = /** @type {any} */ (e).message || 'No se pudieron cargar las reservaciones';
+    } finally {
+      loading = false;
+    }
+  }
+
+  fetchAll();
+
+  /** @param {string|null|undefined} estado */
+  function getStatus(estado) {
+    const e = (estado || '').toLowerCase();
+    if (e === 'confirmada') return { text: 'Confirmada', cls: 'confirmed', icon: '✓' };
+    if (e === 'completada') return { text: 'Completada', cls: 'completed', icon: '✓' };
+    if (e === 'cancelada')  return { text: 'Cancelada',  cls: 'cancelled', icon: '✕' };
+    if (e === 'pendiente')  return { text: 'Pendiente',  cls: 'pending',   icon: '⏳' };
+    if (e === 'expirada')   return { text: 'Expirada',   cls: 'expirada',  icon: '⌛' };
+    return { text: estado, cls: 'pending', icon: '⏳' };
+  }
+
+  function calcNights(checkIn, checkOut) {
+    if (!checkIn || !checkOut) return 0;
+    return Math.max(0, Math.ceil(
+      (Number(new Date(checkOut)) - Number(new Date(checkIn))) / 86400000
+    ));
+  }
+
+  function fmtDate(str) {
+    if (!str) return '—';
+    return str.toString().split(' ')[0];
+  }
+
+  function fmt(p) {
+    return new Intl.NumberFormat('es-GT', {
+      style: 'currency', currency: 'USD', minimumFractionDigits: 0
+    }).format(p);
+  }
+
+  const FILTERS = [
+    ['all','Todas'],['pendiente','Pendientes'],['confirmada','Confirmadas'],
+    ['completada','Completadas'],['cancelada','Canceladas'],['expirada','Expiradas']
   ];
-
-  const STATUS = {
-    confirmed: { text: 'Confirmada', cls: 'confirmed', icon: '✓' },
-    completed:  { text: 'Completada', cls: 'completed', icon: '✓' },
-    cancelled:  { text: 'Cancelada',  cls: 'cancelled', icon: '✕' }
-  };
-
-  const FILTERS = [['all','Todas'],['confirmed','Confirmadas'],['completed','Completadas'],['cancelled','Canceladas']];
 
   let filter = 'all';
   let search = '';
 
-  $: filtered = reservations.filter(r =>
-    (filter === 'all' || r.status === filter) &&
-    (r.id.toLowerCase().includes(search.toLowerCase()) ||
-     r.hotelName.toLowerCase().includes(search.toLowerCase()))
-  );
+  $: filtered = reservations.filter(r => {
+    const estado = (r.estado || '').toLowerCase();
+    const matchFilter = filter === 'all' || estado === filter;
+    const matchSearch = !search ||
+      (r.noReservacion || '').toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
 
-  function cancel(id) {
-    if (confirm('¿Cancelar esta reserva?')) {
-      reservations = reservations.map(r =>
-        r.id === id ? { ...r, status: 'cancelled', cancellationDate: new Date().toISOString().split('T')[0] } : r
-      );
+  async function cancelReservation(id) {
+    if (!confirm('¿Cancelar esta reservación?')) return;
+    try {
+      const res = await fetch(`${API}/reservaciones/${id}/cancelar`, {
+        method: 'POST', credentials: 'include',
+      });
+      if (!res.ok) throw new Error('No se pudo cancelar');
+      selectedReservation = null;
+      await fetchAll();
+    } catch(e) {
+      alert(/** @type {any} */ (e).message || 'Error al cancelar');
+    }
+  }
+
+  function openPanel(r) {
+    selectedReservation = r;
+    comentario       = { resena: 5, contenido: '' };
+    comentarioError  = '';
+    comentarioOk     = false;
+  }
+
+  async function submitComentario() {
+    if (!selectedReservation) return;
+    // Resolver hotelId: del objeto principal o de cualquier habitación
+    const hotelId = selectedReservation.hotelId
+      ?? selectedReservation.habitaciones?.find((/** @type {any} */ h) => h.hotelId)?.hotelId;
+
+    if (!hotelId) { comentarioError = 'No se encontró el hotel.'; return; }
+    if (!comentario.contenido.trim()) {
+      comentarioError = 'Escribe un comentario antes de enviar.'; return;
+    }
+    comentarioError  = '';
+    comentarioSaving = true;
+    try {
+      const res = await fetch(`${API}/comentarios`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          hotelId,
+          resena:    comentario.resena,
+          contenido: comentario.contenido.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        comentarioError = data.mensaje || data.message || `Error ${res.status}`;
+      } else {
+        comentarioOk = true;
+        // Actualizar el set para que no aparezca el form en otros paneles del mismo hotel
+        hotelesConResena = new Set([...hotelesConResena, hotelId]);
+      }
+    } catch(e) {
+      comentarioError = /** @type {any} */ (e).message || 'Error al enviar';
+    } finally {
+      comentarioSaving = false;
     }
   }
 </script>
+
+<svelte:window on:keydown={(e) => {
+  if (e.key === 'Escape' && selectedReservation) selectedReservation = null;
+}} />
 
 <div class="wrap">
   <div class="inner">
@@ -80,7 +210,6 @@
         <h1>Mis Reservas</h1>
         <p class="sub">Gestiona todas tus reservaciones en un solo lugar</p>
       </div>
-      <button class="btn-new" on:click={() => navigateTo('home')}>+ Nueva Reserva</button>
     </header>
 
     <div class="controls">
@@ -91,63 +220,278 @@
       </div>
       <div class="search">
         <span>🔍</span>
-        <input bind:value={search} placeholder="Buscar por código o nombre de hotel..." />
+        <input bind:value={search} placeholder="Buscar por código de reserva..." />
       </div>
     </div>
 
-    <div class="list">
-      {#if filtered.length === 0}
-        <div class="empty">
-          <div class="empty-icon">📋</div>
-          <h2>No se encontraron reservas</h2>
-          <p>Intenta ajustar los filtros o realiza una nueva búsqueda</p>
-        </div>
-      {:else}
-        {#each filtered as r}
-          {@const s = STATUS[r.status]}
-          <div class="card">
-            <div class="img-wrap">
-              <img src={r.image} alt={r.hotelName} />
-              <span class="badge {s.cls}">{s.icon} {s.text}</span>
-            </div>
+    {#if loading}
+      <div class="empty">
+        <div class="empty-icon">⏳</div>
+        <h2>Cargando reservaciones...</h2>
+      </div>
 
-            <div class="info">
-              <div class="info-hdr">
-                <div>
-                  <h3>{r.hotelName}</h3>
-                  <p class="room">{r.roomType}</p>
-                </div>
-                <div class="code">
-                  <small>Código de Reserva</small>
-                  <strong>{r.id}</strong>
-                </div>
-              </div>
+    {:else if loadError}
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <h2>Error al cargar</h2>
+        <p>{loadError}</p>
+        <button class="btn-retry" on:click={fetchAll}>Reintentar</button>
+      </div>
 
-              <div class="grid">
-                {#each [['📅 Check-in', r.checkIn],['📅 Check-out', r.checkOut],['🌙 Noches', r.nights],['👥 Huéspedes', r.guests],['💰 Total', `$${r.totalPrice}`],['📆 Reservado', r.bookingDate]] as [label, val]}
-                  <div class="cell">
-                    <span class="lbl">{label}</span>
-                    <span class="val">{val}</span>
-                  </div>
-                {/each}
-              </div>
-
-              {#if r.cancellationDate}
-                <div class="cancel-note">⚠️ Cancelada el {r.cancellationDate}</div>
-              {/if}
-            </div>
-
-            <div class="actions">
-              <button class="abtn primary">Ver Detalles</button>
-              <button class="abtn">📄 Descargar</button>
-              {#if r.status === 'confirmed'}
-                <button class="abtn danger" on:click={() => cancel(r.id)}>Cancelar Reserva</button>
-              {/if}
-            </div>
+    {:else}
+      <div class="list">
+        {#if filtered.length === 0}
+          <div class="empty">
+            <div class="empty-icon">📋</div>
+            <h2>{reservations.length === 0 ? 'No tienes reservaciones aún' : 'No se encontraron reservas'}</h2>
+            <p>{reservations.length === 0 ? 'Realiza tu primera reserva' : 'Intenta ajustar los filtros'}</p>
           </div>
-        {/each}
-      {/if}
-    </div>
+        {:else}
+          {#each filtered as r}
+            {@const s = getStatus(r.estado)}
+            {@const hab = r.habitaciones?.[0]}
+            {@const nights = calcNights(hab?.fechaCheckIn, hab?.fechaCheckOut)}
+            <div class="card">
+
+              <div class="img-wrap">
+                <div class="img-placeholder">
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <span class="badge {s.cls}">{s.icon} {s.text}</span>
+              </div>
+
+              <div class="info">
+                <div class="info-hdr">
+                  <div>
+                    <h3>{r.nombreHotel || 'Reservación'}</h3>
+                    <p class="room">{r.habitaciones.map(h => h.tipoHabitacion).join(' · ')}</p>
+                  </div>
+                  <div class="code">
+                    <small>Código de Reserva</small>
+                    <strong>{r.noReservacion}</strong>
+                  </div>
+                </div>
+
+                <div class="grid">
+                  <div class="cell"><span class="lbl">📅 Check-in</span>    <span class="val">{fmtDate(hab?.fechaCheckIn)}</span></div>
+                  <div class="cell"><span class="lbl">📅 Check-out</span>   <span class="val">{fmtDate(hab?.fechaCheckOut)}</span></div>
+                  <div class="cell"><span class="lbl">🌙 Noches</span>      <span class="val">{nights}</span></div>
+                  <div class="cell"><span class="lbl">👥 Huéspedes</span>   <span class="val">{r.habitaciones.reduce((s,h) => s + (h.cantidadPersonas||0), 0)}</span></div>
+                  <div class="cell"><span class="lbl">🛏 Habitaciones</span><span class="val">{r.habitaciones.length}</span></div>
+                  <div class="cell"><span class="lbl">💰 Total</span>       <span class="val">{fmt(r.total)}</span></div>
+                </div>
+
+                {#if r.estado?.toLowerCase() === 'cancelada'}
+                  <div class="cancel-note">⚠️ Cancelada el {fmtDate(r.fechaCancelacion)}</div>
+                {:else if r.fechaExpiracion && r.estado?.toLowerCase() !== 'expirada'}
+                  <div class="expiry-note">⏱ Expira: {fmtDate(r.fechaExpiracion)}</div>
+                {/if}
+              </div>
+
+              <div class="actions">
+                <button class="abtn primary" on:click={() => openPanel(r)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Ver Detalles
+                </button>
+                {#if r.estado?.toLowerCase() === 'pendiente' || r.estado?.toLowerCase() === 'confirmada'}
+                  <button class="abtn danger" on:click={() => cancelReservation(r.id)}>Cancelar Reserva</button>
+                {/if}
+              </div>
+
+            </div>
+          {/each}
+        {/if}
+      </div>
+    {/if}
 
   </div>
 </div>
+
+<!-- ── Panel lateral deslizante ── -->
+{#if selectedReservation}
+  {@const sr = selectedReservation}
+  {@const ss = getStatus(sr.estado)}
+  {@const esCompletada = (sr.estado || '').toLowerCase() === 'completada'}
+  {@const yaReseno = hotelesConResena.has(sr.hotelId)}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="panel-overlay" on:click|self={() => selectedReservation = null}>
+    <div class="panel" role="dialog" aria-modal="true" aria-label="Detalle de reservación">
+
+      <div class="panel-header">
+        <div class="panel-header-info">
+          <div class="panel-hotel-name">{sr.nombreHotel}</div>
+          <div class="panel-res-code">{sr.noReservacion}</div>
+        </div>
+        <div class="panel-header-right">
+          <span class="panel-badge {ss.cls}">{ss.icon} {ss.text}</span>
+          <button class="panel-close" on:click={() => selectedReservation = null} aria-label="Cerrar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+
+        <!-- Info general -->
+        <div class="panel-section">
+          <h4 class="panel-section-title">Información general</h4>
+          <div class="panel-info-grid">
+            <div class="panel-info-cell">
+              <span class="panel-lbl">Reservado el</span>
+              <span class="panel-val">{fmtDate(sr.fechaCreacion)}</span>
+            </div>
+            <div class="panel-info-cell">
+              <span class="panel-lbl">Total reservación</span>
+              <span class="panel-val panel-val-total">{fmt(sr.total)}</span>
+            </div>
+            {#if sr.fechaExpiracion}
+              <div class="panel-info-cell">
+                <span class="panel-lbl">Expiración</span>
+                <span class="panel-val">{fmtDate(sr.fechaExpiracion)}</span>
+              </div>
+            {/if}
+            {#if sr.fechaCancelacion}
+              <div class="panel-info-cell">
+                <span class="panel-lbl">Cancelada el</span>
+                <span class="panel-val">{fmtDate(sr.fechaCancelacion)}</span>
+              </div>
+            {/if}
+          </div>
+        </div>
+
+        <!-- Habitaciones -->
+        <div class="panel-section">
+          <h4 class="panel-section-title">
+            Habitaciones reservadas
+            <span class="panel-section-count">{sr.habitaciones.length}</span>
+          </h4>
+          {#each sr.habitaciones as h}
+            <div class="panel-room">
+              <div class="panel-room-top">
+                <div class="panel-room-title-wrap">
+                  <strong class="panel-room-name">{h.tipoHabitacion}</strong>
+                  <span class="panel-room-bed">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    {h.tipoCama}
+                  </span>
+                </div>
+                <div class="panel-room-price">{fmt(h.totalDetalle)}</div>
+              </div>
+              <p class="panel-room-desc">{h.descripcionHabitacion}</p>
+              <div class="panel-room-meta">
+                <div class="panel-room-meta-item">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>{h.fechaCheckIn} → {h.fechaCheckOut}</span>
+                </div>
+                <div class="panel-room-meta-item">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>{calcNights(h.fechaCheckIn, h.fechaCheckOut)} noches</span>
+                </div>
+                <div class="panel-room-meta-item">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  <span>{h.cantidadPersonas} huésped{h.cantidadPersonas !== 1 ? 'es' : ''}</span>
+                </div>
+              </div>
+            </div>
+          {/each}
+        </div>
+
+        <!-- Desglose -->
+        <div class="panel-section panel-totals">
+          <h4 class="panel-section-title">Desglose de costos</h4>
+          {#each sr.habitaciones as h}
+            <div class="panel-total-row">
+              <span>{h.tipoHabitacion}</span>
+              <span>{fmt(h.totalDetalle)}</span>
+            </div>
+          {/each}
+          <div class="panel-total-final">
+            <span>Total</span>
+            <strong>{fmt(sr.total)}</strong>
+          </div>
+        </div>
+
+        <!-- ── Reseña: solo si completada ── -->
+        {#if esCompletada}
+          <div class="panel-section panel-comment-section">
+            <h4 class="panel-section-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Dejar una reseña
+            </h4>
+
+            {#if yaReseno && !comentarioOk}
+              <!-- Ya existe reseña en este hotel -->
+              <div class="comment-already">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Ya dejaste una reseña para <strong>{sr.nombreHotel}</strong>. Solo se permite una reseña por hotel.
+              </div>
+
+            {:else if comentarioOk}
+              <div class="comment-success">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                ¡Gracias por tu reseña! Tu comentario fue enviado correctamente.
+              </div>
+
+            {:else}
+              <!-- Formulario -->
+              <div class="stars-row">
+                <span class="panel-lbl" style="margin-bottom:.5rem;display:block">Calificación</span>
+                <div class="stars">
+                  {#each [1,2,3,4,5] as n}
+                    <button
+                      class="star-btn"
+                      class:active={comentario.resena >= n}
+                      on:click={() => comentario.resena = n}
+                      aria-label="Dar {n} estrellas"
+                    >★</button>
+                  {/each}
+                  <span class="stars-label">{comentario.resena} / 5</span>
+                </div>
+              </div>
+
+              <div class="comment-field">
+                <label for="comentario-txt" class="panel-lbl" style="margin-bottom:.4rem;display:block">Tu comentario</label>
+                <textarea
+                  id="comentario-txt"
+                  class="comment-textarea"
+                  bind:value={comentario.contenido}
+                  placeholder="Cuéntanos tu experiencia en {sr.nombreHotel}..."
+                  rows="4"
+                ></textarea>
+              </div>
+
+              {#if comentarioError}
+                <div class="comment-error">{comentarioError}</div>
+              {/if}
+
+              <button class="comment-submit-btn" on:click={submitComentario} disabled={comentarioSaving}>
+                {#if comentarioSaving}
+                  <span class="comment-spinner"></span>
+                  Enviando...
+                {:else}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Enviar reseña
+                {/if}
+              </button>
+            {/if}
+          </div>
+        {/if}
+
+        <!-- Cancelar -->
+        {#if sr.estado?.toLowerCase() === 'pendiente' || sr.estado?.toLowerCase() === 'confirmada'}
+          <button class="panel-cancel-btn" on:click={() => cancelReservation(sr.id)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Cancelar esta reservación
+          </button>
+        {/if}
+
+      </div>
+    </div>
+  </div>
+{/if}

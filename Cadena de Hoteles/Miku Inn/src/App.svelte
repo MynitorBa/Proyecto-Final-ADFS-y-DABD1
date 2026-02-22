@@ -1,4 +1,5 @@
 <script>
+  // @ts-nocheck
   import { onMount } from 'svelte';
   import Header from './components/Header.svelte';
   import Footer from './components/Footer.svelte';
@@ -32,18 +33,17 @@
 
   const API = 'http://localhost:7000';
 
-  let currentPage    = 'home';
-  let checkoutData   = null;
+  let currentPage      = 'home';
+  let checkoutData     = null;   // { pendingReservations: [...], hotel, room, ... }
   let currentHotelData = null;
   let currentDestinoId = null;
-  let searchParams   = null;
+  let searchParams     = null;
   let destinationSuggestion = null;
-  let pageKey        = Date.now();
-  let cartItemsCount = 0;
+  let pageKey          = Date.now();
 
-  let isLoggedIn    = false;
-  let userName      = '';
-  let userRolId     = null;
+  let isLoggedIn     = false;
+  let userName       = '';
+  let userRolId      = null;
   let sessionChecked = false;
 
   onMount(() => {
@@ -115,7 +115,7 @@
     try {
       await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch (_) {}
-    isLoggedIn = false; userName = ''; userRolId = null; cartItemsCount = 0;
+    isLoggedIn = false; userName = ''; userRolId = null;
     navigateTo('home');
   }
 
@@ -134,7 +134,6 @@
         {isLoggedIn}
         {userName}
         {userRolId}
-        {cartItemsCount}
         on:search={handleHeaderSearch}
         on:logout={handleLogout}
       />
@@ -146,11 +145,8 @@
           <Home {navigateTo} {destinationSuggestion} />
         {/key}
       {:else if currentPage === 'search-results'}
-        {#key pageKey}
           <SearchResults {navigateTo} {searchParams} />
-        {/key}
       {:else if currentPage === 'hotel-detail'}
-        {#key pageKey}
           <HotelDetail
             {navigateTo}
             hotel={currentHotelData?.hotel ?? null}
@@ -158,9 +154,8 @@
             fechaCheckIn={currentHotelData?.fechaCheckIn ?? ''}
             fechaCheckOut={currentHotelData?.fechaCheckOut ?? ''}
           />
-        {/key}
       {:else if currentPage === 'checkout'}
-        <Checkout {navigateTo} {checkoutData} />
+          <Checkout {navigateTo} {checkoutData} />
       {:else if currentPage === 'login'}
         {#key pageKey}
           <Login {navigateTo} on:login={handleLogin} />
@@ -170,7 +165,9 @@
           <Register {navigateTo} on:login={handleLogin} />
         {/key}
       {:else if currentPage === 'reservations'}
-        <MyReservations {navigateTo} />
+        {#key pageKey}
+          <MyReservations {navigateTo} />
+        {/key}
       {:else if currentPage === 'destinations'}
         <Destinos {navigateTo} />
       {:else if currentPage === 'destino-detail'}
