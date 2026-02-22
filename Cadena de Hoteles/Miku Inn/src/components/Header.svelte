@@ -9,12 +9,15 @@
   export let currentPage = 'home';
   export let isLoggedIn = false;
   export let userName = '';
+  export let userRolId = null; // 1 = Usuario, 2 = Administrador
   export let cartItemsCount = 0;
 
   let showUserMenu = false;
   let showMobileMenu = false;
   let searchQuery = '';
   let isScrolled = false;
+
+  $: isAdmin = userRolId === 2;
 
   function handleScroll() { isScrolled = window.scrollY > 10; }
   function toggleUserMenu() { showUserMenu = !showUserMenu; showMobileMenu = false; }
@@ -64,6 +67,16 @@
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
         Mis Reservas
       </button>
+
+      <!-- Enlace Admin solo visible para rol 2 -->
+      {#if isAdmin}
+        <button class="nav-link nav-link--admin" class:active={isActivePage('administrador')} on:click={() => handleNavClick('administrador')}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Panel Admin
+        </button>
+      {/if}
     </nav>
 
     <!-- Search Bar -->
@@ -77,7 +90,6 @@
     <!-- User Actions -->
     <div class="user-actions">
 
-      <!-- Botón tiendita → hotel-detail -->
       <button class="action-button" on:click={() => handleNavClick('hotel-detail')} aria-label="Ver hotel">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
@@ -92,36 +104,75 @@
         <div class="user-menu-wrapper">
           <button class="action-button user-button" on:click|stopPropagation={toggleUserMenu}
             aria-label="Menu de usuario" aria-expanded={showUserMenu}>
-            <div class="user-avatar">{userName.charAt(0).toUpperCase()}</div>
-            <span class="user-name-desktop">{userName}</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            <!-- Badge de admin en el avatar -->
+            <div class="user-avatar" class:user-avatar--admin={isAdmin}>
+              {#if isAdmin}
+                <span class="user-avatar__icon">⚙</span>
+              {:else}
+                {userName.charAt(0).toUpperCase()}
+              {/if}
+            </div>
+            <span class="user-name-desktop">
+              {userName}
+              {#if isAdmin}<span class="user-admin-badge">Admin</span>{/if}
+            </span>
+            <svg class="dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
 
           {#if showUserMenu}
-            <div class="user-dropdown" role="menu" tabindex="-1" aria-label="Menu de usuario" on:keydown={handleDropdownKey} on:click|stopPropagation>
-              <div class="dropdown-user-info">
-                <div class="dropdown-avatar">{userName.charAt(0).toUpperCase()}</div>
-                <div>
-                  <strong>{userName}</strong>
-                  <span class="user-email">usuario@email.com</span>
+            <div class="user-dropdown" role="menu" tabindex="-1" on:keydown={handleDropdownKey} on:click|stopPropagation>
+              <!-- Header del dropdown -->
+              <div class="dropdown-header">
+                <div class="dropdown-user-info">
+                  <div class="dropdown-avatar" class:dropdown-avatar--admin={isAdmin}>
+                    {#if isAdmin}⚙{:else}{userName.charAt(0).toUpperCase()}{/if}
+                  </div>
+                  <div class="dropdown-user-details">
+                    <strong>{userName}</strong>
+                    {#if isAdmin}
+                      <span class="dropdown-role-badge">Administrador</span>
+                    {:else}
+                      <span class="dropdown-role-label">Usuario</span>
+                    {/if}
+                  </div>
                 </div>
               </div>
               <div class="dropdown-divider"></div>
-              <button class="dropdown-item" role="menuitem" on:click={() => handleNavClick('reservations')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                Mis Reservas
+
+              <!-- Mi Perfil -->
+              <button class="dropdown-item" role="menuitem" on:click={() => handleNavClick('profile')}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Mi Perfil
               </button>
+
+              <!-- Panel Admin solo para rol 2 -->
+              {#if isAdmin}
+                <button class="dropdown-item dropdown-item--admin" role="menuitem" on:click={() => handleNavClick('administrador')}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                  Panel de Administrador
+                </button>
+              {/if}
+
               <div class="dropdown-divider"></div>
               <button class="dropdown-item logout-button" role="menuitem" on:click={handleLogout}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                Cerrar Sesion
+                Cerrar Sesión
               </button>
             </div>
           {/if}
         </div>
+
       {:else}
         <div class="auth-buttons">
-          <button class="btn-secondary" on:click={() => handleNavClick('login')}>Iniciar Sesion</button>
+          <button class="btn-secondary" on:click={() => handleNavClick('login')}>Iniciar Sesión</button>
           <button class="btn-primary" on:click={() => handleNavClick('register')}>Registrarse</button>
         </div>
       {/if}
@@ -152,11 +203,17 @@
         <button class="mobile-nav-link" on:click={() => handleNavClick('destinations')}>Destinos</button>
         <button class="mobile-nav-link" on:click={() => handleNavClick('offers')}>Ofertas</button>
         <button class="mobile-nav-link" on:click={() => handleNavClick('reservations')}>Mis Reservas</button>
+        {#if isAdmin}
+          <button class="mobile-nav-link mobile-nav-link--admin" on:click={() => handleNavClick('administrador')}>
+            ⚙ Panel Admin
+          </button>
+        {/if}
         <div class="mobile-divider"></div>
         {#if isLoggedIn}
-          <button class="mobile-nav-link logout" on:click={handleLogout}>Cerrar Sesion</button>
+          <button class="mobile-nav-link" on:click={() => handleNavClick('profile')}>Mi Perfil</button>
+          <button class="mobile-nav-link logout" on:click={handleLogout}>Cerrar Sesión</button>
         {:else}
-          <button class="mobile-nav-link" on:click={() => handleNavClick('login')}>Iniciar Sesion</button>
+          <button class="mobile-nav-link" on:click={() => handleNavClick('login')}>Iniciar Sesión</button>
           <button class="mobile-nav-link primary" on:click={() => handleNavClick('register')}>Registrarse</button>
         {/if}
       </div>

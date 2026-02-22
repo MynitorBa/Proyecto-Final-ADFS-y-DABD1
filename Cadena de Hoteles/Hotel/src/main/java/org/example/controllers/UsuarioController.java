@@ -2,6 +2,7 @@ package org.example.controllers;
 
 import io.javalin.Javalin;
 import org.example.dtos.CambiarContrasenaRequestDTO;
+import org.example.dtos.CambiarRolRequestDTO;
 import org.example.dtos.CambiarTelefonoRequestDTO;
 import org.example.dtos.UsuarioValidacionRequestDTO;
 import org.example.helpers.CamposDuplicadosException;
@@ -16,7 +17,9 @@ public class UsuarioController {
 
     public void registerRoutes(Javalin app) {
 
-        // Rutas publicas
+        // ═══════════════════════════════════════════════════════════════════
+        // RUTAS PÚBLICAS
+        // ═══════════════════════════════════════════════════════════════════
 
         // GET /usuarios/validar
         app.get("/usuarios/validar", ctx -> {
@@ -30,8 +33,8 @@ public class UsuarioController {
             try {
                 int nuevoId = usuarioService.registrarUsuario(request);
                 ctx.status(201).json(Map.of(
-                        "mensaje",    "Usuario creado exitosamente",
-                        "usuarioId",  nuevoId
+                        "mensaje",   "Usuario creado exitosamente",
+                        "usuarioId", nuevoId
                 ));
             } catch (CamposDuplicadosException e) {
                 ctx.status(409).json(Map.of(
@@ -41,16 +44,9 @@ public class UsuarioController {
             }
         });
 
-
-
-
-
-
-
-
-
-
-        //Rutas Privadas
+        // ═══════════════════════════════════════════════════════════════════
+        // RUTAS PRIVADAS  (cualquier usuario autenticado)
+        // ═══════════════════════════════════════════════════════════════════
 
         // GET /usuarios/perfil
         app.get("/usuarios/perfil", ctx -> {
@@ -79,6 +75,40 @@ public class UsuarioController {
                 ctx.status(200).json(Map.of("mensaje", "Contraseña actualizada correctamente"));
             } catch (CredencialesInvalidasException e) {
                 ctx.status(401).json(Map.of("mensaje", "La contraseña actual es incorrecta"));
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // RUTAS DE ADMINISTRADOR  (requieren Rol_ID == 2)
+        // ═══════════════════════════════════════════════════════════════════
+
+        // GET /admin/usuarios  →  lista todos los usuarios con su rol
+        app.get("/admin/usuarios", ctx -> {
+            int rolId = ctx.attribute("rolId");
+            if (rolId != 2) {
+                ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Administrador"));
+                return;
+            }
+
+            ctx.json(usuarioService.listarTodosUsuarios());
+        });
+
+        // PATCH /admin/usuarios/{id}/rol  →  cambia el rol de un usuario
+        app.patch("/admin/usuarios/{id}/rol", ctx -> {
+            int rolId = ctx.attribute("rolId");
+            if (rolId != 2) {
+                ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Administrador"));
+                return;
+            }
+
+            int usuarioId  = Integer.parseInt(ctx.pathParam("id"));
+            int nuevoRolId = ctx.bodyAsClass(CambiarRolRequestDTO.class).getRolId();
+
+            try {
+                usuarioService.cambiarRol(usuarioId, nuevoRolId);
+                ctx.status(200).json(Map.of("mensaje", "Rol actualizado correctamente"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             }
         });
     }

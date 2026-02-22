@@ -181,7 +181,7 @@
 
       <div class="destdet__hotels-grid">
         {#each hotelesDestacados as hotel}
-          <!-- ✅ fix: button en vez de div con on:click -->
+          <!-- button en vez de div con on:click -->
           <button class="destdet__hotel-card" on:click={() => verHotelDetalle(hotel.id)} aria-label="Ver detalles de {hotel.name}">
             <div class="hotel-image">
               <img src={hotel.image} alt={hotel.name} />

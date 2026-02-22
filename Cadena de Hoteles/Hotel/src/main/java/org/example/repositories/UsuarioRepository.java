@@ -1,13 +1,14 @@
 package org.example.repositories;
 
 import org.example.data.DatabaseManager;
+import org.example.dtos.UsuarioAdminDTO;
 import org.example.dtos.UsuarioPerfilResponseDTO;
 
 import java.util.List;
 
 public class UsuarioRepository {
 
-    // --------------------------------- Validaciones ---------------------------------
+    // ─────────────────────── Validaciones ──────────────────────────────────
 
     public boolean existeUsername(String username) {
         String sql = "SELECT COUNT(*) FROM Usuario WHERE Username = ?";
@@ -28,7 +29,8 @@ public class UsuarioRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
-    // ----------------------------------- Creación---------------------------------
+    // ─────────────────────── Creación ──────────────────────────────────────
+
     public int crearUsuario(
             String correo,
             String contrasenaHasheada,
@@ -54,15 +56,16 @@ public class UsuarioRepository {
         );
     }
 
-    // ---------------------------------Perfil completo ---------------------------------
+    // ─────────────────────── Perfil completo ───────────────────────────────
+
     public UsuarioPerfilResponseDTO obtenerPerfil(int usuarioId) {
         String sql = """
                 SELECT u.ID, u.Username, u.Correo, u.Pasaporte, u.Nombre, u.Apellido,
                        u.Telefono, u.Fecha_Nacimiento, u.Rol_ID,
                        c.Nombre AS Ciudad, p.Nombre AS Pais
                 FROM   Usuario u
-                LEFT JOIN Ciudad  c ON u.Ciudad_ID = c.ID
-                LEFT JOIN Pais    p ON c.Pais_ID   = p.ID
+                LEFT JOIN Ciudad c ON u.Ciudad_ID = c.ID
+                LEFT JOIN Pais   p ON c.Pais_ID   = p.ID
                 WHERE  u.ID = ?
                 """;
 
@@ -88,7 +91,8 @@ public class UsuarioRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    //---------------------------------Obtener nacionalidades del usuario---------------------------------
+    // ─────────────────────── Nacionalidades del usuario ────────────────────
+
     public List<String> obtenerNacionalidades(int usuarioId) {
         String sql = """
                 SELECT n.Nombre
@@ -100,22 +104,66 @@ public class UsuarioRepository {
         return DatabaseManager.executeQuery(sql, rs -> rs.getString("Nombre"), usuarioId);
     }
 
-    //---------------------------------Cambiar teléfono---------------------------------
+    // ─────────────────────── Cambiar teléfono ──────────────────────────────
+
     public void actualizarTelefono(int usuarioId, String telefono) {
         String sql = "UPDATE Usuario SET Telefono = ? WHERE ID = ?";
         DatabaseManager.executeUpdate(sql, telefono, usuarioId);
     }
 
-    //---------------------------------Obtener contraseña hasheada actual---------------------------------
+    // ─────────────────────── Contraseña ────────────────────────────────────
+
     public String obtenerContrasena(int usuarioId) {
         String sql = "SELECT Contrasena FROM Usuario WHERE ID = ?";
         List<String> result = DatabaseManager.executeQuery(sql, rs -> rs.getString("Contrasena"), usuarioId);
         return result.isEmpty() ? null : result.get(0);
     }
 
-    //---------------------------------Cambiar contraseña---------------------------------
     public void actualizarContrasena(int usuarioId, String contrasenaHasheada) {
         String sql = "UPDATE Usuario SET Contrasena = ? WHERE ID = ?";
         DatabaseManager.executeUpdate(sql, contrasenaHasheada, usuarioId);
+    }
+
+    // ─────────────────────── Admin: listar todos con rol ───────────────────
+
+    public List<UsuarioAdminDTO> listarTodosConRol() {
+        String sql = """
+                SELECT u.ID, u.Username, u.Nombre, u.Apellido, u.Correo, u.Telefono,
+                       u.Fecha_Nacimiento, u.Rol_ID,
+                       r.RolNombre,
+                       c.Nombre AS Ciudad,
+                       p.Nombre AS Pais
+                FROM   Usuario u
+                JOIN   Rol     r ON u.Rol_ID    = r.ID
+                LEFT JOIN Ciudad c ON u.Ciudad_ID = c.ID
+                LEFT JOIN Pais   p ON c.Pais_ID   = p.ID
+                ORDER BY u.ID
+                """;
+
+        return DatabaseManager.executeQuery(sql, rs -> {
+            UsuarioAdminDTO dto = new UsuarioAdminDTO();
+            dto.setId(rs.getInt("ID"));
+            dto.setUsername(rs.getString("Username"));
+            dto.setNombre(rs.getString("Nombre"));
+            dto.setApellido(rs.getString("Apellido"));
+            dto.setCorreo(rs.getString("Correo"));
+            dto.setTelefono(rs.getString("Telefono"));
+
+            java.sql.Date fecha = rs.getDate("Fecha_Nacimiento");
+            dto.setFechaNacimiento(fecha != null ? fecha.toString() : null);
+
+            dto.setRolId(rs.getInt("Rol_ID"));
+            dto.setRolNombre(rs.getString("RolNombre"));
+            dto.setCiudad(rs.getString("Ciudad"));
+            dto.setPais(rs.getString("Pais"));
+            return dto;
+        });
+    }
+
+    // ─────────────────────── Admin: cambiar rol ────────────────────────────
+
+    public void actualizarRol(int usuarioId, int nuevoRolId) {
+        String sql = "UPDATE Usuario SET Rol_ID = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, nuevoRolId, usuarioId);
     }
 }

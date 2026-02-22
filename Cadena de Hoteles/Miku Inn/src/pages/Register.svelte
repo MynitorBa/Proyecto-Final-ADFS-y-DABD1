@@ -109,7 +109,7 @@
   }
 
   function onPhoneInput(e) {
-    const raw = /** @type {HTMLInputElement} */ (e.target).value.replace(/\D/g, '');
+    const raw = e.target.value.replace(/\D/g, '');
     const capped = raw.slice(0, phoneDigitCount);
     formData.phone = formatLocalPhone(capped, phoneDigitCount);
   }
@@ -131,15 +131,13 @@
       const res = await fetch('https://restcountries.com/v3.1/all?fields=name,demonyms,idd');
       const data = await res.json();
 
-      // Mapa en minúsculas para matching robusto: "australia" → { code:"+61", digits:9 }
       data.forEach(p => {
         if (p.idd?.root) {
           const suffixes = p.idd.suffixes ?? [''];
           const code = suffixes.length === 1
             ? p.idd.root + suffixes[0]
             : p.idd.root;
-          const digits = knownDigits[code] ?? 9; // usar tabla ITU real
-          // Indexar por nombre común en minúsculas Y nombre oficial
+          const digits = knownDigits[code] ?? 9;
           const key = p.name.common.toLowerCase();
           dialCodesMap[key] = { code, digits };
           if (p.name.official) dialCodesMap[p.name.official.toLowerCase()] = { code, digits };
@@ -168,7 +166,6 @@
     ciudadQuery = ''; formData.city = '';
     ciudadesSugeridas = []; ciudadSeleccionada = false;
     errors.country = '';
-    // Actualizar código telefónico — buscar en minúsculas para match robusto
     const info = dialCodesMap[p.country.toLowerCase()];
     dialCode = info?.code ?? '';
     phoneDigitCount = info?.digits ?? 9;
@@ -285,7 +282,17 @@
       errors.lastName = !formData.lastName.trim() ? 'Apellidos requeridos' : 'Mínimo 2 caracteres';
     if (!formData.birthDate) errors.birthDate = 'Fecha de nacimiento requerida';
     else if (userAge < 18)   errors.birthDate = 'Debes tener al menos 18 años';
-    if (!formData.phone.trim()) errors.phone = 'Teléfono requerido';
+
+    // ✅ Validación de teléfono: vacío + dígitos exactos según país
+    if (!formData.phone.trim()) {
+      errors.phone = 'Teléfono requerido';
+    } else {
+      const digitosIngresados = formData.phone.replace(/\D/g, '').length;
+      if (digitosIngresados !== phoneDigitCount) {
+        errors.phone = `Número incompleto: se requieren ${phoneDigitCount} dígitos para ${formData.country || 'el país seleccionado'} (ingresaste ${digitosIngresados}).`;
+      }
+    }
+
     if (!formData.pasaporte.trim() || formData.pasaporte.trim().length < 5)
       errors.pasaporte = !formData.pasaporte.trim() ? 'Pasaporte requerido' : 'Número de pasaporte inválido';
     if (!paisSeleccionado || !formData.country) errors.country = 'Selecciona un país de la lista';
@@ -308,7 +315,6 @@
   }
 
   // Submit → POST /usuarios/registrar
-  // El backend valida duplicados de correo, pasaporte y username y retorna 409 con campos
   async function handleRegister(e) {
     e.preventDefault();
     if (!validateForm()) {
@@ -326,7 +332,7 @@
       pasaporte:       formData.pasaporte.trim(),
       nombre:          formData.firstName.trim(),
       apellido:        formData.lastName.trim(),
-      telefono:        dialCode + ' ' + formData.phone.replace(/\s/g, ''),  // ej. "+502 57878778"
+      telefono:        dialCode + ' ' + formData.phone.replace(/\s/g, ''),
       fechaNacimiento: formData.birthDate,
       pais:            formData.country,
       ciudad:          formData.city,
@@ -334,7 +340,7 @@
     };
 
     try {
-      const res  = await fetch('http://localhost:7000/usuarios/registrar', {
+      const res = await fetch('http://localhost:7000/usuarios/registrar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -454,7 +460,7 @@
               </div>
             </div>
 
-            <!-- Fila: País + Teléfono (el código +502 aparece automático al elegir país) -->
+            <!-- Fila: País + Teléfono -->
             <div class="register__form-grid">
               <div class="register__form-field">
                 <label for="paisInput">País <span class="required">*</span></label>
@@ -476,7 +482,14 @@
               </div>
 
               <div class="register__form-field">
-                <label for="phone">Teléfono <span class="required">*</span></label>
+                <label for="phone">
+                  Teléfono <span class="required">*</span>
+                  {#if dialCode}
+                    <span style="font-weight:400;color:rgba(255,255,255,0.45);font-size:0.8rem;">
+                      — {phoneDigitCount} dígitos requeridos
+                    </span>
+                  {/if}
+                </label>
                 <div class="phone-field" class:error={errors.phone}>
                   {#if dialCode}
                     <span class="phone-prefix">{dialCode}</span>
@@ -487,11 +500,19 @@
                     disabled={!dialCode}
                     autocomplete="tel" />
                 </div>
+                {#if formData.phone && !errors.phone}
+                  {@const d = formData.phone.replace(/\D/g, '').length}
+                  {#if d === phoneDigitCount}
+                    <span class="helper-text success">✓ Número completo</span>
+                  {:else}
+                    <span class="helper-text error-text">{d}/{phoneDigitCount} dígitos</span>
+                  {/if}
+                {/if}
                 {#if errors.phone}<span class="register__error-text">{errors.phone}</span>{/if}
               </div>
             </div>
 
-            <!-- Ciudad sola (depende del país) -->
+            <!-- Ciudad -->
             <div class="register__form-field">
               <label for="ciudadInput">Ciudad <span class="required">*</span></label>
               <div class="autocomplete-wrap">

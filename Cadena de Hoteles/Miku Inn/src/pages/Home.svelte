@@ -2,113 +2,179 @@
   import { onMount } from 'svelte';
   import '../styles/home.css';
 
-  // Props desde App.svelte
   export let navigateTo = (page, data = null) => {};
   export let destinationSuggestion = null;
 
-  let destination = '';
-  let checkIn = '';
+  const API = 'http://localhost:7000';
+
+  let checkIn  = '';
   let checkOut = '';
-  let guests = 1;
+  let cantidadPersonas = 1;
+  let isSearching = false;
+  let searchError = '';
+
+  // País autocomplete
+  let paisQuery = '';
+  let paisesSugeridos = [];
+  let paisSeleccionado = null;
+  let paisLoading = false;
+  let paisTimer = null;
+
+  // Ciudad autocomplete
+  let ciudadQuery = '';
+  let ciudadesSugeridas = [];
+  let ciudadSeleccionada = false;
+  let ciudadLoading = false;
+  let todasLasCiudades = [];
+
+  function toLocalDateStr(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
 
   onMount(() => {
-    const today = new Date();
+    const today    = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    checkIn = today.toISOString().split('T')[0];
-    checkOut = tomorrow.toISOString().split('T')[0];
+    checkIn  = toLocalDateStr(today);
+    checkOut = toLocalDateStr(tomorrow);
 
-    // Si viene sugerencia de destino, rellenar el campo
-    if (destinationSuggestion) {
-      destination = destinationSuggestion;
-    }
+    if (destinationSuggestion) ciudadQuery = destinationSuggestion;
   });
 
-  $: if (destinationSuggestion) {
-    destination = destinationSuggestion;
-  }
+  $: if (destinationSuggestion) ciudadQuery = destinationSuggestion;
 
-  function handleSearch(e) {
-    e.preventDefault();
-    if (destination.trim()) {
-      navigateTo('search-results', { query: destination, checkIn, checkOut, guests });
+  function updateCheckOut() {
+    if (checkIn && (!checkOut || new Date(checkOut) <= new Date(checkIn))) {
+      const d = new Date(checkIn);
+      d.setDate(d.getDate() + 1);
+      checkOut = toLocalDateStr(d);
     }
   }
 
-  function updateCheckOut() {
-    if (checkIn) {
-      const checkInDate = new Date(checkIn);
-      const minCheckOut = new Date(checkInDate);
-      minCheckOut.setDate(minCheckOut.getDate() + 1);
-      if (!checkOut || new Date(checkOut) <= checkInDate) {
-        checkOut = minCheckOut.toISOString().split('T')[0];
+  // ── País ──
+  function onPaisInput() {
+    paisSeleccionado = null;
+    ciudadQuery = ''; ciudadSeleccionada = false;
+    ciudadesSugeridas = []; todasLasCiudades = [];
+    const q = paisQuery.trim();
+    if (q.length < 2) { paisesSugeridos = []; return; }
+    clearTimeout(paisTimer);
+    paisTimer = setTimeout(async () => {
+      paisLoading = true;
+      try {
+        const res  = await fetch('https://countriesnow.space/api/v0.1/countries');
+        const data = await res.json();
+        paisesSugeridos = (data.data || [])
+          .filter(p => p.country.toLowerCase().includes(q.toLowerCase()))
+          .slice(0, 6);
+      } catch { paisesSugeridos = []; }
+      paisLoading = false;
+    }, 300);
+  }
+
+  async function seleccionarPais(p) {
+    paisSeleccionado = p;
+    paisQuery = p.country;
+    paisesSugeridos = [];
+    // cargar ciudades
+    ciudadQuery = ''; ciudadSeleccionada = false;
+    ciudadesSugeridas = []; todasLasCiudades = [];
+    ciudadLoading = true;
+    try {
+      const res  = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: p.country })
+      });
+      const data = await res.json();
+      todasLasCiudades = data.data || [];
+    } catch { todasLasCiudades = []; }
+    ciudadLoading = false;
+  }
+
+  function blurPais() {
+    setTimeout(() => {
+      if (paisQuery && !paisSeleccionado) { paisQuery = ''; paisesSugeridos = []; }
+      else { paisesSugeridos = []; }
+    }, 200);
+  }
+
+  // ── Ciudad ──
+  function onCiudadInput() {
+    ciudadSeleccionada = false;
+    const q = ciudadQuery.toLowerCase().trim();
+    ciudadesSugeridas = q.length < 2
+      ? []
+      : todasLasCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  }
+
+  function seleccionarCiudad(c) {
+    ciudadQuery = c; ciudadSeleccionada = true;
+    ciudadesSugeridas = [];
+  }
+
+  function blurCiudad() {
+    setTimeout(() => {
+      if (ciudadQuery && !ciudadSeleccionada) { ciudadQuery = ''; ciudadesSugeridas = []; }
+      else { ciudadesSugeridas = []; }
+    }, 200);
+  }
+
+  // ── Buscar ──
+  async function handleSearch(e) {
+    e.preventDefault();
+    searchError = '';
+
+    if (!paisSeleccionado) { searchError = 'Por favor selecciona un país de la lista.'; return; }
+    if (!ciudadSeleccionada) { searchError = 'Por favor selecciona una ciudad de la lista.'; return; }
+
+    isSearching = true;
+    try {
+      const res = await fetch(`${API}/busqueda`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          pais:             paisQuery.trim(),
+          ciudad:           ciudadQuery.trim(),
+          fechaCheckIn:     checkIn,
+          fechaCheckOut:    checkOut,
+          cantidadPersonas: Number(cantidadPersonas)
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        searchError = err.mensaje || 'Error al buscar hoteles.';
+        return;
       }
+
+      const hotels = await res.json();
+      navigateTo('search-results', {
+        pais: paisQuery.trim(), ciudad: ciudadQuery.trim(),
+        fechaCheckIn: checkIn, fechaCheckOut: checkOut,
+        cantidadPersonas: Number(cantidadPersonas), hotels
+      });
+    } catch (err) {
+      searchError = 'Error de conexión: ' + err.message;
+    } finally {
+      isSearching = false;
     }
   }
 
   const features = [
-    {
-      icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-      </svg>`,
-      title: 'Hoteles de Lujo',
-      description: 'Experimenta comodidad y elegancia en cada una de nuestras propiedades premium'
-    },
-    {
-      icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="2" y1="12" x2="22" y2="12"></line>
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-      </svg>`,
-      title: 'Ubicaciones Premium',
-      description: 'Presencia en los destinos más exclusivos y demandados del mundo'
-    },
-    {
-      icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-        <circle cx="9" cy="7" r="4"></circle>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-      </svg>`,
-      title: 'Servicio Excepcional',
-      description: 'Atención personalizada las 24 horas con personal altamente capacitado'
-    },
-    {
-      icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <line x1="12" y1="1" x2="12" y2="23"></line>
-        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-      </svg>`,
-      title: 'Mejor Precio Garantizado',
-      description: 'Las mejores tarifas directamente con nosotros, sin intermediarios'
-    }
-  ];
-
-  const destinations = [
-    { name: 'París',      country: 'Francia',          hotels: 5, image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80' },
-    { name: 'Londres',    country: 'Reino Unido',       hotels: 4, image: 'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=800&q=80' },
-    { name: 'Tokio',      country: 'Japón',             hotels: 6, image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80' },
-    { name: 'Nueva York', country: 'Estados Unidos',    hotels: 7, image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80' }
-  ];
-
-  const testimonials = [
-    {
-      name: 'María González', location: 'Madrid, España', rating: 5, avatar: 'MG',
-      text: 'Una experiencia inolvidable. El servicio superó todas mis expectativas. Las instalaciones son impecables y el personal extremadamente atento.'
-    },
-    {
-      name: 'Carlos Méndez', location: 'Guatemala', rating: 5, avatar: 'CM',
-      text: 'Instalaciones de primer nivel y un servicio que realmente marca la diferencia. Sin duda volveré en mi próximo viaje.'
-    },
-    {
-      name: 'Ana Rodríguez', location: 'Buenos Aires, Argentina', rating: 5, avatar: 'AR',
-      text: 'Cada detalle está pensado para la comodidad del huésped. Ubicación perfecta y amenidades de lujo. Altamente recomendado.'
-    }
+    { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`, title: 'Hoteles de Lujo', description: 'Experimenta comodidad y elegancia en cada una de nuestras propiedades premium' },
+    { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`, title: 'Ubicaciones Premium', description: 'Presencia en los destinos más exclusivos y demandados del mundo' },
+    { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`, title: 'Servicio Excepcional', description: 'Atención personalizada las 24 horas con personal altamente capacitado' },
+    { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`, title: 'Mejor Precio Garantizado', description: 'Las mejores tarifas directamente con nosotros, sin intermediarios' }
   ];
 </script>
 
 <div class="home-page">
-  <!-- Hero Section -->
+
   <section class="home__hero-section">
     <div class="home__hero-overlay"></div>
     <div class="home__hero-content">
@@ -117,84 +183,116 @@
         <p class="hero-subtitle">Descubre experiencias únicas en nuestros hoteles alrededor del mundo</p>
       </div>
 
-      <!-- Search Card -->
       <div class="search-card">
         <h2 class="home__search-title">Encuentra tu hotel ideal</h2>
 
+        {#if searchError}
+          <div class="home__search-error">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {searchError}
+          </div>
+        {/if}
+
         <form class="search-form" on:submit={handleSearch}>
           <div class="home__form-grid">
+
+            <!-- País -->
             <div class="home__form-group">
-              <label for="destination" class="home__form-label">
-                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                Destino
+              <label for="h-pais" class="home__form-label">
+                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z"></path></svg>
+                País
               </label>
-              <input type="text" id="destination" class="home__form-input"
-                bind:value={destination} placeholder="¿A dónde viajas?" required />
+              <div class="home__autocomplete-wrap">
+                <input type="text" id="h-pais" class="home__form-input"
+                  bind:value={paisQuery} on:input={onPaisInput} on:blur={blurPais}
+                  placeholder="Escribe un país..." autocomplete="off" />
+                {#if paisLoading}
+                  <div class="home__autocomplete-loading">Buscando...</div>
+                {:else if paisesSugeridos.length > 0}
+                  <ul class="home__autocomplete-list">
+                    {#each paisesSugeridos as p}
+                      <li><button type="button" class="home__autocomplete-btn" on:click={() => seleccionarPais(p)}>{p.country}</button></li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
             </div>
 
+            <!-- Ciudad -->
             <div class="home__form-group">
-              <label for="checkIn" class="home__form-label">
-                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
+              <label for="h-ciudad" class="home__form-label">
+                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Ciudad
+                {#if ciudadLoading}
+                  <span style="font-weight:400;font-size:0.75rem;opacity:0.6;">Cargando...</span>
+                {/if}
+              </label>
+              <div class="home__autocomplete-wrap">
+                <input type="text" id="h-ciudad" class="home__form-input"
+                  bind:value={ciudadQuery} on:input={onCiudadInput} on:blur={blurCiudad}
+                  placeholder={!paisSeleccionado ? 'Primero selecciona un país' : ciudadLoading ? 'Cargando ciudades...' : 'Escribe una ciudad...'}
+                  disabled={!paisSeleccionado || ciudadLoading}
+                  autocomplete="off" />
+                {#if ciudadesSugeridas.length > 0}
+                  <ul class="home__autocomplete-list">
+                    {#each ciudadesSugeridas as c}
+                      <li><button type="button" class="home__autocomplete-btn" on:click={() => seleccionarCiudad(c)}>{c}</button></li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Check-in -->
+            <div class="home__form-group">
+              <label for="h-checkin" class="home__form-label">
+                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 Check-in
               </label>
-              <input type="date" id="checkIn" class="home__form-input"
+              <input type="date" id="h-checkin" class="home__form-input"
                 bind:value={checkIn} on:change={updateCheckOut}
-                min={new Date().toISOString().split('T')[0]} required />
+                min={toLocalDateStr(new Date())} required />
             </div>
 
+            <!-- Check-out -->
             <div class="home__form-group">
-              <label for="checkOut" class="home__form-label">
-                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
+              <label for="h-checkout" class="home__form-label">
+                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 Check-out
               </label>
-              <input type="date" id="checkOut" class="home__form-input"
+              <input type="date" id="h-checkout" class="home__form-input"
                 bind:value={checkOut} min={checkIn} required />
             </div>
 
+            <!-- Huéspedes -->
             <div class="home__form-group">
-              <label for="guests" class="home__form-label">
-                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="9" cy="7" r="4"></circle>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                </svg>
+              <label for="h-personas" class="home__form-label">
+                <svg class="label-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 Huéspedes
               </label>
-              <select id="guests" class="home__form-input" bind:value={guests}>
+              <select id="h-personas" class="home__form-input" bind:value={cantidadPersonas}>
                 {#each Array(10) as _, i}
                   <option value={i + 1}>{i + 1} {i === 0 ? 'Huésped' : 'Huéspedes'}</option>
                 {/each}
               </select>
             </div>
+
           </div>
 
-          <button type="submit" class="search-button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            Buscar Hoteles
+          <button type="submit" class="search-button" disabled={isSearching}>
+            {#if isSearching}
+              <svg class="home__spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              Buscando...
+            {:else}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+              Buscar Hoteles
+            {/if}
           </button>
         </form>
       </div>
     </div>
   </section>
 
-  <!-- Features Section -->
   <section class="features-section">
     <div class="home__container">
       <div class="home__section-header">
@@ -213,83 +311,15 @@
     </div>
   </section>
 
-  <!-- Destinations Section -->
-  <section class="destinations-section">
-    <div class="home__container">
-      <div class="home__section-header">
-        <h2 class="home__section-title">Destinos Populares</h2>
-        <p class="home__section-description">Explora nuestras ubicaciones más demandadas</p>
-      </div>
-      <div class="destinations-grid">
-        {#each destinations as dest}
-          <button
-            type="button"
-            class="destination-card"
-            on:click={() => navigateTo('search-results', { query: dest.name })}
-          >
-            <img src={dest.image} alt={dest.name} class="destination-image" />
-            <div class="destination-overlay">
-              <div class="destination-content">
-                <h3 class="destination-name">{dest.name}</h3>
-                <p class="destination-country">{dest.country}</p>
-                <div class="destination-hotels">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  </svg>
-                  {dest.hotels} hoteles
-                </div>
-              </div>
-            </div>
-          </button>
-        {/each}
-      </div>
-    </div>
-  </section>
-
-  <!-- Testimonials Section -->
-  <section class="testimonials-section">
-    <div class="home__container">
-      <div class="home__section-header">
-        <h2 class="home__section-title">Lo que dicen nuestros huéspedes</h2>
-        <p class="home__section-description">Experiencias reales de clientes satisfechos</p>
-      </div>
-      <div class="testimonials-grid">
-        {#each testimonials as testimonial}
-          <div class="testimonial-card">
-            <div class="testimonial-header">
-              <div class="testimonial-avatar">{testimonial.avatar}</div>
-              <div class="testimonial-info">
-                <h4 class="testimonial-name">{testimonial.name}</h4>
-                <p class="testimonial-location">{testimonial.location}</p>
-              </div>
-            </div>
-            <div class="testimonial-rating">
-              {#each Array(testimonial.rating) as _}
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                </svg>
-              {/each}
-            </div>
-            <p class="testimonial-text">{testimonial.text}</p>
-          </div>
-        {/each}
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
   <section class="home__cta-section">
     <div class="home__container">
       <div class="home__cta-content">
         <h2 class="home__cta-title">¿Listo para tu próxima aventura?</h2>
         <p class="home__cta-description">Únete a miles de viajeros que confían en Miku Inn para sus experiencias de lujo</p>
         <div class="cta-buttons">
-          <button type="button" class="home__cta-button primary" on:click={() => navigateTo('search-results', { query: '' })}>
+          <button type="button" class="home__cta-button primary" on:click={() => navigateTo('search-results', null)}>
             Explorar Hoteles
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
           <button type="button" class="home__cta-button secondary" on:click={() => navigateTo('offers')}>
             Ver Ofertas Especiales
@@ -298,4 +328,5 @@
       </div>
     </div>
   </section>
+
 </div>

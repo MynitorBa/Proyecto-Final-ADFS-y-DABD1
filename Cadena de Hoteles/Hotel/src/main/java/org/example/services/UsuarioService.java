@@ -1,5 +1,6 @@
 package org.example.services;
 
+import org.example.dtos.UsuarioAdminDTO;
 import org.example.dtos.UsuarioPerfilResponseDTO;
 import org.example.dtos.UsuarioValidacionRequestDTO;
 import org.example.dtos.UsuarioValidacionResponseDTO;
@@ -21,7 +22,7 @@ public class UsuarioService {
     private final NacionalidadRepository        nacionalidadRepository        = new NacionalidadRepository();
     private final UsuarioNacionalidadRepository usuarioNacionalidadRepository = new UsuarioNacionalidadRepository();
 
-    // -------------------------------- Validar disponibilidad ----------------------------
+    // ─────────────────────── Validar disponibilidad ────────────────────────
 
     public UsuarioValidacionResponseDTO validarDisponibilidad(UsuarioValidacionRequestDTO request) {
         boolean usernameExiste  = usuarioRepository.existeUsername(request.getUsername());
@@ -31,7 +32,7 @@ public class UsuarioService {
         return new UsuarioValidacionResponseDTO(usernameExiste, correoExiste, pasaporteExiste);
     }
 
-    //------------------------- Registrar usuario-----------------------------
+    // ─────────────────────── Registrar usuario ─────────────────────────────
 
     public int registrarUsuario(UsuarioValidacionRequestDTO request) {
 
@@ -40,13 +41,11 @@ public class UsuarioService {
             throw new CamposDuplicadosException(validacion);
         }
 
-        int paisId = paisRepository.buscarOCrearPorNombre(request.getPais());
-
+        int paisId   = paisRepository.buscarOCrearPorNombre(request.getPais());
         int ciudadId = ciudadRepository.buscarOCrearPorNombre(request.getCiudad(), paisId);
 
         String contrasenaHasheada = PasswordHelper.hashear(request.getContrasena());
-
-        Date fechaNacimiento = Date.valueOf(LocalDate.parse(request.getFechaNacimiento()));
+        Date   fechaNacimiento    = Date.valueOf(LocalDate.parse(request.getFechaNacimiento()));
 
         int nuevoUsuarioId = usuarioRepository.crearUsuario(
                 request.getCorreo(),
@@ -71,7 +70,7 @@ public class UsuarioService {
         return nuevoUsuarioId;
     }
 
-    //---------------------------Obtener perfil completo-----------------------------
+    // ─────────────────────── Obtener perfil completo ───────────────────────
 
     public UsuarioPerfilResponseDTO obtenerPerfil(int usuarioId) {
         UsuarioPerfilResponseDTO perfil = usuarioRepository.obtenerPerfil(usuarioId);
@@ -83,7 +82,7 @@ public class UsuarioService {
         return perfil;
     }
 
-    // --------------- Cambiar teléfono ---------------------------------------
+    // ─────────────────────── Cambiar teléfono ──────────────────────────────
 
     public void cambiarTelefono(int usuarioId, String nuevoTelefono) {
         if (nuevoTelefono == null || nuevoTelefono.isBlank()) {
@@ -92,17 +91,30 @@ public class UsuarioService {
         usuarioRepository.actualizarTelefono(usuarioId, nuevoTelefono);
     }
 
-    //--------------------------------- Cambiar contraseña -------------------------
+    // ─────────────────────── Cambiar contraseña ────────────────────────────
 
     public void cambiarContrasena(int usuarioId, String contrasenaActual, String contrasenaNueva) {
-        // 1. Verificar que la contraseña actual sea correcta
         String hashActual = usuarioRepository.obtenerContrasena(usuarioId);
         if (!PasswordHelper.verificar(contrasenaActual, hashActual)) {
             throw new CredencialesInvalidasException();
         }
 
-        // 2. Hashear la nueva y guardar
         String nuevoHash = PasswordHelper.hashear(contrasenaNueva);
         usuarioRepository.actualizarContrasena(usuarioId, nuevoHash);
+    }
+
+    // ─────────────────────── Admin: listar todos los usuarios ──────────────
+
+    public List<UsuarioAdminDTO> listarTodosUsuarios() {
+        return usuarioRepository.listarTodosConRol();
+    }
+
+    // ─────────────────────── Admin: cambiar rol ────────────────────────────
+
+    public void cambiarRol(int usuarioId, int nuevoRolId) {
+        if (nuevoRolId != 1 && nuevoRolId != 2) {
+            throw new IllegalArgumentException("Rol inválido. Solo se permiten 1 (Usuario) o 2 (Administrador)");
+        }
+        usuarioRepository.actualizarRol(usuarioId, nuevoRolId);
     }
 }
