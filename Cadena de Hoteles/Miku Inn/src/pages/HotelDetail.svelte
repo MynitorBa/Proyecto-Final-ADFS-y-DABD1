@@ -57,13 +57,67 @@
 
   $: totalPrice = selectedRoom ? (selectedRoom.precioPorNoche + selectedRoom.precioPorPersona * cantidadPersonas) * nights : 0;
 
-  // ── Imágenes — solo del backend ──────────────────────────
-  $: images = hotel?.imagenesIds?.length > 0
-    ? hotel.imagenesIds.map(id => `${API}/imagenes/${id}`)
-    : [];
+  // ── Imágenes ─────────────────────────────────────────────
+  // Cada entidad trae imagenesIds: [1, 2, 3...] con los IDs reales de sus imágenes.
+  // Las URLs se construyen: /imagenes/hotel/{id_imagen}, /imagenes/habitacion/{id_imagen}, etc.
+  // Ejemplo: imagenesIds: [1, 2, 3] genera:
+  //   <img src="http://localhost:7000/imagenes/hotel/1" />
+  //   <img src="http://localhost:7000/imagenes/hotel/2" />
+  //   <img src="http://localhost:7000/imagenes/hotel/3" />
+  $: images = (() => {
+    if (!hotel) return [];
+    const imgs = [];
 
+    // Imágenes del hotel (pueden ser varias)
+    if (hotel.imagenesIds?.length > 0) {
+      for (const imgId of hotel.imagenesIds) {
+        imgs.push(`${API}/imagenes/hotel/${imgId}`);
+      }
+    }
+
+    // Imágenes de cada habitación (cada una puede tener varias)
+    if (hotel.habitaciones?.length > 0) {
+      for (const room of hotel.habitaciones) {
+        if (room.imagenesIds?.length > 0) {
+          for (const imgId of room.imagenesIds) {
+            imgs.push(`${API}/imagenes/habitacion/${imgId}`);
+          }
+        }
+      }
+    }
+
+    // Imágenes de cada amenidad (cada una puede tener varias)
+    if (hotel.amenidades?.length > 0) {
+      for (const am of hotel.amenidades) {
+        if (am.imagenesIds?.length > 0) {
+          for (const imgId of am.imagenesIds) {
+            imgs.push(`${API}/imagenes/amenidad/${imgId}`);
+          }
+        }
+      }
+    }
+
+    return imgs;
+  })();
+
+  // Primera imagen de una habitación (para la tarjeta), o null si no tiene
   function roomImage(room) {
-    if (room.imagenesIds?.length > 0) return `${API}/imagenes/${room.imagenesIds[0]}`;
+    if (room.imagenesIds?.length > 0) {
+      return `${API}/imagenes/habitacion/${room.imagenesIds[0]}`;
+    }
+    return null;
+  }
+
+  // Todas las imágenes de una habitación
+  function roomImages(room) {
+    return (room.imagenesIds || []).map(id => `${API}/imagenes/habitacion/${id}`);
+  }
+
+  // Primera imagen de una amenidad, o null si no tiene
+  function amenityImage(amenidad) {
+    if (amenidad.imagenesIds?.length > 0) {
+      return `${API}/imagenes/amenidad/${amenidad.imagenesIds[0]}`;
+    }
     return null;
   }
 
@@ -139,7 +193,6 @@
         }),
       });
       if (!res.ok) {
-        // Intentar leer mensaje del backend de forma limpia
         let msg = 'No se pudo completar la reservación. Intenta de nuevo.';
         try {
           const data = await res.json();
@@ -168,6 +221,11 @@
   function shareHotel() {
     navigator.clipboard?.writeText(window.location.href);
     alert('Enlace copiado al portapapeles');
+  }
+
+  // Manejo de errores de imagen (fallback si el endpoint no tiene imagen)
+  function handleImgError(e) {
+    e.target.style.display = 'none';
   }
 </script>
 
@@ -241,7 +299,7 @@
     <div class="hdet__container">
       <div class="gallery-grid">
         <button class="hdet__gallery-main-image" on:click={() => openGallery(0)} aria-label="Ver todas las fotos">
-          <img src={images[0]} alt={hotel.nombre} />
+          <img src={images[0]} alt={hotel.nombre} on:error={handleImgError} />
           <div class="gallery-overlay" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             Ver todas las fotos
@@ -250,7 +308,7 @@
         <div class="hdet__gallery-thumbnails">
           {#each images.slice(1, 5) as img, i}
             <button class="hdet__gallery-thumb" on:click={() => openGallery(i + 1)} aria-label="Ver imagen {i + 2}">
-              <img src={img} alt="{hotel.nombre} {i + 2}" />
+              <img src={img} alt="{hotel.nombre} {i + 2}" on:error={handleImgError} />
             </button>
           {/each}
         </div>
@@ -291,7 +349,11 @@
                 <div class="amenities-grid">
                   {#each hotel.amenidades as am}
                     <div class="amenity-card">
-                      <span class="amenity-icon-large" aria-hidden="true">{getAmenityIcon(am.nombre)}</span>
+                      {#if am.imagenesIds?.length > 0}
+                        <img src={amenityImage(am)} alt={am.nombre} class="amenity-image" on:error={(e) => { e.target.style.display = 'none'; }} />
+                      {:else}
+                        <span class="amenity-icon-large" aria-hidden="true">{getAmenityIcon(am.nombre)}</span>
+                      {/if}
                       <div class="amenity-info">
                         <span class="amenity-name">{am.nombre}</span>
                         {#if am.descripcion}
@@ -320,8 +382,8 @@
                   {#each habitacionesDisponibles as room, idx}
                     <article class="room-detail-card" class:selected={selectedRoom?.id === room.id}>
                       <div class="room-images-section">
-                        {#if roomImage(room)}
-                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" />
+                        {#if room.imagenesIds?.length > 0}
+                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { e.target.parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
                         {:else}
                           <div class="room-no-image">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -561,7 +623,7 @@
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </button>
       <div class="gallery-content">
-        <img src={images[currentImageIndex]} alt="{hotel.nombre} {currentImageIndex + 1}" class="gallery-image" />
+        <img src={images[currentImageIndex]} alt="{hotel.nombre} {currentImageIndex + 1}" class="gallery-image" on:error={handleImgError} />
         <div class="gallery-counter">{currentImageIndex + 1} / {images.length}</div>
       </div>
     </div>
