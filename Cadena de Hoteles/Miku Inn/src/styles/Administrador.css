@@ -1670,8 +1670,8 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: #252b3b;
-  border-bottom: 1px solid #363d52;
+  background: #232a3e;
+  border-bottom: 2px solid #3d4666;
   position: relative;
   flex-shrink: 0;
 }
@@ -1721,7 +1721,7 @@
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
-  background: #1e2330;
+  background: #1a2035;
 }
 
 /* Footer */
@@ -1730,46 +1730,14 @@
   justify-content: flex-end;
   gap: .75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #363d52;
-  background: #1a1f2e;
+  border-top: 2px solid #3d4666;
+  background: #141929;
   flex-shrink: 0;
 }
 
-/* Form fields inside hotel modal — sólidos */
-.adm__hotel-modal__body .adm__field label {
-  color: #8b95b0;
-  font-size: .75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  display: block;
-  margin-bottom: .4rem;
-}
-.adm__hotel-modal__body .adm__field input,
-.adm__hotel-modal__body .adm__field select,
-.adm__hotel-modal__body .adm__field textarea {
-  background: #252b3b;
-  border: 1.5px solid #363d52;
-  border-radius: 8px;
-  color: #e8eeff;
-  padding: .6rem .875rem;
-  font-size: .875rem;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-  font-family: inherit;
-}
-.adm__hotel-modal__body .adm__field input:focus,
-.adm__hotel-modal__body .adm__field select:focus,
-.adm__hotel-modal__body .adm__field textarea:focus {
-  outline: none;
-  border-color: #5ba3f5;
-  box-shadow: 0 0 0 3px rgba(91,163,245,0.15);
-}
-.adm__hotel-modal__body .adm__field textarea {
-  resize: vertical;
-  min-height: 80px;
-}
+
+/* Form fields del modal se definen una sola vez abajo */
+
 
 /* ════════════════════════════════════════════
    VISTA DETALLE HOTEL — header, tabs
@@ -1939,48 +1907,302 @@
   max-width: 680px;
 }
 .adm__modal-section-title {
-  font-size: .8rem;
-  font-weight: 700;
+  font-size: .72rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .07em;
-  color: var(--adm-text-muted);
-  margin: 0 0 .875rem;
+  letter-spacing: .1em;
+  color: #7b93ff;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.adm__modal-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, #3d4666, transparent);
 }
 .adm__modal-section-divider {
   height: 1px;
-  background: #363d52;
-  margin: 0 0 .75rem;
+  background: #3d4666;
+  margin: 0 0 1rem;
 }
 
-/* form fields inside hotel modal */
-.adm__hotel-modal__body .adm__field label {
-  color: var(--adm-text-muted);
-  font-size: .72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  display: block;
-  margin-bottom: .35rem;
+/* ════════════════════════════════════════════
+   CAMPOS DEL MODAL — alta legibilidad
+   ════════════════════════════════════════════ */
+
+/* Label visible y con buen contraste */
+.adm__hotel-modal__body .adm__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
+
+.adm__hotel-modal__body .adm__field label {
+  color: #c8d0e8;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  display: block;
+}
+
+/* Inputs con fondo más claro y texto blanco nítido */
 .adm__hotel-modal__body .adm__field input,
 .adm__hotel-modal__body .adm__field select,
 .adm__hotel-modal__body .adm__field textarea {
-  background: #252b3b;
-  border: 1.5px solid #363d52;
+  background: #2d3450;
+  border: 1.5px solid #4a527a;
   border-radius: 8px;
-  color: #e8eeff;
-  padding: .55rem .8rem;
-  font-size: .875rem;
+  color: #ffffff;
+  padding: .65rem .9rem;
+  font-size: .9rem;
+  font-weight: 500;
   width: 100%;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
   font-family: inherit;
+  appearance: auto;
 }
+
+.adm__hotel-modal__body .adm__field input::placeholder,
+.adm__hotel-modal__body .adm__field textarea::placeholder {
+  color: #6b789a;
+}
+
+.adm__hotel-modal__body .adm__field select option {
+  background: #1e2330;
+  color: #ffffff;
+}
+
 .adm__hotel-modal__body .adm__field input:focus,
 .adm__hotel-modal__body .adm__field select:focus,
 .adm__hotel-modal__body .adm__field textarea:focus {
   outline: none;
-  border-color: #5ba3f5;
-  box-shadow: 0 0 0 3px rgba(91,163,245,0.15);
+  border-color: #7b93ff;
+  background: #323b5c;
+  box-shadow: 0 0 0 3px rgba(123,147,255,0.2);
 }
-.adm__hotel-modal__body .adm__field textarea { resize: vertical; min-height: 70px; }
+
+.adm__hotel-modal__body .adm__field textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* ════════════════════════════════════════════
+   WIZARD — CREAR HOTEL
+   ════════════════════════════════════════════ */
+
+/* Steps bar */
+.adm__wizard-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1.75rem;
+  padding: 1.25rem 1.5rem;
+  background: #1e2535;
+  border-radius: 14px;
+  border: 1px solid #363d52;
+}
+.adm__wizard-step {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #5a6385;
+  transition: color 0.2s;
+}
+.adm__wizard-step--active {
+  color: #e8eeff;
+}
+.adm__wizard-step--done {
+  color: #3fb950;
+}
+.adm__wizard-step--disabled {
+  opacity: .4;
+  pointer-events: none;
+}
+.adm__wizard-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  background: #2d3450;
+  border: 2px solid #4a527a;
+  color: #8b95b0;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.adm__wizard-step--active .adm__wizard-step-num {
+  background: #7b93ff;
+  border-color: #7b93ff;
+  color: #fff;
+}
+.adm__wizard-step--done .adm__wizard-step-num {
+  background: #1a5c30;
+  border-color: #3fb950;
+  color: #3fb950;
+}
+.adm__wizard-connector {
+  flex: 1;
+  height: 2px;
+  background: #363d52;
+  margin: 0 .75rem;
+  max-width: 80px;
+}
+
+/* Wizard main card */
+.adm__wizard-card {
+  background: #1a2035;
+  border: 1px solid #363d52;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 820px;
+}
+.adm__wizard-card-title {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8eeff;
+  margin: 0 0 1.5rem;
+}
+.adm__wizard-card-title strong { color: #7b93ff; }
+
+/* Form grid for wizard (same inputs as modal) */
+.adm__form-grid--wizard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem 1.25rem;
+}
+.adm__form-grid--wizard .adm__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.adm__form-grid--wizard .adm__field label {
+  color: #c8d0e8;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.adm__form-grid--wizard .adm__field input,
+.adm__form-grid--wizard .adm__field select,
+.adm__form-grid--wizard .adm__field textarea {
+  background: #2d3450;
+  border: 1.5px solid #4a527a;
+  border-radius: 8px;
+  color: #ffffff;
+  padding: .65rem .9rem;
+  font-size: .9rem;
+  font-weight: 500;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adm__form-grid--wizard .adm__field input:focus,
+.adm__form-grid--wizard .adm__field select:focus,
+.adm__form-grid--wizard .adm__field textarea:focus {
+  outline: none;
+  border-color: #7b93ff;
+  background: #323b5c;
+  box-shadow: 0 0 0 3px rgba(123,147,255,.2);
+}
+.adm__form-grid--wizard .adm__field select option { background: #1e2330; color: #fff; }
+.adm__form-grid--wizard .adm__field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+.adm__form-grid--wizard .adm__field--full { grid-column: 1 / -1; }
+
+/* Ciudad combo */
+.adm__field-ciudad-wrap {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.adm__field-ciudad-wrap select,
+.adm__field-ciudad-wrap input { flex: 1; }
+.adm__field-o {
+  font-size: .75rem;
+  color: #5a6385;
+  flex-shrink: 0;
+}
+
+/* Wizard actions bar */
+.adm__wizard-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #363d52;
+}
+
+/* Big / success buttons */
+.adm__btn--lg {
+  padding: .65rem 1.4rem;
+  font-size: .9rem;
+}
+.adm__btn--success {
+  background: #1a5c30;
+  color: #3fb950;
+  border: 1.5px solid #3fb950;
+}
+.adm__btn--success:hover { background: #1f6e38; }
+
+/* Sub-card for hab form */
+.adm__wizard-subcard {
+  background: #222945;
+  border: 1.5px solid #3d4666;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Habitación card en lista del wizard */
+.adm__wizard-hab-card {
+  background: #1e2535;
+  border: 1px solid #363d52;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+.adm__wizard-hab-info { margin-bottom: .75rem; }
+.adm__wizard-hab-tipo {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #e8eeff;
+  margin: 0 0 3px;
+}
+.adm__wizard-hab-meta {
+  font-size: .78rem;
+  color: #8b95b0;
+  margin: 0;
+}
+.adm__wizard-hab-imgs .adm__img-grid--sm {
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+}
+
+/* Add-img button inside wizard hab */
+.adm__wizard-add-img-btn {
+  aspect-ratio: 4/3;
+  border-radius: 10px;
+  background: #2d3450;
+  border: 2px dashed #4a527a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #8b95b0;
+  transition: border-color 0.15s, color 0.15s;
+}
+.adm__wizard-add-img-btn:hover { border-color: #7b93ff; color: #7b93ff; }

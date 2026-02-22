@@ -9,7 +9,7 @@ import java.util.List;
 public class HotelRepository {
 
     // ════════════════════════════════════════════════════
-    //  HOTEL — listado y edición
+    //  HOTEL — listado, creación y edición
     // ════════════════════════════════════════════════════
 
     public List<HotelAdminDTO> listarTodos() {
@@ -24,7 +24,6 @@ public class HotelRepository {
                 JOIN   Pais   p ON c.Pais_ID  = p.ID
                 ORDER BY h.ID
                 """;
-
         return DatabaseManager.executeQuery(sql, rs -> {
             HotelAdminDTO dto = new HotelAdminDTO();
             dto.setId(rs.getInt("ID"));
@@ -38,6 +37,17 @@ public class HotelRepository {
             dto.setPais(rs.getString("Pais"));
             return dto;
         });
+    }
+
+    /** Crea un nuevo hotel y devuelve su ID generado. */
+    public int crearHotel(String nombre, String direccion, String descripcion,
+                          double rating, int estadoId, int ciudadId) {
+        String sql = """
+                INSERT INTO Hotel (Nombre, Direccion, Descripcion, Rating, EstadoID, CiudadID)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        return DatabaseManager.executeInsertReturnId(sql, "ID",
+                nombre, direccion, descripcion, rating, estadoId, ciudadId);
     }
 
     public void actualizarHotel(int hotelId, String nombre, String direccion,
@@ -85,7 +95,7 @@ public class HotelRepository {
     }
 
     // ════════════════════════════════════════════════════
-    //  HABITACIONES — listado y edición
+    //  HABITACIONES — listado, creación y edición
     // ════════════════════════════════════════════════════
 
     public List<HabitacionAdminDTO> listarHabitacionesPorHotel(int hotelId) {
@@ -104,7 +114,6 @@ public class HotelRepository {
                 WHERE  h.HotelID = ?
                 ORDER BY h.ID
                 """;
-
         return DatabaseManager.executeQuery(sql, rs -> {
             HabitacionAdminDTO dto = new HabitacionAdminDTO();
             dto.setId(rs.getInt("ID"));
@@ -122,6 +131,22 @@ public class HotelRepository {
             dto.setEstado(rs.getString("Estado"));
             return dto;
         }, hotelId);
+    }
+
+    /** Crea una nueva habitación y devuelve su ID generado. */
+    public int crearHabitacion(int hotelId, int tipoHabitacionId, int camaId,
+                               double precioPorPersona, double precioPorNoche,
+                               int capacidadMaxima, double metrosCuadrados,
+                               String descripcion, int estadoId) {
+        String sql = """
+                INSERT INTO Habitacion
+                       (HotelID, TipoHabitacionID, CamaID, Precio_por_Persona, Precio_por_Noche,
+                        Capacidad_Maxima, Metros_Cuadrados, Descripcion, Estado_ID)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """;
+        return DatabaseManager.executeInsertReturnId(sql, "ID",
+                hotelId, tipoHabitacionId, camaId, precioPorPersona, precioPorNoche,
+                capacidadMaxima, metrosCuadrados, descripcion, estadoId);
     }
 
     public boolean existeHabitacion(int habitacionId) {
