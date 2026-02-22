@@ -12,7 +12,7 @@ public class DownsController {
 
     public void registerRoutes(Javalin app) {
 
-        // POST /comentarios/{id}/downs — requiere sesión
+        // POST /comentarios/{id}/downs — agregar down
         app.post("/comentarios/{id}/downs", ctx -> {
             int usuarioId    = ctx.attribute("usuarioId");
             int comentarioId = Integer.parseInt(ctx.pathParam("id"));
@@ -25,7 +25,7 @@ public class DownsController {
             }
         });
 
-        // DELETE /comentarios/{id}/downs — requiere sesión
+        // DELETE /comentarios/{id}/downs — eliminar down
         app.delete("/comentarios/{id}/downs", ctx -> {
             int usuarioId    = ctx.attribute("usuarioId");
             int comentarioId = Integer.parseInt(ctx.pathParam("id"));
@@ -37,7 +37,7 @@ public class DownsController {
             }
         });
 
-        // PATCH /comentarios/{id}/downs — requiere sesión
+        // PATCH /comentarios/{id}/downs — actualizar down
         app.patch("/comentarios/{id}/downs", ctx -> {
             int usuarioId    = ctx.attribute("usuarioId");
             int comentarioId = Integer.parseInt(ctx.pathParam("id"));
@@ -48,6 +48,19 @@ public class DownsController {
             } catch (IllegalArgumentException e) {
                 ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             }
+        });
+
+        // GET /downs — todos los downs del usuario en sesión
+        app.get("/downs", ctx -> {
+            int usuarioId = ctx.attribute("usuarioId");
+            ctx.status(200).json(downsService.obtenerDownsDeUsuario(usuarioId));
+        });
+
+        // GET /downs/hotel/{hotelId} — downs del usuario filtrados por hotel
+        app.get("/downs/hotel/{hotelId}", ctx -> {
+            int usuarioId = ctx.attribute("usuarioId");
+            int hotelId   = Integer.parseInt(ctx.pathParam("hotelId"));
+            ctx.status(200).json(downsService.obtenerDownsDeUsuarioPorHotel(usuarioId, hotelId));
         });
     }
 }
