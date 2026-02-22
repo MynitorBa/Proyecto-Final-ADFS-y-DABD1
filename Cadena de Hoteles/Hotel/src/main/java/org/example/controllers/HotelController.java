@@ -3,13 +3,15 @@ package org.example.controllers;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.example.dtos.*;
+import org.example.services.AdminReservacionService;
 import org.example.services.HotelService;
 
 import java.util.Map;
 
 public class HotelController {
 
-    private final HotelService hotelService = new HotelService();
+    private final HotelService               hotelService               = new HotelService();
+    private final AdminReservacionService    adminReservacionService    = new AdminReservacionService();
 
     public void registerRoutes(Javalin app) {
 
@@ -183,6 +185,46 @@ public class HotelController {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             hotelService.eliminarImagenHabitacion(id(ctx, "imgId"));
             ctx.json(Map.of("mensaje", "Imagen eliminada"));
+        });
+
+        // ════════════════════════════════════════════════════
+        //  ADMIN — RESERVACIONES
+        // ════════════════════════════════════════════════════
+
+        // GET /admin/reservaciones — trae TODAS las reservaciones del sistema
+        app.get("/admin/reservaciones", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            ctx.json(adminReservacionService.listarTodas());
+        });
+
+        // PATCH /admin/reservaciones/{id}/cancelar — cancelar reservación de cualquier usuario
+        app.patch("/admin/reservaciones/{id}/cancelar", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            int reservacionId = id(ctx, "id");
+            // El motivo es opcional; si no viene body usamos mensaje por defecto
+            String motivo = "Cancelada por administrador";
+            try {
+                Map<?, ?> body = ctx.bodyAsClass(Map.class);
+                if (body.containsKey("motivo") && body.get("motivo") != null) {
+                    motivo = body.get("motivo").toString();
+                }
+            } catch (Exception ignored) {}
+            try {
+                adminReservacionService.cancelarReservacion(reservacionId, motivo);
+                ctx.json(Map.of("mensaje", "Reservación cancelada correctamente"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // ════════════════════════════════════════════════════
+        //  ADMIN — MÉTRICAS
+        // ════════════════════════════════════════════════════
+
+        // GET /admin/metricas
+        app.get("/admin/metricas", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            ctx.json(hotelService.obtenerMetricas());
         });
     }
 

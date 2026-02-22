@@ -331,4 +331,16 @@ public class HotelService {
     }
 
     private String safe(String s) { return s != null ? s.trim() : ""; }
+
+    // ════════════════════════════════════════════════════
+    //  ADMIN — RESERVACIONES Y MÉTRICAS
+    // ════════════════════════════════════════════════════
+
+    public java.util.List<java.util.Map<String, Object>> listarTodasReservaciones() {
+        return hotelRepository.listarTodasReservaciones();
+    }
+
+    public java.util.Map<String, Object> obtenerMetricas() {
+        return hotelRepository.obtenerMetricas();
+    }
 }

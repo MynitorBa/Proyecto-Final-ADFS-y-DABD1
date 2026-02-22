@@ -32,11 +32,29 @@
   let nuevoUsuario = { nombre: '', apellido: '', username: '', correo: '', pasaporte: '', telefono: '', fechaNacimiento: '', pais: '', ciudad: '', rolId: 1, contrasena: '' };
   let editUsuario  = { rolId: 1 };
 
-  const statsData = [
-    { label: 'Usuarios Totales', value: '1,248',    change: '+12%', icon: 'users',    color: 'blue'   },
-    { label: 'Reservas Activas', value: '384',       change: '+8%',  icon: 'calendar', color: 'green'  },
-    { label: 'Hoteles Activos',  value: '47',        change: '+3',   icon: 'hotel',    color: 'purple' },
-    { label: 'Ingresos del Mes', value: '$ 284,500', change: '+21%', icon: 'money',    color: 'amber'  },
+  // ── Métricas del dashboard (datos reales) ─────────────────────────────────
+  let metricas = null;
+  let cargandoMetricas = false;
+
+  async function cargarMetricas() {
+    cargandoMetricas = true;
+    try {
+      const res = await fetch(`${API_BASE}/admin/metricas`, { credentials: 'include' });
+      if (res.ok) metricas = await res.json();
+    } catch (e) { /* silencioso */ }
+    finally { cargandoMetricas = false; }
+  }
+
+  $: statsData = metricas ? [
+    { label: 'Usuarios Totales', value: metricas.totalUsuarios.toLocaleString('es-GT'),    icon: 'users',    color: 'blue'   },
+    { label: 'Reservas Confirmadas', value: metricas.reservasActivas.toLocaleString('es-GT'), icon: 'calendar', color: 'green'  },
+    { label: 'Hoteles Activos',  value: metricas.hotelesActivos.toLocaleString('es-GT'),   icon: 'hotel',    color: 'purple' },
+    { label: 'Ingresos Totales', value: '$ ' + (metricas.ingresosTotales ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), icon: 'money', color: 'amber' },
+  ] : [
+    { label: 'Usuarios Totales',     value: '—', icon: 'users',    color: 'blue'   },
+    { label: 'Reservas Confirmadas', value: '—', icon: 'calendar', color: 'green'  },
+    { label: 'Hoteles Activos',      value: '—', icon: 'hotel',    color: 'purple' },
+    { label: 'Ingresos Totales',     value: '—', icon: 'money',    color: 'amber'  },
   ];
 
   // ── Carga usuarios desde el backend ──────────────────────────────────────
@@ -58,6 +76,9 @@
     cargarUsuarios();
     cargarHoteles();
     cargarCatalogos();
+    cargarMetricas();
+    cargarReservas();
+    cargarConteosReservas();
   });
 
   // ════════════════════════════════════════════════════
@@ -451,8 +472,8 @@
   let nuevaHabitacion      = { tipoHabitacionId: 1, camaId: 1, precioPorPersona: 0, precioPorNoche: 0, capacidadMaxima: 2, metrosCuadrados: 25, descripcion: '', estadoId: 1 };
   let guardandoNuevaHab    = false;
   let mensajeNuevaHab      = null;
-  let imagenesHabNueva     = {};   // { habitacionId: [imgId, ...] }
-  let subiendoImgHabNueva  = false;
+  let imagenesHabNueva       = {};   // { habitacionId: [{id, preview}, ...] }
+  let subiendoImgHabNuevaSet = new Set(); // Set de habitacionIds que están subiendo
 
   // Filtro ciudad por país seleccionado
 
@@ -557,6 +578,7 @@
     mensajeNuevaHab     = null;
     mensajeAmenidad     = null;
     imagenesHabNueva    = {};
+    subiendoImgHabNuevaSet = new Set();
     resetWizardPaisCiudad();
   }
 
@@ -700,7 +722,7 @@
   async function subirImagenHabNueva(event, habitacionId) {
     const file = event.target.files[0];
     if (!file) return;
-    subiendoImgHabNueva = true;
+    subiendoImgHabNuevaSet = new Set([...subiendoImgHabNuevaSet, habitacionId]);
     try {
       const base64 = await fileToBase64(file);
       const res = await fetch(`${API_BASE}/admin/habitaciones/${habitacionId}/imagenes`, {
@@ -712,7 +734,10 @@
       if (!res.ok) throw new Error(`Error ${res.status}`);
       imagenesHabNueva = { ...imagenesHabNueva, [habitacionId]: [...(imagenesHabNueva[habitacionId] ?? []), { id: data.id, preview: base64 }] };
     } catch (e) { /* silencioso */ }
-    finally { subiendoImgHabNueva = false; event.target.value = ''; }
+    finally {
+      subiendoImgHabNuevaSet = new Set([...subiendoImgHabNuevaSet].filter(id => id !== habitacionId));
+      event.target.value = '';
+    }
   }
 
   async function eliminarImgHabNueva(habitacionId, imgId) {
@@ -770,14 +795,114 @@
     }
   }
 
-  const reservasMock = [
-    { id: 'RES-001', usuario: 'maria.g',  hotel: 'Grand Miku Paris',  checkIn: '2025-03-10', checkOut: '2025-03-15', monto: '$ 2,250', estado: 'confirmada' },
-    { id: 'RES-002', usuario: 'carlosm',  hotel: 'Tokio Miku Palace', checkIn: '2025-04-01', checkOut: '2025-04-07', monto: '$ 4,060', estado: 'pendiente'  },
-    { id: 'RES-003', usuario: 'sofiamt',  hotel: 'Miku NY Suite',     checkIn: '2025-02-20', checkOut: '2025-02-25', monto: '$ 3,100', estado: 'confirmada' },
-    { id: 'RES-004', usuario: 'luisp',    hotel: 'Miku Inn Londres',  checkIn: '2025-05-05', checkOut: '2025-05-08', monto: '$ 960',   estado: 'cancelada'  },
-    { id: 'RES-005', usuario: 'diegot',   hotel: 'Barcelona Miku',    checkIn: '2025-06-12', checkOut: '2025-06-16', monto: '$ 1,160', estado: 'confirmada' },
-    { id: 'RES-006', usuario: 'vale.r',   hotel: 'Miku Antigua',      checkIn: '2025-01-30', checkOut: '2025-02-02', monto: '$ 540',   estado: 'cancelada'  },
-  ];
+  // ── Reservaciones reales ──────────────────────────────────────────────────
+  let reservas          = [];
+  let cargandoReservas  = false;
+  let errorReservas     = null;
+
+  // Filtros — se envían al backend, no se filtran en el frontend
+  let busquedaReserva     = '';
+  let filtroEstadoReserva = 'todos';
+
+  // Conteos totales para las tarjetas (siempre sin filtro)
+  let conteoReservas = { confirmada: 0, pendiente: 0, cancelada: 0, total: 0 };
+
+  // Debounce para búsqueda de texto
+  let debounceTimer = null;
+
+  // Modal cancelar
+  let showModalCancelarReserva = false;
+  let reservaCancelando        = null;
+  let motivoCancelacion        = '';
+  let cancelando               = false;
+  let mensajeCancelar          = null;
+
+  async function cargarReservas() {
+    cargandoReservas = true;
+    errorReservas    = null;
+    try {
+      const params = new URLSearchParams();
+      if (filtroEstadoReserva && filtroEstadoReserva !== 'todos') params.set('estado', filtroEstadoReserva);
+      if (busquedaReserva.trim()) params.set('busqueda', busquedaReserva.trim());
+
+      const url = `${API_BASE}/admin/reservaciones${params.toString() ? '?' + params.toString() : ''}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      reservas = await res.json();
+    } catch (e) {
+      errorReservas = 'No se pudieron cargar las reservas. ' + e.message;
+    } finally {
+      cargandoReservas = false;
+    }
+  }
+
+  async function cargarConteosReservas() {
+    try {
+      const res = await fetch(`${API_BASE}/admin/reservaciones`, { credentials: 'include' });
+      if (!res.ok) return;
+      const todas = await res.json();
+      conteoReservas = {
+        confirmada: todas.filter(r => r.estado === 'confirmada').length,
+        pendiente:  todas.filter(r => r.estado === 'pendiente').length,
+        cancelada:  todas.filter(r => r.estado === 'cancelada').length,
+        total:      todas.length
+      };
+    } catch (e) { /* silencioso */ }
+  }
+
+  // Cuando cambia el filtro de estado, recarga inmediatamente
+  function onFiltroEstadoCambia() {
+    cargarReservas();
+  }
+
+  // Cuando cambia la búsqueda, espera 400ms antes de disparar
+  function onBusquedaCambia() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => cargarReservas(), 400);
+  }
+
+  function abrirModalCancelar(r) {
+    reservaCancelando    = r;
+    motivoCancelacion    = '';
+    mensajeCancelar      = null;
+    showModalCancelarReserva = true;
+  }
+
+  function cerrarModalCancelar() {
+    showModalCancelarReserva = false;
+    reservaCancelando    = null;
+    motivoCancelacion    = '';
+    mensajeCancelar      = null;
+    cancelando           = false;
+  }
+
+  async function confirmarCancelacion() {
+    if (!reservaCancelando) return;
+    cancelando      = true;
+    mensajeCancelar = null;
+    try {
+      const res = await fetch(
+        `${API_BASE}/admin/reservaciones/${reservaCancelando.id}/cancelar`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivo: motivoCancelacion || 'Cancelada por administrador' })
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+      // Recargar desde backend para reflejar el cambio real
+      await cargarReservas();
+      await cargarConteosReservas();
+      cargarMetricas();
+      cerrarModalCancelar();
+    } catch (e) {
+      mensajeCancelar = e.message;
+    } finally {
+      cancelando = false;
+    }
+  }
 
   $: usuariosFiltrados = usuarios.filter(u => {
     const q = busquedaUsuario.toLowerCase();
@@ -891,7 +1016,7 @@
           {item.label}
           {#if item.id === 'usuarios'}<span class="adm__nav-count">{usuarios.length}</span>
           {:else if item.id === 'hoteles'}<span class="adm__nav-count">{hoteles.length}</span>
-          {:else if item.id === 'reservas'}<span class="adm__nav-count">{reservasMock.length}</span>
+          {:else if item.id === 'reservas'}<span class="adm__nav-count">{reservas.length}</span>
           {/if}
         </button>
       {/each}
@@ -953,7 +1078,7 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   {/if}
                 </div>
-                <span class="adm__stat-change">{stat.change}</span>
+                <span class="adm__stat-change">{stat.change ?? ''}</span>
               </div>
               <p class="adm__stat-value">{stat.value}</p>
               <p class="adm__stat-label">{stat.label}</p>
@@ -971,14 +1096,20 @@
               <table class="adm__table">
                 <thead><tr><th>ID</th><th>Usuario</th><th>Hotel</th><th>Estado</th></tr></thead>
                 <tbody>
-                  {#each reservasMock.slice(0, 5) as r}
-                    <tr>
-                      <td class="adm__table-mono">{r.id}</td>
-                      <td>{r.usuario}</td>
-                      <td>{r.hotel}</td>
-                      <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
-                    </tr>
-                  {/each}
+                  {#if cargandoReservas}
+                    <tr><td colspan="4" style="text-align:center; color:var(--adm-text-muted); padding:1.5rem">Cargando reservas...</td></tr>
+                  {:else if reservas.length === 0}
+                    <tr><td colspan="4" class="adm__empty-cell">Sin reservas registradas</td></tr>
+                  {:else}
+                    {#each reservas.slice(0, 5) as r}
+                      <tr>
+                        <td class="adm__table-mono">{r.noReservacion}</td>
+                        <td>{r.usuario}</td>
+                        <td>{r.hotel}</td>
+                        <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
+                      </tr>
+                    {/each}
+                  {/if}
                 </tbody>
               </table>
             </div>
@@ -1526,14 +1657,14 @@
                     type="text"
                     bind:value={wizardPaisQuery}
                     on:input={onWizardPaisInput}
-                    on:blur={validarWizardPais}
+                    on:blur={() => setTimeout(validarWizardPais, 150)}
                     placeholder="Escribe el país..."
                     autocomplete="off"
                   />
                   {#if wizardPaisesSugeridos.length > 0}
                     <ul class="adm__autocomplete-list">
                       {#each wizardPaisesSugeridos as p}
-                        <li><button type="button" class="adm__autocomplete-item" on:click={() => seleccionarWizardPais(p)}>{p.country}</button></li>
+                        <li><button type="button" class="adm__autocomplete-item" on:mousedown|preventDefault={() => seleccionarWizardPais(p)}>{p.country}</button></li>
                       {/each}
                     </ul>
                   {/if}
@@ -1547,7 +1678,7 @@
                     type="text"
                     bind:value={nuevoHotel.ciudadNombre}
                     on:input={onWizardCiudadInput}
-                    on:blur={validarWizardCiudad}
+                    on:blur={() => setTimeout(() => { wizardCiudadesSugeridas = []; }, 150)}
                     placeholder={wizardPaisSeleccionado ? "Escribe la ciudad..." : "Primero selecciona un país"}
                     disabled={!wizardPaisSeleccionado}
                     autocomplete="off"
@@ -1555,7 +1686,7 @@
                   {#if wizardCiudadesSugeridas.length > 0}
                     <ul class="adm__autocomplete-list">
                       {#each wizardCiudadesSugeridas as c}
-                        <li><button type="button" class="adm__autocomplete-item" on:click={() => seleccionarWizardCiudad(c)}>{c}</button></li>
+                        <li><button type="button" class="adm__autocomplete-item" on:mousedown|preventDefault={() => seleccionarWizardCiudad(c)}>{c}</button></li>
                       {/each}
                     </ul>
                   {/if}
@@ -1707,54 +1838,7 @@
               </button>
             </div>
           </div>
-          <div class="adm__wizard-card">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:.75rem">
-              <h3 class="adm__wizard-card-title" style="margin:0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                Imágenes de <strong>{hotelCreadoNombre}</strong>
-              </h3>
-              <label class="adm__btn adm__btn--primary adm__upload-btn">
-                {#if subiendoImgNuevoHotel}
-                  <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Subiendo...
-                {:else}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agregar imagen
-                {/if}
-                <input type="file" accept="image/*" on:change={subirImagenNuevoHotel} disabled={subiendoImgNuevoHotel} style="display:none" />
-              </label>
-            </div>
 
-            {#if mensajeImgNuevo}
-              <div class="adm__feedback adm__feedback--{mensajeImgNuevo.tipo}" style="margin-bottom:1rem">{mensajeImgNuevo.texto}</div>
-            {/if}
-
-            {#if imagenesNuevoHotel.length > 0}
-              <div class="adm__img-grid">
-                {#each imagenesNuevoHotel as img (img.id)}
-                  <div class="adm__img-card">
-                    <img src={img.preview} alt="img {img.id}" />
-                    <button class="adm__img-delete" on:click={() => eliminarImgNuevoHotel(img.id)}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
-                {/each}
-              </div>
-            {:else}
-              <div class="adm__img-empty">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <p>Sube al menos una imagen. Puedes omitir este paso.</p>
-              </div>
-            {/if}
-
-            <div class="adm__wizard-actions">
-              <button class="adm__btn adm__btn--ghost" on:click={() => pasoActual = 'info'}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver
-              </button>
-              <button class="adm__btn adm__btn--primary adm__btn--lg" on:click={() => pasoActual = 'habitaciones'}>
-                Continuar a Habitaciones
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
-          </div>
 
         <!-- ── Paso 3: Habitaciones ── -->
         {:else if pasoActual === 'habitaciones'}
@@ -1851,12 +1935,12 @@
                           </div>
                         {/each}
                         <label class="adm__wizard-add-img-btn adm__upload-btn">
-                          {#if subiendoImgHabNueva}
+                          {#if subiendoImgHabNuevaSet.has(h.id)}
                             <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                           {:else}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                           {/if}
-                          <input type="file" accept="image/*" on:change={(e) => subirImagenHabNueva(e, h.id)} disabled={subiendoImgHabNueva} style="display:none" />
+                          <input type="file" accept="image/*" on:change={(e) => subirImagenHabNueva(e, h.id)} style="display:none" />
                         </label>
                       </div>
                     </div>
@@ -1884,107 +1968,268 @@
 
       <!-- ═══ RESERVAS ═══ -->
       {:else if activeSection === 'reservas'}
+
+        <!-- Tarjetas rápidas clicables — usan conteoReservas (sin filtro) -->
+        <div class="adm__stats-grid" style="margin-bottom:1.25rem">
+          <div class="adm__stat-card adm__stat-card--green" style="cursor:pointer" on:click={() => { filtroEstadoReserva='confirmada'; onFiltroEstadoCambia(); }} on:keydown={() => {}} role="button" tabindex="0">
+            <div class="adm__stat-top"><div class="adm__stat-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+            <p class="adm__stat-value">{conteoReservas.confirmada}</p>
+            <p class="adm__stat-label">Confirmadas</p>
+          </div>
+          <div class="adm__stat-card adm__stat-card--amber" style="cursor:pointer" on:click={() => { filtroEstadoReserva='pendiente'; onFiltroEstadoCambia(); }} on:keydown={() => {}} role="button" tabindex="0">
+            <div class="adm__stat-top"><div class="adm__stat-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+            <p class="adm__stat-value">{conteoReservas.pendiente}</p>
+            <p class="adm__stat-label">Pendientes</p>
+          </div>
+          <div class="adm__stat-card adm__stat-card--red" style="cursor:pointer" on:click={() => { filtroEstadoReserva='cancelada'; onFiltroEstadoCambia(); }} on:keydown={() => {}} role="button" tabindex="0">
+            <div class="adm__stat-top"><div class="adm__stat-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div></div>
+            <p class="adm__stat-value">{conteoReservas.cancelada}</p>
+            <p class="adm__stat-label">Canceladas</p>
+          </div>
+          <div class="adm__stat-card adm__stat-card--blue" style="cursor:pointer" on:click={() => { filtroEstadoReserva='todos'; onFiltroEstadoCambia(); }} on:keydown={() => {}} role="button" tabindex="0">
+            <div class="adm__stat-top"><div class="adm__stat-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+            <p class="adm__stat-value">{conteoReservas.total}</p>
+            <p class="adm__stat-label">Total</p>
+          </div>
+        </div>
+
         <div class="adm__card adm__card--no-pad">
+          <!-- Header -->
           <div class="adm__card-header adm__card-header--pad">
-            <h3 class="adm__card-title">Todas las Reservas</h3>
-            <div class="adm__reservas-stats">
-              <span class="adm__badge badge--green">Confirmadas: {reservasMock.filter(r => r.estado === 'confirmada').length}</span>
-              <span class="adm__badge badge--yellow">Pendientes: {reservasMock.filter(r => r.estado === 'pendiente').length}</span>
-              <span class="adm__badge badge--red">Canceladas: {reservasMock.filter(r => r.estado === 'cancelada').length}</span>
+            <h3 class="adm__card-title">
+              Reservaciones del Sistema
+              {#if filtroEstadoReserva !== 'todos'}
+                <span style="font-size:.78rem; font-weight:400; color:var(--adm-text-muted); margin-left:.5rem">
+                  — filtrando: <strong style="color:var(--adm-text)">{filtroEstadoReserva}</strong>
+                </span>
+              {/if}
+            </h3>
+            <button class="adm__btn adm__btn--ghost" on:click={cargarReservas} title="Recargar lista">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Recargar
+            </button>
+          </div>
+
+          <!-- Filtros -->
+          <div class="adm__filters-bar" style="padding:.75rem 1.25rem; border-bottom:1px solid var(--adm-border)">
+            <div class="adm__search-wrap">
+              <svg class="adm__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                class="adm__search-input"
+                type="text"
+                placeholder="Buscar por No. reserva, usuario, correo o hotel..."
+                bind:value={busquedaReserva}
+                on:input={onBusquedaCambia}
+                aria-label="Buscar reservaciones"
+              />
             </div>
+            <select class="adm__filter-select" bind:value={filtroEstadoReserva} on:change={onFiltroEstadoCambia}>
+              <option value="todos">Todos los estados</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="confirmada">Confirmada</option>
+              <option value="completada">Completada</option>
+              <option value="cancelada">Cancelada</option>
+              <option value="expirada">Expirada</option>
+            </select>
           </div>
-          <div class="adm__table-wrap">
-            <table class="adm__table">
-              <thead>
-                <tr><th>ID Reserva</th><th>Usuario</th><th>Hotel</th><th>Check-in</th><th>Check-out</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr>
-              </thead>
-              <tbody>
-                {#each reservasMock as r}
+
+          {#if cargandoReservas}
+            <div class="adm__loading-state" style="padding:3rem">
+              <svg class="adm__spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <p>Cargando reservaciones...</p>
+            </div>
+          {:else if errorReservas}
+            <div class="adm__error-state" style="padding:2rem">
+              <p>{errorReservas}</p>
+              <button class="adm__btn adm__btn--ghost" on:click={cargarReservas}>Reintentar</button>
+            </div>
+          {:else}
+            <div class="adm__table-wrap">
+              <table class="adm__table">
+                <thead>
                   <tr>
-                    <td class="adm__table-mono">{r.id}</td>
-                    <td>{r.usuario}</td>
-                    <td>{r.hotel}</td>
-                    <td>{r.checkIn}</td>
-                    <td>{r.checkOut}</td>
-                    <td class="adm__table-money">{r.monto}</td>
-                    <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
-                    <td>
-                      <div class="adm__action-btns">
-                        <button class="adm__icon-btn adm__icon-btn--view" title="Ver detalle">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
-                        <button class="adm__icon-btn adm__icon-btn--delete" title="Cancelar reserva">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        </button>
-                      </div>
-                    </td>
+                    <th>No. Reserva</th>
+                    <th>Usuario</th>
+                    <th>Hotel</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Habs.</th>
+                    <th>Total</th>
+                    <th>Creada</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {#each reservas as r (r.id)}
+                    <tr>
+                      <td class="adm__table-mono" style="font-size:.8rem">{r.noReservacion}</td>
+                      <td>
+                        <p style="margin:0; font-weight:600; font-size:.85rem">@{r.usuario}</p>
+                        <p style="margin:0; font-size:.72rem; color:var(--adm-text-muted)">{r.nombreCompleto}</p>
+                        <p style="margin:0; font-size:.68rem; color:var(--adm-text-muted)">{r.correo ?? ''}</p>
+                      </td>
+                      <td style="font-size:.85rem">{r.hotel ?? '—'}</td>
+                      <td style="font-size:.82rem">{r.checkIn ?? '—'}</td>
+                      <td style="font-size:.82rem">{r.checkOut ?? '—'}</td>
+                      <td class="adm__table-center">{r.cantidadHabitaciones ?? 0}</td>
+                      <td class="adm__table-money">$ {(r.total ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td style="font-size:.75rem; color:var(--adm-text-muted)">{r.fechaCreacion ? r.fechaCreacion.substring(0,16) : '—'}</td>
+                      <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
+                      <td>
+                        {#if r.estadoId === 1 || r.estadoId === 2}
+                          <button
+                            class="adm__icon-btn adm__icon-btn--delete"
+                            title="Cancelar reservación"
+                            on:click={() => abrirModalCancelar(r)}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="15" y1="9" x2="9" y2="15"/>
+                              <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                          </button>
+                        {:else}
+                          <span style="color:var(--adm-text-muted); font-size:.75rem; padding:0 .5rem">—</span>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                  {#if reservas.length === 0}
+                    <tr>
+                      <td colspan="10" class="adm__empty-cell">
+                        {busquedaReserva || filtroEstadoReserva !== 'todos'
+                          ? 'Sin resultados para los filtros aplicados.'
+                          : 'No hay reservaciones registradas.'}
+                      </td>
+                    </tr>
+                  {/if}
+                </tbody>
+              </table>
+            </div>
+            <div style="padding:.6rem 1.25rem; color:var(--adm-text-muted); font-size:.78rem; border-top:1px solid var(--adm-border)">
+              Mostrando {reservas.length} reservaciones
+              {#if filtroEstadoReserva !== 'todos' || busquedaReserva}
+                · con filtros activos
+              {/if}
+            </div>
+          {/if}
         </div>
 
       <!-- ═══ REPORTES ═══ -->
       {:else if activeSection === 'reportes'}
         <div class="adm__reportes-grid">
-          <div class="adm__card adm__reporte-card">
-            <h3 class="adm__card-title">Ingresos por Mes (2025)</h3>
-            <div class="adm__bar-chart" role="img" aria-label="Gráfica de ingresos por mes">
-              {#each [{mes:'Ene',val:65},{mes:'Feb',val:80},{mes:'Mar',val:55},{mes:'Abr',val:90},{mes:'May',val:70},{mes:'Jun',val:85}] as b}
-                <div class="adm__bar-col">
-                  <div class="adm__bar" style="height: {b.val}%"></div>
-                  <span class="adm__bar-label">{b.mes}</span>
-                </div>
-              {/each}
-            </div>
-          </div>
 
+          <!-- Reservas por estado (donut con datos reales) -->
           <div class="adm__card adm__reporte-card">
             <h3 class="adm__card-title">Reservas por Estado</h3>
-            <div class="adm__donut-wrap">
-              <div class="adm__donut" role="img" aria-label="Gráfica de reservas por estado">
-                <span class="adm__donut-center">6</span>
+            {#if metricas}
+              {@const confirmadas = (metricas.reservasPorEstado ?? []).find(e => e.estado === 'confirmada')?.total ?? 0}
+              {@const pendientes  = (metricas.reservasPorEstado ?? []).find(e => e.estado === 'pendiente')?.total  ?? 0}
+              {@const canceladas  = (metricas.reservasPorEstado ?? []).find(e => e.estado === 'cancelada')?.total  ?? 0}
+              {@const expiradas   = (metricas.reservasPorEstado ?? []).find(e => e.estado === 'expirada')?.total   ?? 0}
+              {@const totalRes    = metricas.reservasTotales ?? 0}
+              <div class="adm__donut-wrap">
+                <div class="adm__donut" role="img" aria-label="Gráfica de reservas por estado">
+                  <span class="adm__donut-center">{totalRes}</span>
+                </div>
+                <div class="adm__donut-legend">
+                  <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--green"></span> Confirmadas ({confirmadas})</div>
+                  <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--yellow"></span> Pendientes ({pendientes})</div>
+                  <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--red"></span> Canceladas ({canceladas})</div>
+                  <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--gray" style="background:#6b7280"></span> Expiradas ({expiradas})</div>
+                </div>
               </div>
-              <div class="adm__donut-legend">
-                <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--green"></span> Confirmadas (3)</div>
-                <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--yellow"></span> Pendientes (1)</div>
-                <div class="adm__legend-item"><span class="adm__legend-dot adm__legend-dot--red"></span> Canceladas (2)</div>
+            {:else}
+              <div class="adm__loading-state" style="padding:1.5rem 0">
+                <svg class="adm__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <p>Cargando...</p>
               </div>
-            </div>
+            {/if}
           </div>
 
-          <div class="adm__card adm__reporte-card adm__reporte-card--wide">
+          <!-- Resumen General (datos reales) -->
+          <div class="adm__card adm__reporte-card">
             <h3 class="adm__card-title">Resumen General</h3>
-            <div class="adm__kpi-grid">
-              <div class="adm__kpi-item"><p class="adm__kpi-val">$ 284,500</p><p class="adm__kpi-lbl">Ingresos totales</p></div>
-              <div class="adm__kpi-item"><p class="adm__kpi-val">1,248</p><p class="adm__kpi-lbl">Usuarios registrados</p></div>
-              <div class="adm__kpi-item"><p class="adm__kpi-val">384</p><p class="adm__kpi-lbl">Reservas activas</p></div>
-              <div class="adm__kpi-item"><p class="adm__kpi-val">78%</p><p class="adm__kpi-lbl">Tasa de ocupación</p></div>
+            {#if metricas}
+              <div class="adm__kpi-grid">
+                <div class="adm__kpi-item">
+                  <p class="adm__kpi-val">$ {(metricas.ingresosTotales ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p class="adm__kpi-lbl">Ingresos confirmados</p>
+                </div>
+                <div class="adm__kpi-item">
+                  <p class="adm__kpi-val">{(metricas.totalUsuarios ?? 0).toLocaleString('es-GT')}</p>
+                  <p class="adm__kpi-lbl">Usuarios registrados</p>
+                </div>
+                <div class="adm__kpi-item">
+                  <p class="adm__kpi-val">{metricas.reservasActivas ?? 0}</p>
+                  <p class="adm__kpi-lbl">Reservas confirmadas</p>
+                </div>
+                <div class="adm__kpi-item">
+                  <p class="adm__kpi-val">{metricas.reservasTotales ?? 0}</p>
+                  <p class="adm__kpi-lbl">Reservas totales</p>
+                </div>
+                <div class="adm__kpi-item">
+                  <p class="adm__kpi-val">{metricas.hotelesActivos ?? 0} / {metricas.hotesTotales ?? 0}</p>
+                  <p class="adm__kpi-lbl">Hoteles activos / total</p>
+                </div>
+              </div>
+            {:else}
+              <div class="adm__loading-state" style="padding:1.5rem 0">
+                <svg class="adm__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                <p>Cargando métricas...</p>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Top Hoteles (datos reales por rating) -->
+          <div class="adm__card adm__reporte-card adm__reporte-card--wide">
+            <h3 class="adm__card-title">Hoteles por Rating</h3>
+            <div class="adm__hotel-bars">
+              {#each [...hoteles].sort((a,b) => b.rating - a.rating).slice(0, 8) as h}
+                <div class="adm__hotel-bar-item">
+                  <div class="adm__hotel-bar-info">
+                    <span class="adm__hotel-bar-name">{h.nombre}</span>
+                    <span class="adm__hotel-bar-pct">{h.ciudad}, {h.pais} — ★ {h.rating?.toFixed(1)}</span>
+                  </div>
+                  <div class="adm__hotel-bar-track">
+                    <div class="adm__hotel-bar-fill" style="width: {Math.round((h.rating / 5) * 100)}%"></div>
+                  </div>
+                </div>
+              {/each}
+              {#if hoteles.length === 0}
+                <p style="color: var(--adm-text-muted); font-size: .85rem; text-align:center; padding: 1rem 0;">Sin hoteles registrados</p>
+              {/if}
             </div>
           </div>
 
+          <!-- Últimas reservas en reportes -->
           <div class="adm__card adm__reporte-card adm__reporte-card--wide">
-            <div class="adm__card-header"><h3 class="adm__card-title">Exportar Reportes</h3></div>
-            <div class="adm__export-btns">
-              <button class="adm__btn adm__btn--export">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                Reporte de Usuarios (PDF)
-              </button>
-              <button class="adm__btn adm__btn--export">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Reporte de Reservas (Excel)
-              </button>
-              <button class="adm__btn adm__btn--export">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Reporte Financiero (PDF)
-              </button>
-              <button class="adm__btn adm__btn--export">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                Ocupación Hotelera (PDF)
-              </button>
+            <div class="adm__card-header">
+              <h3 class="adm__card-title">Últimas 10 Reservas</h3>
+              <button class="adm__link-btn" on:click={() => activeSection = 'reservas'}>Ver todas →</button>
+            </div>
+            <div class="adm__table-wrap">
+              <table class="adm__table">
+                <thead><tr><th>No. Reserva</th><th>Usuario</th><th>Hotel</th><th>Total</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {#each reservas.slice(0, 10) as r}
+                    <tr>
+                      <td class="adm__table-mono">{r.noReservacion}</td>
+                      <td>@{r.usuario}</td>
+                      <td>{r.hotel}</td>
+                      <td class="adm__table-money">$ {(r.total ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
+                    </tr>
+                  {/each}
+                  {#if reservas.length === 0}
+                    <tr><td colspan="5" class="adm__empty-cell">Sin reservas</td></tr>
+                  {/if}
+                </tbody>
+              </table>
             </div>
           </div>
+
         </div>
       {/if}
 
@@ -2359,6 +2604,119 @@
 
     <div class="adm__hotel-modal__footer">
       <button class="adm__btn adm__btn--ghost" on:click={cerrarModales}>Cerrar</button>
+    </div>
+
+  </div>
+{/if}
+
+<!-- ═══ MODAL CANCELAR RESERVACIÓN ═══ -->
+{#if showModalCancelarReserva && reservaCancelando}
+  <div
+    class="adm__overlay"
+    on:click={cerrarModalCancelar}
+    on:keydown={e => e.key === 'Escape' && cerrarModalCancelar()}
+    role="button" tabindex="-1" aria-label="Cerrar modal"
+  ></div>
+
+  <div class="adm__rol-modal" style="max-width:480px; border-radius:16px; overflow:hidden">
+
+    <!-- Header rojo con clases propias -->
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <div>
+        <p class="adm__cancel-modal__title">Cancelar Reservación</p>
+        <p class="adm__cancel-modal__subtitle">{reservaCancelando.noReservacion} · {reservaCancelando.hotel ?? 'Sin hotel'}</p>
+      </div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModalCancelar} aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Cuerpo -->
+    <div class="adm__cancel-modal__body">
+
+      <!-- Info de la reserva -->
+      <div class="adm__cancel-info-box">
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Cliente</span>
+          <span class="adm__cancel-info-row__value">@{reservaCancelando.usuario} — {reservaCancelando.nombreCompleto}</span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Hotel</span>
+          <span class="adm__cancel-info-row__value">{reservaCancelando.hotel ?? '—'}</span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Fechas</span>
+          <span class="adm__cancel-info-row__value">{reservaCancelando.checkIn ?? '—'} → {reservaCancelando.checkOut ?? '—'}</span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Total</span>
+          <span class="adm__cancel-info-row__value adm__cancel-info-row__value--money">
+            $ {(reservaCancelando.total ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Estado actual</span>
+          <span class="adm__badge {badge(reservaCancelando.estado)}">{reservaCancelando.estado}</span>
+        </div>
+      </div>
+
+      <!-- Motivo -->
+      <label class="adm__cancel-motivo-label" for="motivo-cancel">
+        Motivo de cancelación <span style="text-transform:none; font-weight:400">(opcional)</span>
+      </label>
+      <textarea
+        id="motivo-cancel"
+        class="adm__cancel-motivo-textarea"
+        bind:value={motivoCancelacion}
+        rows="3"
+        placeholder="Ej: Solicitud del cliente, error en la reserva..."
+      ></textarea>
+
+      {#if mensajeCancelar}
+        <div class="adm__feedback adm__feedback--error" style="margin-top:.75rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {mensajeCancelar}
+        </div>
+      {/if}
+
+      <!-- Advertencia -->
+      <div class="adm__cancel-warning">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:.1rem">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>Esta acción no se puede deshacer. El estado pasará a <strong>Cancelada (ID 4)</strong> de forma inmediata.</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModalCancelar} disabled={cancelando}>
+        No, mantener reserva
+      </button>
+      <button
+        class="adm__btn--cancel-confirm"
+        on:click={confirmarCancelacion}
+        disabled={cancelando}
+      >
+        {#if cancelando}
+          <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Cancelando...
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          Sí, cancelar reservación
+        {/if}
+      </button>
     </div>
 
   </div>
