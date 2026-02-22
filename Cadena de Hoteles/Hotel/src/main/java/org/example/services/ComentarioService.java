@@ -55,6 +55,10 @@ public class ComentarioService {
         return comentarioRepository.obtenerComentario(nuevoId);
     }
 
+    public List<ComentarioResponseDTO> obtenerComentariosPorUsuario(int usuarioId) {
+        return comentarioRepository.obtenerComentariosPorUsuario(usuarioId);
+    }
+
     public List<ComentarioResponseDTO> obtenerComentariosPorHotel(int hotelId) {
         return comentarioRepository.obtenerComentariosPorHotel(hotelId);
     }

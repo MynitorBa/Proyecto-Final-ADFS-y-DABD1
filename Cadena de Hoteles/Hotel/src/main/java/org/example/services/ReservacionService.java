@@ -24,7 +24,6 @@ public class ReservacionService {
             throw new IllegalArgumentException("Debe incluir al menos una habitación");
         }
 
-        // Verificar traslapes y calcular total
         double totalGeneral = 0;
         for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
 
@@ -50,24 +49,17 @@ public class ReservacionService {
             totalGeneral += (dias * precios[0]) + (dias * item.getCantidadPersonas() * precios[1]);
         }
 
-        // Generar número único
-        String noReservacion = "RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-
-        // Fechas
+        String noReservacion  = "RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
         Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
 
-        // Crear reservación con estado Pendiente (ID=1)
         int reservacionId = reservacionRepository.crearReservacion(
                 noReservacion, totalGeneral, usuarioId, fechaCreacion, fechaExpiracion
         );
 
-        // Expirar otras reservaciones pendientes del mismo usuario
         reservacionRepository.expirarPendientesDeUsuario(usuarioId, reservacionId);
 
-        // Insertar detalles
         for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
-
             LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
             LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
             long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
@@ -98,9 +90,15 @@ public class ReservacionService {
         return response;
     }
 
-    // -------------------Obtener todas las reservaciones del usuario -------------------------
-
     public List<ReservacionDetalleDTO> obtenerReservaciones(int usuarioId) {
-        return reservacionRepository.obtenerReservacionesDeUsuario(usuarioId);
+        List<ReservacionDetalleDTO> reservaciones = reservacionRepository.obtenerReservacionesDeUsuario(usuarioId);
+
+        // Agregar IDs de imágenes a cada detalle
+        for (ReservacionDetalleDTO dto : reservaciones) {
+            dto.setImagenesHotelIds(reservacionRepository.obtenerImagenesHotel(dto.getHotelId()));
+            dto.setImagenesHabitacionIds(reservacionRepository.obtenerImagenesHabitacion(dto.getHabitacionId()));
+        }
+
+        return reservaciones;
     }
 }

@@ -1,6 +1,7 @@
 package org.example.dtos;
 
 import java.util.List;
+import java.util.Map;
 
 public class HotelResultadoDTO {
     private int    id;
@@ -11,9 +12,14 @@ public class HotelResultadoDTO {
     private String descripcion;
     private double rating;
     private String estado;
-    private List<Integer>       imagenesIds;  // IDs para GET /imagenes/hotel/{id}
+    private List<Integer>          imagenesIds;
     private List<AmenidadHotelDTO> amenidades;
     private List<HabitacionDTO>    habitaciones;
+
+    // Combinaciones numéricas: ej. [[1,3],[2,2],[1,1,2]]
+    private List<List<Integer>>            combinacionesNumericas;
+    // Habitaciones agrupadas por capacidad: {"1": [...], "2": [...], "3": [...]}
+    private Map<Integer, List<HabitacionDTO>> habitacionesPorCapacidad;
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -47,4 +53,10 @@ public class HotelResultadoDTO {
 
     public List<HabitacionDTO> getHabitaciones() { return habitaciones; }
     public void setHabitaciones(List<HabitacionDTO> habitaciones) { this.habitaciones = habitaciones; }
+
+    public List<List<Integer>> getCombinacionesNumericas() { return combinacionesNumericas; }
+    public void setCombinacionesNumericas(List<List<Integer>> combinacionesNumericas) { this.combinacionesNumericas = combinacionesNumericas; }
+
+    public Map<Integer, List<HabitacionDTO>> getHabitacionesPorCapacidad() { return habitacionesPorCapacidad; }
+    public void setHabitacionesPorCapacidad(Map<Integer, List<HabitacionDTO>> habitacionesPorCapacidad) { this.habitacionesPorCapacidad = habitacionesPorCapacidad; }
 }

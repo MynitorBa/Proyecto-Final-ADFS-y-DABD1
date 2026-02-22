@@ -23,6 +23,12 @@ public class ComentarioController {
             }
         });
 
+        // GET /comentarios/usuario — comentarios del usuario en sesión, requiere sesión
+        app.get("/comentarios/usuario", ctx -> {
+            int usuarioId = ctx.attribute("usuarioId");
+            ctx.status(200).json(comentarioService.obtenerComentariosPorUsuario(usuarioId));
+        });
+
         // GET /comentarios/hotel/{hotelId} — pública
         app.get("/comentarios/hotel/{hotelId}", ctx -> {
             int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));

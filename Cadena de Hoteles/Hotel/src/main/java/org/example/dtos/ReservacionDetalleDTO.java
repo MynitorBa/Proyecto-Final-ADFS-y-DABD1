@@ -1,5 +1,7 @@
 package org.example.dtos;
 
+import java.util.List;
+
 public class ReservacionDetalleDTO {
     private int    id;
     private String noReservacion;
@@ -20,7 +22,14 @@ public class ReservacionDetalleDTO {
     private String descripcionHabitacion;
     private String tipoHabitacion;
     private String tipoCama;
+
+    // Hotel
+    private int    hotelId;
     private String nombreHotel;
+
+    // IDs de imágenes
+    private List<Integer> imagenesHotelIds;
+    private List<Integer> imagenesHabitacionIds;
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -73,6 +82,15 @@ public class ReservacionDetalleDTO {
     public String getTipoCama() { return tipoCama; }
     public void setTipoCama(String tipoCama) { this.tipoCama = tipoCama; }
 
+    public int getHotelId() { return hotelId; }
+    public void setHotelId(int hotelId) { this.hotelId = hotelId; }
+
     public String getNombreHotel() { return nombreHotel; }
     public void setNombreHotel(String nombreHotel) { this.nombreHotel = nombreHotel; }
+
+    public List<Integer> getImagenesHotelIds() { return imagenesHotelIds; }
+    public void setImagenesHotelIds(List<Integer> imagenesHotelIds) { this.imagenesHotelIds = imagenesHotelIds; }
+
+    public List<Integer> getImagenesHabitacionIds() { return imagenesHabitacionIds; }
+    public void setImagenesHabitacionIds(List<Integer> imagenesHabitacionIds) { this.imagenesHabitacionIds = imagenesHabitacionIds; }
 }

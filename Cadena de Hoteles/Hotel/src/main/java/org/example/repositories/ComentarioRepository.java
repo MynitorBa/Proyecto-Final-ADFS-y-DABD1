@@ -6,6 +6,9 @@ import org.example.dtos.ComentarioResponseDTO;
 import java.util.List;
 
 public class ComentarioRepository {
+
+    //----------- Verificar si el usuario ya tiene un comentario con reseña en ese hotel ------
+
     public boolean existeComentarioConResena(int usuarioId, int hotelId) {
         String sql = "SELECT COUNT(*) AS total FROM Comentario " +
                 "WHERE Usuario_ID = ? AND HotelID = ? AND Resena IS NOT NULL";
@@ -56,6 +59,29 @@ public class ComentarioRepository {
         }, comentarioId);
 
         return result.isEmpty() ? null : result.get(0);
+    }
+
+    public List<ComentarioResponseDTO> obtenerComentariosPorUsuario(int usuarioId) {
+        String sql = "SELECT c.ID, c.Usuario_ID, u.Username, c.HotelID, " +
+                "c.ComentarioPadreID, c.Resena, c.Contenido, c.Fecha, c.Downs " +
+                "FROM Comentario c " +
+                "JOIN Usuario u ON c.Usuario_ID = u.ID " +
+                "WHERE c.Usuario_ID = ? " +
+                "ORDER BY c.Fecha DESC";
+
+        return DatabaseManager.executeQuery(sql, rs -> {
+            ComentarioResponseDTO dto = new ComentarioResponseDTO();
+            dto.setId(rs.getInt("ID"));
+            dto.setUsuarioId(rs.getInt("Usuario_ID"));
+            dto.setUsername(rs.getString("Username"));
+            dto.setHotelId(rs.getInt("HotelID"));
+            dto.setComentarioPadreId(rs.getObject("ComentarioPadreID") != null ? rs.getInt("ComentarioPadreID") : null);
+            dto.setResena(rs.getObject("Resena") != null ? rs.getInt("Resena") : null);
+            dto.setContenido(rs.getString("Contenido"));
+            dto.setFecha(rs.getDate("Fecha").toString());
+            dto.setDowns(rs.getInt("Downs"));
+            return dto;
+        }, usuarioId);
     }
 
     public List<ComentarioResponseDTO> obtenerComentariosPorHotel(int hotelId) {

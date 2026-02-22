@@ -9,8 +9,6 @@ import java.util.List;
 
 public class ReservacionRepository {
 
-    // -------------------- Obtener precios de una habitación ---------------------------------
-
     public double[] obtenerPrecios(int habitacionId) {
         String sql = "SELECT Precio_por_Noche, Precio_por_Persona FROM Habitacion WHERE ID = ?";
         List<double[]> result = DatabaseManager.executeQuery(sql, rs -> new double[]{
@@ -21,8 +19,6 @@ public class ReservacionRepository {
         if (result.isEmpty()) throw new RuntimeException("Habitación no encontrada: " + habitacionId);
         return result.get(0);
     }
-
-    // -----------------------Verificar traslape ------------------------
 
     public boolean existeTraslape(int habitacionId, Date fechaCheckIn, Date fechaCheckOut) {
         String sql = "SELECT COUNT(*) AS total " +
@@ -41,8 +37,6 @@ public class ReservacionRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
-    // ------------------- Expirar otras reservaciones pendientes del mismo usuario -----------------------
-
     public void expirarPendientesDeUsuario(int usuarioId, int reservacionIdExcluir) {
         String sql = "UPDATE Reservacion " +
                 "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada'), " +
@@ -50,38 +44,30 @@ public class ReservacionRepository {
                 "WHERE Usuario_ID = ? " +
                 "AND ID != ? " +
                 "AND EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'pendiente')";
-
         DatabaseManager.executeUpdate(sql, usuarioId, reservacionIdExcluir);
     }
-
-    //----------------------------Crear reservación -----------------------------------
 
     public int crearReservacion(String noReservacion, double total, int usuarioId,
                                 Timestamp fechaCreacion, Timestamp fechaExpiracion) {
         String sql = "INSERT INTO Reservacion " +
                 "(No_Reservacion, Total, EstadoID, Usuario_ID, Fecha_Creacion, Fecha_Expiracion) " +
                 "VALUES (?, ?, 1, ?, ?, ?)";
-
         return DatabaseManager.executeInsertReturnId(
                 sql, "ID",
                 noReservacion, total, usuarioId, fechaCreacion, fechaExpiracion
         );
     }
 
-    // ---------------------------------- Insertar detalle---------------------------------
     public void crearDetalle(int reservacionId, int habitacionId,
                              Date fechaCheckIn, Date fechaCheckOut,
                              int cantidadPersonas, double total) {
         String sql = "INSERT INTO DetallesReservacion " +
                 "(ReservacionID, HabitacionID, FechaCheckIn, FechaCheckOut, CantidadPersonas, Total) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
-
         DatabaseManager.executeUpdate(sql,
                 reservacionId, habitacionId, fechaCheckIn, fechaCheckOut, cantidadPersonas, total
         );
     }
-
-    // -------------------obtener reservación para la respuesta------------------------------------
 
     public Object[] obtenerReservacion(int reservacionId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, r.Fecha_Creacion, r.Fecha_Expiracion, " +
@@ -102,8 +88,6 @@ public class ReservacionRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // ----------------------Obtener todas las reservaciones de un usuario---------------------------
-
     public List<ReservacionDetalleDTO> obtenerReservacionesDeUsuario(int usuarioId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
                 "r.Fecha_Creacion, r.Fecha_Expiracion, r.Fecha_Cancelacion, r.Motivo_Cancelacion, " +
@@ -113,6 +97,7 @@ public class ReservacionRepository {
                 "h.Descripcion AS DescripcionHabitacion, " +
                 "t.nombre AS TipoHabitacion, " +
                 "c.Tipo_de_clase AS TipoCama, " +
+                "hot.ID AS HotelID, " +
                 "hot.Nombre AS NombreHotel " +
                 "FROM Reservacion r " +
                 "JOIN EstadoReserva      er  ON r.EstadoID          = er.ID " +
@@ -143,19 +128,29 @@ public class ReservacionRepository {
             dto.setDescripcionHabitacion(rs.getString("DescripcionHabitacion"));
             dto.setTipoHabitacion(rs.getString("TipoHabitacion"));
             dto.setTipoCama(rs.getString("TipoCama"));
+            dto.setHotelId(rs.getInt("HotelID"));
             dto.setNombreHotel(rs.getString("NombreHotel"));
             return dto;
         }, usuarioId);
     }
 
-    // --------------- Expirar reservaciones vencidas- ----------------------
+    // --------------------------- IDs de imágenes -----------------------------------
+
+    public List<Integer> obtenerImagenesHotel(int hotelId) {
+        String sql = "SELECT ID FROM ImagenHotel WHERE HotelID = ?";
+        return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelId);
+    }
+
+    public List<Integer> obtenerImagenesHabitacion(int habitacionId) {
+        String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
+        return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
+    }
 
     public int expirarReservacionesVencidas() {
         String sql = "UPDATE Reservacion " +
                 "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada') " +
                 "WHERE EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'pendiente') " +
                 "AND Fecha_Expiracion < SYSDATE";
-
         return DatabaseManager.executeUpdate(sql);
     }
 }
