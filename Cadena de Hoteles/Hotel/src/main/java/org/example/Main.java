@@ -18,6 +18,7 @@ import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
 import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.DestinosController;
+import org.example.controllers.PdfReservacionController;
 
 
 //import agencias
@@ -67,6 +68,8 @@ public class Main {
         new CancelacionController().registerRoutes(app);
         new ImagenController().registerRoutes(app);
         new HotelController().registerRoutes(app);
+
+        new PdfReservacionController().registerRoutes(app);
 
         // Controllers de agencias
         new BusquedaAgenciaController().registerRoutes(app);
