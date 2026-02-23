@@ -263,4 +263,101 @@ public class HotelRepository {
     public void eliminarImagenHabitacion(int imagenId) {
         DatabaseManager.executeUpdate("DELETE FROM ImagenHabitacion WHERE ID=?", imagenId);
     }
+
+    // ════════════════════════════════════════════════════
+    //  ADMIN — RESERVACIONES
+    // ════════════════════════════════════════════════════
+
+    public List<java.util.Map<String, Object>> listarTodasReservaciones() {
+        String sql = """
+                SELECT r.ID, r.No_Reservacion, r.Total,
+                       r.Fecha_Creacion, r.Fecha_Expiracion,
+                       er.Estado,
+                       u.Nombre AS UsuarioNombre, u.Apellido AS UsuarioApellido,
+                       u.Username,
+                       hot.Nombre AS HotelNombre,
+                       MIN(dr.FechaCheckIn)  AS CheckIn,
+                       MAX(dr.FechaCheckOut) AS CheckOut
+                FROM Reservacion r
+                JOIN EstadoReserva er ON r.EstadoID     = er.ID
+                JOIN Usuario       u  ON r.Usuario_ID   = u.ID
+                JOIN DetallesReservacion dr ON dr.ReservacionID = r.ID
+                JOIN Habitacion    h   ON dr.HabitacionID = h.ID
+                JOIN Hotel         hot ON h.HotelID       = hot.ID
+                GROUP BY r.ID, r.No_Reservacion, r.Total,
+                         r.Fecha_Creacion, r.Fecha_Expiracion,
+                         er.Estado,
+                         u.Nombre, u.Apellido, u.Username,
+                         hot.Nombre
+                ORDER BY r.Fecha_Creacion DESC
+                """;
+        return DatabaseManager.executeQuery(sql, rs -> {
+            java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
+            row.put("id",           rs.getInt("ID"));
+            row.put("noReservacion",rs.getString("No_Reservacion"));
+            row.put("total",        rs.getDouble("Total"));
+            row.put("estado",       rs.getString("Estado").toLowerCase());
+            row.put("usuario",      rs.getString("Username"));
+            row.put("nombreCompleto", rs.getString("UsuarioNombre") + " " + rs.getString("UsuarioApellido"));
+            row.put("hotel",        rs.getString("HotelNombre"));
+            row.put("checkIn",      rs.getDate("CheckIn") != null  ? rs.getDate("CheckIn").toString()  : null);
+            row.put("checkOut",     rs.getDate("CheckOut") != null ? rs.getDate("CheckOut").toString() : null);
+            row.put("fechaCreacion",rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null);
+            return row;
+        });
+    }
+
+    // ════════════════════════════════════════════════════
+    //  ADMIN — MÉTRICAS DEL DASHBOARD
+    // ════════════════════════════════════════════════════
+
+    public java.util.Map<String, Object> obtenerMetricas() {
+        java.util.Map<String, Object> metricas = new java.util.LinkedHashMap<>();
+
+        // Usuarios totales
+        List<Integer> totalUsuarios = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) AS total FROM Usuario", rs -> rs.getInt("total"));
+        metricas.put("totalUsuarios", totalUsuarios.isEmpty() ? 0 : totalUsuarios.get(0));
+
+        // Hoteles activos
+        List<Integer> hotelesActivos = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) AS total FROM Hotel h JOIN Estado e ON h.EstadoID = e.ID WHERE LOWER(e.Estado) = 'activo'",
+                rs -> rs.getInt("total"));
+        metricas.put("hotelesActivos", hotelesActivos.isEmpty() ? 0 : hotelesActivos.get(0));
+
+        // Reservas confirmadas activas
+        List<Integer> reservasActivas = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) AS total FROM Reservacion r JOIN EstadoReserva er ON r.EstadoID = er.ID WHERE LOWER(TRIM(er.Estado)) = 'confirmada'",
+                rs -> rs.getInt("total"));
+        metricas.put("reservasActivas", reservasActivas.isEmpty() ? 0 : reservasActivas.get(0));
+
+        // Reservas totales
+        List<Integer> reservasTotales = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) AS total FROM Reservacion", rs -> rs.getInt("total"));
+        metricas.put("reservasTotales", reservasTotales.isEmpty() ? 0 : reservasTotales.get(0));
+
+        // Ingresos totales (solo reservas confirmadas)
+        List<Double> ingresosTotales = DatabaseManager.executeQuery(
+                "SELECT NVL(SUM(r.Total), 0) AS total FROM Reservacion r JOIN EstadoReserva er ON r.EstadoID = er.ID WHERE LOWER(TRIM(er.Estado)) = 'confirmada'",
+                rs -> rs.getDouble("total"));
+        metricas.put("ingresosTotales", ingresosTotales.isEmpty() ? 0.0 : ingresosTotales.get(0));
+
+        // Conteos por estado de reserva
+        List<java.util.Map<String, Object>> porEstado = DatabaseManager.executeQuery(
+                "SELECT LOWER(TRIM(er.Estado)) AS estado, COUNT(*) AS total FROM Reservacion r JOIN EstadoReserva er ON r.EstadoID = er.ID GROUP BY LOWER(TRIM(er.Estado))",
+                rs -> {
+                    java.util.Map<String, Object> e = new java.util.LinkedHashMap<>();
+                    e.put("estado", rs.getString("estado"));
+                    e.put("total",  rs.getInt("total"));
+                    return e;
+                });
+        metricas.put("reservasPorEstado", porEstado);
+
+        // Hoteles totales
+        List<Integer> hotTotales = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) AS total FROM Hotel", rs -> rs.getInt("total"));
+        metricas.put("hotesTotales", hotTotales.isEmpty() ? 0 : hotTotales.get(0));
+
+        return metricas;
+    }
 }

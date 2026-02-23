@@ -273,6 +273,7 @@
 .adm__stat-card--green .adm__stat-icon-wrap { background: rgba(63,185,80,0.15);  color: var(--adm-green); }
 .adm__stat-card--purple .adm__stat-icon-wrap { background: rgba(102,126,234,0.15); color: var(--adm-accent); }
 .adm__stat-card--amber .adm__stat-icon-wrap { background: rgba(227,179,65,0.15);  color: var(--adm-amber); }
+.adm__stat-card--red .adm__stat-icon-wrap   { background: rgba(220,38,38,0.15);   color: #dc2626; }
 
 .adm__stat-change {
   font-size: 0.78rem;
@@ -2365,4 +2366,190 @@
   font-size: .72rem;
   color: #f85149;
   font-weight: 600;
+}
+
+/* ════════════════════════════════════════════
+   MODAL CANCELAR RESERVACIÓN
+   ════════════════════════════════════════════ */
+
+.adm__cancel-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+  border-radius: 16px 16px 0 0;
+  position: relative;
+}
+
+.adm__cancel-modal__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.adm__cancel-modal__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 2px;
+}
+
+.adm__cancel-modal__subtitle {
+  font-size: .78rem;
+  color: rgba(255,255,255,.7);
+  margin: 0;
+  font-family: 'Fira Code', monospace;
+}
+
+.adm__cancel-modal__close {
+  position: absolute;
+  top: .875rem;
+  right: .875rem;
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+}
+.adm__cancel-modal__close:hover {
+  background: rgba(255,255,255,.25);
+}
+
+.adm__cancel-modal__body {
+  padding: 1.25rem 1.5rem;
+  background: #1e2330;
+}
+
+/* Info box dentro del modal */
+.adm__cancel-info-box {
+  background: #252b3b;
+  border: 1px solid #363d52;
+  border-radius: .75rem;
+  padding: .875rem 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.adm__cancel-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .83rem;
+  gap: 1rem;
+}
+
+.adm__cancel-info-row__label {
+  color: #8b95b0;
+  flex-shrink: 0;
+}
+
+.adm__cancel-info-row__value {
+  color: #e8eeff;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+.adm__cancel-info-row__value--money {
+  color: #3fb950;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Campo textarea motivo */
+.adm__cancel-motivo-label {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: #8b95b0;
+  margin: 0 0 .5rem;
+  display: block;
+}
+
+.adm__cancel-motivo-textarea {
+  width: 100%;
+  background: #252b3b;
+  border: 1px solid #363d52;
+  border-radius: .6rem;
+  padding: .65rem .85rem;
+  color: #e8eeff;
+  font-size: .85rem;
+  resize: vertical;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.adm__cancel-motivo-textarea:focus {
+  border-color: #dc2626;
+}
+.adm__cancel-motivo-textarea::placeholder {
+  color: #4a5270;
+}
+
+/* Advertencia roja */
+.adm__cancel-warning {
+  background: #2e0f0f;
+  border: 1px solid #5c1a1a;
+  border-radius: .6rem;
+  padding: .75rem 1rem;
+  margin-top: 1rem;
+  font-size: .82rem;
+  color: #fca5a5;
+  display: flex;
+  gap: .6rem;
+  align-items: flex-start;
+}
+
+.adm__cancel-warning strong {
+  color: #f87171;
+}
+
+.adm__cancel-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #363d52;
+  background: #1a1f2e;
+  border-radius: 0 0 16px 16px;
+}
+
+.adm__btn--cancel-confirm {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .6rem 1.25rem;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.adm__btn--cancel-confirm:hover:not(:disabled) {
+  opacity: .9;
+  transform: translateY(-1px);
+}
+.adm__btn--cancel-confirm:disabled {
+  opacity: .55;
+  cursor: not-allowed;
 }
