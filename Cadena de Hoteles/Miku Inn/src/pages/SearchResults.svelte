@@ -42,31 +42,118 @@
     return [...set].sort();
   })();
 
-  $: minPrecioDisponible = (() => {
-    const prices = hotelsRaw.flatMap(h => h.habitaciones?.map(r => r.precioPorNoche) ?? []);
-    return prices.length ? Math.floor(Math.min(...prices)) : 0;
-  })();
-
-  $: maxPrecioDisponible = (() => {
-    const prices = hotelsRaw.flatMap(h => h.habitaciones?.map(r => r.precioPorNoche) ?? []);
-    return prices.length ? Math.ceil(Math.max(...prices)) : 99999;
-  })();
-
   $: filteredHotels = filterAndSort(hotelsRaw, filters);
 
+  /** Precio mínimo de habitación directa. Null si no hay ninguna. */
   function getMinPrice(hotel) {
     if (!hotel.habitaciones || hotel.habitaciones.length === 0) return null;
     return Math.min(...hotel.habitaciones.map(r => r.precioPorNoche));
   }
 
+  /**
+   * Construye la lista de habs de la primera combinación exacta del backend.
+   * Solo para combos de 2+ habitaciones.
+   */
+  function getComboHabs(hotel) {
+    if (!hotel.combinacionesNumericas?.length) return null;
+    const combo = hotel.combinacionesNumericas[0];
+    if (combo.length <= 1) return null;
+    const usados = {};
+    const result = [];
+    for (const cap of combo) {
+      const key   = String(cap);
+      const rooms = hotel.habitacionesPorCapacidad?.[key];
+      if (!rooms?.length) return null;
+      const idx = usados[key] ?? 0;
+      if (idx >= rooms.length) return null;
+      result.push({ tipo: rooms[idx].tipoHabitacion, precio: rooms[idx].precioPorNoche, cap });
+      usados[key] = idx + 1;
+    }
+    return result;
+  }
+
+  /**
+   * Cuando no hay disponibilidad exacta (habitaciones=[] y combinacionesNumericas=[]),
+   * intenta construir la mejor combinación aproximada usando habitacionesPorCapacidad,
+   * siempre que la capacidad total esté entre cantidadPersonas y cantidadPersonas+2.
+   *
+   * Algoritmo: toma todas las habitaciones disponibles en habitacionesPorCapacidad,
+   * las ordena de mayor a menor capacidad, y va sumando hasta cubrir el objetivo.
+   * Si el total queda en [personas, personas+2] → devuelve la combinación.
+   * Si no → null.
+   */
+  function getComboAproximado(hotel, personas) {
+    // Solo aplica si no tiene disponibilidad exacta
+    const tieneDirecta = hotel.habitaciones && hotel.habitaciones.length > 0;
+    const tieneCombo   = !!getComboHabs(hotel);
+    if (tieneDirecta || tieneCombo) return null;
+
+    const porCapacidad = hotel.habitacionesPorCapacidad;
+    if (!porCapacidad || Object.keys(porCapacidad).length === 0) return null;
+
+    // Aplanar todas las habitaciones disponibles
+    const todasHabs = [];
+    for (const [capStr, rooms] of Object.entries(porCapacidad)) {
+      const cap = Number(capStr);
+      for (const room of rooms) {
+        todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, cap });
+      }
+    }
+
+    // Ordenar de mayor a menor capacidad para cubrir con el mínimo de habitaciones
+    todasHabs.sort((a, b) => b.cap - a.cap);
+
+    // Selección greedy: ir sumando habs hasta cubrir el objetivo
+    let sumCap   = 0;
+    const selec  = [];
+    const limite = personas + 2; // margen máximo
+
+    for (const hab of todasHabs) {
+      if (sumCap >= personas) break;
+      selec.push(hab);
+      sumCap += hab.cap;
+    }
+
+    // Validar que la combinación encontrada esté en [personas, personas+2]
+    if (sumCap < personas || sumCap > limite) return null;
+    // Debe ser más de 1 hab para ser considerada combinación
+    if (selec.length <= 1) return null;
+
+    return { habs: selec, capacidadTotal: sumCap, esAproximado: true };
+  }
+
+  /** Precio total de un array de habs */
+  function sumPrecios(habs) {
+    return habs.reduce((s, h) => s + h.precio, 0);
+  }
+
+  /**
+   * Precio "Desde" para ordenar/filtrar.
+   * Toma el mínimo entre directo, combo exacto y combo aproximado.
+   */
+  function getDesde(hotel) {
+    const directo = getMinPrice(hotel);
+    const combo   = getComboHabs(hotel);
+    const aprox   = getComboAproximado(hotel, cantidadPersonas);
+
+    const precios = [];
+    if (directo !== null)  precios.push(directo);
+    if (combo   !== null)  precios.push(sumPrecios(combo));
+    if (aprox   !== null)  precios.push(sumPrecios(aprox.habs));
+
+    return precios.length ? Math.min(...precios) : null;
+  }
+
   function filterAndSort(hotels, f) {
     return hotels
       .filter(h => {
-        // Si el backend devolvió habitaciones vacías = no hay disponibles para esa búsqueda
-        if (!h.habitaciones || h.habitaciones.length === 0) return false;
+        const tieneDirecta = h.habitaciones && h.habitaciones.length > 0;
+        const tieneCombo   = !!getComboHabs(h);
+        const tieneAprox   = !!getComboAproximado(h, cantidadPersonas);
+        if (!tieneDirecta && !tieneCombo && !tieneAprox) return false;
 
-        const minP = getMinPrice(h);
-        const priceOk = minP === null || (minP >= f.priceMin && (f.priceMax === 0 || minP <= f.priceMax));
+        const desde  = getDesde(h);
+        const priceOk = desde === null || (desde >= f.priceMin && (f.priceMax === 0 || desde <= f.priceMax));
 
         const tipoOk = f.tiposHab.length === 0 ||
           h.habitaciones?.some(r => f.tiposHab.includes(r.tipoHabitacion));
@@ -77,8 +164,8 @@
         return priceOk && tipoOk && amenOk;
       })
       .sort((a, b) => {
-        if (f.sortBy === 'price-low')  return (getMinPrice(a) ?? 0) - (getMinPrice(b) ?? 0);
-        if (f.sortBy === 'price-high') return (getMinPrice(b) ?? 0) - (getMinPrice(a) ?? 0);
+        if (f.sortBy === 'price-low')  return (getDesde(a) ?? 0) - (getDesde(b) ?? 0);
+        if (f.sortBy === 'price-high') return (getDesde(b) ?? 0) - (getDesde(a) ?? 0);
         if (f.sortBy === 'rating')     return (b.rating ?? 0) - (a.rating ?? 0);
         return (b.rating ?? 0) - (a.rating ?? 0);
       });
@@ -170,8 +257,7 @@
             </div>
             <div class="sr-field-group">
               <label for="sr-personas">Huéspedes</label>
-              <input id="sr-personas" type="number" bind:value={cantidadPersonas}
-                min="1" placeholder="Nº huéspedes" />
+              <input id="sr-personas" type="number" bind:value={cantidadPersonas} min="1" placeholder="Nº huéspedes" />
             </div>
           </div>
           {#if searchError}
@@ -299,24 +385,49 @@
         {:else}
           <div class="hotels-grid" class:list-view={viewMode === 'list'} class:grid-view={viewMode === 'grid'}>
             {#each filteredHotels as hotel (hotel.id)}
-              {@const minPrice = getMinPrice(hotel)}
+              {@const minPrice  = getMinPrice(hotel)}
+              {@const comboHabs = getComboHabs(hotel)}
+              {@const comboAprox = getComboAproximado(hotel, cantidadPersonas)}
+              {@const comboTotal = comboHabs ? sumPrecios(comboHabs) : null}
+              {@const aproxTotal = comboAprox ? sumPrecios(comboAprox.habs) : null}
+              {@const desde     = getDesde(hotel)}
+
               <div class="hotel-card"
                 role="button"
                 tabindex="0"
                 on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}
                 on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
 
+                <!-- GALERÍA -->
                 <div class="hotel-gallery">
-                  <div class="hotel-img-placeholder">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
-                      <p class="img-count">{hotel.imagenesIds.length} imagen{hotel.imagenesIds.length !== 1 ? 'es' : ''}</p>
-                    {:else}
+                  {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
+                    <img
+                      src="{API}/imagenes/hotel/{hotel.imagenesIds[0]}"
+                      alt={hotel.nombre}
+                      class="hotel-img-real"
+                      on:error={e => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div class="hotel-img-placeholder" style="display:none">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                       <p class="img-count">Sin imagenes aun</p>
-                    {/if}
-                  </div>
+                    </div>
+                  {:else}
+                    <div class="hotel-img-placeholder">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                      <p class="img-count">Sin imagenes aun</p>
+                    </div>
+                  {/if}
                   {#if hotel.estado === 'Activo'}
                     <div class="hotel-estado-badge hotel-estado-badge--activo">Disponible</div>
+                  {/if}
+                  <!-- Badge de aproximado encima de la imagen -->
+                  {#if comboAprox}
+                    <div class="hotel-estado-badge hotel-estado-badge--aprox" style="left:auto;right:0.75rem;">
+                      Opción cercana · {comboAprox.capacidadTotal} pers.
+                    </div>
                   {/if}
                 </div>
 
@@ -373,30 +484,97 @@
                     </div>
                   {/if}
 
+                  <!-- FOOTER DE PRECIOS -->
                   <div class="hotel-footer">
                     <div class="pricing">
-                      {#if minPrice !== null}
-                        <div class="price-detail">
-                          <div class="price-from">Desde</div>
-                          <div class="curr-price">
-                            <span class="price-amount">{fmt(minPrice)}</span>
-                            <span class="price-lbl">/ noche</span>
-                          </div>
-                          <div class="per-night">{fmt(minPrice * nights)} total por {nights} noche{nights !== 1 ? 's' : ''}</div>
-                        </div>
-                      {:else}
-                        <div class="price-detail">
-                          <div class="price-from">Precio a consultar</div>
+
+                      <!-- Badge "Desde" unificado -->
+                      {#if desde !== null}
+                        <div class="desde-badge">
+                          <span class="desde-lbl">Desde</span>
+                          <span class="desde-precio">{fmt(desde)}</span>
+                          <span class="desde-sub">/ noche · {fmt(desde * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</span>
                         </div>
                       {/if}
+
+                      <div class="price-boxes">
+
+                        <!-- Bloque habitación directa -->
+                        {#if minPrice !== null}
+                          <div class="price-box">
+                            <div class="price-box-label">Habitación directa</div>
+                            <div class="curr-price">
+                              <span class="price-amount">{fmt(minPrice)}</span>
+                              <span class="price-lbl">/ noche</span>
+                            </div>
+                            <div class="per-night">{fmt(minPrice * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</div>
+                          </div>
+                        {/if}
+
+                        {#if minPrice !== null && comboHabs}
+                          <div class="price-box-divider">ó</div>
+                        {/if}
+
+                        <!-- Bloque combinación exacta del backend -->
+                        {#if comboHabs}
+                          <div class="price-box price-box--combo">
+                            <div class="price-box-label">Combinación de habitaciones</div>
+                            {#each comboHabs as hab, i}
+                              <div class="combo-hab-row">
+                                <span class="combo-hab-name">
+                                  Hab.{i + 1} · {hab.tipo}
+                                  <span class="combo-cap">({hab.cap} pers.)</span>
+                                </span>
+                                <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
+                              </div>
+                            {/each}
+                            <div class="combo-total">
+                              Total: <strong>{fmt(comboTotal)}/noche</strong>
+                              · {fmt(comboTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        {/if}
+
+                        <!-- Bloque combinación APROXIMADA (solo si no hay nada exacto) -->
+                        {#if comboAprox}
+                          <div class="price-box price-box--aprox">
+                            <div class="price-box-label">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                              Opción cercana — {comboAprox.capacidadTotal} de {cantidadPersonas} pers.
+                            </div>
+                            {#each comboAprox.habs as hab, i}
+                              <div class="combo-hab-row">
+                                <span class="combo-hab-name">
+                                  Hab.{i + 1} · {hab.tipo}
+                                  <span class="combo-cap">({hab.cap} pers.)</span>
+                                </span>
+                                <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
+                              </div>
+                            {/each}
+                            <div class="combo-total">
+                              Total: <strong>{fmt(aproxTotal)}/noche</strong>
+                              · {fmt(aproxTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        {/if}
+
+                        <!-- Sin ninguna opción -->
+                        {#if minPrice === null && !comboHabs && !comboAprox}
+                          <div class="price-box">
+                            <div class="price-box-label">Precio a consultar</div>
+                          </div>
+                        {/if}
+
+                      </div>
+
                       <button class="btn-view" on:click|stopPropagation={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
                         Ver disponibilidad
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                       </button>
                     </div>
                   </div>
-                </div>
 
+                </div>
               </div>
             {/each}
           </div>

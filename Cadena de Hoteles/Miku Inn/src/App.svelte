@@ -13,7 +13,6 @@
   import MyReservations from './pages/MyReservations.svelte';
   import Destinos from './pages/Destinos.svelte';
   import DestinoDetail from './pages/DestinoDetail.svelte';
-  import Ofertas from './pages/Ofertas.svelte';
   import Profile from './pages/Profile.svelte';
   import Administrador from './pages/Administrador.svelte';
 
@@ -27,14 +26,13 @@
   import './styles/myreservations.css';
   import './styles/destinodetail.css';
   import './styles/destinos.css';
-  import './styles/ofertas.css';
   import './styles/profile.css';
   import './styles/administrador.css';
 
   const API = 'http://localhost:7000';
 
   let currentPage      = 'home';
-  let checkoutData     = null;   // { pendingReservations: [...], hotel, room, ... }
+  let checkoutData     = null;
   let currentHotelData = null;
   let currentDestinoId = null;
   let searchParams     = null;
@@ -172,8 +170,6 @@
         <Destinos {navigateTo} />
       {:else if currentPage === 'destino-detail'}
         <DestinoDetail {navigateTo} destinoId={currentDestinoId} />
-      {:else if currentPage === 'offers'}
-        <Ofertas {navigateTo} />
       {:else if currentPage === 'profile'}
         <Profile {navigateTo} />
       {:else if currentPage === 'administrador' && userRolId === 2}

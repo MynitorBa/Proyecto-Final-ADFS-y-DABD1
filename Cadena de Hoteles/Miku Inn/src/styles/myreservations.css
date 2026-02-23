@@ -365,3 +365,75 @@
   border-radius: 10px; color: #92400e; font-size: .875rem; line-height: 1.5;
 }
 .comment-already svg { flex-shrink: 0; margin-top: .1rem; color: #d97706; }
+
+/* ── Modal cancelación con motivo ── */
+.cancel-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: fadeIn .18s ease;
+}
+
+.cancel-modal {
+  background: white; border-radius: 16px;
+  width: 100%; max-width: 440px;
+  padding: 1.75rem; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: slideUp .22s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cancel-modal-header {
+  display: flex; align-items: center; gap: .75rem;
+  margin-bottom: .5rem; color: #ef4444;
+}
+.cancel-modal-header h3 { margin: 0; font-size: 1.15rem; color: #1e293b; }
+
+.cancel-modal-sub {
+  color: #64748b; font-size: .9rem; margin: 0 0 1.25rem;
+}
+
+.cancel-motivo-input {
+  width: 100%; padding: .75rem 1rem;
+  border: 1.5px solid #e2e8f0; border-radius: 10px;
+  font-size: .9rem; font-family: inherit; color: #1e293b;
+  resize: vertical; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s;
+}
+.cancel-motivo-input:focus {
+  outline: none; border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.1);
+}
+
+.cancel-modal-error {
+  display: flex; align-items: center; gap: .5rem;
+  margin-top: .75rem; padding: .625rem .875rem;
+  background: #fef2f2; border: 1.5px solid #fecaca;
+  border-radius: 8px; color: #ef4444; font-size: .85rem;
+}
+
+.cancel-modal-actions {
+  display: flex; gap: .75rem; margin-top: 1.25rem; justify-content: flex-end;
+}
+
+.cancel-modal-back {
+  padding: .65rem 1.25rem;
+  background: white; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; color: #64748b;
+  font-weight: 600; font-size: .9rem; cursor: pointer;
+  transition: all .15s;
+}
+.cancel-modal-back:hover:not(:disabled) { border-color: #94a3b8; color: #1e293b; }
+
+.cancel-modal-confirm {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .65rem 1.4rem;
+  background: #ef4444; color: white; border: none;
+  border-radius: 10px; font-weight: 700; font-size: .9rem;
+  cursor: pointer; transition: all .15s;
+}
+.cancel-modal-confirm:hover:not(:disabled) { background: #dc2626; }
+.cancel-modal-confirm:disabled { opacity: .5; cursor: not-allowed; }

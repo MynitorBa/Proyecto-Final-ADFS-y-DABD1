@@ -138,17 +138,46 @@
     return matchFilter && matchSearch;
   });
 
-  async function cancelReservation(id) {
-    if (!confirm('¿Cancelar esta reservación?')) return;
+  // ── Cancelación con motivo ───────────────────────────────
+  let cancelingId  = null;
+  let cancelMotivo = '';
+  let cancelError  = '';
+  let cancelSaving = false;
+
+  function openCancelDialog(id) {
+    cancelingId  = id;
+    cancelMotivo = '';
+    cancelError  = '';
+    cancelSaving = false;
+  }
+
+  function closeCancelDialog() {
+    cancelingId = null;
+    cancelMotivo = '';
+    cancelError  = '';
+  }
+
+  async function confirmCancel() {
+    if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo para cancelar.'; return; }
+    cancelSaving = true; cancelError = '';
     try {
-      const res = await fetch(`${API}/reservaciones/${id}/cancelar`, {
-        method: 'POST', credentials: 'include',
+      const res = await fetch(`${API}/reservaciones/${cancelingId}/cancelar`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivoCancelacion: cancelMotivo.trim() }),
       });
-      if (!res.ok) throw new Error('No se pudo cancelar');
-      selectedReservation = null;
-      await fetchAll();
+      const data = await res.json();
+      if (!res.ok) {
+        cancelError = data.mensaje || data.message || `Error ${res.status}`;
+      } else {
+        closeCancelDialog();
+        selectedReservation = null;
+        await fetchAll();
+      }
     } catch(e) {
-      alert(/** @type {any} */ (e).message || 'Error al cancelar');
+      cancelError = /** @type {any} */ (e).message || 'Error al cancelar';
+    } finally {
+      cancelSaving = false;
     }
   }
 
@@ -297,7 +326,7 @@
                   Ver Detalles
                 </button>
                 {#if r.estado?.toLowerCase() === 'pendiente' || r.estado?.toLowerCase() === 'confirmada'}
-                  <button class="abtn danger" on:click={() => cancelReservation(r.id)}>Cancelar Reserva</button>
+                  <button class="abtn danger" on:click={() => openCancelDialog(r.id)}>Cancelar Reserva</button>
                 {/if}
               </div>
 
@@ -485,12 +514,58 @@
 
         <!-- Cancelar -->
         {#if sr.estado?.toLowerCase() === 'pendiente' || sr.estado?.toLowerCase() === 'confirmada'}
-          <button class="panel-cancel-btn" on:click={() => cancelReservation(sr.id)}>
+          <button class="panel-cancel-btn" on:click={() => openCancelDialog(sr.id)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             Cancelar esta reservación
           </button>
         {/if}
 
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ── Modal de cancelación con motivo ── -->
+{#if cancelingId !== null}
+  <!-- svelte-ignore a11y-click-events-have-key-events -->
+  <!-- svelte-ignore a11y-no-static-element-interactions -->
+  <div class="cancel-overlay" on:click|self={closeCancelDialog}>
+    <div class="cancel-modal" role="dialog" aria-modal="true">
+      <div class="cancel-modal-header">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <h3>Cancelar reservación</h3>
+      </div>
+
+      <p class="cancel-modal-sub">Por favor indica el motivo de la cancelación.</p>
+
+      <textarea
+        class="cancel-motivo-input"
+        bind:value={cancelMotivo}
+        placeholder="Ej: Cambio de planes de viaje, emergencia personal..."
+        rows="3"
+        autofocus
+      ></textarea>
+
+      {#if cancelError}
+        <div class="cancel-modal-error">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {cancelError}
+        </div>
+      {/if}
+
+      <div class="cancel-modal-actions">
+        <button class="cancel-modal-back" on:click={closeCancelDialog} disabled={cancelSaving}>
+          Volver
+        </button>
+        <button class="cancel-modal-confirm" on:click={confirmCancel} disabled={cancelSaving}>
+          {#if cancelSaving}
+            <span class="comment-spinner"></span> Cancelando...
+          {:else}
+            Confirmar cancelación
+          {/if}
+        </button>
       </div>
     </div>
   </div>
