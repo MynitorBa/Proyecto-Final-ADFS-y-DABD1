@@ -2212,10 +2212,10 @@
       <!-- ═══ REPORTES ═══ -->
       {:else if activeSection === 'agencias'}
 
-        <div class="adm__toolbar">
-          <div class="adm__search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Buscar por nombre, correo o ID..." bind:value={busquedaAgencia} />
+        <div class="adm__filters-bar">
+          <div class="adm__search-wrap">
+            <svg class="adm__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="adm__search-input" type="text" placeholder="Buscar por nombre, correo o ID..." bind:value={busquedaAgencia} />
           </div>
           <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias} disabled={cargandoAgencias} title="Recargar">
             <svg class={cargandoAgencias ? 'adm__spinner' : ''} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -2918,55 +2918,93 @@
     role="button" tabindex="-1" aria-label="Cerrar modal"
   ></div>
 
-  <div class="adm__rol-modal" style="max-width:520px;border-radius:14px;overflow:hidden">
+  <div style="
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2001;
+    width:90%; max-width:520px; border-radius:16px; overflow:hidden;
+    background:#1e2a3a; border:1px solid #3a4a5c;
+    box-shadow:0 24px 80px rgba(0,0,0,0.7);
+    animation: modalIn 0.25s ease;
+  ">
 
-    <div class="adm__modal-header" style="background:var(--adm-surface-2);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--adm-border)">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;background:#253142;border-bottom:1px solid #3a4a5c">
       <div style="display:flex;align-items:center;gap:.75rem">
-        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#2dd4bf,#0d9488);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="2.5">
+        <div style="width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,#2dd4bf,#0d9488);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
             <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
           </svg>
         </div>
         <div>
-          <p style="font-weight:700;font-size:1rem;color:var(--adm-text);margin:0">Editar Agencia</p>
-          <p style="font-size:.75rem;color:var(--adm-text-muted);margin:0">ID #{agenciaEditando.id} · WS #{agenciaEditando.usuarioWebisId}</p>
+          <p style="font-weight:700;font-size:1rem;color:#e8f0fe;margin:0;line-height:1.3">Editar Agencia</p>
+          <p style="font-size:.75rem;color:#8eacc8;margin:0">ID #{agenciaEditando.id} · WS #{agenciaEditando.usuarioWebisId}</p>
         </div>
       </div>
-      <button class="adm__modal-close" on:click={cerrarModalAgencia} aria-label="Cerrar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button on:click={cerrarModalAgencia} aria-label="Cerrar" style="background:rgba(255,255,255,0.08);border:none;color:#b0c4d8;cursor:pointer;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;transition:background .15s" on:mouseenter={e=>e.currentTarget.style.background='rgba(255,255,255,0.15)'} on:mouseleave={e=>e.currentTarget.style.background='rgba(255,255,255,0.08)'}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
 
-    <div class="adm__modal-body" style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
-      <div class="adm__field">
-        <label for="ea-nombre">Nombre de la agencia</label>
-        <input id="ea-nombre" type="text" bind:value={editAgencia.nombre} placeholder="Nombre" />
+    <!-- Body -->
+    <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.1rem;background:#1e2a3a">
+
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        <label for="ea-nombre" style="font-size:.78rem;font-weight:600;color:#7eb8d4;text-transform:uppercase;letter-spacing:.05em">Nombre de la agencia</label>
+        <input id="ea-nombre" type="text" bind:value={editAgencia.nombre} placeholder="Nombre"
+          style="width:100%;padding:.7rem .9rem;background:#253142;border:1px solid #3a4a5c;border-radius:8px;color:#e8f0fe;font-size:.9rem;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s"
+          on:focus={e=>{e.target.style.borderColor='#2dd4bf';e.target.style.boxShadow='0 0 0 3px rgba(45,212,191,.15)'}}
+          on:blur={e=>{e.target.style.borderColor='#3a4a5c';e.target.style.boxShadow='none'}}
+        />
       </div>
-      <div class="adm__field">
-        <label for="ea-correo">Correo electrónico</label>
-        <input id="ea-correo" type="email" bind:value={editAgencia.correo} placeholder="agencia@ejemplo.com" />
+
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        <label for="ea-correo" style="font-size:.78rem;font-weight:600;color:#7eb8d4;text-transform:uppercase;letter-spacing:.05em">Correo electrónico</label>
+        <input id="ea-correo" type="email" bind:value={editAgencia.correo} placeholder="agencia@ejemplo.com"
+          style="width:100%;padding:.7rem .9rem;background:#253142;border:1px solid #3a4a5c;border-radius:8px;color:#e8f0fe;font-size:.9rem;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s"
+          on:focus={e=>{e.target.style.borderColor='#2dd4bf';e.target.style.boxShadow='0 0 0 3px rgba(45,212,191,.15)'}}
+          on:blur={e=>{e.target.style.borderColor='#3a4a5c';e.target.style.boxShadow='none'}}
+        />
       </div>
-      <div class="adm__field">
-        <label for="ea-descuento">Porcentaje de descuento (0–100)</label>
-        <input id="ea-descuento" type="number" min="0" max="100" step="0.01" bind:value={editAgencia.porcentajeDescuento} />
+
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        <label for="ea-descuento" style="font-size:.78rem;font-weight:600;color:#7eb8d4;text-transform:uppercase;letter-spacing:.05em">Porcentaje de descuento (0–100)</label>
+        <input id="ea-descuento" type="number" min="0" max="100" step="0.01" bind:value={editAgencia.porcentajeDescuento}
+          style="width:100%;padding:.7rem .9rem;background:#253142;border:1px solid #3a4a5c;border-radius:8px;color:#e8f0fe;font-size:.9rem;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s"
+          on:focus={e=>{e.target.style.borderColor='#2dd4bf';e.target.style.boxShadow='0 0 0 3px rgba(45,212,191,.15)'}}
+          on:blur={e=>{e.target.style.borderColor='#3a4a5c';e.target.style.boxShadow='none'}}
+        />
       </div>
-      <div class="adm__field">
-        <label for="ea-estado">Estado</label>
-        <select id="ea-estado" bind:value={editAgencia.estadoId}>
-          <option value={1}>Activo</option>
-          <option value={2}>Cerrado</option>
+
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        <label for="ea-estado" style="font-size:.78rem;font-weight:600;color:#7eb8d4;text-transform:uppercase;letter-spacing:.05em">Estado</label>
+        <select id="ea-estado" bind:value={editAgencia.estadoId}
+          style="width:100%;padding:.7rem .9rem;background:#253142;border:1px solid #3a4a5c;border-radius:8px;color:#e8f0fe;font-size:.9rem;font-family:inherit;box-sizing:border-box;outline:none;cursor:pointer;appearance:auto">
+          <option value={1} style="background:#253142;color:#e8f0fe">Activo</option>
+          <option value={2} style="background:#253142;color:#e8f0fe">Cerrado</option>
         </select>
       </div>
+
       {#if mensajeAgencia}
-        <div class="adm__feedback adm__feedback--{mensajeAgencia.tipo}">
+        <div style="padding:.7rem 1rem;border-radius:8px;font-size:.85rem;font-weight:500;
+          background:{mensajeAgencia.tipo==='ok' ? 'rgba(63,185,80,.15)' : 'rgba(248,81,73,.15)'};
+          border:1px solid {mensajeAgencia.tipo==='ok' ? 'rgba(63,185,80,.4)' : 'rgba(248,81,73,.4)'};
+          color:{mensajeAgencia.tipo==='ok' ? '#3fb950' : '#f85149'}">
           {mensajeAgencia.texto}
         </div>
       {/if}
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--adm-border);background:var(--adm-surface-2)">
-      <button class="adm__btn adm__btn--ghost" on:click={cerrarModalAgencia} disabled={guardandoAgencia}>Cancelar</button>
-      <button class="adm__btn adm__btn--primary" on:click={guardarAgencia} disabled={guardandoAgencia}>
+    <!-- Footer -->
+    <div style="display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid #3a4a5c;background:#253142">
+      <button on:click={cerrarModalAgencia} disabled={guardandoAgencia}
+        style="padding:.6rem 1.1rem;background:transparent;border:1px solid #3a4a5c;border-radius:8px;color:#b0c4d8;font-size:.875rem;font-weight:500;cursor:pointer;transition:all .15s"
+        on:mouseenter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.06)';e.currentTarget.style.borderColor='#5a7a9c'}}
+        on:mouseleave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.borderColor='#3a4a5c'}}
+      >Cancelar</button>
+      <button on:click={guardarAgencia} disabled={guardandoAgencia}
+        style="padding:.6rem 1.3rem;background:linear-gradient(135deg,#2dd4bf,#0d9488);border:none;border-radius:8px;color:#fff;font-size:.875rem;font-weight:600;cursor:pointer;transition:opacity .15s;opacity:{guardandoAgencia?'.6':'1'}"
+        on:mouseenter={e=>{ if(!guardandoAgencia) e.currentTarget.style.opacity='.85' }}
+        on:mouseleave={e=>{ if(!guardandoAgencia) e.currentTarget.style.opacity='1' }}
+      >
         {#if guardandoAgencia}Guardando...{:else}Guardar cambios{/if}
       </button>
     </div>
