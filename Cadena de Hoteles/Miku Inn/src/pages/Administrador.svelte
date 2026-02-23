@@ -800,6 +800,7 @@
   let reservas          = [];
   let cargandoReservas  = false;
   let errorReservas     = null;
+
   // Filtros — se envían al backend, no se filtran en el frontend
   let busquedaReserva     = '';
   let filtroEstadoReserva = 'todos';
@@ -985,8 +986,9 @@
   }
 
 
+
   // ════════════════════════════════════════════════════
-  //  AGENCIAS (admin) — estado y funciones
+  //  AGENCIAS (admin)
   // ════════════════════════════════════════════════════
   let agencias          = [];
   let cargandoAgencias  = false;
@@ -1057,7 +1059,6 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje ?? `Error ${res.status}`);
-
       agencias = agencias.map(a =>
         a.id === agenciaEditando.id
           ? { ...a, ...editAgencia, estado: Number(editAgencia.estadoId) === 1 ? 'Activo' : 'Cerrado' }
@@ -1131,91 +1132,7 @@
           {:else if activeSection === 'crear-hotel'}Crear Nuevo Hotel
           {:else if activeSection === 'reservas'}Reservas
           {:else if activeSection === 'agencias'}Gestión de Agencias
-          {:else if activeSection === 'agencias'}
-
-        <!-- ═══ TOOLBAR ═══ -->
-        <div class="adm__toolbar">
-          <div class="adm__search-box">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="Buscar por nombre, correo o ID..." bind:value={busquedaAgencia} />
-          </div>
-          <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias} disabled={cargandoAgencias} title="Recargar">
-            <svg class={cargandoAgencias ? 'adm__spinner' : ''} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-            Recargar
-          </button>
-        </div>
-
-        {#if errorAgencias}
-          <div class="adm__alert adm__alert--error" style="margin-bottom:1rem">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            {errorAgencias}
-            <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias}>Reintentar</button>
-          </div>
-        {/if}
-
-        <!-- ═══ TABLA ═══ -->
-        <div class="adm__table-card">
-          {#if cargandoAgencias}
-            <div class="adm__loading-state" style="padding:3rem 0">
-              <svg class="adm__spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              <p>Cargando agencias...</p>
-            </div>
-          {:else}
-            <div class="adm__table-wrap">
-              <table class="adm__table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Usuario WS</th>
-                    <th>Descuento %</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#if agenciasFiltradas.length === 0}
-                    <tr>
-                      <td colspan="7" class="adm__empty-cell">
-                        {busquedaAgencia ? 'Sin resultados para esa búsqueda.' : 'No hay agencias registradas.'}
-                      </td>
-                    </tr>
-                  {:else}
-                    {#each agenciasFiltradas as ag (ag.id)}
-                      <tr>
-                        <td class="adm__table-mono" style="color:var(--adm-text-muted);font-size:.8rem">#{ag.id}</td>
-                        <td style="font-weight:600">{ag.nombre}</td>
-                        <td style="color:var(--adm-text-muted)">{ag.correo}</td>
-                        <td class="adm__table-mono" style="font-size:.8rem">WS #{ag.usuarioWebisId}</td>
-                        <td>
-                          <span style="font-weight:700;color:#2dd4bf">{ag.porcentajeDescuento?.toFixed(2)}%</span>
-                        </td>
-                        <td>
-                          <span class="adm__badge {badge(ag.estado)}">{ag.estado}</span>
-                        </td>
-                        <td>
-                          <button
-                            class="adm__icon-btn"
-                            title="Editar agencia"
-                            on:click={() => abrirEditarAgencia(ag)}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    {/each}
-                  {/if}
-                </tbody>
-              </table>
-            </div>
-          {/if}
-        </div>
-
-      {:else if activeSection === 'reportes'}Reportes y Estadísticas
+          {:else if activeSection === 'reportes'}Reportes y Estadísticas
           {/if}
         </h1>
         <p class="adm__topbar-sub">Panel de Administración · Miku Inn</p>
@@ -2293,6 +2210,80 @@
         </div>
 
       <!-- ═══ REPORTES ═══ -->
+      {:else if activeSection === 'agencias'}
+
+        <div class="adm__toolbar">
+          <div class="adm__search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar por nombre, correo o ID..." bind:value={busquedaAgencia} />
+          </div>
+          <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias} disabled={cargandoAgencias} title="Recargar">
+            <svg class={cargandoAgencias ? 'adm__spinner' : ''} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Recargar
+          </button>
+        </div>
+
+        {#if errorAgencias}
+          <div class="adm__alert adm__alert--error" style="margin-bottom:1rem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {errorAgencias}
+            <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias}>Reintentar</button>
+          </div>
+        {/if}
+
+        <div class="adm__table-card">
+          {#if cargandoAgencias}
+            <div class="adm__loading-state" style="padding:3rem 0">
+              <svg class="adm__spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <p>Cargando agencias...</p>
+            </div>
+          {:else}
+            <div class="adm__table-wrap">
+              <table class="adm__table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Usuario WS</th>
+                    <th>Descuento %</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#if agenciasFiltradas.length === 0}
+                    <tr>
+                      <td colspan="7" class="adm__empty-cell">
+                        {busquedaAgencia ? 'Sin resultados para esa búsqueda.' : 'No hay agencias registradas.'}
+                      </td>
+                    </tr>
+                  {:else}
+                    {#each agenciasFiltradas as ag (ag.id)}
+                      <tr>
+                        <td class="adm__table-mono" style="color:var(--adm-text-muted);font-size:.8rem">#{ag.id}</td>
+                        <td style="font-weight:600">{ag.nombre}</td>
+                        <td style="color:var(--adm-text-muted)">{ag.correo}</td>
+                        <td class="adm__table-mono" style="font-size:.8rem">WS #{ag.usuarioWebisId}</td>
+                        <td><span style="font-weight:700;color:#2dd4bf">{ag.porcentajeDescuento?.toFixed(2)}%</span></td>
+                        <td><span class="adm__badge {badge(ag.estado)}">{ag.estado}</span></td>
+                        <td>
+                          <button class="adm__icon-btn" title="Editar" on:click={() => abrirEditarAgencia(ag)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    {/each}
+                  {/if}
+                </tbody>
+              </table>
+            </div>
+          {/if}
+        </div>
+
       {:else if activeSection === 'reportes'}
         <div class="adm__reportes-grid">
 
@@ -2927,11 +2918,10 @@
     role="button" tabindex="-1" aria-label="Cerrar modal"
   ></div>
 
-  <div class="adm__rol-modal" style="max-width:520px; border-radius:14px; overflow:hidden">
+  <div class="adm__rol-modal" style="max-width:520px;border-radius:14px;overflow:hidden">
 
-    <!-- Header -->
-    <div class="adm__modal-header" style="background:var(--adm-surface-2); padding:1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--adm-border)">
-      <div style="display:flex; align-items:center; gap:.75rem">
+    <div class="adm__modal-header" style="background:var(--adm-surface-2);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--adm-border)">
+      <div style="display:flex;align-items:center;gap:.75rem">
         <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#2dd4bf,#0d9488);display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="2.5">
             <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
@@ -2947,24 +2937,19 @@
       </button>
     </div>
 
-    <!-- Body -->
     <div class="adm__modal-body" style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
-
       <div class="adm__field">
         <label for="ea-nombre">Nombre de la agencia</label>
-        <input id="ea-nombre" type="text" bind:value={editAgencia.nombre} placeholder="Nombre de la agencia" />
+        <input id="ea-nombre" type="text" bind:value={editAgencia.nombre} placeholder="Nombre" />
       </div>
-
       <div class="adm__field">
         <label for="ea-correo">Correo electrónico</label>
         <input id="ea-correo" type="email" bind:value={editAgencia.correo} placeholder="agencia@ejemplo.com" />
       </div>
-
       <div class="adm__field">
         <label for="ea-descuento">Porcentaje de descuento (0–100)</label>
         <input id="ea-descuento" type="number" min="0" max="100" step="0.01" bind:value={editAgencia.porcentajeDescuento} />
       </div>
-
       <div class="adm__field">
         <label for="ea-estado">Estado</label>
         <select id="ea-estado" bind:value={editAgencia.estadoId}>
@@ -2972,33 +2957,17 @@
           <option value={2}>Cerrado</option>
         </select>
       </div>
-
       {#if mensajeAgencia}
-        <div class="adm__feedback adm__feedback--{mensajeAgencia.tipo}" style="margin:.25rem 0">
-          {#if mensajeAgencia.tipo === 'ok'}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          {:else}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          {/if}
+        <div class="adm__feedback adm__feedback--{mensajeAgencia.tipo}">
           {mensajeAgencia.texto}
         </div>
       {/if}
-
     </div>
 
-    <!-- Footer -->
-    <div class="adm__hotel-modal__footer" style="display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--adm-border);background:var(--adm-surface-2)">
-      <button class="adm__btn adm__btn--ghost" on:click={cerrarModalAgencia} disabled={guardandoAgencia}>
-        Cancelar
-      </button>
+    <div style="display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--adm-border);background:var(--adm-surface-2)">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModalAgencia} disabled={guardandoAgencia}>Cancelar</button>
       <button class="adm__btn adm__btn--primary" on:click={guardarAgencia} disabled={guardandoAgencia}>
-        {#if guardandoAgencia}
-          <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-          Guardando...
-        {:else}
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          Guardar cambios
-        {/if}
+        {#if guardandoAgencia}Guardando...{:else}Guardar cambios{/if}
       </button>
     </div>
 
