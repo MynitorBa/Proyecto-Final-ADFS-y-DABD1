@@ -1,0 +1,404 @@
+/* ── Agradecimiento — matches home.css palette ─────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --ag-primary:   #667eea;
+  --ag-secondary: #764ba2;
+  --ag-grad:      linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --ag-dark:      #0f172a;
+  --ag-medium:    #1e293b;
+  --ag-muted:     #64748b;
+  --ag-border:    #dde3f0;
+  --ag-bg:        #eef1f8;
+  --ag-card:      #f7f9fc;
+  --ag-white:     #ffffff;
+  --ag-success:   #10b981;
+  --ag-shadow-sm: 0 2px 8px rgba(102,126,234,.08);
+  --ag-shadow-md: 0 6px 24px rgba(102,126,234,.12);
+  --ag-shadow-lg: 0 16px 48px rgba(102,126,234,.16);
+  --ag-r:         16px;
+  --ag-rl:        22px;
+  --ag-t:         all 0.25s ease;
+}
+
+/* ── Page shell ────────────────────────────────────────────── */
+.agradecimiento {
+  min-height: 100vh;
+  background: var(--ag-bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--ag-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 1.5rem 7rem;
+}
+
+.agradecimiento__inner {
+  width: 100%;
+  max-width: 780px;
+}
+
+/* ── Hero banner ───────────────────────────────────────────── */
+.ag-hero {
+  background: var(--ag-grad);
+  border-radius: var(--ag-rl);
+  padding: 3.5rem 3rem;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(102,126,234,.4);
+  animation: agFadeUp .6s ease both;
+}
+
+.ag-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&q=60');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.07;
+}
+
+.ag-hero__content { position: relative; z-index: 1; }
+
+.ag-check {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.18);
+  border: 2.5px solid rgba(255,255,255,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.75rem;
+  animation: agPop .65s cubic-bezier(.34,1.56,.64,1) .1s both;
+}
+
+.ag-check svg { width: 36px; height: 36px; }
+
+.ag-eyebrow {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.72);
+  margin: 0 0 .75rem;
+}
+
+.ag-title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin: 0 0 .85rem;
+  letter-spacing: -.025em;
+  text-shadow: 0 2px 14px rgba(0,0,0,.18);
+}
+
+.ag-subtitle {
+  font-size: 1rem;
+  color: rgba(255,255,255,.88);
+  margin: 0 auto;
+  font-weight: 400;
+  max-width: 500px;
+  line-height: 1.65;
+}
+
+/* ── Facturas ──────────────────────────────────────────────── */
+.ag-facturas {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.ag-factura {
+  background: var(--ag-white);
+  border: 1.5px solid var(--ag-border);
+  border-radius: var(--ag-rl);
+  overflow: hidden;
+  box-shadow: var(--ag-shadow-sm);
+  transition: var(--ag-t);
+  animation: agFadeUp .5s ease both;
+}
+
+.ag-factura:hover {
+  border-color: var(--ag-primary);
+  box-shadow: var(--ag-shadow-md);
+  transform: translateY(-3px);
+}
+
+/* ── Factura head ── */
+.ag-factura__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.35rem 2rem;
+  border-bottom: 1.5px solid var(--ag-border);
+  background: var(--ag-card);
+}
+
+.ag-factura__hotel {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--ag-dark);
+}
+
+.ag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .35rem 1rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  background: rgba(16,185,129,.1);
+  color: var(--ag-success);
+  border: 1px solid rgba(16,185,129,.25);
+}
+
+/* ── Factura body grid ── */
+.ag-factura__body {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.75rem 2rem;
+}
+
+.ag-field {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.ag-field__label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ag-primary);
+}
+
+.ag-field__value {
+  font-size: .95rem;
+  color: var(--ag-medium);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ag-field--total .ag-field__value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: var(--ag-grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+
+.ag-field--full { grid-column: 1 / -1; }
+
+/* ── Reservation code strip ── */
+.ag-factura__code {
+  padding: 1rem 2rem;
+  border-top: 1.5px solid var(--ag-border);
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  background: var(--ag-card);
+}
+
+.ag-factura__code-label {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ag-muted);
+}
+
+.ag-factura__code-val {
+  font-family: 'Courier New', monospace;
+  font-size: .9rem;
+  color: var(--ag-primary);
+  background: rgba(102,126,234,.08);
+  padding: .25rem .75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(102,126,234,.2);
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+/* ── Grand total bar ───────────────────────────────────────── */
+.ag-total-bar {
+  background: var(--ag-white);
+  border: 1.5px solid var(--ag-border);
+  border-radius: var(--ag-rl);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.75rem;
+  box-shadow: var(--ag-shadow-sm);
+  animation: agFadeUp .5s .15s ease both;
+}
+
+.ag-total-bar__label {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--ag-muted);
+}
+
+.ag-total-bar__amount {
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: var(--ag-grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Actions ───────────────────────────────────────────────── */
+.ag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  animation: agFadeUp .5s .25s ease both;
+}
+
+.ag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  padding: 1rem 2.5rem;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: .97rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--ag-t);
+  border: none;
+  letter-spacing: .01em;
+}
+
+.ag-btn--primary {
+  background: var(--ag-grad);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(102,126,234,.4);
+}
+
+.ag-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(102,126,234,.52);
+}
+
+.ag-btn--outline {
+  background: var(--ag-white);
+  color: var(--ag-primary);
+  border: 2px solid var(--ag-border);
+}
+
+.ag-btn--outline:hover {
+  border-color: var(--ag-primary);
+  background: rgba(102,126,234,.05);
+  transform: translateY(-1px);
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes agFadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes agPop {
+  from { opacity: 0; transform: scale(.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .ag-hero            { padding: 2.5rem 1.75rem; }
+  .ag-factura__body   { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .ag-factura__head,
+  .ag-factura__code   { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .ag-total-bar       { flex-direction: column; gap: .5rem; text-align: center; }
+  .ag-actions         { flex-direction: column; }
+  .ag-btn             { width: 100%; justify-content: center; }
+}
+
+/* ── Botón descargar factura ───────────────────────────────── */
+.ag-factura__download {
+  padding: 1.1rem 2rem;
+  border-top: 1.5px solid var(--ag-border);
+  background: var(--ag-card);
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.ag-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  width: 100%;
+  padding: .875rem 1.5rem;
+  background: var(--ag-grad);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--ag-t);
+  box-shadow: 0 4px 16px rgba(102,126,234,.3);
+  letter-spacing: .01em;
+}
+
+.ag-download-btn:hover:not(:disabled) {
+  opacity: .9;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(102,126,234,.45);
+}
+
+.ag-download-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ag-download-error {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .55rem .875rem;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: .82rem;
+  margin: 0;
+}
+
+/* ── Spinner ───────────────────────────────────────────────── */
+.ag-spinner {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 2.5px solid rgba(255,255,255,.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: agSpin .7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes agSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  .ag-factura__download { padding: 1rem 1.25rem; }
+}
