@@ -22,6 +22,43 @@
   let comentarioError  = '';
   let comentarioOk     = false;
 
+  // ── Descarga de factura ───────────────────────────────────
+  let downloadingId  = null;
+  let downloadError  = '';
+
+  async function downloadFactura(reservacionId) {
+    downloadingId = reservacionId;
+    downloadError = '';
+    try {
+      const res = await fetch(`${API}/reservaciones/${reservacionId}/pdf`, {
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        let msg = `Error ${res.status}`;
+        try { const d = await res.json(); msg = d.mensaje || d.message || msg; } catch(_) {}
+        throw new Error(msg);
+      }
+
+      const contentType = res.headers.get('Content-Type') || '';
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = contentType.includes('pdf')
+        ? `factura-${reservacionId}.pdf`
+        : `factura-${reservacionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch(e) {
+      downloadError = /** @type {any} */ (e).message || 'Error al descargar la factura';
+    } finally {
+      downloadingId = null;
+    }
+  }
+
   // ── Agrupar filas por id de reservación ──────────────────
   function groupReservations(rows) {
     const map = new Map();
@@ -37,14 +74,14 @@
           fechaCancelacion:  row.fechaCancelacion,
           motivoCancelacion: row.motivoCancelacion,
           nombreHotel:       row.nombreHotel,
-          hotelId:           row.hotelId,       // ← ahora viene del API
+          hotelId:           row.hotelId,
           habitaciones:      [],
         });
       }
       map.get(row.id).habitaciones.push({
         detalleId:             row.detalleId,
         habitacionId:          row.habitacionId,
-        hotelId:               row.hotelId,   // guardarlo aquí también
+        hotelId:               row.hotelId,
         fechaCheckIn:          row.fechaCheckIn,
         fechaCheckOut:         row.fechaCheckOut,
         cantidadPersonas:      row.cantidadPersonas,
@@ -186,11 +223,11 @@
     comentario       = { resena: 5, contenido: '' };
     comentarioError  = '';
     comentarioOk     = false;
+    downloadError    = '';
   }
 
   async function submitComentario() {
     if (!selectedReservation) return;
-    // Resolver hotelId: del objeto principal o de cualquier habitación
     const hotelId = selectedReservation.hotelId
       ?? selectedReservation.habitaciones?.find((/** @type {any} */ h) => h.hotelId)?.hotelId;
 
@@ -216,7 +253,6 @@
         comentarioError = data.mensaje || data.message || `Error ${res.status}`;
       } else {
         comentarioOk = true;
-        // Actualizar el set para que no aparezca el form en otros paneles del mismo hotel
         hotelesConResena = new Set([...hotelesConResena, hotelId]);
       }
     } catch(e) {
@@ -325,6 +361,19 @@
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                   Ver Detalles
                 </button>
+                <button
+                  class="abtn download"
+                  on:click={() => downloadFactura(r.id)}
+                  disabled={downloadingId === r.id}
+                >
+                  {#if downloadingId === r.id}
+                    <span class="comment-spinner" style="border-color:rgba(102,126,234,.3);border-top-color:#667eea;"></span>
+                    Descargando...
+                  {:else}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Descargar Factura
+                  {/if}
+                </button>
                 {#if r.estado?.toLowerCase() === 'pendiente' || r.estado?.toLowerCase() === 'confirmada'}
                   <button class="abtn danger" on:click={() => openCancelDialog(r.id)}>Cancelar Reserva</button>
                 {/if}
@@ -366,6 +415,29 @@
       </div>
 
       <div class="panel-body">
+
+        <!-- ── Botón descargar factura en el panel ── -->
+        <div class="panel-download-wrap">
+          <button
+            class="panel-download-btn"
+            on:click={() => downloadFactura(sr.id)}
+            disabled={downloadingId === sr.id}
+          >
+            {#if downloadingId === sr.id}
+              <span class="comment-spinner"></span>
+              Descargando factura...
+            {:else}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Descargar Factura PDF
+            {/if}
+          </button>
+          {#if downloadError}
+            <div class="download-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {downloadError}
+            </div>
+          {/if}
+        </div>
 
         <!-- Info general -->
         <div class="panel-section">
@@ -455,7 +527,6 @@
             </h4>
 
             {#if yaReseno && !comentarioOk}
-              <!-- Ya existe reseña en este hotel -->
               <div class="comment-already">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Ya dejaste una reseña para <strong>{sr.nombreHotel}</strong>. Solo se permite una reseña por hotel.
@@ -468,7 +539,6 @@
               </div>
 
             {:else}
-              <!-- Formulario -->
               <div class="stars-row">
                 <span class="panel-lbl" style="margin-bottom:.5rem;display:block">Calificación</span>
                 <div class="stars">

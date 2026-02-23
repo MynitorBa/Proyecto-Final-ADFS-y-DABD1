@@ -1,19 +1,28 @@
 <script>
+  // @ts-nocheck
   import logo from '../assets/mikuinn-logo.png';
   import '../styles/Footer.css';
+
+  export let navigateTo;
 
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
-    { name: 'Inicio', href: '#/' },
-    { name: 'Sobre Nosotros', href: '#/about' },
+    { name: 'Inicio',         page: 'home' },
+    { name: 'Sobre Nosotros', page: 'sobre-nosotros' },
   ];
 
   const support = [
-    { name: 'Centro de Ayuda', href: '#/help' },
-    { name: 'Contactanos', href: '#/contact' },
-    { name: 'Preguntas Frecuentes', href: '#/faq' },
-    { name: 'Politica de Cancelacion', href: '#/cancellation' },
+    { name: 'Centro de Ayuda',       page: 'centro-ayuda' },
+    { name: 'Contactanos',           page: 'contactanos' },
+    { name: 'Preguntas Frecuentes',  page: 'preguntas-frecuentes' },
+    { name: 'Politica de Cancelacion', page: 'politica-cancelacion' },
+  ];
+
+  const legalLinks = [
+    { name: 'Privacidad', page: 'privacidad' },
+    { name: 'Terminos',   page: 'terminos' },
+    { name: 'Cookies',    page: 'cookies' },
   ];
 
   const socialLinks = [
@@ -29,12 +38,6 @@
       name: 'Twitter', href: 'https://twitter.com',
       icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>`
     },
-  ];
-
-  const legalLinks = [
-    { name: 'Privacidad', href: '#/privacy' },
-    { name: 'Terminos', href: '#/terms' },
-    { name: 'Cookies', href: '#/cookies' },
   ];
 
   const chevronRight = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
@@ -62,7 +65,11 @@
         <h3 class="footer-title">Enlaces Rapidos</h3>
         <ul class="footer-links">
           {#each quickLinks as link}
-            <li><a href={link.href} class="footer-link">{@html chevronRight}{link.name}</a></li>
+            <li>
+              <button class="footer-link" on:click={() => navigateTo(link.page)}>
+                {@html chevronRight}{link.name}
+              </button>
+            </li>
           {/each}
         </ul>
       </div>
@@ -71,7 +78,11 @@
         <h3 class="footer-title">Ayuda</h3>
         <ul class="footer-links">
           {#each support as link}
-            <li><a href={link.href} class="footer-link">{@html chevronRight}{link.name}</a></li>
+            <li>
+              <button class="footer-link" on:click={() => navigateTo(link.page)}>
+                {@html chevronRight}{link.name}
+              </button>
+            </li>
           {/each}
         </ul>
       </div>
@@ -110,7 +121,7 @@
 
         <div class="newsletter">
           <h4 class="newsletter-title">Suscribete a nuestro boletin</h4>
-          <form class="newsletter-form">
+          <form class="newsletter-form" on:submit|preventDefault>
             <input type="email" placeholder="Tu correo electronico" class="newsletter-input" required />
             <button type="submit" class="newsletter-button" aria-label="Suscribirse">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -127,7 +138,7 @@
       <p class="copyright">© {currentYear} <strong>Miku Inn</strong>. Todos los derechos reservados.</p>
       <nav class="footer-legal" aria-label="Legal">
         {#each legalLinks as link, i}
-          <a href={link.href} class="legal-link">{link.name}</a>
+          <button class="legal-link" on:click={() => navigateTo(link.page)}>{link.name}</button>
           {#if i < legalLinks.length - 1}<span class="separator" aria-hidden="true">•</span>{/if}
         {/each}
       </nav>

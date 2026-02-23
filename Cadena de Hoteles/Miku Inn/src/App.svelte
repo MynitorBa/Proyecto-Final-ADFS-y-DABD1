@@ -8,6 +8,7 @@
   import SearchResults from './pages/SearchResults.svelte';
   import HotelDetail from './pages/HotelDetail.svelte';
   import Checkout from './pages/Checkout.svelte';
+  import Agradecimiento from './pages/Agradecimiento.svelte';
   import Login from './pages/Login.svelte';
   import Register from './pages/Register.svelte';
   import MyReservations from './pages/MyReservations.svelte';
@@ -15,13 +16,23 @@
   import DestinoDetail from './pages/DestinoDetail.svelte';
   import Profile from './pages/Profile.svelte';
   import Administrador from './pages/Administrador.svelte';
-  import WebService from './pages/WebService.svelte';         // ← NUEVO
+  import WebService from './pages/WebService.svelte';
+
+  import SobreNosotros       from './pages/SobreNosotros.svelte';
+  import CentroAyuda         from './pages/CentroAyuda.svelte';
+  import Contactanos         from './pages/Contactanos.svelte';
+  import PreguntasFrecuentes from './pages/PreguntasFrecuentes.svelte';
+  import PoliticaCancelacion from './pages/PoliticaCancelacion.svelte';
+  import Privacidad          from './pages/Privacidad.svelte';
+  import Terminos            from './pages/Terminos.svelte';
+  import Cookies             from './pages/Cookies.svelte';
 
   import './app.css';
   import './styles/home.css';
   import './styles/searchresults.css';
   import './styles/hoteldetail.css';
   import './styles/checkout.css';
+  import './styles/Agradecimiento.css';
   import './styles/login.css';
   import './styles/register.css';
   import './styles/myreservations.css';
@@ -29,17 +40,19 @@
   import './styles/destinos.css';
   import './styles/profile.css';
   import './styles/administrador.css';
-  import './styles/webservice.css';                          // ← NUEVO
+  import './styles/webservice.css';
+  import './styles/info-pages.css';
 
   const API = 'http://localhost:7000';
 
-  let currentPage      = 'home';
-  let checkoutData     = null;
-  let currentHotelData = null;
-  let currentDestinoId = null;
-  let searchParams     = null;
+  let currentPage           = 'home';
+  let checkoutData          = null;
+  let agradecimientoData    = null;
+  let currentHotelData      = null;
+  let currentDestinoId      = null;
+  let searchParams          = null;
   let destinationSuggestion = null;
-  let pageKey          = Date.now();
+  let pageKey               = Date.now();
 
   let isLoggedIn     = false;
   let userName       = '';
@@ -82,25 +95,18 @@
   }
 
   function navigateTo(page, data = null) {
-    // Proteger ruta administrador
-    if (page === 'administrador' && userRolId !== 2) {
-      navigateTo('home');
-      return;
-    }
-    // Proteger ruta webservice
-    if (page === 'webservice' && userRolId !== 3) {
-      navigateTo('home');
-      return;
-    }
+    if (page === 'administrador' && userRolId !== 2) { navigateTo('home'); return; }
+    if (page === 'webservice'    && userRolId !== 3) { navigateTo('home'); return; }
 
     currentPage = page;
     pageKey     = Date.now();
     window.history.pushState({}, '', `/${page}`);
 
-    if (page === 'hotel-detail')   currentHotelData = data;
-    if (page === 'destino-detail') currentDestinoId = data;
-    if (page === 'search-results') searchParams     = data;
-    if (page === 'checkout')       checkoutData     = data;
+    if (page === 'hotel-detail')   currentHotelData   = data;
+    if (page === 'destino-detail') currentDestinoId   = data;
+    if (page === 'search-results') searchParams       = data;
+    if (page === 'checkout')       checkoutData       = data;
+    if (page === 'agradecimiento') agradecimientoData = data;
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -112,18 +118,12 @@
   function handleLogin(event) {
     const name  = event.detail?.name  ?? event.detail?.email ?? 'Usuario';
     const rolId = event.detail?.rolId ?? null;
-    isLoggedIn = true;
-    userName   = name;
-    userRolId  = rolId;
-
-    // Redirigir siempre al home al iniciar sesión
+    isLoggedIn = true; userName = name; userRolId = rolId;
     navigateTo('home');
   }
 
   async function handleLogout() {
-    try {
-      await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' });
-    } catch (_) {}
+    try { await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch (_) {}
     isLoggedIn = false; userName = ''; userRolId = null;
     navigateTo('home');
   }
@@ -138,11 +138,7 @@
   {:else}
     {#if showHeaderFooter}
       <Header
-        {navigateTo}
-        {currentPage}
-        {isLoggedIn}
-        {userName}
-        {userRolId}
+        {navigateTo} {currentPage} {isLoggedIn} {userName} {userRolId}
         on:search={handleHeaderSearch}
         on:logout={handleLogout}
       />
@@ -150,48 +146,80 @@
 
     <main class="app-main">
       {#if currentPage === 'home'}
-        {#key pageKey}
-          <Home {navigateTo} {destinationSuggestion} />
-        {/key}
+        {#key pageKey}<Home {navigateTo} {destinationSuggestion} />{/key}
+
       {:else if currentPage === 'search-results'}
-          <SearchResults {navigateTo} {searchParams} />
+        <SearchResults {navigateTo} {searchParams} />
+
       {:else if currentPage === 'hotel-detail'}
-          <HotelDetail
-            {navigateTo}
-            hotel={currentHotelData?.hotel ?? null}
-            cantidadPersonas={currentHotelData?.cantidadPersonas ?? 1}
-            fechaCheckIn={currentHotelData?.fechaCheckIn ?? ''}
-            fechaCheckOut={currentHotelData?.fechaCheckOut ?? ''}
-          />
+        <HotelDetail
+          {navigateTo}
+          hotel={currentHotelData?.hotel ?? null}
+          cantidadPersonas={currentHotelData?.cantidadPersonas ?? 1}
+          fechaCheckIn={currentHotelData?.fechaCheckIn ?? ''}
+          fechaCheckOut={currentHotelData?.fechaCheckOut ?? ''}
+        />
+
       {:else if currentPage === 'checkout'}
-          <Checkout {navigateTo} {checkoutData} />
+        <Checkout {navigateTo} {checkoutData} />
+
+      {:else if currentPage === 'agradecimiento'}
+        {#key pageKey}<Agradecimiento {navigateTo} {agradecimientoData} />{/key}
+
       {:else if currentPage === 'login'}
-        {#key pageKey}
-          <Login {navigateTo} on:login={handleLogin} />
-        {/key}
+        {#key pageKey}<Login {navigateTo} on:login={handleLogin} />{/key}
+
       {:else if currentPage === 'register'}
-        {#key pageKey}
-          <Register {navigateTo} on:login={handleLogin} />
-        {/key}
+        {#key pageKey}<Register {navigateTo} on:login={handleLogin} />{/key}
+
       {:else if currentPage === 'reservations'}
-        {#key pageKey}
-          <MyReservations {navigateTo} />
-        {/key}
+        {#key pageKey}<MyReservations {navigateTo} />{/key}
+
       {:else if currentPage === 'destinations'}
         <Destinos {navigateTo} />
+
       {:else if currentPage === 'destino-detail'}
         <DestinoDetail {navigateTo} destinoId={currentDestinoId} />
+
       {:else if currentPage === 'profile'}
         <Profile {navigateTo} />
+
       {:else if currentPage === 'administrador' && userRolId === 2}
         <Administrador {navigateTo} />
+
       {:else if currentPage === 'webservice' && userRolId === 3}
-        <WebService {navigateTo} />                          <!-- ← NUEVO -->
+        <WebService {navigateTo} />
+
+      <!-- ── Páginas informativas ── -->
+      {:else if currentPage === 'sobre-nosotros'}
+        {#key pageKey}<SobreNosotros {navigateTo} />{/key}
+
+      {:else if currentPage === 'centro-ayuda'}
+        {#key pageKey}<CentroAyuda {navigateTo} />{/key}
+
+      {:else if currentPage === 'contactanos'}
+        {#key pageKey}<Contactanos {navigateTo} />{/key}
+
+      {:else if currentPage === 'preguntas-frecuentes'}
+        {#key pageKey}<PreguntasFrecuentes {navigateTo} />{/key}
+
+      {:else if currentPage === 'politica-cancelacion'}
+        {#key pageKey}<PoliticaCancelacion {navigateTo} />{/key}
+
+      {:else if currentPage === 'privacidad'}
+        {#key pageKey}<Privacidad {navigateTo} />{/key}
+
+      {:else if currentPage === 'terminos'}
+        {#key pageKey}<Terminos {navigateTo} />{/key}
+
+      {:else if currentPage === 'cookies'}
+        {#key pageKey}<Cookies {navigateTo} />{/key}
+
       {/if}
     </main>
 
     {#if showHeaderFooter}
-      <Footer />
+      <Footer {navigateTo} />
     {/if}
   {/if}
 </div>
