@@ -16,6 +16,14 @@ import org.example.controllers.UsuarioController;
 import org.example.data.DatabaseTest;
 import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
+import org.example.controllers.CancelacionAgenciaController;
+import org.example.controllers.DestinosController;
+
+
+//import agencias
+import org.example.controllers.BusquedaAgenciaController;
+import org.example.controllers.ReservacionAgenciaController;
+import org.example.controllers.PagoAgenciaController;
 
 import java.util.Map;
 
@@ -58,7 +66,16 @@ public class Main {
         new DownsController().registerRoutes(app);
         new CancelacionController().registerRoutes(app);
         new ImagenController().registerRoutes(app);
-        new HotelController().registerRoutes(app);   // ← Panel de administración
+        new HotelController().registerRoutes(app);
+
+        // Controllers de agencias
+        new BusquedaAgenciaController().registerRoutes(app);
+        new ReservacionAgenciaController().registerRoutes(app);
+        new PagoAgenciaController().registerRoutes(app);
+        new CancelacionAgenciaController().registerRoutes(app);
+        new DestinosController().registerRoutes(app);
+
+
 
         // ── Rutas base ────────────────────────────────────────────────────────
         app.get("/", ctx -> ctx.json("OK"));
