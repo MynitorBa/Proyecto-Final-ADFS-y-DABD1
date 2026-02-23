@@ -7,7 +7,17 @@ import java.util.List;
 
 public class PdfReservacionRepository {
 
-    // ------------------- Verificar que la reservación pertenece al usuario --------------------------------
+    // -------------------------------- Obtener correo del usuario ----------------
+
+    public String obtenerCorreoUsuario(int usuarioId) {
+        String sql = "SELECT Correo FROM Usuario WHERE ID = ?";
+        List<String> result = DatabaseManager.executeQuery(
+                sql, rs -> rs.getString("Correo"), usuarioId
+        );
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+    //-------------------- Verificar que la reservación pertenece al usuario -------------------
 
     public boolean perteneceAlUsuario(int reservacionId, int usuarioId) {
         String sql = "SELECT COUNT(*) AS total FROM Reservacion " +
@@ -18,7 +28,7 @@ public class PdfReservacionRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
-    // ------------------------------ Obtener datos completos de la reservación ------------------------
+    // ------------------------ Obtener datos completos de la reservación -------------------------------
 
     public List<ReservacionDetalleDTO> obtenerDetalles(int reservacionId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
@@ -65,7 +75,7 @@ public class PdfReservacionRepository {
         }, reservacionId);
     }
 
-    // --------------------------- Obtener factura si existe ---------------------------------
+    // -----------------------Obtener factura si existe ----------------------------------------------
 
     public Object[] obtenerFactura(int reservacionId) {
         String sql = "SELECT ID, Fecha, NIT, Codigo_Postal, Total " +

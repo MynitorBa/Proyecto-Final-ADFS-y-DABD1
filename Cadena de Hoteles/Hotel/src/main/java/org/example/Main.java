@@ -2,7 +2,7 @@ package org.example;
 
 import io.javalin.Javalin;
 import org.example.config.ServerConfig;
-import org.example.controllers.AgenciaController;         // ← añadir
+import org.example.controllers.AgenciaController;
 import org.example.controllers.AuthController;
 import org.example.controllers.BusquedaController;
 import org.example.controllers.CancelacionController;
@@ -18,6 +18,17 @@ import org.example.data.DatabaseTest;
 import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
 import org.example.controllers.PdfReservacionController;
+import org.example.controllers.DestinosController;
+
+
+import org.example.controllers.EmailReservacionController;
+
+//import de agencias
+import org.example.controllers.CancelacionAgenciaController;
+import org.example.controllers.BusquedaAgenciaController;
+import org.example.controllers.ReservacionAgenciaController;
+import org.example.controllers.PagoAgenciaController;
+
 
 import java.util.Map;
 
@@ -58,9 +69,22 @@ public class Main {
         new DownsController().registerRoutes(app);
         new CancelacionController().registerRoutes(app);
         new ImagenController().registerRoutes(app);
-        new HotelController().registerRoutes(app);         // ← añadir
-        new AgenciaController().registerRoutes(app);       // ← añadir
+        new HotelController().registerRoutes(app);
+        new AgenciaController().registerRoutes(app);
         new PdfReservacionController().registerRoutes(app);
+
+
+        //agencia
+        new CancelacionAgenciaController().registerRoutes(app);
+        new ReservacionAgenciaController().registerRoutes(app);
+        new BusquedaAgenciaController().registerRoutes(app);
+        new PagoAgenciaController().registerRoutes(app);
+
+
+
+        new DestinosController().registerRoutes(app);
+        new EmailReservacionController().registerRoutes(app);
+
 
         // ── Rutas base ────────────────────────────────────────────────────────
         app.get("/", ctx -> ctx.json("OK"));
