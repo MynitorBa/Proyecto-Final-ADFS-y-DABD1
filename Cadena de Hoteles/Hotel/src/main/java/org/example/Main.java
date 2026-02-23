@@ -17,6 +17,7 @@ import org.example.controllers.UsuarioController;
 import org.example.data.DatabaseTest;
 import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
+import org.example.controllers.PdfReservacionController;
 
 import java.util.Map;
 
@@ -59,6 +60,7 @@ public class Main {
         new ImagenController().registerRoutes(app);
         new HotelController().registerRoutes(app);         // ← añadir
         new AgenciaController().registerRoutes(app);       // ← añadir
+        new PdfReservacionController().registerRoutes(app);
 
         // ── Rutas base ────────────────────────────────────────────────────────
         app.get("/", ctx -> ctx.json("OK"));
