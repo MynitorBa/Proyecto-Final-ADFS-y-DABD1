@@ -9,14 +9,15 @@
   export let currentPage = 'home';
   export let isLoggedIn = false;
   export let userName = '';
-  export let userRolId = null; // 1 = Usuario, 2 = Administrador
+  export let userRolId = null; // 1 = Usuario, 2 = Administrador, 3 = Webservice
 
   let showUserMenu = false;
   let showMobileMenu = false;
   let searchQuery = '';
   let isScrolled = false;
 
-  $: isAdmin = userRolId === 2;
+  $: isAdmin      = userRolId === 2;
+  $: isWebservice = userRolId === 3;
 
   function handleScroll() { isScrolled = window.scrollY > 10; }
   function toggleUserMenu() { showUserMenu = !showUserMenu; showMobileMenu = false; }
@@ -58,6 +59,10 @@
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
         Destinos
       </button>
+      <button class="nav-link" class:active={isActivePage('offers')} on:click={() => handleNavClick('offers')}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+        Ofertas
+      </button>
       <button class="nav-link" class:active={isActivePage('reservations')} on:click={() => handleNavClick('reservations')}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
         Mis Reservas
@@ -69,6 +74,15 @@
             <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
           Panel Admin
+        </button>
+      {/if}
+
+      {#if isWebservice}
+        <button class="nav-link nav-link--webservice" class:active={isActivePage('webservice')} on:click={() => handleNavClick('webservice')}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+          Portal WS
         </button>
       {/if}
     </nav>
@@ -95,9 +109,11 @@
         <div class="user-menu-wrapper">
           <button class="action-button user-button" on:click|stopPropagation={toggleUserMenu}
             aria-label="Menu de usuario" aria-expanded={showUserMenu}>
-            <div class="user-avatar" class:user-avatar--admin={isAdmin}>
+            <div class="user-avatar" class:user-avatar--admin={isAdmin} class:user-avatar--webservice={isWebservice}>
               {#if isAdmin}
                 <span class="user-avatar__icon">⚙</span>
+              {:else if isWebservice}
+                <span class="user-avatar__icon">⬡</span>
               {:else}
                 {userName.charAt(0).toUpperCase()}
               {/if}
@@ -105,6 +121,7 @@
             <span class="user-name-desktop">
               {userName}
               {#if isAdmin}<span class="user-admin-badge">Admin</span>{/if}
+              {#if isWebservice}<span class="user-ws-badge">WS</span>{/if}
             </span>
             <svg class="dropdown-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
@@ -113,13 +130,15 @@
             <div class="user-dropdown" role="menu" tabindex="-1" on:keydown={handleDropdownKey} on:click|stopPropagation>
               <div class="dropdown-header">
                 <div class="dropdown-user-info">
-                  <div class="dropdown-avatar" class:dropdown-avatar--admin={isAdmin}>
-                    {#if isAdmin}⚙{:else}{userName.charAt(0).toUpperCase()}{/if}
+                  <div class="dropdown-avatar" class:dropdown-avatar--admin={isAdmin} class:dropdown-avatar--webservice={isWebservice}>
+                    {#if isAdmin}⚙{:else if isWebservice}⬡{:else}{userName.charAt(0).toUpperCase()}{/if}
                   </div>
                   <div class="dropdown-user-details">
                     <strong>{userName}</strong>
                     {#if isAdmin}
                       <span class="dropdown-role-badge">Administrador</span>
+                    {:else if isWebservice}
+                      <span class="dropdown-role-badge dropdown-role-badge--ws">Webservice</span>
                     {:else}
                       <span class="dropdown-role-label">Usuario</span>
                     {/if}
@@ -145,6 +164,17 @@
                     <rect x="3" y="14" width="7" height="7"></rect>
                   </svg>
                   Panel de Administrador
+                </button>
+              {/if}
+
+              {#if isWebservice}
+                <button class="dropdown-item dropdown-item--webservice" role="menuitem" on:click={() => handleNavClick('webservice')}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                  </svg>
+                  Portal Webservice
                 </button>
               {/if}
 
@@ -192,6 +222,11 @@
         {#if isAdmin}
           <button class="mobile-nav-link mobile-nav-link--admin" on:click={() => handleNavClick('administrador')}>
             ⚙ Panel Admin
+          </button>
+        {/if}
+        {#if isWebservice}
+          <button class="mobile-nav-link mobile-nav-link--webservice" on:click={() => handleNavClick('webservice')}>
+            ⬡ Portal WS
           </button>
         {/if}
         <div class="mobile-divider"></div>
