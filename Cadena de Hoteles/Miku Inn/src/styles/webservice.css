@@ -614,3 +614,195 @@
   border-color: rgba(45,212,191,0.4) !important;
   color: #99f6e4 !important;
 }
+
+/* ════════════════════════════════════════════
+   ONBOARDING (sin agencia)
+   ════════════════════════════════════════════ */
+.ws__loading-full,
+.ws__error-full {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 60vh;
+  color: #8b949e;
+  font-size: .9rem;
+}
+.ws__error-full svg { opacity: .7; }
+
+.ws__onboarding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  height: 65vh;
+  text-align: center;
+  padding: 2rem;
+}
+.ws__onboarding-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(45,212,191,.15), rgba(13,148,136,.1));
+  border: 1px solid rgba(45,212,191,.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2dd4bf;
+}
+.ws__onboarding-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e6edf3;
+  margin: 0;
+}
+.ws__onboarding-sub {
+  font-size: .9rem;
+  color: #8b949e;
+  max-width: 380px;
+  line-height: 1.6;
+  margin: 0;
+}
+.ws__btn--lg {
+  padding: .75rem 1.75rem;
+  font-size: .9rem;
+  border-radius: 10px;
+}
+.ws__btn--sm {
+  padding: .35rem .75rem;
+  font-size: .78rem;
+}
+
+/* ════════════════════════════════════════════
+   AGENCY VIEW — tarjeta de detalle
+   ════════════════════════════════════════════ */
+.ws__agency-view {
+  max-width: 760px;
+}
+.ws__page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ws__agency-card {
+  background: #161b22;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Banner */
+.ws__agency-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.75rem;
+  background: linear-gradient(135deg, rgba(45,212,191,.12), rgba(13,148,136,.07));
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.ws__agency-banner-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2dd4bf, #0d9488);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(45,212,191,.25);
+}
+.ws__agency-banner-info { flex: 1; }
+.ws__agency-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e6edf3;
+  margin: 0 0 .2rem;
+}
+.ws__agency-id { font-size: .78rem; color: #8b949e; margin: 0; }
+
+/* Badge grande */
+.ws__badge--lg {
+  padding: .35rem 1rem;
+  font-size: .8rem;
+  font-weight: 700;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.ws__badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* Grid de stats */
+.ws__agency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0;
+}
+.ws__agency-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: .875rem;
+  padding: 1.25rem 1.75rem;
+  border-right: 1px solid rgba(255,255,255,.05);
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.ws__agency-stat:last-child { border-right: none; }
+.ws__agency-stat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ws__agency-stat-icon--teal  { background: rgba(45,212,191,.12); color: #2dd4bf; }
+.ws__agency-stat-icon--amber { background: rgba(227,179,65,.12);  color: #e3b341; }
+.ws__agency-stat-icon--blue  { background: rgba(88,166,255,.12);  color: #58a6ff; }
+.ws__agency-stat-label {
+  font-size: .72rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 600;
+  margin: 0 0 .25rem;
+}
+.ws__agency-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e6edf3;
+  margin: 0;
+}
+.ws__agency-stat-value--accent { color: #2dd4bf; font-size: 1.25rem; }
+.ws__agency-stat-hint {
+  font-size: .7rem;
+  color: #8b949e;
+  margin: .2rem 0 0;
+  font-style: italic;
+}
+
+/* Acciones */
+.ws__agency-actions {
+  padding: 1.25rem 1.75rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.02);
+  display: flex;
+  gap: .75rem;
+}
+.ws__btn--warning {
+  background: rgba(227,179,65,.12);
+  color: #e3b341;
+  border: 1px solid rgba(227,179,65,.25);
+}
+.ws__btn--warning:hover:not(:disabled) {
+  background: rgba(227,179,65,.22);
+}

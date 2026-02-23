@@ -55,18 +55,22 @@ public class AgenciaRepository {
             throw new IllegalArgumentException("El nombre de la agencia es obligatorio");
         if (req.getCorreo() == null || req.getCorreo().isBlank())
             throw new IllegalArgumentException("El correo de la agencia es obligatorio");
-        if (req.getPorcentajeDescuento() < 0 || req.getPorcentajeDescuento() > 100)
-            throw new IllegalArgumentException("El porcentaje de descuento debe estar entre 0 y 100");
 
+        // Un usuario webservice solo puede tener una agencia
+        String checkSql = "SELECT COUNT(*) AS C FROM Agencia WHERE UsuarioWebis_ID = ?";
+        List<Integer> existe = DatabaseManager.executeQuery(checkSql, rs -> rs.getInt("C"), usuarioId);
+        if (!existe.isEmpty() && existe.get(0) > 0)
+            throw new IllegalArgumentException("Ya tienes una agencia registrada. Solo se permite una por usuario webservice.");
+
+        // El descuento siempre inicia en 0, solo el admin puede cambiarlo
         String sql = """
                 INSERT INTO Agencia (Nombre, Correo, UsuarioWebis_ID, PorcentajeDescuento, EstadoID)
-                VALUES (?, ?, ?, ?, 1)
+                VALUES (?, ?, ?, 0, 1)
                 """;
         int nuevoId = DatabaseManager.executeInsertReturnId(sql, "ID",
                 req.getNombre().trim(),
                 req.getCorreo().trim(),
-                usuarioId,
-                req.getPorcentajeDescuento()
+                usuarioId
         );
 
         AgenciaDTO dto = new AgenciaDTO();
@@ -74,7 +78,7 @@ public class AgenciaRepository {
         dto.setNombre(req.getNombre().trim());
         dto.setCorreo(req.getCorreo().trim());
         dto.setUsuarioWebisId(usuarioId);
-        dto.setPorcentajeDescuento(req.getPorcentajeDescuento());
+        dto.setPorcentajeDescuento(0);
         dto.setEstadoId(1);
         dto.setEstado("Activo");
         return dto;
