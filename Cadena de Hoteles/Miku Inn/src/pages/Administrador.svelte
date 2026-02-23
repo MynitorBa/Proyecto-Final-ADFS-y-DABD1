@@ -79,6 +79,7 @@
     cargarMetricas();
     cargarReservas();
     cargarConteosReservas();
+    cargarAgencias();
   });
 
   // ════════════════════════════════════════════════════
@@ -799,7 +800,6 @@
   let reservas          = [];
   let cargandoReservas  = false;
   let errorReservas     = null;
-
   // Filtros — se envían al backend, no se filtran en el frontend
   let busquedaReserva     = '';
   let filtroEstadoReserva = 'todos';
@@ -944,9 +944,10 @@
       if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
       mensajeRol = { tipo: 'ok', texto: 'Rol actualizado correctamente.' };
       // Reflejar el cambio en la lista local sin recargar todo
+      const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice' };
       usuarios = usuarios.map(u =>
         u.id === usuarioSeleccionado.id
-          ? { ...u, rolId: editUsuario.rolId, rolNombre: editUsuario.rolId === 2 ? 'Administrador' : 'Usuario Registrado' }
+          ? { ...u, rolId: editUsuario.rolId, rolNombre: rolNombres[editUsuario.rolId] ?? 'Usuario Registrado' }
           : u
       );
     } catch (e) {
@@ -984,12 +985,100 @@
   }
 
 
+  // ════════════════════════════════════════════════════
+  //  AGENCIAS (admin) — estado y funciones
+  // ════════════════════════════════════════════════════
+  let agencias          = [];
+  let cargandoAgencias  = false;
+  let errorAgencias     = null;
+  let busquedaAgencia   = '';
+  let showModalEditarAgencia = false;
+  let agenciaEditando        = null;
+  let editAgencia            = { nombre: '', correo: '', porcentajeDescuento: 0, estadoId: 1 };
+  let guardandoAgencia       = false;
+  let mensajeAgencia         = null;
+
+  $: agenciasFiltradas = agencias.filter(a =>
+    a.nombre?.toLowerCase().includes(busquedaAgencia.toLowerCase()) ||
+    a.correo?.toLowerCase().includes(busquedaAgencia.toLowerCase()) ||
+    String(a.id).includes(busquedaAgencia)
+  );
+
+  async function cargarAgencias() {
+    cargandoAgencias = true;
+    errorAgencias    = null;
+    try {
+      const res = await fetch(`${API_BASE}/admin/agencias`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      agencias = await res.json();
+    } catch (e) {
+      errorAgencias = 'No se pudo cargar la lista de agencias. ' + e.message;
+    } finally {
+      cargandoAgencias = false;
+    }
+  }
+
+  function abrirEditarAgencia(ag) {
+    agenciaEditando = ag;
+    editAgencia = {
+      nombre:              ag.nombre              ?? '',
+      correo:              ag.correo              ?? '',
+      porcentajeDescuento: ag.porcentajeDescuento ?? 0,
+      estadoId:            ag.estadoId            ?? 1,
+    };
+    mensajeAgencia         = null;
+    showModalEditarAgencia = true;
+  }
+
+  function cerrarModalAgencia() {
+    showModalEditarAgencia = false;
+    agenciaEditando        = null;
+    mensajeAgencia         = null;
+  }
+
+  async function guardarAgencia() {
+    if (!editAgencia.nombre.trim()) {
+      mensajeAgencia = { tipo: 'error', texto: 'El nombre es obligatorio.' };
+      return;
+    }
+    guardandoAgencia = true;
+    mensajeAgencia   = null;
+    try {
+      const res = await fetch(`${API_BASE}/admin/agencias/${agenciaEditando.id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:              editAgencia.nombre.trim(),
+          correo:              editAgencia.correo.trim(),
+          porcentajeDescuento: Number(editAgencia.porcentajeDescuento),
+          estadoId:            Number(editAgencia.estadoId),
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje ?? `Error ${res.status}`);
+
+      agencias = agencias.map(a =>
+        a.id === agenciaEditando.id
+          ? { ...a, ...editAgencia, estado: Number(editAgencia.estadoId) === 1 ? 'Activo' : 'Cerrado' }
+          : a
+      );
+      mensajeAgencia = { tipo: 'ok', texto: 'Agencia actualizada correctamente.' };
+      setTimeout(cerrarModalAgencia, 1200);
+    } catch (e) {
+      mensajeAgencia = { tipo: 'error', texto: e.message };
+    } finally {
+      guardandoAgencia = false;
+    }
+  }
+
   const navItems = [
     { id: 'dashboard',    label: 'Dashboard',     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { id: 'usuarios',     label: 'Usuarios',       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     { id: 'hoteles',      label: 'Hoteles',        icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
     { id: 'crear-hotel',  label: 'Crear Hotel',    icon: 'M12 4v16m8-8H4' },
     { id: 'reservas',     label: 'Reservas',       icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { id: 'agencias',     label: 'Agencias',       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
     { id: 'reportes',     label: 'Reportes',       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ];
 </script>
@@ -1017,6 +1106,7 @@
           {#if item.id === 'usuarios'}<span class="adm__nav-count">{usuarios.length}</span>
           {:else if item.id === 'hoteles'}<span class="adm__nav-count">{hoteles.length}</span>
           {:else if item.id === 'reservas'}<span class="adm__nav-count">{reservas.length}</span>
+          {:else if item.id === 'agencias'}<span class="adm__nav-count">{agencias.length}</span>
           {/if}
         </button>
       {/each}
@@ -1040,7 +1130,92 @@
           {:else if activeSection === 'hoteles'}Gestión de Hoteles
           {:else if activeSection === 'crear-hotel'}Crear Nuevo Hotel
           {:else if activeSection === 'reservas'}Reservas
-          {:else if activeSection === 'reportes'}Reportes y Estadísticas
+          {:else if activeSection === 'agencias'}Gestión de Agencias
+          {:else if activeSection === 'agencias'}
+
+        <!-- ═══ TOOLBAR ═══ -->
+        <div class="adm__toolbar">
+          <div class="adm__search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Buscar por nombre, correo o ID..." bind:value={busquedaAgencia} />
+          </div>
+          <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias} disabled={cargandoAgencias} title="Recargar">
+            <svg class={cargandoAgencias ? 'adm__spinner' : ''} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Recargar
+          </button>
+        </div>
+
+        {#if errorAgencias}
+          <div class="adm__alert adm__alert--error" style="margin-bottom:1rem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {errorAgencias}
+            <button class="adm__btn adm__btn--ghost" on:click={cargarAgencias}>Reintentar</button>
+          </div>
+        {/if}
+
+        <!-- ═══ TABLA ═══ -->
+        <div class="adm__table-card">
+          {#if cargandoAgencias}
+            <div class="adm__loading-state" style="padding:3rem 0">
+              <svg class="adm__spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <p>Cargando agencias...</p>
+            </div>
+          {:else}
+            <div class="adm__table-wrap">
+              <table class="adm__table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Usuario WS</th>
+                    <th>Descuento %</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#if agenciasFiltradas.length === 0}
+                    <tr>
+                      <td colspan="7" class="adm__empty-cell">
+                        {busquedaAgencia ? 'Sin resultados para esa búsqueda.' : 'No hay agencias registradas.'}
+                      </td>
+                    </tr>
+                  {:else}
+                    {#each agenciasFiltradas as ag (ag.id)}
+                      <tr>
+                        <td class="adm__table-mono" style="color:var(--adm-text-muted);font-size:.8rem">#{ag.id}</td>
+                        <td style="font-weight:600">{ag.nombre}</td>
+                        <td style="color:var(--adm-text-muted)">{ag.correo}</td>
+                        <td class="adm__table-mono" style="font-size:.8rem">WS #{ag.usuarioWebisId}</td>
+                        <td>
+                          <span style="font-weight:700;color:#2dd4bf">{ag.porcentajeDescuento?.toFixed(2)}%</span>
+                        </td>
+                        <td>
+                          <span class="adm__badge {badge(ag.estado)}">{ag.estado}</span>
+                        </td>
+                        <td>
+                          <button
+                            class="adm__icon-btn"
+                            title="Editar agencia"
+                            on:click={() => abrirEditarAgencia(ag)}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    {/each}
+                  {/if}
+                </tbody>
+              </table>
+            </div>
+          {/if}
+        </div>
+
+      {:else if activeSection === 'reportes'}Reportes y Estadísticas
           {/if}
         </h1>
         <p class="adm__topbar-sub">Panel de Administración · Miku Inn</p>
@@ -1152,7 +1327,7 @@
                   <tr>
                     <td>
                       <div class="adm__user-mini">
-                        <div class="adm__user-mini-avatar" style="background: {u.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
+                        <div class="adm__user-mini-avatar" style="background: {u.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : u.rolId === 3 ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
                           {u.nombre.charAt(0)}
                         </div>
                         {u.nombre} {u.apellido}
@@ -1160,7 +1335,7 @@
                     </td>
                     <td class="adm__table-mono">@{u.username}</td>
                     <td>{u.pais ?? '—'}</td>
-                    <td><span class="adm__badge {u.rolId === 2 ? 'badge--amber' : 'badge--blue'}">{u.rolNombre}</span></td>
+                    <td><span class="adm__badge {u.rolId === 2 ? 'badge--amber' : u.rolId === 3 ? 'badge--purple' : 'badge--blue'}">{u.rolNombre}</span></td>
                     <td>{u.ciudad ?? '—'}</td>
                   </tr>
                 {/each}
@@ -1182,6 +1357,7 @@
             <option value="todos">Todos los roles</option>
             <option value="1">Usuarios</option>
             <option value="2">Administradores</option>
+            <option value="3">Webservice</option>
           </select>
           <span class="adm__count-label">{usuariosFiltrados.length} resultado(s)</span>
           <button class="adm__btn adm__btn--ghost" on:click={cargarUsuarios} title="Recargar lista" aria-label="Recargar usuarios">
@@ -1213,7 +1389,7 @@
                   <tr>
                     <td>
                       <div class="adm__user-mini">
-                        <div class="adm__user-mini-avatar" style="background: {u.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
+                        <div class="adm__user-mini-avatar" style="background: {u.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : u.rolId === 3 ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
                           {u.nombre.charAt(0)}
                         </div>
                         <div>
@@ -1224,7 +1400,7 @@
                     </td>
                     <td class="adm__table-mono">{u.correo}</td>
                     <td>{u.pais}</td>
-                    <td><span class="adm__badge {u.rolId === 2 ? 'badge--amber' : 'badge--blue'}">{u.rolNombre}</span></td>
+                    <td><span class="adm__badge {u.rolId === 2 ? 'badge--amber' : u.rolId === 3 ? 'badge--purple' : 'badge--blue'}">{u.rolNombre}</span></td>
                     <td>{u.ciudad ?? '—'}</td>
                     <td>{u.fechaNacimiento ?? '—'}</td>
                     <td>
@@ -2023,7 +2199,7 @@
                 aria-label="Buscar reservaciones"
               />
             </div>
-            <select class="adm__filter-select" bind:value={filtroEstadoReserva} on:change={onFiltroEstadoCambia}>
+            <select class="adm__select" bind:value={filtroEstadoReserva} on:change={onFiltroEstadoCambia}>
               <option value="todos">Todos los estados</option>
               <option value="pendiente">Pendiente</option>
               <option value="confirmada">Confirmada</option>
@@ -2287,7 +2463,7 @@
 
     <!-- Header con gradiente -->
     <div class="adm__rol-modal__header">
-      <div class="adm__rol-modal__avatar" style="background: {usuarioSeleccionado.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
+      <div class="adm__rol-modal__avatar" style="background: {usuarioSeleccionado.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : usuarioSeleccionado.rolId === 3 ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
         {usuarioSeleccionado.nombre.charAt(0)}
       </div>
       <div class="adm__rol-modal__user-info">
@@ -2336,6 +2512,24 @@
             <span class="adm__rol-card__desc">Acceso total al panel</span>
           </div>
           {#if editUsuario.rolId === 2}
+            <div class="adm__rol-card__check">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          {/if}
+        </button>
+
+        <button
+          class="adm__rol-card {editUsuario.rolId === 3 ? 'adm__rol-card--active-ws' : ''}"
+          on:click={() => editUsuario.rolId = 3}
+        >
+          <div class="adm__rol-card__icon adm__rol-card__icon--ws">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+          </div>
+          <div class="adm__rol-card__text">
+            <span class="adm__rol-card__title">Webservice</span>
+            <span class="adm__rol-card__desc">Acceso para integraciones API</span>
+          </div>
+          {#if editUsuario.rolId === 3}
             <div class="adm__rol-card__check">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
@@ -2715,6 +2909,95 @@
         {:else}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
           Sí, cancelar reservación
+        {/if}
+      </button>
+    </div>
+
+  </div>
+{/if}
+
+<!-- ═══════════════════════════════════════════════
+     MODAL: EDITAR AGENCIA (admin)
+     ════════════════════════════════════════════════ -->
+{#if showModalEditarAgencia && agenciaEditando}
+  <div
+    class="adm__overlay"
+    on:click={cerrarModalAgencia}
+    on:keydown={e => e.key === 'Escape' && cerrarModalAgencia()}
+    role="button" tabindex="-1" aria-label="Cerrar modal"
+  ></div>
+
+  <div class="adm__rol-modal" style="max-width:520px; border-radius:14px; overflow:hidden">
+
+    <!-- Header -->
+    <div class="adm__modal-header" style="background:var(--adm-surface-2); padding:1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--adm-border)">
+      <div style="display:flex; align-items:center; gap:.75rem">
+        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#2dd4bf,#0d9488);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="2.5">
+            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+        <div>
+          <p style="font-weight:700;font-size:1rem;color:var(--adm-text);margin:0">Editar Agencia</p>
+          <p style="font-size:.75rem;color:var(--adm-text-muted);margin:0">ID #{agenciaEditando.id} · WS #{agenciaEditando.usuarioWebisId}</p>
+        </div>
+      </div>
+      <button class="adm__modal-close" on:click={cerrarModalAgencia} aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="adm__modal-body" style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
+
+      <div class="adm__field">
+        <label for="ea-nombre">Nombre de la agencia</label>
+        <input id="ea-nombre" type="text" bind:value={editAgencia.nombre} placeholder="Nombre de la agencia" />
+      </div>
+
+      <div class="adm__field">
+        <label for="ea-correo">Correo electrónico</label>
+        <input id="ea-correo" type="email" bind:value={editAgencia.correo} placeholder="agencia@ejemplo.com" />
+      </div>
+
+      <div class="adm__field">
+        <label for="ea-descuento">Porcentaje de descuento (0–100)</label>
+        <input id="ea-descuento" type="number" min="0" max="100" step="0.01" bind:value={editAgencia.porcentajeDescuento} />
+      </div>
+
+      <div class="adm__field">
+        <label for="ea-estado">Estado</label>
+        <select id="ea-estado" bind:value={editAgencia.estadoId}>
+          <option value={1}>Activo</option>
+          <option value={2}>Cerrado</option>
+        </select>
+      </div>
+
+      {#if mensajeAgencia}
+        <div class="adm__feedback adm__feedback--{mensajeAgencia.tipo}" style="margin:.25rem 0">
+          {#if mensajeAgencia.tipo === 'ok'}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          {:else}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {/if}
+          {mensajeAgencia.texto}
+        </div>
+      {/if}
+
+    </div>
+
+    <!-- Footer -->
+    <div class="adm__hotel-modal__footer" style="display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--adm-border);background:var(--adm-surface-2)">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModalAgencia} disabled={guardandoAgencia}>
+        Cancelar
+      </button>
+      <button class="adm__btn adm__btn--primary" on:click={guardarAgencia} disabled={guardandoAgencia}>
+        {#if guardandoAgencia}
+          <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Guardando...
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar cambios
         {/if}
       </button>
     </div>

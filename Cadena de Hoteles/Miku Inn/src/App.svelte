@@ -13,9 +13,9 @@
   import MyReservations from './pages/MyReservations.svelte';
   import Destinos from './pages/Destinos.svelte';
   import DestinoDetail from './pages/DestinoDetail.svelte';
-  import Ofertas from './pages/Ofertas.svelte';
   import Profile from './pages/Profile.svelte';
   import Administrador from './pages/Administrador.svelte';
+  import WebService from './pages/WebService.svelte';         // ← NUEVO
 
   import './app.css';
   import './styles/home.css';
@@ -27,14 +27,14 @@
   import './styles/myreservations.css';
   import './styles/destinodetail.css';
   import './styles/destinos.css';
-  import './styles/ofertas.css';
   import './styles/profile.css';
   import './styles/administrador.css';
+  import './styles/webservice.css';                          // ← NUEVO
 
   const API = 'http://localhost:7000';
 
   let currentPage      = 'home';
-  let checkoutData     = null;   // { pendingReservations: [...], hotel, room, ... }
+  let checkoutData     = null;
   let currentHotelData = null;
   let currentDestinoId = null;
   let searchParams     = null;
@@ -82,10 +82,17 @@
   }
 
   function navigateTo(page, data = null) {
+    // Proteger ruta administrador
     if (page === 'administrador' && userRolId !== 2) {
       navigateTo('home');
       return;
     }
+    // Proteger ruta webservice
+    if (page === 'webservice' && userRolId !== 3) {
+      navigateTo('home');
+      return;
+    }
+
     currentPage = page;
     pageKey     = Date.now();
     window.history.pushState({}, '', `/${page}`);
@@ -108,6 +115,8 @@
     isLoggedIn = true;
     userName   = name;
     userRolId  = rolId;
+
+    // Redirigir siempre al home al iniciar sesión
     navigateTo('home');
   }
 
@@ -119,7 +128,7 @@
     navigateTo('home');
   }
 
-  const noHeaderFooter = ['login', 'register'];
+  const noHeaderFooter = ['login', 'register', 'administrador', 'webservice'];
   $: showHeaderFooter = !noHeaderFooter.includes(currentPage);
 </script>
 
@@ -172,12 +181,12 @@
         <Destinos {navigateTo} />
       {:else if currentPage === 'destino-detail'}
         <DestinoDetail {navigateTo} destinoId={currentDestinoId} />
-      {:else if currentPage === 'offers'}
-        <Ofertas {navigateTo} />
       {:else if currentPage === 'profile'}
         <Profile {navigateTo} />
       {:else if currentPage === 'administrador' && userRolId === 2}
         <Administrador {navigateTo} />
+      {:else if currentPage === 'webservice' && userRolId === 3}
+        <WebService {navigateTo} />                          <!-- ← NUEVO -->
       {/if}
     </main>
 

@@ -112,8 +112,8 @@ public class UsuarioService {
     // ─────────────────────── Admin: cambiar rol ────────────────────────────
 
     public void cambiarRol(int usuarioId, int nuevoRolId) {
-        if (nuevoRolId != 1 && nuevoRolId != 2) {
-            throw new IllegalArgumentException("Rol inválido. Solo se permiten 1 (Usuario) o 2 (Administrador)");
+        if (nuevoRolId != 1 && nuevoRolId != 2 && nuevoRolId != 3) {
+            throw new IllegalArgumentException("Rol inválido. Solo se permiten 1 (Usuario), 2 (Administrador) o 3 (Webservice)");
         }
         usuarioRepository.actualizarRol(usuarioId, nuevoRolId);
     }

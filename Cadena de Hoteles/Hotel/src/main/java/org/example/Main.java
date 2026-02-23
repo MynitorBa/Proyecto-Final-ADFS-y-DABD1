@@ -2,6 +2,7 @@ package org.example;
 
 import io.javalin.Javalin;
 import org.example.config.ServerConfig;
+import org.example.controllers.AgenciaController;         // ← NUEVO
 import org.example.controllers.AuthController;
 import org.example.controllers.BusquedaController;
 import org.example.controllers.CancelacionController;
@@ -16,6 +17,7 @@ import org.example.controllers.UsuarioController;
 import org.example.data.DatabaseTest;
 import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
+<<<<<<< HEAD
 import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.DestinosController;
 import org.example.controllers.PdfReservacionController;
@@ -25,6 +27,8 @@ import org.example.controllers.PdfReservacionController;
 import org.example.controllers.BusquedaAgenciaController;
 import org.example.controllers.ReservacionAgenciaController;
 import org.example.controllers.PagoAgenciaController;
+=======
+>>>>>>> 9062071513878f7cb2ced11182684daf77bd600e
 
 import java.util.Map;
 
@@ -41,10 +45,8 @@ public class Main {
         Javalin app = ServerConfig.createServer();
 
         // ── Manejador global de excepciones ───────────────────────────────────
-        // Garantiza que CUALQUIER error siempre devuelva JSON, nunca texto plano
         app.exception(Exception.class, (e, ctx) -> {
             String msg = e.getMessage() != null ? e.getMessage() : "Error interno del servidor";
-            // Simplificar mensajes de Oracle
             if (msg.contains("ORA-00001")) {
                 msg = "Registro duplicado: ya existe un valor con esa restricción única.";
             } else if (msg.contains("ORA-")) {
@@ -67,6 +69,7 @@ public class Main {
         new DownsController().registerRoutes(app);
         new CancelacionController().registerRoutes(app);
         new ImagenController().registerRoutes(app);
+<<<<<<< HEAD
         new HotelController().registerRoutes(app);
 
         new PdfReservacionController().registerRoutes(app);
@@ -79,6 +82,10 @@ public class Main {
         new DestinosController().registerRoutes(app);
 
 
+=======
+        new HotelController().registerRoutes(app);         // ← Panel de administración
+        new AgenciaController().registerRoutes(app);       // ← Panel de webservice
+>>>>>>> 9062071513878f7cb2ced11182684daf77bd600e
 
         // ── Rutas base ────────────────────────────────────────────────────────
         app.get("/", ctx -> ctx.json("OK"));

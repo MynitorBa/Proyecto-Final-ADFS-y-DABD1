@@ -419,6 +419,7 @@
 .badge--blue   { background: rgba(88,166,255,0.15);  color: var(--adm-blue); }
 .badge--amber  { background: rgba(227,179,65,0.15);  color: var(--adm-amber); }
 .badge--gray   { background: rgba(139,148,158,0.15); color: var(--adm-text-muted); }
+.badge--purple { background: rgba(167,139,250,0.15); color: #a78bfa; }
 
 /* ════════════════════════════════════════════
    USER MINI
@@ -1507,6 +1508,17 @@
 }
 .adm__rol-card__icon--user  { background: #1a2e50; color: #5ba3f5; }
 .adm__rol-card__icon--admin { background: #2e2010; color: #f0a030; }
+.adm__rol-card__icon--ws    { background: #221a3a; color: #a78bfa; }
+
+/* Activo — Webservice */
+.adm__rol-card--active-ws {
+  background: #1e1530 !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+}
+.adm__rol-card--active-ws .adm__rol-card__check {
+  background: #7c3aed;
+}
 
 .adm__rol-card__text {
   display: flex;
