@@ -12,6 +12,7 @@
     pasaporte: '',
     country: '',
     city: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -49,8 +50,8 @@
   let nacionalidadesSeleccionadas = [false];
 
   // Teléfono — código de marcado por país
-  let dialCode = '';       // ej. "+502"
-  let dialCodesMap = {};   // { "australia": { code:"+61", digits:9 }, ... } clave en minúsculas
+  let dialCode = '';
+  let dialCodesMap = {};
   let phoneDigitCount = 8;
 
   // Dígitos locales reales por código de país (fuente: estándares ITU)
@@ -98,13 +99,11 @@
     '+994':  9,  '+995':  9,  '+996':  9,  '+998':  9,
   };
 
-  // Formatea dígitos locales con espacios según total de dígitos esperados
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
     if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
     if (total === 9) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim();
     if (total === 10) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,4})/, '$1 $2 $3').trim();
-    // 11 dígitos (Brasil, China...)
     return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
   }
 
@@ -114,10 +113,15 @@
     formData.phone = formatLocalPhone(capped, phoneDigitCount);
   }
 
-  // Genera el placeholder de ejemplo según los dígitos del país
   function getPhonePlaceholder(digits) {
     const sample = '5'.repeat(digits);
     return formatLocalPhone(sample, digits);
+  }
+
+  // Username: solo letras, números, guion bajo y punto
+  function onUsernameInput(e) {
+    formData.username = e.target.value.replace(/[^a-zA-Z0-9_.]/g, '');
+    if (errors.username) errors.username = '';
   }
 
   onMount(async () => {
@@ -283,7 +287,6 @@
     if (!formData.birthDate) errors.birthDate = 'Fecha de nacimiento requerida';
     else if (userAge < 18)   errors.birthDate = 'Debes tener al menos 18 años';
 
-    // ✅ Validación de teléfono: vacío + dígitos exactos según país
     if (!formData.phone.trim()) {
       errors.phone = 'Teléfono requerido';
     } else {
@@ -297,6 +300,18 @@
       errors.pasaporte = !formData.pasaporte.trim() ? 'Pasaporte requerido' : 'Número de pasaporte inválido';
     if (!paisSeleccionado || !formData.country) errors.country = 'Selecciona un país de la lista';
     if (!ciudadSeleccionada || !formData.city)  errors.city    = 'Selecciona una ciudad de la lista';
+
+    // Username validación
+    if (!formData.username.trim()) {
+      errors.username = 'Nombre de usuario requerido';
+    } else if (formData.username.trim().length < 3) {
+      errors.username = 'Mínimo 3 caracteres';
+    } else if (formData.username.trim().length > 20) {
+      errors.username = 'Máximo 20 caracteres';
+    } else if (!/^[a-zA-Z0-9_.]+$/.test(formData.username.trim())) {
+      errors.username = 'Solo letras, números, puntos y guion bajo';
+    }
+
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       errors.email = !formData.email.trim() ? 'Email requerido' : 'Email inválido';
     const nacsValidas = nacionalidades.filter((n, i) => n.trim() && nacionalidadesSeleccionadas[i]);
@@ -326,7 +341,7 @@
     const nacsValidas = nacionalidades.filter((n, i) => n.trim() && nacionalidadesSeleccionadas[i]);
 
     const payload = {
-      username:        formData.email.split('@')[0],
+      username:        formData.username.trim(),
       correo:          formData.email.toLowerCase(),
       contrasena:      formData.password,
       pasaporte:       formData.pasaporte.trim(),
@@ -353,7 +368,7 @@
       if (res.status === 409 && data?.campos) {
         if (data.campos.correoExiste)    errors.email     = 'Este correo ya está registrado.';
         if (data.campos.pasaporteExiste) errors.pasaporte = 'Este pasaporte ya está registrado.';
-        if (data.campos.usernameExiste)  errors.email     = (errors.email || '') + ' Usuario ya en uso.';
+        if (data.campos.usernameExiste)  errors.username  = 'Este nombre de usuario ya está en uso.';
         isSubmitting = false;
         return;
       }
@@ -576,6 +591,25 @@
               Credenciales de Acceso
             </h3>
 
+            <!-- Username -->
+            <div class="register__form-field">
+              <label for="username">Nombre de Usuario <span class="required">*</span></label>
+              <div class="register__input-with-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <input type="text" id="username" bind:value={formData.username}
+                  on:input={onUsernameInput}
+                  placeholder="Ej: Pine2" class:error={errors.username} autocomplete="username" />
+              </div>
+              {#if formData.username && !errors.username}
+                <span class="helper-text" style="color:#64748b;">Tu usuario será: <strong style="color:var(--primary);">{formData.username}</strong></span>
+              {/if}
+              {#if errors.username}<span class="register__error-text">{errors.username}</span>{/if}
+            </div>
+
+            <!-- Email -->
             <div class="register__form-field">
               <label for="email">Correo Electrónico <span class="required">*</span></label>
               <div class="register__input-with-icon">

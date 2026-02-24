@@ -2,13 +2,21 @@ package org.example.helpers;
 
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.events.Event;
+import com.itextpdf.kernel.events.IEventHandler;
+import com.itextpdf.kernel.events.PdfDocumentEvent;
 import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.borders.Border;
 import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Div;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
@@ -21,304 +29,480 @@ import java.util.List;
 
 public class PdfHelper {
 
-    // ── Miku Inn brand palette ─────────────────────────────────────────
-    private static final Color PRIMARY      = new DeviceRgb(0x66, 0x7E, 0xEA); // #667eea
-    private static final Color SECONDARY    = new DeviceRgb(0x76, 0x4B, 0xA2); // #764ba2
-    private static final Color DARK         = new DeviceRgb(0x0F, 0x17, 0x2A); // #0f172a
-    private static final Color MEDIUM       = new DeviceRgb(0x1E, 0x29, 0x3B); // #1e293b
-    private static final Color MUTED        = new DeviceRgb(0x64, 0x74, 0x8B); // #64748b
-    private static final Color BG_LIGHT     = new DeviceRgb(0xEE, 0xF1, 0xF8); // #eef1f8
-    private static final Color CARD         = new DeviceRgb(0xF7, 0xF9, 0xFC); // #f7f9fc
-    private static final Color BORDER_COLOR = new DeviceRgb(0xDD, 0xE3, 0xF0); // #dde3f0
-    private static final Color WHITE        = new DeviceRgb(0xFF, 0xFF, 0xFF);
-    private static final Color SUCCESS      = new DeviceRgb(0x10, 0xB9, 0x81); // #10b981
+    private static final Color INK       = new DeviceRgb(0x1A, 0x1A, 0x1A);
+    private static final Color TEXT_MID  = new DeviceRgb(0x44, 0x50, 0x60);
+    private static final Color TEXT_SOFT = new DeviceRgb(0x78, 0x84, 0x96);
+    private static final Color BDR       = new DeviceRgb(0xC8, 0xCE, 0xDA);
+    private static final Color BDR_DARK  = new DeviceRgb(0x7A, 0x86, 0x9E);
+    private static final Color BG_WHITE  = new DeviceRgb(0xFF, 0xFF, 0xFF);
+    private static final Color BG_ROW    = new DeviceRgb(0xF5, 0xF7, 0xFA);
+    private static final Color BG_LBL    = new DeviceRgb(0xEE, 0xF1, 0xF6);
+    private static final Color BG_HI     = new DeviceRgb(0xE4, 0xE9, 0xF4);
+    private static final Color ACCENT    = new DeviceRgb(0x3A, 0x52, 0x7C);
+    private static final Color ACCENTBG  = new DeviceRgb(0xE2, 0xE8, 0xF4);
+    private static final Color HDR_DARK  = new DeviceRgb(0x1E, 0x28, 0x3C);
+    private static final Color HDR_MID   = new DeviceRgb(0x2C, 0x3A, 0x52);
+    private static final Color HDR_TEXT  = new DeviceRgb(0xE8, 0xED, 0xF5);
+    private static final Color HDR_SOFT  = new DeviceRgb(0x78, 0x88, 0xA6);
+    private static final Color HDR_LINE  = new DeviceRgb(0x48, 0x60, 0x88);
+    private static final Color S_OK      = new DeviceRgb(0x1A, 0x68, 0x3C);
+    private static final Color S_ERR     = new DeviceRgb(0x84, 0x18, 0x18);
+    private static final Color S_WARN    = new DeviceRgb(0x76, 0x4C, 0x10);
+
+    private static final float HDR_H = 78f;
+    private static final float FTR_H = 40f;
+    private static final float MH    = 50f;
+    private static final float MT    = HDR_H + 26f;
+    private static final float MB    = FTR_H + 24f;
+
+    // Espacio entre bloques — siempre generoso
+    private static final float GAP = 22f;
 
     public static byte[] generarPdfReservacion(List<ReservacionDetalleDTO> detalles, Object[] factura) {
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter   writer   = new PdfWriter(baos);
-        PdfDocument pdf      = new PdfDocument(writer);
-        Document    document = new Document(pdf, PageSize.A4);
-        document.setMargins(0, 0, 36, 0);
+        PdfDocument pdf = new PdfDocument(new PdfWriter(baos));
 
-        ReservacionDetalleDTO primera = detalles.get(0);
+        ReservacionDetalleDTO p0 = detalles.get(0);
+        boolean esF = factura != null;
 
-        // ══════════════════════════════════════════════════════════════
-        // HEADER — gradiente simulado con banda de color primario
-        // ══════════════════════════════════════════════════════════════
-        Table header = new Table(UnitValue.createPercentArray(new float[]{100}))
-                .setWidth(UnitValue.createPercentValue(100));
+        pdf.addEventHandler(PdfDocumentEvent.END_PAGE, new HeaderRenderer(p0, esF));
+        pdf.addEventHandler(PdfDocumentEvent.END_PAGE, new FooterRenderer());
 
-        Cell headerCell = new Cell()
-                .setBackgroundColor(PRIMARY)
-                .setPadding(32)
-                .setBorder(Border.NO_BORDER)
-                .setTextAlignment(TextAlignment.CENTER);
+        Document doc = new Document(pdf, PageSize.A4);
+        doc.setMargins(MT, MH, MB, MH);
 
-        headerCell.add(new Paragraph("MIKU INN")
-                .setFontSize(28)
-                .setBold()
-                .setFontColor(WHITE)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(4));
+        // BLOQUE 1 — Datos de la reservación + facturación
+        doc.add(bloque(buildInfoBlock(p0, esF, factura)));
+        doc.add(sp(GAP));
 
-        headerCell.add(new Paragraph("Comprobante de Reservación")
-                .setFontSize(11)
-                .setFontColor(new DeviceRgb(0xCC, 0xD6, 0xF8))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(0));
+        // BLOQUE 2 — Tabla de habitaciones + totales integrados al final
+        doc.add(bloque(buildTablaConTotales(detalles, p0, esF)));
+        doc.add(sp(GAP));
 
-        header.addCell(headerCell);
-        document.add(header);
-
-        // Banda secundaria con el número de reservación
-        Table subHeader = new Table(UnitValue.createPercentArray(new float[]{100}))
-                .setWidth(UnitValue.createPercentValue(100));
-
-        Cell subCell = new Cell()
-                .setBackgroundColor(SECONDARY)
-                .setPaddingTop(10).setPaddingBottom(10)
-                .setBorder(Border.NO_BORDER)
-                .setTextAlignment(TextAlignment.CENTER);
-
-        subCell.add(new Paragraph("Reservación  " + primera.getNoReservacion())
-                .setFontSize(13)
-                .setBold()
-                .setFontColor(WHITE)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(0));
-
-        subHeader.addCell(subCell);
-        document.add(subHeader);
-
-        // Espacio interior con padding
-        document.setLeftMargin(36);
-        document.setRightMargin(36);
-
-        spacer(document, 18);
-
-        // ══════════════════════════════════════════════════════════════
-        // SECCIÓN: Datos de la Reservación
-        // ══════════════════════════════════════════════════════════════
-        seccionTitulo(document, "📋  Datos de la Reservación", PRIMARY);
-
-        Table tablaGeneral = crearTabla();
-
-        agregarFila(tablaGeneral, "Número de Reservación", primera.getNoReservacion(), true);
-        agregarFilaEstado(tablaGeneral, "Estado", primera.getEstado());
-        agregarFila(tablaGeneral, "Fecha de Creación", primera.getFechaCreacion(), false);
-        agregarFilaTotal(tablaGeneral, "Total", "Q " + primera.getTotal());
-
-        if (primera.getFechaCancelacion() != null) {
-            agregarFila(tablaGeneral, "Fecha de Cancelación", primera.getFechaCancelacion(), false);
-        }
-        if (primera.getMotivoCancelacion() != null) {
-            agregarFila(tablaGeneral, "Motivo de Cancelación", primera.getMotivoCancelacion(), false);
+        // BLOQUE 3 — Datos fiscales (solo si hay factura)
+        if (esF) {
+            doc.add(bloque(buildDatosFactura(factura, p0)));
+            doc.add(sp(GAP));
         }
 
-        document.add(tablaGeneral);
-        spacer(document, 20);
+        // BLOQUE 4 — Términos y condiciones
+        doc.add(new Div().setKeepTogether(true).add(bloque(buildCondiciones())));
 
-        // ══════════════════════════════════════════════════════════════
-        // SECCIÓN: Habitaciones Reservadas
-        // ══════════════════════════════════════════════════════════════
-        seccionTitulo(document, "🛏  Habitaciones Reservadas", PRIMARY);
-
-        for (int idx = 0; idx < detalles.size(); idx++) {
-            ReservacionDetalleDTO detalle = detalles.get(idx);
-
-            // Sub-encabezado de cada habitación
-            Table habHeader = new Table(UnitValue.createPercentArray(new float[]{100}))
-                    .setWidth(UnitValue.createPercentValue(100))
-                    .setMarginBottom(0);
-
-            Cell habTitleCell = new Cell()
-                    .setBackgroundColor(BG_LIGHT)
-                    .setPadding(10)
-                    .setBorder(new SolidBorder(BORDER_COLOR, 1))
-                    .setBorderBottom(Border.NO_BORDER);
-
-            habTitleCell.add(new Paragraph(detalle.getNombreHotel() + "  —  " + detalle.getTipoHabitacion())
-                    .setFontSize(11)
-                    .setBold()
-                    .setFontColor(MEDIUM)
-                    .setMarginBottom(0));
-
-            habHeader.addCell(habTitleCell);
-            document.add(habHeader);
-
-            Table tablaHab = crearTabla();
-            agregarFila(tablaHab, "Tipo de cama",  detalle.getTipoCama(),                         false);
-            agregarFila(tablaHab, "Check-in",       detalle.getFechaCheckIn(),                     false);
-            agregarFila(tablaHab, "Check-out",      detalle.getFechaCheckOut(),                    false);
-            agregarFila(tablaHab, "Personas",        String.valueOf(detalle.getCantidadPersonas()), false);
-            agregarFilaTotal(tablaHab, "Subtotal", "Q " + detalle.getTotalDetalle());
-
-            document.add(tablaHab);
-
-            if (idx < detalles.size() - 1) spacer(document, 10);
-        }
-
-        spacer(document, 20);
-
-        // ══════════════════════════════════════════════════════════════
-        // SECCIÓN: Factura
-        // ══════════════════════════════════════════════════════════════
-        if (factura != null) {
-            seccionTitulo(document, "🧾  Factura", SECONDARY);
-
-            Table tablaFactura = crearTabla();
-            agregarFila(tablaFactura, "NIT",           (String) factura[2], false);
-            agregarFila(tablaFactura, "Código postal",  (String) factura[3], false);
-            agregarFila(tablaFactura, "Fecha",          (String) factura[1], false);
-            agregarFilaTotal(tablaFactura, "Total Factura", "Q " + factura[4]);
-
-            document.add(tablaFactura);
-            spacer(document, 20);
-        }
-
-        // ══════════════════════════════════════════════════════════════
-        // FOOTER
-        // ══════════════════════════════════════════════════════════════
-        Table footer = new Table(UnitValue.createPercentArray(new float[]{100}))
-                .setWidth(UnitValue.createPercentValue(100))
-                .setMarginTop(10);
-
-        Cell footerCell = new Cell()
-                .setBackgroundColor(DARK)
-                .setPadding(16)
-                .setBorder(Border.NO_BORDER)
-                .setTextAlignment(TextAlignment.CENTER);
-
-        footerCell.add(new Paragraph("Miku Inn  ·  info@mikuinn.com  ·  +502 4276-8687  ·  Guatemala City, Guatemala")
-                .setFontSize(9)
-                .setFontColor(new DeviceRgb(0x94, 0xA3, 0xB8))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(2));
-
-        footerCell.add(new Paragraph("Gracias por elegir Miku Inn. ¡Esperamos verte pronto!")
-                .setFontSize(9)
-                .setFontColor(new DeviceRgb(0x64, 0x74, 0x8B))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(0));
-
-        footer.addCell(footerCell);
-        document.add(footer);
-
-        document.close();
+        doc.close();
         return baos.toByteArray();
     }
 
-    // ── Helpers de diseño ─────────────────────────────────────────────
-
-    /** Título de sección con barra de color lateral */
-    private static void seccionTitulo(Document doc, String texto, Color color) {
-        Table t = new Table(UnitValue.createPercentArray(new float[]{3, 97}))
-                .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(6);
-
-        // Barra lateral de color
-        t.addCell(new Cell()
-                .setBackgroundColor(color)
-                .setBorder(Border.NO_BORDER)
-                .setPadding(0));
-
-        t.addCell(new Cell()
-                .setBackgroundColor(BG_LIGHT)
-                .setBorder(Border.NO_BORDER)
-                .setPaddingLeft(12).setPaddingTop(9).setPaddingBottom(9)
-                .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                .add(new Paragraph(texto)
-                        .setFontSize(12)
-                        .setBold()
-                        .setFontColor(DARK)
-                        .setMarginBottom(0)));
-
-        doc.add(t);
+    // Envoltorio de bloque con borde exterior y fondo blanco
+    private static Div bloque(Table inner) {
+        return new Div()
+                .setBorder(new SolidBorder(BDR_DARK, 0.8f))
+                .setBackgroundColor(BG_WHITE)
+                .add(inner);
     }
 
-    /** Tabla base con bordes sutiles */
-    private static Table crearTabla() {
+    // ══════════════════════════════════════════════════════════════════
+    //  HEADER / FOOTER
+    // ══════════════════════════════════════════════════════════════════
+
+    static class HeaderRenderer implements IEventHandler {
+        private final ReservacionDetalleDTO p0;
+        private final boolean esF;
+        HeaderRenderer(ReservacionDetalleDTO p0, boolean esF) { this.p0 = p0; this.esF = esF; }
+
+        @Override
+        public void handleEvent(Event event) {
+            PdfDocumentEvent e = (PdfDocumentEvent) event;
+            PdfPage page = e.getPage();
+            PdfDocument pdf = e.getDocument();
+            float pw = page.getPageSize().getWidth();
+            float ph = page.getPageSize().getHeight();
+
+            PdfCanvas cv = new PdfCanvas(page.newContentStreamBefore(), page.getResources(), pdf);
+            cv.saveState();
+            cv.setFillColor(HDR_DARK);
+            cv.rectangle(0, ph - HDR_H, pw, HDR_H);
+            cv.fill();
+            cv.setFillColor(HDR_LINE);
+            cv.rectangle(0, ph - HDR_H, pw, 3f);
+            cv.fill();
+            cv.restoreState();
+
+            Rectangle area = new Rectangle(MH, ph - HDR_H + 3, pw - 2 * MH, HDR_H - 6);
+            try (Canvas c = new Canvas(cv, area)) {
+                Table t = new Table(UnitValue.createPercentArray(new float[]{55, 45}))
+                        .setWidth(UnitValue.createPercentValue(100));
+
+                Cell L = new Cell().setBorder(Border.NO_BORDER).setPadding(0)
+                        .setVerticalAlignment(VerticalAlignment.MIDDLE).setPaddingTop(12);
+                L.add(new Paragraph("MIKU INN").setFontSize(22).setBold()
+                        .setFontColor(HDR_TEXT).setCharacterSpacing(1.5f).setMarginBottom(5));
+                L.add(new Paragraph("Hotel Boutique  ·  Guatemala City  ·  info@mikuinn.com")
+                        .setFontSize(7.5f).setFontColor(HDR_SOFT));
+                t.addCell(L);
+
+                Cell R = new Cell().setBorder(Border.NO_BORDER).setPadding(0)
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setVerticalAlignment(VerticalAlignment.MIDDLE).setPaddingTop(12);
+                R.add(new Paragraph(esF ? "FACTURA" : "COMPROBANTE").setFontSize(7.5f).setBold()
+                        .setFontColor(HDR_SOFT).setCharacterSpacing(2f)
+                        .setTextAlignment(TextAlignment.RIGHT).setMarginBottom(5));
+                R.add(new Paragraph(p0.getNoReservacion()).setFontSize(13).setBold()
+                        .setFontColor(HDR_TEXT).setTextAlignment(TextAlignment.RIGHT).setMarginBottom(6));
+                R.add(new Paragraph("● " + (p0.getEstado() != null ? p0.getEstado().toUpperCase() : "—"))
+                        .setFontSize(7.5f).setBold().setFontColor(sColor(p0.getEstado()))
+                        .setTextAlignment(TextAlignment.RIGHT).setMarginBottom(3));
+                R.add(new Paragraph("Emitido: " + p0.getFechaCreacion()).setFontSize(7f)
+                        .setFontColor(HDR_SOFT).setTextAlignment(TextAlignment.RIGHT));
+                t.addCell(R);
+                c.add(t);
+            }
+        }
+    }
+
+    static class FooterRenderer implements IEventHandler {
+        @Override
+        public void handleEvent(Event event) {
+            PdfDocumentEvent e = (PdfDocumentEvent) event;
+            PdfPage page = e.getPage();
+            PdfDocument pdf = e.getDocument();
+            float pw = page.getPageSize().getWidth();
+
+            PdfCanvas cv = new PdfCanvas(page.newContentStreamBefore(), page.getResources(), pdf);
+            cv.saveState();
+            cv.setFillColor(HDR_LINE);
+            cv.rectangle(0, FTR_H - 2, pw, 2f);
+            cv.fill();
+            cv.setFillColor(HDR_DARK);
+            cv.rectangle(0, 0, pw, FTR_H - 2);
+            cv.fill();
+            cv.restoreState();
+
+            try (Canvas c = new Canvas(cv, new Rectangle(0, 0, pw, FTR_H))) {
+                Table ft = new Table(UnitValue.createPercentArray(new float[]{55, 45}))
+                        .setWidth(UnitValue.createPercentValue(100));
+                ft.addCell(new Cell().setBorder(Border.NO_BORDER)
+                        .add(new Paragraph("MIKU INN  ·  info@mikuinn.com  ·  +502 4276-8687  ·  Guatemala City, Guatemala")
+                                .setFontSize(7f).setFontColor(HDR_SOFT))
+                        .setPaddingLeft(MH).setPaddingTop(13));
+                ft.addCell(new Cell().setBorder(Border.NO_BORDER)
+                        .add(new Paragraph("Comprobante oficial de reservación")
+                                .setFontSize(7f).setFontColor(new DeviceRgb(0x55, 0x62, 0x78))
+                                .setTextAlignment(TextAlignment.RIGHT))
+                        .setTextAlignment(TextAlignment.RIGHT).setPaddingRight(MH).setPaddingTop(13));
+                c.add(ft);
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  BLOQUE 1 — Info reservación + facturación
+    // ══════════════════════════════════════════════════════════════════
+
+    private static Table buildInfoBlock(ReservacionDetalleDTO p, boolean esF, Object[] fac) {
+        Table outer = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        Cell cL = new Cell().setBorder(Border.NO_BORDER)
+                .setBorderRight(new SolidBorder(BDR, 1f))
+                .setPadding(18);
+        cL.add(colTitle("DATOS DE LA RESERVACIÓN"));
+        cL.add(sp(8));
+        Table tL = infoTbl();
+        iRow(tL, "Nro. Reservación", p.getNoReservacion(), true);
+        iRow(tL, "Hotel",            nn(p.getNombreHotel()), false);
+        iRow(tL, "Check-in",         nn(p.getFechaCheckIn()), false);
+        iRow(tL, "Check-out",        nn(p.getFechaCheckOut()), false);
+        if (p.getFechaCancelacion() != null)  iRow(tL, "Cancelación", p.getFechaCancelacion(), false);
+        if (p.getMotivoCancelacion() != null) iRow(tL, "Motivo",      p.getMotivoCancelacion(), false);
+        cL.add(tL);
+        outer.addCell(cL);
+
+        Cell cR = new Cell().setBorder(Border.NO_BORDER).setPadding(18);
+        if (esF && fac != null) {
+            cR.add(colTitle("DATOS DE FACTURACIÓN"));
+            cR.add(sp(8));
+            Table tR = infoTbl();
+            iRow(tR, "NIT / RFC",     s(fac[2]), false);
+            iRow(tR, "Código Postal", s(fac[3]), false);
+            iRow(tR, "Fecha Emisión", s(fac[1]), false);
+            cR.add(tR);
+        } else {
+            cR.add(colTitle("DATOS DE CONTACTO"));
+            cR.add(sp(8));
+            Table tR = infoTbl();
+            iRow(tR, "Email",  "info@mikuinn.com",   false);
+            iRow(tR, "Tel.",   "+502 4276-8687",      false);
+            iRow(tR, "Ciudad", "Guatemala City, GT",  false);
+            cR.add(tR);
+        }
+        outer.addCell(cR);
+        return outer;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  BLOQUE 2 — Tabla de habitaciones + filas de total al final
+    //             Todo dentro del mismo bloque, mismo diseño de celda
+    // ══════════════════════════════════════════════════════════════════
+
+    private static Table buildTablaConTotales(List<ReservacionDetalleDTO> detalles,
+                                              ReservacionDetalleDTO p0, boolean esF) {
+        Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        // Barra de título
+        outer.addCell(titleBar(esF ? "CONCEPTOS Y SERVICIOS" : "DETALLE DE HABITACIONES"));
+
+        // Tabla interior de 8 columnas
+        Cell tableWrap = new Cell().setBorder(Border.NO_BORDER).setPadding(0);
+        Table t = new Table(UnitValue.createPercentArray(new float[]{5, 22, 15, 8, 8, 14, 14, 14}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        // Encabezados
+        String[]        hs = {"#", "Habitación", "Cama", "Noches", "Pers.", "Check-in", "Check-out", "Subtotal"};
+        TextAlignment[] ta = {
+                TextAlignment.CENTER, TextAlignment.LEFT,   TextAlignment.LEFT,
+                TextAlignment.CENTER, TextAlignment.CENTER,
+                TextAlignment.CENTER, TextAlignment.CENTER, TextAlignment.RIGHT
+        };
+        for (int i = 0; i < hs.length; i++) t.addHeaderCell(thC(hs[i], ta[i]));
+
+        // Filas de habitaciones
+        for (int i = 0; i < detalles.size(); i++) {
+            ReservacionDetalleDTO d = detalles.get(i);
+            Color bg = i % 2 == 0 ? BG_WHITE : BG_ROW;
+            t.addCell(tdC(String.valueOf(i + 1),                    TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(nn(d.getTipoHabitacion()),                 TextAlignment.LEFT,   bg, false));
+            t.addCell(tdC(nn(d.getTipoCama()),                       TextAlignment.LEFT,   bg, false));
+            t.addCell(tdC(nights(d.getFechaCheckIn(), d.getFechaCheckOut()), TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(String.valueOf(d.getCantidadPersonas()),   TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(nn(d.getFechaCheckIn()),                   TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(nn(d.getFechaCheckOut()),                  TextAlignment.CENTER, bg, false));
+            t.addCell(tdC("Q " + fmt(d.getTotalDetalle()),           TextAlignment.RIGHT,  bg, true));
+        }
+
+        // Separador antes de totales
+        t.addCell(new Cell(1, 8).setHeight(1f).setBackgroundColor(BDR)
+                .setBorder(Border.NO_BORDER).setPadding(0));
+
+        // Filas de subtotales (solo si hay más de 1 hab) — misma tabla, colspan para alinear a la derecha
+        if (detalles.size() > 1) {
+            for (int i = 0; i < detalles.size(); i++) {
+                ReservacionDetalleDTO d = detalles.get(i);
+                // Celdas vacías a la izquierda (colspan 5) + label + valor (colspan 2)
+                t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
+                        .setBackgroundColor(BG_WHITE).setPadding(0));
+                t.addCell(new Cell(1, 2)
+                        .add(new Paragraph("Hab. " + (i + 1) + "  " + nn(d.getTipoHabitacion()))
+                                .setFontSize(8).setFontColor(TEXT_MID).setBold())
+                        .setBackgroundColor(BG_LBL)
+                        .setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(10).setPaddingRight(8)
+                        .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                        .setBorderRight(new SolidBorder(BDR, 0.5f))
+                        .setBorderBottom(new SolidBorder(BDR, 0.5f)));
+                t.addCell(new Cell(1, 1)
+                        .add(new Paragraph("Q " + fmt(d.getTotalDetalle()))
+                                .setFontSize(8).setFontColor(INK).setBold()
+                                .setTextAlignment(TextAlignment.RIGHT))
+                        .setBackgroundColor(BG_WHITE)
+                        .setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(8).setPaddingRight(10)
+                        .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                        .setBorderRight(Border.NO_BORDER)
+                        .setBorderBottom(new SolidBorder(BDR, 0.5f)));
+            }
+            // Línea separadora antes del total
+            t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
+                    .setBackgroundColor(BG_WHITE).setPadding(0));
+            t.addCell(new Cell(1, 3).setHeight(1f).setBackgroundColor(BDR_DARK)
+                    .setBorder(Border.NO_BORDER).setPadding(0));
+        }
+
+        // Fila TOTAL RESERVACIÓN — misma tabla, destaca con fondo oscuro
+        t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
+                .setBackgroundColor(BG_WHITE).setPadding(0));
+        t.addCell(new Cell(1, 2)
+                .add(new Paragraph("TOTAL RESERVACIÓN")
+                        .setFontSize(9.5f).setBold().setFontColor(HDR_TEXT))
+                .setBackgroundColor(HDR_MID)
+                .setPaddingTop(11).setPaddingBottom(11).setPaddingLeft(10).setPaddingRight(8)
+                .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                .setBorderRight(new SolidBorder(new DeviceRgb(0x44, 0x54, 0x70), 0.5f))
+                .setBorderBottom(Border.NO_BORDER));
+        t.addCell(new Cell(1, 1)
+                .add(new Paragraph("Q " + fmt(p0.getTotal()))
+                        .setFontSize(9.5f).setBold().setFontColor(ACCENT)
+                        .setTextAlignment(TextAlignment.RIGHT))
+                .setBackgroundColor(ACCENTBG)
+                .setPaddingTop(11).setPaddingBottom(11).setPaddingLeft(8).setPaddingRight(10)
+                .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                .setBorderRight(Border.NO_BORDER).setBorderBottom(Border.NO_BORDER));
+
+        tableWrap.add(t);
+        outer.addCell(tableWrap);
+        return outer;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  BLOQUE 3 — Datos fiscales
+    // ══════════════════════════════════════════════════════════════════
+
+    private static Table buildDatosFactura(Object[] fac, ReservacionDetalleDTO p0) {
+        Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        outer.addCell(titleBar("DATOS FISCALES"));
+
+        String[] lbls = {"NIT / RFC", "Código Postal", "Fecha Emisión", "Total Factura"};
+        String[] vals = {s(fac[2]), s(fac[3]), s(fac[1]), "Q " + fmt(p0.getTotal())};
+
+        Table grid = new Table(UnitValue.createPercentArray(new float[]{28, 18, 20, 34}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        for (int i = 0; i < lbls.length; i++) {
+            boolean last = i == lbls.length - 1;
+            grid.addCell(new Cell()
+                    .add(new Paragraph(lbls[i]).setFontSize(7.5f).setBold().setFontColor(TEXT_MID))
+                    .setBackgroundColor(BG_LBL)
+                    .setPaddingTop(10).setPaddingBottom(10).setPaddingLeft(16).setPaddingRight(16)
+                    .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                    .setBorderBottom(new SolidBorder(BDR, 0.6f))
+                    .setBorderRight(last ? Border.NO_BORDER : new SolidBorder(BDR, 0.6f)));
+        }
+        for (int i = 0; i < vals.length; i++) {
+            boolean last = i == vals.length - 1;
+            grid.addCell(new Cell()
+                    .add(new Paragraph(vals[i]).setFontSize(last ? 12 : 9).setBold()
+                            .setFontColor(last ? ACCENT : INK))
+                    .setBackgroundColor(last ? ACCENTBG : BG_WHITE)
+                    .setPaddingTop(11).setPaddingBottom(11).setPaddingLeft(16).setPaddingRight(16)
+                    .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                    .setBorderBottom(Border.NO_BORDER)
+                    .setBorderRight(last ? Border.NO_BORDER : new SolidBorder(BDR, 0.6f)));
+        }
+
+        outer.addCell(new Cell().setBorder(Border.NO_BORDER).setPadding(0).add(grid));
+        return outer;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  BLOQUE 4 — Términos y condiciones
+    // ══════════════════════════════════════════════════════════════════
+
+    private static Table buildCondiciones() {
+        Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
+                .setWidth(UnitValue.createPercentValue(100));
+
+        outer.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .setBorderBottom(new SolidBorder(BDR, 0.8f))
+                .setBackgroundColor(BG_LBL)
+                .setPaddingTop(10).setPaddingBottom(10).setPaddingLeft(18).setPaddingRight(18)
+                .add(new Paragraph("TÉRMINOS Y CONDICIONES").setFontSize(7.5f).setBold()
+                        .setFontColor(TEXT_MID).setCharacterSpacing(0.8f)));
+
+        outer.addCell(new Cell().setBorder(Border.NO_BORDER)
+                .setBackgroundColor(BG_WHITE)
+                .setPaddingTop(14).setPaddingBottom(14).setPaddingLeft(18).setPaddingRight(18)
+                .add(new Paragraph(
+                        "1. Esta reservación es válida únicamente para las fechas indicadas.\n" +
+                                "2. Check-in estándar: 15:00 hrs  ·  Check-out estándar: 12:00 hrs.\n" +
+                                "3. Cancelaciones con menos de 24 hrs de anticipación generan cargo del 100%.\n" +
+                                "4. El hotel no se responsabiliza por objetos de valor no declarados en recepción.\n" +
+                                "5. Este documento es comprobante oficial de reservación.")
+                        .setFontSize(7.5f).setFontColor(TEXT_SOFT)));
+        return outer;
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  HELPERS
+    // ══════════════════════════════════════════════════════════════════
+
+    private static Cell titleBar(String txt) {
+        return new Cell().setBorder(Border.NO_BORDER)
+                .setBorderBottom(new SolidBorder(HDR_DARK, 1f))
+                .setBackgroundColor(HDR_MID)
+                .setPaddingTop(10).setPaddingBottom(10).setPaddingLeft(18).setPaddingRight(18)
+                .add(new Paragraph(txt).setFontSize(7.5f).setBold()
+                        .setFontColor(HDR_TEXT).setCharacterSpacing(1.2f));
+    }
+
+    private static Cell thC(String txt, TextAlignment ta) {
+        return new Cell()
+                .add(new Paragraph(txt).setFontSize(7.5f).setBold().setFontColor(HDR_TEXT).setTextAlignment(ta))
+                .setBackgroundColor(HDR_MID)
+                .setPaddingTop(10).setPaddingBottom(10).setPaddingLeft(8).setPaddingRight(8)
+                .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                .setBorderBottom(new SolidBorder(HDR_DARK, 1f))
+                .setBorderRight(new SolidBorder(new DeviceRgb(0x42, 0x52, 0x6E), 0.5f))
+                .setTextAlignment(ta);
+    }
+
+    private static Cell tdC(String txt, TextAlignment ta, Color bg, boolean bold) {
+        Paragraph p = new Paragraph(txt != null ? txt : "—").setFontSize(8).setFontColor(INK).setTextAlignment(ta);
+        if (bold) p.setBold();
+        return new Cell().add(p).setBackgroundColor(bg)
+                .setPaddingTop(9).setPaddingBottom(9).setPaddingLeft(8).setPaddingRight(8)
+                .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                .setBorderBottom(new SolidBorder(BDR, 0.6f))
+                .setBorderRight(new SolidBorder(BDR, 0.5f))
+                .setTextAlignment(ta);
+    }
+
+    private static Paragraph colTitle(String txt) {
+        return new Paragraph(txt).setFontSize(7.5f).setBold().setFontColor(ACCENT)
+                .setCharacterSpacing(0.8f).setMarginBottom(0);
+    }
+
+    private static Table infoTbl() {
         return new Table(UnitValue.createPercentArray(new float[]{38, 62}))
-                .setWidth(UnitValue.createPercentValue(100))
-                .setMarginBottom(0)
-                .setBorder(new SolidBorder(BORDER_COLOR, 1));
+                .setWidth(UnitValue.createPercentValue(100));
     }
 
-    /** Fila estándar */
-    private static void agregarFila(Table tabla, String etiqueta, String valor, boolean highlight) {
-        Color bgLabel = highlight ? new DeviceRgb(0xE8, 0xED, 0xF8) : CARD;
-
-        tabla.addCell(new Cell()
-                .add(new Paragraph(etiqueta).setFontSize(9).setBold().setFontColor(MEDIUM))
-                .setBackgroundColor(bgLabel)
-                .setPadding(8)
-                .setBorderRight(new SolidBorder(BORDER_COLOR, 1))
-                .setBorderBottom(new SolidBorder(BORDER_COLOR, 1))
-                .setBorderTop(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER));
-
-        tabla.addCell(new Cell()
-                .add(new Paragraph(valor != null ? valor : "-").setFontSize(9).setFontColor(MEDIUM))
-                .setBackgroundColor(WHITE)
-                .setPadding(8)
-                .setBorderBottom(new SolidBorder(BORDER_COLOR, 1))
-                .setBorderTop(Border.NO_BORDER)
+    private static void iRow(Table t, String lbl, String val, boolean hi) {
+        t.addCell(new Cell()
+                .add(new Paragraph(lbl).setFontSize(7.5f).setBold().setFontColor(TEXT_MID))
+                .setBackgroundColor(hi ? BG_HI : BG_LBL)
+                .setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(10).setPaddingRight(8)
+                .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
+                .setBorderRight(new SolidBorder(BDR, 0.6f))
+                .setBorderBottom(new SolidBorder(BDR, 0.6f)));
+        t.addCell(new Cell()
+                .add(new Paragraph(val != null ? val : "—").setFontSize(7.5f).setFontColor(INK))
+                .setBackgroundColor(BG_WHITE)
+                .setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(10).setPaddingRight(10)
+                .setBorderTop(Border.NO_BORDER).setBorderLeft(Border.NO_BORDER)
                 .setBorderRight(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER));
+                .setBorderBottom(new SolidBorder(BDR, 0.6f)));
     }
 
-    /** Fila para estado con badge de color */
-    private static void agregarFilaEstado(Table tabla, String etiqueta, String valor) {
-        tabla.addCell(new Cell()
-                .add(new Paragraph(etiqueta).setFontSize(9).setBold().setFontColor(MEDIUM))
-                .setBackgroundColor(CARD)
-                .setPadding(8)
-                .setBorderRight(new SolidBorder(BORDER_COLOR, 1))
-                .setBorderBottom(new SolidBorder(BORDER_COLOR, 1))
-                .setBorderTop(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER));
-
-        String v = valor != null ? valor : "-";
-        Color estadoColor = v.equalsIgnoreCase("Confirmada") ? SUCCESS
-                : v.equalsIgnoreCase("Cancelada")  ? new DeviceRgb(0xEF,0x44,0x44)
-                : v.equalsIgnoreCase("Completada") ? PRIMARY
-                : MUTED;
-
-        tabla.addCell(new Cell()
-                .add(new Paragraph(v).setFontSize(9).setBold().setFontColor(estadoColor))
-                .setBackgroundColor(WHITE)
-                .setPadding(8)
-                .setBorderBottom(new SolidBorder(BORDER_COLOR, 1))
-                .setBorderTop(Border.NO_BORDER)
-                .setBorderRight(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER));
+    private static Paragraph sp(float pts) {
+        return new Paragraph(" ").setFontSize(pts / 4f).setMargin(0);
     }
 
-    /** Fila de total con color destacado */
-    private static void agregarFilaTotal(Table tabla, String etiqueta, String valor) {
-        tabla.addCell(new Cell()
-                .add(new Paragraph(etiqueta).setFontSize(9).setBold().setFontColor(WHITE))
-                .setBackgroundColor(PRIMARY)
-                .setPadding(9)
-                .setBorderRight(new SolidBorder(SECONDARY, 1))
-                .setBorderBottom(Border.NO_BORDER)
-                .setBorderTop(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER));
-
-        tabla.addCell(new Cell()
-                .add(new Paragraph(valor != null ? valor : "-")
-                        .setFontSize(11).setBold().setFontColor(PRIMARY))
-                .setBackgroundColor(BG_LIGHT)
-                .setPadding(9)
-                .setBorderBottom(Border.NO_BORDER)
-                .setBorderTop(Border.NO_BORDER)
-                .setBorderRight(Border.NO_BORDER)
-                .setBorderLeft(Border.NO_BORDER));
+    private static Color sColor(String e) {
+        if (e == null) return new DeviceRgb(0x88, 0x9A, 0xB4);
+        return switch (e.toLowerCase()) {
+            case "confirmada"  -> S_OK;
+            case "cancelada"   -> S_ERR;
+            case "pendiente"   -> S_WARN;
+            default            -> new DeviceRgb(0x88, 0x9A, 0xB4);
+        };
     }
 
-    /** Espacio en blanco */
-    private static void spacer(Document doc, float size) {
-        doc.add(new Paragraph(" ").setFontSize(size / 3f).setMarginBottom(0).setMarginTop(0));
+    private static String nights(String ci, String co) {
+        try {
+            java.time.LocalDate d1 = java.time.LocalDate.parse(ci.substring(0, 10));
+            java.time.LocalDate d2 = java.time.LocalDate.parse(co.substring(0, 10));
+            return java.time.temporal.ChronoUnit.DAYS.between(d1, d2) + " n.";
+        } catch (Exception ex) { return "—"; }
     }
+
+    private static String fmt(Object o) {
+        if (o == null) return "—";
+        try {
+            double d = Double.parseDouble(o.toString());
+            return d == Math.floor(d) ? String.format("%,.0f", d) : String.format("%,.2f", d);
+        } catch (Exception e) { return o.toString(); }
+    }
+
+    private static String s(Object o)  { return o != null ? o.toString() : "—"; }
+    private static String nn(String s) { return s != null && !s.isBlank() ? s : "—"; }
 }

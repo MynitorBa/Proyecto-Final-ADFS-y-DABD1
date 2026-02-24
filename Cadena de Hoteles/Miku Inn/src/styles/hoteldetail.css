@@ -493,19 +493,34 @@
 
 /* Resumen del slot */
 .hdet__combo-slot-resumen {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; justify-content: space-between; align-items: flex-start;
   padding: .625rem 1.25rem;
   background: rgba(102,126,234,.05);
   border-top: 1.5px solid rgba(102,126,234,.15);
   font-size: .85rem;
+  gap: 1rem;
+}
+
+.hdet__combo-slot-resumen-left {
+  display: flex; flex-direction: column; gap: .15rem;
 }
 
 .hdet__combo-slot-resumen-name {
   font-weight: 700; color: var(--text-dark);
 }
 
+.hdet__combo-slot-resumen-breakdown {
+  font-size: .75rem; color: var(--text-light);
+}
+
 .hdet__combo-slot-resumen-precio {
-  font-weight: 600; color: var(--primary);
+  font-weight: 800; color: var(--primary);
+  text-align: right; white-space: nowrap;
+  display: flex; flex-direction: column; align-items: flex-end; gap: .1rem;
+}
+
+.hdet__combo-slot-resumen-total {
+  font-size: .75rem; font-weight: 600; color: var(--text-medium);
 }
 
 /* ── Barra total del combo ── */
@@ -695,44 +710,22 @@
   font-size: .85rem; font-weight: 700; color: var(--secondary);
 }
 
-/* ── Resumen slot - izquierda con breakdown ── */
-.hdet__combo-slot-resumen {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  padding: .625rem 1.25rem;
-  background: rgba(102,126,234,.05);
-  border-top: 1.5px solid rgba(102,126,234,.15);
-  font-size: .85rem;
-  gap: 1rem;
-}
-
-.hdet__combo-slot-resumen-left {
-  display: flex; flex-direction: column; gap: .15rem;
-}
-
-.hdet__combo-slot-resumen-name {
-  font-weight: 700; color: var(--text-dark);
-}
-
-.hdet__combo-slot-resumen-breakdown {
-  font-size: .75rem; color: var(--text-light);
-}
-
-.hdet__combo-slot-resumen-precio {
-  font-weight: 800; color: var(--primary);
-  text-align: right; white-space: nowrap;
-  display: flex; flex-direction: column; align-items: flex-end; gap: .1rem;
-}
-
-.hdet__combo-slot-resumen-total {
-  font-size: .75rem; font-weight: 600; color: var(--text-medium);
-}
-
 /* ── Sidebar combo mejorado ── */
+.hdet__sidebar-combo {
+  display: flex; flex-direction: column; gap: .5rem;
+}
+
 .hdet__sidebar-combo-slot {
   display: flex; align-items: center; gap: .625rem;
   padding: .5rem .75rem;
   background: var(--bg-light); border-radius: var(--radius-sm);
   font-size: .875rem;
+}
+
+.hdet__sidebar-combo-num {
+  font-size: .75rem; font-weight: 800; color: var(--primary);
+  background: rgba(102,126,234,.12); padding: .15rem .5rem;
+  border-radius: 12px; white-space: nowrap;
 }
 
 .hdet__sidebar-combo-middle {
@@ -947,6 +940,85 @@
 .hdet__confirm-btn-close:hover { border-color: var(--primary); color: var(--primary); }
 
 /* ═══════════════════════════════════════════════════════════
+   MODAL: INICIAR SESIÓN REQUERIDO
+   ═══════════════════════════════════════════════════════════ */
+
+.hdet__login-prompt-modal {
+  background: white; border-radius: 24px;
+  padding: 2.5rem 2rem; max-width: 440px; width: 100%;
+  text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,.2);
+  animation: loginPromptSlideUp .35s ease;
+}
+
+@keyframes loginPromptSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hdet__login-prompt-icon {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(102,126,234,.12), rgba(118,75,162,.12));
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.5rem;
+  border: 2px solid rgba(102,126,234,.2);
+}
+
+.hdet__login-prompt-title {
+  font-size: 1.5rem; font-weight: 700;
+  color: var(--text-dark); margin: 0 0 .75rem;
+}
+
+.hdet__login-prompt-text {
+  color: var(--text-medium); font-size: .95rem;
+  line-height: 1.65; margin: 0 0 2rem;
+  max-width: 360px; margin-left: auto; margin-right: auto;
+}
+
+.hdet__login-prompt-btns {
+  display: flex; flex-direction: column; gap: .75rem;
+}
+
+.hdet__login-prompt-btn-login {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  width: 100%; padding: 1rem;
+  background: var(--grad); color: white;
+  border: none; border-radius: 12px;
+  font-weight: 700; font-size: 1rem; cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: var(--shadow-primary);
+}
+.hdet__login-prompt-btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102,126,234,.45);
+}
+
+.hdet__login-prompt-btn-register {
+  display: flex; align-items: center; justify-content: center; gap: .5rem;
+  width: 100%; padding: 1rem;
+  background: var(--bg-white); color: var(--primary);
+  border: 2px solid var(--primary); border-radius: 12px;
+  font-weight: 700; font-size: 1rem; cursor: pointer;
+  transition: all .2s ease;
+}
+.hdet__login-prompt-btn-register:hover {
+  background: rgba(102,126,234,.06);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102,126,234,.2);
+}
+
+.hdet__login-prompt-btn-close {
+  width: 100%; padding: .875rem;
+  background: transparent; color: var(--text-light);
+  border: none; border-radius: 12px;
+  font-weight: 600; font-size: .9rem; cursor: pointer;
+  transition: all .2s ease;
+}
+.hdet__login-prompt-btn-close:hover {
+  background: var(--bg-light); color: var(--text-medium);
+}
+
+/* ═══════════════════════════════════════════════════════════
    COMENTARIOS / RESEÑAS — estilo Reddit
    ═══════════════════════════════════════════════════════════ */
 
@@ -1148,4 +1220,10 @@
   .hdet__combo-total-bar { flex-direction: column; align-items: stretch; }
   .hdet__combo-btn-seleccionar { width: 100%; justify-content: center; }
   .hdet__combo-slot-opciones { flex-direction: column; }
+
+  .hdet__login-prompt-modal { padding: 2rem 1.5rem; }
+  .hdet__login-prompt-icon { width: 64px; height: 64px; }
+  .hdet__login-prompt-icon svg { width: 36px; height: 36px; }
+  .hdet__login-prompt-title { font-size: 1.25rem; }
+  .hdet__login-prompt-text { font-size: .875rem; }
 }

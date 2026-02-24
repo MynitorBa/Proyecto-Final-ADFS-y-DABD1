@@ -55,16 +55,20 @@
   let currentImageIndex = 0;
   let showImageGallery  = false;
 
-  // ── Combinaciones ─────────────────────────────────────────
-  // combinacionesSeleccionadas: array de { capRequerida, habitacionId, habitacion }
-  // una por cada slot de la combinación activa
-  let comboActivo = null; // null | { tipo: 'exacta', slots: [...] } | { tipo: 'aproximada', slots: [...] }
+  // ── Modal de login requerido ──────────────────────────────
+  let showLoginRequired = false;
 
-  /**
-   * Construye las combinaciones sugeridas desde el API.
-   * Cada combinación es un array de capacidades, p.ej. [2, 2].
-   * Para cada capacidad devolvemos las habitaciones disponibles con esa capacidad.
-   */
+  function promptLogin() {
+    showLoginRequired = true;
+  }
+
+  function closeLoginPrompt() {
+    showLoginRequired = false;
+  }
+
+  // ── Combinaciones ─────────────────────────────────────────
+  let comboActivo = null;
+
   $: combosSugeridos = (() => {
     if (!hotel) return [];
     const combNums = hotel.combinacionesNumericas || [];
@@ -77,10 +81,6 @@
     });
   })();
 
-  /**
-   * Combinación aproximada cuando no hay exactas ni habitaciones directas.
-   * Misma lógica que en SearchResults.
-   */
   $: comboAproximada = (() => {
     if (!hotel) return null;
     const tieneDirecta = hotel.habitaciones && hotel.habitaciones.length > 0;
@@ -112,7 +112,6 @@
     if (sumCap < cantidadPersonas || sumCap > limite) return null;
     if (selec.length <= 1) return null;
 
-    // Construir slots para la UI
     const slots = selec.map(hab => {
       const capStr = String(hab.cap);
       const opciones = hotel.habitacionesPorCapacidad?.[capStr] || [];
@@ -121,7 +120,6 @@
     return { slots, esAproximada: true, capacidadTotal: sumCap };
   })();
 
-  // Inicializar comboActivo con el primer combo exacto si existe
   $: if (combosSugeridos.length > 0 && comboActivo === null) {
     comboActivo = deepCloneCombo(combosSugeridos[0]);
   } else if (combosSugeridos.length === 0 && comboAproximada && comboActivo === null) {
@@ -149,32 +147,23 @@
     comboActivo = { ...comboActivo, slots: [...comboActivo.slots] };
   }
 
-  /**
-   * Devuelve true si una opción debe bloquearse en un slot dado.
-   * Solo se bloquea si ESA habitación ya está seleccionada en OTRO slot
-   * Y ese otro slot tiene más de una opción (para no dejar al usuario sin elección).
-   */
   function esOpcionBloqueada(comboActivo, slotIdx, opcionId) {
     if (!comboActivo) return false;
     return comboActivo.slots.some((s, i) => {
       if (i === slotIdx) return false;
       if (s.seleccionada?.id !== opcionId) return false;
-      // Solo bloquear si el otro slot tiene más de 1 opción (así puede cambiar)
       return s.opciones.length > 1;
     });
   }
 
-  // Personas distribuidas entre slots (reactivo)
   $: personasPorSlotActivo = comboActivo
     ? distribuirPersonas(comboActivo.slots, cantidadPersonas)
     : [];
 
-  // Precio total por noche sin personas
   $: comboTotalPrecio = comboActivo
     ? comboActivo.slots.reduce((sum, s) => sum + (s.seleccionada?.precioPorNoche || 0), 0)
     : 0;
 
-  // Precio total por noche CON personas distribuidas
   $: comboTotalConPersonas = comboActivo
     ? comboActivo.slots.reduce((sum, s, i) => {
         const h = s.seleccionada;
@@ -190,7 +179,6 @@
     : 0;
 
   // ── Modo de reserva ───────────────────────────────────────
-  // 'single' | 'combo'
   let bookMode = 'single';
 
   // ── Imágenes ─────────────────────────────────────────────
@@ -272,6 +260,17 @@
     return true;
   }
 
+  /**
+   * Detecta si un error del servidor es por falta de autenticación.
+   */
+  function esErrorDeAutenticacion(status, mensaje) {
+    if (status === 401 || status === 403) return true;
+    const m = (mensaje || '').toLowerCase();
+    if (m.includes('intvalue') && m.includes('null')) return true;
+    if (m.includes('no autenticado') || m.includes('no autorizado') || m.includes('sesión') || m.includes('iniciar sesión')) return true;
+    return false;
+  }
+
   // ── Reservar habitación individual ────────────────────────
   async function bookNow() {
     if (!selectedRoom) return;
@@ -297,11 +296,22 @@
           const data = await res.json();
           msg = data.mensaje || data.message || data.error || msg;
         } catch(_) {}
+
+        // Detectar error de autenticación
+        if (esErrorDeAutenticacion(res.status, msg)) {
+          promptLogin();
+          return;
+        }
         throw new Error(msg);
       }
       reservacion = await res.json();
       reservacion._modo = 'single';
     } catch(e) {
+      // También detectar en catch general (errores de parsing, etc.)
+      if (esErrorDeAutenticacion(0, e.message)) {
+        promptLogin();
+        return;
+      }
       bookError = e.message || 'Error al crear la reservación';
     } finally {
       booking = false;
@@ -313,14 +323,12 @@
     if (!comboActivo) return;
     if (!validarFechas()) return;
 
-    // Verificar que todos los slots tienen habitación seleccionada
     const slotsInvalidos = comboActivo.slots.filter(s => !s.seleccionada);
     if (slotsInvalidos.length > 0) {
       bookError = 'Por favor selecciona una habitación para cada slot.';
       return;
     }
 
-    // Verificar que no hay duplicados
     const ids = comboActivo.slots.map(s => s.seleccionada.id);
     const idsUnicos = new Set(ids);
     if (idsUnicos.size !== ids.length) {
@@ -330,7 +338,6 @@
 
     bookError = ''; booking = true; reservacion = null;
 
-    // Distribuir personas entre habitaciones proporcionalmente
     const personasPorSlot = distribuirPersonas(comboActivo.slots, cantidadPersonas);
 
     try {
@@ -353,21 +360,27 @@
           const data = await res.json();
           msg = data.mensaje || data.message || data.error || msg;
         } catch(_) {}
+
+        if (esErrorDeAutenticacion(res.status, msg)) {
+          promptLogin();
+          return;
+        }
         throw new Error(msg);
       }
       reservacion = await res.json();
       reservacion._modo = 'combo';
       reservacion._comboSlots = comboActivo.slots.map(s => s.seleccionada);
     } catch(e) {
+      if (esErrorDeAutenticacion(0, e.message)) {
+        promptLogin();
+        return;
+      }
       bookError = e.message || 'Error al crear la reservación';
     } finally {
       booking = false;
     }
   }
 
-  /**
-   * Distribuye cantidadPersonas entre slots respetando la capacidad máxima de cada uno.
-   */
   function distribuirPersonas(slots, total) {
     const result = new Array(slots.length).fill(0);
     let restante = total;
@@ -377,7 +390,6 @@
       result[i] = asig;
       restante -= asig;
     }
-    // Si aún quedan personas, distribuir en el primer slot
     if (restante > 0) result[0] += restante;
     return result;
   }
@@ -419,12 +431,6 @@
     }).format(p);
   }
 
-  function toggleFavorite() { alert('Hotel guardado en favoritos'); }
-  function shareHotel() {
-    navigator.clipboard?.writeText(window.location.href);
-    alert('Enlace copiado al portapapeles');
-  }
-
   function handleImgError(e) {
     /** @type {HTMLImageElement} */ (e.target).style.display = 'none';
   }
@@ -464,15 +470,10 @@
   $: resenasRaiz    = comentarios.filter(c => c.comentarioPadreId === null && c.resena !== null);
   $: comentariosRaiz = comentarios.filter(c => c.comentarioPadreId === null && c.resena === null);
 
-  /** @param {number} id */
   function getRespuestas(id) {
     return comentarios.filter(c => c.comentarioPadreId === id);
   }
 
-  /**
-   * @param {number} comentarioId
-   * @param {1|-1} valor
-   */
   async function handleDown(comentarioId, valor) {
     const actual = misDowns.get(comentarioId);
     try {
@@ -497,7 +498,6 @@
     await loadComentarios();
   }
 
-  /** @param {number} parentId */
   async function sendReply(parentId) {
     const texto = (replyTexts[parentId] || '').trim();
     if (!texto) return;
@@ -535,7 +535,6 @@
     }
   }
 
-  /** @param {number} n */
   function starLabel(n) {
     return ['','Muy malo','Malo','Regular','Bueno','Excelente'][n] || '';
   }
@@ -545,13 +544,11 @@
   $: hayComboAproximado  = !!comboAproximada;
   $: hayCombinaciones    = hayCombosSugeridos || hayComboAproximado;
 
-  // Habitaciones "superiores" (capacidad >= cantidadPersonas pero sin ser combo)
   $: habitacionesSuperiores = (() => {
     if (!hotel) return [];
     const directas = hotel.habitaciones || [];
     const porCap   = hotel.habitacionesPorCapacidad || {};
     const todas    = [...directas];
-    // Agregar habitaciones de porCapacidad que no estén en directas
     for (const rooms of Object.values(porCap)) {
       for (const r of rooms) {
         if (!todas.find(x => x.id === r.id)) todas.push(r);
@@ -596,16 +593,6 @@
             <div class="score-number">{hotel.rating}</div>
             <div class="score-text">{hotel.rating >= 4.8 ? 'Excepcional' : hotel.rating >= 4.5 ? 'Fabuloso' : 'Muy bueno'}</div>
           </div>
-          <div class="header-actions">
-            <button class="hdet__action-btn action-btn-secondary" on:click={toggleFavorite}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-              Guardar
-            </button>
-            <button class="hdet__action-btn action-btn-secondary" on:click={shareHotel}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-              Compartir
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -646,7 +633,6 @@
             {#each [
               { id: 'overview',  label: 'Descripción'  },
               { id: 'rooms',     label: 'Habitaciones' },
-              { id: 'location',  label: 'Ubicación'    },
               { id: 'comments',  label: 'Comentarios'  },
             ] as tab}
               <button class="tab-btn" class:active={activeTab === tab.id} on:click={() => activeTab = tab.id}>
@@ -1020,20 +1006,6 @@
               </section>
             {/if}
 
-          <!-- Ubicación -->
-          {:else if activeTab === 'location'}
-            <section class="content-section">
-              <h2 class="hdet__section-title">Ubicación</h2>
-              <p class="hdet__section-description">{hotel.direccion} — {hotel.ciudad}, {hotel.pais}</p>
-              <div class="hdet__map-container">
-                <div class="hdet__map-placeholder">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="10" r="3"></circle><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"></path></svg>
-                  <p>{hotel.nombre}</p>
-                  <span>{hotel.direccion}</span>
-                </div>
-              </div>
-            </section>
-
           {:else if activeTab === 'comments'}
             <section class="content-section">
               <h2 class="hdet__section-title">Reseñas y Comentarios</h2>
@@ -1245,7 +1217,7 @@
       </div>
     </div>
 
-    <!-- Modal confirmación -->
+    <!-- Modal confirmación reserva -->
     {#if reservacion}
       <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
         <div class="hdet__confirm-modal">
@@ -1275,6 +1247,47 @@
               Pagar ahora
             </button>
             <button class="hdet__confirm-btn-close" on:click={() => reservacion = null}>Cerrar</button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- ═══ MODAL: Iniciar sesión requerido ═══ -->
+    {#if showLoginRequired}
+      <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
+        <div class="hdet__login-prompt-modal">
+          <div class="hdet__login-prompt-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <h2 class="hdet__login-prompt-title">¡Necesitas iniciar sesión!</h2>
+          <p class="hdet__login-prompt-text">
+            Para poder reservar una habitación necesitas tener una cuenta e iniciar sesión.
+            Es rápido, sencillo y podrás gestionar todas tus reservas.
+          </p>
+          <div class="hdet__login-prompt-btns">
+            <button class="hdet__login-prompt-btn-login" on:click={() => { closeLoginPrompt(); navigateTo('login'); }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                <polyline points="10 17 15 12 10 7"></polyline>
+                <line x1="15" y1="12" x2="3" y2="12"></line>
+              </svg>
+              Iniciar Sesión
+            </button>
+            <button class="hdet__login-prompt-btn-register" on:click={() => { closeLoginPrompt(); navigateTo('register'); }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              Crear Cuenta
+            </button>
+            <button class="hdet__login-prompt-btn-close" on:click={closeLoginPrompt}>
+              Seguir explorando
+            </button>
           </div>
         </div>
       </div>

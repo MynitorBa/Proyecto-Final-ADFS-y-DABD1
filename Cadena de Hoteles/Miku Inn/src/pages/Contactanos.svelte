@@ -2,6 +2,53 @@
   // @ts-nocheck
   import '../styles/info-pages.css';
   export let navigateTo;
+
+  let formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
+  let status = '';
+  let statusMsg = '';
+  let errors = {};
+
+  function validate() {
+    errors = {};
+    if (!formData.nombre.trim()) errors.nombre = 'Nombre requerido';
+    if (!formData.correo.trim()) errors.correo = 'Correo requerido';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.correo)) errors.correo = 'Correo inválido';
+    if (!formData.mensaje.trim()) errors.mensaje = 'Mensaje requerido';
+    else if (formData.mensaje.trim().length < 10) errors.mensaje = 'Mínimo 10 caracteres';
+    return Object.keys(errors).length === 0;
+  }
+
+  async function handleSubmit() {
+    if (!validate()) return;
+    status = 'sending';
+    statusMsg = '';
+
+    try {
+      const res = await fetch('http://localhost:7000/contacto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:  formData.nombre.trim(),
+          correo:  formData.correo.trim(),
+          asunto:  formData.asunto.trim(),
+          mensaje: formData.mensaje.trim()
+        })
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        status = 'success';
+        statusMsg = '¡Mensaje enviado correctamente! Te responderemos pronto.';
+        formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
+      } else {
+        status = 'error';
+        statusMsg = data.mensaje || 'Error al enviar el mensaje';
+      }
+    } catch {
+      status = 'error';
+      statusMsg = 'Error de conexión con el servidor';
+    }
+  }
 </script>
 
 <div class="info-page">
@@ -10,7 +57,7 @@
       <div class="info-hero__icon">✉️</div>
       <p class="info-hero__eyebrow">Miku Inn</p>
       <h1 class="info-hero__title">Contáctanos</h1>
-      <p class="info-hero__subtitle">Estamos aquí para ayudarte. Escríbenos o llámanos en cualquier momento.</p>
+      <p class="info-hero__subtitle">¿Tienes alguna duda o comentario? Envíanos un mensaje y te responderemos lo antes posible.</p>
     </div>
   </div>
 
@@ -24,40 +71,99 @@
       <div class="info-contact-item">
         <div class="info-contact-item__icon">📞</div>
         <div>
-          <p class="info-contact-item__label">Teléfono 24/7</p>
+          <p class="info-contact-item__label">Atención 24/7</p>
           <p class="info-contact-item__value">+502 4276-8687</p>
-          <p class="info-contact-item__sub">Llamadas y WhatsApp disponibles</p>
+          <p class="info-contact-item__sub">Llamadas y WhatsApp</p>
         </div>
       </div>
       <div class="info-contact-item">
         <div class="info-contact-item__icon">✉️</div>
         <div>
-          <p class="info-contact-item__label">Correo electrónico</p>
+          <p class="info-contact-item__label">Email</p>
           <p class="info-contact-item__value">info@mikuinn.com</p>
-          <p class="info-contact-item__sub">Respuesta en menos de 24 horas</p>
+          <p class="info-contact-item__sub">Respuesta en menos de 24h</p>
         </div>
       </div>
       <div class="info-contact-item">
         <div class="info-contact-item__icon">📍</div>
         <div>
           <p class="info-contact-item__label">Oficina Central</p>
-          <p class="info-contact-item__value">Guatemala City, Guatemala</p>
-          <p class="info-contact-item__sub">Lunes a viernes 8am – 6pm</p>
+          <p class="info-contact-item__value">Guatemala City</p>
+          <p class="info-contact-item__sub">Guatemala</p>
         </div>
       </div>
     </div>
 
-    <div class="info-card">
-      <h2 class="info-section-title">Horarios de atención</h2>
-      <ul class="info-list">
-        <li>Soporte telefónico: disponible las 24 horas, 7 días a la semana</li>
-        <li>Soporte por correo: respuesta en menos de 24 horas hábiles</li>
-        <li>Oficina central: lunes a viernes de 8:00am a 6:00pm</li>
-        <li>Para emergencias durante tu estadía, contacta directamente a recepción del hotel</li>
-      </ul>
-      <div class="info-highlight">
-        Para reservaciones grupales o empresariales, escríbenos a <strong>info@mikuinn.com</strong> indicando el número de habitaciones y fechas deseadas.
+    {#if status === 'success'}
+      <div class="info-card">
+        <div class="info-contacto-success">
+          <div class="info-contacto-success__icon">✅</div>
+          <h2 class="info-section-title" style="border:none;text-align:center;margin:0 0 0.5rem;">¡Mensaje Enviado!</h2>
+          <p class="info-prose" style="text-align:center;">Hemos recibido tu mensaje. Te responderemos a la brevedad posible.</p>
+          <button class="info-back" style="margin:1rem auto 0;display:flex;"
+            on:click={() => { status = ''; statusMsg = ''; }}>
+            Enviar otro mensaje
+          </button>
+        </div>
       </div>
+
+    {:else}
+      <div class="info-card">
+        <h2 class="info-section-title" style="margin-top:0;">Envíanos un mensaje</h2>
+
+        <form on:submit|preventDefault={handleSubmit} class="info-contacto-form">
+          <div class="info-contacto-grid">
+            <div class="info-contacto-field">
+              <label class="info-contacto-label" for="contactNombre">Nombre completo <span class="info-contacto-req">*</span></label>
+              <input type="text" id="contactNombre" class="info-contacto-input" class:info-contacto-input--error={errors.nombre}
+                bind:value={formData.nombre} placeholder="Tu nombre" autocomplete="name" />
+              {#if errors.nombre}<span class="info-contacto-error">{errors.nombre}</span>{/if}
+            </div>
+            <div class="info-contacto-field">
+              <label class="info-contacto-label" for="contactCorreo">Correo electrónico <span class="info-contacto-req">*</span></label>
+              <input type="email" id="contactCorreo" class="info-contacto-input" class:info-contacto-input--error={errors.correo}
+                bind:value={formData.correo} placeholder="tu@email.com" autocomplete="email" />
+              {#if errors.correo}<span class="info-contacto-error">{errors.correo}</span>{/if}
+            </div>
+          </div>
+
+          <div class="info-contacto-field">
+            <label class="info-contacto-label" for="contactAsunto">Asunto</label>
+            <input type="text" id="contactAsunto" class="info-contacto-input"
+              bind:value={formData.asunto} placeholder="¿Sobre qué nos escribes? (opcional)" autocomplete="off" />
+          </div>
+
+          <div class="info-contacto-field">
+            <label class="info-contacto-label" for="contactMensaje">Mensaje <span class="info-contacto-req">*</span></label>
+            <textarea id="contactMensaje" class="info-contacto-input info-contacto-textarea" class:info-contacto-input--error={errors.mensaje}
+              bind:value={formData.mensaje} placeholder="Escribe tu mensaje aquí..." rows="6"></textarea>
+            {#if formData.mensaje && !errors.mensaje}
+              <span class="info-contacto-helper">{formData.mensaje.length} caracteres</span>
+            {/if}
+            {#if errors.mensaje}<span class="info-contacto-error">{errors.mensaje}</span>{/if}
+          </div>
+
+          {#if status === 'error'}
+            <div class="info-highlight" style="border-left-color:#ef4444;background:rgba(239,68,68,.07);color:#ef4444;">
+              {statusMsg}
+            </div>
+          {/if}
+
+          <button type="submit" class="info-contacto-submit" disabled={status === 'sending'}>
+            {#if status === 'sending'}
+              <svg class="info-contacto-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              Enviando...
+            {:else}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Enviar Mensaje
+            {/if}
+          </button>
+        </form>
+      </div>
+    {/if}
+
+    <div class="info-highlight">
+      Para consultas urgentes llámanos al <strong>+502 4276-8687</strong> o escríbenos a <strong>info@mikuinn.com</strong>
     </div>
   </div>
 </div>

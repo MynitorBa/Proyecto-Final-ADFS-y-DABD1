@@ -2,11 +2,6 @@
   import '../styles/checkout.css';
 
   export let navigateTo;
-  /**
-   * checkoutData puede ser:
-   *   { pendingReservations: [...] }  → vino de HotelDetail con reservaciones ya creadas
-   *   null                            → entró directo desde el carrito/header, carga del backend
-   */
   export let checkoutData = null;
 
   const API = 'http://localhost:7000';
@@ -152,6 +147,9 @@
           errors.push(`${r.noReservacion}: ${data.mensaje || data.message || `Error ${res.status}`}`);
         } else {
           facturas.push({ ...data, _reservacion: r });
+
+          // Enviar correo con boleta de pago al usuario (fire & forget)
+          fetch(`${API}/reservaciones/${r.id}/correo`, { credentials: 'include' }).catch(() => {});
         }
       } catch(e) {
         errors.push(`${r.noReservacion}: ${e.message}`);
@@ -165,7 +163,6 @@
     }
 
     if (facturas.length > 0) {
-      // Redirigir a la página de agradecimiento con los datos de facturas
       navigateTo('agradecimiento', { facturas });
     }
   }

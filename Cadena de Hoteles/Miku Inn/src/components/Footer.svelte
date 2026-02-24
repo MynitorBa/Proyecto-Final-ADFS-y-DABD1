@@ -118,16 +118,6 @@
             </div>
           </div>
         </div>
-
-        <div class="newsletter">
-          <h4 class="newsletter-title">Suscribete a nuestro boletin</h4>
-          <form class="newsletter-form" on:submit|preventDefault>
-            <input type="email" placeholder="Tu correo electronico" class="newsletter-input" required />
-            <button type="submit" class="newsletter-button" aria-label="Suscribirse">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
-          </form>
-        </div>
       </div>
 
     </div>

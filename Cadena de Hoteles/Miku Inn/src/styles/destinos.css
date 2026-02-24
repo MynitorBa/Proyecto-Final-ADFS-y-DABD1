@@ -1,227 +1,249 @@
-/* ── Variables locales (complementan las globales) ─────────── */
-/* Usa var(--primary-color), var(--secondary-color), var(--text-muted),
-   var(--white), var(--bg-color), var(--perla-dark), var(--transition)
-   definidas globalmente */
+/* ═══════════════════════════════════════════════════════════
+   DESTINOS PAGE — Habitaciones Disponibles
+   ═══════════════════════════════════════════════════════════ */
 
-/* ── Page ──────────────────────────────────────────────────── */
 .destinos-page {
-  width: 100%;
   min-height: 100vh;
-  background-color: var(--bg-color);
-  padding-bottom: 4rem;
+  background: var(--bg-primary, #f5f5f5);
 }
 
-/* ── Hero Section ──────────────────────────────────────────── */
-.hero-section {
+/* ── Hero ──────────────────────────────────────────────── */
+.destinos-hero {
   position: relative;
-  height: 420px;
-  background: linear-gradient(135deg, var(--secondary-color) 0%, #2c2a28 100%);
-  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  padding: 70px 20px 50px;
+  text-align: center;
   overflow: hidden;
 }
 
-.hero-overlay {
+.destinos-hero__overlay {
   position: absolute; inset: 0;
-  background: rgba(0,0,0,.35);
+  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.05) 0%, transparent 60%);
+  pointer-events: none;
 }
 
-.hero-content {
-  position: relative; z-index: 1;
-  text-align: center; color: var(--white);
-  padding: 2rem;
+.destinos-hero__content {
+  position: relative; z-index: 1; max-width: 700px; margin: 0 auto;
 }
 
-.hero-title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 700; margin: 0 0 1rem;
-  color: var(--white);
-  text-shadow: 0 2px 20px rgba(0,0,0,.4);
+.destinos-hero__title {
+  font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0 0 10px; letter-spacing: -0.5px;
 }
 
-.hero-subtitle {
-  font-size: 1.1rem; opacity: .85;
-  max-width: 600px; margin: 0 auto 2.5rem;
+.destinos-hero__subtitle {
+  font-size: 1rem; color: rgba(255,255,255,0.65); margin: 0 0 28px; font-weight: 400;
 }
 
-.hero-stats {
-  display: flex; justify-content: center; gap: 3rem;
+/* ── Search Form ───────────────────────────────────────── */
+.destinos-search-form {
+  display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
 }
 
-.stat { text-align: center; }
-
-.stat-number {
-  font-size: 2rem; font-weight: 700;
-  color: var(--primary-color); line-height: 1;
+.destinos-search-field {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 12px; padding: 10px 18px; transition: border-color 0.2s, background 0.2s;
 }
 
-.stat-label { font-size: .85rem; opacity: .7; margin-top: .25rem; }
-
-/* ── Container & Section Header ────────────────────────────── */
-.container { max-width: 1400px; margin: 0 auto; padding: 4rem 2rem 4rem; }
-
-.section-header { text-align: center; margin-bottom: 3rem; }
-
-.section-title {
-  font-size: clamp(1.8rem, 3vw, 2.5rem);
-  font-weight: 300; color: var(--secondary-color); margin: 0 0 .75rem;
+.destinos-search-field:focus-within {
+  border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.18);
 }
 
-.section-subtitle { color: var(--text-muted); font-size: .95rem; margin: 0; }
+.destinos-search-field svg { color: rgba(255,255,255,0.6); flex-shrink: 0; }
 
-/* ── Destinos Grid ─────────────────────────────────────────── */
-.destinos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 2.5rem;
-  margin-bottom: 6rem;
+.destinos-search-input {
+  background: transparent; border: none; outline: none; color: #fff;
+  font-size: 1.2rem; font-weight: 700; width: 56px; text-align: center;
+  -moz-appearance: textfield;
+}
+.destinos-search-input::-webkit-outer-spin-button,
+.destinos-search-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.destinos-search-label { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 500; white-space: nowrap; }
+
+.destinos-search-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px;
+  background: #fff; color: #1a1a2e; border: none; border-radius: 12px;
+  font-size: 0.92rem; font-weight: 600; cursor: pointer;
+  transition: background 0.2s, transform 0.15s; white-space: nowrap;
+}
+.destinos-search-btn:hover:not(:disabled) { background: #f0f0f0; transform: translateY(-1px); }
+.destinos-search-btn:disabled { opacity: 0.7; cursor: wait; }
+
+.destinos-search-spinner {
+  width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #1a1a2e;
+  border-radius: 50%; animation: destinos-spin 0.7s linear infinite;
 }
 
-/* ── Destino Card ──────────────────────────────────────────── */
-.destino-card {
-  background: var(--white);
-  border-radius: 4px 32px 4px 32px;
-  overflow: hidden;
-  box-shadow: 0 15px 35px rgba(28,26,24,.05);
-  border: 1px solid rgba(235,230,224,.5);
-  cursor: pointer;
-  display: flex; flex-direction: column;
-  width: 100%;
-  text-align: left;
-  padding: 0;
-  transition: var(--transition);
-  /* Animación de entrada */
-  animation: fadeInUp .6s ease-out forwards;
-  opacity: 0;
-}
-.destino-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 25px 50px rgba(28,26,24,.12);
+/* ── Container ─────────────────────────────────────────── */
+.destinos-container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
+
+.destinos-results-header { margin-bottom: 24px; }
+.destinos-results-info { font-size: 0.95rem; color: #555; margin: 0; }
+.destinos-results-info strong { color: #1a1a2e; }
+
+/* ── Loading ───────────────────────────────────────────── */
+.destinos-loading {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 20px; gap: 16px; color: #666;
 }
 
-.destino-card:nth-child(1) { animation-delay: .1s; }
-.destino-card:nth-child(2) { animation-delay: .2s; }
-.destino-card:nth-child(3) { animation-delay: .3s; }
-.destino-card:nth-child(4) { animation-delay: .4s; }
-.destino-card:nth-child(5) { animation-delay: .5s; }
-.destino-card:nth-child(6) { animation-delay: .6s; }
+.destinos-spinner {
+  width: 40px; height: 40px; border: 3px solid #e0e0e0;
+  border-top-color: var(--primary-color, #2c5f8a); border-radius: 50%;
+  animation: destinos-spin 0.8s linear infinite;
+}
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
+@keyframes destinos-spin { to { transform: rotate(360deg); } }
+
+/* ── Empty / Error ─────────────────────────────────────── */
+.destinos-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 80px 20px; text-align: center; gap: 12px;
+}
+.destinos-empty h2 { font-size: 1.3rem; font-weight: 600; color: #333; margin: 0; }
+.destinos-empty p  { font-size: 0.95rem; color: #777; margin: 0; }
+
+.destinos-btn {
+  margin-top: 12px; padding: 10px 28px; background: var(--primary-color, #2c5f8a);
+  color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 500;
+  cursor: pointer; transition: background 0.2s, transform 0.15s;
+}
+.destinos-btn:hover { background: var(--primary-hover, #1e4a6e); transform: translateY(-1px); }
+
+/* ═══════════════════════════════════════════════════════════
+   ROOMS LIST
+   ═══════════════════════════════════════════════════════════ */
+
+.dh-rooms-list { display: flex; flex-direction: column; gap: 20px; }
+
+.dh-room {
+  display: flex; background: #fff; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06); border: 1px solid #eee;
+  transition: box-shadow 0.25s, transform 0.25s; animation: dh-fadeUp 0.45s ease both;
+}
+.dh-room:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+@keyframes dh-fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Card Image ────────────────────────────────────────────── */
-.destino-image {
-  position: relative; height: 260px; overflow: hidden;
+/* ── Image ─────────────────────────────────────────────── */
+.dh-room__image {
+  position: relative; width: 160px; min-height: 180px; flex-shrink: 0;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1); overflow: hidden;
+}
+.dh-room__image img { width: 100%; height: 100%; object-fit: cover; }
+.dh-room__no-img {
+  display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #94a3b8;
 }
 
-.destino-image img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform .8s ease;
-}
-.destino-card:hover .destino-image img { transform: scale(1.1); }
-
-/* Overlay con botón */
-.destino-overlay {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity .3s ease;
-}
-.destino-card:hover .destino-overlay { opacity: 1; }
-
-.view-btn {
-  display: flex; align-items: center; gap: .5rem;
-  padding: .75rem 1.5rem;
-  background: var(--white); color: var(--secondary-color);
-  border: none; border-radius: 0 12px 0 12px;
-  font-weight: 600; cursor: pointer;
+.dh-room__capacity-badge {
+  position: absolute; bottom: 8px; left: 8px; display: flex; align-items: center; gap: 4px;
+  background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 600;
 }
 
-/* Badges */
-.featured-badge,
-.flight-badge {
-  position: absolute;
-  display: flex; align-items: center; gap: .4rem;
-  padding: .4rem .9rem;
-  font-size: .75rem; font-weight: 700;
-  border-radius: 20px;
+.dh-room__combo-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff;
+  padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
-.featured-badge {
-  top: 1rem; left: 1rem;
-  background: var(--primary-color); color: var(--white);
+.dh-room__combo-badge--aprox {
+  background: linear-gradient(135deg, #d97706, #b45309);
 }
 
-.flight-badge {
-  top: 1rem; right: 1rem;
-  background: var(--secondary-color); color: var(--white);
+/* ── Info central ──────────────────────────────────────── */
+.dh-room__info {
+  flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
 }
 
-/* ── Card Content ──────────────────────────────────────────── */
-.destino-content {
-  padding: 1.75rem 2rem;
-  display: flex; flex-direction: column; gap: 1rem; flex: 1;
+.dh-room__hotel-tag {
+  display: flex; align-items: center; gap: 5px; font-size: 0.78rem;
+  color: #6b7280; font-weight: 500; flex-wrap: wrap;
+}
+.dh-room__hotel-rating { color: #d97706; font-weight: 700; margin-left: 4px; }
+
+.dh-room__name { font-size: 1.15rem; font-weight: 700; color: #1a1a2e; margin: 2px 0 0; line-height: 1.3; }
+
+.dh-room__desc {
+  font-size: 0.85rem; color: #6b7280; margin: 0; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-.destino-header { display: flex; align-items: center; }
-
-.destino-name-wrapper {
-  display: flex; align-items: center; gap: .75rem;
+.dh-room__specs { display: flex; gap: 16px; margin-top: auto; padding-top: 6px; }
+.dh-room__spec {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #64748b; font-weight: 500;
 }
 
-.flag { font-size: 2rem; }
-
-.destino-name {
-  font-size: 1.6rem; font-weight: 300;
-  color: var(--secondary-color); margin: 0 0 .2rem;
+/* Combo detail chips */
+.dh-room__combo-detail {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px;
 }
 
-.destino-country {
-  font-size: .8rem; color: var(--primary-color);
-  text-transform: uppercase; letter-spacing: 2px; margin: 0;
+.dh-room__combo-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #f0f0ff; border: 1px solid #e0e0f0; padding: 5px 12px;
+  border-radius: 8px; font-size: 0.78rem; color: #4338ca; font-weight: 500;
 }
 
-.destino-description {
-  color: var(--text-muted); line-height: 1.7;
-  font-size: .95rem; margin: 0;
+.dh-room__combo-chip-cap { color: #6b7280; font-weight: 400; }
+.dh-room__combo-chip-price { color: #1a1a2e; font-weight: 700; margin-left: 4px; }
+
+/* ── Pricing ───────────────────────────────────────────── */
+.dh-room__pricing {
+  display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+  padding: 20px 24px; min-width: 180px; border-left: 1px solid #f1f5f9; gap: 2px;
 }
 
-/* Info row */
-.destino-info {
-  display: flex; justify-content: space-between; align-items: center;
-  padding-top: 1rem; border-top: 1px solid var(--perla-dark);
-  margin-top: auto;
+.dh-room__price-main { display: flex; align-items: baseline; gap: 4px; }
+.dh-room__price-amount { font-size: 1.5rem; font-weight: 800; color: #1a1a2e; }
+.dh-room__price-unit { font-size: 0.82rem; color: #888; font-weight: 400; }
+.dh-room__price-person { font-size: 0.78rem; color: #6b7280; }
+.dh-room__price-total { font-size: 0.85rem; font-weight: 700; color: #dc2626; margin-top: 2px; }
+.dh-room__price-detail { font-size: 0.72rem; color: #9ca3af; }
+
+.dh-room__btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  padding: 9px 22px; background: var(--primary-color, #2c5f8a); color: #fff;
+  border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; transition: background 0.2s, transform 0.15s; white-space: nowrap;
+}
+.dh-room__btn:hover { background: var(--primary-hover, #1e4a6e); transform: translateY(-1px); }
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .dh-room__image { width: 130px; min-height: 160px; }
+  .dh-room__info  { padding: 16px 18px; }
+  .dh-room__pricing { padding: 16px 18px; min-width: 150px; }
+  .dh-room__price-amount { font-size: 1.3rem; }
 }
 
-.destinos__info-item {
-  display: flex; align-items: center; gap: .4rem;
-  font-size: .9rem; color: var(--text-muted);
-}
+@media (max-width: 700px) {
+  .destinos-hero { padding: 50px 16px 36px; }
+  .destinos-hero__title { font-size: 1.6rem; }
+  .destinos-search-form { flex-direction: column; gap: 10px; }
+  .destinos-search-btn { width: 100%; justify-content: center; }
 
-.destinos__info-item svg { color: var(--primary-color); flex-shrink: 0; }
-
-.destinos__info-item.price { flex-direction: row; align-items: baseline; gap: .25rem; }
-
-.from, .per-night { font-size: .8rem; color: var(--text-muted); }
-
-.amount { font-size: 1.5rem; font-weight: 700; color: var(--secondary-color); }
-
-/* ── Responsive ────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .destinos-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; }
-}
-
-@media (max-width: 768px) {
-  .hero-section { height: 340px; }
-  .hero-stats { gap: 2rem; }
-  .container { padding: 3rem 1rem 4rem; }
-  .destinos-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-  .destino-image { height: 220px; }
+  .dh-room { flex-direction: column; }
+  .dh-room__image { width: 100%; height: 160px; min-height: unset; }
+  .dh-room__pricing {
+    border-left: none; border-top: 1px solid #f1f5f9;
+    flex-direction: row; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; min-width: unset; padding: 16px 18px; gap: 6px;
+  }
+  .dh-room__price-main { order: 1; } .dh-room__price-person { order: 2; }
+  .dh-room__price-total { order: 3; } .dh-room__price-detail { order: 4; }
+  .dh-room__btn { order: 5; margin-top: 4px; }
 }
 
 @media (max-width: 480px) {
-  .hero-stats { flex-direction: column; gap: 1rem; }
-  .destino-card { border-radius: 4px 24px 4px 24px; }
-  .destino-content { padding: 1.25rem 1.5rem; }
+  .destinos-hero { padding: 40px 14px 28px; }
+  .destinos-hero__title { font-size: 1.4rem; }
+  .destinos-container { padding: 20px 12px 40px; }
+  .dh-room__name { font-size: 1.05rem; }
+  .dh-room__info { padding: 14px; }
 }

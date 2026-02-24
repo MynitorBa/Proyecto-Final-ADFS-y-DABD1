@@ -321,9 +321,9 @@
             Explorar Hoteles
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
-          <button type="button" class="home__cta-button secondary" on:click={() => navigateTo('offers')}>
-            Ver Ofertas Especiales
-          </button>
+            <a href="http://localhost:5173/destinations" class="home__cta-button secondary">
+              Ver Destinos
+            </a>
         </div>
       </div>
     </div>

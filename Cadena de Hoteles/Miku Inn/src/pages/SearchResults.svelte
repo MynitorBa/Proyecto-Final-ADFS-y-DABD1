@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   /** @type {{ pais?:string, ciudad?:string, fechaCheckIn?:string, fechaCheckOut?:string, cantidadPersonas?:number, hotels?:any[] } | null} */
   export let searchParams = null;
   export let navigateTo;
@@ -11,12 +12,109 @@
   let viewMode     = 'list';
   let searchError  = '';
 
-  let pais             = (searchParams && searchParams.pais)             ? searchParams.pais             : '';
-  let ciudad           = (searchParams && searchParams.ciudad)           ? searchParams.ciudad           : '';
   let fechaCheckIn     = (searchParams && searchParams.fechaCheckIn)     ? searchParams.fechaCheckIn     : '';
   let fechaCheckOut    = (searchParams && searchParams.fechaCheckOut)    ? searchParams.fechaCheckOut    : '';
   let cantidadPersonas = (searchParams && searchParams.cantidadPersonas) ? searchParams.cantidadPersonas : 1;
   let hotelsRaw        = (searchParams && Array.isArray(searchParams.hotels)) ? searchParams.hotels      : [];
+
+  // País autocomplete
+  let paisQuery = (searchParams && searchParams.pais) ? searchParams.pais : '';
+  let paisesSugeridos = [];
+  let paisSeleccionado = (searchParams && searchParams.pais) ? { country: searchParams.pais } : null;
+  let paisLoading = false;
+  let paisTimer = null;
+
+  // Ciudad autocomplete
+  let ciudadQuery = (searchParams && searchParams.ciudad) ? searchParams.ciudad : '';
+  let ciudadesSugeridas = [];
+  let ciudadSeleccionada = !!(searchParams && searchParams.ciudad);
+  let ciudadLoading = false;
+  let todasLasCiudades = [];
+
+  // Si venimos con país, cargar ciudades
+  onMount(async () => {
+    if (paisSeleccionado) {
+      ciudadLoading = true;
+      try {
+        const res = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ country: paisSeleccionado.country })
+        });
+        const data = await res.json();
+        todasLasCiudades = data.data || [];
+      } catch { todasLasCiudades = []; }
+      ciudadLoading = false;
+    }
+  });
+
+  // ── País ──
+  function onPaisInput() {
+    paisSeleccionado = null;
+    ciudadQuery = ''; ciudadSeleccionada = false;
+    ciudadesSugeridas = []; todasLasCiudades = [];
+    const q = paisQuery.trim();
+    if (q.length < 2) { paisesSugeridos = []; return; }
+    clearTimeout(paisTimer);
+    paisTimer = setTimeout(async () => {
+      paisLoading = true;
+      try {
+        const res  = await fetch('https://countriesnow.space/api/v0.1/countries');
+        const data = await res.json();
+        paisesSugeridos = (data.data || [])
+          .filter(p => p.country.toLowerCase().includes(q.toLowerCase()))
+          .slice(0, 6);
+      } catch { paisesSugeridos = []; }
+      paisLoading = false;
+    }, 300);
+  }
+
+  async function seleccionarPais(p) {
+    paisSeleccionado = p;
+    paisQuery = p.country;
+    paisesSugeridos = [];
+    ciudadQuery = ''; ciudadSeleccionada = false;
+    ciudadesSugeridas = []; todasLasCiudades = [];
+    ciudadLoading = true;
+    try {
+      const res = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: p.country })
+      });
+      const data = await res.json();
+      todasLasCiudades = data.data || [];
+    } catch { todasLasCiudades = []; }
+    ciudadLoading = false;
+  }
+
+  function blurPais() {
+    setTimeout(() => {
+      if (paisQuery && !paisSeleccionado) { paisQuery = ''; paisesSugeridos = []; }
+      else { paisesSugeridos = []; }
+    }, 200);
+  }
+
+  // ── Ciudad ──
+  function onCiudadInput() {
+    ciudadSeleccionada = false;
+    const q = ciudadQuery.toLowerCase().trim();
+    ciudadesSugeridas = q.length < 2
+      ? []
+      : todasLasCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+  }
+
+  function seleccionarCiudad(c) {
+    ciudadQuery = c; ciudadSeleccionada = true;
+    ciudadesSugeridas = [];
+  }
+
+  function blurCiudad() {
+    setTimeout(() => {
+      if (ciudadQuery && !ciudadSeleccionada) { ciudadQuery = ''; ciudadesSugeridas = []; }
+      else { ciudadesSugeridas = []; }
+    }, 200);
+  }
 
   let filters = {
     priceMin:    0,
@@ -50,10 +148,6 @@
     return Math.min(...hotel.habitaciones.map(r => r.precioPorNoche));
   }
 
-  /**
-   * Construye la lista de habs de la primera combinación exacta del backend.
-   * Solo para combos de 2+ habitaciones.
-   */
   function getComboHabs(hotel) {
     if (!hotel.combinacionesNumericas?.length) return null;
     const combo = hotel.combinacionesNumericas[0];
@@ -72,18 +166,7 @@
     return result;
   }
 
-  /**
-   * Cuando no hay disponibilidad exacta (habitaciones=[] y combinacionesNumericas=[]),
-   * intenta construir la mejor combinación aproximada usando habitacionesPorCapacidad,
-   * siempre que la capacidad total esté entre cantidadPersonas y cantidadPersonas+2.
-   *
-   * Algoritmo: toma todas las habitaciones disponibles en habitacionesPorCapacidad,
-   * las ordena de mayor a menor capacidad, y va sumando hasta cubrir el objetivo.
-   * Si el total queda en [personas, personas+2] → devuelve la combinación.
-   * Si no → null.
-   */
   function getComboAproximado(hotel, personas) {
-    // Solo aplica si no tiene disponibilidad exacta
     const tieneDirecta = hotel.habitaciones && hotel.habitaciones.length > 0;
     const tieneCombo   = !!getComboHabs(hotel);
     if (tieneDirecta || tieneCombo) return null;
@@ -91,7 +174,6 @@
     const porCapacidad = hotel.habitacionesPorCapacidad;
     if (!porCapacidad || Object.keys(porCapacidad).length === 0) return null;
 
-    // Aplanar todas las habitaciones disponibles
     const todasHabs = [];
     for (const [capStr, rooms] of Object.entries(porCapacidad)) {
       const cap = Number(capStr);
@@ -100,13 +182,11 @@
       }
     }
 
-    // Ordenar de mayor a menor capacidad para cubrir con el mínimo de habitaciones
     todasHabs.sort((a, b) => b.cap - a.cap);
 
-    // Selección greedy: ir sumando habs hasta cubrir el objetivo
     let sumCap   = 0;
     const selec  = [];
-    const limite = personas + 2; // margen máximo
+    const limite = personas + 2;
 
     for (const hab of todasHabs) {
       if (sumCap >= personas) break;
@@ -114,23 +194,16 @@
       sumCap += hab.cap;
     }
 
-    // Validar que la combinación encontrada esté en [personas, personas+2]
     if (sumCap < personas || sumCap > limite) return null;
-    // Debe ser más de 1 hab para ser considerada combinación
     if (selec.length <= 1) return null;
 
     return { habs: selec, capacidadTotal: sumCap, esAproximado: true };
   }
 
-  /** Precio total de un array de habs */
   function sumPrecios(habs) {
     return habs.reduce((s, h) => s + h.precio, 0);
   }
 
-  /**
-   * Precio "Desde" para ordenar/filtrar.
-   * Toma el mínimo entre directo, combo exacto y combo aproximado.
-   */
   function getDesde(hotel) {
     const directo = getMinPrice(hotel);
     const combo   = getComboHabs(hotel);
@@ -183,7 +256,8 @@
 
   async function handleReSearch(e) {
     e.preventDefault();
-    if (!pais.trim() || !ciudad.trim()) return;
+    if (!paisSeleccionado) { searchError = 'Por favor selecciona un país de la lista.'; return; }
+    if (!ciudadSeleccionada) { searchError = 'Por favor selecciona una ciudad de la lista.'; return; }
     isSearching = true;
     searchError = '';
     try {
@@ -192,8 +266,8 @@
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          pais:             pais.trim(),
-          ciudad:           ciudad.trim(),
+          pais:             paisQuery.trim(),
+          ciudad:           ciudadQuery.trim(),
           fechaCheckIn,
           fechaCheckOut,
           cantidadPersonas: Number(cantidadPersonas)
@@ -239,14 +313,55 @@
       <div class="sr-modify-content">
         <form class="sr-modify-form" on:submit={handleReSearch}>
           <div class="sr-form-fields">
-            <div class="sr-field-group">
+
+            <!-- País con autocomplete -->
+            <div class="sr-field-group sr-field-group--ac">
               <label for="sr-pais">Pais</label>
-              <input id="sr-pais" type="text" bind:value={pais} placeholder="Guatemala" required />
+              <div class="sr-ac-wrap">
+                <input id="sr-pais" type="text"
+                  bind:value={paisQuery}
+                  on:input={onPaisInput}
+                  on:blur={blurPais}
+                  placeholder="Escribe un país..."
+                  autocomplete="off" />
+                {#if paisLoading}
+                  <div class="sr-ac-loading">Buscando...</div>
+                {:else if paisesSugeridos.length > 0}
+                  <ul class="sr-ac-list">
+                    {#each paisesSugeridos as p}
+                      <li><button type="button" class="sr-ac-btn" on:mousedown|preventDefault={() => seleccionarPais(p)}>{p.country}</button></li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
             </div>
-            <div class="sr-field-group">
-              <label for="sr-ciudad">Ciudad</label>
-              <input id="sr-ciudad" type="text" bind:value={ciudad} placeholder="Ciudad de Guatemala" required />
+
+            <!-- Ciudad con autocomplete -->
+            <div class="sr-field-group sr-field-group--ac">
+              <label for="sr-ciudad">
+                Ciudad
+                {#if ciudadLoading}
+                  <span class="sr-ac-hint">Cargando...</span>
+                {/if}
+              </label>
+              <div class="sr-ac-wrap">
+                <input id="sr-ciudad" type="text"
+                  bind:value={ciudadQuery}
+                  on:input={onCiudadInput}
+                  on:blur={blurCiudad}
+                  placeholder={!paisSeleccionado ? 'Primero selecciona un país' : ciudadLoading ? 'Cargando ciudades...' : 'Escribe una ciudad...'}
+                  disabled={!paisSeleccionado || ciudadLoading}
+                  autocomplete="off" />
+                {#if ciudadesSugeridas.length > 0}
+                  <ul class="sr-ac-list">
+                    {#each ciudadesSugeridas as c}
+                      <li><button type="button" class="sr-ac-btn" on:mousedown|preventDefault={() => seleccionarCiudad(c)}>{c}</button></li>
+                    {/each}
+                  </ul>
+                {/if}
+              </div>
             </div>
+
             <div class="sr-field-group">
               <label for="sr-checkin">Check-in</label>
               <input id="sr-checkin" type="date" bind:value={fechaCheckIn} required />
@@ -273,7 +388,7 @@
 
     <div class="sr-header">
       <div>
-        <h1>{ciudad}{pais ? ', ' + pais : ''}: {filteredHotels.length} hotel{filteredHotels.length !== 1 ? 'es' : ''} encontrado{filteredHotels.length !== 1 ? 's' : ''}</h1>
+        <h1>{ciudadQuery}{paisQuery ? ', ' + paisQuery : ''}: {filteredHotels.length} hotel{filteredHotels.length !== 1 ? 'es' : ''} encontrado{filteredHotels.length !== 1 ? 's' : ''}</h1>
         <p class="sr-subtitle">{nights} {nights === 1 ? 'noche' : 'noches'} · {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}</p>
       </div>
       <div class="sr-actions">
@@ -398,7 +513,6 @@
                 on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}
                 on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
 
-                <!-- GALERÍA -->
                 <div class="hotel-gallery">
                   {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
                     <img
@@ -423,7 +537,6 @@
                   {#if hotel.estado === 'Activo'}
                     <div class="hotel-estado-badge hotel-estado-badge--activo">Disponible</div>
                   {/if}
-                  <!-- Badge de aproximado encima de la imagen -->
                   {#if comboAprox}
                     <div class="hotel-estado-badge hotel-estado-badge--aprox" style="left:auto;right:0.75rem;">
                       Opción cercana · {comboAprox.capacidadTotal} pers.
@@ -484,11 +597,9 @@
                     </div>
                   {/if}
 
-                  <!-- FOOTER DE PRECIOS -->
                   <div class="hotel-footer">
                     <div class="pricing">
 
-                      <!-- Badge "Desde" unificado -->
                       {#if desde !== null}
                         <div class="desde-badge">
                           <span class="desde-lbl">Desde</span>
@@ -499,7 +610,6 @@
 
                       <div class="price-boxes">
 
-                        <!-- Bloque habitación directa -->
                         {#if minPrice !== null}
                           <div class="price-box">
                             <div class="price-box-label">Habitación directa</div>
@@ -515,7 +625,6 @@
                           <div class="price-box-divider">ó</div>
                         {/if}
 
-                        <!-- Bloque combinación exacta del backend -->
                         {#if comboHabs}
                           <div class="price-box price-box--combo">
                             <div class="price-box-label">Combinación de habitaciones</div>
@@ -535,7 +644,6 @@
                           </div>
                         {/if}
 
-                        <!-- Bloque combinación APROXIMADA (solo si no hay nada exacto) -->
                         {#if comboAprox}
                           <div class="price-box price-box--aprox">
                             <div class="price-box-label">
@@ -558,7 +666,6 @@
                           </div>
                         {/if}
 
-                        <!-- Sin ninguna opción -->
                         {#if minPrice === null && !comboHabs && !comboAprox}
                           <div class="price-box">
                             <div class="price-box-label">Precio a consultar</div>

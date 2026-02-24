@@ -13,7 +13,6 @@
   import Register from './pages/Register.svelte';
   import MyReservations from './pages/MyReservations.svelte';
   import Destinos from './pages/Destinos.svelte';
-  import DestinoDetail from './pages/DestinoDetail.svelte';
   import Profile from './pages/Profile.svelte';
   import Administrador from './pages/Administrador.svelte';
   import WebService from './pages/WebService.svelte';
@@ -36,7 +35,6 @@
   import './styles/login.css';
   import './styles/register.css';
   import './styles/myreservations.css';
-  import './styles/destinodetail.css';
   import './styles/destinos.css';
   import './styles/profile.css';
   import './styles/administrador.css';
@@ -49,7 +47,6 @@
   let checkoutData          = null;
   let agradecimientoData    = null;
   let currentHotelData      = null;
-  let currentDestinoId      = null;
   let searchParams          = null;
   let destinationSuggestion = null;
   let pageKey               = Date.now();
@@ -103,16 +100,11 @@
     window.history.pushState({}, '', `/${page}`);
 
     if (page === 'hotel-detail')   currentHotelData   = data;
-    if (page === 'destino-detail') currentDestinoId   = data;
     if (page === 'search-results') searchParams       = data;
     if (page === 'checkout')       checkoutData       = data;
     if (page === 'agradecimiento') agradecimientoData = data;
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function handleHeaderSearch(event) {
-    navigateTo('search-results', { ciudad: event.detail, pais: '', hotels: [] });
   }
 
   function handleLogin(event) {
@@ -139,7 +131,6 @@
     {#if showHeaderFooter}
       <Header
         {navigateTo} {currentPage} {isLoggedIn} {userName} {userRolId}
-        on:search={handleHeaderSearch}
         on:logout={handleLogout}
       />
     {/if}
@@ -178,9 +169,6 @@
       {:else if currentPage === 'destinations'}
         <Destinos {navigateTo} />
 
-      {:else if currentPage === 'destino-detail'}
-        <DestinoDetail {navigateTo} destinoId={currentDestinoId} />
-
       {:else if currentPage === 'profile'}
         <Profile {navigateTo} />
 
@@ -190,7 +178,6 @@
       {:else if currentPage === 'webservice' && userRolId === 3}
         <WebService {navigateTo} />
 
-      <!-- ── Páginas informativas ── -->
       {:else if currentPage === 'sobre-nosotros'}
         {#key pageKey}<SobreNosotros {navigateTo} />{/key}
 

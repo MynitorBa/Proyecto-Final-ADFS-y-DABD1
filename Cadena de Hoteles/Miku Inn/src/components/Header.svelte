@@ -9,12 +9,15 @@
   export let currentPage = 'home';
   export let isLoggedIn = false;
   export let userName = '';
-  export let userRolId = null; // 1 = Usuario, 2 = Administrador, 3 = Webservice
+  export let userRolId = null;
+
+  const API = 'http://localhost:7000';
 
   let showUserMenu = false;
   let showMobileMenu = false;
   let searchQuery = '';
   let isScrolled = false;
+  let isSearching = false;
 
   $: isAdmin      = userRolId === 2;
   $: isWebservice = userRolId === 3;
@@ -24,9 +27,118 @@
   function toggleMobileMenu() { showMobileMenu = !showMobileMenu; showUserMenu = false; }
   function closeMenus() { showUserMenu = false; showMobileMenu = false; }
 
-  function handleSearch(e) {
+  function getFutureDate(daysFromNow) {
+    const d = new Date();
+    d.setDate(d.getDate() + daysFromNow);
+    return d.toISOString().split('T')[0];
+  }
+
+  async function handleSearch(e) {
     e.preventDefault();
-    if (searchQuery.trim()) { dispatch('search', searchQuery); searchQuery = ''; }
+    const query = searchQuery.trim();
+    if (!query || isSearching) return;
+
+    isSearching = true;
+    showMobileMenu = false;
+
+    try {
+      // 1. Traer todos los destinos
+      let hotelesBasicos = [];
+      try {
+        const res = await fetch(`${API}/destinos`, { credentials: 'include' });
+        if (res.ok) hotelesBasicos = await res.json();
+      } catch (_) {}
+
+      // 2. Filtrar hoteles que coincidan con el query (nombre, ciudad, país, dirección, descripción)
+      const qLower = query.toLowerCase();
+      const ciudadesMatch = new Map();
+
+      for (const h of hotelesBasicos) {
+        const campos = [
+          h.nombre || '', h.ciudad || '', h.pais || '',
+          h.direccion || '', h.descripcion || ''
+        ];
+        const match = campos.some(c => c.toLowerCase().includes(qLower));
+
+        if (match) {
+          const key = `${h.ciudad}|||${h.pais}`;
+          if (!ciudadesMatch.has(key)) {
+            ciudadesMatch.set(key, { ciudad: h.ciudad, pais: h.pais });
+          }
+        }
+      }
+
+      // Si no hay coincidencias, intentar búsqueda directa con el query
+      if (ciudadesMatch.size === 0) {
+        ciudadesMatch.set('direct-ciudad', { ciudad: query, pais: '' });
+        ciudadesMatch.set('direct-pais', { ciudad: '', pais: query });
+      }
+
+      // 3. POST /busqueda por cada ciudad/país
+      const checkIn  = getFutureDate(1);
+      const checkOut = getFutureDate(2);
+
+      const promesas = Array.from(ciudadesMatch.values()).map(async ({ ciudad, pais }) => {
+        try {
+          const r = await fetch(`${API}/busqueda`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              pais: pais || ciudad,
+              ciudad: ciudad || pais,
+              fechaCheckIn: checkIn,
+              fechaCheckOut: checkOut,
+              cantidadPersonas: 1
+            })
+          });
+          if (r.ok) return await r.json();
+          return [];
+        } catch (_) { return []; }
+      });
+
+      const resultados = await Promise.all(promesas);
+      const hoteles = resultados.flat();
+
+      // 4. Deduplicar
+      const seen = new Set();
+      const hotelesUnicos = hoteles.filter(h => {
+        if (seen.has(h.id)) return false;
+        seen.add(h.id);
+        return true;
+      });
+
+      // 5. Determinar labels
+      let ciudadLabel = query;
+      let paisLabel   = '';
+      if (ciudadesMatch.size >= 1) {
+        const first = Array.from(ciudadesMatch.values())[0];
+        if (first.ciudad) ciudadLabel = first.ciudad;
+        if (first.pais) paisLabel = first.pais;
+      }
+
+      // 6. Navegar
+      navigateTo('search-results', {
+        pais:             paisLabel,
+        ciudad:           ciudadLabel,
+        fechaCheckIn:     checkIn,
+        fechaCheckOut:    checkOut,
+        cantidadPersonas: 1,
+        hotels:           hotelesUnicos
+      });
+
+      searchQuery = '';
+
+    } catch (err) {
+      navigateTo('search-results', {
+        pais: '', ciudad: query,
+        fechaCheckIn: getFutureDate(1), fechaCheckOut: getFutureDate(2),
+        cantidadPersonas: 1, hotels: []
+      });
+      searchQuery = '';
+    } finally {
+      isSearching = false;
+    }
   }
 
   function handleLogout() { dispatch('logout'); showUserMenu = false; }
@@ -59,7 +171,6 @@
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
         Destinos
       </button>
-
       <button class="nav-link" class:active={isActivePage('reservations')} on:click={() => handleNavClick('reservations')}>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
         Mis Reservas
@@ -67,18 +178,14 @@
 
       {#if isAdmin}
         <button class="nav-link nav-link--admin" class:active={isActivePage('administrador')} on:click={() => handleNavClick('administrador')}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-          </svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           Panel Admin
         </button>
       {/if}
 
       {#if isWebservice}
         <button class="nav-link nav-link--webservice" class:active={isActivePage('webservice')} on:click={() => handleNavClick('webservice')}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          </svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           Portal WS
         </button>
       {/if}
@@ -87,8 +194,19 @@
     <!-- Search Bar -->
     <form class="search-bar" on:submit={handleSearch}>
       <div class="search-input-wrapper">
-        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-        <input type="text" bind:value={searchQuery} placeholder="Buscar hoteles, destinos..." class="search-input" aria-label="Buscar" />
+        {#if isSearching}
+          <div class="search-spinner"></div>
+        {:else}
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        {/if}
+        <input
+          type="text"
+          bind:value={searchQuery}
+          placeholder={isSearching ? 'Buscando...' : 'Buscar hoteles, destinos...'}
+          class="search-input"
+          aria-label="Buscar"
+          disabled={isSearching}
+        />
       </div>
     </form>
 
@@ -145,32 +263,20 @@
               <div class="dropdown-divider"></div>
 
               <button class="dropdown-item" role="menuitem" on:click={() => handleNavClick('profile')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 Mi Perfil
               </button>
 
               {#if isAdmin}
                 <button class="dropdown-item dropdown-item--admin" role="menuitem" on:click={() => handleNavClick('administrador')}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                   Panel de Administrador
                 </button>
               {/if}
 
               {#if isWebservice}
                 <button class="dropdown-item dropdown-item--webservice" role="menuitem" on:click={() => handleNavClick('webservice')}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                    <line x1="12" y1="22.08" x2="12" y2="12"/>
-                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                   Portal Webservice
                 </button>
               {/if}
@@ -207,8 +313,12 @@
     <nav class="mobile-nav" aria-label="Menu movil">
       <form class="mobile-search" on:submit={handleSearch}>
         <div class="search-input-wrapper">
-          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
-          <input type="text" bind:value={searchQuery} placeholder="Buscar..." class="search-input" aria-label="Buscar" />
+          {#if isSearching}
+            <div class="search-spinner"></div>
+          {:else}
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+          {/if}
+          <input type="text" bind:value={searchQuery} placeholder={isSearching ? 'Buscando...' : 'Buscar hoteles, destinos...'} class="search-input" aria-label="Buscar" disabled={isSearching} />
         </div>
       </form>
       <div class="mobile-nav-links">
@@ -217,14 +327,10 @@
         <button class="mobile-nav-link" on:click={() => handleNavClick('destinations')}>Destinos</button>
         <button class="mobile-nav-link" on:click={() => handleNavClick('reservations')}>Mis Reservas</button>
         {#if isAdmin}
-          <button class="mobile-nav-link mobile-nav-link--admin" on:click={() => handleNavClick('administrador')}>
-            ⚙ Panel Admin
-          </button>
+          <button class="mobile-nav-link mobile-nav-link--admin" on:click={() => handleNavClick('administrador')}>⚙ Panel Admin</button>
         {/if}
         {#if isWebservice}
-          <button class="mobile-nav-link mobile-nav-link--webservice" on:click={() => handleNavClick('webservice')}>
-            ⬡ Portal WS
-          </button>
+          <button class="mobile-nav-link mobile-nav-link--webservice" on:click={() => handleNavClick('webservice')}>⬡ Portal WS</button>
         {/if}
         <div class="mobile-divider"></div>
         {#if isLoggedIn}
