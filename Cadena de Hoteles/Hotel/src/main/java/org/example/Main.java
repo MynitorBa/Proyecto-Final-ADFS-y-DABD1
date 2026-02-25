@@ -19,6 +19,7 @@ import org.example.helpers.AuthMiddleware;
 import org.example.services.ExpiracionService;
 import org.example.controllers.PdfReservacionController;
 import org.example.controllers.DestinosController;
+import org.example.controllers.AdminBusquedaController;
 
 
 import org.example.controllers.EmailReservacionController;
@@ -84,6 +85,7 @@ public class Main {
 
         new DestinosController().registerRoutes(app);
         new EmailReservacionController().registerRoutes(app);
+        new AdminBusquedaController().registerRoutes(app);
 
 
         // ── Rutas base ────────────────────────────────────────────────────────
