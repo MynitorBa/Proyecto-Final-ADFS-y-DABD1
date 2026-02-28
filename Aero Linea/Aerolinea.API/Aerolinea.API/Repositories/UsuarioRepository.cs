@@ -9,18 +9,15 @@ namespace Aerolinea.API.Repositories
     {
         private readonly DbConnectionFactory _connectionFactory;
         private readonly NacionalidadRepository _nacionalidadRepository;
-        private readonly PaisRepository _paisRepository;
         private readonly CiudadRepository _ciudadRepository;
 
         public UsuarioRepository(
             DbConnectionFactory connectionFactory,
             NacionalidadRepository nacionalidadRepository,
-            PaisRepository paisRepository,
             CiudadRepository ciudadRepository)
         {
             _connectionFactory = connectionFactory;
             _nacionalidadRepository = nacionalidadRepository;
-            _paisRepository = paisRepository;
             _ciudadRepository = ciudadRepository;
         }
 
@@ -31,10 +28,10 @@ namespace Aerolinea.API.Repositories
 
             var query = @"
                 INSERT INTO Usuario (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, 
-                                    Telefono, FechaNacimiento, PaisId, CiudadId, RolID)
+                                    Telefono, FechaNacimiento, CiudadId, RolID)
                 OUTPUT INSERTED.Id
                 VALUES (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, 
-                        @Telefono, @FechaNacimiento, @PaisId, @CiudadId, @RolID)";
+                        @Telefono, @FechaNacimiento, @CiudadId, @RolID)";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Correo", usuario.Correo);
@@ -45,7 +42,6 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
             command.Parameters.AddWithValue("@Telefono", usuario.Telefono);
             command.Parameters.AddWithValue("@FechaNacimiento", usuario.FechaNacimiento);
-            command.Parameters.AddWithValue("@PaisId", usuario.PaisId);
             command.Parameters.AddWithValue("@CiudadId", usuario.CiudadId);
             command.Parameters.AddWithValue("@RolID", usuario.RolID);
 
@@ -102,7 +98,7 @@ namespace Aerolinea.API.Repositories
 
             var query = @"
                 SELECT Id, Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, 
-                       Telefono, FechaNacimiento, PaisId, CiudadId, RolID
+                       Telefono, FechaNacimiento, CiudadId, RolID
                 FROM Usuario 
                 WHERE Correo = @CorreoOUsername OR Username = @CorreoOUsername";
 
@@ -124,9 +120,8 @@ namespace Aerolinea.API.Repositories
                     Apellido = reader.GetString(6),
                     Telefono = reader.IsDBNull(7) ? "" : reader.GetString(7),
                     FechaNacimiento = reader.IsDBNull(8) ? DateTime.MinValue : reader.GetDateTime(8),
-                    PaisId = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
-                    CiudadId = reader.IsDBNull(10) ? 0 : reader.GetInt32(10),
-                    RolID = reader.GetInt32(11)
+                    CiudadId = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                    RolID = reader.GetInt32(10)
                 };
             }
 
@@ -194,7 +189,7 @@ namespace Aerolinea.API.Repositories
 
             var lista = new List<Usuario>();
             using var command = new SqlCommand(
-                "SELECT Id, Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Telefono, FechaNacimiento, PaisId, CiudadId, RolID FROM Usuario ORDER BY Id",
+                "SELECT Id, Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, Telefono, FechaNacimiento, CiudadId, RolID FROM Usuario ORDER BY Id",
                 connection);
             using var reader = await command.ExecuteReaderAsync();
 
@@ -211,9 +206,8 @@ namespace Aerolinea.API.Repositories
                     Apellido = reader.GetString(6),
                     Telefono = reader.IsDBNull(7) ? "" : reader.GetString(7),
                     FechaNacimiento = reader.IsDBNull(8) ? DateTime.MinValue : reader.GetDateTime(8),
-                    PaisId = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
-                    CiudadId = reader.IsDBNull(10) ? 0 : reader.GetInt32(10),
-                    RolID = reader.GetInt32(11)
+                    CiudadId = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                    RolID = reader.GetInt32(10)
                 });
             }
 
