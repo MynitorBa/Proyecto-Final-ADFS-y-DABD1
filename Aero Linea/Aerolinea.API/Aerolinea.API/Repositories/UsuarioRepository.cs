@@ -40,9 +40,9 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@Username", usuario.Username);
             command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
             command.Parameters.AddWithValue("@Apellido", usuario.Apellido);
-            command.Parameters.AddWithValue("@Telefono", usuario.Telefono);
-            command.Parameters.AddWithValue("@FechaNacimiento", usuario.FechaNacimiento);
-            command.Parameters.AddWithValue("@CiudadId", usuario.CiudadId);
+            command.Parameters.AddWithValue("@Telefono", (object)usuario.Telefono ?? DBNull.Value);
+            command.Parameters.AddWithValue("@FechaNacimiento", usuario.FechaNacimiento == DateTime.MinValue ? DBNull.Value : usuario.FechaNacimiento);
+            command.Parameters.AddWithValue("@CiudadId", usuario.CiudadId == 0 ? DBNull.Value : usuario.CiudadId);
             command.Parameters.AddWithValue("@RolID", usuario.RolID);
 
             return (int)await command.ExecuteScalarAsync();
@@ -152,8 +152,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
             command.Parameters.AddWithValue("@NuevoRolId", nuevoRolId);
 
-            int filasAfectadas = await command.ExecuteNonQueryAsync();
-            return filasAfectadas > 0;
+            return await command.ExecuteNonQueryAsync() > 0;
         }
 
         public async Task<bool> UsuarioExiste(int usuarioId)
@@ -165,8 +164,7 @@ namespace Aerolinea.API.Repositories
                 "SELECT COUNT(*) FROM Usuario WHERE Id = @UsuarioId", connection);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
 
-            int count = (int)await command.ExecuteScalarAsync();
-            return count > 0;
+            return (int)await command.ExecuteScalarAsync() > 0;
         }
 
         public async Task<bool> RolExiste(int rolId)
@@ -178,8 +176,7 @@ namespace Aerolinea.API.Repositories
                 "SELECT COUNT(*) FROM Rol WHERE Id = @RolId", connection);
             command.Parameters.AddWithValue("@RolId", rolId);
 
-            int count = (int)await command.ExecuteScalarAsync();
-            return count > 0;
+            return (int)await command.ExecuteScalarAsync() > 0;
         }
 
         public async Task<List<Usuario>> ObtenerTodos()
