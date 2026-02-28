@@ -1,6 +1,7 @@
 <script>
   import '../styles/header.css';
   import logoPath from '../assets/logBAL.png';
+  import { sesion, logout } from '../stores/sesion.js';
 
   export let navigateTo;
   export let currentPage = 'home';
@@ -17,13 +18,14 @@
     menuActive = false;
   }
 
-  function handleLogout() {
-    sessionStorage.clear();
-    navigateTo('login');
+  async function handleLogout() {
+    await logout();
+    navigateTo('home');
   }
 
-  $: isLoggedIn = !!sessionStorage.getItem('usuarioId');
-  $: isAdmin = parseInt(sessionStorage.getItem('rolId')) === 2;
+  // Leemos directo del store, son reactivos automáticamente
+  $: isLoggedIn = !!$sesion;
+  $: isAdmin    = $sesion?.rolNombre === 'Administrador';
 </script>
 
 <header class="broom-header">
@@ -42,8 +44,8 @@
         aria-label="Buscar vuelos y destinos"
       >
       <button class="broom-header__search-btn" aria-label="Buscar"
-      class:broom-header__nav-link--active={currentPage === 'resultados-busqueda'}
-          on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
+        class:broom-header__nav-link--active={currentPage === 'resultados-busqueda'}
+        on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
         <svg class="broom-header__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <path d="m21 21-4.35-4.35"></path>
@@ -53,8 +55,8 @@
 
     <div class="broom-header__actions">
       <button class="broom-header__action-btn broom-header__cart" aria-label="Carrito de compras"
-      class:broom-header__nav-link--active={currentPage === 'datos-pasajeros'}
-          on:click|preventDefault={() => handleNavigation('datos-pasajeros')}>
+        class:broom-header__nav-link--active={currentPage === 'datos-pasajeros'}
+        on:click|preventDefault={() => handleNavigation('datos-pasajeros')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="9" cy="21" r="1"></circle>
           <circle cx="20" cy="21" r="1"></circle>
@@ -64,8 +66,8 @@
       </button>
 
       <button class="broom-header__action-btn broom-header__user" aria-label="Perfil de usuario"
-      class:broom-header__nav-link--active={currentPage === 'profile'}
-          on:click|preventDefault={() => handleNavigation('profile')}>
+        class:broom-header__nav-link--active={currentPage === 'profile'}
+        on:click|preventDefault={() => handleNavigation('profile')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
           <circle cx="12" cy="7" r="4"></circle>
@@ -99,8 +101,8 @@
         aria-label="Buscar vuelos y destinos"
       >
       <button class="broom-header__search-btn" aria-label="Buscar"
-      class:broom-header__nav-link--active={currentPage === 'resultados-busqueda'}
-          on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
+        class:broom-header__nav-link--active={currentPage === 'resultados-busqueda'}
+        on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
         <svg class="broom-header__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <path d="m21 21-4.35-4.35"></path>
@@ -110,67 +112,49 @@
 
     <ul class="broom-header__nav-list">
       <li class="broom-header__nav-item">
-        <a 
-          href="#home" 
-          class="broom-header__nav-link" 
+        <a href="#home" class="broom-header__nav-link" 
           class:broom-header__nav-link--active={currentPage === 'home'}
-          on:click|preventDefault={() => handleNavigation('home')}
-        >
+          on:click|preventDefault={() => handleNavigation('home')}>
           Inicio
         </a>
       </li>
       <li class="broom-header__nav-item">
-        <a 
-          href="#destinos-destacados" 
-          class="broom-header__nav-link"
+        <a href="#destinos-destacados" class="broom-header__nav-link"
           class:broom-header__nav-link--active={currentPage === 'destinos-destacados'}
-          on:click|preventDefault={() => handleNavigation('destinos-destacados')}
-        >
+          on:click|preventDefault={() => handleNavigation('destinos-destacados')}>
           Destinos Destacados
         </a>
       </li>
       {#if isLoggedIn}
         <li class="broom-header__nav-item">
-          <a 
-            href="#reservas" 
-            class="broom-header__nav-link"
+          <a href="#reservas" class="broom-header__nav-link"
             class:broom-header__nav-link--active={currentPage === 'reservas'}
-            on:click|preventDefault={() => handleNavigation('reservas')}
-          >
+            on:click|preventDefault={() => handleNavigation('reservas')}>
             Mis Reservas
           </a>
         </li>
       {/if}
       {#if isAdmin}
         <li class="broom-header__nav-item">
-          <a 
-            href="#admin" 
-            class="broom-header__nav-link"
+          <a href="#admin" class="broom-header__nav-link"
             class:broom-header__nav-link--active={currentPage === 'admin'}
-            on:click|preventDefault={() => handleNavigation('admin')}
-          >
-            Administracion
+            on:click|preventDefault={() => handleNavigation('admin')}>
+            Administración
           </a>
         </li>
       {/if}
       {#if isLoggedIn}
         <li class="broom-header__nav-item">
-          <a 
-            href="#logout" 
-            class="broom-header__nav-link"
-            on:click|preventDefault={handleLogout}
-          >
+          <a href="#logout" class="broom-header__nav-link"
+            on:click|preventDefault={handleLogout}>
             Logout
           </a>
         </li>
       {:else}
         <li class="broom-header__nav-item">
-          <a 
-            href="#login" 
-            class="broom-header__nav-link"
+          <a href="#login" class="broom-header__nav-link"
             class:broom-header__nav-link--active={currentPage === 'login'}
-            on:click|preventDefault={() => handleNavigation('login')}
-          >
+            on:click|preventDefault={() => handleNavigation('login')}>
             Login
           </a>
         </li>

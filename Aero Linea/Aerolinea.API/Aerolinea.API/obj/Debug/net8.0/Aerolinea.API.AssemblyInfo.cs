@@ -15,10 +15,10 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 <<<<<<< HEAD
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bb6a50abc6fc97f2884d124a5c69e962a95fb721")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+121ae0ff6ad9b3926f8b8223d2c119d1b2f80b51")]
 =======
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+09d481b9b618583e2de3c9ea017ee2f2a4f982d4")]
->>>>>>> b8c37d41115812e1787851281d22bba94018fb6e
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a96b837917534073401ebb26297d819a5f50aba2")]
+>>>>>>> c19d56001cf87123bf2e13a3c64a444a12ff78f5
 [assembly: System.Reflection.AssemblyProductAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
