@@ -3,20 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\",
   "Documents": [
     {
-<<<<<<< HEAD
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\controllers\\perfilcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\controllers\\perfilcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-=======
-<<<<<<< HEAD
-      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\mynit\\onedrive\\escritorio\\unis\\primer semestre 2026\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\controllers\\aeropuertoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\controllers\\aeropuertoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\mynit\\onedrive\\escritorio\\unis\\primer semestre 2026\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\controllers\\adminvueloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-=======
->>>>>>> c19d56001cf87123bf2e13a3c64a444a12ff78f5
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\repositories\\usuariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\repositories\\usuariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -54,7 +44,6 @@
     },
     {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\controllers\\adminvueloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
->>>>>>> 121ae0ff6ad9b3926f8b8223d2c119d1b2f80b51
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\controllers\\adminvueloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -70,13 +59,12 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-<<<<<<< HEAD
               "Title": "PerfilController.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\PerfilController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\PerfilController.cs",
               "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\PerfilController.cs",
               "RelativeToolTip": "Aerolinea.API\\Controllers\\PerfilController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEAAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAA2AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-28T04:13:18.409Z",
               "EditorCaption": ""
@@ -84,18 +72,6 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
-=======
-<<<<<<< HEAD
-              "Title": "AeropuertosController.cs",
-              "DocumentMoniker": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\AeropuertosController.cs",
-              "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\AeropuertosController.cs",
-              "ToolTip": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\AeropuertosController.cs",
-              "RelativeToolTip": "Aerolinea.API\\Controllers\\AeropuertosController.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-20T16:58:48.102Z",
-=======
->>>>>>> c19d56001cf87123bf2e13a3c64a444a12ff78f5
               "Title": "UsuarioRepository.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\UsuarioRepository.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\UsuarioRepository.cs",
@@ -103,9 +79,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\UsuarioRepository.cs",
               "ViewState": "AgIAAGIAAAAAAAAAAAAYwHYAAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T03:36:12.411Z",
->>>>>>> 121ae0ff6ad9b3926f8b8223d2c119d1b2f80b51
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-28T03:36:12.411Z"
             },
             {
               "$type": "Document",
@@ -213,11 +187,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\AdminVuelosController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-<<<<<<< HEAD
-              "WhenOpened": "2026-02-20T16:58:46.365Z"
-=======
               "WhenOpened": "2026-02-25T00:35:20.186Z"
->>>>>>> 121ae0ff6ad9b3926f8b8223d2c119d1b2f80b51
             }
           ]
         }
