@@ -1,6 +1,7 @@
 using Aerolinea.API.Data;
 using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,7 +37,7 @@ builder.Services.AddScoped<ComentarioService>();
 builder.Services.AddScoped<DownService>();
 builder.Services.AddScoped<AvionService>();
 builder.Services.AddScoped<TripulacionService>();
-builder.Services.AddScoped<GestionReservacionService>(); 
+builder.Services.AddScoped<GestionReservacionService>();
 builder.Services.AddScoped<AdminVueloService>();
 builder.Services.AddScoped<PerfilService>();
 
@@ -46,22 +47,53 @@ builder.Services.AddSingleton<BusquedaTemporalService>();
 // *** BACKGROUND SERVICE PARA LIMPIAR RESERVAS EXPIRADAS ***
 builder.Services.AddHostedService<ReservasCleanupService>();
 
-// CORS abierto para desarrollo local
+// *** AUTENTICACIÓN POR COOKIES (sesión de 8 horas) ***
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "aerolinea_session";
+        options.Cookie.HttpOnly = true;                      // No accesible desde JS, más seguro
+        options.Cookie.SameSite = SameSiteMode.None;         // Necesario para Svelte en origen distinto
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Requerido cuando SameSite=None
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;                    // Renueva las 8h con cada request
+        // En lugar de redirigir a /login (comportamiento MVC), devolvemos 401/403 para APIs
+        options.Events.OnRedirectToLogin = ctx =>
+        {
+            ctx.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        };
+        options.Events.OnRedirectToAccessDenied = ctx =>
+        {
+            ctx.Response.StatusCode = 403;
+            return Task.CompletedTask;
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// *** CORS para Svelte - WithCredentials requiere origen explícito ***
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(
+                "http://localhost:5173",   // Vite dev server (Svelte por defecto)
+                "http://localhost:4173",   // Vite preview
+                "http://localhost:3000"    // Por si usan otro puerto
+              )
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();         // Imprescindible para que la cookie viaje con fetch
     });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-app.UseCors("FrontendPolicy");
+// *** ORDEN DEL PIPELINE - el orden importa ***
+app.UseCors("FrontendPolicy");           // CORS siempre primero
 // app.UseHttpsRedirection();
-app.UseAuthorization();
+app.UseAuthentication();                 // Primero autenticación
+app.UseAuthorization();                  // Luego autorización
 app.MapControllers();
 app.Run();

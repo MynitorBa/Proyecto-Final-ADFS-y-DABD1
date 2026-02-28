@@ -118,14 +118,14 @@ namespace Aerolinea.API.Repositories
                     Id = reader.GetInt32(0),
                     Correo = reader.GetString(1),
                     ContrasenaHash = reader.GetString(2),
-                    Pasaporte = reader.GetString(3),
-                    Username = reader.GetString(4),
+                    Pasaporte = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    Username = reader.IsDBNull(4) ? "" : reader.GetString(4),
                     Nombre = reader.GetString(5),
                     Apellido = reader.GetString(6),
-                    Telefono = reader.GetString(7),
-                    FechaNacimiento = reader.GetDateTime(8),
-                    PaisId = reader.GetInt32(9),
-                    CiudadId = reader.GetInt32(10),
+                    Telefono = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                    FechaNacimiento = reader.IsDBNull(8) ? DateTime.MinValue : reader.GetDateTime(8),
+                    PaisId = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                    CiudadId = reader.IsDBNull(10) ? 0 : reader.GetInt32(10),
                     RolID = reader.GetInt32(11)
                 };
             }
