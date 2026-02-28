@@ -1,6 +1,4 @@
-﻿using Aerolinea.API.DTOs;
-
-namespace Aerolinea.API.DTOs
+﻿namespace Aerolinea.API.DTOs
 {
     public class VueloDetalleDTO
     {
@@ -10,7 +8,6 @@ namespace Aerolinea.API.DTOs
         public TimeSpan HoraSalida { get; set; }
         public TimeSpan HoraLlegada { get; set; }
         public int DuracionMinutos { get; set; }
-        public int BoletosDisponibles { get; set; }
 
         // Estado
         public int EstadoId { get; set; }
@@ -39,7 +36,7 @@ namespace Aerolinea.API.DTOs
         // Ruta
         public int RutaId { get; set; }
 
-        // Precios por clase
+        // Precios y disponibilidad por clase (leídos directo de la tabla Vuelo)
         public decimal? PrecioTurista { get; set; }
         public decimal? PrecioEjecutiva { get; set; }
         public int? BoletosDisponiblesTurista { get; set; }

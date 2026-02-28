@@ -1,5 +1,7 @@
 ﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -15,12 +17,15 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // POST api/reservaciones
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CrearReservacion([FromBody] CrearReservacionDTO dto)
         {
             try
             {
-                var reservacion = await _service.CrearReservacion(dto);
+                int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
+                var reservacion = await _service.CrearReservacion(dto, usuarioId);
                 return Ok(reservacion);
             }
             catch (Exception ex)
@@ -29,7 +34,9 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        // PUT api/reservaciones/{id}/pasajeros
         [HttpPut("{id}/pasajeros")]
+        [Authorize]
         public async Task<IActionResult> AgregarPasajeros(int id, [FromBody] List<DatosPasajeroDTO> pasajeros)
         {
             try
@@ -39,23 +46,8 @@ namespace Aerolinea.API.Controllers
                     ReservacionId = id,
                     Pasajeros = pasajeros
                 };
-
                 await _service.AgregarPasajeros(dto);
-                return Ok(new { message = "Pasajeros agregados correctamente" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpPost("{id}/confirmar")]
-        public async Task<IActionResult> ConfirmarReservacion(int id)
-        {
-            try
-            {
-                await _service.ConfirmarReservacion(id);
-                return Ok(new { message = "Reservación confirmada exitosamente" });
+                return Ok(new { message = "Pasajeros agregados correctamente." });
             }
             catch (Exception ex)
             {

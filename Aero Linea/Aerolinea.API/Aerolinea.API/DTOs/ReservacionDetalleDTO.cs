@@ -15,6 +15,9 @@
         public string UsuarioNombre { get; set; }
         public string UsuarioEmail { get; set; }
 
+        public DateTime? FechaCancelacion { get; set; }
+        public string? MotivoCancelacion { get; set; }
+
         // Lista de boletos
         public List<BoletoDetalleDTO> Boletos { get; set; }
     }
@@ -71,6 +74,7 @@
         public int Confirmadas { get; set; }
         public int Canceladas { get; set; }
         public int Expiradas { get; set; }
+        public int Completadas { get; set; }
         public decimal TotalGastado { get; set; }
     }
 }

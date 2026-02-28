@@ -20,12 +20,8 @@ namespace Aerolinea.API.Services
         public async Task<ReservacionDetalleDTO> ObtenerDetalleReservacion(int reservacionId, int usuarioId)
         {
             var reservacion = await _repository.ObtenerReservacionPorId(reservacionId, usuarioId);
-
             if (reservacion == null)
-            {
                 throw new Exception("Reservación no encontrada o no tienes acceso a ella.");
-            }
-
             return reservacion;
         }
 
@@ -34,9 +30,9 @@ namespace Aerolinea.API.Services
             return await _repository.ObtenerResumenReservaciones(usuarioId);
         }
 
-        public async Task CancelarReservacion(int reservacionId, int usuarioId)
+        public async Task CancelarReservacion(int reservacionId, int usuarioId, string motivo)
         {
-            await _repository.CancelarReservacion(reservacionId, usuarioId);
+            await _repository.CancelarReservacion(reservacionId, usuarioId, motivo);
         }
     }
 }

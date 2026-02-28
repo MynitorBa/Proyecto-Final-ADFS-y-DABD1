@@ -26,17 +26,21 @@ namespace Aerolinea.API.Controllers
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var aeropuerto = await _service.ObtenerPorId(id);
-
             if (aeropuerto == null)
                 return NotFound(new { message = "Aeropuerto no encontrado" });
-
             return Ok(aeropuerto);
         }
 
+        // GET /api/aeropuertos/fechas-disponibles?origenId=1&destinoId=2&cantidadPersonas=2&claseId=1
         [HttpGet("fechas-disponibles")]
-        public async Task<IActionResult> ObtenerFechasDisponibles([FromQuery] int? origenId, [FromQuery] int? destinoId)
+        public async Task<IActionResult> ObtenerFechasDisponibles(
+            [FromQuery] int? origenId,
+            [FromQuery] int? destinoId,
+            [FromQuery] int cantidadPersonas = 1,
+            [FromQuery] int? claseId = null)
         {
-            var fechas = await _service.ObtenerFechasDisponiblesPorRuta(origenId, destinoId);
+            var fechas = await _service.ObtenerFechasDisponiblesPorRuta(
+                origenId, destinoId, cantidadPersonas, claseId);
             return Ok(fechas);
         }
 
@@ -57,7 +61,6 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(ModelState);
 
             var resultado = await _service.Actualizar(id, actualizarAeropuertoDto);
-
             if (!resultado)
                 return NotFound(new { message = "Aeropuerto no encontrado" });
 

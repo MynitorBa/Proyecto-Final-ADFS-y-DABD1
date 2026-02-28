@@ -108,15 +108,14 @@
       currentFlightId = data;
     }
 
-    if (paginaFinal === 'vuelos' && data?.busquedaId) {
-      searchParams = { busquedaId: data.busquedaId };
-      console.log('✅ App.svelte - navegando a vuelos con busquedaId:', data.busquedaId);
+    if (paginaFinal === 'vuelos') {
+      // Guardamos todos los datos que vengan del Home (vuelosIda, vuelosVuelta, searchData)
+      searchParams = data;
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
     } else if (paginaFinal === 'confirmacion' && data?.reservaciones) {
       reservacionesConfirmadas = data.reservaciones;
-      console.log('✅ App.svelte - reservaciones para confirmación:', reservacionesConfirmadas);
-    } else if (paginaFinal !== 'vuelos') {
+    } else {
       searchParams = null;
     }
 
@@ -172,7 +171,7 @@
     {:else if currentPage === 'reservas'}
       <MisReservas {navigateTo} />
     {:else if currentPage === 'vuelos'}
-      {#key searchParams?.busquedaId}
+      {#key pageKey}
         <Vuelos {navigateTo} {searchParams} />
       {/key}
     {:else if currentPage === 'confirmacion'}
