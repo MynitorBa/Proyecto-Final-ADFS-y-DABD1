@@ -26,15 +26,14 @@ namespace Aerolinea.API.Repositories
                     p.Nombre AS Pais,
                     c.Nombre AS Ciudad
                 FROM Usuario u
-                LEFT JOIN Pais p ON u.PaisId = p.Id
                 LEFT JOIN Ciudad c ON u.CiudadId = c.Id
+                LEFT JOIN Pais p   ON c.PaisID   = p.Id
                 WHERE u.Id = @UsuarioId";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
 
             using var reader = await command.ExecuteReaderAsync();
-
             if (!await reader.ReadAsync())
                 return null;
 
@@ -62,7 +61,6 @@ namespace Aerolinea.API.Repositories
                 "UPDATE Usuario SET Telefono = @Telefono WHERE Id = @UsuarioId", connection);
             command.Parameters.AddWithValue("@Telefono", telefono);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
-
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
@@ -74,7 +72,6 @@ namespace Aerolinea.API.Repositories
             using var command = new SqlCommand(
                 "SELECT ContrasenaHash FROM Usuario WHERE Id = @UsuarioId", connection);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
-
             var result = await command.ExecuteScalarAsync();
             return result?.ToString();
         }
@@ -88,7 +85,6 @@ namespace Aerolinea.API.Repositories
                 "UPDATE Usuario SET ContrasenaHash = @Hash WHERE Id = @UsuarioId", connection);
             command.Parameters.AddWithValue("@Hash", nuevoHash);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
-
             return await command.ExecuteNonQueryAsync() > 0;
         }
     }
