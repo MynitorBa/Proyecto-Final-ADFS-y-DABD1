@@ -30,6 +30,10 @@ namespace Aerolinea.API.Services
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
+            // Se usa PaisRepository para obtener el PaisId
+            // Luego se usa ese PaisId para buscar/crear la Ciudad
+            // Pero en Usuario solo se guarda CiudadId
+            // (la relacion Pais se obtiene via Ciudad -> Pais)
             int paisId = await _paisRepository.ObtenerOCrearId(dto.Pais, connection);
             int ciudadId = await _ciudadRepository.ObtenerOCrearId(dto.Ciudad, paisId, connection);
 
@@ -43,9 +47,8 @@ namespace Aerolinea.API.Services
                 Apellido = dto.Apellido,
                 Telefono = dto.Telefono,
                 FechaNacimiento = dto.FechaNacimiento,
-                PaisId = paisId,
                 CiudadId = ciudadId,
-                RolID = 1
+                RolID = 2  // Cliente por defecto
             };
 
             int usuarioId = await _repository.CrearUsuario(usuario);
@@ -61,31 +64,18 @@ namespace Aerolinea.API.Services
 
         public async Task<(bool exito, string mensaje)> CambiarRol(CambiarRolDTO dto)
         {
-            // Validar que el usuario existe
             bool usuarioExiste = await _repository.UsuarioExiste(dto.UsuarioId);
             if (!usuarioExiste)
-            {
                 return (false, "El usuario no existe");
-            }
 
-            // Validar que el rol existe
             bool rolExiste = await _repository.RolExiste(dto.NuevoRolId);
             if (!rolExiste)
-            {
                 return (false, "El rol especificado no existe");
-            }
 
-            // Actualizar el rol
             bool actualizado = await _repository.ActualizarRol(dto.UsuarioId, dto.NuevoRolId);
-
-            if (actualizado)
-            {
-                return (true, "Rol actualizado correctamente");
-            }
-            else
-            {
-                return (false, "No se pudo actualizar el rol");
-            }
+            return actualizado
+                ? (true, "Rol actualizado correctamente")
+                : (false, "No se pudo actualizar el rol");
         }
 
         public async Task<List<object>> ObtenerTodos()
@@ -107,7 +97,6 @@ namespace Aerolinea.API.Services
                     rolNombre = rolNombre ?? "Desconocido"
                 });
             }
-
             return resultado;
         }
     }

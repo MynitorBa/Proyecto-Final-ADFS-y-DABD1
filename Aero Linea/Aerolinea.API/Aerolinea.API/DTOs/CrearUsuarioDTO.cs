@@ -13,6 +13,6 @@
         public string Pais { get; set; }
         public string Ciudad { get; set; }
         public List<string> Nacionalidades { get; set; } = new();
-        public int RolID { get; set; } = 1;
+        public int RolID { get; set; } = 2;
     }
 }
