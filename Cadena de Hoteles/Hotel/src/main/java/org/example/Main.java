@@ -48,7 +48,7 @@ public class Main {
         // ── Manejador global de excepciones ───────────────────────────────────
         app.exception(Exception.class, (e, ctx) -> {
             String msg = e.getMessage() != null ? e.getMessage() : "Error interno del servidor";
-            if (msg.contains("ORA-00001")) {
+            if (msg.contains("ORA-00001")) {    
                 msg = "Registro duplicado: ya existe un valor con esa restricción única.";
             } else if (msg.contains("ORA-")) {
                 msg = msg.split("\n")[0].trim();

@@ -1,11 +1,14 @@
 ﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
     [ApiController]
     [Route("api/perfil")]
+    [Authorize]   // Todas las rutas de perfil requieren sesión activa
     public class PerfilController : ControllerBase
     {
         private readonly PerfilService _service;
@@ -14,15 +17,18 @@ namespace Aerolinea.API.Controllers
         {
             _service = service;
         }
-        private bool UsuarioAutorizado(int headerUsuarioId, int routeUsuarioId)
-            => headerUsuarioId == routeUsuarioId;
+
+        // Comprueba que el usuario de la sesión es el dueño del recurso
+        private bool EsPropietario(int routeUsuarioId)
+        {
+            var sesionId = SessionHelper.GetUsuarioId(HttpContext);
+            return sesionId.HasValue && sesionId.Value == routeUsuarioId;
+        }
 
         [HttpGet("{usuarioId}")]
-        public async Task<IActionResult> ObtenerPerfil(
-            int usuarioId,
-            [FromHeader(Name = "X-UsuarioId")] int headerUsuarioId)
+        public async Task<IActionResult> ObtenerPerfil(int usuarioId)
         {
-            if (!UsuarioAutorizado(headerUsuarioId, usuarioId))
+            if (!EsPropietario(usuarioId))
                 return StatusCode(403, new { message = "Acceso denegado." });
 
             var perfil = await _service.ObtenerPerfil(usuarioId);
@@ -35,10 +41,9 @@ namespace Aerolinea.API.Controllers
         [HttpPatch("{usuarioId}/telefono")]
         public async Task<IActionResult> ActualizarTelefono(
             int usuarioId,
-            [FromHeader(Name = "X-UsuarioId")] int headerUsuarioId,
             [FromBody] ActualizarTelefonoDTO dto)
         {
-            if (!UsuarioAutorizado(headerUsuarioId, usuarioId))
+            if (!EsPropietario(usuarioId))
                 return StatusCode(403, new { message = "Acceso denegado." });
 
             var (exito, mensaje) = await _service.ActualizarTelefono(usuarioId, dto.Telefono);
@@ -48,10 +53,9 @@ namespace Aerolinea.API.Controllers
         [HttpPatch("{usuarioId}/contrasena")]
         public async Task<IActionResult> CambiarContrasena(
             int usuarioId,
-            [FromHeader(Name = "X-UsuarioId")] int headerUsuarioId,
             [FromBody] CambiarContrasenaDTO dto)
         {
-            if (!UsuarioAutorizado(headerUsuarioId, usuarioId))
+            if (!EsPropietario(usuarioId))
                 return StatusCode(403, new { message = "Acceso denegado." });
 
             var (exito, mensaje) = await _service.CambiarContrasena(usuarioId, dto);
