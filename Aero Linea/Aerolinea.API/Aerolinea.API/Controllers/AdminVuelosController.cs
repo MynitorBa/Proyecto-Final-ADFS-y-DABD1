@@ -29,7 +29,7 @@ namespace Aerolinea.API.Controllers
                 }
 
                 var vueloId = await _adminVueloService.CrearVuelo(dto);
-
+                // prueba para ver que funcione el git ignore
                 return Ok(new
                 {
                     message = "Vuelo creado exitosamente",
