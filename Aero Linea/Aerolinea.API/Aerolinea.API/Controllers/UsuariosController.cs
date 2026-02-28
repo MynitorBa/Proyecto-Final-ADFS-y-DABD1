@@ -1,5 +1,6 @@
 ﻿using Aerolinea.API.DTOs;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -15,6 +16,7 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // Público: cualquiera puede registrarse
         [HttpPost]
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDTO dto)
         {
@@ -35,6 +37,7 @@ namespace Aerolinea.API.Controllers
             return Ok(new { message = "Usuario creado correctamente" });
         }
 
+        // Público: validación en tiempo real durante el registro
         [HttpPost("verificar")]
         public async Task<IActionResult> VerificarConstraints([FromBody] CrearUsuarioDTO dto)
         {
@@ -42,37 +45,24 @@ namespace Aerolinea.API.Controllers
             return Ok(constraints);
         }
 
-
+        // Solo administradores
+        [Authorize(Roles = "Administrador")]
         [HttpPost("cambiar-rol")]
-        public async Task<IActionResult> CambiarRol(
-            [FromHeader(Name = "X-RolId")] int rolId,
-            [FromBody] CambiarRolDTO dto)
+        public async Task<IActionResult> CambiarRol([FromBody] CambiarRolDTO dto)
         {
-            // Solo administradores (RolId = 2) pueden cambiar roles
-            if (rolId != 2)
-            {
-                return StatusCode(403, new { message = "Acceso denegado. Solo administradores pueden cambiar roles." });
-            }
-
             var (exito, mensaje) = await _service.CambiarRol(dto);
 
             if (exito)
-            {
                 return Ok(new { message = mensaje });
-            }
             else
-            {
                 return BadRequest(new { message = mensaje });
-            }
         }
 
-
+        // Solo administradores
+        [Authorize(Roles = "Administrador")]
         [HttpGet]
-        public async Task<IActionResult> ObtenerTodos([FromHeader(Name = "X-RolId")] int rolId)
+        public async Task<IActionResult> ObtenerTodos()
         {
-            if (rolId != 2)
-                return StatusCode(403, new { message = "Acceso denegado. Solo administradores." });
-
             var usuarios = await _service.ObtenerTodos();
             return Ok(usuarios);
         }

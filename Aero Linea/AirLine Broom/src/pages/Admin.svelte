@@ -2,8 +2,15 @@
 // @ts-nocheck
   import '../styles/admin.css';
   import { onMount } from 'svelte';
+  import { sesion } from '../stores/sesion.js';
 
   export let navigateTo;
+
+  // Leemos rol del store igual que en Profile.svelte
+  let rolNombre = null;
+  const unsubscribe = sesion.subscribe(s => {
+    rolNombre = s?.rolNombre ?? null;
+  });
 
   let activeSection = 'crear-vuelo';
 
@@ -95,12 +102,14 @@
   let historialVuelos = [];
 
   onMount(async () => {
-    const isAdmin = parseInt(sessionStorage.getItem('rolId')) === 2;
-    if (!isAdmin) {
+    // Verificamos sesión activa y rol Administrador desde el store (igual que Profile.svelte)
+    if (rolNombre !== 'Administrador') {
       navigateTo('acceso-denegado');
       return;
     }
     await cargarDatosIniciales();
+
+    return () => unsubscribe();
   });
 
   async function cargarDatosIniciales() {
@@ -118,11 +127,8 @@
   async function cargarUsuarios() {
     loadingUsuarios = true;
     try {
-      const rolId = sessionStorage.getItem('rolId');
       const response = await fetch('http://localhost:5190/api/usuarios', {
-        headers: {
-          'X-RolId': rolId
-        }
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -219,11 +225,8 @@
   async function cargarHistorialVuelos() {
     loadingHistorialVuelos = true;
     try {
-      const rolId = sessionStorage.getItem('rolId');
       const response = await fetch('http://localhost:5190/api/admin/vuelos/historial', {
-        headers: {
-          'X-RolId': rolId
-        }
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -390,8 +393,6 @@
     }
 
     try {
-      const rolId = sessionStorage.getItem('rolId');
-      
       const datosVuelo = {
         numeroVuelo: nuevoVuelo.numeroVuelo,
         aeropuertoOrigenId: parseInt(nuevoVuelo.aeropuertoOrigenId),
@@ -407,9 +408,9 @@
 
       const response = await fetch('http://localhost:5190/api/admin/vuelos', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'X-RolId': rolId
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(datosVuelo)
       });
@@ -455,12 +456,11 @@
 
   async function handleCambiarRol(userId, nuevoRolId) {
     try {
-      const rolId = sessionStorage.getItem('rolId');
       const response = await fetch('http://localhost:5190/api/usuarios/cambiar-rol', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'X-RolId': rolId
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           usuarioId: parseInt(userId),
@@ -486,13 +486,11 @@
     }
 
     try {
-      const rolId = sessionStorage.getItem('rolId');
-      
       const response = await fetch(`http://localhost:5190/api/admin/vuelos/${vueloId}/cancelar`, {
         method: 'PUT',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
-          'X-RolId': rolId
+          'Content-Type': 'application/json'
         }
       });
 
@@ -549,6 +547,7 @@
         // Actualizar avión existente
         const response = await fetch(`http://localhost:5190/api/aviones/${avionForm.id}`, {
           method: 'PUT',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },
@@ -571,6 +570,7 @@
         // Crear nuevo avión
         const response = await fetch('http://localhost:5190/api/aviones', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },
@@ -644,6 +644,7 @@
         // Actualizar tripulante existente
         const response = await fetch(`http://localhost:5190/api/tripulacion/${tripulanteForm.id}`, {
           method: 'PUT',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },
@@ -666,6 +667,7 @@
         // Crear nuevo tripulante
         const response = await fetch('http://localhost:5190/api/tripulacion', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },
@@ -797,6 +799,7 @@
         // Actualizar aeropuerto existente
         const response = await fetch(`http://localhost:5190/api/aeropuertos/${aeropuertoForm.id}`, {
           method: 'PUT',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },
@@ -820,6 +823,7 @@
         // Crear nuevo aeropuerto
         const response = await fetch('http://localhost:5190/api/aeropuertos', {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json'
           },

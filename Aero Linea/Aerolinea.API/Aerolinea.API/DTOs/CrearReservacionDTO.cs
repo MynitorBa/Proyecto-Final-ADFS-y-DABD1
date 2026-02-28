@@ -1,8 +1,8 @@
 ﻿namespace Aerolinea.API.DTOs
 {
+    // El UsuarioId ya NO va en el body — se lee de la cookie de sesión en el controller
     public class CrearReservacionDTO
     {
-        public int UsuarioId { get; set; }
         public List<SeleccionVueloDTO> Vuelos { get; set; }
     }
 

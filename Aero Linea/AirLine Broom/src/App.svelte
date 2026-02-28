@@ -120,13 +120,23 @@
       currentFlightId = data;
     }
 
+<<<<<<< HEAD
     if (paginaFinal === 'vuelos' && data?.busquedaId) {
       searchParams = { busquedaId: data.busquedaId };
+=======
+    if (paginaFinal === 'vuelos') {
+      // Guardamos todos los datos que vengan del Home (vuelosIda, vuelosVuelta, searchData)
+      searchParams = data;
+>>>>>>> 8e34393b52333d4f8b07f0a2dc84fa2e87031710
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
     } else if (paginaFinal === 'confirmacion' && data?.reservaciones) {
       reservacionesConfirmadas = data.reservaciones;
+<<<<<<< HEAD
     } else if (paginaFinal !== 'vuelos') {
+=======
+    } else {
+>>>>>>> 8e34393b52333d4f8b07f0a2dc84fa2e87031710
       searchParams = null;
     }
 
@@ -180,7 +190,7 @@
     {:else if currentPage === 'reservas'}
       <MisReservas {navigateTo} />
     {:else if currentPage === 'vuelos'}
-      {#key searchParams?.busquedaId}
+      {#key pageKey}
         <Vuelos {navigateTo} {searchParams} />
       {/key}
     {:else if currentPage === 'confirmacion'}

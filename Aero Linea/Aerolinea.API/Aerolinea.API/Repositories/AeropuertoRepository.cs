@@ -68,56 +68,59 @@ namespace Aerolinea.API.Repositories
             using var reader = await command.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
-            {
                 fechas.Add(reader.GetDateTime(0));
-            }
 
             return fechas;
         }
 
-        public async Task<List<DateTime>> ObtenerFechasConVuelosPorRuta(int? origenId, int? destinoId)
+        public async Task<List<DateTime>> ObtenerFechasConVuelosPorRuta(
+            int? origenId,
+            int? destinoId,
+            int cantidadPersonas = 1,
+            int? claseId = null)
         {
             var fechas = new List<DateTime>();
 
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            string query = @"
+
+            string filtroDisponibilidad = claseId == 1
+                ? "AND v.BoletosTurista   >= @cantidadPersonas"
+                : claseId == 2
+                    ? "AND v.BoletosEjecutivo >= @cantidadPersonas"
+                    : "AND (v.BoletosTurista >= @cantidadPersonas OR v.BoletosEjecutivo >= @cantidadPersonas)";
+
+            string query = $@"
                 SELECT DISTINCT v.Fecha 
                 FROM Vuelo v
                 INNER JOIN Ruta r ON v.RutaID = r.ID
-                WHERE v.Fecha >= CAST(GETDATE() AS DATE) AND EstadoID = 1";
+                INNER JOIN Estado e ON v.EstadoID = e.ID
+                WHERE v.Fecha >= CAST(GETDATE() AS DATE)
+                  AND e.Estatus = 'A tiempo'
+                  {filtroDisponibilidad}";
 
             if (origenId.HasValue)
-            {
                 query += " AND r.OrigenID = @origenId";
-            }
 
             if (destinoId.HasValue)
-            {
                 query += " AND r.DestinoID = @destinoId";
-            }
 
             query += " ORDER BY v.Fecha";
 
             using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
 
             if (origenId.HasValue)
-            {
                 command.Parameters.AddWithValue("@origenId", origenId.Value);
-            }
 
             if (destinoId.HasValue)
-            {
                 command.Parameters.AddWithValue("@destinoId", destinoId.Value);
-            }
 
             using var reader = await command.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
-            {
                 fechas.Add(reader.GetDateTime(0));
-            }
 
             return fechas;
         }
@@ -240,22 +243,15 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Buscar si el país ya existe (case-insensitive)
             var queryBuscar = "SELECT ID FROM Pais WHERE LOWER(Nombre) = LOWER(@Nombre)";
             using var commandBuscar = new SqlCommand(queryBuscar, connection);
             commandBuscar.Parameters.AddWithValue("@Nombre", nombrePais.Trim());
 
             var paisId = await commandBuscar.ExecuteScalarAsync();
+            if (paisId != null) return Convert.ToInt32(paisId);
 
-            if (paisId != null)
-            {
-                return Convert.ToInt32(paisId);
-            }
-
-            // Si no existe, crear el país
             var queryCrear = @"
-                INSERT INTO Pais (Nombre)
-                VALUES (@Nombre);
+                INSERT INTO Pais (Nombre) VALUES (@Nombre);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             using var commandCrear = new SqlCommand(queryCrear, connection);
@@ -270,28 +266,19 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Buscar si la ciudad ya existe en ese país (case-insensitive)
             var queryBuscar = @"
-                SELECT ID 
-                FROM Ciudad 
-                WHERE LOWER(Nombre) = LOWER(@Nombre) 
-                AND PaisID = @PaisID";
+                SELECT ID FROM Ciudad 
+                WHERE LOWER(Nombre) = LOWER(@Nombre) AND PaisID = @PaisID";
 
             using var commandBuscar = new SqlCommand(queryBuscar, connection);
             commandBuscar.Parameters.AddWithValue("@Nombre", nombreCiudad.Trim());
             commandBuscar.Parameters.AddWithValue("@PaisID", paisId);
 
             var ciudadId = await commandBuscar.ExecuteScalarAsync();
+            if (ciudadId != null) return Convert.ToInt32(ciudadId);
 
-            if (ciudadId != null)
-            {
-                return Convert.ToInt32(ciudadId);
-            }
-
-            // Si no existe, crear la ciudad
             var queryCrear = @"
-                INSERT INTO Ciudad (Nombre, PaisID)
-                VALUES (@Nombre, @PaisID);
+                INSERT INTO Ciudad (Nombre, PaisID) VALUES (@Nombre, @PaisID);
                 SELECT CAST(SCOPE_IDENTITY() as int);";
 
             using var commandCrear = new SqlCommand(queryCrear, connection);

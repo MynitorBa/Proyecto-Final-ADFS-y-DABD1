@@ -6,6 +6,8 @@
   export let navigateTo;
   export let suggestedDestination = null;
 
+  const API = 'https://localhost:7107';
+
   let tripType = 'roundtrip'; 
   let departureDate = '';
   let returnDate = '';
@@ -19,7 +21,6 @@
   let toSugeridos = [];
   let toSeleccionado = null;
   
-  // SEPARAR fechas disponibles para IDA y VUELTA
   let fechasDisponiblesIda = [];
   let fechasDisponiblesVuelta = [];
   
@@ -28,15 +29,14 @@
   let mesIda = new Date();
   let mesVuelta = new Date();
   let searchError = '';
-  let guardandoBusqueda = false;
+  let buscando = false;
 
   onMount(async () => {
     try {
-      const res = await fetch('https://localhost:7107/api/aeropuertos');
+      const res = await fetch(`${API}/api/aeropuertos`);
       aeropuertos = await res.json();
-      console.log('✅ Aeropuertos cargados:', aeropuertos.length);
     } catch (err) { 
-      console.error('❌ Error cargando aeropuertos:', err); 
+      console.error('Error cargando aeropuertos:', err); 
     } finally { 
       loadingAeropuertos = false; 
     }
@@ -49,6 +49,11 @@
       f.classList.add('broom-home__form-input--highlighted');
       setTimeout(() => f.classList.remove('broom-home__form-input--highlighted'), 2000);
     }
+  }
+
+  // Cuando cambia el número de pasajeros, recargar fechas si ya hay ruta seleccionada
+  $: if (passengers && fromSeleccionado && toSeleccionado) {
+    cargarFechasDisponibles();
   }
 
   function onFromInput() {
@@ -104,62 +109,48 @@
     resetCalendarios();
     
     try {
-      // CARGAR FECHAS DE IDA (origen → destino)
-      console.log('📅 Cargando fechas de IDA...');
+      // Fechas IDA con filtro de pasajeros
       const resIda = await fetch(
-        `https://localhost:7107/api/aeropuertos/fechas-disponibles?origenId=${fromSeleccionado.id}&destinoId=${toSeleccionado.id}`
+        `${API}/api/aeropuertos/fechas-disponibles?origenId=${fromSeleccionado.id}&destinoId=${toSeleccionado.id}&cantidadPersonas=${passengers}`
       );
       const dataIda = await resIda.json();
       fechasDisponiblesIda = dataIda.map(f => f.split('T')[0]);
-      console.log('✅ Fechas IDA:', fechasDisponiblesIda);
 
-      // CARGAR FECHAS DE VUELTA (destino → origen)
-      console.log('📅 Cargando fechas de VUELTA...');
+      // Fechas VUELTA con filtro de pasajeros
       const resVuelta = await fetch(
-        `https://localhost:7107/api/aeropuertos/fechas-disponibles?origenId=${toSeleccionado.id}&destinoId=${fromSeleccionado.id}`
+        `${API}/api/aeropuertos/fechas-disponibles?origenId=${toSeleccionado.id}&destinoId=${fromSeleccionado.id}&cantidadPersonas=${passengers}`
       );
       const dataVuelta = await resVuelta.json();
       fechasDisponiblesVuelta = dataVuelta.map(f => f.split('T')[0]);
-      console.log('✅ Fechas VUELTA:', fechasDisponiblesVuelta);
 
-      // Configurar meses del calendario
       if (fechasDisponiblesIda.length > 0) {
-        const primeraIda = new Date(fechasDisponiblesIda[0] + 'T00:00:00');
-        mesIda = new Date(primeraIda.getFullYear(), primeraIda.getMonth(), 1);
+        const primera = new Date(fechasDisponiblesIda[0] + 'T00:00:00');
+        mesIda = new Date(primera.getFullYear(), primera.getMonth(), 1);
       } else {
         const hoy = new Date();
         mesIda = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
       }
 
-      // Calendario de vuelta debe iniciar en el primer vuelo de vuelta disponible
       if (fechasDisponiblesVuelta.length > 0) {
-        const primeraVuelta = new Date(fechasDisponiblesVuelta[0] + 'T00:00:00');
-        mesVuelta = new Date(primeraVuelta.getFullYear(), primeraVuelta.getMonth(), 1);
+        const primera = new Date(fechasDisponiblesVuelta[0] + 'T00:00:00');
+        mesVuelta = new Date(primera.getFullYear(), primera.getMonth(), 1);
       } else {
-        // Si no hay fechas de vuelta, usar mes siguiente a IDA como fallback
         mesVuelta = new Date(mesIda.getFullYear(), mesIda.getMonth() + 1, 1);
       }
       
       mostrarCalendarios = true;
       
     } catch (err) { 
-      console.error('❌ Error cargando fechas:', err); 
+      console.error('Error cargando fechas:', err); 
     } finally { 
       loadingFechas = false; 
     }
   }
 
-  // Validar si fecha de IDA está disponible
-  function esFechaDisponibleIda(f) { 
-    return fechasDisponiblesIda.includes(f); 
-  }
+  function esFechaDisponibleIda(f)    { return fechasDisponiblesIda.includes(f); }
+  function esFechaDisponibleVuelta(f) { return fechasDisponiblesVuelta.includes(f); }
 
-  // Validar si fecha de VUELTA está disponible
-  function esFechaDisponibleVuelta(f) { 
-    return fechasDisponiblesVuelta.includes(f); 
-  }
-
-  const diasSemana = ['LU','MA','MI','JU','VI','SA','DO'];
+  const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
   const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -171,21 +162,18 @@
     for (let i = 0; i < ini; i++) dias.push(null);
     const total = new Date(y, m + 1, 0).getDate();
     for (let d = 1; d <= total; d++) {
-      dias.push({
-        dia: d,
-        fecha: `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-      });
+      dias.push({ dia: d, fecha: `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` });
     }
     return dias;
   }
 
-  $: diasIda = getDias(mesIda);
+  $: diasIda    = getDias(mesIda);
   $: diasVuelta = getDias(mesVuelta);
-  $: titIda = `${mesesNombre[mesIda.getMonth()]} ${mesIda.getFullYear()}`;
-  $: titVuelta = `${mesesNombre[mesVuelta.getMonth()]} ${mesVuelta.getFullYear()}`;
+  $: titIda     = `${mesesNombre[mesIda.getMonth()]} ${mesIda.getFullYear()}`;
+  $: titVuelta  = `${mesesNombre[mesVuelta.getMonth()]} ${mesVuelta.getFullYear()}`;
 
-  function prevIda() { mesIda = new Date(mesIda.getFullYear(), mesIda.getMonth() - 1, 1); }
-  function nextIda() { mesIda = new Date(mesIda.getFullYear(), mesIda.getMonth() + 1, 1); }
+  function prevIda()    { mesIda    = new Date(mesIda.getFullYear(),    mesIda.getMonth()    - 1, 1); }
+  function nextIda()    { mesIda    = new Date(mesIda.getFullYear(),    mesIda.getMonth()    + 1, 1); }
   function prevVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() - 1, 1); }
   function nextVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() + 1, 1); }
 
@@ -196,7 +184,6 @@
   }
 
   function pickVuelta(f) {
-    // Validar que sea después de la fecha de ida Y que haya vuelos disponibles
     if (departureDate && f < departureDate) return;
     if (!esFechaDisponibleVuelta(f)) return;
     returnDate = f;
@@ -206,65 +193,70 @@
   async function handleSearchFlight() {
     searchError = '';
     
-    // Validaciones
-    if (!fromSeleccionado) { 
-      searchError = 'Selecciona el aeropuerto de origen.'; 
-      return; 
-    }
-    if (!toSeleccionado) { 
-      searchError = 'Selecciona el aeropuerto de destino.'; 
-      return; 
-    }
-    if (!departureDate) { 
-      searchError = 'Selecciona la fecha de ida.'; 
-      return; 
-    }
-    if (tripType === 'roundtrip' && !returnDate) {
-      searchError = 'Selecciona la fecha de regreso.'; 
-      return;
-    }
+    if (!fromSeleccionado) { searchError = 'Selecciona el aeropuerto de origen.'; return; }
+    if (!toSeleccionado)   { searchError = 'Selecciona el aeropuerto de destino.'; return; }
+    if (!departureDate)    { searchError = 'Selecciona la fecha de ida.'; return; }
+    if (tripType === 'roundtrip' && !returnDate) { searchError = 'Selecciona la fecha de regreso.'; return; }
 
-    guardandoBusqueda = true;
-    
+    buscando = true;
+
     try {
-      const busquedaData = {
-        origenId: fromSeleccionado.id,
-        destinoId: toSeleccionado.id,
-        origenNombre: fromSeleccionado.ciudad,
-        destinoNombre: toSeleccionado.ciudad,
-        origenCodigo: fromSeleccionado.codigo,
-        destinoCodigo: toSeleccionado.codigo,
-        fechaIda: departureDate,
-        fechaVuelta: returnDate || '',
-        pasajeros: passengers,
-        tripType: tripType
-      };
-
-      console.log('📤 Guardando búsqueda en backend:', busquedaData);
-
-      const response = await fetch('https://localhost:7107/api/busquedas/guardar', {
+      // Buscar vuelos de ida — esto también guarda la búsqueda en BD con el usuario de sesión
+      const resIda = await fetch(`${API}/api/vuelos/buscar`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(busquedaData)
+        body: JSON.stringify({
+          origenId:          fromSeleccionado.id,
+          destinoId:         toSeleccionado.id,
+          fecha:             departureDate,
+          cantidadPasajeros: passengers
+        })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor:', response.status, errorText);
-        throw new Error('Error al guardar la búsqueda');
+      if (!resIda.ok) throw new Error('Error buscando vuelos de ida');
+      const vuelosIda = await resIda.json();
+
+      // Si es ida y vuelta, buscar también los vuelos de vuelta
+      let vuelosVuelta = [];
+      if (tripType === 'roundtrip' && returnDate) {
+        const resVuelta = await fetch(`${API}/api/vuelos/buscar`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            origenId:          toSeleccionado.id,
+            destinoId:         fromSeleccionado.id,
+            fecha:             returnDate,
+            cantidadPasajeros: passengers
+          })
+        });
+        if (resVuelta.ok) vuelosVuelta = await resVuelta.json();
       }
 
-      const resultado = await response.json();
-      console.log('✅ Búsqueda guardada con ID:', resultado.id);
-
-      // Navegar a vuelos pasando solo el ID
-      navigateTo('vuelos', { busquedaId: resultado.id });
+      // Pasamos todo directamente a Vuelos.svelte sin necesidad de busquedaId
+      navigateTo('vuelos', {
+        vuelosIda,
+        vuelosVuelta,
+        searchData: {
+          origenId:      fromSeleccionado.id,
+          destinoId:     toSeleccionado.id,
+          origenNombre:  fromSeleccionado.ciudad,
+          destinoNombre: toSeleccionado.ciudad,
+          origenCodigo:  fromSeleccionado.codigo,
+          destinoCodigo: toSeleccionado.codigo,
+          fechaIda:      departureDate,
+          fechaVuelta:   returnDate || '',
+          pasajeros:     passengers,
+          tripType
+        }
+      });
 
     } catch (error) {
-      console.error('❌ Error guardando búsqueda:', error);
-      searchError = 'Error al procesar la búsqueda. Intenta nuevamente.';
+      console.error('Error en búsqueda:', error);
+      searchError = 'Error al buscar vuelos. Intenta nuevamente.';
     } finally {
-      guardandoBusqueda = false;
+      buscando = false;
     }
   }
 </script>
@@ -346,12 +338,12 @@
 
           <div class="broom-home__form-group broom-home__form-group--btn">
             <div class="broom-home__form-label broom-home__form-label--hidden" aria-hidden="true">·</div>
-            <button type="submit" class="broom-home__search-btn" disabled={guardandoBusqueda}>
+            <button type="submit" class="broom-home__search-btn" disabled={buscando}>
               <svg class="broom-home__search-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="m21 21-4.35-4.35"></path>
               </svg>
-              {guardandoBusqueda ? 'Procesando...' : 'Buscar vuelo'}
+              {buscando ? 'Buscando...' : 'Buscar vuelo'}
             </button>
           </div>
         </div>
@@ -364,7 +356,7 @@
               {#if fechasDisponiblesIda.length > 0 || fechasDisponiblesVuelta.length > 0}
                 <span class="cal-info-text">✈ Días con vuelo están marcados — selecciona tu fecha</span>
               {:else}
-                <span class="cal-info-text cal-info-text--empty">No hay vuelos disponibles en esta ruta</span>
+                <span class="cal-info-text cal-info-text--empty">No hay vuelos disponibles en esta ruta para {passengers} {passengers === 1 ? 'pasajero' : 'pasajeros'}</span>
               {/if}
             </div>
 
@@ -386,7 +378,7 @@
                       <span class="cal-day cal-day--empty"></span>
                     {:else}
                       {@const disp = esFechaDisponibleIda(item.fecha)}
-                      {@const sel = departureDate === item.fecha}
+                      {@const sel  = departureDate === item.fecha}
                       <button type="button" class="cal-day"
                         class:cal-day--disponible={disp && !sel}
                         class:cal-day--seleccionado-ida={sel}
@@ -421,12 +413,10 @@
                       {#if item === null}
                         <span class="cal-day cal-day--empty"></span>
                       {:else}
-                        <!-- Fecha posterior a ida Y con vuelos disponibles -->
-                        {@const bloqPorIda = departureDate && item.fecha < departureDate}
-                        {@const bloqPorNoDisponible = !esFechaDisponibleVuelta(item.fecha)}
+                        {@const bloqPorIda          = departureDate && item.fecha < departureDate}
+                        {@const bloqPorNoDisponible  = !esFechaDisponibleVuelta(item.fecha)}
                         {@const bloq = bloqPorIda || bloqPorNoDisponible}
-                        {@const sel = returnDate === item.fecha}
-                        
+                        {@const sel  = returnDate === item.fecha}
                         <button type="button" class="cal-day"
                           class:cal-day--disponible-vuelta={!bloq && !sel}
                           class:cal-day--seleccionado-vuelta={sel}

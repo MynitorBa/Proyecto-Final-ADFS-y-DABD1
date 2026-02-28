@@ -2,17 +2,19 @@
   // @ts-nocheck
   import '../styles/vuelos.css';
   import DetalleVueloModal from './DetalleVuelo.svelte';
-  import { onMount } from 'svelte';
+  import { sesion } from '../stores/sesion.js';
 
   export let navigateTo;
   export let searchParams = null;
 
+  const API = 'https://localhost:7107';
+
   let searchData = {
+    origenId: null, destinoId: null,
     origenNombre: '', destinoNombre: '',
     origenCodigo: '', destinoCodigo: '',
     fechaIda: '', fechaVuelta: '',
-    pasajeros: 1, tripType: 'roundtrip',
-    origenId: null, destinoId: null
+    pasajeros: 1, tripType: 'roundtrip'
   };
 
   let currentView = 'outbound';
@@ -22,10 +24,11 @@
   let detailFlight     = null;
   let vuelosIda        = [];
   let vuelosVuelta     = [];
-  let loadingIda       = true;
+  let loadingIda       = false;
   let loadingVuelta    = false;
   let errorIda         = '';
   let errorVuelta      = '';
+
   let clases = [
     { id: 1, tipoDeClase: 'Turista' },
     { id: 2, tipoDeClase: 'Ejecutiva' }
@@ -34,62 +37,37 @@
   let precioMax = '';
   let claseSeleccionada = '';
 
-  onMount(async () => {
-    if (searchParams?.busquedaId) {
-      await cargarBusquedaDesdeBackend(searchParams.busquedaId);
-    } else {
-      errorIda = 'No se encontró información de búsqueda. Por favor, realiza una nueva búsqueda desde el inicio.';
-      loadingIda = false;
-    }
-  });
-
-  async function cargarBusquedaDesdeBackend(busquedaId) {
-    try {
-      const response = await fetch(`https://localhost:7107/api/busquedas/${busquedaId}`);
-      if (!response.ok) throw new Error('Búsqueda no encontrada o expirada');
-      const busqueda = await response.json();
-      searchData = {
-        origenNombre: busqueda.origenNombre || '', destinoNombre: busqueda.destinoNombre || '',
-        origenCodigo: busqueda.origenCodigo || '', destinoCodigo: busqueda.destinoCodigo || '',
-        fechaIda: busqueda.fechaIda || '', fechaVuelta: busqueda.fechaVuelta || '',
-        pasajeros: busqueda.pasajeros || 1, tripType: busqueda.tripType || 'roundtrip',
-        origenId: busqueda.origenId || null, destinoId: busqueda.destinoId || null
-      };
-      await buscarVuelosIda();
-    } catch (error) {
-      errorIda = 'La búsqueda ha expirado o no existe. Por favor, realiza una nueva búsqueda desde el inicio.';
-      loadingIda = false;
-    }
+  // Inicializar con los datos que vienen del Home directamente
+  if (searchParams?.searchData) {
+    searchData  = searchParams.searchData;
+    vuelosIda   = searchParams.vuelosIda   ?? [];
+    vuelosVuelta = searchParams.vuelosVuelta ?? [];
+  } else {
+    errorIda = 'No se encontró información de búsqueda. Por favor, realiza una nueva búsqueda desde el inicio.';
   }
 
+  // Reaplicar filtros en memoria cuando el usuario los cambia
   async function buscarVuelosIda() {
-    if (!searchData.origenId || !searchData.destinoId || !searchData.fechaIda) {
-      errorIda = 'Parámetros de búsqueda incompletos. Vuelve al inicio y busca un vuelo.';
-      loadingIda = false;
-      return;
-    }
+    if (!searchData.origenId || !searchData.destinoId || !searchData.fechaIda) return;
     loadingIda = true; errorIda = '';
     try {
       const body = {
-        origenId: searchData.origenId,
-        destinoId: searchData.destinoId,
-        fecha: searchData.fechaIda,
-        cantidadPasajeros: searchData.pasajeros
+        origenId: searchData.origenId, destinoId: searchData.destinoId,
+        fecha: searchData.fechaIda, cantidadPasajeros: searchData.pasajeros
       };
-
-      // Agregar filtros opcionales
       if (precioMin !== '') body.precioMinimo = parseFloat(precioMin);
       if (precioMax !== '') body.precioMaximo = parseFloat(precioMax);
       if (claseSeleccionada !== '') body.claseId = parseInt(claseSeleccionada);
 
-      const res = await fetch('https://localhost:7107/api/vuelos/buscar', {
+      const res = await fetch(`${API}/api/vuelos/buscar`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error(`Error ${res.status}`);
+      if (!res.ok) throw new Error();
       vuelosIda = await res.json();
-    } catch (err) {
+    } catch {
       errorIda = 'No se pudieron cargar los vuelos de ida.';
     } finally { loadingIda = false; }
   }
@@ -99,49 +77,42 @@
     loadingVuelta = true; errorVuelta = '';
     try {
       const body = {
-        origenId: searchData.destinoId,
-        destinoId: searchData.origenId,
-        fecha: searchData.fechaVuelta,
-        cantidadPasajeros: searchData.pasajeros
+        origenId: searchData.destinoId, destinoId: searchData.origenId,
+        fecha: searchData.fechaVuelta, cantidadPasajeros: searchData.pasajeros
       };
-
-      // Agregar filtros opcionales
       if (precioMin !== '') body.precioMinimo = parseFloat(precioMin);
       if (precioMax !== '') body.precioMaximo = parseFloat(precioMax);
       if (claseSeleccionada !== '') body.claseId = parseInt(claseSeleccionada);
 
-      const res = await fetch('https://localhost:7107/api/vuelos/buscar', {
+      const res = await fetch(`${API}/api/vuelos/buscar`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error('Error buscando vuelos de vuelta');
+      if (!res.ok) throw new Error();
       vuelosVuelta = await res.json();
-    } catch (err) {
+    } catch {
       errorVuelta = 'No se pudieron cargar los vuelos de vuelta.';
     } finally { loadingVuelta = false; }
   }
 
   async function aplicarFiltros() {
-    if (currentView === 'outbound') {
-      await buscarVuelosIda();
-    } else {
-      await buscarVuelosVuelta();
-    }
+    if (currentView === 'outbound') await buscarVuelosIda();
+    else await buscarVuelosVuelta();
   }
-
-  $: currentFlights  = currentView === 'outbound' ? vuelosIda : vuelosVuelta;
-  $: loading         = currentView === 'outbound' ? loadingIda    : loadingVuelta;
-  $: errorActual     = currentView === 'outbound' ? errorIda      : errorVuelta;
-  $: selectedFlight  = currentView === 'outbound' ? selectedOutbound : selectedReturn;
-  $: canProceed      = selectedFlight.flight !== null && selectedFlight.clase !== null;
 
   function limpiarFiltros() {
-    precioMin = '';
-    precioMax = '';
-    claseSeleccionada = '';
+    precioMin = ''; precioMax = ''; claseSeleccionada = '';
     aplicarFiltros();
   }
+
+  $: currentFlights = currentView === 'outbound' ? vuelosIda : vuelosVuelta;
+  $: loading        = currentView === 'outbound' ? loadingIda    : loadingVuelta;
+  $: errorActual    = currentView === 'outbound' ? errorIda      : errorVuelta;
+  $: canProceed     = currentView === 'outbound'
+                        ? selectedOutbound.flight !== null && selectedOutbound.clase !== null
+                        : selectedReturn.flight   !== null && selectedReturn.clase   !== null;
 
   function selectFlight(vuelo, clase) {
     if (currentView === 'outbound') selectedOutbound = { flight: vuelo, clase };
@@ -160,82 +131,56 @@
     if (currentView === 'outbound' && selectedOutbound.flight) {
       if (searchData.tripType === 'roundtrip') {
         currentView = 'return';
-        await buscarVuelosVuelta();
+        // Si no tenemos vuelos de vuelta todavía, buscarlos ahora
+        if (vuelosVuelta.length === 0) await buscarVuelosVuelta();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        // Solo ida - intentar crear reserva si está logueado
         await crearReserva();
       }
     } else if (currentView === 'return' && selectedReturn.flight) {
-      // Ida y vuelta - intentar crear reserva si está logueado
       await crearReserva();
     }
   }
 
   async function crearReserva() {
-    const usuarioId = sessionStorage.getItem('usuarioId');
-    
-    // Si no está logueado, ir directo a datos-pasajeros
-    if (!usuarioId) {
-      if (searchData.tripType === 'roundtrip') {
-        navigateTo('datos-pasajeros', { outbound: selectedOutbound, return: selectedReturn, searchData });
-      } else {
-        navigateTo('datos-pasajeros', { outbound: selectedOutbound, searchData });
-      }
+    // Leemos del store en vez de sessionStorage
+    const sesionActual = $sesion;
+
+    if (!sesionActual) {
+      // No está logueado → ir a datos-pasajeros sin reserva creada
+      navigateTo('datos-pasajeros', {
+        outbound: selectedOutbound,
+        return:   selectedReturn.flight ? selectedReturn : null,
+        searchData
+      });
       return;
     }
 
-    // Construir el array de vuelos
-    const vuelos = [];
-    
-    // Agregar vuelo de ida
-    vuelos.push({
-      vueloId: selectedOutbound.flight.id,
-      claseId: selectedOutbound.clase.id,
-      cantidadPasajeros: searchData.pasajeros
-    });
-    
-    // Agregar vuelo de vuelta si existe
+    const vuelos = [
+      { vueloId: selectedOutbound.flight.id, claseId: selectedOutbound.clase.id, cantidadPasajeros: searchData.pasajeros }
+    ];
     if (selectedReturn.flight) {
-      vuelos.push({
-        vueloId: selectedReturn.flight.id,
-        claseId: selectedReturn.clase.id,
-        cantidadPasajeros: searchData.pasajeros
-      });
+      vuelos.push({ vueloId: selectedReturn.flight.id, claseId: selectedReturn.clase.id, cantidadPasajeros: searchData.pasajeros });
     }
 
-    // Hacer POST a /api/reservaciones
     try {
-      const response = await fetch('https://localhost:7107/api/reservaciones', {
+      const response = await fetch(`${API}/api/reservaciones`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          usuarioId: parseInt(usuarioId),
-          vuelos: vuelos
-        })
+        body: JSON.stringify({ vuelos })
       });
 
       if (response.ok) {
         const reservaData = await response.json();
-        // Si la reserva fue exitosa, navegar a datos-pasajeros con la info de la reserva
-        if (searchData.tripType === 'roundtrip') {
-          navigateTo('datos-pasajeros', { 
-            outbound: selectedOutbound, 
-            return: selectedReturn, 
-            searchData,
-            reserva: reservaData 
-          });
-        } else {
-          navigateTo('datos-pasajeros', { 
-            outbound: selectedOutbound, 
-            searchData,
-            reserva: reservaData 
-          });
-        }
+        navigateTo('datos-pasajeros', {
+          outbound: selectedOutbound,
+          return:   selectedReturn.flight ? selectedReturn : null,
+          searchData,
+          reserva:  reservaData
+        });
       }
-      // Si falla, no hacer nada (sin alert)
     } catch (error) {
-      // Si hay error, no hacer nada (sin alert)
       console.error('Error al crear reserva:', error);
     }
   }
@@ -249,7 +194,6 @@
     if (!min) return '';
     return `${Math.floor(min/60)}h ${min%60}m`;
   }
-
   function formatHora(h) { return h ? h.substring(0,5) : ''; }
 
   function getPrecioClase(vuelo, claseId) {
@@ -259,8 +203,8 @@
   }
 
   function getBoletosDisponiblesClase(vuelo, claseId) {
-    if (claseId === 1) return vuelo.boletosDisponiblesTurista || 0;
-    if (claseId === 2) return vuelo.boletosDisponiblesEjecutiva || 0;
+    if (claseId === 1) return vuelo.boletosDisponiblesTurista ?? 0;
+    if (claseId === 2) return vuelo.boletosDisponiblesEjecutiva ?? 0;
     return 0;
   }
 
@@ -302,6 +246,7 @@
           </div>
         </div>
       </div>
+
       <div class="step-indicator">
         <div class="step-indicator__item"
           class:step-indicator__item--active={currentView === 'outbound'}
@@ -369,11 +314,10 @@
               {@const estaSeleccionado = (currentView === 'outbound' ? selectedOutbound : selectedReturn).flight?.id === vuelo.id}
 
               <div class="flight-card" class:flight-card--selected={estaSeleccionado}>
-
                 <svg class="flight-card__deco" viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <circle cx="190" cy="15"  r="90" stroke="#c9a96e" stroke-width="0.6"/>
-                  <circle cx="190" cy="15"  r="62" stroke="#c9a96e" stroke-width="0.6"/>
-                  <circle cx="190" cy="15"  r="36" stroke="#c9a96e" stroke-width="0.6"/>
+                  <circle cx="190" cy="15" r="90" stroke="#c9a96e" stroke-width="0.6"/>
+                  <circle cx="190" cy="15" r="62" stroke="#c9a96e" stroke-width="0.6"/>
+                  <circle cx="190" cy="15" r="36" stroke="#c9a96e" stroke-width="0.6"/>
                   <path d="M95 72 L148 48 L160 53 L142 66 L156 62 L160 68 L128 79 Z" fill="#c9a96e" opacity="0.18"/>
                   <line x1="60" y1="125" x2="200" y2="125" stroke="#c9a96e" stroke-width="0.5" stroke-dasharray="4 7"/>
                   <line x1="80" y1="135" x2="200" y2="135" stroke="#c9a96e" stroke-width="0.4" stroke-dasharray="3 8"/>
@@ -384,10 +328,6 @@
                     <div class="flight-card__code-info">
                       <span class="flight-card__code">{vuelo.numeroVuelo || 'N/A'}</span>
                       <span class="flight-card__airline">{vuelo.avionMarca || ''} {vuelo.avionModelo || ''}</span>
-                    </div>
-                    <div class="flight-card__rating">
-                      <span class="flight-card__rating-value">{vuelo.boletosDisponibles || 0}</span>
-                      <span class="flight-card__rating-label">asientos</span>
                     </div>
                   </div>
 
@@ -415,9 +355,9 @@
 
                   <div class="flight-card__class-selection">
                     {#each clases as clase}
-                      {@const precio = getPrecioClase(vuelo, clase.id)}
+                      {@const precio      = getPrecioClase(vuelo, clase.id)}
                       {@const boletosDisp = getBoletosDisponiblesClase(vuelo, clase.id)}
-                      {@const disponible = precio !== null && precio > 0 && boletosDisp >= searchData.pasajeros}
+                      {@const disponible  = precio !== null && precio > 0 && boletosDisp >= searchData.pasajeros}
 
                       <button
                         class="class-option"
@@ -430,7 +370,7 @@
                         {#if disponible}
                           <span class="class-option__price">{formatPrecio(precio)}</span>
                           <span class="class-option__label">
-                            {estaSeleccionado && isSelected(vuelo, clase) ? 'Seleccionado ✓' : 'por persona'}
+                            {isSelected(vuelo, clase) ? 'Seleccionado ✓' : 'por persona'}
                           </span>
                         {:else}
                           <span class="class-option__label class-option__label--unavailable">No disponible</span>
@@ -462,36 +402,14 @@
 
 <style>
   .filters-panel__apply {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #c9a96e;
-    color: white;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 1rem;
+    width: 100%; padding: 0.75rem;
+    background-color: #c9a96e; color: white;
+    border: none; border-radius: 0.5rem;
+    font-weight: 600; cursor: pointer; margin-top: 1rem;
     transition: background-color 0.2s;
   }
-
-  .filters-panel__apply:hover {
-    background-color: #b89860;
-  }
-
-  .class-option__price {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #c9a96e;
-    margin: 0.25rem 0;
-  }
-
-  .class-option--disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .class-option__label--unavailable {
-    color: #dc2626;
-    font-weight: 600;
-  }
+  .filters-panel__apply:hover { background-color: #b89860; }
+  .class-option__price { font-size: 1.25rem; font-weight: 700; color: #c9a96e; margin: 0.25rem 0; }
+  .class-option--disabled { opacity: 0.5; cursor: not-allowed; }
+  .class-option__label--unavailable { color: #dc2626; font-weight: 600; }
 </style>

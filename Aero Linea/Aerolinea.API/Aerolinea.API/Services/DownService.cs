@@ -12,15 +12,12 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
-        public async Task<ResultadoVotoDTO> VotarComentario(VotarComentarioDTO dto)
+        public async Task<ResultadoVotoDTO> VotarComentario(int usuarioId, VotarComentarioDTO dto)
         {
-            // Validar que el valor sea 1 o -1
             if (dto.Valor != 1 && dto.Valor != -1)
-            {
                 throw new Exception("El valor del voto debe ser 1 (upvote) o -1 (downvote).");
-            }
 
-            return await _repository.VotarComentario(dto);
+            return await _repository.VotarComentario(usuarioId, dto);
         }
 
         public async Task<ResultadoVotoDTO> QuitarVoto(int usuarioId, int comentarioId)

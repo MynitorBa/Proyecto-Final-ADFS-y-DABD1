@@ -1,10 +1,14 @@
-﻿using Aerolinea.API.Services;
+﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
+using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
     [ApiController]
     [Route("api/mis-reservaciones")]
+    [Authorize] // Todas las rutas requieren sesión
     public class MisReservacionesController : ControllerBase
     {
         private readonly GestionReservacionService _service;
@@ -14,11 +18,13 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
-        [HttpGet("usuario/{usuarioId}")]
-        public async Task<IActionResult> ObtenerMisReservaciones(int usuarioId)
+        // GET api/mis-reservaciones
+        [HttpGet]
+        public async Task<IActionResult> ObtenerMisReservaciones()
         {
             try
             {
+                int usuarioId = ObtenerUsuarioId();
                 var reservaciones = await _service.ObtenerMisReservaciones(usuarioId);
                 return Ok(reservaciones);
             }
@@ -28,11 +34,13 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        [HttpGet("{reservacionId}/usuario/{usuarioId}")]
-        public async Task<IActionResult> ObtenerDetalleReservacion(int reservacionId, int usuarioId)
+        // GET api/mis-reservaciones/{reservacionId}
+        [HttpGet("{reservacionId}")]
+        public async Task<IActionResult> ObtenerDetalleReservacion(int reservacionId)
         {
             try
             {
+                int usuarioId = ObtenerUsuarioId();
                 var reservacion = await _service.ObtenerDetalleReservacion(reservacionId, usuarioId);
                 return Ok(reservacion);
             }
@@ -42,11 +50,13 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        [HttpGet("resumen/usuario/{usuarioId}")]
-        public async Task<IActionResult> ObtenerResumen(int usuarioId)
+        // GET api/mis-reservaciones/resumen
+        [HttpGet("resumen")]
+        public async Task<IActionResult> ObtenerResumen()
         {
             try
             {
+                int usuarioId = ObtenerUsuarioId();
                 var resumen = await _service.ObtenerResumen(usuarioId);
                 return Ok(resumen);
             }
@@ -56,18 +66,29 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        [HttpPost("{reservacionId}/cancelar/usuario/{usuarioId}")]
-        public async Task<IActionResult> CancelarReservacion(int reservacionId, int usuarioId)
+        // POST api/mis-reservaciones/{reservacionId}/cancelar
+        // Body: { "motivo": "Cambio de planes" }  (opcional)
+        [HttpPost("{reservacionId}/cancelar")]
+        public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
         {
             try
             {
-                await _service.CancelarReservacion(reservacionId, usuarioId);
-                return Ok(new { message = "Reservación cancelada exitosamente" });
+                int usuarioId = ObtenerUsuarioId();
+                await _service.CancelarReservacion(reservacionId, usuarioId, dto?.Motivo);
+                return Ok(new { message = "Reservación cancelada exitosamente." });
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        private int ObtenerUsuarioId()
+        {
+            int? id = SessionHelper.GetUsuarioId(HttpContext);
+            if (id == null)
+                throw new Exception("No se pudo obtener la sesión del usuario.");
+            return id.Value;
         }
     }
 }

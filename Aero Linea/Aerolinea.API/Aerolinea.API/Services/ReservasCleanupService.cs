@@ -7,7 +7,6 @@ namespace Aerolinea.API.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ReservasCleanupService> _logger;
 
-        // Contador para saber cuántos ciclos de 1 min han pasado
         private int _ciclos = 0;
         private const int CiclosParaActualizarVuelos = 30; // cada 30 min
 
@@ -25,31 +24,23 @@ namespace Aerolinea.API.Services
 
             await LiberarReservasExpiradas();
             await ActualizarEstadosVuelos();
+            await CompletarReservaciones();
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
                 _ciclos++;
 
-                try
-                {
-                    await LiberarReservasExpiradas();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al liberar reservas expiradas.");
-                }
+                try { await LiberarReservasExpiradas(); }
+                catch (Exception ex) { _logger.LogError(ex, "Error al liberar reservas expiradas."); }
+
+                try { await CompletarReservaciones(); }
+                catch (Exception ex) { _logger.LogError(ex, "Error al completar reservaciones."); }
 
                 if (_ciclos >= CiclosParaActualizarVuelos)
                 {
-                    try
-                    {
-                        await ActualizarEstadosVuelos();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error al actualizar estados de vuelos.");
-                    }
+                    try { await ActualizarEstadosVuelos(); }
+                    catch (Exception ex) { _logger.LogError(ex, "Error al actualizar estados de vuelos."); }
 
                     _ciclos = 0;
                 }
@@ -68,6 +59,16 @@ namespace Aerolinea.API.Services
                 _logger.LogInformation("Se liberaron {Count} reservas expiradas.", reservasLiberadas);
         }
 
+        private async Task CompletarReservaciones()
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<ReservacionRepository>();
+            int completadas = await repository.CompletarReservaciones();
+
+            if (completadas > 0)
+                _logger.LogInformation("{Count} reservación(es) pasaron a estado Completada.", completadas);
+        }
+
         private async Task ActualizarEstadosVuelos()
         {
             using var scope = _serviceProvider.CreateScope();
@@ -76,7 +77,6 @@ namespace Aerolinea.API.Services
 
             if (enTranscurso > 0)
                 _logger.LogInformation("{Count} vuelo(s) pasaron a estado En Transcurso.", enTranscurso);
-
             if (finalizados > 0)
                 _logger.LogInformation("{Count} vuelo(s) pasaron a estado Finalizado.", finalizados);
         }

@@ -12,52 +12,40 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
-        public async Task<List<VueloDetalleDTO>> BuscarVuelos(BuscarVueloDTO dto)
+        public async Task<List<VueloDetalleDTO>> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
         {
-            var vuelos = await _repository.BuscarVuelos(dto.OrigenId, dto.DestinoId, dto.Fecha, dto.CantidadPasajeros);
+            // Guardar la búsqueda (usuarioId null = búsqueda anónima, TipoBusquedaID siempre 1)
+            await _repository.GuardarBusqueda(
+                origenId: dto.OrigenId,
+                destinoId: dto.DestinoId,
+                fechaSalida: dto.Fecha,
+                cantidadPersonas: dto.CantidadPasajeros,
+                usuarioId: usuarioId
+            );
 
-            // Aplicar filtros de precio si están presentes
-            if (dto.PrecioMinimo.HasValue || dto.PrecioMaximo.HasValue || dto.ClaseId.HasValue)
+            // Obtener resultados con disponibilidad por clase
+            var vuelos = await _repository.BuscarVuelos(
+                dto.OrigenId,
+                dto.DestinoId,
+                dto.Fecha,
+                dto.CantidadPasajeros,
+                dto.ClaseId
+            );
+
+            // Filtro de precio en memoria
+            if (dto.PrecioMinimo.HasValue || dto.PrecioMaximo.HasValue)
             {
                 vuelos = vuelos.Where(v =>
                 {
-                    decimal? precioConsiderar = null;
+                    decimal? precio = dto.ClaseId == 1 ? v.PrecioTurista
+                                    : dto.ClaseId == 2 ? v.PrecioEjecutiva
+                                    : v.PrecioTurista.HasValue && v.PrecioEjecutiva.HasValue
+                                        ? Math.Min(v.PrecioTurista.Value, v.PrecioEjecutiva.Value)
+                                        : v.PrecioTurista ?? v.PrecioEjecutiva;
 
-                    // Si se especifica una clase, usar el precio de esa clase
-                    if (dto.ClaseId.HasValue)
-                    {
-                        if (dto.ClaseId.Value == 1) // Turista
-                        {
-                            precioConsiderar = v.PrecioTurista;
-                        }
-                        else if (dto.ClaseId.Value == 2) // Ejecutiva
-                        {
-                            precioConsiderar = v.PrecioEjecutiva;
-                        }
-                    }
-                    else
-                    {
-                        // Si no se especifica clase, usar el menor precio disponible
-                        if (v.PrecioTurista.HasValue && v.PrecioEjecutiva.HasValue)
-                        {
-                            precioConsiderar = Math.Min(v.PrecioTurista.Value, v.PrecioEjecutiva.Value);
-                        }
-                        else
-                        {
-                            precioConsiderar = v.PrecioTurista ?? v.PrecioEjecutiva;
-                        }
-                    }
-
-                    // Si no hay precio, filtrar el vuelo
-                    if (!precioConsiderar.HasValue)
-                        return false;
-
-                    // Aplicar filtros de rango de precio
-                    if (dto.PrecioMinimo.HasValue && precioConsiderar < dto.PrecioMinimo.Value)
-                        return false;
-
-                    if (dto.PrecioMaximo.HasValue && precioConsiderar > dto.PrecioMaximo.Value)
-                        return false;
+                    if (!precio.HasValue) return false;
+                    if (dto.PrecioMinimo.HasValue && precio < dto.PrecioMinimo.Value) return false;
+                    if (dto.PrecioMaximo.HasValue && precio > dto.PrecioMaximo.Value) return false;
 
                     return true;
                 }).ToList();

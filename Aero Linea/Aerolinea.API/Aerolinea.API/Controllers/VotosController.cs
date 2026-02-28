@@ -1,11 +1,14 @@
 ﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
     [ApiController]
     [Route("api/votos")]
+    [Authorize] // Todas requieren sesión
     public class VotosController : ControllerBase
     {
         private readonly DownService _service;
@@ -15,12 +18,15 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // POST api/votos
+        // Body: { "comentarioId": 1, "valor": 1 }   (1 = upvote, -1 = downvote)
         [HttpPost]
         public async Task<IActionResult> VotarComentario([FromBody] VotarComentarioDTO dto)
         {
             try
             {
-                var resultado = await _service.VotarComentario(dto);
+                int usuarioId = ObtenerUsuarioId();
+                var resultado = await _service.VotarComentario(usuarioId, dto);
                 return Ok(resultado);
             }
             catch (Exception ex)
@@ -29,11 +35,13 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        [HttpDelete("{usuarioId}/{comentarioId}")]
-        public async Task<IActionResult> QuitarVoto(int usuarioId, int comentarioId)
+        // DELETE api/votos/{comentarioId}
+        [HttpDelete("{comentarioId}")]
+        public async Task<IActionResult> QuitarVoto(int comentarioId)
         {
             try
             {
+                int usuarioId = ObtenerUsuarioId();
                 var resultado = await _service.QuitarVoto(usuarioId, comentarioId);
                 return Ok(resultado);
             }
@@ -43,21 +51,17 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        [HttpGet("{usuarioId}/{comentarioId}")]
-        public async Task<IActionResult> ObtenerVotoUsuario(int usuarioId, int comentarioId)
+        // GET api/votos/{comentarioId}
+        [HttpGet("{comentarioId}")]
+        public async Task<IActionResult> ObtenerVotoUsuario(int comentarioId)
         {
             try
             {
+                int usuarioId = ObtenerUsuarioId();
                 var voto = await _service.ObtenerVotoUsuario(usuarioId, comentarioId);
-
-                if (voto == null)
-                {
-                    return Ok(new { mensaje = "No ha votado", valor = (int?)null });
-                }
-
                 return Ok(new
                 {
-                    mensaje = voto == 1 ? "Upvote" : "Downvote",
+                    mensaje = voto == null ? "No ha votado" : voto == 1 ? "Upvote" : "Downvote",
                     valor = voto
                 });
             }
@@ -65,6 +69,15 @@ namespace Aerolinea.API.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+  
+        private int ObtenerUsuarioId()
+        {
+            int? id = SessionHelper.GetUsuarioId(HttpContext);
+            if (id == null)
+                throw new Exception("No se pudo obtener la sesión del usuario.");
+            return id.Value;
         }
     }
 }
