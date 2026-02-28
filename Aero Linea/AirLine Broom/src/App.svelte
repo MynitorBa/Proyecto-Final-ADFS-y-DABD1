@@ -1,4 +1,6 @@
 <script>
+// @ts-nocheck
+
   import { onMount } from 'svelte';
   import { sesion, cargarSesion } from './stores/sesion.js';
   import Header from './components/Header.svelte';
@@ -160,7 +162,10 @@
   {/if}
 
   <main class="app-main">
-    {#if currentPage === 'home'}
+    {#if !sesionCargada && paginasProtegidas.includes(currentPage)}
+      <!-- Esperamos a conocer la sesión antes de renderizar páginas protegidas -->
+      <p style="text-align:center; padding:4rem; color:#888">Cargando...</p>
+    {:else if currentPage === 'home'}
       <Home {navigateTo} {suggestedDestination} />
     {:else if currentPage === 'VuelosGenerales'}
       <VuelosGenerales {navigateTo} />
