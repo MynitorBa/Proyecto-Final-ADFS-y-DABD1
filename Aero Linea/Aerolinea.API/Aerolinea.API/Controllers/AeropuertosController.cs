@@ -1,5 +1,6 @@
 ﻿using Aerolinea.API.DTOs;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -15,6 +16,7 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // Público: usado en búsqueda de vuelos por usuarios no autenticados
         [HttpGet]
         public async Task<IActionResult> ObtenerAeropuertos()
         {
@@ -44,6 +46,8 @@ namespace Aerolinea.API.Controllers
             return Ok(fechas);
         }
 
+        // Solo administradores: operaciones de escritura
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearAeropuertoDTO crearAeropuertoDTO)
         {
@@ -54,6 +58,7 @@ namespace Aerolinea.API.Controllers
             return CreatedAtAction(nameof(ObtenerPorId), new { id = aeropuerto.Id }, aeropuerto);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] CrearAeropuertoDTO actualizarAeropuertoDto)
         {
