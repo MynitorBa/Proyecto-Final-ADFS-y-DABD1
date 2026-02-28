@@ -26,10 +26,21 @@
   import InformacionAsientos from './pages/InformacionAsientos.svelte';
   import InformacionSeguridad from './pages/InformacionSeguridad.svelte';
   import AccesoDenegado from './pages/Accesodenegado.svelte';
+
+  // Páginas de información / soporte
+  import Contactanos from './pages/Contactanos.svelte';
+  import CentroAyuda from './pages/CentroAyuda.svelte';
+  import PreguntasFrecuentes from './pages/PreguntasFrecuentes.svelte';
+  import Privacidad from './pages/Privacidad.svelte';
+  import Terminos from './pages/Terminos.svelte';
+  import Cookies from './pages/Cookies.svelte';
+  import PoliticaCancelacion from './pages/PoliticaCancelacion.svelte';
+  import SobreNosotros from './pages/SobreNosotros.svelte';
+
   import './app.css';
 
   let isLoading = true;
-  let sesionCargada = false;   // evita que el guard actúe antes de conocer la sesión
+  let sesionCargada = false;
   let currentPage = 'home';
   let suggestedDestination = null;
   let currentFlightId = null;
@@ -37,7 +48,6 @@
   let reservacionesConfirmadas = [];
   let pageKey = Date.now();
 
-  // Páginas que requieren sesión activa para entrar
   const paginasProtegidas = [
     'profile',
     'admin',
@@ -47,14 +57,24 @@
     'carrito'
   ];
 
-  // Solo admin puede entrar aquí; el resto va a acceso-denegado
   const paginasSoloAdmin = ['admin'];
+
+  // Páginas info/soporte — no requieren sesión, siempre muestran footer
+  const infoPages = [
+    'contactanos',
+    'centro-ayuda',
+    'preguntas-frecuentes',
+    'privacidad',
+    'terminos',
+    'cookies',
+    'politica-cancelacion',
+    'sobre-nosotros',
+  ];
 
   onMount(async () => {
     actualizarPaginaDesdeURL();
     window.addEventListener('popstate', actualizarPaginaDesdeURL);
 
-    // Intentamos restaurar la sesión antes de quitar el loading
     await cargarSesion();
     sesionCargada = true;
 
@@ -73,23 +93,15 @@
     pageKey = Date.now();
   }
 
-  /**
-   * Guard de navegación.
-   * Devuelve la página real a la que debe ir el usuario
-   * teniendo en cuenta su sesión y rol.
-   */
   function resolverPagina(page) {
-    // Si la sesión aún no terminó de cargar, no redirigir todavía
     if (!sesionCargada) return page;
 
     const sesionActual = $sesion;
 
-    // Si intenta ir a una página protegida sin sesión → login
     if (paginasProtegidas.includes(page) && !sesionActual) {
       return 'login';
     }
 
-    // Si intenta ir a admin sin ser administrador → acceso-denegado
     if (paginasSoloAdmin.includes(page) && sesionActual?.rolNombre !== 'Administrador') {
       return 'acceso-denegado';
     }
@@ -110,12 +122,10 @@
 
     if (paginaFinal === 'vuelos' && data?.busquedaId) {
       searchParams = { busquedaId: data.busquedaId };
-      console.log('✅ App.svelte - navegando a vuelos con busquedaId:', data.busquedaId);
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
     } else if (paginaFinal === 'confirmacion' && data?.reservaciones) {
       reservacionesConfirmadas = data.reservaciones;
-      console.log('✅ App.svelte - reservaciones para confirmación:', reservacionesConfirmadas);
     } else if (paginaFinal !== 'vuelos') {
       searchParams = null;
     }
@@ -156,14 +166,12 @@
     {#if useSimpleHeader}
       <HeaderSimple {navigateTo} />
     {:else}
-      <!-- Pasamos la sesión al Header para que muestre nombre/rol o botón login -->
       <Header {navigateTo} {currentPage} sesion={$sesion} />
     {/if}
   {/if}
 
   <main class="app-main">
     {#if !sesionCargada && paginasProtegidas.includes(currentPage)}
-      <!-- Esperamos a conocer la sesión antes de renderizar páginas protegidas -->
       <p style="text-align:center; padding:4rem; color:#888">Cargando...</p>
     {:else if currentPage === 'home'}
       <Home {navigateTo} {suggestedDestination} />
@@ -205,6 +213,25 @@
       <InformacionSeguridad {navigateTo} />
     {:else if currentPage === 'acceso-denegado'}
       <AccesoDenegado {navigateTo} />
+
+    <!-- Páginas de información / soporte -->
+    {:else if currentPage === 'contactanos'}
+      <Contactanos {navigateTo} />
+    {:else if currentPage === 'centro-ayuda'}
+      <CentroAyuda {navigateTo} />
+    {:else if currentPage === 'preguntas-frecuentes'}
+      <PreguntasFrecuentes {navigateTo} />
+    {:else if currentPage === 'privacidad'}
+      <Privacidad {navigateTo} />
+    {:else if currentPage === 'terminos'}
+      <Terminos {navigateTo} />
+    {:else if currentPage === 'cookies'}
+      <Cookies {navigateTo} />
+    {:else if currentPage === 'politica-cancelacion'}
+      <PoliticaCancelacion {navigateTo} />
+    {:else if currentPage === 'sobre-nosotros'}
+      <SobreNosotros {navigateTo} />
+
     {:else}
       <Home {navigateTo} />
     {/if}
