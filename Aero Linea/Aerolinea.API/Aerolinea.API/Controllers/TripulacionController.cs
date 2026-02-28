@@ -1,5 +1,6 @@
 ﻿using Aerolinea.API.DTOs;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -15,6 +16,7 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // Público: necesario para cargar listas en formularios del panel
         [HttpGet]
         public async Task<IActionResult> ObtenerTodos()
         {
@@ -33,6 +35,15 @@ namespace Aerolinea.API.Controllers
             return Ok(tripulante);
         }
 
+        [HttpGet("roles")]
+        public async Task<IActionResult> ObtenerRoles()
+        {
+            var roles = await _service.ObtenerRoles();
+            return Ok(roles);
+        }
+
+        // Solo administradores: operaciones de escritura
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> Crear([FromBody] CrearTripulanteDTO crearTripulanteDTO)
         {
@@ -43,6 +54,7 @@ namespace Aerolinea.API.Controllers
             return CreatedAtAction(nameof(ObtenerPorId), new { id = tripulante.Id }, tripulante);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Actualizar(int id, [FromBody] CrearTripulanteDTO actualizarTripulanteDto)
         {
@@ -55,13 +67,6 @@ namespace Aerolinea.API.Controllers
                 return NotFound(new { message = "Tripulante no encontrado" });
 
             return Ok(new { message = "Tripulante actualizado correctamente" });
-        }
-
-        [HttpGet("roles")]
-        public async Task<IActionResult> ObtenerRoles()
-        {
-            var roles = await _service.ObtenerRoles();
-            return Ok(roles);
         }
     }
 }

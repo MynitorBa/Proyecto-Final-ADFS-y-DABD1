@@ -1,11 +1,13 @@
 ﻿using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
     [ApiController]
     [Route("api/admin/vuelos")]
+    [Authorize(Roles = "Administrador")]   // Toda la clase exige sesión de administrador
     public class AdminVuelosController : ControllerBase
     {
         private readonly AdminVueloService _adminVueloService;
@@ -20,16 +22,7 @@ namespace Aerolinea.API.Controllers
         {
             try
             {
-                // Validar que sea admin (rolId = 2)
-                if (!Request.Headers.TryGetValue("X-RolId", out var rolIdHeader) ||
-                    !int.TryParse(rolIdHeader, out var rolId) ||
-                    rolId != 2)
-                {
-                    return Unauthorized(new { message = "No tienes permisos para crear vuelos" });
-                }
-
                 var vueloId = await _adminVueloService.CrearVuelo(dto);
-                // prueba para ver que funcione el git ignore
                 return Ok(new
                 {
                     message = "Vuelo creado exitosamente",
@@ -51,14 +44,6 @@ namespace Aerolinea.API.Controllers
         {
             try
             {
-                // Validar que sea admin (rolId = 2)
-                if (!Request.Headers.TryGetValue("X-RolId", out var rolIdHeader) ||
-                    !int.TryParse(rolIdHeader, out var rolId) ||
-                    rolId != 2)
-                {
-                    return Unauthorized(new { message = "No tienes permisos para ver el historial" });
-                }
-
                 var vuelos = await _adminVueloService.ObtenerHistorialVuelos();
                 return Ok(vuelos);
             }
@@ -73,20 +58,10 @@ namespace Aerolinea.API.Controllers
         {
             try
             {
-                // Validar que sea admin (rolId = 2)
-                if (!Request.Headers.TryGetValue("X-RolId", out var rolIdHeader) ||
-                    !int.TryParse(rolIdHeader, out var rolId) ||
-                    rolId != 2)
-                {
-                    return Unauthorized(new { message = "No tienes permisos para cancelar vuelos" });
-                }
-
                 var resultado = await _adminVueloService.CancelarVuelo(id);
 
                 if (!resultado)
-                {
                     return NotFound(new { message = "No se pudo cancelar el vuelo. Puede que ya esté cancelado o no exista." });
-                }
 
                 return Ok(new { message = "Vuelo cancelado exitosamente" });
             }

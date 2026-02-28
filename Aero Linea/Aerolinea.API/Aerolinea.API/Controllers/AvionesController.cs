@@ -1,5 +1,6 @@
 ﻿using Aerolinea.API.DTOs;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -15,6 +16,7 @@ namespace Aerolinea.API.Controllers
             _avionService = avionService;
         }
 
+        // Público: necesario para cargar listas en formularios del panel
         [HttpGet]
         public async Task<ActionResult<List<AvionDTO>>> ObtenerTodos()
         {
@@ -33,6 +35,8 @@ namespace Aerolinea.API.Controllers
             return Ok(avion);
         }
 
+        // Solo administradores: operaciones de escritura
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<AvionDTO>> Crear([FromBody] CrearAvionDTO crearAvionDto)
         {
@@ -43,6 +47,7 @@ namespace Aerolinea.API.Controllers
             return CreatedAtAction(nameof(ObtenerPorId), new { id = avionCreado.Id }, avionCreado);
         }
 
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<ActionResult> Actualizar(int id, [FromBody] CrearAvionDTO actualizarAvionDto)
         {
@@ -56,7 +61,5 @@ namespace Aerolinea.API.Controllers
 
             return Ok(new { message = "Avión actualizado correctamente" });
         }
-
-        
     }
 }
