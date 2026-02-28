@@ -1,6 +1,7 @@
 <script>
   import '../styles/reslog.css';
   import { onMount } from 'svelte';
+  import { login } from '../stores/sesion.js';
   export let navigateTo;
 
   let loginData = {
@@ -13,11 +14,7 @@
   let submitting = false;
 
   onMount(() => {
-    sessionStorage.clear();
-    loginData = {
-      correoOUsername: '',
-      contrasena: ''
-    };
+    loginData = { correoOUsername: '', contrasena: '' };
     rememberMe = false;
     loginError = '';
   });
@@ -27,27 +24,12 @@
     submitting = true;
 
     try {
-      const response = await fetch('http://localhost:5190/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          correoOUsername: loginData.correoOUsername,
-          contrasena: loginData.contrasena
-        })
-      });
+      const resultado = await login(loginData.correoOUsername, loginData.contrasena);
 
-      if (!response.ok) {
+      if (!resultado.ok) {
         loginError = 'Correo, username o contraseña incorrectos.';
         return;
       }
-
-      const result = await response.json();
-      
-      sessionStorage.setItem('usuarioId', result.usuarioId);
-      sessionStorage.setItem('nombre', result.nombre);
-      sessionStorage.setItem('correo', result.correo);
-      sessionStorage.setItem('rolId', result.rolId);
-      sessionStorage.setItem('rolNombre', result.rolNombre);
 
       navigateTo('home');
 

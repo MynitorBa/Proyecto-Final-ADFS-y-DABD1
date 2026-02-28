@@ -1,13 +1,16 @@
 <script>
   import '../styles/profile.css';
   import { onMount } from 'svelte';
+  import { sesion, logout } from '../stores/sesion.js';
   export let navigateTo;
 
-  const usuarioId = sessionStorage.getItem('usuarioId');
-  const headers = {
-    'Content-Type': 'application/json',
-    'X-UsuarioId': usuarioId
-  };
+  // Leemos del store en vez de sessionStorage
+  let usuarioId = null;
+  const unsubscribe = sesion.subscribe(s => {
+    usuarioId = s?.usuarioId ?? null;
+  });
+
+  const API = 'http://localhost:5190';
 
   let activeTab = 'personal';
   let cargando = true;
@@ -17,7 +20,6 @@
     telefono: '', pasaporte: '', fechaNacimiento: '', pais: '', ciudad: ''
   };
 
-  // Solo teléfono es editable por ahora
   let telefonoEditado = '';
   let telefonoMensaje = '';
   let telefonoError = '';
@@ -28,7 +30,6 @@
   let passwordError = '';
   let guardandoPassword = false;
 
-  // Validación contraseña
   $: ps = {
     length:    passwordData.newPassword.length >= 8,
     uppercase: /[A-Z]/.test(passwordData.newPassword),
@@ -36,14 +37,18 @@
   };
   $: passwordValid = ps.length && ps.uppercase && ps.number;
 
+  // @ts-ignore
   onMount(async () => {
+    // Si el store aún no cargó o no hay sesión, redirigir
     if (!usuarioId) {
-      navigateTo('acceso-denegado');
+      navigateTo('login');
       return;
     }
 
     try {
-      const res = await fetch(`http://localhost:5190/api/perfil/${usuarioId}`, { headers });
+      const res = await fetch(`${API}/api/perfil/${usuarioId}`, {
+        credentials: 'include'   // la cookie viaja automáticamente
+      });
       if (!res.ok) { navigateTo('acceso-denegado'); return; }
 
       const data = await res.json();
@@ -66,6 +71,8 @@
     } finally {
       cargando = false;
     }
+
+    return () => unsubscribe();
   });
 
   async function handleActualizarTelefono() {
@@ -79,9 +86,10 @@
 
     guardandoTelefono = true;
     try {
-      const res = await fetch(`http://localhost:5190/api/perfil/${usuarioId}/telefono`, {
+      const res = await fetch(`${API}/api/perfil/${usuarioId}/telefono`, {
         method: 'PATCH',
-        headers,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telefono: telefonoEditado })
       });
       const data = await res.json();
@@ -113,9 +121,10 @@
 
     guardandoPassword = true;
     try {
-      const res = await fetch(`http://localhost:5190/api/perfil/${usuarioId}/contrasena`, {
+      const res = await fetch(`${API}/api/perfil/${usuarioId}/contrasena`, {
         method: 'PATCH',
-        headers,
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contrasenaActual: passwordData.currentPassword,
           nuevaContrasena:  passwordData.newPassword
@@ -135,8 +144,8 @@
     }
   }
 
-  function handleLogout() {
-    sessionStorage.clear();
+  async function handleLogout() {
+    await logout();        // limpia cookie + store
     navigateTo('home');
   }
 </script>
@@ -189,7 +198,6 @@
               <h2 class="profile-section__title">Información Personal</h2>
               <p class="profile-section__subtitle">Tus datos registrados en el sistema</p>
 
-              <!-- Datos de solo lectura -->
               <div class="profile-form">
                 <div class="profile-form__row">
                   <div class="profile-form__field">
