@@ -20,6 +20,8 @@
 
         // Lista de boletos
         public List<BoletoDetalleDTO> Boletos { get; set; }
+
+        public FacturaDTO? Factura { get; set; }
     }
 
     public class BoletoDetalleDTO

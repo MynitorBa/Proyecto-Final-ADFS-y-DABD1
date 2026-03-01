@@ -108,6 +108,28 @@ namespace Aerolinea.API.Helpers
                 </div>";
             }
 
+
+            // ── Sección factura ───────────────────────────────────────────
+            string seccionFactura = "";
+            if (reservacion.Factura != null)
+            {
+                var f = reservacion.Factura;
+                seccionFactura = $@"
+    <div class='bloque' style='margin-top:22px;'>
+        <div class='titulo-seccion'>DATOS DE FACTURA</div>
+        <div class='info-grid'>
+            <div class='info-col'>
+                <h3>Factura</h3>
+                <div class='info-row'><div class='info-lbl'>Nro. Factura</div><div class='info-val highlight'>{f.Id}</div></div>
+                <div class='info-row'><div class='info-lbl'>Fecha</div><div class='info-val'>{f.Fecha:yyyy-MM-dd HH:mm}</div></div>
+                <div class='info-row'><div class='info-lbl'>NIT</div><div class='info-val'>{E(f.NIT)}</div></div>
+                <div class='info-row'><div class='info-lbl'>Codigo Postal</div><div class='info-val'>{E(f.CodigoPostal)}</div></div>
+                <div class='info-row'><div class='info-lbl'>Total Facturado</div><div class='info-val highlight'>Q {f.Total:N2}</div></div>
+            </div>
+        </div>
+    </div>";
+            }
+
             // ── Info avión ────────────────────────────────────────────────
             string infoAvion = reservacion.Boletos.Any()
                 ? $"{E(reservacion.Boletos.First().AvionMarca)} {E(reservacion.Boletos.First().AvionModelo)}"
@@ -250,6 +272,8 @@ namespace Aerolinea.API.Helpers
     </div>
 
     {seccionPasajeros}
+
+    {seccionFactura}
 
     <div class='bloque condiciones' style='margin-top:22px;'>
         <h4>Terminos y Condiciones</h4>
