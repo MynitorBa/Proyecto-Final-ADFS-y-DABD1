@@ -17,33 +17,33 @@
   let activeSection = 'crear-vuelo';
 
   // ========= DATOS =========
-  let usuarios = [];
-  let aviones = [];
-  let tripulantes = [];
-  let aeropuertos = [];
+  let usuarios        = [];
+  let aviones         = [];
+  let tripulantes     = [];
+  let aeropuertos     = [];
   let historialVuelos = [];
   let rolesTripulacion = [];
-  let todosLosPaises = [];
+  let todosLosPaises  = [];
 
   // ========= LOADING =========
-  let loadingUsuarios = false;
-  let loadingAviones = false;
-  let loadingTripulantes = false;
-  let loadingAeropuertos = false;
+  let loadingUsuarios        = false;
+  let loadingAviones         = false;
+  let loadingTripulantes     = false;
+  let loadingAeropuertos     = false;
   let loadingHistorialVuelos = false;
 
   // ========= BÚSQUEDA VUELO =========
-  let busquedaOrigen = '';
-  let busquedaDestino = '';
-  let busquedaAvion = '';
-  let busquedaTripulante = '';
-  let mostrarDropdownOrigen = false;
-  let mostrarDropdownDestino = false;
-  let mostrarDropdownAvion = false;
+  let busquedaOrigen        = '';
+  let busquedaDestino       = '';
+  let busquedaAvion         = '';
+  let busquedaTripulante    = '';
+  let mostrarDropdownOrigen     = false;
+  let mostrarDropdownDestino    = false;
+  let mostrarDropdownAvion      = false;
   let mostrarDropdownTripulante = false;
 
-  // ========= MODALES =========
-  let mostrarFormularioAvion = false;
+  // ========= MODALES ENTIDADES =========
+  let mostrarFormularioAvion      = false;
   let mostrarFormularioTripulante = false;
   let mostrarFormularioAeropuerto = false;
   let modoEdicion = false;
@@ -54,11 +54,56 @@
     { id: 2, nombre: 'Administrador' }
   ];
 
+  // ─────────────────────────────────────────────────────────────────
+  //  SISTEMA DE TOASTS
+  // ─────────────────────────────────────────────────────────────────
+  let toasts  = [];
+  let toastId = 0;
+
+  function mostrarToast(tipo, mensaje, duracion = 4000) {
+    const id = ++toastId;
+    toasts = [...toasts, { id, tipo, mensaje }];
+    setTimeout(() => { toasts = toasts.filter(t => t.id !== id); }, duracion);
+  }
+
+  function cerrarToast(id) {
+    toasts = toasts.filter(t => t.id !== id);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  //  MODAL DE CONFIRMACIÓN
+  // ─────────────────────────────────────────────────────────────────
+  let confirmVisible  = false;
+  let confirmMensaje  = '';
+  let confirmSubtexto = '';
+  let confirmTipo     = 'danger';
+  let confirmResolve  = null;
+
+  function mostrarConfirm(mensaje, subtexto = '', tipo = 'danger') {
+    confirmMensaje  = mensaje;
+    confirmSubtexto = subtexto;
+    confirmTipo     = tipo;
+    confirmVisible  = true;
+    return new Promise(resolve => { confirmResolve = resolve; });
+  }
+
+  function confirmarAccion() {
+    confirmVisible = false;
+    if (confirmResolve) confirmResolve(true);
+    confirmResolve = null;
+  }
+
+  function cancelarConfirm() {
+    confirmVisible = false;
+    if (confirmResolve) confirmResolve(false);
+    confirmResolve = null;
+  }
+
   // ========= AUTOCOMPLETE AEROPUERTO =========
-  let paisQueryAeropuerto = '';
+  let paisQueryAeropuerto       = '';
   let paisesSugeridosAeropuerto = [];
   let paisSeleccionadoAeropuerto = null;
-  let ciudadQueryAeropuerto = '';
+  let ciudadQueryAeropuerto       = '';
   let ciudadesSugeridasAeropuerto = [];
   let ciudadSeleccionadaAeropuerto = false;
 
@@ -71,6 +116,7 @@
     fecha: '',
     horaSalida: '',
     horaLlegada: '',
+    fechaLlegada: '',
     boletosTurista: '',
     boletosEjecutivo: '',
     precioTurista: '',
@@ -79,42 +125,33 @@
   };
 
   // ========= FORMULARIO AVIÓN =========
-  let avionForm = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
+  let avionForm          = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
   let avionImagenPreview = null;
-  let avionImagenBase64 = null;
+  let avionImagenBase64  = null;
 
   // ========= FORMULARIO TRIPULANTE =========
-  let tripulanteForm = { id: null, nombre: '', apellido: '', rolID: '' };
+  let tripulanteForm          = { id: null, nombre: '', apellido: '', rolID: '' };
   let tripulanteImagenPreview = null;
-  let tripulanteImagenBase64 = null;
+  let tripulanteImagenBase64  = null;
 
   // ========= FORMULARIO AEROPUERTO =========
-  let aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '' };
+  let aeropuertoForm          = { id: null, codigo: '', nombre: '', ciudad: '', pais: '' };
   let aeropuertoImagenPreview = null;
-  let aeropuertoImagenBase64 = null;
+  let aeropuertoImagenBase64  = null;
 
   // ========= LIFECYCLE =========
   onMount(async () => {
-    if (rolNombre !== 'Administrador') {
-      navigateTo('acceso-denegado');
-      return;
-    }
+    if (rolNombre !== 'Administrador') { navigateTo('acceso-denegado'); return; }
     await cargarDatosIniciales();
   });
 
-  onDestroy(() => {
-    unsubscribeSesion();
-  });
+  onDestroy(() => { unsubscribeSesion(); });
 
   async function cargarDatosIniciales() {
     await Promise.all([
-      cargarUsuarios(),
-      cargarAviones(),
-      cargarTripulantes(),
-      cargarAeropuertos(),
-      cargarRolesTripulacion(),
-      cargarPaises(),
-      cargarHistorialVuelos()
+      cargarUsuarios(), cargarAviones(), cargarTripulantes(),
+      cargarAeropuertos(), cargarRolesTripulacion(),
+      cargarPaises(), cargarHistorialVuelos()
     ]);
   }
 
@@ -124,8 +161,7 @@
     try {
       const r = await fetch(`${API}/api/usuarios`, { credentials: 'include' });
       if (r.ok) usuarios = await r.json();
-    } catch (e) { console.error('Error cargando usuarios:', e); }
-    finally { loadingUsuarios = false; }
+    } catch (e) { console.error(e); } finally { loadingUsuarios = false; }
   }
 
   async function cargarAviones() {
@@ -133,8 +169,7 @@
     try {
       const r = await fetch(`${API}/api/aviones`);
       if (r.ok) aviones = await r.json();
-    } catch (e) { console.error('Error cargando aviones:', e); }
-    finally { loadingAviones = false; }
+    } catch (e) { console.error(e); } finally { loadingAviones = false; }
   }
 
   async function cargarTripulantes() {
@@ -142,8 +177,7 @@
     try {
       const r = await fetch(`${API}/api/tripulacion`);
       if (r.ok) tripulantes = await r.json();
-    } catch (e) { console.error('Error cargando tripulantes:', e); }
-    finally { loadingTripulantes = false; }
+    } catch (e) { console.error(e); } finally { loadingTripulantes = false; }
   }
 
   async function cargarAeropuertos() {
@@ -151,8 +185,7 @@
     try {
       const r = await fetch(`${API}/api/aeropuertos`);
       if (r.ok) aeropuertos = await r.json();
-    } catch (e) { console.error('Error cargando aeropuertos:', e); }
-    finally { loadingAeropuertos = false; }
+    } catch (e) { console.error(e); } finally { loadingAeropuertos = false; }
   }
 
   async function cargarRolesTripulacion() {
@@ -162,7 +195,7 @@
         const roles = await r.json();
         rolesTripulacion = roles.map(rol => ({ id: rol.id, nombre: rol.cargo }));
       }
-    } catch (e) { console.error('Error cargando roles:', e); }
+    } catch (e) { console.error(e); }
   }
 
   async function cargarPaises() {
@@ -170,7 +203,7 @@
       const r = await fetch('https://countriesnow.space/api/v0.1/countries');
       const data = await r.json();
       todosLosPaises = data.data;
-    } catch (e) { console.error('Error cargando países:', e); }
+    } catch (e) { console.error(e); }
   }
 
   async function cargarHistorialVuelos() {
@@ -178,45 +211,30 @@
     try {
       const r = await fetch(`${API}/api/admin/vuelos/historial`, { credentials: 'include' });
       if (r.ok) historialVuelos = await r.json();
-    } catch (e) { console.error('Error cargando historial:', e); }
-    finally { loadingHistorialVuelos = false; }
+    } catch (e) { console.error(e); } finally { loadingHistorialVuelos = false; }
   }
 
   // ========= IMAGEN HELPER =========
   function leerImagenComoBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
+      reader.onload  = () => resolve(reader.result);
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
   }
 
   function onAvionImagenChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    leerImagenComoBase64(file).then(b64 => {
-      avionImagenBase64 = b64;
-      avionImagenPreview = b64;
-    });
+    const file = e.target.files[0]; if (!file) return;
+    leerImagenComoBase64(file).then(b64 => { avionImagenBase64 = b64; avionImagenPreview = b64; });
   }
-
   function onTripulanteImagenChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    leerImagenComoBase64(file).then(b64 => {
-      tripulanteImagenBase64 = b64;
-      tripulanteImagenPreview = b64;
-    });
+    const file = e.target.files[0]; if (!file) return;
+    leerImagenComoBase64(file).then(b64 => { tripulanteImagenBase64 = b64; tripulanteImagenPreview = b64; });
   }
-
   function onAeropuertoImagenChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    leerImagenComoBase64(file).then(b64 => {
-      aeropuertoImagenBase64 = b64;
-      aeropuertoImagenPreview = b64;
-    });
+    const file = e.target.files[0]; if (!file) return;
+    leerImagenComoBase64(file).then(b64 => { aeropuertoImagenBase64 = b64; aeropuertoImagenPreview = b64; });
   }
 
   // ========= AUTOCOMPLETE AEROPUERTO =========
@@ -232,10 +250,8 @@
     paisQueryAeropuerto = p.country;
     aeropuertoForm.pais = p.country;
     paisesSugeridosAeropuerto = [];
-    ciudadQueryAeropuerto = '';
-    aeropuertoForm.ciudad = '';
-    ciudadesSugeridasAeropuerto = [];
-    ciudadSeleccionadaAeropuerto = false;
+    ciudadQueryAeropuerto = ''; aeropuertoForm.ciudad = '';
+    ciudadesSugeridasAeropuerto = []; ciudadSeleccionadaAeropuerto = false;
   }
 
   function validarPaisAeropuertoSeleccionado() {
@@ -251,10 +267,8 @@
   }
 
   function seleccionarCiudadAeropuerto(c) {
-    ciudadQueryAeropuerto = c;
-    aeropuertoForm.ciudad = c;
-    ciudadesSugeridasAeropuerto = [];
-    ciudadSeleccionadaAeropuerto = true;
+    ciudadQueryAeropuerto = c; aeropuertoForm.ciudad = c;
+    ciudadesSugeridasAeropuerto = []; ciudadSeleccionadaAeropuerto = true;
   }
 
   function validarCiudadAeropuertoSeleccionada() {
@@ -267,19 +281,16 @@
     a.codigo.toLowerCase().includes(busquedaOrigen.toLowerCase()) ||
     a.ciudad.toLowerCase().includes(busquedaOrigen.toLowerCase())
   );
-
   $: aeropuertosFiltradosDestino = aeropuertos.filter(a =>
     a.nombre.toLowerCase().includes(busquedaDestino.toLowerCase()) ||
     a.codigo.toLowerCase().includes(busquedaDestino.toLowerCase()) ||
     a.ciudad.toLowerCase().includes(busquedaDestino.toLowerCase())
   );
-
   $: avionesFiltrados = aviones.filter(a =>
     a.nombreCompleto.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
     a.marca.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
     a.modelo.toLowerCase().includes(busquedaAvion.toLowerCase())
   );
-
   $: tripulantesFiltrados = tripulantes.filter(t => {
     const yaSeleccionado = nuevoVuelo.tripulantesSeleccionados.some(ts => ts.id === t.id);
     const coincide =
@@ -292,7 +303,10 @@
   $: aeropuertoDestino = aeropuertos.find(a => a.id === parseInt(nuevoVuelo.aeropuertoDestinoId));
   $: avionSeleccionado = aviones.find(a => a.id === parseInt(nuevoVuelo.avionId));
 
-  // Cuando cambia el avión, sugerir distribución 75/25 automáticamente
+  $: if (nuevoVuelo.fecha && !nuevoVuelo.fechaLlegada) {
+    nuevoVuelo.fechaLlegada = nuevoVuelo.fecha;
+  }
+
   $: if (avionSeleccionado && !nuevoVuelo.boletosTurista && !nuevoVuelo.boletosEjecutivo) {
     const cap = avionSeleccionado.capacidadPasajeros;
     const eje = Math.floor(cap * 0.25);
@@ -300,10 +314,13 @@
     nuevoVuelo.boletosTurista   = cap - eje;
   }
 
-  $: totalBoletosAsignados = (parseInt(nuevoVuelo.boletosTurista) || 0) +
+  $: totalBoletosAsignados = (parseInt(nuevoVuelo.boletosTurista)   || 0) +
                              (parseInt(nuevoVuelo.boletosEjecutivo) || 0);
   $: capacidadAvion = avionSeleccionado?.capacidadPasajeros ?? 0;
-  $: excedeLimite = capacidadAvion > 0 && totalBoletosAsignados > capacidadAvion;
+  $: excedeLimite   = capacidadAvion > 0 && totalBoletosAsignados > capacidadAvion;
+  $: porcentajeOcupado = capacidadAvion > 0
+    ? Math.min(100, Math.round(totalBoletosAsignados / capacidadAvion * 100))
+    : 0;
 
   // ========= VUELO HELPERS =========
   function seleccionarAeropuertoOrigen(a) {
@@ -311,126 +328,123 @@
     busquedaOrigen = `${a.codigo} - ${a.nombre}`;
     mostrarDropdownOrigen = false;
   }
-
   function seleccionarAeropuertoDestino(a) {
     nuevoVuelo.aeropuertoDestinoId = a.id;
     busquedaDestino = `${a.codigo} - ${a.nombre}`;
     mostrarDropdownDestino = false;
   }
-
   function seleccionarAvion(a) {
     nuevoVuelo.avionId = a.id;
     busquedaAvion = a.nombreCompleto;
     mostrarDropdownAvion = false;
-    // Limpiar para que el reactivo sugiera distribución según nueva capacidad
-    nuevoVuelo.boletosTurista = '';
+    nuevoVuelo.boletosTurista   = '';
     nuevoVuelo.boletosEjecutivo = '';
   }
-
   function agregarTripulante(t) {
     nuevoVuelo.tripulantesSeleccionados = [...nuevoVuelo.tripulantesSeleccionados, t];
-    busquedaTripulante = '';
-    mostrarDropdownTripulante = false;
+    busquedaTripulante = ''; mostrarDropdownTripulante = false;
   }
-
   function quitarTripulante(id) {
     nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== id);
   }
-
   function limpiarFormularioVuelo() {
     nuevoVuelo = {
       numeroVuelo: '', aeropuertoOrigenId: '', aeropuertoDestinoId: '',
       avionId: '', fecha: '', horaSalida: '', horaLlegada: '',
-      boletosTurista: '', boletosEjecutivo: '',
+      fechaLlegada: '', boletosTurista: '', boletosEjecutivo: '',
       precioTurista: '', precioEjecutiva: '', tripulantesSeleccionados: []
     };
     busquedaOrigen = ''; busquedaDestino = ''; busquedaAvion = ''; busquedaTripulante = '';
   }
 
   async function handleCrearVuelo() {
-    if (!nuevoVuelo.numeroVuelo)         { alert('Por favor ingresa el número de vuelo'); return; }
-    if (!nuevoVuelo.aeropuertoOrigenId)  { alert('Por favor selecciona el aeropuerto de origen'); return; }
-    if (!nuevoVuelo.aeropuertoDestinoId) { alert('Por favor selecciona el aeropuerto de destino'); return; }
-    if (!nuevoVuelo.avionId)             { alert('Por favor selecciona un avión'); return; }
-    if (!nuevoVuelo.fecha)               { alert('Por favor selecciona la fecha del vuelo'); return; }
-    if (!nuevoVuelo.horaSalida || !nuevoVuelo.horaLlegada) { alert('Por favor ingresa las horas'); return; }
-    if (!nuevoVuelo.boletosTurista || parseInt(nuevoVuelo.boletosTurista) < 0) { alert('Por favor ingresa los boletos de clase turista'); return; }
-    if (!nuevoVuelo.boletosEjecutivo || parseInt(nuevoVuelo.boletosEjecutivo) < 0) { alert('Por favor ingresa los boletos de clase ejecutiva'); return; }
-    if (excedeLimite) { alert(`La suma de boletos (${totalBoletosAsignados}) excede la capacidad del avión (${capacidadAvion})`); return; }
-    if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) { alert('Por favor ingresa los precios'); return; }
+    if (!nuevoVuelo.numeroVuelo)         { mostrarToast('error', 'Ingresa el número de vuelo'); return; }
+    if (!nuevoVuelo.aeropuertoOrigenId)  { mostrarToast('error', 'Selecciona el aeropuerto de origen'); return; }
+    if (!nuevoVuelo.aeropuertoDestinoId) { mostrarToast('error', 'Selecciona el aeropuerto de destino'); return; }
+    if (!nuevoVuelo.avionId)             { mostrarToast('error', 'Selecciona un avión'); return; }
+    if (!nuevoVuelo.fecha)               { mostrarToast('error', 'Selecciona la fecha del vuelo'); return; }
+    if (!nuevoVuelo.horaSalida || !nuevoVuelo.horaLlegada) { mostrarToast('error', 'Ingresa las horas de salida y llegada'); return; }
+    if (!nuevoVuelo.fechaLlegada) { mostrarToast('error', 'Ingresa la fecha de llegada'); return; }
+    if (nuevoVuelo.fechaLlegada < nuevoVuelo.fecha) { mostrarToast('error', 'La fecha de llegada no puede ser anterior a la fecha de salida'); return; }
+    if (!nuevoVuelo.boletosTurista || parseInt(nuevoVuelo.boletosTurista) < 0)   { mostrarToast('error', 'Ingresa los boletos de clase turista'); return; }
+    if (!nuevoVuelo.boletosEjecutivo || parseInt(nuevoVuelo.boletosEjecutivo) < 0) { mostrarToast('error', 'Ingresa los boletos de clase ejecutiva'); return; }
+    if (excedeLimite) { mostrarToast('error', `La suma de boletos (${totalBoletosAsignados}) excede la capacidad del avión (${capacidadAvion})`); return; }
+    if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) { mostrarToast('error', 'Ingresa los precios de ambas clases'); return; }
 
     try {
       const datos = {
-        numeroVuelo: nuevoVuelo.numeroVuelo,
+        numeroVuelo:         nuevoVuelo.numeroVuelo,
         aeropuertoOrigenId:  parseInt(nuevoVuelo.aeropuertoOrigenId),
         aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
-        avionId:      parseInt(nuevoVuelo.avionId),
-        fecha:        nuevoVuelo.fecha,
-        horaSalida:   nuevoVuelo.horaSalida,
-        horaLlegada:  nuevoVuelo.horaLlegada,
-        boletosTurista:   parseInt(nuevoVuelo.boletosTurista),
-        boletosEjecutivo: parseInt(nuevoVuelo.boletosEjecutivo),
-        precioTurista:   parseFloat(nuevoVuelo.precioTurista),
-        precioEjecutiva: parseFloat(nuevoVuelo.precioEjecutiva),
-        tripulantesIds: nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
+        avionId:             parseInt(nuevoVuelo.avionId),
+        fecha:               nuevoVuelo.fecha,
+        horaSalida:          nuevoVuelo.horaSalida,
+        horaLlegada:         nuevoVuelo.horaLlegada,
+        fechaLlegada:        nuevoVuelo.fechaLlegada || null,
+        boletosTurista:      parseInt(nuevoVuelo.boletosTurista),
+        boletosEjecutivo:    parseInt(nuevoVuelo.boletosEjecutivo),
+        precioTurista:       parseFloat(nuevoVuelo.precioTurista),
+        precioEjecutiva:     parseFloat(nuevoVuelo.precioEjecutiva),
+        tripulantesIds:      nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
       };
 
       const r = await fetch(`${API}/api/admin/vuelos`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datos)
       });
 
       if (r.ok) {
-        alert('¡Vuelo creado exitosamente!');
+        mostrarToast('success', '¡Vuelo creado exitosamente!');
         limpiarFormularioVuelo();
         await cargarHistorialVuelos();
         activeSection = 'historial';
       } else {
         const err = await r.json();
-        alert(err.message || 'Error al crear el vuelo');
+        mostrarToast('error', err.message || 'Error al crear el vuelo');
       }
     } catch (e) {
-      alert('Error de conexión al crear el vuelo');
+      mostrarToast('error', 'Error de conexión al crear el vuelo');
     }
   }
 
   async function handleCambiarRol(userId, nuevoRolId) {
     try {
       const r = await fetch(`${API}/api/usuarios/cambiar-rol`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuarioId: parseInt(userId), nuevoRolId: parseInt(nuevoRolId) })
       });
-      if (!r.ok) {
+      if (r.ok) {
+        mostrarToast('success', 'Rol actualizado correctamente');
+      } else {
         const err = await r.json();
-        alert(err.message || 'Error al cambiar el rol');
+        mostrarToast('error', err.message || 'Error al cambiar el rol');
       }
-    } catch (e) {
-      alert('Error de conexión al cambiar el rol');
-    }
+    } catch (e) { mostrarToast('error', 'Error de conexión al cambiar el rol'); }
   }
 
   async function handleCambiarEstadoVuelo(vueloId) {
-    if (!confirm('¿Estás seguro de que deseas cancelar este vuelo?')) return;
+    const ok = await mostrarConfirm(
+      '¿Cancelar este vuelo?',
+      'Se cancelarán también los boletos activos y las reservaciones asociadas.',
+      'danger'
+    );
+    if (!ok) return;
+
     try {
       const r = await fetch(`${API}/api/admin/vuelos/${vueloId}/cancelar`, {
-        method: 'PUT',
-        credentials: 'include',
+        method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
       if (r.ok) {
-        alert('Vuelo cancelado exitosamente');
+        mostrarToast('success', 'Vuelo cancelado exitosamente');
         await cargarHistorialVuelos();
       } else {
         const err = await r.json();
-        alert(err.message || 'Error al cancelar el vuelo');
+        mostrarToast('error', err.message || 'Error al cancelar el vuelo');
       }
-    } catch (e) {
-      alert('Error de conexión al cancelar el vuelo');
-    }
+    } catch (e) { mostrarToast('error', 'Error de conexión al cancelar el vuelo'); }
   }
 
   // ===== AVIONES =====
@@ -440,15 +454,12 @@
     avionImagenPreview = null; avionImagenBase64 = null;
     mostrarFormularioAvion = true;
   }
-
   function abrirFormularioEditarAvion(avion) {
     modoEdicion = true;
     avionForm = { id: avion.id, marca: avion.marca, modelo: avion.modelo, capacidadPasajeros: avion.capacidadPasajeros };
-    avionImagenBase64 = null;
-    avionImagenPreview = avion.imagenBase64 || null;
+    avionImagenBase64 = null; avionImagenPreview = avion.imagenBase64 || null;
     mostrarFormularioAvion = true;
   }
-
   function cerrarFormularioAvion() {
     mostrarFormularioAvion = false;
     avionForm = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
@@ -458,62 +469,35 @@
   async function handleGuardarAvion() {
     try {
       const payload = {
-        marca: avionForm.marca,
-        modelo: avionForm.modelo,
+        marca: avionForm.marca, modelo: avionForm.modelo,
         capacidadPasajeros: parseInt(avionForm.capacidadPasajeros),
         imagenBase64: avionImagenBase64 || null
       };
-
       const url    = modoEdicion ? `${API}/api/aviones/${avionForm.id}` : `${API}/api/aviones`;
       const method = modoEdicion ? 'PUT' : 'POST';
-
       const r = await fetch(url, {
-        method,
-        credentials: 'include',
+        method, credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       if (r.ok) {
-        alert(modoEdicion ? 'Avión actualizado correctamente' : 'Avión creado correctamente');
-        await cargarAviones();
-        cerrarFormularioAvion();
+        mostrarToast('success', modoEdicion ? 'Avión actualizado correctamente' : 'Avión creado correctamente');
+        await cargarAviones(); cerrarFormularioAvion();
       } else {
         const err = await r.json();
-        alert(err.message || 'Error al guardar el avión');
+        mostrarToast('error', err.message || 'Error al guardar el avión');
       }
-    } catch (e) {
-      alert('Error de conexión al guardar el avión');
-    }
-  }
-
-  async function handleEliminarAvion(avionId) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este avión?')) return;
-    try {
-      const r = await fetch(`${API}/api/aviones/${avionId}`, {
-        method: 'DELETE', credentials: 'include'
-      });
-      if (r.ok) {
-        alert('Avión eliminado correctamente');
-        await cargarAviones();
-      } else {
-        const err = await r.json();
-        alert(err.message || 'Error al eliminar el avión');
-      }
-    } catch (e) {
-      alert('Error de conexión al eliminar el avión');
-    }
+    } catch (e) { mostrarToast('error', 'Error de conexión al guardar el avión'); }
   }
 
   async function handleEliminarImagenAvion(avionId) {
-    if (!confirm('¿Eliminar la imagen de este avión?')) return;
+    const ok = await mostrarConfirm('¿Quitar la imagen de este avión?', '', 'warning');
+    if (!ok) return;
     try {
-      const r = await fetch(`${API}/api/aviones/${avionId}/imagen`, {
-        method: 'DELETE', credentials: 'include'
-      });
-      if (r.ok) await cargarAviones();
-      else alert('Error al eliminar la imagen');
-    } catch (e) { alert('Error de conexión'); }
+      const r = await fetch(`${API}/api/aviones/${avionId}/imagen`, { method: 'DELETE', credentials: 'include' });
+      if (r.ok) { mostrarToast('success', 'Imagen eliminada'); await cargarAviones(); }
+      else mostrarToast('error', 'Error al eliminar la imagen');
+    } catch (e) { mostrarToast('error', 'Error de conexión'); }
   }
 
   // ===== TRIPULANTES =====
@@ -523,15 +507,12 @@
     tripulanteImagenPreview = null; tripulanteImagenBase64 = null;
     mostrarFormularioTripulante = true;
   }
-
   function abrirFormularioEditarTripulante(t) {
     modoEdicion = true;
     tripulanteForm = { id: t.id, nombre: t.nombre, apellido: t.apellido, rolID: t.rolID };
-    tripulanteImagenBase64 = null;
-    tripulanteImagenPreview = t.imagenBase64 || null;
+    tripulanteImagenBase64 = null; tripulanteImagenPreview = t.imagenBase64 || null;
     mostrarFormularioTripulante = true;
   }
-
   function cerrarFormularioTripulante() {
     mostrarFormularioTripulante = false;
     tripulanteForm = { id: null, nombre: '', apellido: '', rolID: '' };
@@ -541,62 +522,35 @@
   async function handleGuardarTripulante() {
     try {
       const payload = {
-        nombre: tripulanteForm.nombre,
-        apellido: tripulanteForm.apellido,
+        nombre: tripulanteForm.nombre, apellido: tripulanteForm.apellido,
         rolID: parseInt(tripulanteForm.rolID),
         imagenBase64: tripulanteImagenBase64 || null
       };
-
       const url    = modoEdicion ? `${API}/api/tripulacion/${tripulanteForm.id}` : `${API}/api/tripulacion`;
       const method = modoEdicion ? 'PUT' : 'POST';
-
       const r = await fetch(url, {
-        method,
-        credentials: 'include',
+        method, credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       if (r.ok) {
-        alert(modoEdicion ? 'Tripulante actualizado correctamente' : 'Tripulante creado correctamente');
-        await cargarTripulantes();
-        cerrarFormularioTripulante();
+        mostrarToast('success', modoEdicion ? 'Tripulante actualizado correctamente' : 'Tripulante creado correctamente');
+        await cargarTripulantes(); cerrarFormularioTripulante();
       } else {
         const err = await r.json();
-        alert(err.message || 'Error al guardar el tripulante');
+        mostrarToast('error', err.message || 'Error al guardar el tripulante');
       }
-    } catch (e) {
-      alert('Error de conexión al guardar el tripulante');
-    }
-  }
-
-  async function handleEliminarTripulante(tripulanteId) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este tripulante?')) return;
-    try {
-      const r = await fetch(`${API}/api/tripulacion/${tripulanteId}`, {
-        method: 'DELETE', credentials: 'include'
-      });
-      if (r.ok) {
-        alert('Tripulante eliminado correctamente');
-        await cargarTripulantes();
-      } else {
-        const err = await r.json();
-        alert(err.message || 'Error al eliminar el tripulante');
-      }
-    } catch (e) {
-      alert('Error de conexión al eliminar el tripulante');
-    }
+    } catch (e) { mostrarToast('error', 'Error de conexión al guardar el tripulante'); }
   }
 
   async function handleEliminarImagenTripulante(tripulanteId) {
-    if (!confirm('¿Eliminar la foto de este tripulante?')) return;
+    const ok = await mostrarConfirm('¿Quitar la foto de este tripulante?', '', 'warning');
+    if (!ok) return;
     try {
-      const r = await fetch(`${API}/api/tripulacion/${tripulanteId}/imagen`, {
-        method: 'DELETE', credentials: 'include'
-      });
-      if (r.ok) await cargarTripulantes();
-      else alert('Error al eliminar la foto');
-    } catch (e) { alert('Error de conexión'); }
+      const r = await fetch(`${API}/api/tripulacion/${tripulanteId}/imagen`, { method: 'DELETE', credentials: 'include' });
+      if (r.ok) { mostrarToast('success', 'Foto eliminada'); await cargarTripulantes(); }
+      else mostrarToast('error', 'Error al eliminar la foto');
+    } catch (e) { mostrarToast('error', 'Error de conexión'); }
   }
 
   // ===== AEROPUERTOS =====
@@ -616,23 +570,17 @@
       const r = await fetch(`${API}/api/aeropuertos/${aeropuerto.id}`);
       if (r.ok) {
         const completo = await r.json();
-        aeropuertoForm = {
-          id: completo.id, codigo: completo.codigo, nombre: completo.nombre,
-          ciudad: completo.ciudad, pais: completo.pais
-        };
-        paisQueryAeropuerto = completo.pais;
+        aeropuertoForm = { id: completo.id, codigo: completo.codigo, nombre: completo.nombre, ciudad: completo.ciudad, pais: completo.pais };
+        paisQueryAeropuerto   = completo.pais;
         ciudadQueryAeropuerto = completo.ciudad;
-        const paisEncontrado = todosLosPaises.find(p =>
-          p.country.toLowerCase() === completo.pais.toLowerCase());
+        const paisEncontrado = todosLosPaises.find(p => p.country.toLowerCase() === completo.pais.toLowerCase());
         if (paisEncontrado) paisSeleccionadoAeropuerto = paisEncontrado;
         ciudadSeleccionadaAeropuerto = true;
-        aeropuertoImagenBase64 = null;
+        aeropuertoImagenBase64  = null;
         aeropuertoImagenPreview = completo.imagenBase64 || null;
         mostrarFormularioAeropuerto = true;
       }
-    } catch (e) {
-      alert('Error al cargar los datos del aeropuerto');
-    }
+    } catch (e) { mostrarToast('error', 'Error al cargar los datos del aeropuerto'); }
   }
 
   function cerrarFormularioAeropuerto() {
@@ -646,81 +594,97 @@
 
   async function handleGuardarAeropuerto() {
     if (!paisSeleccionadoAeropuerto || !aeropuertoForm.pais) {
-      alert('Debes seleccionar un país de la lista'); return;
+      mostrarToast('error', 'Debes seleccionar un país de la lista'); return;
     }
     if (!ciudadSeleccionadaAeropuerto || !aeropuertoForm.ciudad) {
-      alert('Debes seleccionar una ciudad de la lista'); return;
+      mostrarToast('error', 'Debes seleccionar una ciudad de la lista'); return;
     }
-
     try {
       const payload = {
-        nombre: aeropuertoForm.nombre,
-        codigo: aeropuertoForm.codigo.toUpperCase(),
-        ciudad: aeropuertoForm.ciudad,
-        pais: aeropuertoForm.pais,
+        nombre: aeropuertoForm.nombre, codigo: aeropuertoForm.codigo.toUpperCase(),
+        ciudad: aeropuertoForm.ciudad, pais: aeropuertoForm.pais,
         imagenBase64: aeropuertoImagenBase64 || null
       };
-
       const url    = modoEdicion ? `${API}/api/aeropuertos/${aeropuertoForm.id}` : `${API}/api/aeropuertos`;
       const method = modoEdicion ? 'PUT' : 'POST';
-
       const r = await fetch(url, {
-        method,
-        credentials: 'include',
+        method, credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       if (r.ok) {
-        alert(modoEdicion ? 'Aeropuerto actualizado correctamente' : 'Aeropuerto creado correctamente');
-        await cargarAeropuertos();
-        cerrarFormularioAeropuerto();
+        mostrarToast('success', modoEdicion ? 'Aeropuerto actualizado correctamente' : 'Aeropuerto creado correctamente');
+        await cargarAeropuertos(); cerrarFormularioAeropuerto();
       } else {
         const err = await r.json();
-        alert(err.message || 'Error al guardar el aeropuerto');
+        mostrarToast('error', err.message || 'Error al guardar el aeropuerto');
       }
-    } catch (e) {
-      alert('Error de conexión al guardar el aeropuerto');
-    }
-  }
-
-  async function handleEliminarAeropuerto(aeropuertoId) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este aeropuerto?')) return;
-    try {
-      const r = await fetch(`${API}/api/aeropuertos/${aeropuertoId}`, {
-        method: 'DELETE', credentials: 'include'
-      });
-      if (r.ok) {
-        alert('Aeropuerto eliminado correctamente');
-        await cargarAeropuertos();
-      } else {
-        const err = await r.json();
-        alert(err.message || 'Error al eliminar el aeropuerto');
-      }
-    } catch (e) {
-      alert('Error de conexión al eliminar el aeropuerto');
-    }
+    } catch (e) { mostrarToast('error', 'Error de conexión al guardar el aeropuerto'); }
   }
 
   async function handleEliminarImagenAeropuerto(aeropuertoId) {
-    if (!confirm('¿Eliminar la imagen de este aeropuerto?')) return;
+    const ok = await mostrarConfirm('¿Quitar la imagen de este aeropuerto?', '', 'warning');
+    if (!ok) return;
     try {
-      const r = await fetch(`${API}/api/aeropuertos/${aeropuertoId}/imagen`, {
-        method: 'DELETE', credentials: 'include'
-      });
-      if (r.ok) await cargarAeropuertos();
-      else alert('Error al eliminar la imagen');
-    } catch (e) { alert('Error de conexión'); }
+      const r = await fetch(`${API}/api/aeropuertos/${aeropuertoId}/imagen`, { method: 'DELETE', credentials: 'include' });
+      if (r.ok) { mostrarToast('success', 'Imagen eliminada'); await cargarAeropuertos(); }
+      else mostrarToast('error', 'Error al eliminar la imagen');
+    } catch (e) { mostrarToast('error', 'Error de conexión'); }
   }
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════
+     TOASTS
+════════════════════════════════════════════════════════════ -->
+<div class="toast-stack" aria-live="polite">
+  {#each toasts as toast (toast.id)}
+    <div class="toast toast--{toast.tipo}" role="alert">
+      <span class="toast__icon">
+        {#if toast.tipo === 'success'}✓{:else if toast.tipo === 'error'}✕{:else}⚠{/if}
+      </span>
+      <span class="toast__msg">{toast.mensaje}</span>
+      <button class="toast__close" on:click={() => cerrarToast(toast.id)} aria-label="Cerrar">×</button>
+    </div>
+  {/each}
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL CONFIRMACIÓN
+════════════════════════════════════════════════════════════ -->
+{#if confirmVisible}
+  <div class="modal-overlay" on:click={cancelarConfirm} role="dialog" aria-modal="true">
+    <div class="confirm-dialog" on:click|stopPropagation>
+      <div class="confirm-dialog__icon confirm-dialog__icon--{confirmTipo}">
+        {#if confirmTipo === 'danger'}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        {:else}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        {/if}
+      </div>
+      <h3 class="confirm-dialog__title">{confirmMensaje}</h3>
+      {#if confirmSubtexto}
+        <p class="confirm-dialog__sub">{confirmSubtexto}</p>
+      {/if}
+      <div class="confirm-dialog__actions">
+        <button class="confirm-dialog__btn confirm-dialog__btn--cancel" on:click={cancelarConfirm}>
+          No, cancelar
+        </button>
+        <button class="confirm-dialog__btn confirm-dialog__btn--{confirmTipo}" on:click={confirmarAccion}>
+          Sí, confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- ═══════════════════════════════════════════════════════════
+     PANEL PRINCIPAL
+════════════════════════════════════════════════════════════ -->
 <div class="admin">
   <div class="admin__container">
 
     <div class="admin__header">
-      <button class="admin__back" on:click={() => navigateTo('home')}>
-        ← Salir del Panel
-      </button>
+      <button class="admin__back" on:click={() => navigateTo('home')}>← Salir del Panel</button>
       <h1 class="admin__title">Panel de Administracion</h1>
       <p class="admin__subtitle">Gestion de vuelos, usuarios y metricas</p>
     </div>
@@ -780,14 +744,13 @@
                       <p class="loading-text">Cargando aeropuertos...</p>
                     {:else}
                       <div class="searchable-select">
-                        <input type="text" class="admin-form__input"
-                          bind:value={busquedaOrigen}
+                        <input type="text" class="admin-form__input" bind:value={busquedaOrigen}
                           on:focus={() => mostrarDropdownOrigen = true}
                           on:blur={() => setTimeout(() => mostrarDropdownOrigen = false, 200)}
                           placeholder="Buscar aeropuerto..." autocomplete="off" />
                         {#if mostrarDropdownOrigen && aeropuertosFiltradosOrigen.length > 0}
                           <div class="searchable-select__dropdown">
-                            {#each aeropuertosFiltradosOrigen.slice(0, 10) as a}
+                            {#each aeropuertosFiltradosOrigen.slice(0,10) as a}
                               <button type="button" class="searchable-select__option"
                                 on:click={() => seleccionarAeropuertoOrigen(a)}>
                                 <span class="searchable-select__option-code">{a.codigo}</span>
@@ -803,21 +766,19 @@
                       </div>
                     {/if}
                   </div>
-
                   <div class="admin-form__field">
                     <label class="admin-form__label">Aeropuerto de Destino *</label>
                     {#if loadingAeropuertos}
                       <p class="loading-text">Cargando aeropuertos...</p>
                     {:else}
                       <div class="searchable-select">
-                        <input type="text" class="admin-form__input"
-                          bind:value={busquedaDestino}
+                        <input type="text" class="admin-form__input" bind:value={busquedaDestino}
                           on:focus={() => mostrarDropdownDestino = true}
                           on:blur={() => setTimeout(() => mostrarDropdownDestino = false, 200)}
                           placeholder="Buscar aeropuerto..." autocomplete="off" />
                         {#if mostrarDropdownDestino && aeropuertosFiltradosDestino.length > 0}
                           <div class="searchable-select__dropdown">
-                            {#each aeropuertosFiltradosDestino.slice(0, 10) as a}
+                            {#each aeropuertosFiltradosDestino.slice(0,10) as a}
                               <button type="button" class="searchable-select__option"
                                 on:click={() => seleccionarAeropuertoDestino(a)}>
                                 <span class="searchable-select__option-code">{a.codigo}</span>
@@ -850,6 +811,18 @@
                       bind:value={nuevoVuelo.horaLlegada} required />
                   </div>
                 </div>
+                <div class="admin-form__row" style="margin-top:1.25rem">
+                  <div class="admin-form__field">
+                    <label for="fechaLlegada" class="admin-form__label">Fecha de Llegada *</label>
+                    <input type="date" id="fechaLlegada" class="admin-form__input"
+                      bind:value={nuevoVuelo.fechaLlegada}
+                      min={nuevoVuelo.fecha || undefined}
+                      required />
+                    {#if nuevoVuelo.fecha && nuevoVuelo.fechaLlegada && nuevoVuelo.fechaLlegada > nuevoVuelo.fecha}
+                      <p class="vuelo-nextday-note">✈ Vuelo con llegada al día siguiente o posterior</p>
+                    {/if}
+                  </div>
+                </div>
               </div>
 
               <div class="admin-form__group">
@@ -860,14 +833,13 @@
                     <p class="loading-text">Cargando aviones...</p>
                   {:else}
                     <div class="searchable-select">
-                      <input type="text" class="admin-form__input"
-                        bind:value={busquedaAvion}
+                      <input type="text" class="admin-form__input" bind:value={busquedaAvion}
                         on:focus={() => mostrarDropdownAvion = true}
                         on:blur={() => setTimeout(() => mostrarDropdownAvion = false, 200)}
                         placeholder="Buscar avion..." autocomplete="off" />
                       {#if mostrarDropdownAvion && avionesFiltrados.length > 0}
                         <div class="searchable-select__dropdown">
-                          {#each avionesFiltrados.slice(0, 10) as a}
+                          {#each avionesFiltrados.slice(0,10) as a}
                             <button type="button" class="searchable-select__option"
                               on:click={() => seleccionarAvion(a)}>
                               {#if a.imagenBase64}
@@ -888,21 +860,25 @@
               </div>
 
               <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Distribución de Asientos y Precios</h3>
+                <h3 class="admin-form__group-title">Distribucion de Asientos y Precios</h3>
 
                 {#if avionSeleccionado}
-                  <div class="avion-info" style="margin-bottom: 1.5rem;">
-                    <p class="avion-info__text">
-                      <strong>Capacidad total del avión:</strong> {avionSeleccionado.capacidadPasajeros} pasajeros
-                    </p>
-                    <p class="avion-info__text">
-                      <strong>Asignados:</strong> {totalBoletosAsignados} / {capacidadAvion}
-                      {#if excedeLimite}
-                        &nbsp;<span style="color:#ef4444;font-weight:700;">⚠ Excede la capacidad</span>
-                      {:else if totalBoletosAsignados === capacidadAvion}
-                        &nbsp;<span style="color:#16a34a;font-weight:700;">✔ Capacidad completa</span>
-                      {/if}
-                    </p>
+                  <div class="capacidad-bar">
+                    <div class="capacidad-bar__labels">
+                      <span>Capacidad total: <strong>{capacidadAvion} pax</strong></span>
+                      <span class="capacidad-bar__count"
+                        class:capacidad-bar__count--ok={totalBoletosAsignados === capacidadAvion && !excedeLimite}
+                        class:capacidad-bar__count--error={excedeLimite}>
+                        {totalBoletosAsignados} asignados
+                        {#if excedeLimite}&nbsp;⚠ Excede límite{:else if totalBoletosAsignados === capacidadAvion}&nbsp;✔ Completo{/if}
+                      </span>
+                    </div>
+                    <div class="capacidad-bar__track">
+                      <div class="capacidad-bar__fill"
+                        class:capacidad-bar__fill--error={excedeLimite}
+                        style="width:{porcentajeOcupado}%">
+                      </div>
+                    </div>
                   </div>
                 {/if}
 
@@ -910,22 +886,18 @@
                   <div class="admin-form__field">
                     <label for="boletosTurista" class="admin-form__label">Boletos Clase Turista *</label>
                     <input type="number" id="boletosTurista" class="admin-form__input" min="0"
-                      bind:value={nuevoVuelo.boletosTurista}
-                      placeholder="Ej: 180"
-                      max={capacidadAvion > 0 ? capacidadAvion : undefined}
-                      required />
+                      bind:value={nuevoVuelo.boletosTurista} placeholder="Ej: 180"
+                      max={capacidadAvion > 0 ? capacidadAvion : undefined} required />
                   </div>
                   <div class="admin-form__field">
                     <label for="boletosEjecutivo" class="admin-form__label">Boletos Clase Ejecutiva *</label>
                     <input type="number" id="boletosEjecutivo" class="admin-form__input" min="0"
-                      bind:value={nuevoVuelo.boletosEjecutivo}
-                      placeholder="Ej: 60"
-                      max={capacidadAvion > 0 ? capacidadAvion : undefined}
-                      required />
+                      bind:value={nuevoVuelo.boletosEjecutivo} placeholder="Ej: 60"
+                      max={capacidadAvion > 0 ? capacidadAvion : undefined} required />
                   </div>
                 </div>
 
-                <div class="admin-form__row" style="margin-top: 1.5rem;">
+                <div class="admin-form__row" style="margin-top:1.5rem">
                   <div class="admin-form__field">
                     <label for="precioTurista" class="admin-form__label">Precio Turista (Q) *</label>
                     <input type="number" id="precioTurista" class="admin-form__input" min="0" step="0.01"
@@ -947,14 +919,13 @@
                     <p class="loading-text">Cargando tripulantes...</p>
                   {:else}
                     <div class="searchable-select">
-                      <input type="text" class="admin-form__input"
-                        bind:value={busquedaTripulante}
+                      <input type="text" class="admin-form__input" bind:value={busquedaTripulante}
                         on:focus={() => mostrarDropdownTripulante = true}
                         on:blur={() => setTimeout(() => mostrarDropdownTripulante = false, 200)}
                         placeholder="Buscar por nombre o rol..." autocomplete="off" />
                       {#if mostrarDropdownTripulante && tripulantesFiltrados.length > 0}
                         <div class="searchable-select__dropdown">
-                          {#each tripulantesFiltrados.slice(0, 10) as t}
+                          {#each tripulantesFiltrados.slice(0,10) as t}
                             <button type="button" class="searchable-select__option"
                               on:click={() => agregarTripulante(t)}>
                               {#if t.imagenBase64}
@@ -968,7 +939,6 @@
                         </div>
                       {/if}
                     </div>
-
                     {#if nuevoVuelo.tripulantesSeleccionados.length > 0}
                       <div class="tripulantes-seleccionados">
                         <p class="tripulantes-seleccionados__title">
@@ -994,9 +964,7 @@
 
               <div class="admin-form__actions">
                 <button type="submit" class="admin-form__submit">Crear Vuelo</button>
-                <button type="button" class="admin-form__cancel" on:click={limpiarFormularioVuelo}>
-                  Limpiar
-                </button>
+                <button type="button" class="admin-form__cancel" on:click={limpiarFormularioVuelo}>Limpiar</button>
               </div>
             </form>
           </section>
@@ -1013,13 +981,10 @@
                 <span class="btn-add__icon">+</span> Nuevo Avion
               </button>
             </div>
-
             {#if loadingAviones}
               <p class="loading-text">Cargando aviones...</p>
             {:else if aviones.length === 0}
-              <div class="placeholder-card">
-                <p class="placeholder-card__text">No hay aviones registrados.</p>
-              </div>
+              <div class="placeholder-card"><p class="placeholder-card__text">No hay aviones registrados.</p></div>
             {:else}
               <table class="table">
                 <thead class="table__head">
@@ -1038,9 +1003,7 @@
                       <td class="table__cell" data-label="Imagen">
                         {#if avion.imagenBase64}
                           <img src={avion.imagenBase64} alt={avion.nombreCompleto} class="entity-thumb" />
-                        {:else}
-                          <span style="color:#9ca3af">—</span>
-                        {/if}
+                        {:else}<span style="color:#9ca3af">—</span>{/if}
                       </td>
                       <td class="table__cell" data-label="ID">{avion.id}</td>
                       <td class="table__cell" data-label="Marca">{avion.marca}</td>
@@ -1075,13 +1038,10 @@
                 <span class="btn-add__icon">+</span> Nuevo Tripulante
               </button>
             </div>
-
             {#if loadingTripulantes}
               <p class="loading-text">Cargando tripulantes...</p>
             {:else if tripulantes.length === 0}
-              <div class="placeholder-card">
-                <p class="placeholder-card__text">No hay tripulantes registrados.</p>
-              </div>
+              <div class="placeholder-card"><p class="placeholder-card__text">No hay tripulantes registrados.</p></div>
             {:else}
               <table class="table">
                 <thead class="table__head">
@@ -1099,11 +1059,8 @@
                     <tr class="table__row">
                       <td class="table__cell" data-label="Foto">
                         {#if t.imagenBase64}
-                          <img src={t.imagenBase64} alt={t.nombreCompleto}
-                            class="entity-thumb entity-thumb--circle" />
-                        {:else}
-                          <span style="color:#9ca3af">—</span>
-                        {/if}
+                          <img src={t.imagenBase64} alt={t.nombreCompleto} class="entity-thumb entity-thumb--circle" />
+                        {:else}<span style="color:#9ca3af">—</span>{/if}
                       </td>
                       <td class="table__cell" data-label="ID">{t.id}</td>
                       <td class="table__cell" data-label="Nombre">{t.nombre}</td>
@@ -1140,13 +1097,10 @@
                 <span class="btn-add__icon">+</span> Nuevo Aeropuerto
               </button>
             </div>
-
             {#if loadingAeropuertos}
               <p class="loading-text">Cargando aeropuertos...</p>
             {:else if aeropuertos.length === 0}
-              <div class="placeholder-card">
-                <p class="placeholder-card__text">No hay aeropuertos registrados.</p>
-              </div>
+              <div class="placeholder-card"><p class="placeholder-card__text">No hay aeropuertos registrados.</p></div>
             {:else}
               <table class="table">
                 <thead class="table__head">
@@ -1165,9 +1119,7 @@
                       <td class="table__cell" data-label="Imagen">
                         {#if a.imagenBase64}
                           <img src={a.imagenBase64} alt={a.nombre} class="entity-thumb" />
-                        {:else}
-                          <span style="color:#9ca3af">—</span>
-                        {/if}
+                        {:else}<span style="color:#9ca3af">—</span>{/if}
                       </td>
                       <td class="table__cell" data-label="Codigo"><strong>{a.codigo}</strong></td>
                       <td class="table__cell" data-label="Nombre">{a.nombre}</td>
@@ -1195,13 +1147,10 @@
           <section class="admin-section">
             <h2 class="admin-section__title">Historial de Vuelos</h2>
             <p class="admin-section__subtitle">Todos los vuelos del sistema</p>
-
             {#if loadingHistorialVuelos}
               <p class="loading-text">Cargando historial...</p>
             {:else if historialVuelos.length === 0}
-              <div class="placeholder-card">
-                <p class="placeholder-card__text">No hay vuelos registrados.</p>
-              </div>
+              <div class="placeholder-card"><p class="placeholder-card__text">No hay vuelos registrados.</p></div>
             {:else}
               <div class="vuelos-table">
                 <table class="table">
@@ -1210,13 +1159,14 @@
                       <th class="table__header">No. Vuelo</th>
                       <th class="table__header">Origen</th>
                       <th class="table__header">Destino</th>
-                      <th class="table__header">Fecha</th>
+                      <th class="table__header">Fecha Salida</th>
                       <th class="table__header">Salida</th>
+                      <th class="table__header">Fecha Llegada</th>
                       <th class="table__header">Llegada</th>
-                      <th class="table__header">Turista disp.</th>
-                      <th class="table__header">Ejecutiva disp.</th>
-                      <th class="table__header">Precio T.</th>
-                      <th class="table__header">Precio E.</th>
+                      <th class="table__header">Turista</th>
+                      <th class="table__header">Ejecutiva</th>
+                      <th class="table__header">P. Turista</th>
+                      <th class="table__header">P. Ejecutiva</th>
                       <th class="table__header">Estado</th>
                       <th class="table__header">Acciones</th>
                     </tr>
@@ -1227,13 +1177,20 @@
                         <td class="table__cell" data-label="No. Vuelo">{vuelo.numeroVuelo}</td>
                         <td class="table__cell" data-label="Origen">{vuelo.origen}</td>
                         <td class="table__cell" data-label="Destino">{vuelo.destino}</td>
-                        <td class="table__cell" data-label="Fecha">{vuelo.fecha}</td>
+                        <td class="table__cell" data-label="Fecha Salida">{vuelo.fecha}</td>
                         <td class="table__cell" data-label="Salida">{vuelo.horaSalida}</td>
+                        <td class="table__cell" data-label="Fecha Llegada">
+                          {#if vuelo.fechaLlegada && vuelo.fechaLlegada !== vuelo.fecha}
+                            <span class="fecha-llegada-distinta">{vuelo.fechaLlegada} <span class="nextday-tag">+día</span></span>
+                          {:else}
+                            {vuelo.fechaLlegada ?? vuelo.fecha}
+                          {/if}
+                        </td>
                         <td class="table__cell" data-label="Llegada">{vuelo.horaLlegada}</td>
-                        <td class="table__cell" data-label="Turista disp.">{vuelo.boletosTurista}</td>
-                        <td class="table__cell" data-label="Ejecutiva disp.">{vuelo.boletosEjecutivo}</td>
-                        <td class="table__cell" data-label="Precio T.">Q{vuelo.precioTurista}</td>
-                        <td class="table__cell" data-label="Precio E.">Q{vuelo.precioEjecutiva}</td>
+                        <td class="table__cell" data-label="Turista">{vuelo.boletosTurista} disp.</td>
+                        <td class="table__cell" data-label="Ejecutiva">{vuelo.boletosEjecutivo} disp.</td>
+                        <td class="table__cell" data-label="P. Turista">Q{vuelo.precioTurista}</td>
+                        <td class="table__cell" data-label="P. Ejecutiva">Q{vuelo.precioEjecutiva}</td>
                         <td class="table__cell" data-label="Estado">
                           {#if vuelo.estado === 'Activo'}
                             <span class="status-badge status-badge--activo">{vuelo.estado}</span>
@@ -1249,9 +1206,7 @@
                           <div class="table__actions">
                             {#if vuelo.estado === 'Activo' || vuelo.estado === 'En curso'}
                               <button class="table__action-btn table__action-btn--cancel"
-                                on:click={() => handleCambiarEstadoVuelo(vuelo.id)}>
-                                Cancelar
-                              </button>
+                                on:click={() => handleCambiarEstadoVuelo(vuelo.id)}>Cancelar</button>
                             {/if}
                           </div>
                         </td>
@@ -1268,13 +1223,10 @@
           <section class="admin-section">
             <h2 class="admin-section__title">Usuarios</h2>
             <p class="admin-section__subtitle">Gestion de roles de usuarios</p>
-
             {#if loadingUsuarios}
               <p class="loading-text">Cargando usuarios...</p>
             {:else if usuarios.length === 0}
-              <div class="placeholder-card">
-                <p class="placeholder-card__text">No hay usuarios registrados.</p>
-              </div>
+              <div class="placeholder-card"><p class="placeholder-card__text">No hay usuarios registrados.</p></div>
             {:else}
               <table class="table">
                 <thead class="table__head">
@@ -1294,8 +1246,7 @@
                       <td class="table__cell" data-label="Correo">{usuario.correo}</td>
                       <td class="table__cell" data-label="Username">{usuario.username}</td>
                       <td class="table__cell" data-label="Rol">
-                        <select class="rol-select"
-                          value={usuario.rolId}
+                        <select class="rol-select" value={usuario.rolId}
                           on:change={(e) => handleCambiarRol(usuario.id, e.target.value)}>
                           {#each rolesDisponibles as rol}
                             <option value={rol.id}>{rol.nombre}</option>
@@ -1309,7 +1260,6 @@
             {/if}
           </section>
 
-        <!-- ===== MÉTRICAS ===== -->
         {:else if activeSection === 'metricas'}
           <section class="admin-section">
             <h2 class="admin-section__title">Metricas</h2>
@@ -1354,9 +1304,7 @@
           {#if avionImagenPreview}
             <img src={avionImagenPreview} alt="Preview" class="img-preview" />
             <button type="button" class="table__action-btn table__action-btn--cancel"
-              on:click={() => { avionImagenPreview = null; avionImagenBase64 = null; }}>
-              Quitar imagen
-            </button>
+              on:click={() => { avionImagenPreview = null; avionImagenBase64 = null; }}>Quitar imagen</button>
           {/if}
           <input type="file" accept="image/*" class="form-input" on:change={onAvionImagenChange} />
           <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>
@@ -1403,9 +1351,7 @@
           {#if tripulanteImagenPreview}
             <img src={tripulanteImagenPreview} alt="Preview" class="img-preview img-preview--circle" />
             <button type="button" class="table__action-btn table__action-btn--cancel"
-              on:click={() => { tripulanteImagenPreview = null; tripulanteImagenBase64 = null; }}>
-              Quitar foto
-            </button>
+              on:click={() => { tripulanteImagenPreview = null; tripulanteImagenBase64 = null; }}>Quitar foto</button>
           {/if}
           <input type="file" accept="image/*" class="form-input" on:change={onTripulanteImagenChange} />
           <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>
@@ -1443,8 +1389,7 @@
           <label for="aero-pais" class="form-label">Pais *</label>
           <div class="autocomplete">
             <input type="text" id="aero-pais" class="form-input"
-              bind:value={paisQueryAeropuerto}
-              on:input={onPaisAeropuertoInput}
+              bind:value={paisQueryAeropuerto} on:input={onPaisAeropuertoInput}
               on:blur={validarPaisAeropuertoSeleccionado}
               placeholder="Escribe el pais..." autocomplete="off" required />
             {#if paisesSugeridosAeropuerto.length > 0}
@@ -1463,12 +1408,10 @@
           <label for="aero-ciudad" class="form-label">Ciudad *</label>
           <div class="autocomplete">
             <input type="text" id="aero-ciudad" class="form-input"
-              bind:value={ciudadQueryAeropuerto}
-              on:input={onCiudadAeropuertoInput}
+              bind:value={ciudadQueryAeropuerto} on:input={onCiudadAeropuertoInput}
               on:blur={validarCiudadAeropuertoSeleccionada}
               placeholder={paisSeleccionadoAeropuerto ? 'Escribe la ciudad...' : 'Primero selecciona un pais'}
-              disabled={!paisSeleccionadoAeropuerto}
-              autocomplete="off" required />
+              disabled={!paisSeleccionadoAeropuerto} autocomplete="off" required />
             {#if ciudadesSugeridasAeropuerto.length > 0}
               <ul class="autocomplete__list">
                 {#each ciudadesSugeridasAeropuerto as c}
@@ -1486,9 +1429,7 @@
           {#if aeropuertoImagenPreview}
             <img src={aeropuertoImagenPreview} alt="Preview" class="img-preview" />
             <button type="button" class="table__action-btn table__action-btn--cancel"
-              on:click={() => { aeropuertoImagenPreview = null; aeropuertoImagenBase64 = null; }}>
-              Quitar imagen
-            </button>
+              on:click={() => { aeropuertoImagenPreview = null; aeropuertoImagenBase64 = null; }}>Quitar imagen</button>
           {/if}
           <input type="file" accept="image/*" class="form-input" on:change={onAeropuertoImagenChange} />
           <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>

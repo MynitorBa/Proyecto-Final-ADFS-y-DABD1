@@ -9,6 +9,14 @@
         public DateTime Fecha { get; set; }
         public string HoraSalida { get; set; }
         public string HoraLlegada { get; set; }
+
+        /// <summary>
+        /// Fecha de llegada al destino. Puede ser distinta a Fecha en vuelos
+        /// que cruzan medianoche o cambian de zona horaria.
+        /// Es nullable: si no se envía, se trata como llegada en la misma fecha.
+        /// </summary>
+        public DateTime? FechaLlegada { get; set; }
+
         public int BoletosTurista { get; set; }
         public int BoletosEjecutivo { get; set; }
         public decimal PrecioTurista { get; set; }
