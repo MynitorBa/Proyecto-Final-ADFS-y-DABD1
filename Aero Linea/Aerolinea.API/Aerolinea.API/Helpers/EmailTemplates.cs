@@ -24,7 +24,7 @@ namespace Aerolinea.API.Helpers
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.OrigenCodigo)} → {e(boleto.DestinoCodigo)}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.Clase)}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.FechaVuelo:yyyy-MM-dd}</td>
-                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.HoraSalida:hh\\:mm}</td>
+                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.HoraSalida.Hours:D2}:{boleto.HoraSalida.Minutes:D2}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:right;font-weight:700;border-bottom:1px solid rgba(139,107,74,0.15);'>Q {boleto.Precio:N2}</td>
                 </tr>";
                 idx++;

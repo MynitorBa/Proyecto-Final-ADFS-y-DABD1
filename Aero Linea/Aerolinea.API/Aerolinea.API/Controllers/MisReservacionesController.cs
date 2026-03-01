@@ -104,6 +104,24 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+
+        // POST api/mis-reservaciones/{reservacionId}/enviar-comprobante
+        [HttpPost("{reservacionId}/enviar-comprobante")]
+        public async Task<IActionResult> EnviarComprobanteEmail(int reservacionId)
+        {
+            try
+            {
+                int usuarioId = ObtenerUsuarioId();
+                await _service.EnviarComprobanteEmail(reservacionId, usuarioId);
+                return Ok(new { message = "Comprobante enviado exitosamente al correo registrado." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
         private int ObtenerUsuarioId()
         {
             int? id = SessionHelper.GetUsuarioId(HttpContext);
