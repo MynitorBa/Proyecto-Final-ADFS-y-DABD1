@@ -12,10 +12,13 @@ namespace Aerolinea.API.Controllers
     public class MisReservacionesController : ControllerBase
     {
         private readonly GestionReservacionService _service;
+        private readonly PdfService _pdfService;
 
-        public MisReservacionesController(GestionReservacionService service)
+
+        public MisReservacionesController(GestionReservacionService service, PdfService pdfService)
         {
             _service = service;
+            _pdfService = pdfService;
         }
 
         // GET api/mis-reservaciones
@@ -43,6 +46,24 @@ namespace Aerolinea.API.Controllers
                 int usuarioId = ObtenerUsuarioId();
                 var reservacion = await _service.ObtenerDetalleReservacion(reservacionId, usuarioId);
                 return Ok(reservacion);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // GET api/mis-reservaciones/{reservacionId}/comprobante
+        [HttpGet("{reservacionId}/comprobante")]
+        public async Task<IActionResult> DescargarComprobante(int reservacionId)
+        {
+            try
+            {
+                int usuarioId = ObtenerUsuarioId();
+                var reservacion = await _service.ObtenerDetalleReservacion(reservacionId, usuarioId);
+                string html = PdfHtmlHelper.GenerarComprobante(reservacion);
+                byte[] pdf = _pdfService.GenerarPdf(html);
+                return File(pdf, "application/pdf", $"comprobante-{reservacion.NoReservacion}.pdf");
             }
             catch (Exception ex)
             {
