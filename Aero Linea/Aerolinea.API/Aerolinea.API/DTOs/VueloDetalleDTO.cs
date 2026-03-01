@@ -5,6 +5,7 @@
         public int Id { get; set; }
         public string NumeroVuelo { get; set; }
         public DateTime Fecha { get; set; }
+        public DateTime FechaLlegada { get; set; }
         public TimeSpan HoraSalida { get; set; }
         public TimeSpan HoraLlegada { get; set; }
         public int DuracionMinutos { get; set; }

@@ -12,9 +12,9 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
-        public async Task<List<VueloDetalleDTO>> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
+        public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
         {
-            // Guardar la búsqueda (usuarioId null = búsqueda anónima, TipoBusquedaID siempre 1)
+            // Guardar búsqueda
             await _repository.GuardarBusqueda(
                 origenId: dto.OrigenId,
                 destinoId: dto.DestinoId,
@@ -23,35 +23,63 @@ namespace Aerolinea.API.Services
                 usuarioId: usuarioId
             );
 
-            // Obtener resultados con disponibilidad por clase
-            var vuelos = await _repository.BuscarVuelos(
-                dto.OrigenId,
-                dto.DestinoId,
-                dto.Fecha,
-                dto.CantidadPasajeros,
-                dto.ClaseId
-            );
+            //  Vuelos directos 
+            var directos = await _repository.BuscarVuelos(
+                dto.OrigenId, dto.DestinoId,
+                dto.Fecha, dto.CantidadPasajeros, dto.ClaseId);
 
-            // Filtro de precio en memoria
+            // Filtro de precio en memoria para directos
+            directos = AplicarFiltroPrecio(directos, dto);
+
+            // Vuelos con 1 escala 
+            var conEscala = await _repository.BuscarVuelosConEscala(
+                dto.OrigenId, dto.DestinoId,
+                dto.Fecha, dto.CantidadPasajeros, dto.ClaseId);
+
+            // Filtro de precio para escalas (sobre el precio total)
             if (dto.PrecioMinimo.HasValue || dto.PrecioMaximo.HasValue)
             {
-                vuelos = vuelos.Where(v =>
+                conEscala = conEscala.Where(v =>
                 {
-                    decimal? precio = dto.ClaseId == 1 ? v.PrecioTurista
-                                    : dto.ClaseId == 2 ? v.PrecioEjecutiva
-                                    : v.PrecioTurista.HasValue && v.PrecioEjecutiva.HasValue
-                                        ? Math.Min(v.PrecioTurista.Value, v.PrecioEjecutiva.Value)
-                                        : v.PrecioTurista ?? v.PrecioEjecutiva;
+                    decimal? precio = dto.ClaseId == 1 ? v.PrecioTuristaTotal
+                                    : dto.ClaseId == 2 ? v.PrecioEjecutivaTotal
+                                    : v.PrecioTuristaTotal.HasValue && v.PrecioEjecutivaTotal.HasValue
+                                        ? Math.Min(v.PrecioTuristaTotal.Value, v.PrecioEjecutivaTotal.Value)
+                                        : v.PrecioTuristaTotal ?? v.PrecioEjecutivaTotal;
 
                     if (!precio.HasValue) return false;
                     if (dto.PrecioMinimo.HasValue && precio < dto.PrecioMinimo.Value) return false;
                     if (dto.PrecioMaximo.HasValue && precio > dto.PrecioMaximo.Value) return false;
-
                     return true;
                 }).ToList();
             }
 
-            return vuelos;
+            return new ResultadoBusquedaDTO
+            {
+                Directos = directos,
+                ConEscala = conEscala
+            };
+        }
+
+        
+        private List<VueloDetalleDTO> AplicarFiltroPrecio(List<VueloDetalleDTO> vuelos, BuscarVueloDTO dto)
+        {
+            if (!dto.PrecioMinimo.HasValue && !dto.PrecioMaximo.HasValue)
+                return vuelos;
+
+            return vuelos.Where(v =>
+            {
+                decimal? precio = dto.ClaseId == 1 ? v.PrecioTurista
+                                : dto.ClaseId == 2 ? v.PrecioEjecutiva
+                                : v.PrecioTurista.HasValue && v.PrecioEjecutiva.HasValue
+                                    ? Math.Min(v.PrecioTurista.Value, v.PrecioEjecutiva.Value)
+                                    : v.PrecioTurista ?? v.PrecioEjecutiva;
+
+                if (!precio.HasValue) return false;
+                if (dto.PrecioMinimo.HasValue && precio < dto.PrecioMinimo.Value) return false;
+                if (dto.PrecioMaximo.HasValue && precio > dto.PrecioMaximo.Value) return false;
+                return true;
+            }).ToList();
         }
     }
 }

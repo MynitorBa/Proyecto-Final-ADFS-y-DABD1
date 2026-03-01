@@ -16,14 +16,21 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // POST api/vuelos/buscar
+        // Devuelve { directos: [...], conEscala: [...] }
         [HttpPost("buscar")]
         public async Task<IActionResult> BuscarVuelos([FromBody] BuscarVueloDTO dto)
         {
-            // Si hay sesión activa obtenemos el id, si no queda null (búsqueda anónima)
-            int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
-
-            var vuelos = await _service.BuscarVuelos(dto, usuarioId);
-            return Ok(vuelos);
+            try
+            {
+                int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
+                var resultado = await _service.BuscarVuelos(dto, usuarioId);
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }
