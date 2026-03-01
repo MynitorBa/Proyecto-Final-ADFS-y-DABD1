@@ -1,9 +1,17 @@
 <script>
+  // @ts-nocheck
   import '../styles/pasajeros.css';
   import { onMount } from 'svelte';
+  import { sesion } from '../stores/sesion.js';
+
   export let navigateTo;
 
+  const API = 'https://localhost:7107';
+
+  // ── Sesión desde store (igual que Profile) ──
   let usuarioId = null;
+  const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
+
   let loading = true;
   let error = null;
   let reservacionesPendientes = [];
@@ -12,25 +20,20 @@
   let currentPassengerIndex = 0;
   let submitting = false;
 
-  // API de países y ciudades - UN ESTADO POR CADA BOLETO
   let todosLosPaises = [];
-  let paisQueries = {};           // paisQuery por cada boletoId
-  let paisesSugeridos = {};       // array de sugerencias por boletoId
-  let paisesSeleccionados = {};   // país seleccionado por boletoId
-  let ciudadQueries = {};         // ciudadQuery por cada boletoId
-  let ciudadesSugeridas = {};     // array de sugerencias por boletoId
-  let ciudadesSeleccionadas = {}; // boolean por boletoId
+  let paisQueries = {};
+  let paisesSugeridos = {};
+  let paisesSeleccionados = {};
+  let ciudadQueries = {};
+  let ciudadesSugeridas = {};
+  let ciudadesSeleccionadas = {};
 
   onMount(async () => {
-    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
-    if (!isLoggedIn) {
-      navigateTo('acceso-denegado');
+    if (!usuarioId) {
+      navigateTo('login');
       return;
     }
-    
-    usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
-    
-    // Cargar países desde la API
+
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
       const data = await res.json();
@@ -38,30 +41,30 @@
     } catch (err) {
       console.error('Error cargando países:', err);
     }
-    
+
     await cargarReservacionesPendientes();
+
+    return () => unsubscribe();
   });
 
   async function cargarReservacionesPendientes() {
     loading = true;
     error = null;
-    
+
     try {
-      const response = await fetch(`http://localhost:5190/api/mis-reservaciones/usuario/${usuarioId}`);
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar las reservaciones');
-      }
-      
+      const response = await fetch(`${API}/api/mis-reservaciones`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Error al cargar las reservaciones');
+
       const reservaciones = await response.json();
-      
-      // Filtrar solo las pendientes (estadoReservaId === 1)
+
       reservacionesPendientes = reservaciones.filter(r => r.estadoReservaId === 1);
-      
-      // Crear lista de todos los boletos de todas las reservaciones pendientes
+
       todosLosBoletos = [];
       let todosTienenPasajero = true;
-      
+
       reservacionesPendientes.forEach(reserva => {
         reserva.boletos.forEach(boleto => {
           todosLosBoletos.push({
@@ -69,41 +72,36 @@
             reservacionId: reserva.reservacionId,
             noReservacion: reserva.noReservacion
           });
-          
-          // Verificar si este boleto NO tiene pasajero asignado
           if (!boleto.pasajero || !boleto.pasajero.id) {
             todosTienenPasajero = false;
           }
         });
       });
 
-      // Si TODOS los boletos de TODAS las reservaciones pendientes ya tienen pasajero, ir a checkout
+      // Si todos ya tienen pasajero → ir al carrito
       if (todosLosBoletos.length > 0 && todosTienenPasajero) {
-        navigateTo('checkout');
+        navigateTo('carrito');
         return;
       }
 
-      // Inicializar datos de pasajeros para cada boleto
       todosLosBoletos.forEach(boleto => {
         passengerData[boleto.boletoId] = {
-          boletoId: boleto.boletoId,
-          nombre: '',
-          apellido: '',
+          boletoId:  boleto.boletoId,
+          nombre:    '',
+          apellido:  '',
           pasaporte: '',
-          telefono: '',
-          pais: '',
-          ciudad: ''
+          telefono:  '',
+          pais:      '',
+          ciudad:    ''
         };
-        
-        // Inicializar estado de autocomplete para cada boleto
-        paisQueries[boleto.boletoId] = '';
-        paisesSugeridos[boleto.boletoId] = [];
-        paisesSeleccionados[boleto.boletoId] = null;
-        ciudadQueries[boleto.boletoId] = '';
-        ciudadesSugeridas[boleto.boletoId] = [];
+        paisQueries[boleto.boletoId]          = '';
+        paisesSugeridos[boleto.boletoId]      = [];
+        paisesSeleccionados[boleto.boletoId]  = null;
+        ciudadQueries[boleto.boletoId]        = '';
+        ciudadesSugeridas[boleto.boletoId]    = [];
         ciudadesSeleccionadas[boleto.boletoId] = false;
       });
-      
+
     } catch (err) {
       console.error('Error cargando reservaciones:', err);
       error = 'No se pudieron cargar las reservaciones pendientes.';
@@ -112,37 +110,29 @@
     }
   }
 
-  // Funciones de autocomplete para País (igual que en el registro)
   function onPaisInput(boletoId) {
     const q = paisQueries[boletoId].toLowerCase();
-    paisesSugeridos[boletoId] = q.length < 2 ? [] : todosLosPaises
-      .filter(p => p.country.toLowerCase().includes(q))
-      .slice(0, 6);
+    paisesSugeridos[boletoId] = q.length < 2 ? [] :
+      todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
     paisesSugeridos = { ...paisesSugeridos };
-    
-    // Si el usuario escribe pero no selecciona de la lista
-    if (paisQueries[boletoId] && !paisesSeleccionados[boletoId]) {
+    if (paisQueries[boletoId] && !paisesSeleccionados[boletoId])
       passengerData[boletoId].pais = '';
-    }
   }
 
   function seleccionarPais(boletoId, pais) {
-    paisesSeleccionados[boletoId] = pais;
-    paisQueries[boletoId] = pais.country;
-    passengerData[boletoId].pais = pais.country;
-    paisesSugeridos[boletoId] = [];
-    
-    // Limpiar ciudad al cambiar país
-    ciudadQueries[boletoId] = '';
-    passengerData[boletoId].ciudad = '';
-    ciudadesSugeridas[boletoId] = [];
-    ciudadesSeleccionadas[boletoId] = false;
-    
-    paisQueries = { ...paisQueries };
-    paisesSeleccionados = { ...paisesSeleccionados };
-    paisesSugeridos = { ...paisesSugeridos };
-    ciudadQueries = { ...ciudadQueries };
-    ciudadesSugeridas = { ...ciudadesSugeridas };
+    paisesSeleccionados[boletoId]     = pais;
+    paisQueries[boletoId]             = pais.country;
+    passengerData[boletoId].pais      = pais.country;
+    paisesSugeridos[boletoId]         = [];
+    ciudadQueries[boletoId]           = '';
+    passengerData[boletoId].ciudad    = '';
+    ciudadesSugeridas[boletoId]       = [];
+    ciudadesSeleccionadas[boletoId]   = false;
+    paisQueries          = { ...paisQueries };
+    paisesSeleccionados  = { ...paisesSeleccionados };
+    paisesSugeridos      = { ...paisesSugeridos };
+    ciudadQueries        = { ...ciudadQueries };
+    ciudadesSugeridas    = { ...ciudadesSugeridas };
     ciudadesSeleccionadas = { ...ciudadesSeleccionadas };
   }
 
@@ -153,29 +143,23 @@
     }
   }
 
-  // Funciones de autocomplete para Ciudad (igual que en el registro)
   function onCiudadInput(boletoId) {
     if (!paisesSeleccionados[boletoId]) return;
     const q = ciudadQueries[boletoId].toLowerCase();
-    ciudadesSugeridas[boletoId] = q.length < 2 ? [] : paisesSeleccionados[boletoId].cities
-      .filter(c => c.toLowerCase().includes(q))
-      .slice(0, 6);
+    ciudadesSugeridas[boletoId] = q.length < 2 ? [] :
+      paisesSeleccionados[boletoId].cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
     ciudadesSugeridas = { ...ciudadesSugeridas };
-    
-    // Si el usuario escribe pero no selecciona de la lista
-    if (ciudadQueries[boletoId] && !ciudadesSeleccionadas[boletoId]) {
+    if (ciudadQueries[boletoId] && !ciudadesSeleccionadas[boletoId])
       passengerData[boletoId].ciudad = '';
-    }
   }
 
   function seleccionarCiudad(boletoId, ciudad) {
-    ciudadQueries[boletoId] = ciudad;
-    passengerData[boletoId].ciudad = ciudad;
-    ciudadesSugeridas[boletoId] = [];
-    ciudadesSeleccionadas[boletoId] = true;
-    
-    ciudadQueries = { ...ciudadQueries };
-    ciudadesSugeridas = { ...ciudadesSugeridas };
+    ciudadQueries[boletoId]           = ciudad;
+    passengerData[boletoId].ciudad    = ciudad;
+    ciudadesSugeridas[boletoId]       = [];
+    ciudadesSeleccionadas[boletoId]   = true;
+    ciudadQueries        = { ...ciudadQueries };
+    ciudadesSugeridas    = { ...ciudadesSugeridas };
     ciudadesSeleccionadas = { ...ciudadesSeleccionadas };
   }
 
@@ -186,70 +170,48 @@
     }
   }
 
-  function handleNext() {
-    if (currentPassengerIndex < todosLosBoletos.length - 1) {
-      currentPassengerIndex++;
-    }
-  }
-
-  function handlePrevious() {
-    if (currentPassengerIndex > 0) {
-      currentPassengerIndex--;
-    }
-  }
+  function handleNext()     { if (currentPassengerIndex < todosLosBoletos.length - 1) currentPassengerIndex++; }
+  function handlePrevious() { if (currentPassengerIndex > 0) currentPassengerIndex--; }
 
   async function handleSubmit() {
     submitting = true;
-    
+
     try {
-      // Agrupar boletos por reservación
       const boletosAgrupados = {};
       todosLosBoletos.forEach(boleto => {
-        if (!boletosAgrupados[boleto.reservacionId]) {
+        if (!boletosAgrupados[boleto.reservacionId])
           boletosAgrupados[boleto.reservacionId] = [];
-        }
         boletosAgrupados[boleto.reservacionId].push(passengerData[boleto.boletoId]);
       });
-      
-      // Hacer un PUT por cada reservación
-      const promises = [];
+
       for (const reservacionId in boletosAgrupados) {
-        const body = boletosAgrupados[reservacionId];
-        
-        // Validar que todos los campos estén completos
-        for (const pasajero of body) {
-          if (!pasajero.nombre || !pasajero.apellido || !pasajero.pasaporte || 
-              !pasajero.telefono || !pasajero.pais || !pasajero.ciudad) {
+        for (const p of boletosAgrupados[reservacionId]) {
+          if (!p.nombre || !p.apellido || !p.pasaporte || !p.telefono || !p.pais || !p.ciudad) {
             alert('Por favor completa todos los campos de todos los pasajeros');
             submitting = false;
             return;
           }
         }
-        
-        console.log('Enviando datos para reservación', reservacionId, ':', body);
-        
-        const promise = fetch(`http://localhost:5190/api/reservaciones/${reservacionId}/pasajeros`, {
+      }
+
+      const promises = Object.entries(boletosAgrupados).map(([reservacionId, body]) =>
+        fetch(`${API}/api/reservaciones/${reservacionId}/pasajeros`, {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
-        });
-        
-        promises.push(promise);
-      }
-      
-      // Esperar a que todas las peticiones terminen
+        })
+      );
+
       const responses = await Promise.all(promises);
-      
-      // Verificar que todas fueron exitosas
       const allSuccess = responses.every(r => r.ok);
-      
+
       if (allSuccess) {
-        // Navegar a checkout
-        navigateTo('checkout');
+        navigateTo('carrito');  // ← carrito, no checkout
       } else {
         alert('Hubo un error al procesar algunos datos. Por favor intenta de nuevo.');
       }
-      
+
     } catch (err) {
       console.error('Error al enviar datos de pasajeros:', err);
       alert('Error al enviar los datos. Por favor intenta de nuevo.');
@@ -258,25 +220,20 @@
     }
   }
 
-  function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
-    });
+  function formatDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
   }
 
-  function formatTime(timeSpan) {
-    if (!timeSpan) return '';
-    const parts = timeSpan.split(':');
-    return `${parts[0]}:${parts[1]}`;
+  function formatTime(t) {
+    if (!t) return '';
+    const p = t.split(':');
+    return `${p[0]}:${p[1]}`;
   }
 
-  $: currentBoleto = todosLosBoletos[currentPassengerIndex];
+  $: currentBoleto    = todosLosBoletos[currentPassengerIndex];
   $: isFirstPassenger = currentPassengerIndex === 0;
-  $: isLastPassenger = currentPassengerIndex === todosLosBoletos.length - 1;
+  $: isLastPassenger  = currentPassengerIndex === todosLosBoletos.length - 1;
 </script>
 
 <div class="datos-pasajeros">
@@ -294,8 +251,10 @@
     <div class="datos-pasajeros__content">
       {#if loading}
         <div class="datos-pasajeros__loading">Cargando reservaciones pendientes...</div>
+
       {:else if error}
         <div class="datos-pasajeros__error">{error}</div>
+
       {:else if todosLosBoletos.length === 0}
         <div class="datos-pasajeros__empty">
           <p>No tienes reservaciones pendientes por completar.</p>
@@ -303,6 +262,7 @@
             Buscar Vuelos
           </button>
         </div>
+
       {:else}
         <div class="datos-pasajeros__main">
           <div class="datos-pasajeros__notice">
@@ -310,13 +270,13 @@
             <ul class="notice__list">
               <li class="notice__item">Los nombres deben coincidir exactamente con el pasaporte</li>
               <li class="notice__item">Verifica que los datos sean correctos antes de enviar</li>
-              <li class="notice__item">Tienes 15 minutos para completar los datos antes de que expire la reserva</li>
+              <li class="notice__item">Tienes 10 minutos para completar los datos antes de que expire la reserva</li>
             </ul>
           </div>
 
           <div class="passenger-tabs">
             {#each todosLosBoletos as boleto, index}
-              <button 
+              <button
                 class="passenger-tab"
                 class:passenger-tab--active={index === currentPassengerIndex}
                 class:passenger-tab--completed={index < currentPassengerIndex}
@@ -341,7 +301,9 @@
                   {formatDate(currentBoleto.fechaVuelo)} | Salida: {formatTime(currentBoleto.horaSalida)} - Llegada: {formatTime(currentBoleto.horaLlegada)}
                 </p>
                 <p class="flight-passengers-section__info">
-                  <strong>Reservación:</strong> {currentBoleto.noReservacion} | <strong>Boleto:</strong> {currentBoleto.noBoleto} | <strong>Asiento:</strong> {currentBoleto.noAsiento}
+                  <strong>Reservación:</strong> {currentBoleto.noReservacion} |
+                  <strong>Boleto:</strong> {currentBoleto.noBoleto} |
+                  <strong>Asiento:</strong> {currentBoleto.noAsiento}
                 </p>
               </div>
 
@@ -353,11 +315,9 @@
                 <div class="passenger-form-card__content">
                   <div class="form-row">
                     <div class="form-field">
-                      <label for="nombre-{currentBoleto.boletoId}" class="form-field__label">
-                        Nombre *
-                      </label>
-                      <input 
-                        type="text" 
+                      <label for="nombre-{currentBoleto.boletoId}" class="form-field__label">Nombre *</label>
+                      <input
+                        type="text"
                         id="nombre-{currentBoleto.boletoId}"
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].nombre}
@@ -366,13 +326,10 @@
                         required
                       />
                     </div>
-
                     <div class="form-field">
-                      <label for="apellido-{currentBoleto.boletoId}" class="form-field__label">
-                        Apellido *
-                      </label>
-                      <input 
-                        type="text" 
+                      <label for="apellido-{currentBoleto.boletoId}" class="form-field__label">Apellido *</label>
+                      <input
+                        type="text"
                         id="apellido-{currentBoleto.boletoId}"
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].apellido}
@@ -385,11 +342,9 @@
 
                   <div class="form-row">
                     <div class="form-field">
-                      <label for="pasaporte-{currentBoleto.boletoId}" class="form-field__label">
-                        Número de Pasaporte *
-                      </label>
-                      <input 
-                        type="text" 
+                      <label for="pasaporte-{currentBoleto.boletoId}" class="form-field__label">Número de Pasaporte *</label>
+                      <input
+                        type="text"
                         id="pasaporte-{currentBoleto.boletoId}"
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].pasaporte}
@@ -398,13 +353,10 @@
                         required
                       />
                     </div>
-
                     <div class="form-field">
-                      <label for="telefono-{currentBoleto.boletoId}" class="form-field__label">
-                        Teléfono de contacto *
-                      </label>
-                      <input 
-                        type="tel" 
+                      <label for="telefono-{currentBoleto.boletoId}" class="form-field__label">Teléfono de contacto *</label>
+                      <input
+                        type="tel"
                         id="telefono-{currentBoleto.boletoId}"
                         class="form-field__input"
                         bind:value={passengerData[currentBoleto.boletoId].telefono}
@@ -416,13 +368,12 @@
                   </div>
 
                   <div class="form-row">
+                    <!-- País con autocomplete -->
                     <div class="form-field">
-                      <label for="pais-{currentBoleto.boletoId}" class="form-field__label">
-                        País *
-                      </label>
+                      <label for="pais-{currentBoleto.boletoId}" class="form-field__label">País *</label>
                       <div class="autocomplete">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           id="pais-{currentBoleto.boletoId}"
                           class="form-field__input"
                           bind:value={paisQueries[currentBoleto.boletoId]}
@@ -436,9 +387,9 @@
                           <ul class="autocomplete__list">
                             {#each paisesSugeridos[currentBoleto.boletoId] as pais}
                               <li class="autocomplete__item">
-                                <button 
-                                  type="button" 
-                                  class="autocomplete__btn" 
+                                <button
+                                  type="button"
+                                  class="autocomplete__btn"
                                   on:click={() => seleccionarPais(currentBoleto.boletoId, pais)}
                                 >
                                   {pais.country}
@@ -450,13 +401,12 @@
                       </div>
                     </div>
 
+                    <!-- Ciudad con autocomplete -->
                     <div class="form-field">
-                      <label for="ciudad-{currentBoleto.boletoId}" class="form-field__label">
-                        Ciudad *
-                      </label>
+                      <label for="ciudad-{currentBoleto.boletoId}" class="form-field__label">Ciudad *</label>
                       <div class="autocomplete">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           id="ciudad-{currentBoleto.boletoId}"
                           class="form-field__input"
                           bind:value={ciudadQueries[currentBoleto.boletoId]}
@@ -471,9 +421,9 @@
                           <ul class="autocomplete__list">
                             {#each ciudadesSugeridas[currentBoleto.boletoId] as ciudad}
                               <li class="autocomplete__item">
-                                <button 
-                                  type="button" 
-                                  class="autocomplete__btn" 
+                                <button
+                                  type="button"
+                                  class="autocomplete__btn"
                                   on:click={() => seleccionarCiudad(currentBoleto.boletoId, ciudad)}
                                 >
                                   {ciudad}
@@ -490,8 +440,8 @@
             </section>
 
             <div class="passengers-form__navigation">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 class="passengers-form__btn-prev"
                 on:click={handlePrevious}
                 disabled={isFirstPassenger}
@@ -504,11 +454,7 @@
                   {submitting ? 'Enviando...' : 'Confirmar Datos'}
                 </button>
               {:else}
-                <button 
-                  type="button" 
-                  class="passengers-form__btn-next"
-                  on:click={handleNext}
-                >
+                <button type="button" class="passengers-form__btn-next" on:click={handleNext}>
                   Siguiente
                 </button>
               {/if}
@@ -519,7 +465,6 @@
         <aside class="datos-pasajeros__sidebar">
           <div class="booking-recap">
             <h2 class="booking-recap__title">Resumen de reservaciones pendientes</h2>
-
             <div class="booking-recap__flights">
               {#each reservacionesPendientes as reserva}
                 <div class="recap-reservation">
@@ -527,7 +472,7 @@
                     <strong>Reservación:</strong> {reserva.noReservacion}
                   </div>
                   <div class="recap-reservation__total">
-                    Total: ${reserva.total.toFixed(2)}
+                    Total: $ {reserva.total.toFixed(2)}
                   </div>
                   <div class="recap-reservation__boletos">
                     {reserva.boletos.length} boleto{reserva.boletos.length > 1 ? 's' : ''}
@@ -535,14 +480,10 @@
                 </div>
               {/each}
             </div>
-
             <div class="booking-recap__divider"></div>
-
             <div class="booking-recap__help">
               <h3 class="booking-recap__help-title">¿Necesitas ayuda?</h3>
-              <p class="booking-recap__help-text">
-                Contáctanos al +502 2345-6789
-              </p>
+              <p class="booking-recap__help-text">Contáctanos al +502 2345-6789</p>
             </div>
           </div>
         </aside>
@@ -550,113 +491,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .datos-pasajeros__loading,
-  .datos-pasajeros__error,
-  .datos-pasajeros__empty {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.125rem;
-    color: #666;
-  }
-
-  .datos-pasajeros__error {
-    color: #dc2626;
-  }
-
-  .datos-pasajeros__empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .action-btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .action-btn--primary {
-    background-color: #c9a96e;
-    color: white;
-  }
-
-  .action-btn--primary:hover {
-    background-color: #b89860;
-  }
-
-  .recap-reservation {
-    padding: 1rem;
-    background-color: #f9f9f9;
-    border-radius: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .recap-reservation__header {
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .recap-reservation__total {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: #c9a96e;
-    margin: 0.5rem 0;
-  }
-
-  .recap-reservation__boletos {
-    font-size: 0.875rem;
-    color: #666;
-  }
-
-  /* Estilos para autocomplete */
-  .autocomplete {
-    position: relative;
-  }
-
-  .autocomplete__list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 0.375rem;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1000;
-    margin-top: 0.25rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    list-style: none;
-    padding: 0;
-  }
-
-  .autocomplete__item {
-    list-style: none;
-  }
-
-  .autocomplete__btn {
-    width: 100%;
-    text-align: left;
-    padding: 0.75rem 1rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    font-size: 0.875rem;
-  }
-
-  .autocomplete__btn:hover {
-    background-color: #f3f4f6;
-  }
-
-  .autocomplete__btn:focus {
-    background-color: #e5e7eb;
-    outline: none;
-  }
-</style>

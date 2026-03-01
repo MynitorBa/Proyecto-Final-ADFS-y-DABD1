@@ -28,6 +28,8 @@
   let loadingVuelta    = false;
   let errorIda         = '';
   let errorVuelta      = '';
+  let creandoReserva   = false;
+  let errorReserva     = '';
 
   let clases = [
     { id: 1, tipoDeClase: 'Turista' },
@@ -37,16 +39,14 @@
   let precioMax = '';
   let claseSeleccionada = '';
 
-  // Inicializar con los datos que vienen del Home directamente
   if (searchParams?.searchData) {
-    searchData  = searchParams.searchData;
-    vuelosIda   = searchParams.vuelosIda   ?? [];
+    searchData   = searchParams.searchData;
+    vuelosIda    = searchParams.vuelosIda   ?? [];
     vuelosVuelta = searchParams.vuelosVuelta ?? [];
   } else {
     errorIda = 'No se encontró información de búsqueda. Por favor, realiza una nueva búsqueda desde el inicio.';
   }
 
-  // Reaplicar filtros en memoria cuando el usuario los cambia
   async function buscarVuelosIda() {
     if (!searchData.origenId || !searchData.destinoId || !searchData.fechaIda) return;
     loadingIda = true; errorIda = '';
@@ -58,18 +58,15 @@
       if (precioMin !== '') body.precioMinimo = parseFloat(precioMin);
       if (precioMax !== '') body.precioMaximo = parseFloat(precioMax);
       if (claseSeleccionada !== '') body.claseId = parseInt(claseSeleccionada);
-
       const res = await fetch(`${API}/api/vuelos/buscar`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error();
       vuelosIda = await res.json();
-    } catch {
-      errorIda = 'No se pudieron cargar los vuelos de ida.';
-    } finally { loadingIda = false; }
+    } catch { errorIda = 'No se pudieron cargar los vuelos de ida.'; }
+    finally { loadingIda = false; }
   }
 
   async function buscarVuelosVuelta() {
@@ -83,18 +80,15 @@
       if (precioMin !== '') body.precioMinimo = parseFloat(precioMin);
       if (precioMax !== '') body.precioMaximo = parseFloat(precioMax);
       if (claseSeleccionada !== '') body.claseId = parseInt(claseSeleccionada);
-
       const res = await fetch(`${API}/api/vuelos/buscar`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error();
       vuelosVuelta = await res.json();
-    } catch {
-      errorVuelta = 'No se pudieron cargar los vuelos de vuelta.';
-    } finally { loadingVuelta = false; }
+    } catch { errorVuelta = 'No se pudieron cargar los vuelos de vuelta.'; }
+    finally { loadingVuelta = false; }
   }
 
   async function aplicarFiltros() {
@@ -128,10 +122,10 @@
   function closeModal()       { showDetailModal = false; detailFlight = null; }
 
   async function nextStep() {
+    errorReserva = '';
     if (currentView === 'outbound' && selectedOutbound.flight) {
       if (searchData.tripType === 'roundtrip') {
         currentView = 'return';
-        // Si no tenemos vuelos de vuelta todavía, buscarlos ahora
         if (vuelosVuelta.length === 0) await buscarVuelosVuelta();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
@@ -143,45 +137,59 @@
   }
 
   async function crearReserva() {
-    // Leemos del store en vez de sessionStorage
+    // ── misma lógica de acceso que Profile: leer del store ──
     const sesionActual = $sesion;
-
     if (!sesionActual) {
-      // No está logueado → ir a datos-pasajeros sin reserva creada
-      navigateTo('datos-pasajeros', {
-        outbound: selectedOutbound,
-        return:   selectedReturn.flight ? selectedReturn : null,
-        searchData
-      });
+      navigateTo('login');
       return;
     }
 
+    creandoReserva = true;
+    errorReserva = '';
+
+    const pasajeros = Number(searchData.pasajeros) || 1;
     const vuelos = [
-      { vueloId: selectedOutbound.flight.id, claseId: selectedOutbound.clase.id, cantidadPasajeros: searchData.pasajeros }
+      {
+        vueloId:           Number(selectedOutbound.flight.id),
+        claseId:           Number(selectedOutbound.clase.id),
+        cantidadPasajeros: pasajeros
+      }
     ];
     if (selectedReturn.flight) {
-      vuelos.push({ vueloId: selectedReturn.flight.id, claseId: selectedReturn.clase.id, cantidadPasajeros: searchData.pasajeros });
+      vuelos.push({
+        vueloId:           Number(selectedReturn.flight.id),
+        claseId:           Number(selectedReturn.clase.id),
+        cantidadPasajeros: pasajeros
+      });
     }
 
+    console.log('Body reserva:', JSON.stringify({ vuelos }, null, 2));
+
     try {
-      const response = await fetch(`${API}/api/reservaciones`, {
+      const res = await fetch(`${API}/api/reservaciones`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ vuelos })
       });
 
-      if (response.ok) {
-        const reservaData = await response.json();
-        navigateTo('datos-pasajeros', {
-          outbound: selectedOutbound,
-          return:   selectedReturn.flight ? selectedReturn : null,
-          searchData,
-          reserva:  reservaData
-        });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errorReserva = data.message ?? 'Error al crear la reservación.';
+        return;
       }
-    } catch (error) {
-      console.error('Error al crear reserva:', error);
+
+      // Reserva creada (estado Pendiente) → ir a datos de pasajeros
+      navigateTo('datos-pasajeros', {
+        reserva:    data,         // { reservacionId, boletos, total, minutosRestantes, ... }
+        searchData
+      });
+
+    } catch (e) {
+      errorReserva = 'Error de conexión al crear la reservación.';
+    } finally {
+      creandoReserva = false;
     }
   }
 
@@ -192,9 +200,9 @@
 
   function formatDuracion(min) {
     if (!min) return '';
-    return `${Math.floor(min/60)}h ${min%60}m`;
+    return `${Math.floor(min / 60)}h ${min % 60}m`;
   }
-  function formatHora(h) { return h ? h.substring(0,5) : ''; }
+  function formatHora(h) { return h ? h.substring(0, 5) : ''; }
 
   function getPrecioClase(vuelo, claseId) {
     if (claseId === 1) return vuelo.precioTurista;
@@ -390,13 +398,26 @@
       </div>
     </div>
 
+    {#if errorReserva}
+      <div class="vuelos-estado vuelos-estado--error" style="margin: 1rem 2rem; color: #dc2626; background: #fef2f2; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fca5a5;">
+        {errorReserva}
+      </div>
+    {/if}
+
     {#if canProceed}
       <div class="vuelos-page__next-step">
-        <button class="next-step-btn" on:click={nextStep}>
-          {currentView === 'outbound' && searchData.tripType === 'roundtrip' ? 'Seleccionar Vuelo de Vuelta' : 'Siguiente Paso'}
+        <button class="next-step-btn" on:click={nextStep} disabled={creandoReserva}>
+          {#if creandoReserva}
+            Creando reservación...
+          {:else if currentView === 'outbound' && searchData.tripType === 'roundtrip'}
+            Seleccionar Vuelo de Vuelta
+          {:else}
+            Siguiente Paso
+          {/if}
         </button>
       </div>
     {/if}
+
   </div>
 </div>
 
@@ -412,4 +433,5 @@
   .class-option__price { font-size: 1.25rem; font-weight: 700; color: #c9a96e; margin: 0.25rem 0; }
   .class-option--disabled { opacity: 0.5; cursor: not-allowed; }
   .class-option__label--unavailable { color: #dc2626; font-weight: 600; }
+  .next-step-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

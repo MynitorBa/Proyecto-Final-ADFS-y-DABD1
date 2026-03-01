@@ -196,7 +196,7 @@
     padding: 0.5rem 2rem;
     margin-bottom: 2.5rem;
     border-radius: 0 10px 0 10px;
-    margin-left: -2.5rem; /* Efecto de solapa */
+    margin-left: -2.5rem;
 }
 
 /* Form Grid */
@@ -295,7 +295,7 @@
     background: var(--secondary-color);
 }
 
-/* --- Barra Lateral de Recapitulación --- */
+/* --- Barra Lateral --- */
 .booking-recap {
     background: var(--white);
     padding: 2rem;
@@ -312,64 +312,34 @@
     font-weight: 300;
 }
 
-.recap-flight {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px dashed var(--perla-dark);
+.recap-reservation {
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
 }
 
-.recap-flight__header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
+.recap-reservation__header {
+    font-size: 0.875rem;
     margin-bottom: 0.5rem;
 }
 
-.recap-flight__type {
+.recap-reservation__total {
+    font-size: 1.125rem;
     font-weight: 700;
     color: var(--primary-color);
-    text-transform: uppercase;
+    margin: 0.5rem 0;
 }
 
-.recap-flight__number {
+.recap-reservation__boletos {
+    font-size: 0.875rem;
     color: var(--text-muted);
-}
-
-.recap-flight__route {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--secondary-color);
-    margin: 0.2rem 0;
-}
-
-.recap-flight__date, .recap-flight__passengers {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin: 0;
 }
 
 .booking-recap__divider {
     height: 1px;
     background: var(--perla-dark);
     margin: 2rem 0;
-}
-
-.booking-recap__total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.booking-recap__total-label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-
-.booking-recap__total-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--secondary-color);
 }
 
 .booking-recap__help {
@@ -389,146 +359,118 @@
     line-height: 1.4;
 }
 
+/* --- Estados de carga/error/vacío --- */
+.datos-pasajeros__loading,
+.datos-pasajeros__error,
+.datos-pasajeros__empty {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.125rem;
+    color: #666;
+}
+
+.datos-pasajeros__error { color: #dc2626; }
+
+.datos-pasajeros__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.action-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn--primary { background-color: var(--primary-color); color: white; }
+.action-btn--primary:hover { background-color: #b89860; }
+
+/* --- Autocomplete --- */
+.autocomplete { position: relative; }
+
+.autocomplete__list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 0.25rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    list-style: none;
+    padding: 0;
+}
+
+.autocomplete__item { list-style: none; }
+
+.autocomplete__btn {
+    width: 100%;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 0.875rem;
+}
+
+.autocomplete__btn:hover  { background-color: #f3f4f6; }
+.autocomplete__btn:focus  { background-color: #e5e7eb; outline: none; }
+
 /* --- Animaciones --- */
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* --- Responsive --- */
 @media (max-width: 992px) {
-    .datos-pasajeros__content {
-        grid-template-columns: 1fr;
-    }
-
-    .booking-recap {
-        position: relative;
-        top: 0;
-        margin-top: 3rem;
-    }
-
-    .passenger-tabs {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
-
-    .passenger-tab {
-        min-width: 90px;
-    }
+    .datos-pasajeros__content { grid-template-columns: 1fr; }
+    .booking-recap { position: relative; top: 0; margin-top: 3rem; }
+    .passenger-tabs { overflow-x: auto; flex-wrap: nowrap; }
+    .passenger-tab { min-width: 90px; }
 }
 
 @media (max-width: 768px) {
-    .datos-pasajeros {
-        padding: 2rem 1rem 6rem;
-    }
-
-    .datos-pasajeros__header {
-        margin-bottom: 2rem;
-        padding-left: 1rem;
-    }
-
-    .datos-pasajeros__notice {
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .passenger-tabs {
-        padding: 1rem;
-        gap: 0.4rem;
-        border-radius: 4px 20px 4px 20px;
-    }
-
-    .passenger-tab {
-        min-width: 80px;
-        padding: 0.8rem 1rem;
-    }
-
-    .passenger-tab__number {
-        font-size: 1.2rem;
-    }
-
-    .passenger-tab__label {
-        font-size: 0.65rem;
-    }
-
-    .passenger-form-card {
-        padding: 2rem;
-        border-radius: 4px 30px 4px 30px;
-    }
-
-    .passenger-form-card__title {
-        margin-left: -2rem;
-    }
-
-    .passengers-form__navigation {
-        flex-direction: column;
-    }
-
+    .datos-pasajeros { padding: 2rem 1rem 6rem; }
+    .datos-pasajeros__header { margin-bottom: 2rem; padding-left: 1rem; }
+    .datos-pasajeros__notice { padding: 1.5rem; margin-bottom: 2rem; }
+    .passenger-tabs { padding: 1rem; gap: 0.4rem; border-radius: 4px 20px 4px 20px; }
+    .passenger-tab { min-width: 80px; padding: 0.8rem 1rem; }
+    .passenger-tab__number { font-size: 1.2rem; }
+    .passenger-tab__label { font-size: 0.65rem; }
+    .passenger-form-card { padding: 2rem; border-radius: 4px 30px 4px 30px; }
+    .passenger-form-card__title { margin-left: -2rem; }
+    .passengers-form__navigation { flex-direction: column; }
     .passengers-form__btn-prev,
     .passengers-form__btn-next,
-    .passengers-form__btn-submit {
-        width: 100%;
-        padding: 1rem 2rem;
-    }
+    .passengers-form__btn-submit { width: 100%; padding: 1rem 2rem; }
 }
 
 @media (max-width: 600px) {
-    .datos-pasajeros {
-        padding: 1.5rem 0.5rem 5rem;
-    }
-
-    .datos-pasajeros__header {
-        padding-left: 0.5rem;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-    
-    .passenger-form-card {
-        padding: 1.5rem;
-    }
-    
-    .passenger-form-card__title {
-        margin-left: -1.5rem;
-        padding: 0.4rem 1.5rem;
-        font-size: 0.8rem;
-    }
-
-    .passenger-tabs {
-        padding: 0.8rem;
-    }
-
-    .passenger-tab {
-        min-width: 70px;
-        padding: 0.7rem 0.8rem;
-    }
-
-    .passenger-tab__number {
-        font-size: 1.1rem;
-    }
-
-    .passenger-tab__label {
-        font-size: 0.6rem;
-    }
-
-    .form-field__input {
-        padding: 0.8rem 1rem;
-        font-size: 0.95rem;
-    }
+    .datos-pasajeros { padding: 1.5rem 0.5rem 5rem; }
+    .datos-pasajeros__header { padding-left: 0.5rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .passenger-form-card { padding: 1.5rem; }
+    .passenger-form-card__title { margin-left: -1.5rem; padding: 0.4rem 1.5rem; font-size: 0.8rem; }
+    .passenger-tabs { padding: 0.8rem; }
+    .passenger-tab { min-width: 70px; padding: 0.7rem 0.8rem; }
+    .passenger-tab__number { font-size: 1.1rem; }
+    .passenger-tab__label { font-size: 0.6rem; }
+    .form-field__input { padding: 0.8rem 1rem; font-size: 0.95rem; }
 }
 
 @media (max-width: 480px) {
-    .passenger-tab {
-        min-width: 60px;
-        padding: 0.6rem 0.5rem;
-    }
-
-    .passenger-tab__number {
-        font-size: 1rem;
-    }
-
-    .passenger-tab__label {
-        font-size: 0.55rem;
-    }
+    .passenger-tab { min-width: 60px; padding: 0.6rem 0.5rem; }
+    .passenger-tab__number { font-size: 1rem; }
+    .passenger-tab__label { font-size: 0.55rem; }
 }
