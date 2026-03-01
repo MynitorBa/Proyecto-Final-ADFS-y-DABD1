@@ -6,5 +6,6 @@
         public string Marca { get; set; }
         public string Modelo { get; set; }
         public int CapacidadPasajeros { get; set; }
+        public string? ImagenBase64 { get; set; }
     }
 }

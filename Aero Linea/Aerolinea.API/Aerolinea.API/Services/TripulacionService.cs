@@ -6,7 +6,6 @@ namespace Aerolinea.API.Services
 {
     public class TripulacionService
     {
-
         private readonly TripulacionRepository _repository;
 
         public TripulacionService(TripulacionRepository repository)
@@ -21,7 +20,6 @@ namespace Aerolinea.API.Services
 
             foreach (var tripulante in tripulantes)
             {
-                // Obtener nombre del rol
                 var nombreRol = await _repository.ObtenerNombreRol(tripulante.RolID);
 
                 tripulantesDTO.Add(new TripulanteDTO
@@ -31,7 +29,8 @@ namespace Aerolinea.API.Services
                     Apellido = tripulante.Apellido,
                     RolID = tripulante.RolID,
                     NombreRol = nombreRol ?? "Desconocido",
-                    NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}"
+                    NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
+                    ImagenBase64 = tripulante.ImagenBase64
                 });
             }
 
@@ -45,7 +44,6 @@ namespace Aerolinea.API.Services
             if (tripulante == null)
                 return null;
 
-            // Obtener nombre del rol
             var nombreRol = await _repository.ObtenerNombreRol(tripulante.RolID);
 
             return new TripulanteDTO
@@ -55,7 +53,8 @@ namespace Aerolinea.API.Services
                 Apellido = tripulante.Apellido,
                 RolID = tripulante.RolID,
                 NombreRol = nombreRol ?? "Desconocido",
-                NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}"
+                NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
+                ImagenBase64 = tripulante.ImagenBase64
             };
         }
 
@@ -65,7 +64,8 @@ namespace Aerolinea.API.Services
             {
                 Nombre = crearTripulanteDTO.Nombre,
                 Apellido = crearTripulanteDTO.Apellido,
-                RolID = crearTripulanteDTO.RolID
+                RolID = crearTripulanteDTO.RolID,
+                ImagenBase64 = crearTripulanteDTO.ImagenBase64
             };
 
             var nuevoId = await _repository.Crear(tripulante);
@@ -77,7 +77,8 @@ namespace Aerolinea.API.Services
                 Nombre = tripulante.Nombre,
                 Apellido = tripulante.Apellido,
                 RolID = tripulante.RolID,
-                NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}"
+                NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
+                ImagenBase64 = tripulante.ImagenBase64
             };
         }
 
@@ -88,10 +89,26 @@ namespace Aerolinea.API.Services
                 Id = id,
                 Nombre = actualizarTripulanteDto.Nombre,
                 Apellido = actualizarTripulanteDto.Apellido,
-                RolID = actualizarTripulanteDto.RolID
+                RolID = actualizarTripulanteDto.RolID,
+                ImagenBase64 = actualizarTripulanteDto.ImagenBase64
             };
 
             return await _repository.Actualizar(tripulante);
+        }
+
+        public async Task<bool> Eliminar(int id)
+        {
+            return await _repository.Eliminar(id);
+        }
+
+        public async Task GuardarImagen(int tripulanteId, string imagenBase64)
+        {
+            await _repository.GuardarImagen(tripulanteId, imagenBase64);
+        }
+
+        public async Task EliminarImagen(int tripulanteId)
+        {
+            await _repository.EliminarImagen(tripulanteId);
         }
 
         public async Task<List<RolTripulacion>> ObtenerRoles()

@@ -10,6 +10,11 @@
         public int EstadoId { get; set; }
         public int AvionId { get; set; }
         public int RutaId { get; set; }
-        public int BoletosDisponibles { get; set; }
+
+        // Disponibilidad y precios almacenados directamente en el vuelo
+        public int BoletosTurista { get; set; }
+        public int BoletosEjecutivo { get; set; }
+        public decimal PrecioTurista { get; set; }
+        public decimal PrecioEjecutivo { get; set; }
     }
 }

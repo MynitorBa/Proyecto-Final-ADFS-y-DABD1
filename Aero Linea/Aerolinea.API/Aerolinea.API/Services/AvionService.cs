@@ -23,7 +23,8 @@ namespace Aerolinea.API.Services
                 Marca = a.Marca,
                 Modelo = a.Modelo,
                 CapacidadPasajeros = a.CapacidadPasajeros,
-                NombreCompleto = $"{a.Marca} {a.Modelo}"
+                NombreCompleto = $"{a.Marca} {a.Modelo}",
+                ImagenBase64 = a.ImagenBase64
             }).ToList();
         }
 
@@ -40,7 +41,8 @@ namespace Aerolinea.API.Services
                 Marca = avion.Marca,
                 Modelo = avion.Modelo,
                 CapacidadPasajeros = avion.CapacidadPasajeros,
-                NombreCompleto = $"{avion.Marca} {avion.Modelo}"
+                NombreCompleto = $"{avion.Marca} {avion.Modelo}",
+                ImagenBase64 = avion.ImagenBase64
             };
         }
 
@@ -56,13 +58,21 @@ namespace Aerolinea.API.Services
             var nuevoId = await _avionRepository.Crear(avion);
             avion.Id = nuevoId;
 
+            // Si viene imagen, guardarla
+            if (!string.IsNullOrEmpty(crearAvionDto.ImagenBase64))
+            {
+                await _avionRepository.GuardarImagen(nuevoId, crearAvionDto.ImagenBase64);
+                avion.ImagenBase64 = crearAvionDto.ImagenBase64;
+            }
+
             return new AvionDTO
             {
                 Id = avion.Id,
                 Marca = avion.Marca,
                 Modelo = avion.Modelo,
                 CapacidadPasajeros = avion.CapacidadPasajeros,
-                NombreCompleto = $"{avion.Marca} {avion.Modelo}"
+                NombreCompleto = $"{avion.Marca} {avion.Modelo}",
+                ImagenBase64 = avion.ImagenBase64
             };
         }
 
@@ -76,9 +86,30 @@ namespace Aerolinea.API.Services
                 CapacidadPasajeros = actualizarAvionDto.CapacidadPasajeros
             };
 
-            return await _avionRepository.Actualizar(avion);
+            var resultado = await _avionRepository.Actualizar(avion);
+
+            // Actualizar imagen si se proporcionó una nueva
+            if (resultado && !string.IsNullOrEmpty(actualizarAvionDto.ImagenBase64))
+            {
+                await _avionRepository.GuardarImagen(id, actualizarAvionDto.ImagenBase64);
+            }
+
+            return resultado;
         }
 
-      
+        public async Task<bool> Eliminar(int id)
+        {
+            return await _avionRepository.Eliminar(id);
+        }
+
+        public async Task GuardarImagen(int avionId, string imagenBase64)
+        {
+            await _avionRepository.GuardarImagen(avionId, imagenBase64);
+        }
+
+        public async Task EliminarImagen(int avionId)
+        {
+            await _avionRepository.EliminarImagen(avionId);
+        }
     }
 }
