@@ -26,6 +26,8 @@ builder.Services.AddScoped<AdminVueloRepository>();
 builder.Services.AddScoped<VueloAdminInternoRepository>();
 builder.Services.AddScoped<PerfilRepository>();
 builder.Services.AddScoped<FacturaRepository>();
+builder.Services.AddScoped<MetricasRepository>();
+
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -42,7 +44,7 @@ builder.Services.AddScoped<GestionReservacionService>();
 builder.Services.AddScoped<AdminVueloService>();
 builder.Services.AddScoped<PerfilService>();
 builder.Services.AddScoped<FacturaService>();
-
+builder.Services.AddScoped<MetricasService>();
 
 // Servicio de búsquedas temporales (Singleton)
 builder.Services.AddSingleton<BusquedaTemporalService>();

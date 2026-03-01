@@ -139,6 +139,131 @@
   let aeropuertoImagenPreview = null;
   let aeropuertoImagenBase64  = null;
 
+  // ========= MÉTRICAS =========
+  let metricasResumen = null;
+  let metricasListado = null;
+  let loadingMetricas = false;
+  let loadingListado  = false;
+
+  // Filtros
+  let metFechaDesde = (() => {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  })();
+  let metFechaHasta = new Date().toISOString().split('T')[0];
+  let metTipo       = '';    // '' | 'Web' | 'REST'
+  let metUsuario    = '';
+  let metPagina     = 1;
+
+  // Estado de envío de correo del listado
+  let correoExportar       = '';
+  let mostrarModalExportar = false;
+  let enviandoCorreo       = false;
+
+  async function cargarMetricas() {
+    loadingMetricas = true;
+    try {
+      const params = new URLSearchParams({
+        fechaDesde: metFechaDesde,
+        fechaHasta: metFechaHasta
+      });
+      const r = await fetch(`${API}/api/metricas/resumen?${params}`, { credentials: 'include' });
+      if (r.ok) metricasResumen = await r.json();
+      else mostrarToast('error', 'Error al cargar métricas');
+    } catch (e) {
+      mostrarToast('error', 'Error de conexión con métricas');
+    } finally {
+      loadingMetricas = false;
+    }
+  }
+
+  async function cargarListadoBusquedas(pagina = 1) {
+    loadingListado = true;
+    metPagina = pagina;
+    try {
+      const r = await fetch(`${API}/api/metricas/listado`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fechaDesde: metFechaDesde,
+          fechaHasta: metFechaHasta,
+          tipo:       metTipo     || null,
+          usuario:    metUsuario  || null,
+          pagina,
+          tamañoPagina: 25
+        })
+      });
+      if (r.ok) metricasListado = await r.json();
+      else mostrarToast('error', 'Error al cargar listado');
+    } catch (e) {
+      mostrarToast('error', 'Error de conexión');
+    } finally {
+      loadingListado = false;
+    }
+  }
+
+  function aplicarFiltrosMetricas() {
+    cargarMetricas();
+    cargarListadoBusquedas(1);
+  }
+
+  async function activarMetricas() {
+    if (!metricasResumen) await cargarMetricas();
+    if (!metricasListado) await cargarListadoBusquedas(1);
+  }
+
+  // Gráficas SVG helpers
+  function svgLinea(datos, w = 700, h = 200) {
+    if (!datos || datos.length === 0) return '';
+    const maxVal = Math.max(...datos.map(d => d.total), 1);
+    const pts = datos.map((d, i) => {
+      const x = (i / (datos.length - 1)) * (w - 40) + 20;
+      const y = h - 20 - ((d.total / maxVal) * (h - 40));
+      return `${x},${y}`;
+    });
+    return pts.join(' ');
+  }
+
+  function svgPuntos(datos, w = 700, h = 200) {
+    if (!datos || datos.length === 0) return [];
+    const maxVal = Math.max(...datos.map(d => d.total), 1);
+    return datos.map((d, i) => ({
+      x: (i / (datos.length - 1)) * (w - 40) + 20,
+      y: h - 20 - ((d.total / maxVal) * (h - 40)),
+      val: d.total,
+      label: d.fecha
+    }));
+  }
+
+  // Donut helpers
+  function calcularDonut(porTipo) {
+    if (!porTipo || porTipo.length === 0) return [];
+    const total = porTipo.reduce((s, t) => s + t.total, 0);
+    let startAngle = 0;
+    const colores = { 'Web': '#D4AF37', 'REST': '#1C1A18' };
+    return porTipo.map(t => {
+      const angle = (t.total / total) * 360;
+      const start = startAngle;
+      startAngle += angle;
+      return { ...t, angle, start, color: colores[t.tipo] || '#888', porcentaje: Math.round((t.total / total) * 100) };
+    });
+  }
+
+  function polarToXY(angleDeg, r) {
+    const rad = ((angleDeg - 90) * Math.PI) / 180;
+    return { x: 100 + r * Math.cos(rad), y: 100 + r * Math.sin(rad) };
+  }
+
+  function donutPath(startDeg, endDeg, r = 70, innerR = 40) {
+    const s = polarToXY(startDeg, r);
+    const e = polarToXY(endDeg, r);
+    const si = polarToXY(startDeg, innerR);
+    const ei = polarToXY(endDeg, innerR);
+    const large = endDeg - startDeg > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y} L ${ei.x} ${ei.y} A ${innerR} ${innerR} 0 ${large} 0 ${si.x} ${si.y} Z`;
+  }
+
   // ========= LIFECYCLE =========
   onMount(async () => {
     if (rolNombre !== 'Administrador') { navigateTo('acceso-denegado'); return; }
@@ -705,7 +830,7 @@
           <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'usuarios'}
             on:click={() => activeSection = 'usuarios'}>Usuarios</button>
           <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'metricas'}
-            on:click={() => activeSection = 'metricas'}>Metricas</button>
+            on:click={() => { activeSection = 'metricas'; activarMetricas(); }}>Metricas</button>
         </nav>
       </aside>
 
@@ -899,14 +1024,14 @@
 
                 <div class="admin-form__row" style="margin-top:1.5rem">
                   <div class="admin-form__field">
-                    <label for="precioTurista" class="admin-form__label">Precio Turista (Q) *</label>
+                    <label for="precioTurista" class="admin-form__label">Precio Turista (USD) *</label>
                     <input type="number" id="precioTurista" class="admin-form__input" min="0" step="0.01"
-                      bind:value={nuevoVuelo.precioTurista} placeholder="Ej: 1500.00" required />
+                      bind:value={nuevoVuelo.precioTurista} placeholder="Ej: 150.00" required />
                   </div>
                   <div class="admin-form__field">
-                    <label for="precioEjecutiva" class="admin-form__label">Precio Ejecutiva (Q) *</label>
+                    <label for="precioEjecutiva" class="admin-form__label">Precio Ejecutiva (USD) *</label>
                     <input type="number" id="precioEjecutiva" class="admin-form__input" min="0" step="0.01"
-                      bind:value={nuevoVuelo.precioEjecutiva} placeholder="Ej: 3000.00" required />
+                      bind:value={nuevoVuelo.precioEjecutiva} placeholder="Ej: 300.00" required />
                   </div>
                 </div>
               </div>
@@ -1189,8 +1314,8 @@
                         <td class="table__cell" data-label="Llegada">{vuelo.horaLlegada}</td>
                         <td class="table__cell" data-label="Turista">{vuelo.boletosTurista} disp.</td>
                         <td class="table__cell" data-label="Ejecutiva">{vuelo.boletosEjecutivo} disp.</td>
-                        <td class="table__cell" data-label="P. Turista">Q{vuelo.precioTurista}</td>
-                        <td class="table__cell" data-label="P. Ejecutiva">Q{vuelo.precioEjecutiva}</td>
+                        <td class="table__cell" data-label="P. Turista">${vuelo.precioTurista}</td>
+                        <td class="table__cell" data-label="P. Ejecutiva">${vuelo.precioEjecutiva}</td>
                         <td class="table__cell" data-label="Estado">
                           {#if vuelo.estado === 'Activo'}
                             <span class="status-badge status-badge--activo">{vuelo.estado}</span>
@@ -1261,13 +1386,346 @@
           </section>
 
         {:else if activeSection === 'metricas'}
-          <section class="admin-section">
-            <h2 class="admin-section__title">Metricas</h2>
-            <p class="admin-section__subtitle">Analisis y estadisticas del sistema</p>
-            <div class="placeholder-card">
-              <p class="placeholder-card__text">Esta seccion estara disponible proximamente.</p>
+          <!-- ========= MÉTRICAS DASHBOARD ========= -->
+          <section class="admin-section met-section">
+            <div class="met-header">
+              <div>
+                <h2 class="admin-section__title">Analiticos y Reportes</h2>
+                <p class="admin-section__subtitle">Registro y visualizacion de busquedas del sistema</p>
+              </div>
             </div>
+
+            <!-- ── Filtros ───────────────────────────────────────────── -->
+            <div class="met-filtros">
+              <div class="met-filtro-grupo">
+                <label class="met-label">Desde</label>
+                <input type="date" class="met-input" bind:value={metFechaDesde} />
+              </div>
+              <div class="met-filtro-grupo">
+                <label class="met-label">Hasta</label>
+                <input type="date" class="met-input" bind:value={metFechaHasta} />
+              </div>
+              <div class="met-filtro-grupo">
+                <label class="met-label">Tipo</label>
+                <select class="met-input" bind:value={metTipo}>
+                  <option value="">Todos</option>
+                  <option value="Web">Web</option>
+                  <option value="REST">REST</option>
+                </select>
+              </div>
+              <div class="met-filtro-grupo">
+                <label class="met-label">Usuario</label>
+                <input type="text" class="met-input" placeholder="username..." bind:value={metUsuario} />
+              </div>
+              <button class="met-btn-aplicar" on:click={aplicarFiltrosMetricas} disabled={loadingMetricas}>
+                {loadingMetricas ? 'Cargando...' : 'Aplicar filtros'}
+              </button>
+            </div>
+
+            {#if loadingMetricas}
+              <div class="met-loading">
+                <div class="met-spinner"></div>
+                <p>Cargando analiticos...</p>
+              </div>
+            {:else if metricasResumen}
+
+              <!-- ── KPI Cards ───────────────────────────────────────── -->
+              <div class="met-kpis">
+                <div class="met-kpi">
+                  <span class="met-kpi__icon">🔍</span>
+                  <span class="met-kpi__value">{metricasResumen.totalBusquedas.toLocaleString()}</span>
+                  <span class="met-kpi__label">Total Busquedas</span>
+                </div>
+                <div class="met-kpi met-kpi--gold">
+                  <span class="met-kpi__icon">🌐</span>
+                  <span class="met-kpi__value">{metricasResumen.totalBusquedasWeb.toLocaleString()}</span>
+                  <span class="met-kpi__label">Busquedas Web</span>
+                </div>
+                <div class="met-kpi met-kpi--dark">
+                  <span class="met-kpi__icon">⚡</span>
+                  <span class="met-kpi__value">{metricasResumen.totalBusquedasRest.toLocaleString()}</span>
+                  <span class="met-kpi__label">Busquedas REST</span>
+                </div>
+                <div class="met-kpi">
+                  <span class="met-kpi__icon">📅</span>
+                  <span class="met-kpi__value">{metricasResumen.busquedasPorDia.length}</span>
+                  <span class="met-kpi__label">Dias con actividad</span>
+                </div>
+              </div>
+
+              <!-- ── Gráficas ────────────────────────────────────────── -->
+              <div class="met-graficas">
+
+                <!-- Gráfica 1: Línea temporal de búsquedas por día -->
+                <div class="met-grafica met-grafica--wide">
+                  <h3 class="met-grafica__titulo">Busquedas por dia</h3>
+                  <p class="met-grafica__subtitulo">Volumen diario de busquedas en el periodo seleccionado</p>
+                  {#if metricasResumen.busquedasPorDia.length === 0}
+                    <div class="met-empty">Sin datos en el periodo seleccionado</div>
+                  {:else}
+                    {@const datos = metricasResumen.busquedasPorDia}
+                    {@const maxVal = Math.max(...datos.map(d => d.total), 1)}
+                    {@const W = 700} {@const H = 200}
+                    <div class="met-svg-wrap">
+                      <svg viewBox="0 0 {W} {H}" class="met-svg" preserveAspectRatio="xMidYMid meet">
+                        <!-- Grid lines -->
+                        {#each [0.25, 0.5, 0.75, 1] as pct}
+                          <line x1="20" y1={H - 20 - pct * (H - 40)} x2={W - 10} y2={H - 20 - pct * (H - 40)}
+                            stroke="#EBE6E0" stroke-width="1" />
+                          <text x="14" y={H - 20 - pct * (H - 40) + 4} font-size="9" fill="#b8b0a5" text-anchor="end">
+                            {Math.round(maxVal * pct)}
+                          </text>
+                        {/each}
+                        <!-- Área rellena -->
+                        <defs>
+                          <linearGradient id="gradLinea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.3"/>
+                            <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+                          </linearGradient>
+                        </defs>
+                        {#if datos.length > 1}
+                          {@const pts = datos.map((d,i) => {
+                            const x = (i/(datos.length-1))*(W-40)+20;
+                            const y = H-20-((d.total/maxVal)*(H-40));
+                            return `${x},${y}`;
+                          })}
+                          <polygon
+                            points={`20,${H-20} ${pts.join(' ')} ${(W-20)},${H-20}`}
+                            fill="url(#gradLinea)" />
+                          <polyline points={pts.join(' ')}
+                            fill="none" stroke="#D4AF37" stroke-width="2.5"
+                            stroke-linejoin="round" stroke-linecap="round" />
+                          <!-- Puntos interactivos -->
+                          {#each datos as d, i}
+                            {@const x = (i/(datos.length-1))*(W-40)+20}
+                            {@const y = H-20-((d.total/maxVal)*(H-40))}
+                            <circle cx={x} cy={y} r="4" fill="#D4AF37" stroke="white" stroke-width="2">
+                              <title>{d.fecha}: {d.total} busquedas</title>
+                            </circle>
+                          {/each}
+                        {:else}
+                          <!-- Solo 1 punto -->
+                          <circle cx={W/2} cy={H/2} r="6" fill="#D4AF37" stroke="white" stroke-width="2" />
+                        {/if}
+                        <!-- Eje X: etiquetas de fechas (cada ~5) -->
+                        {#each datos as d, i}
+                          {#if i % Math.ceil(datos.length / 6) === 0 || i === datos.length - 1}
+                            {@const x = datos.length > 1 ? (i/(datos.length-1))*(W-40)+20 : W/2}
+                            <text x={x} y={H - 4} font-size="8" fill="#b8b0a5" text-anchor="middle">
+                              {d.fecha.slice(5)}
+                            </text>
+                          {/if}
+                        {/each}
+                      </svg>
+                    </div>
+                    <div class="met-grafica__leyenda">
+                      <span class="met-leyenda-dot" style="background:#D4AF37"></span>
+                      Busquedas totales por dia
+                    </div>
+                  {/if}
+                </div>
+
+                <!-- Gráfica 2: Rutas más buscadas (barras horizontales) -->
+                <div class="met-grafica">
+                  <h3 class="met-grafica__titulo">Rutas mas buscadas</h3>
+                  <p class="met-grafica__subtitulo">Top 10 rutas con mayor demanda</p>
+                  {#if metricasResumen.rutasMasBuscadas.length === 0}
+                    <div class="met-empty">Sin datos en el periodo seleccionado</div>
+                  {:else}
+                    {@const maxRuta = Math.max(...metricasResumen.rutasMasBuscadas.map(r => r.total), 1)}
+                    <div class="met-barras">
+                      {#each metricasResumen.rutasMasBuscadas as ruta, i}
+                        <div class="met-barra-row">
+                          <div class="met-barra-label">
+                            <span class="met-barra-rank">#{i+1}</span>
+                            <span class="met-barra-ruta">{ruta.origenCodigo} → {ruta.destinoCodigo}</span>
+                          </div>
+                          <div class="met-barra-track">
+                            <div class="met-barra-fill"
+                              style="width:{(ruta.total/maxRuta)*100}%;
+                                     background: {i < 3 ? '#D4AF37' : i < 6 ? '#C9A961' : '#b8a080'}">
+                            </div>
+                          </div>
+                          <span class="met-barra-val">{ruta.total}</span>
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+
+                <!-- Gráfica 3: Donut Web vs REST -->
+                <div class="met-grafica met-grafica--donut">
+                  <h3 class="met-grafica__titulo">Canal de busqueda</h3>
+                  <p class="met-grafica__subtitulo">Proporcion Web vs REST</p>
+                  {#if metricasResumen.busquedasPorTipo.length === 0}
+                    <div class="met-empty">Sin datos en el periodo seleccionado</div>
+                  {:else}
+                    {@const segmentos = calcularDonut(metricasResumen.busquedasPorTipo)}
+                    <div class="met-donut-wrap">
+                      <svg viewBox="0 0 200 200" class="met-donut-svg">
+                        {#each segmentos as seg}
+                          <path
+                            d={donutPath(seg.start, seg.start + seg.angle)}
+                            fill={seg.color}
+                            stroke="white"
+                            stroke-width="2">
+                            <title>{seg.tipo}: {seg.total} ({seg.porcentaje}%)</title>
+                          </path>
+                        {/each}
+                        <!-- Texto central -->
+                        <text x="100" y="97" text-anchor="middle" font-size="22" font-weight="700" fill="#1C1A18">
+                          {metricasResumen.totalBusquedas}
+                        </text>
+                        <text x="100" y="113" text-anchor="middle" font-size="9" fill="#b8b0a5">TOTAL</text>
+                      </svg>
+                      <div class="met-donut-leyenda">
+                        {#each segmentos as seg}
+                          <div class="met-ley-item">
+                            <span class="met-leyenda-dot" style="background:{seg.color}"></span>
+                            <span class="met-ley-tipo">{seg.tipo}</span>
+                            <span class="met-ley-num">{seg.total} <em>({seg.porcentaje}%)</em></span>
+                          </div>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+
+              </div>
+              <!-- /Gráficas -->
+            {/if}
+
+            <!-- ── Listado de datos ───────────────────────────────────── -->
+            <div class="met-listado">
+              <div class="met-listado__header">
+                <h3 class="met-listado__titulo">Registro de busquedas</h3>
+                <button class="met-btn-exportar" on:click={() => mostrarModalExportar = true}>
+                  Exportar por correo
+                </button>
+              </div>
+
+              {#if loadingListado}
+                <div class="met-loading met-loading--sm">
+                  <div class="met-spinner"></div>
+                  <p>Cargando listado...</p>
+                </div>
+              {:else if metricasListado}
+                <div class="met-tabla-wrap">
+                  <table class="table">
+                    <thead class="table__head">
+                      <tr>
+                        <th class="table__header">#</th>
+                        <th class="table__header">Ruta</th>
+                        <th class="table__header">Fecha Salida</th>
+                        <th class="table__header">Pasajeros</th>
+                        <th class="table__header">Usuario</th>
+                        <th class="table__header">Tipo</th>
+                        <th class="table__header">Fecha Busqueda</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {#each metricasListado.registros as r}
+                        <tr class="table__row">
+                          <td class="table__cell">{r.id}</td>
+                          <td class="table__cell">
+                            <span class="met-ruta-badge">{r.origenCodigo}</span>
+                            <span class="met-ruta-arrow">→</span>
+                            <span class="met-ruta-badge">{r.destinoCodigo}</span>
+                          </td>
+                          <td class="table__cell">{r.fechaSalida}</td>
+                          <td class="table__cell">{r.cantidadPersonas}</td>
+                          <td class="table__cell">{r.usuario ?? '— anon —'}</td>
+                          <td class="table__cell">
+                            <span class="status-badge status-badge--{r.tipo === 'Web' ? 'activo' : 'cancelado'}">
+                              {r.tipo}
+                            </span>
+                          </td>
+                          <td class="table__cell">{r.fechaBusqueda}</td>
+                        </tr>
+                      {/each}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Paginado -->
+                {#if metricasListado.totalPaginas > 1}
+                  <div class="met-paginado">
+                    <button class="met-pag-btn" disabled={metricasListado.paginaActual <= 1}
+                      on:click={() => cargarListadoBusquedas(metricasListado.paginaActual - 1)}>
+                      ← Anterior
+                    </button>
+                    <span class="met-pag-info">
+                      Pagina {metricasListado.paginaActual} de {metricasListado.totalPaginas}
+                      &nbsp;·&nbsp; {metricasListado.totalRegistros} registros
+                    </span>
+                    <button class="met-pag-btn"
+                      disabled={metricasListado.paginaActual >= metricasListado.totalPaginas}
+                      on:click={() => cargarListadoBusquedas(metricasListado.paginaActual + 1)}>
+                      Siguiente →
+                    </button>
+                  </div>
+                {:else}
+                  <p class="met-pag-info" style="text-align:right;padding:1rem 0">
+                    {metricasListado.totalRegistros} registros encontrados
+                  </p>
+                {/if}
+              {:else}
+                <div class="met-empty">Aplica filtros para ver el listado</div>
+              {/if}
+            </div>
+
           </section>
+
+          <!-- Modal exportar por correo -->
+          {#if mostrarModalExportar}
+            <div class="modal-overlay" on:click={() => mostrarModalExportar = false}>
+              <div class="modal" on:click|stopPropagation style="max-width:420px">
+                <div class="modal__header">
+                  <h3 class="modal__title">Exportar listado</h3>
+                  <button class="modal__close" on:click={() => mostrarModalExportar = false}>×</button>
+                </div>
+                <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
+                  <p style="color:var(--text-muted);font-size:0.9rem">
+                    El listado filtrado actual se enviara como archivo adjunto al correo indicado.
+                  </p>
+                  <label class="met-label">Correo electronico</label>
+                  <input type="email" class="met-input" placeholder="correo@ejemplo.com"
+                    bind:value={correoExportar} />
+                  <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:0.5rem">
+                    <button class="btn-secondary" on:click={() => mostrarModalExportar = false}>Cancelar</button>
+                    <button class="btn-primary" disabled={enviandoCorreo || !correoExportar}
+                      on:click={async () => {
+                        enviandoCorreo = true;
+                        try {
+                          const r = await fetch(`${API}/api/metricas/exportar-correo`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              correo: correoExportar,
+                              fechaDesde: metFechaDesde,
+                              fechaHasta: metFechaHasta,
+                              tipo: metTipo || null,
+                              usuario: metUsuario || null
+                            })
+                          });
+                          if (r.ok) {
+                            mostrarToast('success', `Listado enviado a ${correoExportar}`);
+                            mostrarModalExportar = false;
+                            correoExportar = '';
+                          } else {
+                            mostrarToast('error', 'No se pudo enviar el correo');
+                          }
+                        } catch { mostrarToast('error', 'Error de conexion'); }
+                        finally { enviandoCorreo = false; }
+                      }}>
+                      {enviandoCorreo ? 'Enviando...' : 'Enviar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/if}
         {/if}
 
       </main>
