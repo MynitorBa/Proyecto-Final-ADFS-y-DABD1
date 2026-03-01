@@ -1,15 +1,64 @@
-/* Global / Utilities */
-:global(.dv-backdrop) {
+/* ── Backdrop modal global ── */
+:global(body.modal-open) {
+    overflow: hidden !important;
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 99999 !important;
-    background-color: rgba(0, 0, 0, 0.5);
+    width: 100% !important;
+    top: var(--scroll-y, 0) !important;
 }
 
-/* Página de Vuelos */
+:global(.dv-backdrop) {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+    width: 100vw !important; height: 100vh !important;
+    z-index: 99999 !important;
+    background-color: rgba(0,0,0,0.55);
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 1.5rem !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+:global(.dv-modal) {
+    background: var(--white, #fff) !important;
+    border-radius: 4px 24px 4px 24px !important;
+    width: 100% !important;
+    max-width: 1100px !important;
+    max-height: calc(100vh - 3rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3) !important;
+}
+
+/* Header fijo del modal */
+:global(.dv-header) {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 1.2rem 2rem !important;
+    border-bottom: 1px solid #ede9e1 !important;
+    background: #fff !important;
+    flex-shrink: 0 !important;
+    border-radius: 4px 24px 0 0 !important;
+}
+
+/* Hero fijo del modal */
+:global(.dv-hero) {
+    background: linear-gradient(135deg, #1c1a18 0%, #2c2a1c 60%, #3d3010 100%) !important;
+    flex-shrink: 0 !important;
+}
+
+/* Body con scroll interno */
+:global(.dv-body) {
+    overflow-y: auto !important;
+    flex: 1 !important;
+    overscroll-behavior: contain !important;
+}
+
+
+/* ── Página ── */
 .vuelos-page {
     width: 100%;
     min-height: 100vh;
@@ -18,7 +67,7 @@
 }
 .vuelos-page__container { max-width: 1400px; margin: 0 auto; }
 
-/* Header */
+/* ── Header ── */
 .vuelos-page__header { margin-bottom: 3rem; }
 .vuelos-page__back {
     background: transparent;
@@ -36,7 +85,7 @@
 }
 .vuelos-page__back:hover { border-color: var(--primary-color); color: var(--primary-color); }
 
-/* Resumen de Búsqueda */
+/* ── Resumen búsqueda ── */
 .search-summary {
     background: var(--white);
     padding: 2rem;
@@ -49,12 +98,13 @@
 .search-summary__origin,
 .search-summary__destination { font-size: 1.5rem; font-weight: 300; color: var(--secondary-color); }
 .search-summary__arrow { color: var(--primary-color); font-size: 1.5rem; }
-.search-summary__details { display: flex; gap: 3rem; }
+.search-summary__details { display: flex; gap: 3rem; flex-wrap: wrap; }
 .search-summary__item { display: flex; flex-direction: column; gap: 0.3rem; }
 .search-summary__label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .search-summary__value { font-size: 0.95rem; font-weight: 500; color: var(--secondary-color); }
+.search-summary__value--mode { color: var(--primary-color); font-weight: 700; }
 
-/* Indicador de Pasos */
+/* ── Step indicator ── */
 .step-indicator {
     display: flex; align-items: center; justify-content: center;
     gap: 2rem; padding: 2rem; background: #fcfbf9; border-radius: 20px;
@@ -68,16 +118,16 @@
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; transition: var(--transition);
 }
-.step-indicator__item--active .step-indicator__number { background: var(--primary-color); transform: scale(1.1); }
+.step-indicator__item--active    .step-indicator__number { background: var(--primary-color); transform: scale(1.1); }
 .step-indicator__item--completed .step-indicator__number { background: var(--secondary-color); }
 .step-indicator__label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-.step-indicator__line { width: 80px; height: 2px; background: var(--perla-dark); }
+.step-indicator__line  { width: 80px; height: 2px; background: var(--perla-dark); }
 
-/* Layout Principal */
+/* ── Layout ── */
 .vuelos-page__content { display: grid; grid-template-columns: 300px 1fr; gap: 2.5rem; align-items: start; }
-
-/* Panel de Filtros */
 .vuelos-page__filters { position: sticky; top: 7rem; }
+
+/* ── Panel filtros ── */
 .filters-panel {
     background: var(--white); padding: 2rem;
     border-radius: 4px 32px 4px 32px;
@@ -85,9 +135,18 @@
     border-top: 3px solid var(--primary-color);
 }
 .filters-panel__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--perla-dark); }
-.filters-panel__title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary-color); }
-.filters-panel__clear { background: transparent; border: none; color: var(--primary-color); font-size: 0.75rem; cursor: pointer; text-decoration: underline; transition: var(--transition); font-family: inherit; }
+.filters-panel__title  { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary-color); }
+.filters-panel__clear  { background: transparent; border: none; color: var(--primary-color); font-size: 0.75rem; cursor: pointer; text-decoration: underline; transition: var(--transition); font-family: inherit; }
 .filters-panel__clear:hover { color: var(--secondary-color); }
+.filters-panel__apply {
+    width: 100%; padding: 0.75rem;
+    background-color: var(--primary-color); color: white;
+    border: none; border-radius: 0.5rem;
+    font-weight: 600; cursor: pointer; margin-top: 1rem;
+    transition: background-color 0.2s; font-family: inherit; font-size: 0.85rem;
+}
+.filters-panel__apply:hover { background-color: #b07d2e; }
+
 .filter-group { margin-bottom: 1.5rem; }
 .filter-group__label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
 .filter-group__input,
@@ -96,20 +155,93 @@
 .filter-group__select-element:focus { outline: none; border-color: var(--primary-color); background: var(--white); }
 .filter-group__price-range { display: flex; align-items: center; gap: 0.5rem; }
 .filter-group__price-range input { flex: 1; }
-.filter-group__price-range span { color: var(--text-muted); }
+.filter-group__price-range span  { color: var(--text-muted); }
+.filter-group__select { width: 100%; }
 
-/* Lista de Vuelos */
+/* ── Filtro tipo de vuelo en panel ── */
+.filter-flight-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+.filter-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid var(--perla-dark);
+    border-radius: 6px 0 6px 0;
+    background: #fcfbf9;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+}
+.filter-mode-btn:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--secondary-color);
+    background: var(--white);
+}
+.filter-mode-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.filter-mode-btn--active {
+    background: var(--white) !important;
+    color: var(--secondary-color) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: inset 3px 0 0 var(--primary-color);
+}
+.filter-mode-btn--escala.filter-mode-btn--active {
+    border-color: #3b4f6b !important;
+    box-shadow: inset 3px 0 0 #3b4f6b;
+}
+.filter-mode-btn__icon { font-size: 1rem; flex-shrink: 0; }
+.filter-mode-btn__text { flex: 1; }
+.filter-mode-btn__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--perla-dark);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0 5px;
+}
+.filter-mode-btn--active .filter-mode-btn__count { background: var(--primary-color); color: white; }
+.filter-mode-btn--escala.filter-mode-btn--active .filter-mode-btn__count { background: #3b4f6b; color: white; }
+
+/* ── Main area ── */
 .vuelos-page__main { width: 100%; }
 .flights-header { margin-bottom: 2rem; border-left: 4px solid var(--primary-color); padding-left: 1.5rem; }
-.flights-header__title { font-size: 1.8rem; font-weight: 300; color: var(--secondary-color); margin: 0 0 0.5rem 0; }
+.flights-header__title    { font-size: 1.8rem; font-weight: 300; color: var(--secondary-color); margin: 0 0 0.5rem 0; }
 .flights-header__subtitle { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
 .flights-list { display: flex; flex-direction: column; gap: 1.5rem; }
 
-/* Estado vacío */
-.vuelos-estado { text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; border: 1px dashed var(--perla-dark); border-radius: 4px 24px 4px 24px; background: #fcfbf9; }
-.vuelos-estado--info { border-color: var(--primary-color); border-style: solid; color: var(--secondary-color); font-weight: 400; letter-spacing: 0.3px; text-transform: none; font-size: 0.88rem; }
+/* ── Estado vacío / error ── */
+.vuelos-estado {
+    text-align: center; padding: 4rem 2rem; color: var(--text-muted);
+    font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;
+    border: 1px dashed var(--perla-dark); border-radius: 4px 24px 4px 24px; background: #fcfbf9;
+}
+.vuelos-estado--info {
+    border-color: var(--primary-color); border-style: solid; color: var(--secondary-color);
+    font-weight: 400; letter-spacing: 0.3px; text-transform: none; font-size: 0.88rem;
+}
+.vuelos-error-reserva {
+    margin: 1rem 2rem; color: #dc2626; background: #fef2f2;
+    padding: 1rem; border-radius: 0.5rem; border: 1px solid #fca5a5;
+    font-size: 0.88rem;
+}
 
-/* Flight Card */
+/* ── Flight Card ── */
 .flight-card {
     background: var(--white);
     border-radius: 4px 28px 4px 28px;
@@ -129,124 +261,143 @@
     border-color: var(--primary-color) !important;
     box-shadow: 0 16px 42px rgba(176,125,46,0.18) !important;
 }
-
-.flight-card__deco {
-    position: absolute;
-    top: 0; right: 0;
-    width: 200px; height: 100%;
-    pointer-events: none;
-    opacity: 0.55;
-    transition: opacity 0.3s;
+.flight-card--escala.flight-card--selected {
+    border-color: #3b4f6b !important;
+    box-shadow: 0 16px 42px rgba(59,79,107,0.18) !important;
 }
-.flight-card:hover .flight-card__deco { opacity: 0.85; }
-.flight-card--selected .flight-card__deco { opacity: 1; }
-
+.flight-card__deco {
+    position: absolute; top: 0; right: 0;
+    width: 200px; height: 100%;
+    pointer-events: none; opacity: 0.55; transition: opacity 0.3s;
+}
+.flight-card:hover          .flight-card__deco { opacity: 0.85; }
+.flight-card--selected      .flight-card__deco { opacity: 1; }
 .flight-card__content {
     padding: 1.75rem 2rem;
     display: flex; flex-direction: column; gap: 1.2rem;
     position: relative; z-index: 1;
 }
-
 .flight-card__header { display: flex; justify-content: space-between; align-items: flex-start; }
 .flight-card__code-info { display: flex; flex-direction: column; gap: 0.25rem; }
-.flight-card__code { font-size: 1.35rem; font-weight: 600; color: var(--secondary-color); letter-spacing: 0.5px; }
+.flight-card__code    { font-size: 1.35rem; font-weight: 600; color: var(--secondary-color); letter-spacing: 0.5px; }
 .flight-card__airline { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
 
-.flight-card__rating {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 0.15rem;
-    background: #faf8f5; padding: 0.5rem 0.9rem; border-radius: 4px 12px 4px 12px;
+/* Badge directo/escala */
+.flight-card__badge {
+    font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; padding: 0.3rem 0.8rem; border-radius: 20px; flex-shrink: 0;
 }
-.flight-card__rating-value { font-size: 1.1rem; font-weight: 700; color: var(--primary-color); line-height: 1; }
-.flight-card__rating-label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.flight-card__badge--directo {
+    background: rgba(201,169,97,0.12); color: #b07d2e;
+    border: 1px solid rgba(201,169,97,0.3);
+}
+.flight-card__badge--escala {
+    background: rgba(59,79,107,0.1); color: #3b4f6b;
+    border: 1px solid rgba(59,79,107,0.25);
+}
 
+/* ── Schedule (vuelo directo) ── */
 .flight-card__schedule {
     display: grid; grid-template-columns: auto 1fr auto;
     gap: 1rem; align-items: center;
-    background: #faf8f5;
-    border-radius: 4px 16px 4px 16px;
-    padding: 1.1rem 1.4rem;
+    background: #faf8f5; border-radius: 4px 16px 4px 16px; padding: 1.1rem 1.4rem;
 }
 .schedule-point { display: flex; flex-direction: column; gap: 0.2rem; }
-.schedule-point:last-child { align-items: flex-end; }
+.schedule-point--right { align-items: flex-end; }
 .schedule-point__time { font-size: 1.6rem; font-weight: 300; color: var(--secondary-color); line-height: 1; letter-spacing: -0.5px; }
 .schedule-point__code { font-size: 0.68rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
-
 .schedule-duration { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0 0.5rem; }
-.schedule-duration__track {
-    width: 100%; display: flex; align-items: center; gap: 4px;
-}
-.schedule-duration__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-color); flex-shrink: 0; }
-.schedule-duration__line { flex: 1; height: 1px; background: var(--perla-dark); }
+.schedule-duration__track { width: 100%; display: flex; align-items: center; gap: 4px; }
+.schedule-duration__dot   { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-color); flex-shrink: 0; }
+.schedule-duration__line  { flex: 1; height: 1px; background: var(--perla-dark); }
 .schedule-duration__plane { font-size: 0.95rem; color: var(--primary-color); line-height: 1; }
-.schedule-duration__time { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-.schedule-duration__type { font-size: 0.6rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+.schedule-duration__time  { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+.schedule-duration__type  { font-size: 0.6rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
 
+/* ── Escalas timeline ── */
+.escala-timeline {
+    background: #f7f5f2; border-radius: 4px 16px 4px 16px; padding: 1.2rem 1.4rem;
+    display: flex; flex-direction: column; gap: 0;
+}
+.escala-tramo__airports {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 0.8rem; align-items: center;
+}
+.escala-tramo__point { display: flex; flex-direction: column; gap: 0.15rem; min-width: 70px; }
+.escala-tramo__point--right { align-items: flex-end; }
+.escala-tramo__time { font-size: 1.35rem; font-weight: 300; color: var(--secondary-color); line-height: 1; }
+.escala-tramo__code { font-size: 0.65rem; font-weight: 700; color: #3b4f6b; text-transform: uppercase; letter-spacing: 2px; }
+.escala-tramo__city { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.escala-tramo__middle { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
+.escala-tramo__track  { width: 100%; display: flex; align-items: center; gap: 3px; }
+.escala-tramo__dot    { width: 5px; height: 5px; border-radius: 50%; background: #3b4f6b; flex-shrink: 0; }
+.escala-tramo__line   { flex: 1; height: 1px; background: rgba(59,79,107,0.25); }
+.escala-tramo__plane  { font-size: 0.85rem; color: #3b4f6b; }
+.escala-tramo__dur    { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
+.escala-tramo__num    { font-size: 0.58rem; color: #3b4f6b; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(59,79,107,0.08); padding: 0.15rem 0.5rem; border-radius: 10px; }
+
+.escala-conexion { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; margin: 0.4rem 0; }
+.escala-conexion__line  { flex: 1; height: 1px; border-top: 1px dashed rgba(59,79,107,0.3); }
+.escala-conexion__badge {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: #3b4f6b; background: rgba(59,79,107,0.08); border: 1px solid rgba(59,79,107,0.15);
+    padding: 0.3rem 0.8rem; border-radius: 20px; white-space: nowrap;
+}
+.escala-conexion__badge svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+.escala-resumen { display: flex; gap: 2rem; padding: 0.6rem 0; border-top: 1px solid var(--perla-dark); }
+.escala-resumen__item  { display: flex; flex-direction: column; gap: 0.15rem; }
+.escala-resumen__label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.escala-resumen__value { font-size: 0.88rem; font-weight: 600; color: var(--secondary-color); }
+
+/* ── Clases ── */
 .flight-card__class-selection { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .class-option {
     display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
-    padding: 0.85rem 1rem;
-    background: #faf8f5;
-    border: 1.5px solid #ede9e1;
-    border-radius: 4px 12px 4px 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
+    padding: 0.85rem 1rem; background: #faf8f5;
+    border: 1.5px solid #ede9e1; border-radius: 4px 12px 4px 12px;
+    cursor: pointer; transition: all 0.2s ease; font-family: inherit;
 }
 .class-option:hover { border-color: var(--primary-color); transform: translateY(-2px); }
-.class-option--selected { background: var(--primary-color); border-color: var(--primary-color); }
-.class-option__name { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+.class-option--selected { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
+.flight-card--escala .class-option--selected { background: #3b4f6b !important; border-color: #3b4f6b !important; }
+.class-option--disabled { opacity: 0.5; cursor: not-allowed; }
+.class-option__name  { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
 .class-option--selected .class-option__name { color: var(--white); }
+.class-option__price { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0.25rem 0; }
+.class-option--selected .class-option__price { color: var(--white); }
 .class-option__label { font-size: 0.62rem; color: var(--text-muted); }
 .class-option--selected .class-option__label { color: rgba(255,255,255,0.85); }
+.class-option__label--unavailable { color: #dc2626; font-weight: 600; }
 
 .flight-card__details-btn {
-    width: 100%; padding: 0.85rem;
-    background: transparent;
-    border: 1.5px solid var(--perla-dark);
-    color: var(--secondary-color);
-    border-radius: 4px 14px 4px 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; font-size: 0.72rem;
-    font-family: inherit;
+    width: 100%; padding: 0.85rem; background: transparent;
+    border: 1.5px solid var(--perla-dark); color: var(--secondary-color);
+    border-radius: 4px 14px 4px 14px; cursor: pointer;
+    transition: all 0.2s ease; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1.5px; font-size: 0.72rem; font-family: inherit;
 }
 .flight-card__details-btn:hover { background: var(--secondary-color); color: var(--white); border-color: var(--secondary-color); }
 
-/* Siguiente Paso */
-.vuelos-page__next-step { 
-    position: fixed; 
-    bottom: 2rem; 
-    right: 2rem; 
-    z-index: 100; 
-}
+/* ── Siguiente paso ── */
+.vuelos-page__next-step { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; }
 .next-step-btn {
-    padding: 1.2rem 2.5rem; 
-    background: var(--secondary-color); 
-    color: var(--white);
-    border: none; 
-    border-radius: 4px 20px 4px 20px; 
-    cursor: pointer;
-    transition: var(--transition); 
-    font-weight: 700; 
-    text-transform: uppercase;
-    letter-spacing: 1.5px; 
-    font-size: 0.85rem;
-    box-shadow: 0 15px 40px rgba(28,26,24,0.25); 
-    font-family: inherit;
+    padding: 1.2rem 2.5rem; background: var(--secondary-color); color: var(--white);
+    border: none; border-radius: 4px 20px 4px 20px; cursor: pointer;
+    transition: var(--transition); font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; font-size: 0.85rem;
+    box-shadow: 0 15px 40px rgba(28,26,24,0.25); font-family: inherit;
 }
-.next-step-btn:hover { 
-    background: var(--primary-color); 
-    transform: translateY(-3px); 
-    box-shadow: 0 20px 50px rgba(201,169,97,0.35); 
-}
+.next-step-btn:hover { background: var(--primary-color); transform: translateY(-3px); box-shadow: 0 20px 50px rgba(201,169,97,0.35); }
+.next-step-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-/* Animación */
+/* ── Animación ── */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Responsive */
+/* ── Responsive ── */
 @media (max-width: 1200px) { .vuelos-page__content { grid-template-columns: 270px 1fr; gap: 2rem; } }
 @media (max-width: 1024px) {
     .vuelos-page__content { grid-template-columns: 1fr; }
@@ -257,4 +408,6 @@
     .search-summary__route { flex-direction: column; gap: 0.5rem; }
     .vuelos-page__next-step { right: 1rem; bottom: 1rem; }
     .next-step-btn { padding: 1rem 1.8rem; font-size: 0.75rem; }
+    .escala-tramo__airports { gap: 0.5rem; }
+    .escala-tramo__time { font-size: 1.1rem; }
 }
