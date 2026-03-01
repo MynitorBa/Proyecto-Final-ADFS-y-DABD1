@@ -1,415 +1,394 @@
 <script>
+  // @ts-nocheck
   import '../styles/checkout.css';
   import { onMount } from 'svelte';
+  import { sesion } from '../stores/sesion.js';
+
   export let navigateTo;
 
+  const API = 'https://localhost:7107';
+
   let usuarioId = null;
-  let loading = true;
-  let error = null;
-  let reservacionesPendientes = [];
+  const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
+
+  let loading    = true;
+  let error      = null;
   let submitting = false;
+  let reservacionesPendientes = [];
+
+  // Errores por campo
+  let errores = {
+    numeroTarjeta:   '',
+    nombreTitular:   '',
+    fechaExpiracion: '',
+    cvv:             '',
+    nit:             '',
+    codigoPostal:    ''
+  };
+
+  let cardInfo = {
+    nit:             '',
+    codigoPostal:    '',
+    numeroTarjeta:   '',
+    nombreTitular:   '',
+    fechaExpiracion: '',
+    cvv:             ''
+  };
+
+  $: cardDisplay = {
+    numero:  cardInfo.numeroTarjeta || '•••• •••• •••• ••••',
+    titular: cardInfo.nombreTitular  || 'NOMBRE TITULAR',
+    expira:  cardInfo.fechaExpiracion || 'MM/AA'
+  };
 
   onMount(async () => {
-    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
-    if (!isLoggedIn) {
-      navigateTo('acceso-denegado');
-      return;
-    }
-    
-    usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
+    if (!usuarioId) { navigateTo('login'); return; }
     await cargarReservacionesPendientes();
+    return () => unsubscribe();
   });
 
   async function cargarReservacionesPendientes() {
-    loading = true;
-    error = null;
-    
+    loading = true; error = null;
     try {
-      const response = await fetch(`http://localhost:5190/api/mis-reservaciones/usuario/${usuarioId}`);
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar las reservaciones');
-      }
-      
-      const reservaciones = await response.json();
-      
-      // Filtrar solo las pendientes (estadoReservaId === 1)
-      reservacionesPendientes = reservaciones.filter(r => r.estadoReservaId === 1);
-      
-      // Si no hay reservaciones pendientes, redirigir
-      if (reservacionesPendientes.length === 0) {
-        navigateTo('home');
-        return;
-      }
-      
+      const res = await fetch(`${API}/api/mis-reservaciones`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Error al cargar las reservaciones');
+      const todas = await res.json();
+      reservacionesPendientes = todas.filter(r => r.estadoReservaId === 1);
+      if (reservacionesPendientes.length === 0) { navigateTo('home'); return; }
     } catch (err) {
-      console.error('Error cargando reservaciones:', err);
       error = 'No se pudieron cargar las reservaciones pendientes.';
     } finally {
       loading = false;
     }
   }
 
-  let paymentMethod = 'tarjeta';
-  let billingInfo = {
-    nombre: '',
-    apellido: '',
-    email: '',
-    telefono: '',
-    pais: '',
-    ciudad: '',
-    direccion: '',
-    codigoPostal: ''
-  };
+  // ── Formateo de inputs ─────────────────────────────────────────────
 
-  let cardInfo = {
-    numero: '',
-    titular: '',
-    expiracion: '',
-    cvv: ''
-  };
+  function onNumeroInput(e) {
+    // Solo dígitos, máx 16
+    let v = e.target.value.replace(/\D/g, '').substring(0, 16);
+    // Mostrar con espacios cada 4
+    cardInfo.numeroTarjeta = v.replace(/(.{4})/g, '$1 ').trim();
+    errores.numeroTarjeta = '';
+  }
+
+  function onExpiryInput(e) {
+    // Solo dígitos y /
+    let v = e.target.value.replace(/[^\d]/g, '').substring(0, 4);
+    if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
+    cardInfo.fechaExpiracion = v;
+    errores.fechaExpiracion = '';
+  }
+
+  function onCvvInput(e) {
+    cardInfo.cvv = e.target.value.replace(/\D/g, '').substring(0, 4);
+    errores.cvv = '';
+  }
+
+  function onNitInput(e) {
+    // CF permitido, o solo números
+    let v = e.target.value.toUpperCase();
+    if (v === 'C' || v === 'CF') {
+      cardInfo.nit = v;
+    } else {
+      cardInfo.nit = v.replace(/[^0-9]/g, '').substring(0, 12);
+    }
+    errores.nit = '';
+  }
+
+  function onCodigoPostalInput(e) {
+    cardInfo.codigoPostal = e.target.value.replace(/\D/g, '').substring(0, 10);
+    errores.codigoPostal = '';
+  }
+
+  // ── Validación inline ──────────────────────────────────────────────
+
+  function validar() {
+    let ok = true;
+    errores = { numeroTarjeta: '', nombreTitular: '', fechaExpiracion: '', cvv: '', nit: '', codigoPostal: '' };
+
+    const raw = cardInfo.numeroTarjeta.replace(/\s/g, '');
+    if (!raw) {
+      errores.numeroTarjeta = 'El número de tarjeta es requerido.'; ok = false;
+    } else if (!/^\d{16}$/.test(raw)) {
+      errores.numeroTarjeta = 'Debe tener exactamente 16 dígitos.'; ok = false;
+    }
+
+    if (!cardInfo.nombreTitular.trim()) {
+      errores.nombreTitular = 'El nombre del titular es requerido.'; ok = false;
+    } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,60}$/.test(cardInfo.nombreTitular.trim())) {
+      errores.nombreTitular = 'Solo letras, mínimo 3 caracteres.'; ok = false;
+    }
+
+    if (!cardInfo.fechaExpiracion) {
+      errores.fechaExpiracion = 'La fecha de expiración es requerida.'; ok = false;
+    } else if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardInfo.fechaExpiracion)) {
+      errores.fechaExpiracion = 'Formato MM/AA requerido (ej. 12/28).'; ok = false;
+    } else {
+      const [mm, yy] = cardInfo.fechaExpiracion.split('/');
+      const exp = new Date(2000 + parseInt(yy), parseInt(mm) - 1 + 1, 0); // último día del mes
+      if (exp < new Date()) {
+        errores.fechaExpiracion = 'Esta tarjeta está vencida.'; ok = false;
+      }
+    }
+
+    if (!cardInfo.cvv) {
+      errores.cvv = 'El CVV es requerido.'; ok = false;
+    } else if (!/^\d{3,4}$/.test(cardInfo.cvv)) {
+      errores.cvv = 'El CVV debe tener 3 o 4 dígitos.'; ok = false;
+    }
+
+    return ok;
+  }
 
   async function handlePayment() {
+    if (!validar()) return;
+
     submitting = true;
-    
     try {
-      // Guardar las reservaciones ANTES de confirmarlas para tener toda la info
+      const raw = cardInfo.numeroTarjeta.replace(/\s/g, '');
       const reservacionesParaConfirmacion = JSON.parse(JSON.stringify(reservacionesPendientes));
-      
-      // Confirmar cada reservación pendiente
-      const promises = reservacionesPendientes.map(reserva => 
-        fetch(`http://localhost:5190/api/reservaciones/${reserva.reservacionId}/confirmar`, {
+
+      const promises = reservacionesPendientes.map(reserva =>
+        fetch(`${API}/api/reservaciones/${reserva.reservacionId}/comprar`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nit:             cardInfo.nit || 'CF',
+            codigoPostal:    cardInfo.codigoPostal || '01001',
+            numeroTarjeta:   raw,
+            nombreTitular:   cardInfo.nombreTitular,
+            fechaExpiracion: cardInfo.fechaExpiracion,
+            cvv:             cardInfo.cvv
+          })
         })
       );
-      
+
       const responses = await Promise.all(promises);
-      
-      // Verificar que todas fueron exitosas
-      const allSuccess = responses.every(r => r.ok);
-      
-      if (allSuccess) {
-        // Navegar a confirmación con los datos de las reservaciones confirmadas
-        // Usamos las reservaciones que guardamos ANTES de confirmar
-        navigateTo('confirmacion', { 
-          reservaciones: reservacionesParaConfirmacion
+      const jsons     = await Promise.all(responses.map(r => r.json()));
+      const allOk     = responses.every(r => r.ok);
+
+      if (allOk) {
+        navigateTo('confirmacion', {
+          reservaciones: reservacionesParaConfirmacion,
+          facturas: jsons
         });
       } else {
-        alert('Hubo un error al confirmar algunas reservaciones. Por favor intenta de nuevo.');
+        const msg = jsons.find(j => j.mensaje || j.message);
+        errores.numeroTarjeta = msg?.mensaje ?? msg?.message ?? 'Error al procesar el pago.';
       }
-      
     } catch (err) {
-      console.error('Error al confirmar reservaciones:', err);
-      alert('Error al procesar el pago. Por favor intenta de nuevo.');
+      errores.numeroTarjeta = 'Error de conexión. Intenta de nuevo.';
     } finally {
       submitting = false;
     }
   }
 
-  function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  }
-
-  function formatTime(timeSpan) {
-    if (!timeSpan) return '';
-    const parts = timeSpan.split(':');
-    return `${parts[0]}:${parts[1]}`;
-  }
-
   function agruparVuelosPorRuta(boletos) {
-    if (!boletos || boletos.length === 0) return [];
-    
-    const vuelos = {};
-    
-    boletos.forEach(boleto => {
-      const key = `${boleto.vueloId}-${boleto.origenCodigo}-${boleto.destinoCodigo}`;
-      
-      if (!vuelos[key]) {
-        vuelos[key] = {
-          vueloId: boleto.vueloId,
-          numeroVuelo: boleto.numeroVuelo,
-          origen: boleto.origenCiudad,
-          origenCodigo: boleto.origenCodigo,
-          destino: boleto.destinoCiudad,
-          destinoCodigo: boleto.destinoCodigo,
-          fecha: boleto.fechaVuelo,
-          horaSalida: boleto.horaSalida,
-          horaLlegada: boleto.horaLlegada,
-          clase: boleto.clase,
-          cantidadPasajeros: 0,
-          precioTotal: 0
-        };
-      }
-      
-      vuelos[key].cantidadPasajeros++;
-      vuelos[key].precioTotal += boleto.precio;
+    if (!boletos?.length) return [];
+    const m = {};
+    boletos.forEach(b => {
+      if (!m[b.vueloId]) m[b.vueloId] = {
+        numeroVuelo: b.numeroVuelo,
+        origenCodigo: b.origenCodigo, destinoCodigo: b.destinoCodigo,
+        origenCiudad: b.origenCiudad, destinoCiudad: b.destinoCiudad,
+        fecha: b.fechaVuelo, clase: b.clase, cantidadPasajeros: 0, precioTotal: 0
+      };
+      m[b.vueloId].cantidadPasajeros++;
+      m[b.vueloId].precioTotal += b.precio;
     });
-    
-    return Object.values(vuelos);
+    return Object.values(m);
   }
 
-  $: totalGeneral = reservacionesPendientes.reduce((sum, r) => sum + r.total, 0);
+  function formatDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  $: totalGeneral = reservacionesPendientes.reduce((s, r) => s + r.total, 0);
 </script>
 
 <div class="checkout">
   <div class="checkout__container">
+
     <div class="checkout__header">
-      <button class="checkout__back" on:click={() => navigateTo('datos-pasajeros')}>
-        Volver a datos de pasajeros
+      <button class="checkout__back" on:click={() => navigateTo('carrito')}>
+        &larr; Volver al carrito
       </button>
       <h1 class="checkout__title">Finalizar compra</h1>
     </div>
 
     <div class="checkout__content">
+
+      <!-- COLUMNA IZQUIERDA -->
       <div class="checkout__main">
         <section class="checkout-section">
-          <h2 class="checkout-section__title">Información de facturación</h2>
-          
-          <form class="billing-form">
-            <div class="billing-form__row">
-              <div class="form-field">
-                <label for="nombre" class="form-field__label">Nombre</label>
-                <input 
-                  type="text" 
-                  id="nombre"
-                  class="form-field__input"
-                  bind:value={billingInfo.nombre}
-                  placeholder="Tu nombre"
-                  required
-                />
-              </div>
+          <h2 class="checkout-section__title">Datos de la tarjeta</h2>
 
-              <div class="form-field">
-                <label for="apellido" class="form-field__label">Apellido</label>
-                <input 
-                  type="text" 
-                  id="apellido"
-                  class="form-field__input"
-                  bind:value={billingInfo.apellido}
-                  placeholder="Tu apellido"
-                  required
-                />
-              </div>
+          <!-- Tarjeta visual -->
+          <div class="card-visual">
+            <div class="card-visual__chip">
+              <svg viewBox="0 0 40 30" width="40" height="30">
+                <rect width="40" height="30" rx="4" fill="url(#chipGrad)"/>
+                <line x1="0" y1="10" x2="40" y2="10" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+                <line x1="0" y1="20" x2="40" y2="20" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+                <line x1="13" y1="0" x2="13" y2="30" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+                <line x1="27" y1="0" x2="27" y2="30" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+                <defs>
+                  <linearGradient id="chipGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#c9a96e"/>
+                    <stop offset="100%" stop-color="#8B6B4A"/>
+                  </linearGradient>
+                </defs>
+              </svg>
             </div>
-
-            <div class="billing-form__row">
-              <div class="form-field">
-                <label for="email" class="form-field__label">Email</label>
-                <input 
-                  type="email" 
-                  id="email"
-                  class="form-field__input"
-                  bind:value={billingInfo.email}
-                  placeholder="correo@ejemplo.com"
-                  required
-                />
+            <div class="card-visual__number">{cardDisplay.numero}</div>
+            <div class="card-visual__bottom">
+              <div>
+                <span class="card-visual__label">TITULAR</span>
+                <span class="card-visual__value">{cardDisplay.titular}</span>
               </div>
-
-              <div class="form-field">
-                <label for="telefono" class="form-field__label">Teléfono</label>
-                <input 
-                  type="tel" 
-                  id="telefono"
-                  class="form-field__input"
-                  bind:value={billingInfo.telefono}
-                  placeholder="+502 1234-5678"
-                  required
-                />
+              <div>
+                <span class="card-visual__label">EXPIRA</span>
+                <span class="card-visual__value">{cardDisplay.expira}</span>
               </div>
+              <div class="card-visual__logo">BROOM</div>
             </div>
-
-            <div class="billing-form__row">
-              <div class="form-field">
-                <label for="pais" class="form-field__label">País</label>
-                <input 
-                  type="text" 
-                  id="pais"
-                  class="form-field__input"
-                  bind:value={billingInfo.pais}
-                  placeholder="Guatemala"
-                  required
-                />
-              </div>
-
-              <div class="form-field">
-                <label for="ciudad" class="form-field__label">Ciudad</label>
-                <input 
-                  type="text" 
-                  id="ciudad"
-                  class="form-field__input"
-                  bind:value={billingInfo.ciudad}
-                  placeholder="Ciudad de Guatemala"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="billing-form__row">
-              <div class="form-field form-field--full">
-                <label for="direccion" class="form-field__label">Dirección</label>
-                <input 
-                  type="text" 
-                  id="direccion"
-                  class="form-field__input"
-                  bind:value={billingInfo.direccion}
-                  placeholder="Calle, número, zona"
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="billing-form__row">
-              <div class="form-field">
-                <label for="codigoPostal" class="form-field__label">Código Postal</label>
-                <input 
-                  type="text" 
-                  id="codigoPostal"
-                  class="form-field__input"
-                  bind:value={billingInfo.codigoPostal}
-                  placeholder="01001"
-                  required
-                />
-              </div>
-            </div>
-          </form>
-        </section>
-
-        <section class="checkout-section">
-          <h2 class="checkout-section__title">Método de pago</h2>
-          
-          <div class="payment-methods">
-            <label class="payment-method">
-              <input 
-                type="radio" 
-                name="paymentMethod" 
-                value="tarjeta"
-                bind:group={paymentMethod}
-                class="payment-method__radio"
-              />
-              <div class="payment-method__content">
-                <span class="payment-method__name">Tarjeta de crédito/débito</span>
-                <div class="payment-method__icons">
-                  <span class="payment-icon">VISA</span>
-                  <span class="payment-icon">MC</span>
-                  <span class="payment-icon">AMEX</span>
-                </div>
-              </div>
-            </label>
-
-            <label class="payment-method">
-              <input 
-                type="radio" 
-                name="paymentMethod" 
-                value="paypal"
-                bind:group={paymentMethod}
-                class="payment-method__radio"
-              />
-              <div class="payment-method__content">
-                <span class="payment-method__name">PayPal</span>
-              </div>
-            </label>
-
-            <label class="payment-method">
-              <input 
-                type="radio" 
-                name="paymentMethod" 
-                value="transferencia"
-                bind:group={paymentMethod}
-                class="payment-method__radio"
-              />
-              <div class="payment-method__content">
-                <span class="payment-method__name">Transferencia bancaria</span>
-              </div>
-            </label>
           </div>
 
-          {#if paymentMethod === 'tarjeta'}
-            <form class="card-form">
-              <div class="form-field form-field--full">
-                <label for="cardNumber" class="form-field__label">Número de tarjeta</label>
-                <input 
-                  type="text" 
-                  id="cardNumber"
-                  class="form-field__input"
-                  bind:value={cardInfo.numero}
-                  placeholder="1234 5678 9012 3456"
-                  maxlength="19"
-                  required
-                />
-              </div>
+          <!-- Campos -->
+          <div class="form-campo">
+            <label for="card-numero" class="form-campo__label">Número de tarjeta</label>
+            <input
+              id="card-numero"
+              type="text"
+              class="form-campo__input"
+              class:form-campo__input--error={errores.numeroTarjeta}
+              value={cardInfo.numeroTarjeta}
+              on:input={onNumeroInput}
+              placeholder="1234 5678 9012 3456"
+              maxlength="19"
+              inputmode="numeric"
+            />
+            {#if errores.numeroTarjeta}
+              <span class="form-campo__error">{errores.numeroTarjeta}</span>
+            {/if}
+          </div>
 
-              <div class="form-field form-field--full">
-                <label for="cardHolder" class="form-field__label">Titular de la tarjeta</label>
-                <input 
-                  type="text" 
-                  id="cardHolder"
-                  class="form-field__input"
-                  bind:value={cardInfo.titular}
-                  placeholder="Nombre como aparece en la tarjeta"
-                  required
-                />
-              </div>
+          <div class="form-campo">
+            <label for="card-titular" class="form-campo__label">Nombre del titular</label>
+            <input
+              id="card-titular"
+              type="text"
+              class="form-campo__input"
+              class:form-campo__input--error={errores.nombreTitular}
+              bind:value={cardInfo.nombreTitular}
+              on:input={() => errores.nombreTitular = ''}
+              placeholder="Como aparece en la tarjeta"
+            />
+            {#if errores.nombreTitular}
+              <span class="form-campo__error">{errores.nombreTitular}</span>
+            {/if}
+          </div>
 
-              <div class="card-form__row">
-                <div class="form-field">
-                  <label for="cardExpiry" class="form-field__label">Fecha de expiración</label>
-                  <input 
-                    type="text" 
-                    id="cardExpiry"
-                    class="form-field__input"
-                    bind:value={cardInfo.expiracion}
-                    placeholder="MM/AA"
-                    maxlength="5"
-                    required
-                  />
-                </div>
-
-                <div class="form-field">
-                  <label for="cardCVV" class="form-field__label">CVV</label>
-                  <input 
-                    type="text" 
-                    id="cardCVV"
-                    class="form-field__input"
-                    bind:value={cardInfo.cvv}
-                    placeholder="123"
-                    maxlength="4"
-                    required
-                  />
-                </div>
-              </div>
-            </form>
-          {:else if paymentMethod === 'paypal'}
-            <div class="payment-info">
-              <p class="payment-info__text">
-                Serás redirigido a PayPal para completar tu pago de forma segura.
-              </p>
+          <div class="form-fila">
+            <div class="form-campo">
+              <label for="card-expiry" class="form-campo__label">Fecha de expiración</label>
+              <input
+                id="card-expiry"
+                type="text"
+                class="form-campo__input"
+                class:form-campo__input--error={errores.fechaExpiracion}
+                value={cardInfo.fechaExpiracion}
+                on:input={onExpiryInput}
+                placeholder="MM/AA"
+                maxlength="5"
+                inputmode="numeric"
+              />
+              {#if errores.fechaExpiracion}
+                <span class="form-campo__error">{errores.fechaExpiracion}</span>
+              {/if}
             </div>
-          {:else if paymentMethod === 'transferencia'}
-            <div class="payment-info">
-              <p class="payment-info__text">
-                Recibirás las instrucciones de transferencia por correo electrónico después de confirmar tu pedido.
-              </p>
+            <div class="form-campo">
+              <label for="card-cvv" class="form-campo__label">CVV</label>
+              <input
+                id="card-cvv"
+                type="password"
+                class="form-campo__input"
+                class:form-campo__input--error={errores.cvv}
+                value={cardInfo.cvv}
+                on:input={onCvvInput}
+                placeholder="•••"
+                maxlength="4"
+                inputmode="numeric"
+              />
+              {#if errores.cvv}
+                <span class="form-campo__error">{errores.cvv}</span>
+              {/if}
             </div>
-          {/if}
+          </div>
+
+          <div class="form-fila">
+            <div class="form-campo">
+              <label for="card-nit" class="form-campo__label">NIT <span class="form-campo__opcional">(opcional)</span></label>
+              <input
+                id="card-nit"
+                type="text"
+                class="form-campo__input"
+                class:form-campo__input--error={errores.nit}
+                value={cardInfo.nit}
+                on:input={onNitInput}
+                placeholder="CF"
+                maxlength="12"
+              />
+              {#if errores.nit}
+                <span class="form-campo__error">{errores.nit}</span>
+              {/if}
+            </div>
+            <div class="form-campo">
+              <label for="card-postal" class="form-campo__label">Código postal <span class="form-campo__opcional">(opcional)</span></label>
+              <input
+                id="card-postal"
+                type="text"
+                class="form-campo__input"
+                class:form-campo__input--error={errores.codigoPostal}
+                value={cardInfo.codigoPostal}
+                on:input={onCodigoPostalInput}
+                placeholder="01001"
+                maxlength="10"
+                inputmode="numeric"
+              />
+              {#if errores.codigoPostal}
+                <span class="form-campo__error">{errores.codigoPostal}</span>
+              {/if}
+            </div>
+          </div>
+
+          <div class="checkout-seguridad">
+            <span class="checkout-seguridad__item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              SSL Seguro
+            </span>
+            <span class="checkout-seguridad__item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              VISA / Mastercard / AMEX
+            </span>
+          </div>
         </section>
       </div>
 
+      <!-- COLUMNA DERECHA: Resumen -->
       <aside class="checkout__sidebar">
         {#if loading}
-          <div class="order-summary">
-            <p>Cargando resumen...</p>
-          </div>
+          <div class="order-summary"><p class="checkout-loading">Cargando...</p></div>
         {:else if error}
-          <div class="order-summary">
-            <p style="color: #dc2626;">{error}</p>
-          </div>
+          <div class="order-summary"><p class="checkout-error">{error}</p></div>
         {:else}
           <div class="order-summary">
             <h2 class="order-summary__title">Resumen del pedido</h2>
@@ -417,34 +396,23 @@
             <div class="order-summary__items">
               {#each reservacionesPendientes as reserva}
                 {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
-                
                 <div class="reserva-group">
-                  <div class="reserva-group__header">
-                    <strong>Reservación:</strong> {reserva.noReservacion}
-                  </div>
-                  
+                  <div class="reserva-group__header">Reservación: {reserva.noReservacion}</div>
                   {#each vuelos as vuelo}
                     <div class="order-item">
                       <div class="order-item__header">
                         <span class="order-item__type">{vuelo.numeroVuelo}</span>
-                        <span class="order-item__class">{vuelo.clase}</span>
+                        <span class="order-item__clase">{vuelo.clase}</span>
                       </div>
-                      <p class="order-item__route">
-                        {vuelo.origen} ({vuelo.origenCodigo}) → {vuelo.destino} ({vuelo.destinoCodigo})
-                      </p>
+                      <p class="order-item__route">{vuelo.origenCodigo} &rarr; {vuelo.destinoCodigo}</p>
                       <div class="order-item__details">
-                        <span class="order-item__date">{formatDate(vuelo.fecha)}</span>
-                        <span class="order-item__passengers">
-                          {vuelo.cantidadPasajeros} pasajero{vuelo.cantidadPasajeros > 1 ? 's' : ''}
-                        </span>
+                        <span>{formatDate(vuelo.fecha)}</span>
+                        <span>{vuelo.cantidadPasajeros} pasajero{vuelo.cantidadPasajeros > 1 ? 's' : ''}</span>
                       </div>
-                      <div class="order-item__price">${vuelo.precioTotal.toFixed(2)}</div>
+                      <div class="order-item__price">$ {vuelo.precioTotal.toFixed(2)}</div>
                     </div>
                   {/each}
-                  
-                  <div class="reserva-group__total">
-                    Subtotal: ${reserva.total.toFixed(2)}
-                  </div>
+                  <div class="reserva-group__total">Subtotal: $ {reserva.total.toFixed(2)}</div>
                 </div>
               {/each}
             </div>
@@ -453,20 +421,31 @@
 
             <div class="order-summary__total">
               <span class="order-summary__total-label">Total a pagar</span>
-              <span class="order-summary__total-value">${totalGeneral.toFixed(2)}</span>
+              <span class="order-summary__total-value">$ {totalGeneral.toFixed(2)}</span>
             </div>
 
-            <button 
-              class="order-summary__btn-pay" 
+            <button
+              class="order-summary__btn-pay"
               on:click={handlePayment}
               disabled={submitting}
             >
-              {submitting ? 'Procesando...' : 'Pagar'}
+              {#if submitting}
+                <svg class="btn-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                Procesando...
+              {:else}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Pagar ahora
+              {/if}
             </button>
 
-            <div class="order-summary__security">
-              <p class="security-badge">Pago 100% seguro</p>
-              <p class="security-note">Tus datos están protegidos con encriptación SSL</p>
+            <div class="order-security">
+              <p class="order-security__badge">PAGO 100% SEGURO</p>
+              <p class="order-security__note">Tus datos están protegidos con encriptación SSL de 256 bits</p>
             </div>
           </div>
         {/if}
@@ -474,31 +453,3 @@
     </div>
   </div>
 </div>
-
-<style>
-  .reserva-group {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e5e5;
-  }
-
-  .reserva-group__header {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #666;
-    margin-bottom: 0.75rem;
-  }
-
-  .reserva-group__total {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #c9a96e;
-    margin-top: 0.75rem;
-    text-align: right;
-  }
-
-  .order-summary__btn-pay:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-</style>

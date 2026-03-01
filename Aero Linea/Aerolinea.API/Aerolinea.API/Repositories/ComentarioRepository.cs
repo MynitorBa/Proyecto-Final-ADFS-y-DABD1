@@ -117,10 +117,6 @@ namespace Aerolinea.API.Repositories
                     if (!await reader.ReadAsync())
                         throw new Exception("El comentario al que intentas responder no existe.");
 
-                    // Solo se puede responder a comentarios raíz (padre directo de la ruta)
-                    if (!reader.IsDBNull(1))
-                        throw new Exception("Solo puedes responder a comentarios principales, no a otras respuestas.");
-
                     rutaId = reader.GetInt32(0);
                 }
 

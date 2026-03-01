@@ -13,7 +13,7 @@
   import Vuelos from './pages/Vuelos.svelte';
   import VuelosGenerales from './pages/VuelosGenerales.svelte';
   import ResultadosBusqueda from './pages/ResultadosBusqueda.svelte';
-  import Comfirmacion from './pages/Comfirmacion.svelte';
+  import Comfirmacion from './pages/Confirmacion.svelte';
   import Carrito from './pages/Carrito.svelte';
   import Checkout from './pages/Checkout.svelte';
   import DatosPasajeros from './pages/DatosPasajeros.svelte';
@@ -27,7 +27,6 @@
   import InformacionSeguridad from './pages/InformacionSeguridad.svelte';
   import AccesoDenegado from './pages/Accesodenegado.svelte';
 
-  // Páginas de información / soporte
   import Contactanos from './pages/Contactanos.svelte';
   import CentroAyuda from './pages/CentroAyuda.svelte';
   import PreguntasFrecuentes from './pages/PreguntasFrecuentes.svelte';
@@ -39,6 +38,10 @@
 
   import './app.css';
 
+  // ── Claves de sessionStorage ───────────────────────────────────────
+  const SS_SEARCH_PARAMS = 'broom_searchParams';
+  const SS_PAGE          = 'broom_currentPage';
+
   let isLoading = true;
   let sesionCargada = false;
   let currentPage = 'home';
@@ -46,41 +49,52 @@
   let currentFlightId = null;
   let searchParams = null;
   let reservacionesConfirmadas = [];
+  let facturasConfirmadas = [];
   let pageKey = Date.now();
 
-  const paginasProtegidas = [
-    'profile',
-    'admin',
-    'reservas',
-    'checkout',
-    'datos-pasajeros',
-    'carrito'
-  ];
-
-  const paginasSoloAdmin = ['admin'];
-
-  // Páginas info/soporte — no requieren sesión, siempre muestran footer
+  const paginasProtegidas = ['profile','admin','reservas','checkout','datos-pasajeros','carrito'];
+  const paginasSoloAdmin  = ['admin'];
   const infoPages = [
-    'contactanos',
-    'centro-ayuda',
-    'preguntas-frecuentes',
-    'privacidad',
-    'terminos',
-    'cookies',
-    'politica-cancelacion',
-    'sobre-nosotros',
+    'contactanos','centro-ayuda','preguntas-frecuentes',
+    'privacidad','terminos','cookies','politica-cancelacion','sobre-nosotros',
   ];
 
+  // ── sessionStorage helpers ─────────────────────────────────────────
+  function saveSearchParams(params) {
+    try {
+      if (params) sessionStorage.setItem(SS_SEARCH_PARAMS, JSON.stringify(params));
+      else        sessionStorage.removeItem(SS_SEARCH_PARAMS);
+    } catch (e) { /* incognito o lleno */ }
+  }
+
+  function loadSearchParams() {
+    try {
+      const raw = sessionStorage.getItem(SS_SEARCH_PARAMS);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function saveCurrentPage(page) {
+    try { sessionStorage.setItem(SS_PAGE, page); } catch {}
+  }
+
+  // ── Inicialización ─────────────────────────────────────────────────
   onMount(async () => {
+    // 1. Determinar página desde URL
     actualizarPaginaDesdeURL();
     window.addEventListener('popstate', actualizarPaginaDesdeURL);
+
+    // 2. Si la página actual es 'vuelos' y no tenemos searchParams en memoria,
+    //    intentamos recuperarlos desde sessionStorage
+    if (currentPage === 'vuelos' && !searchParams) {
+      const guardados = loadSearchParams();
+      if (guardados) searchParams = guardados;
+    }
 
     await cargarSesion();
     sesionCargada = true;
 
-    setTimeout(() => {
-      isLoading = false;
-    }, 3000);
+    setTimeout(() => { isLoading = false; }, 3000);
 
     return () => {
       window.removeEventListener('popstate', actualizarPaginaDesdeURL);
@@ -91,21 +105,19 @@
     const path = window.location.pathname.slice(1) || 'home';
     currentPage = path;
     pageKey = Date.now();
+
+    // Si navegamos a 'vuelos' via el botón Atrás del browser, restaurar params
+    if (path === 'vuelos' && !searchParams) {
+      const guardados = loadSearchParams();
+      if (guardados) searchParams = guardados;
+    }
   }
 
   function resolverPagina(page) {
     if (!sesionCargada) return page;
-
     const sesionActual = $sesion;
-
-    if (paginasProtegidas.includes(page) && !sesionActual) {
-      return 'login';
-    }
-
-    if (paginasSoloAdmin.includes(page) && sesionActual?.rolNombre !== 'Administrador') {
-      return 'acceso-denegado';
-    }
-
+    if (paginasProtegidas.includes(page) && !sesionActual) return 'login';
+    if (paginasSoloAdmin.includes(page) && sesionActual?.rolNombre !== 'Administrador') return 'acceso-denegado';
     return page;
   }
 
@@ -115,18 +127,39 @@
     pageKey = Date.now();
 
     window.history.pushState({}, '', `/${paginaFinal}`);
+    saveCurrentPage(paginaFinal);
 
     if (paginaFinal === 'detalle-vuelo') {
       currentFlightId = data;
     }
 
-    if (paginaFinal === 'vuelos' && data?.busquedaId) {
-      searchParams = { busquedaId: data.busquedaId };
+    if (paginaFinal === 'vuelos') {
+      if (data?.searchData) {
+        searchParams = {
+          vuelosIda:    data.vuelosIda    ?? [],
+          vuelosVuelta: data.vuelosVuelta ?? [],
+          searchData:   data.searchData
+        };
+      } else if (data?.busquedaId) {
+        searchParams = { busquedaId: data.busquedaId };
+      } else {
+        searchParams = data;
+      }
+      // ── Guardar en sessionStorage para sobrevivir recargas ──
+      saveSearchParams(searchParams);
+
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
-    } else if (paginaFinal === 'confirmacion' && data?.reservaciones) {
-      reservacionesConfirmadas = data.reservaciones;
-    } else if (paginaFinal !== 'vuelos') {
+
+    } else if (paginaFinal === 'datos-pasajeros') {
+      // Guardar reserva + searchData para DatosPasajeros.svelte
+      searchParams = data;
+
+    } else if (paginaFinal === 'confirmacion') {
+      if (data?.reservaciones) reservacionesConfirmadas = data.reservaciones;
+      if (data?.facturas)      facturasConfirmadas      = data.facturas;
+
+    } else if (!['vuelos', 'datos-pasajeros', 'confirmacion'].includes(paginaFinal)) {
       searchParams = null;
     }
 
@@ -138,15 +171,13 @@
     if (currentPage !== 'home') navigateTo('home');
     setTimeout(() => {
       const searchSection = document.querySelector('.broom-home__search-section');
-      if (searchSection) {
-        searchSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (searchSection) searchSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }
 
-  const simpleHeaderPages = ['vuelos', 'carrito', 'datos-pasajeros', 'checkout', 'confirmacion'];
-  const noFooterPages    = ['profile', 'admin', 'login', 'register', 'acceso-denegado', ...simpleHeaderPages];
-  const noHeaderPages    = ['login', 'register'];
+  const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','checkout','confirmacion'];
+  const noFooterPages     = ['profile','admin','login','register','acceso-denegado',...simpleHeaderPages];
+  const noHeaderPages     = ['login','register'];
 
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
   $: showHeader      = !noHeaderPages.includes(currentPage);
@@ -180,11 +211,11 @@
     {:else if currentPage === 'reservas'}
       <MisReservas {navigateTo} />
     {:else if currentPage === 'vuelos'}
-      {#key searchParams?.busquedaId}
+      {#key pageKey}
         <Vuelos {navigateTo} {searchParams} />
       {/key}
     {:else if currentPage === 'confirmacion'}
-      <Comfirmacion {navigateTo} reservaciones={reservacionesConfirmadas} />
+      <Comfirmacion {navigateTo} reservaciones={reservacionesConfirmadas} facturas={facturasConfirmadas} />
     {:else if currentPage === 'resultados-busqueda'}
       <ResultadosBusqueda {navigateTo} {searchParams} />
     {:else if currentPage === 'carrito'}
@@ -214,7 +245,6 @@
     {:else if currentPage === 'acceso-denegado'}
       <AccesoDenegado {navigateTo} />
 
-    <!-- Páginas de información / soporte -->
     {:else if currentPage === 'contactanos'}
       <Contactanos {navigateTo} />
     {:else if currentPage === 'centro-ayuda'}

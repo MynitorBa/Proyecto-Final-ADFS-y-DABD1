@@ -21,9 +21,6 @@ namespace Aerolinea.API.Repositories
             _ciudadRepository = ciudadRepository;
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  CREAR RESERVACIÓN
-        // ─────────────────────────────────────────────────────────────────
         public async Task<ReservacionCreadaDTO> CrearReservacion(int? usuarioId, List<SeleccionVueloDTO> vuelos)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -35,7 +32,6 @@ namespace Aerolinea.API.Repositories
                 decimal total = 0;
                 var boletosReservados = new List<BoletoReservadoDTO>();
 
-                // ── Expirar reservas pendientes anteriores del mismo usuario ──────
                 if (usuarioId.HasValue)
                 {
                     string queryPendientes = @"
@@ -80,16 +76,14 @@ namespace Aerolinea.API.Repositories
                         foreach (var (vueloId, claseId, cantidad) in grupos)
                         {
                             string campo = claseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
-                            string devolver = $@"
-                                UPDATE Vuelo SET {campo} = {campo} + @cantidad WHERE ID = @vueloId";
+                            string devolver = $"UPDATE Vuelo SET {campo} = {campo} + @cantidad WHERE ID = @vueloId";
                             using var cmd = new SqlCommand(devolver, connection, transaction);
                             cmd.Parameters.AddWithValue("@cantidad", cantidad);
                             cmd.Parameters.AddWithValue("@vueloId", vueloId);
                             await cmd.ExecuteNonQueryAsync();
                         }
 
-                        string expirar = @"
-                            UPDATE Reservacion SET EstadoReservaID = 4 WHERE ID = @pendienteId";
+                        string expirar = "UPDATE Reservacion SET EstadoReservaID = 4 WHERE ID = @pendienteId";
                         using (var cmd = new SqlCommand(expirar, connection, transaction))
                         {
                             cmd.Parameters.AddWithValue("@pendienteId", pendienteId);
@@ -98,16 +92,12 @@ namespace Aerolinea.API.Repositories
                     }
                 }
 
-                // ── PASO 1: Verificar disponibilidad de TODOS los vuelos ──────────
                 foreach (var vuelo in vuelos)
                 {
                     string campoDisponible = vuelo.ClaseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
                     string campoPrecio = vuelo.ClaseId == 1 ? "PrecioTurista" : "PrecioEjecutivo";
 
-                    string queryVerificar = $@"
-                        SELECT {campoDisponible}, {campoPrecio}
-                        FROM Vuelo WITH (UPDLOCK, ROWLOCK)
-                        WHERE ID = @vueloId";
+                    string queryVerificar = $"SELECT {campoDisponible}, {campoPrecio} FROM Vuelo WITH (UPDLOCK, ROWLOCK) WHERE ID = @vueloId";
 
                     int disponibles = 0;
                     decimal precio = 0;
@@ -133,16 +123,13 @@ namespace Aerolinea.API.Repositories
                     total += precio * vuelo.CantidadPasajeros;
                 }
 
-                // ── PASO 2: Crear la reservación ──────────────────────────────────
                 string noReservacion = GenerarNoReservacion();
                 DateTime fechaExpiracion = DateTime.Now.AddMinutes(10);
                 int reservacionId;
 
                 string insertReservacion = @"
-                    INSERT INTO Reservacion
-                        (NoReservacion, UsuarioID, FechaReservacion, FechaExpiracion, Total, EstadoReservaID)
-                    VALUES
-                        (@noReservacion, @usuarioId, GETDATE(), @fechaExpiracion, @total, 1);
+                    INSERT INTO Reservacion (NoReservacion, UsuarioID, FechaReservacion, FechaExpiracion, Total, EstadoReservaID)
+                    VALUES (@noReservacion, @usuarioId, GETDATE(), @fechaExpiracion, @total, 1);
                     SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                 using (var cmd = new SqlCommand(insertReservacion, connection, transaction))
@@ -154,19 +141,13 @@ namespace Aerolinea.API.Repositories
                     reservacionId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 }
 
-                // ── PASO 3: Por cada vuelo, decrementar y crear boletos ───────────
                 foreach (var vuelo in vuelos)
                 {
                     string campoDisponible = vuelo.ClaseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
                     string campoPrecio = vuelo.ClaseId == 1 ? "PrecioTurista" : "PrecioEjecutivo";
                     string nombreClase = vuelo.ClaseId == 1 ? "Turista" : "Ejecutivo";
 
-                    // 3a. Decrementar disponibilidad
-                    string updateVuelo = $@"
-                        UPDATE Vuelo
-                        SET {campoDisponible} = {campoDisponible} - @cantidad
-                        WHERE ID = @vueloId";
-
+                    string updateVuelo = $"UPDATE Vuelo SET {campoDisponible} = {campoDisponible} - @cantidad WHERE ID = @vueloId";
                     using (var cmd = new SqlCommand(updateVuelo, connection, transaction))
                     {
                         cmd.Parameters.AddWithValue("@cantidad", vuelo.CantidadPasajeros);
@@ -174,7 +155,6 @@ namespace Aerolinea.API.Repositories
                         await cmd.ExecuteNonQueryAsync();
                     }
 
-                    // 3b. Precio de la clase
                     decimal precioClase = 0;
                     string queryPrecio = $"SELECT {campoPrecio} FROM Vuelo WHERE ID = @vueloId";
                     using (var cmd = new SqlCommand(queryPrecio, connection, transaction))
@@ -184,15 +164,9 @@ namespace Aerolinea.API.Repositories
                         precioClase = result == DBNull.Value ? 0 : Convert.ToDecimal(result);
                     }
 
-                    // ── 3c. FIX DE ASIENTOS ──────────────────────────────────────
-                    // Cargamos SOLO los asientos activos (Reservado=2 o Vendido=3).
-                    // Los cancelados (4) quedan disponibles para reutilizarse.
                     string queryAsientosOcupados = @"
-                        SELECT NoAsiento
-                        FROM Boleto
-                        WHERE VueloID    = @vueloId
-                          AND ClaseID    = @claseId
-                          AND EstadoBoletoID IN (2, 3)";
+                        SELECT NoAsiento FROM Boleto
+                        WHERE VueloID = @vueloId AND ClaseID = @claseId AND EstadoBoletoID IN (2, 3)";
 
                     var asientosOcupados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     using (var cmd = new SqlCommand(queryAsientosOcupados, connection, transaction))
@@ -204,29 +178,24 @@ namespace Aerolinea.API.Repositories
                             asientosOcupados.Add(reader.GetString(0));
                     }
 
-                    // 3d. Crear boletos buscando el primer asiento libre
-                    string noBoletoBase = $"BOL{DateTime.Now:yyyyMMddHHmmss}";
-                    string asientoActual = null; // cursor; null = empezar desde el principio
+                    string asientoActual = null;
 
                     for (int i = 0; i < vuelo.CantidadPasajeros; i++)
                     {
-                        // Iterar hasta encontrar un asiento no ocupado
                         do
                         {
                             asientoActual = SiguienteAsiento(asientoActual, vuelo.ClaseId);
                         }
                         while (asientosOcupados.Contains(asientoActual));
 
-                        // Reservar en memoria para que el siguiente pasajero no lo tome
                         asientosOcupados.Add(asientoActual);
 
-                        string noBoleto = $"{noBoletoBase}{reservacionId}{i}";
+                        // NoBoleto a prueba de balas: reservacionId + vueloId + indice + 8 chars GUID
+                        string noBoleto = $"BOL{reservacionId}{vuelo.VueloId}{i}{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
 
                         string insertBoleto = @"
-                            INSERT INTO Boleto
-                                (NoBoleto, NoAsiento, Precio, VueloID, ClaseID, EstadoBoletoID, ReservacionID)
-                            VALUES
-                                (@noBoleto, @noAsiento, @precio, @vueloId, @claseId, 2, @reservacionId);
+                            INSERT INTO Boleto (NoBoleto, NoAsiento, Precio, VueloID, ClaseID, EstadoBoletoID, ReservacionID)
+                            VALUES (@noBoleto, @noAsiento, @precio, @vueloId, @claseId, 2, @reservacionId);
                             SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                         int boletoId;
@@ -247,20 +216,16 @@ namespace Aerolinea.API.Repositories
                             NoBoleto = noBoleto,
                             NoAsiento = asientoActual,
                             Precio = precioClase,
-                            NumeroVuelo = vuelo.VueloId.ToString(), // se rellena abajo
+                            NumeroVuelo = vuelo.VueloId.ToString(),
                             Clase = nombreClase
                         });
                     }
                 }
 
-                // ── PASO 4: Enriquecer boletos con número de vuelo real ───────────
                 var vueloIds = vuelos.Select(v => v.VueloId).Distinct().ToList();
                 var numerosVuelo = new Dictionary<int, string>();
 
-                string queryNumeros = $@"
-                    SELECT ID, NumeroVuelo FROM Vuelo
-                    WHERE ID IN ({string.Join(",", vueloIds)})";
-
+                string queryNumeros = $"SELECT ID, NumeroVuelo FROM Vuelo WHERE ID IN ({string.Join(",", vueloIds)})";
                 using (var cmd = new SqlCommand(queryNumeros, connection, transaction))
                 {
                     using var reader = await cmd.ExecuteReaderAsync();
@@ -298,9 +263,6 @@ namespace Aerolinea.API.Repositories
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  LIBERAR RESERVAS EXPIRADAS
-        // ─────────────────────────────────────────────────────────────────
         public async Task<int> LiberarReservasExpiradas()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -358,17 +320,14 @@ namespace Aerolinea.API.Repositories
                     foreach (var (vueloId, claseId, cantidad) in grupos)
                     {
                         string campoDisponible = claseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
-                        string devolverDisp = $@"
-                            UPDATE Vuelo SET {campoDisponible} = {campoDisponible} + @cantidad
-                            WHERE ID = @vueloId";
+                        string devolverDisp = $"UPDATE Vuelo SET {campoDisponible} = {campoDisponible} + @cantidad WHERE ID = @vueloId";
                         using var cmd = new SqlCommand(devolverDisp, connection, transaction);
                         cmd.Parameters.AddWithValue("@cantidad", cantidad);
                         cmd.Parameters.AddWithValue("@vueloId", vueloId);
                         await cmd.ExecuteNonQueryAsync();
                     }
 
-                    string expirarReservacion = @"
-                        UPDATE Reservacion SET EstadoReservaID = 4 WHERE ID = @reservaId";
+                    string expirarReservacion = "UPDATE Reservacion SET EstadoReservaID = 4 WHERE ID = @reservaId";
                     using (var cmd = new SqlCommand(expirarReservacion, connection, transaction))
                     {
                         cmd.Parameters.AddWithValue("@reservaId", reservaId);
@@ -386,9 +345,6 @@ namespace Aerolinea.API.Repositories
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  AGREGAR PASAJEROS
-        // ─────────────────────────────────────────────────────────────────
         public async Task AgregarPasajerosAReservacion(int reservacionId, List<DatosPasajeroDTO> pasajeros)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -397,9 +353,7 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                string queryVerificar = @"
-                    SELECT EstadoReservaID, FechaExpiracion
-                    FROM Reservacion WHERE ID = @reservacionId";
+                string queryVerificar = "SELECT EstadoReservaID, FechaExpiracion FROM Reservacion WHERE ID = @reservacionId";
 
                 int estadoReserva = 0;
                 DateTime? fechaExpiracion = null;
@@ -421,9 +375,7 @@ namespace Aerolinea.API.Repositories
 
                 foreach (var pasajero in pasajeros)
                 {
-                    string queryVerificarBoleto = @"
-                        SELECT ReservacionID, DatosPasajeroID
-                        FROM Boleto WHERE ID = @boletoId";
+                    string queryVerificarBoleto = "SELECT ReservacionID, DatosPasajeroID FROM Boleto WHERE ID = @boletoId";
 
                     int? reservacionDelBoleto = null;
                     int? pasajeroExistente = null;
@@ -480,9 +432,7 @@ namespace Aerolinea.API.Repositories
                         datosPasajeroId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                     }
 
-                    string updateBoleto = @"
-                        UPDATE Boleto SET DatosPasajeroID = @datosPasajeroId WHERE ID = @boletoId";
-
+                    string updateBoleto = "UPDATE Boleto SET DatosPasajeroID = @datosPasajeroId WHERE ID = @boletoId";
                     using (var cmd = new SqlCommand(updateBoleto, connection, transaction))
                     {
                         cmd.Parameters.AddWithValue("@datosPasajeroId", datosPasajeroId);
@@ -500,9 +450,6 @@ namespace Aerolinea.API.Repositories
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  CONFIRMAR RESERVACIÓN
-        // ─────────────────────────────────────────────────────────────────
         public async Task ConfirmarReservacion(int reservacionId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -511,9 +458,7 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                string queryVerificar = @"
-                    SELECT EstadoReservaID, FechaExpiracion
-                    FROM Reservacion WHERE ID = @reservacionId";
+                string queryVerificar = "SELECT EstadoReservaID, FechaExpiracion FROM Reservacion WHERE ID = @reservacionId";
 
                 int estadoReserva = 0;
                 DateTime? fechaExpiracion = null;
@@ -545,8 +490,7 @@ namespace Aerolinea.API.Repositories
                         throw new Exception("Hay boletos sin pasajeros asignados. Complete todos los datos.");
                 }
 
-                string updateBoletos = @"
-                    UPDATE Boleto SET EstadoBoletoID = 3 WHERE ReservacionID = @reservacionId";
+                string updateBoletos = "UPDATE Boleto SET EstadoBoletoID = 3 WHERE ReservacionID = @reservacionId";
                 using (var cmd = new SqlCommand(updateBoletos, connection, transaction))
                 {
                     cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
@@ -572,9 +516,58 @@ namespace Aerolinea.API.Repositories
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  HELPERS PRIVADOS
-        // ─────────────────────────────────────────────────────────────────
+        public async Task<int> CompletarReservaciones()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                string queryCompletables = @"
+                    SELECT DISTINCT r.ID
+                    FROM Reservacion r
+                    INNER JOIN Boleto b ON b.ReservacionID = r.ID
+                    INNER JOIN Vuelo  v ON v.ID = b.VueloID
+                    WHERE r.EstadoReservaID = 2
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM Boleto b2
+                          INNER JOIN Vuelo v2 ON v2.ID = b2.VueloID
+                          WHERE b2.ReservacionID = r.ID
+                            AND v2.EstadoID != 3
+                      )";
+
+                var reservacionesACompletar = new List<int>();
+                using (var cmd = new SqlCommand(queryCompletables, connection, transaction))
+                {
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                        reservacionesACompletar.Add(reader.GetInt32(0));
+                }
+
+                if (reservacionesACompletar.Count == 0)
+                {
+                    transaction.Commit();
+                    return 0;
+                }
+
+                string ids = string.Join(",", reservacionesACompletar);
+                string updateReservaciones = $"UPDATE Reservacion SET EstadoReservaID = 5 WHERE ID IN ({ids})";
+
+                using (var cmd = new SqlCommand(updateReservaciones, connection, transaction))
+                    await cmd.ExecuteNonQueryAsync();
+
+                transaction.Commit();
+                return reservacionesACompletar.Count;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
         private string GenerarNoReservacion()
             => "RES" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(1000, 9999);
 
@@ -619,63 +612,6 @@ namespace Aerolinea.API.Repositories
             }
 
             return "A" + new string(letras);
-        }
-
-        public async Task<int> CompletarReservaciones()
-        {
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.OpenAsync();
-            using var transaction = connection.BeginTransaction();
-
-            try
-            {
-                // Reservaciones confirmadas donde todos sus vuelos ya finalizaron
-                // (EstadoVueloID = 3 o el valor que uses para Finalizado en tu tabla)
-                string queryCompletables = @"
-            SELECT DISTINCT r.ID
-            FROM Reservacion r
-            INNER JOIN Boleto b ON b.ReservacionID = r.ID
-            INNER JOIN Vuelo  v ON v.ID = b.VueloID
-            WHERE r.EstadoReservaID = 2
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM Boleto b2
-                  INNER JOIN Vuelo v2 ON v2.ID = b2.VueloID
-                  WHERE b2.ReservacionID = r.ID
-                    AND v2.EstadoID != 3  -- aún no finalizado
-              )";
-
-                var reservacionesACompletar = new List<int>();
-                using (var cmd = new SqlCommand(queryCompletables, connection, transaction))
-                {
-                    using var reader = await cmd.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                        reservacionesACompletar.Add(reader.GetInt32(0));
-                }
-
-                if (reservacionesACompletar.Count == 0)
-                {
-                    transaction.Commit();
-                    return 0;
-                }
-
-                string ids = string.Join(",", reservacionesACompletar);
-                string updateReservaciones = $@"
-            UPDATE Reservacion
-            SET EstadoReservaID = 5
-            WHERE ID IN ({ids})";
-
-                using (var cmd = new SqlCommand(updateReservaciones, connection, transaction))
-                    await cmd.ExecuteNonQueryAsync();
-
-                transaction.Commit();
-                return reservacionesACompletar.Count;
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
         }
     }
 }
