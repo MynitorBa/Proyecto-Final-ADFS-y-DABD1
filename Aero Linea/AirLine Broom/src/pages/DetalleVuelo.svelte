@@ -2,13 +2,20 @@
   // @ts-nocheck
   import '../styles/detallesv.css';
   import { onMount } from 'svelte';
+  import { sesion } from '../stores/sesion.js';
+  import ComentarioNodo from './ComentarioNodo.svelte';
 
   export let flight;
   export let onClose;
 
+  const API = 'https://localhost:7107';
+
   let selectedClass = 'economico';
-  let comentarios = [];
+  let comentariosPlanos = [];
   let loadingComentarios = true;
+
+  // Estado reactivo por comentario: id → { expandido, mostrandoForm, textoRespuesta, enviando, votoActual }
+  let estadoNodos = {};
 
   const amenidades = {
     economico: [
@@ -34,22 +41,175 @@
   onMount(async () => {
     if (flight.rutaId) {
       await cargarComentarios();
+    } else {
+      loadingComentarios = false;
     }
   });
 
+  /* ─── Carga de comentarios ──────────────── */
   async function cargarComentarios() {
+    loadingComentarios = true;
     try {
-      const response = await fetch(`https://localhost:7107/api/comentarios/ruta/${flight.rutaId}`);
-      if (response.ok) {
-        comentarios = await response.json();
+      const sesionActual = $sesion;
+      // Si hay sesión, usamos el endpoint con-voto para obtener votoUsuario
+      const endpoint = sesionActual
+        ? `${API}/api/comentarios/ruta/${flight.rutaId}/con-voto`
+        : `${API}/api/comentarios/ruta/${flight.rutaId}`;
+
+      const res = await fetch(endpoint, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        comentariosPlanos = data;
+        // Inicializar estado de cada nodo
+        const nuevoEstado = {};
+        data.forEach(c => {
+          nuevoEstado[c.id] = {
+            expandido: false,
+            mostrandoForm: false,
+            textoRespuesta: '',
+            enviando: false,
+            votoActual: c.votoUsuario ?? null  // null | 1 | -1
+          };
+        });
+        estadoNodos = nuevoEstado;
       }
-    } catch (error) {
-      console.error('Error cargando comentarios:', error);
+    } catch (e) {
+      console.error('Error cargando comentarios:', e);
     } finally {
       loadingComentarios = false;
     }
   }
 
+  /* ─── Árbol de comentarios ──────────────── */
+  $: raices = comentariosPlanos.filter(c => !c.comentarioPadreId);
+  $: hijosMap = (() => {
+    const map = {};
+    comentariosPlanos.forEach(c => {
+      if (c.comentarioPadreId) {
+        if (!map[c.comentarioPadreId]) map[c.comentarioPadreId] = [];
+        map[c.comentarioPadreId].push(c);
+      }
+    });
+    return map;
+  })();
+
+  function getHijos(id) {
+    return hijosMap[id] ?? [];
+  }
+
+  /* ─── Votos ─────────────────────────────── */
+  async function votar(comentarioId, valor) {
+    const sesionActual = $sesion;
+    if (!sesionActual) return;
+
+    const estado = estadoNodos[comentarioId];
+    if (!estado) return;
+    const votoActual = estado.votoActual;
+
+    try {
+      if (votoActual === valor) {
+        // Toggle: eliminar voto existente
+        const res = await fetch(`${API}/api/votos/${comentarioId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          _actualizarVoto(comentarioId, null, data.nuevosDowns);
+        }
+      } else {
+        // Crear o cambiar voto
+        const res = await fetch(`${API}/api/votos`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comentarioId, valor })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Si ya votaste igual, la API devuelve { message: "..." }
+          if (data.message) return;
+          _actualizarVoto(comentarioId, valor, data.nuevosDowns);
+        }
+      }
+    } catch (e) {
+      console.error('Error al votar:', e);
+    }
+  }
+
+  function _actualizarVoto(comentarioId, nuevoVoto, nuevosDowns) {
+    estadoNodos[comentarioId] = { ...estadoNodos[comentarioId], votoActual: nuevoVoto };
+    comentariosPlanos = comentariosPlanos.map(c =>
+      c.id === comentarioId ? { ...c, downs: nuevosDowns } : c
+    );
+    estadoNodos = { ...estadoNodos };
+  }
+
+  /* ─── Formulario de respuesta ───────────── */
+  function toggleForm(id) {
+    estadoNodos[id] = {
+      ...estadoNodos[id],
+      mostrandoForm: !estadoNodos[id].mostrandoForm,
+      textoRespuesta: ''
+    };
+    estadoNodos = { ...estadoNodos };
+  }
+
+  function toggleExpandido(id) {
+    estadoNodos[id] = { ...estadoNodos[id], expandido: !estadoNodos[id].expandido };
+    estadoNodos = { ...estadoNodos };
+  }
+
+  function onTextoChange(id, val) {
+    estadoNodos[id] = { ...estadoNodos[id], textoRespuesta: val };
+    estadoNodos = { ...estadoNodos };
+  }
+
+  async function enviarRespuesta(padreId) {
+    const estado = estadoNodos[padreId];
+    if (!estado || !estado.textoRespuesta.trim()) return;
+
+    estadoNodos[padreId] = { ...estado, enviando: true };
+    estadoNodos = { ...estadoNodos };
+
+    try {
+      const res = await fetch(`${API}/api/comentarios/respuesta`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          comentarioPadreId: padreId,
+          contenido: estado.textoRespuesta.trim()
+        })
+      });
+
+      if (res.ok) {
+        const nuevo = await res.json();
+        comentariosPlanos = [...comentariosPlanos, nuevo];
+        estadoNodos[nuevo.id] = {
+          expandido: false,
+          mostrandoForm: false,
+          textoRespuesta: '',
+          enviando: false,
+          votoActual: null
+        };
+        estadoNodos[padreId] = {
+          ...estadoNodos[padreId],
+          mostrandoForm: false,
+          textoRespuesta: '',
+          enviando: false,
+          expandido: true
+        };
+        estadoNodos = { ...estadoNodos };
+      }
+    } catch (e) {
+      console.error('Error al enviar respuesta:', e);
+      estadoNodos[padreId] = { ...estadoNodos[padreId], enviando: false };
+      estadoNodos = { ...estadoNodos };
+    }
+  }
+
+  /* ─── Helpers de formato ────────────────── */
   function formatHora(h) {
     if (!h) return '--:--';
     return h.substring(0, 5);
@@ -57,9 +217,7 @@
 
   function formatDuracion(min) {
     if (!min) return 'N/A';
-    const horas = Math.floor(min / 60);
-    const minutos = min % 60;
-    return `${horas}h ${minutos}m`;
+    return `${Math.floor(min / 60)}h ${min % 60}m`;
   }
 
   function formatPrecio(precio) {
@@ -69,28 +227,28 @@
 
   function formatFecha(fecha) {
     if (!fecha) return '';
-    const date = new Date(fecha);
-    const opciones = { year: 'numeric', month: 'short', day: 'numeric' };
-    return date.toLocaleDateString('es-ES', opciones);
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric', month: 'short', day: 'numeric'
+    });
   }
 
   function getEstrellas(cantidad) {
-    const estrellas = [];
-    for (let i = 0; i < 5; i++) {
-      estrellas.push(i < cantidad);
-    }
-    return estrellas;
+    return Array.from({ length: 5 }, (_, i) => i < (cantidad ?? 0));
   }
 
-  $: precioTurista   = flight.precioTurista ?? 0;
-  $: precioEjecutiva = flight.precioEjecutiva ?? 0;
-  $: precioMostrado  = selectedClass === 'economico' ? precioTurista : precioEjecutiva;
-  $: asientosTurista = flight.boletosDisponiblesTurista ?? 0;
-  $: asientosEjecutiva = flight.boletosDisponiblesEjecutiva ?? 0;
-  $: asientosMostrados = selectedClass === 'economico' ? asientosTurista : asientosEjecutiva;
-  $: turistaDisponible = precioTurista > 0 && asientosTurista > 0;
+  /* ─── Reactivos ─────────────────────────── */
+  $: precioTurista      = flight.precioTurista ?? 0;
+  $: precioEjecutiva    = flight.precioEjecutiva ?? 0;
+  $: precioMostrado     = selectedClass === 'economico' ? precioTurista : precioEjecutiva;
+  $: asientosTurista    = flight.boletosDisponiblesTurista ?? 0;
+  $: asientosEjecutiva  = flight.boletosDisponiblesEjecutiva ?? 0;
+  $: asientosMostrados  = selectedClass === 'economico' ? asientosTurista : asientosEjecutiva;
+  // Total real = suma de ambas clases (boletosDisponibles del API puede venir en 0)
+  $: totalAsientosDisponibles = asientosTurista + asientosEjecutiva;
+  $: turistaDisponible  = precioTurista > 0 && asientosTurista > 0;
   $: ejecutivaDisponible = precioEjecutiva > 0 && asientosEjecutiva > 0;
-  $: tripulantes = flight.tripulantes || [];
+  $: tripulantes        = flight.tripulantes || [];
+  $: haySession         = !!$sesion;
 
   function handleBackdropClick(e) {
     if (e.target === e.currentTarget) onClose();
@@ -102,7 +260,7 @@
 <div class="dv-backdrop" on:click={handleBackdropClick}>
   <div class="dv-modal">
 
-    <!-- HEADER -->
+    <!-- ── HEADER ── -->
     <div class="dv-header">
       <div class="dv-header-left">
         <span class="dv-code">{flight.numeroVuelo}</span>
@@ -111,7 +269,7 @@
       <button class="dv-close" on:click={onClose}>✕ Cerrar</button>
     </div>
 
-    <!-- HERO -->
+    <!-- ── HERO ── -->
     <div class="dv-hero">
       <div class="dv-hero-content">
         <div class="dv-hero-point">
@@ -138,12 +296,14 @@
       </div>
     </div>
 
-    <!-- BODY -->
+    <!-- ── BODY ── -->
     <div class="dv-body">
       <div class="dv-grid">
 
         <!-- MAIN -->
         <div class="dv-main">
+
+          <!-- Info del vuelo -->
           <div class="dv-section-title">Información del vuelo</div>
           <div class="dv-specs">
             <div class="dv-spec">
@@ -164,7 +324,7 @@
             </div>
             <div class="dv-spec">
               <div class="dv-spec-label">Asientos disponibles</div>
-              <div class="dv-spec-value dv-spec-value--gold">{flight.boletosDisponibles ?? 0}</div>
+              <div class="dv-spec-value dv-spec-value--gold">{totalAsientosDisponibles}</div>
             </div>
             <div class="dv-spec">
               <div class="dv-spec-label">Tipo de vuelo</div>
@@ -172,7 +332,7 @@
             </div>
           </div>
 
-          <!-- TRIPULACIÓN -->
+          <!-- Tripulación -->
           {#if tripulantes.length > 0}
             <div class="dv-section-title dv-section-title--mt">Tripulación</div>
             <div class="dv-tripulantes">
@@ -193,9 +353,11 @@
             </div>
           {/if}
 
+          <!-- Clases disponibles -->
           <div class="dv-section-title dv-section-title--mt">Clases disponibles</div>
           <div class="dv-clases">
 
+            <!-- Turista -->
             <button
               class="dv-clase"
               class:dv-clase--selected={selectedClass === 'economico'}
@@ -222,6 +384,7 @@
               </ul>
             </button>
 
+            <!-- Ejecutiva -->
             <button
               class="dv-clase dv-clase--premium"
               class:dv-clase--selected={selectedClass === 'ejecutivo'}
@@ -251,56 +414,39 @@
 
           </div>
 
-          <!-- COMENTARIOS Y RESEÑAS -->
+          <!-- ═══ COMENTARIOS RECURSIVOS ═══ -->
           <div class="dv-section-title dv-section-title--mt">
-            Reseñas de la ruta {flight.origenCodigo} → {flight.destinoCodigo}
+            Reseñas · {flight.origenCodigo} → {flight.destinoCodigo}
           </div>
-          
+
           {#if loadingComentarios}
             <div class="dv-loading">Cargando reseñas...</div>
-          {:else if comentarios.length === 0}
+
+          {:else if raices.length === 0}
             <div class="dv-no-comentarios">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
               </svg>
               <p>Aún no hay reseñas para esta ruta</p>
             </div>
+
           {:else}
-            <div class="dv-comentarios">
-              {#each comentarios as comentario}
-                <div class="dv-comentario">
-                  <div class="dv-comentario-header">
-                    <div class="dv-comentario-user">
-                      <div class="dv-comentario-avatar">
-                        {comentario.nombreCompleto.charAt(0).toUpperCase()}
-                      </div>
-                      <div class="dv-comentario-user-info">
-                        <div class="dv-comentario-nombre">{comentario.nombreCompleto}</div>
-                        <div class="dv-comentario-username">@{comentario.username}</div>
-                      </div>
-                    </div>
-                    <div class="dv-comentario-fecha">{formatFecha(comentario.fecha)}</div>
-                  </div>
-                  
-                  <div class="dv-comentario-estrellas">
-                    {#each getEstrellas(comentario.cantidadEstrellas) as llena}
-                      <svg class="dv-estrella" class:dv-estrella--llena={llena} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={llena ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                      </svg>
-                    {/each}
-                  </div>
-
-                  <div class="dv-comentario-contenido">{comentario.contenido}</div>
-
-                  {#if comentario.downs > 0}
-                    <div class="dv-comentario-downs">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path>
-                      </svg>
-                      {comentario.downs}
-                    </div>
-                  {/if}
-                </div>
+            <div class="dv-comentarios-raiz">
+              {#each raices as comentario (comentario.id)}
+                <ComentarioNodo
+                  {comentario}
+                  {getHijos}
+                  {estadoNodos}
+                  {haySession}
+                  {formatFecha}
+                  {getEstrellas}
+                  {votar}
+                  {toggleForm}
+                  {toggleExpandido}
+                  {enviarRespuesta}
+                  {onTextoChange}
+                  profundidad={0}
+                />
               {/each}
             </div>
           {/if}
@@ -338,233 +484,13 @@
               </div>
             {/if}
             <div class="dv-summary-note">Precio referencial · sujeto a cambios</div>
-            <div class="dv-summary-disclaimer">Vista informativa. Para reservar, selecciona el vuelo en la lista principal.</div>
+            <div class="dv-summary-disclaimer">
+              Vista informativa. Para reservar, selecciona el vuelo en la lista principal.
+            </div>
           </div>
         </aside>
 
       </div>
     </div>
-
   </div>
 </div>
-
-<style>
-  .dv-clase--disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
-  .dv-clase-unavailable {
-    color: #dc2626;
-    font-weight: 700;
-    font-size: 1.1rem;
-    margin: 1rem 0;
-  }
-
-  .dv-summary-seats {
-    color: #c9a96e;
-    font-weight: 700;
-  }
-
-  .dv-summary-unavailable {
-    color: #dc2626;
-    font-weight: 600;
-    text-align: center;
-  }
-
-  /* Estilos para tripulantes */
-  .dv-tripulantes {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  .dv-tripulante {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-  }
-
-  .dv-tripulante:hover {
-    border-color: #c9a96e;
-    box-shadow: 0 2px 8px rgba(201, 169, 110, 0.1);
-  }
-
-  .dv-tripulante-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #c9a96e 0%, #d4b782 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .dv-tripulante-avatar svg {
-    width: 24px;
-    height: 24px;
-    color: white;
-  }
-
-  .dv-tripulante-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .dv-tripulante-nombre {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: #1f2937;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .dv-tripulante-rol {
-    font-size: 0.75rem;
-    color: #c9a96e;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-    margin-top: 0.125rem;
-  }
-
-  /* Estilos para comentarios */
-  .dv-loading {
-    text-align: center;
-    padding: 2rem;
-    color: #6b7280;
-    font-style: italic;
-  }
-
-  .dv-no-comentarios {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: #9ca3af;
-  }
-
-  .dv-no-comentarios svg {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 1rem;
-    opacity: 0.5;
-  }
-
-  .dv-no-comentarios p {
-    font-size: 0.95rem;
-    margin: 0;
-  }
-
-  .dv-comentarios {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  .dv-comentario {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    transition: all 0.2s ease;
-  }
-
-  .dv-comentario:hover {
-    border-color: #c9a96e;
-    box-shadow: 0 4px 12px rgba(201, 169, 110, 0.08);
-  }
-
-  .dv-comentario-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.75rem;
-  }
-
-  .dv-comentario-user {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .dv-comentario-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #c9a96e 0%, #d4b782 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: white;
-    font-size: 1.125rem;
-  }
-
-  .dv-comentario-user-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .dv-comentario-nombre {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 0.95rem;
-  }
-
-  .dv-comentario-username {
-    font-size: 0.8rem;
-    color: #6b7280;
-  }
-
-  .dv-comentario-fecha {
-    font-size: 0.8rem;
-    color: #9ca3af;
-  }
-
-  .dv-comentario-estrellas {
-    display: flex;
-    gap: 0.25rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .dv-estrella {
-    width: 18px;
-    height: 18px;
-    color: #d1d5db;
-    transition: color 0.2s;
-  }
-
-  .dv-estrella--llena {
-    color: #fbbf24;
-  }
-
-  .dv-comentario-contenido {
-    color: #374151;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    margin-bottom: 0.5rem;
-  }
-
-  .dv-comentario-downs {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    color: #9ca3af;
-    font-size: 0.85rem;
-    margin-top: 0.75rem;
-  }
-
-  .dv-comentario-downs svg {
-    width: 16px;
-    height: 16px;
-  }
-</style>

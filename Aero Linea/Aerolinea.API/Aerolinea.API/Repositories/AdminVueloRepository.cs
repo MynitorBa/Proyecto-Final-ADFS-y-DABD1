@@ -39,12 +39,12 @@ namespace Aerolinea.API.Repositories
                 // 4. Crear el vuelo — los precios y boletos disponibles van directo en la tabla
                 var insertVuelo = @"
                     INSERT INTO Vuelo
-                        (NumeroVuelo, Fecha, HoraSalida, HoraLlegada, EstadoID,
+                        (NumeroVuelo, Fecha, HoraSalida, HoraLlegada, FechaLlegada, EstadoID,
                          AvionID, RutaID, BoletosTurista, BoletosEjecutivo,
                          PrecioTurista, PrecioEjecutivo)
                     OUTPUT INSERTED.ID
                     VALUES
-                        (@NumeroVuelo, @Fecha, @HoraSalida, @HoraLlegada, @EstadoId,
+                        (@NumeroVuelo, @Fecha, @HoraSalida, @HoraLlegada, @FechaLlegada, @EstadoId,
                          @AvionId, @RutaId, @BoletosTurista, @BoletosEjecutivo,
                          @PrecioTurista, @PrecioEjecutivo)";
 
@@ -55,6 +55,8 @@ namespace Aerolinea.API.Repositories
                     cmd.Parameters.AddWithValue("@Fecha", dto.Fecha.Date);
                     cmd.Parameters.AddWithValue("@HoraSalida", TimeSpan.Parse(dto.HoraSalida));
                     cmd.Parameters.AddWithValue("@HoraLlegada", TimeSpan.Parse(dto.HoraLlegada));
+                    cmd.Parameters.AddWithValue("@FechaLlegada",
+                        dto.FechaLlegada.HasValue ? (object)dto.FechaLlegada.Value.Date : DBNull.Value);
                     cmd.Parameters.AddWithValue("@EstadoId", 1);
                     cmd.Parameters.AddWithValue("@AvionId", dto.AvionId);
                     cmd.Parameters.AddWithValue("@RutaId", rutaId);
@@ -149,6 +151,7 @@ namespace Aerolinea.API.Repositories
                     v.Fecha,
                     v.HoraSalida,
                     v.HoraLlegada,
+                    v.FechaLlegada,
                     v.EstadoID,
                     av.CapacidadPasajeros,
                     v.BoletosTurista,
@@ -170,7 +173,7 @@ namespace Aerolinea.API.Repositories
             var vuelos = new List<VueloHistorialDTO>();
             while (await reader.ReadAsync())
             {
-                var estadoId = reader.GetInt32(7);
+                var estadoId = reader.GetInt32(8);
                 string estado = estadoId switch
                 {
                     1 => "Activo",
@@ -180,9 +183,9 @@ namespace Aerolinea.API.Repositories
                     _ => "Activo"
                 };
 
-                int capacidad = reader.GetInt32(8);
-                int bolTurista = reader.IsDBNull(9) ? 0 : reader.GetInt32(9);
-                int bolEjecutivo = reader.IsDBNull(10) ? 0 : reader.GetInt32(10);
+                int capacidad = reader.GetInt32(9);
+                int bolTurista = reader.IsDBNull(10) ? 0 : reader.GetInt32(10);
+                int bolEjecutivo = reader.IsDBNull(11) ? 0 : reader.GetInt32(11);
                 int boletosVendidos = capacidad - (bolTurista + bolEjecutivo);
 
                 vuelos.Add(new VueloHistorialDTO
@@ -194,13 +197,14 @@ namespace Aerolinea.API.Repositories
                     Fecha = reader.GetDateTime(4).ToString("yyyy-MM-dd"),
                     HoraSalida = reader.GetTimeSpan(5).ToString(@"hh\:mm"),
                     HoraLlegada = reader.GetTimeSpan(6).ToString(@"hh\:mm"),
+                    FechaLlegada = reader.IsDBNull(7) ? null : reader.GetDateTime(7).ToString("yyyy-MM-dd"),
                     Estado = estado,
                     AsientosTotales = capacidad,
                     BoletosTurista = bolTurista,
                     BoletosEjecutivo = bolEjecutivo,
                     AsientosVendidos = boletosVendidos,
-                    PrecioTurista = reader.IsDBNull(11) ? 0 : reader.GetDecimal(11),
-                    PrecioEjecutiva = reader.IsDBNull(12) ? 0 : reader.GetDecimal(12)
+                    PrecioTurista = reader.IsDBNull(12) ? 0 : reader.GetDecimal(12),
+                    PrecioEjecutiva = reader.IsDBNull(13) ? 0 : reader.GetDecimal(13)
                 });
             }
 

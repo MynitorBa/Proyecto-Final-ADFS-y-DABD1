@@ -48,7 +48,7 @@ namespace Aerolinea.API.Services
                 Telefono = dto.Telefono,
                 FechaNacimiento = dto.FechaNacimiento,
                 CiudadId = ciudadId,
-                RolID = 2  // Cliente por defecto
+                RolID = 1  // Cliente por defecto
             };
 
             int usuarioId = await _repository.CrearUsuario(usuario);
