@@ -2,43 +2,47 @@
   import '../styles/home.css';
   import logoHero from '../assets/BroomHero1.png';
   import { onMount } from 'svelte';
-  
+
   export let navigateTo;
   export let suggestedDestination = null;
 
   const API = 'https://localhost:7107';
 
-  let tripType = 'roundtrip'; 
+  let tripType   = 'roundtrip';
   let departureDate = '';
-  let returnDate = '';
-  let passengers = 1;
-  let aeropuertos = [];
+  let returnDate    = '';
+  let passengers    = 1;
+
+  let aeropuertos        = [];
   let loadingAeropuertos = true;
-  let fromQuery = '';
-  let fromSugeridos = [];
-  let fromSeleccionado = null;
-  let toQuery = '';
-  let toSugeridos = [];
-  let toSeleccionado = null;
-  
-  let fechasDisponiblesIda = [];
+  let fromQuery          = '';
+  let fromSugeridos      = [];
+  let fromSeleccionado   = null;
+  let toQuery            = '';
+  let toSugeridos        = [];
+  let toSeleccionado     = null;
+
+  let fechasDisponiblesIda    = [];
   let fechasDisponiblesVuelta = [];
-  
-  let loadingFechas = false;
+  let loadingFechas      = false;
   let mostrarCalendarios = false;
-  let mesIda = new Date();
+  let mesIda    = new Date();
   let mesVuelta = new Date();
   let searchError = '';
-  let buscando = false;
+  let buscando    = false;
+
+  const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
+  const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                       'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   onMount(async () => {
     try {
       const res = await fetch(`${API}/api/aeropuertos`);
       aeropuertos = await res.json();
-    } catch (err) { 
-      console.error('Error cargando aeropuertos:', err); 
-    } finally { 
-      loadingAeropuertos = false; 
+    } catch (err) {
+      console.error('Error cargando aeropuertos:', err);
+    } finally {
+      loadingAeropuertos = false;
     }
   });
 
@@ -51,10 +55,7 @@
     }
   }
 
-  // Cuando cambia el número de pasajeros, recargar fechas si ya hay ruta seleccionada
-  $: if (passengers && fromSeleccionado && toSeleccionado) {
-    cargarFechasDisponibles();
-  }
+  $: if (passengers && fromSeleccionado && toSeleccionado) cargarFechasDisponibles();
 
   function onFromInput() {
     const q = fromQuery.toLowerCase();
@@ -67,7 +68,6 @@
       fromSeleccionado = null; resetCalendarios();
     }
   }
-
   function seleccionarOrigen(a) {
     fromSeleccionado = a;
     fromQuery = `${a.ciudad} (${a.codigo})`;
@@ -87,7 +87,6 @@
       toSeleccionado = null; resetCalendarios();
     }
   }
-
   function seleccionarDestino(a) {
     toSeleccionado = a;
     toQuery = `${a.ciudad} (${a.codigo})`;
@@ -96,10 +95,8 @@
   }
 
   function resetCalendarios() {
-    fechasDisponiblesIda = [];
-    fechasDisponiblesVuelta = [];
-    departureDate = '';
-    returnDate = '';
+    fechasDisponiblesIda = []; fechasDisponiblesVuelta = [];
+    departureDate = ''; returnDate = '';
     mostrarCalendarios = false;
   }
 
@@ -107,52 +104,36 @@
     if (!fromSeleccionado || !toSeleccionado) return;
     loadingFechas = true;
     resetCalendarios();
-    
     try {
-      // Fechas IDA con filtro de pasajeros
-      const resIda = await fetch(
-        `${API}/api/aeropuertos/fechas-disponibles?origenId=${fromSeleccionado.id}&destinoId=${toSeleccionado.id}&cantidadPersonas=${passengers}`
-      );
-      const dataIda = await resIda.json();
-      fechasDisponiblesIda = dataIda.map(f => f.split('T')[0]);
-
-      // Fechas VUELTA con filtro de pasajeros
-      const resVuelta = await fetch(
-        `${API}/api/aeropuertos/fechas-disponibles?origenId=${toSeleccionado.id}&destinoId=${fromSeleccionado.id}&cantidadPersonas=${passengers}`
-      );
+      const [resIda, resVuelta] = await Promise.all([
+        fetch(`${API}/api/aeropuertos/fechas-disponibles?origenId=${fromSeleccionado.id}&destinoId=${toSeleccionado.id}&cantidadPersonas=${passengers}`),
+        fetch(`${API}/api/aeropuertos/fechas-disponibles?origenId=${toSeleccionado.id}&destinoId=${fromSeleccionado.id}&cantidadPersonas=${passengers}`)
+      ]);
+      const dataIda    = await resIda.json();
       const dataVuelta = await resVuelta.json();
+      fechasDisponiblesIda    = dataIda.map(f => f.split('T')[0]);
       fechasDisponiblesVuelta = dataVuelta.map(f => f.split('T')[0]);
 
-      if (fechasDisponiblesIda.length > 0) {
-        const primera = new Date(fechasDisponiblesIda[0] + 'T00:00:00');
-        mesIda = new Date(primera.getFullYear(), primera.getMonth(), 1);
-      } else {
-        const hoy = new Date();
-        mesIda = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-      }
+      const priIda = fechasDisponiblesIda[0];
+      mesIda = priIda
+        ? (() => { const d = new Date(priIda + 'T00:00:00'); return new Date(d.getFullYear(), d.getMonth(), 1); })()
+        : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-      if (fechasDisponiblesVuelta.length > 0) {
-        const primera = new Date(fechasDisponiblesVuelta[0] + 'T00:00:00');
-        mesVuelta = new Date(primera.getFullYear(), primera.getMonth(), 1);
-      } else {
-        mesVuelta = new Date(mesIda.getFullYear(), mesIda.getMonth() + 1, 1);
-      }
-      
+      const priVuelta = fechasDisponiblesVuelta[0];
+      mesVuelta = priVuelta
+        ? (() => { const d = new Date(priVuelta + 'T00:00:00'); return new Date(d.getFullYear(), d.getMonth(), 1); })()
+        : new Date(mesIda.getFullYear(), mesIda.getMonth() + 1, 1);
+
       mostrarCalendarios = true;
-      
-    } catch (err) { 
-      console.error('Error cargando fechas:', err); 
-    } finally { 
-      loadingFechas = false; 
+    } catch (err) {
+      console.error('Error cargando fechas:', err);
+    } finally {
+      loadingFechas = false;
     }
   }
 
   function esFechaDisponibleIda(f)    { return fechasDisponiblesIda.includes(f); }
   function esFechaDisponibleVuelta(f) { return fechasDisponiblesVuelta.includes(f); }
-
-  const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
-  const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                       'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   function getDias(fecha) {
     const y = fecha.getFullYear(), m = fecha.getMonth();
@@ -161,9 +142,8 @@
     const dias = [];
     for (let i = 0; i < ini; i++) dias.push(null);
     const total = new Date(y, m + 1, 0).getDate();
-    for (let d = 1; d <= total; d++) {
+    for (let d = 1; d <= total; d++)
       dias.push({ dia: d, fecha: `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` });
-    }
     return dias;
   }
 
@@ -179,62 +159,47 @@
 
   function pickIda(f) {
     if (!esFechaDisponibleIda(f)) return;
-    departureDate = f;
-    searchError = '';
+    departureDate = f; searchError = '';
   }
-
   function pickVuelta(f) {
     if (departureDate && f < departureDate) return;
     if (!esFechaDisponibleVuelta(f)) return;
-    returnDate = f;
-    searchError = '';
+    returnDate = f; searchError = '';
   }
 
   async function handleSearchFlight() {
     searchError = '';
-    
-    if (!fromSeleccionado) { searchError = 'Selecciona el aeropuerto de origen.'; return; }
+    if (!fromSeleccionado) { searchError = 'Selecciona el aeropuerto de origen.';  return; }
     if (!toSeleccionado)   { searchError = 'Selecciona el aeropuerto de destino.'; return; }
-    if (!departureDate)    { searchError = 'Selecciona la fecha de ida.'; return; }
+    if (!departureDate)    { searchError = 'Selecciona la fecha de ida.';           return; }
     if (tripType === 'roundtrip' && !returnDate) { searchError = 'Selecciona la fecha de regreso.'; return; }
 
     buscando = true;
-
     try {
-      // Buscar vuelos de ida — esto también guarda la búsqueda en BD con el usuario de sesión
       const resIda = await fetch(`${API}/api/vuelos/buscar`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          origenId:          fromSeleccionado.id,
-          destinoId:         toSeleccionado.id,
-          fecha:             departureDate,
-          cantidadPasajeros: passengers
+          origenId: fromSeleccionado.id, destinoId: toSeleccionado.id,
+          fecha: departureDate, cantidadPasajeros: passengers
         })
       });
-
-      if (!resIda.ok) throw new Error('Error buscando vuelos de ida');
+      if (!resIda.ok) throw new Error();
       const vuelosIda = await resIda.json();
 
-      // Si es ida y vuelta, buscar también los vuelos de vuelta
-      let vuelosVuelta = [];
+      let vuelosVuelta = { directos: [], conEscala: [] };
       if (tripType === 'roundtrip' && returnDate) {
         const resVuelta = await fetch(`${API}/api/vuelos/buscar`, {
-          method: 'POST',
-          credentials: 'include',
+          method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            origenId:          toSeleccionado.id,
-            destinoId:         fromSeleccionado.id,
-            fecha:             returnDate,
-            cantidadPasajeros: passengers
+            origenId: toSeleccionado.id, destinoId: fromSeleccionado.id,
+            fecha: returnDate, cantidadPasajeros: passengers
           })
         });
         if (resVuelta.ok) vuelosVuelta = await resVuelta.json();
       }
 
-      // Pasamos todo directamente a Vuelos.svelte sin necesidad de busquedaId
       navigateTo('vuelos', {
         vuelosIda,
         vuelosVuelta,
@@ -251,9 +216,8 @@
           tripType
         }
       });
-
-    } catch (error) {
-      console.error('Error en búsqueda:', error);
+    } catch (err) {
+      console.error('Error en búsqueda:', err);
       searchError = 'Error al buscar vuelos. Intenta nuevamente.';
     } finally {
       buscando = false;
@@ -262,6 +226,7 @@
 </script>
 
 <div class="broom-home">
+
   <section class="broom-home__hero">
     <img src={logoHero} alt="Broom AirLine Hero">
     <div class="broom-home__hero-overlay">
@@ -273,8 +238,10 @@
   <section class="broom-home__search-section">
     <div class="broom-home__search-container">
       <h2 class="broom-home__search-title">Encuentra tu vuelo</h2>
-      
+
       <form class="broom-home__search-form" on:submit|preventDefault={handleSearchFlight}>
+
+        <!-- Tipo de viaje -->
         <div class="broom-home__trip-type">
           <label class="broom-home__radio-label">
             <input type="radio" name="tripType" value="roundtrip" bind:group={tripType} class="broom-home__radio-input">
@@ -286,8 +253,10 @@
           </label>
         </div>
 
+        <!-- Campos de búsqueda -->
         <div class="broom-home__form-grid">
-          <div class="broom-home__form-group" style="position:relative">
+
+          <div class="broom-home__form-group broom-home__form-group--relative">
             <label for="fromCity" class="broom-home__form-label">Desde</label>
             <input type="text" id="fromCity" bind:value={fromQuery} on:input={onFromInput}
               placeholder={loadingAeropuertos ? 'Cargando...' : 'Ciudad de origen'}
@@ -307,7 +276,7 @@
             {/if}
           </div>
 
-          <div class="broom-home__form-group" style="position:relative">
+          <div class="broom-home__form-group broom-home__form-group--relative">
             <label for="toCity" class="broom-home__form-label">Hacia</label>
             <input type="text" id="toCity" bind:value={toQuery} on:input={onToInput}
               placeholder="Ciudad de destino"
@@ -346,8 +315,10 @@
               {buscando ? 'Buscando...' : 'Buscar vuelo'}
             </button>
           </div>
+
         </div>
 
+        <!-- Calendarios -->
         {#if loadingFechas}
           <div class="cal-loading">Cargando disponibilidad de vuelos...</div>
         {:else if mostrarCalendarios}
@@ -356,12 +327,14 @@
               {#if fechasDisponiblesIda.length > 0 || fechasDisponiblesVuelta.length > 0}
                 <span class="cal-info-text">✈ Días con vuelo están marcados — selecciona tu fecha</span>
               {:else}
-                <span class="cal-info-text cal-info-text--empty">No hay vuelos disponibles en esta ruta para {passengers} {passengers === 1 ? 'pasajero' : 'pasajeros'}</span>
+                <span class="cal-info-text cal-info-text--empty">
+                  No hay vuelos disponibles en esta ruta para {passengers} {passengers === 1 ? 'pasajero' : 'pasajeros'}
+                </span>
               {/if}
             </div>
 
             <div class="cal-dual" class:cal-dual--single={tripType === 'oneway'}>
-              <!-- CALENDARIO DE IDA -->
+
               <div class="cal-container">
                 <div class="cal-label">✈ Fecha de ida</div>
                 <div class="cal-nav">
@@ -396,7 +369,6 @@
                 {/if}
               </div>
 
-              <!-- CALENDARIO DE VUELTA -->
               {#if tripType === 'roundtrip'}
                 <div class="cal-container">
                   <div class="cal-label">↩ Fecha de regreso</div>
@@ -413,9 +385,9 @@
                       {#if item === null}
                         <span class="cal-day cal-day--empty"></span>
                       {:else}
-                        {@const bloqPorIda          = departureDate && item.fecha < departureDate}
-                        {@const bloqPorNoDisponible  = !esFechaDisponibleVuelta(item.fecha)}
-                        {@const bloq = bloqPorIda || bloqPorNoDisponible}
+                        {@const bloqIda  = departureDate && item.fecha < departureDate}
+                        {@const bloqDisp = !esFechaDisponibleVuelta(item.fecha)}
+                        {@const bloq = bloqIda || bloqDisp}
                         {@const sel  = returnDate === item.fecha}
                         <button type="button" class="cal-day"
                           class:cal-day--disponible-vuelta={!bloq && !sel}
@@ -423,7 +395,7 @@
                           class:cal-day--bloqueado={bloq}
                           on:click={() => pickVuelta(item.fecha)}
                           disabled={bloq}
-                          title={bloqPorIda ? 'Fecha anterior a la ida' : bloqPorNoDisponible ? 'Sin vuelos de regreso' : 'Vuelo disponible'}>
+                          title={bloqIda ? 'Fecha anterior a la ida' : bloqDisp ? 'Sin vuelos de regreso' : 'Vuelo disponible'}>
                           {item.dia}
                         </button>
                       {/if}
@@ -434,6 +406,7 @@
                   {/if}
                 </div>
               {/if}
+
             </div>
           </div>
         {/if}
@@ -441,6 +414,7 @@
         {#if searchError}
           <p class="broom-home__search-error">{searchError}</p>
         {/if}
+
       </form>
     </div>
   </section>
@@ -488,4 +462,5 @@
       </div>
     </div>
   </section>
+
 </div>

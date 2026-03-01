@@ -69,7 +69,6 @@ namespace Aerolinea.API.Repositories
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Id", id);
-
             using var reader = await command.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())
@@ -116,8 +115,6 @@ namespace Aerolinea.API.Repositories
             int cantidadPersonas = 1,
             int? claseId = null)
         {
-            var fechas = new List<DateTime>();
-
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
@@ -127,38 +124,88 @@ namespace Aerolinea.API.Repositories
                     ? "AND v.BoletosEjecutivo >= @cantidadPersonas"
                     : "AND (v.BoletosTurista >= @cantidadPersonas OR v.BoletosEjecutivo >= @cantidadPersonas)";
 
-            string query = $@"
-                SELECT DISTINCT v.Fecha 
+            // ── 1. Fechas con vuelos DIRECTOS ─────────────────────────────
+            string queryDirectos = $@"
+                SELECT DISTINCT v.Fecha
                 FROM Vuelo v
-                INNER JOIN Ruta r ON v.RutaID = r.ID
-                INNER JOIN Estado e ON v.EstadoID = e.ID
-                WHERE v.Fecha >= CAST(GETDATE() AS DATE)
+                INNER JOIN Ruta   r ON r.ID = v.RutaID
+                INNER JOIN Estado e ON e.ID = v.EstadoID
+                WHERE v.Fecha  >= CAST(GETDATE() AS DATE)
                   AND e.Estatus = 'A tiempo'
                   {filtroDisponibilidad}";
 
-            if (origenId.HasValue)
-                query += " AND r.OrigenID = @origenId";
+            if (origenId.HasValue) queryDirectos += " AND r.OrigenID  = @origenId";
+            if (destinoId.HasValue) queryDirectos += " AND r.DestinoID = @destinoId";
 
-            if (destinoId.HasValue)
-                query += " AND r.DestinoID = @destinoId";
+            var fechas = new HashSet<DateTime>();
 
-            query += " ORDER BY v.Fecha";
+            using (var cmd = new SqlCommand(queryDirectos, connection))
+            {
+                cmd.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
+                if (origenId.HasValue) cmd.Parameters.AddWithValue("@origenId", origenId.Value);
+                if (destinoId.HasValue) cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
 
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                    fechas.Add(reader.GetDateTime(0));
+            }
 
-            if (origenId.HasValue)
-                command.Parameters.AddWithValue("@origenId", origenId.Value);
+            // ── 2. Fechas con vuelos CON ESCALA ───────────────────────────
+            // Solo aplica si vienen ambos IDs
+            if (origenId.HasValue && destinoId.HasValue)
+            {
+                // Buscamos el Fecha del tramo 1 donde exista al menos un par
+                // tramo1 (origen→X) + tramo2 (X→destino) con escala válida (60-720 min)
+                // y disponibilidad en ambos tramos.
+                // La columna FechaLlegada del tramo 1 se usa para calcular la escala real.
+                string campoDispo1 = claseId == 1 ? "t1.BoletosTurista"
+                                   : claseId == 2 ? "t1.BoletosEjecutivo"
+                                   : "GREATEST(t1.BoletosTurista, t1.BoletosEjecutivo)";
 
-            if (destinoId.HasValue)
-                command.Parameters.AddWithValue("@destinoId", destinoId.Value);
+                string campoDispo2 = claseId == 1 ? "t2.BoletosTurista"
+                                   : claseId == 2 ? "t2.BoletosEjecutivo"
+                                   : "GREATEST(t2.BoletosTurista, t2.BoletosEjecutivo)";
 
-            using var reader = await command.ExecuteReaderAsync();
+                string queryEscalas = @"
+                    SELECT DISTINCT t1.Fecha
+                    FROM Vuelo t1
+                    INNER JOIN Ruta   r1 ON r1.ID = t1.RutaID
+                    INNER JOIN Estado e1 ON e1.ID = t1.EstadoID
+                    INNER JOIN Vuelo  t2 ON t2.RutaID IN (
+                                               SELECT ID FROM Ruta
+                                               WHERE OrigenID  = r1.DestinoID
+                                                 AND DestinoID = @destinoId)
+                    INNER JOIN Estado e2 ON e2.ID = t2.EstadoID
+                    WHERE t1.Fecha    >= CAST(GETDATE() AS DATE)
+                      AND r1.OrigenID  = @origenId
+                      AND r1.DestinoID != @destinoId
+                      AND e1.Estatus   = 'A tiempo'
+                      AND e2.Estatus   = 'A tiempo'
+                      -- Tramo 2 sale el mismo día o el día siguiente del tramo 1
+                      AND t2.Fecha BETWEEN t1.Fecha AND DATEADD(DAY, 1, t1.Fecha)
+                      -- Escala entre 60 y 720 minutos usando FechaLlegada real del tramo 1
+                      AND DATEDIFF(MINUTE,
+                              CAST(t1.FechaLlegada AS DATETIME) + CAST(t1.HoraLlegada AS DATETIME),
+                              CAST(t2.Fecha        AS DATETIME) + CAST(t2.HoraSalida  AS DATETIME)
+                          ) BETWEEN 60 AND 720
+                      -- Disponibilidad en tramo 1
+                      AND (t1.BoletosTurista   >= @cantidadPersonas
+                           OR t1.BoletosEjecutivo >= @cantidadPersonas)
+                      -- Disponibilidad en tramo 2
+                      AND (t2.BoletosTurista   >= @cantidadPersonas
+                           OR t2.BoletosEjecutivo >= @cantidadPersonas)";
 
-            while (await reader.ReadAsync())
-                fechas.Add(reader.GetDateTime(0));
+                using var cmd = new SqlCommand(queryEscalas, connection);
+                cmd.Parameters.AddWithValue("@origenId", origenId.Value);
+                cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
+                cmd.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
 
-            return fechas;
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                    fechas.Add(reader.GetDateTime(0));
+            }
+
+            return fechas.OrderBy(f => f).ToList();
         }
 
         public async Task<int> Crear(Aeropuerto aeropuerto)
@@ -176,8 +223,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@Codigo", aeropuerto.Codigo);
             command.Parameters.AddWithValue("@CiudadID", aeropuerto.CiudadId);
 
-            var nuevoId = await command.ExecuteScalarAsync();
-            return Convert.ToInt32(nuevoId);
+            return Convert.ToInt32(await command.ExecuteScalarAsync());
         }
 
         public async Task<bool> Actualizar(Aeropuerto aeropuerto)
@@ -187,8 +233,8 @@ namespace Aerolinea.API.Repositories
 
             var query = @"
                 UPDATE Aeropuerto 
-                SET Nombre = @Nombre,
-                    Codigo = @Codigo,
+                SET Nombre   = @Nombre,
+                    Codigo   = @Codigo,
                     CiudadID = @CiudadID
                 WHERE ID = @Id";
 
@@ -198,8 +244,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@Codigo", aeropuerto.Codigo);
             command.Parameters.AddWithValue("@CiudadID", aeropuerto.CiudadId);
 
-            var filasAfectadas = await command.ExecuteNonQueryAsync();
-            return filasAfectadas > 0;
+            return await command.ExecuteNonQueryAsync() > 0;
         }
 
         public async Task<bool> Eliminar(int id)
@@ -207,34 +252,31 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Primero eliminar imagen si existe
             var deleteImagen = "DELETE FROM ImagenAeropuerto WHERE AeropuertoID = @Id";
             using var cmdImagen = new SqlCommand(deleteImagen, connection);
             cmdImagen.Parameters.AddWithValue("@Id", id);
             await cmdImagen.ExecuteNonQueryAsync();
 
-            // Luego eliminar el aeropuerto
             var query = "DELETE FROM Aeropuerto WHERE ID = @Id";
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Id", id);
 
-            var filasAfectadas = await command.ExecuteNonQueryAsync();
-            return filasAfectadas > 0;
+            return await command.ExecuteNonQueryAsync() > 0;
         }
 
-        // ===== IMAGEN =====
+        // ── IMAGEN ────────────────────────────────────────────────────────
 
         public async Task GuardarImagen(int aeropuertoId, string imagenBase64)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // UPSERT: si ya existe la actualizamos, si no la insertamos
             var upsert = @"
                 IF EXISTS (SELECT 1 FROM ImagenAeropuerto WHERE AeropuertoID = @AeropuertoID)
                     UPDATE ImagenAeropuerto SET Imagen = @Imagen WHERE AeropuertoID = @AeropuertoID
                 ELSE
-                    INSERT INTO ImagenAeropuerto (ID, AeropuertoID, Imagen) VALUES (@AeropuertoID, @AeropuertoID, @Imagen)";
+                    INSERT INTO ImagenAeropuerto (ID, AeropuertoID, Imagen)
+                    VALUES (@AeropuertoID, @AeropuertoID, @Imagen)";
 
             using var command = new SqlCommand(upsert, connection);
             command.Parameters.AddWithValue("@AeropuertoID", aeropuertoId);
@@ -252,6 +294,8 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@AeropuertoID", aeropuertoId);
             await command.ExecuteNonQueryAsync();
         }
+
+        // ── CIUDADES / PAÍSES ─────────────────────────────────────────────
 
         public async Task<List<CiudadDTO>> ObtenerCiudades()
         {
@@ -304,8 +348,7 @@ namespace Aerolinea.API.Repositories
             using var commandCrear = new SqlCommand(queryCrear, connection);
             commandCrear.Parameters.AddWithValue("@Nombre", nombrePais.Trim());
 
-            var nuevoPaisId = await commandCrear.ExecuteScalarAsync();
-            return Convert.ToInt32(nuevoPaisId);
+            return Convert.ToInt32(await commandCrear.ExecuteScalarAsync());
         }
 
         public async Task<int> ObtenerOCrearCiudad(string nombreCiudad, int paisId)
@@ -332,8 +375,7 @@ namespace Aerolinea.API.Repositories
             commandCrear.Parameters.AddWithValue("@Nombre", nombreCiudad.Trim());
             commandCrear.Parameters.AddWithValue("@PaisID", paisId);
 
-            var nuevaCiudadId = await commandCrear.ExecuteScalarAsync();
-            return Convert.ToInt32(nuevaCiudadId);
+            return Convert.ToInt32(await commandCrear.ExecuteScalarAsync());
         }
     }
 }
