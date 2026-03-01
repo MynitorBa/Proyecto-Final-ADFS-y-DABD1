@@ -42,7 +42,13 @@ namespace Aerolinea.API.Services
             };
 
             var nuevoId = await _repository.Crear(aeropuerto);
-            aeropuerto.Id = nuevoId;
+
+            // Guardar imagen si se proporcionó
+            if (!string.IsNullOrEmpty(crearAeropuertoDTO.ImagenBase64))
+            {
+                await _repository.GuardarImagen(nuevoId, crearAeropuertoDTO.ImagenBase64);
+            }
+
             return await _repository.ObtenerPorId(nuevoId);
         }
 
@@ -59,7 +65,29 @@ namespace Aerolinea.API.Services
                 CiudadId = ciudadId
             };
 
-            return await _repository.Actualizar(aeropuerto);
+            var resultado = await _repository.Actualizar(aeropuerto);
+
+            if (resultado && !string.IsNullOrEmpty(actualizarAeropuertoDto.ImagenBase64))
+            {
+                await _repository.GuardarImagen(id, actualizarAeropuertoDto.ImagenBase64);
+            }
+
+            return resultado;
+        }
+
+        public async Task<bool> Eliminar(int id)
+        {
+            return await _repository.Eliminar(id);
+        }
+
+        public async Task GuardarImagen(int aeropuertoId, string imagenBase64)
+        {
+            await _repository.GuardarImagen(aeropuertoId, imagenBase64);
+        }
+
+        public async Task EliminarImagen(int aeropuertoId)
+        {
+            await _repository.EliminarImagen(aeropuertoId);
         }
     }
 }

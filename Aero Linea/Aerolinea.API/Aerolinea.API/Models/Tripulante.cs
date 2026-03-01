@@ -6,5 +6,6 @@
         public string Nombre { get; set; }
         public string Apellido { get; set; }
         public int RolID { get; set; }
+        public string? ImagenBase64 { get; set; }
     }
 }

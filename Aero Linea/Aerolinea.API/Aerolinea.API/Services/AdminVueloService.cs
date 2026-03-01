@@ -14,7 +14,6 @@ namespace Aerolinea.API.Services
 
         public async Task<int> CrearVuelo(CrearVueloAdminDTO dto)
         {
-            // Validaciones
             if (string.IsNullOrWhiteSpace(dto.NumeroVuelo))
                 throw new ArgumentException("El número de vuelo es obligatorio");
 
@@ -33,18 +32,26 @@ namespace Aerolinea.API.Services
             if (dto.Fecha < DateTime.Now.Date)
                 throw new ArgumentException("La fecha del vuelo no puede ser en el pasado");
 
-            if (dto.PrecioTurista <= 0)
-                throw new ArgumentException("El precio de clase turista debe ser mayor a 0");
-
-            if (dto.PrecioEjecutiva <= 0)
-                throw new ArgumentException("El precio de clase ejecutiva debe ser mayor a 0");
-
-            // Validar formato de horas
             if (!TimeSpan.TryParse(dto.HoraSalida, out _))
                 throw new ArgumentException("El formato de hora de salida es inválido");
 
             if (!TimeSpan.TryParse(dto.HoraLlegada, out _))
                 throw new ArgumentException("El formato de hora de llegada es inválido");
+
+            if (dto.BoletosTurista < 0)
+                throw new ArgumentException("Los boletos de clase turista no pueden ser negativos");
+
+            if (dto.BoletosEjecutivo < 0)
+                throw new ArgumentException("Los boletos de clase ejecutiva no pueden ser negativos");
+
+            if (dto.BoletosTurista == 0 && dto.BoletosEjecutivo == 0)
+                throw new ArgumentException("Debe asignar al menos un boleto turista o ejecutivo");
+
+            if (dto.PrecioTurista <= 0)
+                throw new ArgumentException("El precio de clase turista debe ser mayor a 0");
+
+            if (dto.PrecioEjecutiva <= 0)
+                throw new ArgumentException("El precio de clase ejecutiva debe ser mayor a 0");
 
             return await _adminVueloRepository.CrearVuelo(dto);
         }

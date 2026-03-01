@@ -33,7 +33,7 @@ namespace Aerolinea.API.Controllers
             return Ok(aeropuerto);
         }
 
-        // GET /api/aeropuertos/fechas-disponibles?origenId=1&destinoId=2&cantidadPersonas=2&claseId=1
+        // GET /api/aeropuertos/fechas-disponibles
         [HttpGet("fechas-disponibles")]
         public async Task<IActionResult> ObtenerFechasDisponibles(
             [FromQuery] int? origenId,
@@ -70,6 +70,49 @@ namespace Aerolinea.API.Controllers
                 return NotFound(new { message = "Aeropuerto no encontrado" });
 
             return Ok(new { message = "Aeropuerto actualizado correctamente" });
+        }
+
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            var resultado = await _service.Eliminar(id);
+
+            if (!resultado)
+                return NotFound(new { message = "Aeropuerto no encontrado" });
+
+            return Ok(new { message = "Aeropuerto eliminado correctamente" });
+        }
+
+        // ===== ENDPOINTS DE IMAGEN =====
+
+        /// POST api/aeropuertos/{id}/imagen — sube o reemplaza la imagen del aeropuerto
+        [Authorize(Roles = "Administrador")]
+        [HttpPost("{id}/imagen")]
+        public async Task<IActionResult> SubirImagen(int id, [FromBody] SubirImagenDTO dto)
+        {
+            if (string.IsNullOrEmpty(dto.ImagenBase64))
+                return BadRequest(new { message = "La imagen no puede estar vacía" });
+
+            var aeropuerto = await _service.ObtenerPorId(id);
+            if (aeropuerto == null)
+                return NotFound(new { message = "Aeropuerto no encontrado" });
+
+            await _service.GuardarImagen(id, dto.ImagenBase64);
+            return Ok(new { message = "Imagen guardada correctamente" });
+        }
+
+        /// DELETE api/aeropuertos/{id}/imagen — elimina la imagen del aeropuerto
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("{id}/imagen")]
+        public async Task<IActionResult> EliminarImagen(int id)
+        {
+            var aeropuerto = await _service.ObtenerPorId(id);
+            if (aeropuerto == null)
+                return NotFound(new { message = "Aeropuerto no encontrado" });
+
+            await _service.EliminarImagen(id);
+            return Ok(new { message = "Imagen eliminada correctamente" });
         }
     }
 }

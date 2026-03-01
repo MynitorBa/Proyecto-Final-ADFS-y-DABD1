@@ -61,5 +61,48 @@ namespace Aerolinea.API.Controllers
 
             return Ok(new { message = "Avión actualizado correctamente" });
         }
+
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> Eliminar(int id)
+        {
+            var eliminado = await _avionService.Eliminar(id);
+
+            if (!eliminado)
+                return NotFound(new { message = "Avión no encontrado" });
+
+            return Ok(new { message = "Avión eliminado correctamente" });
+        }
+
+        // ===== ENDPOINTS DE IMAGEN =====
+
+        /// POST api/aviones/{id}/imagen — sube o reemplaza la imagen del avión
+        [Authorize(Roles = "Administrador")]
+        [HttpPost("{id}/imagen")]
+        public async Task<ActionResult> SubirImagen(int id, [FromBody] SubirImagenDTO dto)
+        {
+            if (string.IsNullOrEmpty(dto.ImagenBase64))
+                return BadRequest(new { message = "La imagen no puede estar vacía" });
+
+            var avion = await _avionService.ObtenerPorId(id);
+            if (avion == null)
+                return NotFound(new { message = "Avión no encontrado" });
+
+            await _avionService.GuardarImagen(id, dto.ImagenBase64);
+            return Ok(new { message = "Imagen guardada correctamente" });
+        }
+
+        /// DELETE api/aviones/{id}/imagen — elimina la imagen del avión
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("{id}/imagen")]
+        public async Task<ActionResult> EliminarImagen(int id)
+        {
+            var avion = await _avionService.ObtenerPorId(id);
+            if (avion == null)
+                return NotFound(new { message = "Avión no encontrado" });
+
+            await _avionService.EliminarImagen(id);
+            return Ok(new { message = "Imagen eliminada correctamente" });
+        }
     }
 }

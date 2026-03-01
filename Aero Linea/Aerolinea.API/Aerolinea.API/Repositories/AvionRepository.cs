@@ -18,10 +18,13 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
+            // LEFT JOIN para incluir la imagen si existe
             var query = @"
-                SELECT ID, Modelo, Marca, CapacidadPasajeros
-                FROM Avion 
-                ORDER BY Marca, Modelo";
+                SELECT a.ID, a.Modelo, a.Marca, a.CapacidadPasajeros,
+                       ia.Imagen
+                FROM Avion a
+                LEFT JOIN ImagenAvion ia ON ia.AvionID = a.ID
+                ORDER BY a.Marca, a.Modelo";
 
             using var command = new SqlCommand(query, connection);
             using var reader = await command.ExecuteReaderAsync();
@@ -34,7 +37,8 @@ namespace Aerolinea.API.Repositories
                     Id = reader.GetInt32(0),
                     Modelo = reader.GetString(1),
                     Marca = reader.GetString(2),
-                    CapacidadPasajeros = reader.GetInt32(3)
+                    CapacidadPasajeros = reader.GetInt32(3),
+                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4)
                 });
             }
 
@@ -47,9 +51,11 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             var query = @"
-                SELECT ID, Modelo, Marca, CapacidadPasajeros
-                FROM Avion 
-                WHERE ID = @Id";
+                SELECT a.ID, a.Modelo, a.Marca, a.CapacidadPasajeros,
+                       ia.Imagen
+                FROM Avion a
+                LEFT JOIN ImagenAvion ia ON ia.AvionID = a.ID
+                WHERE a.ID = @Id";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Id", id);
@@ -63,7 +69,8 @@ namespace Aerolinea.API.Repositories
                     Id = reader.GetInt32(0),
                     Modelo = reader.GetString(1),
                     Marca = reader.GetString(2),
-                    CapacidadPasajeros = reader.GetInt32(3)
+                    CapacidadPasajeros = reader.GetInt32(3),
+                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4)
                 };
             }
 
@@ -111,6 +118,69 @@ namespace Aerolinea.API.Repositories
             return filasAfectadas > 0;
         }
 
-        
+        public async Task<bool> Eliminar(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // Primero eliminar imagen si existe
+            var deleteImagen = "DELETE FROM ImagenAvion WHERE AvionID = @Id";
+            using var cmdImagen = new SqlCommand(deleteImagen, connection);
+            cmdImagen.Parameters.AddWithValue("@Id", id);
+            await cmdImagen.ExecuteNonQueryAsync();
+
+            // Luego eliminar el avión
+            var query = "DELETE FROM Avion WHERE ID = @Id";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Id", id);
+
+            var filasAfectadas = await command.ExecuteNonQueryAsync();
+            return filasAfectadas > 0;
+        }
+
+        // ===== IMAGEN =====
+
+        public async Task GuardarImagen(int avionId, string imagenBase64)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // UPSERT: si ya existe imagen para este avión la actualizamos, si no la insertamos
+            var upsert = @"
+                IF EXISTS (SELECT 1 FROM ImagenAvion WHERE AvionID = @AvionID)
+                    UPDATE ImagenAvion SET Imagen = @Imagen WHERE AvionID = @AvionID
+                ELSE
+                    INSERT INTO ImagenAvion (ID, AvionID, Imagen) VALUES (@AvionID, @AvionID, @Imagen)";
+
+            using var command = new SqlCommand(upsert, connection);
+            command.Parameters.AddWithValue("@AvionID", avionId);
+            command.Parameters.AddWithValue("@Imagen", imagenBase64);
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task EliminarImagen(int avionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "DELETE FROM ImagenAvion WHERE AvionID = @AvionID";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@AvionID", avionId);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task<string?> ObtenerImagen(int avionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "SELECT Imagen FROM ImagenAvion WHERE AvionID = @AvionID";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@AvionID", avionId);
+
+            var result = await command.ExecuteScalarAsync();
+            return result?.ToString();
+        }
     }
 }

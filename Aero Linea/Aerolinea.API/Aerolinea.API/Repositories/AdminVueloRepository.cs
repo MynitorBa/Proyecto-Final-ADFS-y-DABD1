@@ -1,5 +1,4 @@
 ﻿using Aerolinea.API.Data;
-using Aerolinea.API.Models;
 using Aerolinea.API.Models.DTOs;
 using Microsoft.Data.SqlClient;
 
@@ -14,6 +13,9 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        //  CREAR VUELO
+        // ─────────────────────────────────────────────────────────────────
         public async Task<int> CrearVuelo(CrearVueloAdminDTO dto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -22,32 +24,63 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                // 1. Verificar o crear la ruta
-                int rutaId = await ObtenerOCrearRuta(dto.AeropuertoOrigenId, dto.AeropuertoDestinoId, connection, transaction);
+                // 2. Verificar o crear la ruta
+                int rutaId = await ObtenerOCrearRuta(
+                    dto.AeropuertoOrigenId, dto.AeropuertoDestinoId, connection, transaction);
 
-                // 2. Obtener capacidad del avión
-                var capacidadAvion = await ObtenerCapacidadAvion(dto.AvionId, connection, transaction);
+                // 3. Validar que los boletos no superen la capacidad del avión
+                int capacidadAvion = await ObtenerCapacidadAvion(dto.AvionId, connection, transaction);
 
-                // 3. Crear el vuelo
-                var insertVueloQuery = @"
-                    INSERT INTO Vuelo (NumeroVuelo, Fecha, HoraSalida, HoraLlegada, EstadoID, AvionID, RutaID, BoletosDisponibles)
+                if (dto.BoletosTurista + dto.BoletosEjecutivo > capacidadAvion)
+                    throw new ArgumentException(
+                        $"La suma de boletos ({dto.BoletosTurista + dto.BoletosEjecutivo}) " +
+                        $"supera la capacidad del avión ({capacidadAvion}).");
+
+                // 4. Crear el vuelo — los precios y boletos disponibles van directo en la tabla
+                var insertVuelo = @"
+                    INSERT INTO Vuelo
+                        (NumeroVuelo, Fecha, HoraSalida, HoraLlegada, EstadoID,
+                         AvionID, RutaID, BoletosTurista, BoletosEjecutivo,
+                         PrecioTurista, PrecioEjecutivo)
                     OUTPUT INSERTED.ID
-                    VALUES (@NumeroVuelo, @Fecha, @HoraSalida, @HoraLlegada, @EstadoId, @AvionId, @RutaId, @BoletosDisponibles)";
+                    VALUES
+                        (@NumeroVuelo, @Fecha, @HoraSalida, @HoraLlegada, @EstadoId,
+                         @AvionId, @RutaId, @BoletosTurista, @BoletosEjecutivo,
+                         @PrecioTurista, @PrecioEjecutivo)";
 
-                using var commandVuelo = new SqlCommand(insertVueloQuery, connection, transaction);
-                commandVuelo.Parameters.AddWithValue("@NumeroVuelo", dto.NumeroVuelo);
-                commandVuelo.Parameters.AddWithValue("@Fecha", dto.Fecha.Date);
-                commandVuelo.Parameters.AddWithValue("@HoraSalida", TimeSpan.Parse(dto.HoraSalida));
-                commandVuelo.Parameters.AddWithValue("@HoraLlegada", TimeSpan.Parse(dto.HoraLlegada));
-                commandVuelo.Parameters.AddWithValue("@EstadoId", 1); // 1 = Activo
-                commandVuelo.Parameters.AddWithValue("@AvionId", dto.AvionId);
-                commandVuelo.Parameters.AddWithValue("@RutaId", rutaId);
-                commandVuelo.Parameters.AddWithValue("@BoletosDisponibles", capacidadAvion);
+                int vueloId;
+                using (var cmd = new SqlCommand(insertVuelo, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@NumeroVuelo", dto.NumeroVuelo);
+                    cmd.Parameters.AddWithValue("@Fecha", dto.Fecha.Date);
+                    cmd.Parameters.AddWithValue("@HoraSalida", TimeSpan.Parse(dto.HoraSalida));
+                    cmd.Parameters.AddWithValue("@HoraLlegada", TimeSpan.Parse(dto.HoraLlegada));
+                    cmd.Parameters.AddWithValue("@EstadoId", 1);
+                    cmd.Parameters.AddWithValue("@AvionId", dto.AvionId);
+                    cmd.Parameters.AddWithValue("@RutaId", rutaId);
+                    cmd.Parameters.AddWithValue("@BoletosTurista", dto.BoletosTurista);
+                    cmd.Parameters.AddWithValue("@BoletosEjecutivo", dto.BoletosEjecutivo);
+                    cmd.Parameters.AddWithValue("@PrecioTurista", dto.PrecioTurista);
+                    cmd.Parameters.AddWithValue("@PrecioEjecutivo", dto.PrecioEjecutiva);
 
-                var vueloId = (int)await commandVuelo.ExecuteScalarAsync();
+                    vueloId = (int)await cmd.ExecuteScalarAsync();
+                }
 
-                // 4. Crear boletos para el vuelo
-                await CrearBoletos(vueloId, capacidadAvion, dto.PrecioTurista, dto.PrecioEjecutiva, connection, transaction);
+                // 5. Asignar tripulación (EquipoPivote)
+                if (dto.TripulantesIds != null && dto.TripulantesIds.Count > 0)
+                {
+                    foreach (var tripulanteId in dto.TripulantesIds)
+                    {
+                        var insertTrip = @"
+                            INSERT INTO EquipoPivote (VueloID, MiembroTripulacionID)
+                            VALUES (@VueloId, @TripulanteId)";
+
+                        using var cmdTrip = new SqlCommand(insertTrip, connection, transaction);
+                        cmdTrip.Parameters.AddWithValue("@VueloId", vueloId);
+                        cmdTrip.Parameters.AddWithValue("@TripulanteId", tripulanteId);
+                        await cmdTrip.ExecuteNonQueryAsync();
+                    }
+                }
 
                 transaction.Commit();
                 return vueloId;
@@ -59,195 +92,203 @@ namespace Aerolinea.API.Repositories
             }
         }
 
-        private async Task<int> ObtenerOCrearRuta(int origenId, int destinoId, SqlConnection connection, SqlTransaction transaction)
+        // ─────────────────────────────────────────────────────────────────
+        //  HELPERS PRIVADOS
+        // ─────────────────────────────────────────────────────────────────
+        private async Task<int> ObtenerOCrearRuta(
+            int origenId, int destinoId, SqlConnection connection, SqlTransaction transaction)
         {
             var queryBuscar = @"
-                SELECT ID FROM Ruta 
+                SELECT ID FROM Ruta
                 WHERE OrigenID = @OrigenId AND DestinoID = @DestinoId";
 
-            using var commandBuscar = new SqlCommand(queryBuscar, connection, transaction);
-            commandBuscar.Parameters.AddWithValue("@OrigenId", origenId);
-            commandBuscar.Parameters.AddWithValue("@DestinoId", destinoId);
-
-            var resultado = await commandBuscar.ExecuteScalarAsync();
+            using var cmdBuscar = new SqlCommand(queryBuscar, connection, transaction);
+            cmdBuscar.Parameters.AddWithValue("@OrigenId", origenId);
+            cmdBuscar.Parameters.AddWithValue("@DestinoId", destinoId);
+            var resultado = await cmdBuscar.ExecuteScalarAsync();
 
             if (resultado != null)
-            {
                 return (int)resultado;
-            }
 
             var queryCrear = @"
                 INSERT INTO Ruta (OrigenID, DestinoID, DuracionEstimada)
                 OUTPUT INSERTED.ID
                 VALUES (@OrigenId, @DestinoId, @DuracionEstimada)";
 
-            using var commandCrear = new SqlCommand(queryCrear, connection, transaction);
-            commandCrear.Parameters.AddWithValue("@OrigenId", origenId);
-            commandCrear.Parameters.AddWithValue("@DestinoId", destinoId);
-            commandCrear.Parameters.AddWithValue("@DuracionEstimada", 120);
-
-            return (int)await commandCrear.ExecuteScalarAsync();
+            using var cmdCrear = new SqlCommand(queryCrear, connection, transaction);
+            cmdCrear.Parameters.AddWithValue("@OrigenId", origenId);
+            cmdCrear.Parameters.AddWithValue("@DestinoId", destinoId);
+            cmdCrear.Parameters.AddWithValue("@DuracionEstimada", 120);
+            return (int)await cmdCrear.ExecuteScalarAsync();
         }
 
-        private async Task<int> ObtenerCapacidadAvion(int avionId, SqlConnection connection, SqlTransaction transaction)
+        private async Task<int> ObtenerCapacidadAvion(
+            int avionId, SqlConnection connection, SqlTransaction transaction)
         {
             var query = "SELECT CapacidadPasajeros FROM Avion WHERE ID = @AvionId";
-            using var command = new SqlCommand(query, connection, transaction);
-            command.Parameters.AddWithValue("@AvionId", avionId);
-
-            var resultado = await command.ExecuteScalarAsync();
+            using var cmd = new SqlCommand(query, connection, transaction);
+            cmd.Parameters.AddWithValue("@AvionId", avionId);
+            var resultado = await cmd.ExecuteScalarAsync();
             return resultado != null ? (int)resultado : 0;
         }
 
-        private async Task CrearBoletos(int vueloId, int capacidadAvion, decimal precioTurista, decimal precioEjecutiva, SqlConnection connection, SqlTransaction transaction)
-        {
-            int asientosEjecutiva = (int)(capacidadAvion * 0.25);
-            int asientosTurista = capacidadAvion - asientosEjecutiva;
-
-            var query = @"
-                INSERT INTO Boleto (NoBoleto, NoAsiento, Precio, VueloID, ClaseID, EstadoBoletoID, ReservacionID, DatosPasajeroID)
-                VALUES (@NoBoleto, @NoAsiento, @Precio, @VueloId, @ClaseId, @EstadoBoletoId, NULL, NULL)";
-
-            for (int i = 1; i <= asientosEjecutiva; i++)
-            {
-                using var command = new SqlCommand(query, connection, transaction);
-                command.Parameters.AddWithValue("@NoBoleto", $"BOL-{vueloId}-{i:D4}");
-                command.Parameters.AddWithValue("@NoAsiento", $"{i}{(char)('A' + (i - 1) % 6)}");
-                command.Parameters.AddWithValue("@Precio", precioEjecutiva);
-                command.Parameters.AddWithValue("@VueloId", vueloId);
-                command.Parameters.AddWithValue("@ClaseId", 2); // Ejecutiva
-                command.Parameters.AddWithValue("@EstadoBoletoId", 1); // Disponible
-                await command.ExecuteNonQueryAsync();
-            }
-
-            for (int i = asientosEjecutiva + 1; i <= capacidadAvion; i++)
-            {
-                using var command = new SqlCommand(query, connection, transaction);
-                command.Parameters.AddWithValue("@NoBoleto", $"BOL-{vueloId}-{i:D4}");
-                command.Parameters.AddWithValue("@NoAsiento", $"{i}{(char)('A' + (i - 1) % 6)}");
-                command.Parameters.AddWithValue("@Precio", precioTurista);
-                command.Parameters.AddWithValue("@VueloId", vueloId);
-                command.Parameters.AddWithValue("@ClaseId", 1); // Turista
-                command.Parameters.AddWithValue("@EstadoBoletoId", 1); // Disponible
-                await command.ExecuteNonQueryAsync();
-            }
-        }
-
+        // ─────────────────────────────────────────────────────────────────
+        //  HISTORIAL
+        // ─────────────────────────────────────────────────────────────────
         public async Task<List<VueloHistorialDTO>> ObtenerHistorialVuelos()
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-                SELECT 
+                SELECT
                     v.ID,
                     v.NumeroVuelo,
-                    aorigen.Codigo + ' - ' + corigen.Nombre AS CiudadOrigen,
-                    adestino.Codigo + ' - ' + cdestino.Nombre AS CiudadDestino,
+                    aorigen.Codigo + ' - ' + corigen.Nombre  AS Origen,
+                    adestino.Codigo + ' - ' + cdestino.Nombre AS Destino,
                     v.Fecha,
                     v.HoraSalida,
                     v.HoraLlegada,
                     v.EstadoID,
                     av.CapacidadPasajeros,
-                    v.BoletosDisponibles,
-                    (av.CapacidadPasajeros - v.BoletosDisponibles) AS AsientosVendidos
+                    v.BoletosTurista,
+                    v.BoletosEjecutivo,
+                    v.PrecioTurista,
+                    v.PrecioEjecutivo
                 FROM Vuelo v
-                INNER JOIN Ruta r ON v.RutaID = r.ID
-                INNER JOIN Aeropuerto aorigen ON r.OrigenID = aorigen.ID
+                INNER JOIN Ruta r         ON v.RutaID    = r.ID
+                INNER JOIN Aeropuerto aorigen  ON r.OrigenID  = aorigen.ID
                 INNER JOIN Aeropuerto adestino ON r.DestinoID = adestino.ID
-                INNER JOIN Ciudad corigen ON aorigen.CiudadID = corigen.ID
-                INNER JOIN Ciudad cdestino ON adestino.CiudadID = cdestino.ID
-                INNER JOIN Avion av ON v.AvionID = av.ID
+                INNER JOIN Ciudad corigen      ON aorigen.CiudadID  = corigen.ID
+                INNER JOIN Ciudad cdestino     ON adestino.CiudadID = cdestino.ID
+                INNER JOIN Avion av            ON v.AvionID   = av.ID
                 ORDER BY v.Fecha DESC, v.HoraSalida DESC";
 
-            using var command = new SqlCommand(query, connection);
-            using var reader = await command.ExecuteReaderAsync();
+            using var cmd = new SqlCommand(query, connection);
+            using var reader = await cmd.ExecuteReaderAsync();
 
             var vuelos = new List<VueloHistorialDTO>();
-
             while (await reader.ReadAsync())
             {
-                var fecha = reader.GetDateTime(4);
-                var horaSalida = reader.GetTimeSpan(5);
-                var horaLlegada = reader.GetTimeSpan(6);
                 var estadoId = reader.GetInt32(7);
-
-                // Estados:
-                // 1 = Activo
-                // 2 = En curso
-                // 3 = Finalizado
-                // 4 = Cancelado
                 string estado = estadoId switch
                 {
-                    1 => "activo",
-                    2 => "en-curso",
-                    3 => "finalizado",
-                    4 => "cancelado",
-                    _ => "activo"
+                    1 => "Activo",
+                    2 => "En curso",
+                    3 => "Finalizado",
+                    4 => "Cancelado",
+                    _ => "Activo"
                 };
+
+                int capacidad = reader.GetInt32(8);
+                int bolTurista = reader.IsDBNull(9) ? 0 : reader.GetInt32(9);
+                int bolEjecutivo = reader.IsDBNull(10) ? 0 : reader.GetInt32(10);
+                int boletosVendidos = capacidad - (bolTurista + bolEjecutivo);
 
                 vuelos.Add(new VueloHistorialDTO
                 {
                     Id = reader.GetInt32(0),
                     NumeroVuelo = reader.GetString(1),
-                    Ruta = $"{reader.GetString(2)} → {reader.GetString(3)}",
-                    Fecha = fecha.ToString("yyyy-MM-dd"),
-                    HoraSalida = horaSalida.ToString(@"hh\:mm"),
-                    HoraLlegada = horaLlegada.ToString(@"hh\:mm"),
+                    Origen = reader.GetString(2),
+                    Destino = reader.GetString(3),
+                    Fecha = reader.GetDateTime(4).ToString("yyyy-MM-dd"),
+                    HoraSalida = reader.GetTimeSpan(5).ToString(@"hh\:mm"),
+                    HoraLlegada = reader.GetTimeSpan(6).ToString(@"hh\:mm"),
                     Estado = estado,
-                    AsientosTotales = reader.GetInt32(8),
-                    AsientosVendidos = reader.GetInt32(10)
+                    AsientosTotales = capacidad,
+                    BoletosTurista = bolTurista,
+                    BoletosEjecutivo = bolEjecutivo,
+                    AsientosVendidos = boletosVendidos,
+                    PrecioTurista = reader.IsDBNull(11) ? 0 : reader.GetDecimal(11),
+                    PrecioEjecutiva = reader.IsDBNull(12) ? 0 : reader.GetDecimal(12)
                 });
             }
 
             return vuelos;
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        //  CANCELAR VUELO
+        //  Cancela: vuelo → boletos activos → reservaciones afectadas
+        //  Devuelve false si el vuelo ya estaba cancelado/finalizado
+        // ─────────────────────────────────────────────────────────────────
         public async Task<bool> CancelarVuelo(int vueloId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
-
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                // 1. Cancelar vuelo — EstadoID = 4 (Cancelado)
-                // Solo se puede cancelar si está Activo (1) o En curso (2)
+                // 1. Cancelar el vuelo (solo si está Activo=1 o En curso=2)
                 var queryVuelo = @"
-                    UPDATE Vuelo 
-                    SET EstadoID = 4
+                    UPDATE Vuelo
+                    SET EstadoID        = 4,
+                        BoletosTurista  = 0,
+                        BoletosEjecutivo = 0
                     WHERE ID = @VueloId AND EstadoID IN (1, 2)";
 
-                using var commandVuelo = new SqlCommand(queryVuelo, connection, transaction);
-                commandVuelo.Parameters.AddWithValue("@VueloId", vueloId);
+                int filasVuelo;
+                using (var cmd = new SqlCommand(queryVuelo, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@VueloId", vueloId);
+                    filasVuelo = await cmd.ExecuteNonQueryAsync();
+                }
 
-                var filasVuelo = await commandVuelo.ExecuteNonQueryAsync();
+                if (filasVuelo == 0)
+                {
+                    transaction.Rollback();
+                    return false;
+                }
 
-                // 2. Cancelar boletos del vuelo
+                // 2. Obtener IDs de reservaciones afectadas (boletos reservados/vendidos de este vuelo)
+                var reservacionIds = new List<int>();
+                var queryReservaciones = @"
+                    SELECT DISTINCT ReservacionID
+                    FROM Boleto
+                    WHERE VueloID = @VueloId
+                      AND ReservacionID IS NOT NULL
+                      AND EstadoBoletoID IN (2, 3)";   // 2=Reservado, 3=Pagado/Vendido
+
+                using (var cmd = new SqlCommand(queryReservaciones, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@VueloId", vueloId);
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                        reservacionIds.Add(reader.GetInt32(0));
+                }
+
+                // 3. Cancelar los boletos activos de este vuelo
                 var queryBoletos = @"
                     UPDATE Boleto
                     SET EstadoBoletoID = 4
-                    WHERE VueloID = @VueloId";
+                    WHERE VueloID = @VueloId
+                      AND EstadoBoletoID IN (2, 3)";
 
-                using var commandBoletos = new SqlCommand(queryBoletos, connection, transaction);
-                commandBoletos.Parameters.AddWithValue("@VueloId", vueloId);
-                await commandBoletos.ExecuteNonQueryAsync();
+                using (var cmd = new SqlCommand(queryBoletos, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@VueloId", vueloId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
 
-                // 3. Cancelar reservaciones asociadas
-                var queryReservaciones = @"
-                    UPDATE r
-                    SET r.EstadoReservaID = 3
-                    FROM Reservacion r
-                    INNER JOIN Boleto b ON b.ReservacionID = r.ID
-                    WHERE b.VueloID = @VueloId";
+                // 4. Cancelar las reservaciones afectadas (EstadoReservaID = 3 = Cancelada)
+                if (reservacionIds.Count > 0)
+                {
+                    var ids = string.Join(",", reservacionIds);
+                    var queryCancel = $@"
+                        UPDATE Reservacion
+                        SET EstadoReservaID   = 3,
+                            FechaCancelacion  = GETDATE(),
+                            MotivoCancelacion = 'Vuelo cancelado por la aerolínea'
+                        WHERE ID IN ({ids})
+                          AND EstadoReservaID NOT IN (3, 4)";   // No cancelar las ya canceladas
 
-                using var commandReservas = new SqlCommand(queryReservaciones, connection, transaction);
-                commandReservas.Parameters.AddWithValue("@VueloId", vueloId);
-                await commandReservas.ExecuteNonQueryAsync();
+                    using var cmd = new SqlCommand(queryCancel, connection, transaction);
+                    await cmd.ExecuteNonQueryAsync();
+                }
 
                 transaction.Commit();
-                return filasVuelo > 0;
+                return true;
             }
             catch
             {

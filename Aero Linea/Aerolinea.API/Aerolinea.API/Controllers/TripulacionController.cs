@@ -68,5 +68,48 @@ namespace Aerolinea.API.Controllers
 
             return Ok(new { message = "Tripulante actualizado correctamente" });
         }
+
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            var resultado = await _service.Eliminar(id);
+
+            if (!resultado)
+                return NotFound(new { message = "Tripulante no encontrado" });
+
+            return Ok(new { message = "Tripulante eliminado correctamente" });
+        }
+
+        // ===== ENDPOINTS DE IMAGEN =====
+
+        /// POST api/tripulacion/{id}/imagen — sube o reemplaza la imagen del tripulante
+        [Authorize(Roles = "Administrador")]
+        [HttpPost("{id}/imagen")]
+        public async Task<IActionResult> SubirImagen(int id, [FromBody] SubirImagenDTO dto)
+        {
+            if (string.IsNullOrEmpty(dto.ImagenBase64))
+                return BadRequest(new { message = "La imagen no puede estar vacía" });
+
+            var tripulante = await _service.ObtenerPorId(id);
+            if (tripulante == null)
+                return NotFound(new { message = "Tripulante no encontrado" });
+
+            await _service.GuardarImagen(id, dto.ImagenBase64);
+            return Ok(new { message = "Imagen guardada correctamente" });
+        }
+
+        /// DELETE api/tripulacion/{id}/imagen — elimina la imagen del tripulante
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("{id}/imagen")]
+        public async Task<IActionResult> EliminarImagen(int id)
+        {
+            var tripulante = await _service.ObtenerPorId(id);
+            if (tripulante == null)
+                return NotFound(new { message = "Tripulante no encontrado" });
+
+            await _service.EliminarImagen(id);
+            return Ok(new { message = "Imagen eliminada correctamente" });
+        }
     }
 }
