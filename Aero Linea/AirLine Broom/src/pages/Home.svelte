@@ -8,7 +8,7 @@
 
   const API = 'https://localhost:7107';
 
-  let tripType   = 'roundtrip';
+  let tripType      = 'roundtrip';
   let departureDate = '';
   let returnDate    = '';
   let passengers    = 1;
@@ -34,6 +34,10 @@
   const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
   const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  // Destinos: aeropuertos con imagen para mostrar en la sección
+  // Todos los aeropuertos que tengan imagen subida desde el admin
+  $: destinosConImagen = aeropuertos.filter(a => a.imagenBase64);
 
   onMount(async () => {
     try {
@@ -201,8 +205,7 @@
       }
 
       navigateTo('vuelos', {
-        vuelosIda,
-        vuelosVuelta,
+        vuelosIda, vuelosVuelta,
         searchData: {
           origenId:      fromSeleccionado.id,
           destinoId:     toSeleccionado.id,
@@ -227,6 +230,7 @@
 
 <div class="broom-home">
 
+  <!-- ── Hero ── -->
   <section class="broom-home__hero">
     <img src={logoHero} alt="Broom AirLine Hero">
     <div class="broom-home__hero-overlay">
@@ -235,13 +239,13 @@
     </div>
   </section>
 
+  <!-- ── Búsqueda ── -->
   <section class="broom-home__search-section">
     <div class="broom-home__search-container">
       <h2 class="broom-home__search-title">Encuentra tu vuelo</h2>
 
       <form class="broom-home__search-form" on:submit|preventDefault={handleSearchFlight}>
 
-        <!-- Tipo de viaje -->
         <div class="broom-home__trip-type">
           <label class="broom-home__radio-label">
             <input type="radio" name="tripType" value="roundtrip" bind:group={tripType} class="broom-home__radio-input">
@@ -253,7 +257,6 @@
           </label>
         </div>
 
-        <!-- Campos de búsqueda -->
         <div class="broom-home__form-grid">
 
           <div class="broom-home__form-group broom-home__form-group--relative">
@@ -267,8 +270,10 @@
                   <li class="home-autocomplete__item">
                     <button type="button" class="home-autocomplete__btn" on:click={() => seleccionarOrigen(a)}>
                       <span class="home-autocomplete__code">{a.codigo}</span>
-                      <span class="home-autocomplete__ciudad">{a.ciudad}</span>
-                      <span class="home-autocomplete__nombre">{a.nombre}</span>
+                      <div class="home-autocomplete__info">
+                        <span class="home-autocomplete__ciudad">{a.ciudad}</span>
+                        <span class="home-autocomplete__nombre">{a.nombre} · {a.pais}</span>
+                      </div>
                     </button>
                   </li>
                 {/each}
@@ -287,8 +292,10 @@
                   <li class="home-autocomplete__item">
                     <button type="button" class="home-autocomplete__btn" on:click={() => seleccionarDestino(a)}>
                       <span class="home-autocomplete__code">{a.codigo}</span>
-                      <span class="home-autocomplete__ciudad">{a.ciudad}</span>
-                      <span class="home-autocomplete__nombre">{a.nombre}</span>
+                      <div class="home-autocomplete__info">
+                        <span class="home-autocomplete__ciudad">{a.ciudad}</span>
+                        <span class="home-autocomplete__nombre">{a.nombre} · {a.pais}</span>
+                      </div>
                     </button>
                   </li>
                 {/each}
@@ -419,48 +426,40 @@
     </div>
   </section>
 
+  <!-- ── Destinos desde la BD (aeropuertos con imagen) ── -->
+  {#if destinosConImagen.length > 0}
   <section class="broom-home__destinations">
     <div class="broom-home__destinations-container">
       <h2 class="broom-home__destinations-title">Destinos destacados</h2>
       <div class="broom-home__destinations-grid">
-        <article class="broom-home__destination-card">
-          <div class="broom-home__destination-image">
-            <img src="https://th.bing.com/th/id/R.ef1269d03e8cd5b5d625bda0dca6f222?rik=67LTJJMuW8HnfQ&riu=http%3a%2f%2f1.bp.blogspot.com%2f-XCDP_qtL724%2fUQgMmYegCuI%2fAAAAAAAAjdE%2fhmq_X36t-Hs%2fs1600%2f202_1la_tour_eiffel___paris__france.jpg&ehk=V0GlPlEL31Rm9Kb0i%2fAKEYy92nYb%2bE1GUJsa3Lallnc%3d&risl=&pid=ImgRaw&r=0" alt="" class="broom-home__destination-image-visual">
-          </div>
-          <div class="broom-home__destination-content">
-            <h3 class="broom-home__destination-name">París, Francia</h3>
-            <p class="broom-home__destination-description">Descubre la ciudad del amor y sus icónicos monumentos.</p>
-          </div>
-        </article>
-        <article class="broom-home__destination-card">
-          <div class="broom-home__destination-image">
-            <img src="https://hldak.mmtcdn.com/prod-s3-hld-hpcmsadmin/holidays/images/cities/1921/Tokyo-Tower.jpg" alt="" class="broom-home__destination-image-visual">
-          </div>
-          <div class="broom-home__destination-content">
-            <h3 class="broom-home__destination-name">Tokio, Japón</h3>
-            <p class="broom-home__destination-description">Experimenta la perfecta fusión entre tradición y modernidad.</p>
-          </div>
-        </article>
+        {#each destinosConImagen as aeropuerto}
+          <article class="broom-home__destination-card"
+            on:click={() => { toQuery = `${aeropuerto.ciudad} (${aeropuerto.codigo})`; toSeleccionado = aeropuerto; }}
+            role="button" tabindex="0"
+            on:keydown={e => e.key === 'Enter' && navigateTo('vuelos')}>
+            <div class="broom-home__destination-image">
+              <img
+                src={aeropuerto.imagenBase64.startsWith("data:") ? aeropuerto.imagenBase64 : `data:image/jpeg;base64,${aeropuerto.imagenBase64}`}
+                alt="{aeropuerto.ciudad}, {aeropuerto.pais}"
+                class="broom-home__destination-image-visual"
+              />
+              <div class="broom-home__destination-badge">{aeropuerto.codigo}</div>
+            </div>
+            <div class="broom-home__destination-content">
+              <h3 class="broom-home__destination-name">{aeropuerto.ciudad}</h3>
+              <p class="broom-home__destination-meta">{aeropuerto.pais}</p>
+              <p class="broom-home__destination-description">{aeropuerto.nombre}</p>
+            </div>
+          </article>
+        {/each}
       </div>
       <div class="broom-home__destinations-actions">
-        <button type="button" class="broom-home__destinations-btn" on:click={() => navigateTo('destinos-destacados')}>Ver más destinos</button>
+        <button type="button" class="broom-home__destinations-btn" on:click={() => navigateTo('destinos-destacados')}>
+          Ver más destinos
+        </button>
       </div>
     </div>
   </section>
-
-  <section class="broom-home__manage-booking">
-    <div class="broom-home__manage-booking-container">
-      <div class="broom-home__manage-booking-content">
-        <div class="broom-home__manage-booking-image">
-          <img src="https://i.pinimg.com/originals/a5/0d/05/a50d05dd4ca9116119320a244c438c19.jpg" alt="">
-        </div>
-        <div class="broom-home__manage-booking-info">
-          <h2 class="broom-home__manage-booking-title">¿Ya tienes una reserva?</h2>
-          <p class="broom-home__manage-booking-description">Administra tus vuelos, selecciona asientos, añade equipaje y mucho más.</p>
-          <button type="button" class="broom-home__manage-booking-btn" on:click={() => navigateTo('reservas')}>Administrar reservas</button>
-        </div>
-      </div>
-    </div>
-  </section>
+  {/if}
 
 </div>

@@ -306,8 +306,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
               "ViewState": "AgIAAGgBAAAAAAAAAAAIwH0BAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:20:04.618Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:20:04.618Z"
             },
             {
               "$type": "Document",
@@ -319,8 +318,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\AeropuertoDTO.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:11:28.172Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:11:28.172Z"
             },
             {
               "$type": "Document",
@@ -332,8 +330,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\AeropuertosController.cs",
               "ViewState": "AgIAAGAAAAAAAAAAAAAwwHUAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:09:35.576Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:09:35.576Z"
             },
             {
               "$type": "Document",
@@ -345,8 +342,7 @@
               "RelativeToolTip": "Aerolinea.API\\Services\\AeropuertoService.cs",
               "ViewState": "AgIAAEkAAAAAAAAAAAAgwFwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-15T18:22:08.028Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-15T18:22:08.028Z"
             },
             {
               "$type": "Document",
@@ -356,7 +352,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Program.cs",
               "ToolTip": "C:\\Users\\memit\\OneDrive - Universidad del Istmo\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs",
               "RelativeToolTip": "Aerolinea.API\\Program.cs",
-              "ViewState": "AgIAAFAAAAAAAAAAAAAIwGUAAAAKAAAAAAAAAA==",
+              "ViewState": "AgIAAFQAAAAAAAAAAAAAwGUAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-14T19:05:49.545Z",
               "EditorCaption": ""
@@ -407,8 +403,7 @@
               "RelativeToolTip": "Aerolinea.API\\Helpers\\PdfHtmlHelper.cs",
               "ViewState": "AgIAAAgBAAAAAAAAAAAowBMBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T05:40:15.001Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-28T05:40:15.001Z"
             },
             {
               "$type": "Document",
