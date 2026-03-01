@@ -26,6 +26,7 @@
       const res = await fetch(`${API}/api/contacto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           nombre:  formData.nombre.trim(),
           correo:  formData.correo.trim(),
@@ -39,7 +40,7 @@
         formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
       } else {
         status = 'error';
-        statusMsg = data.mensaje || 'Error al enviar el mensaje';
+        statusMsg = data.mensaje || data.message || 'Error al enviar el mensaje';
       }
     } catch {
       status = 'error';
@@ -133,7 +134,7 @@
         <h2 class="info-section-title" style="margin-top:0;">Envianos un mensaje</h2>
         <p class="info-prose">Completa el formulario y nuestro equipo te respondera con los detalles de tu consulta. Para asuntos urgentes llamanos directamente al +502 2000-0000.</p>
 
-        <form on:submit|preventDefault={handleSubmit} class="info-contacto-form">
+        <div class="info-contacto-form">
           <div class="info-contacto-grid">
             <div class="info-contacto-field">
               <label class="info-contacto-label" for="cNombre">Nombre completo <span class="info-contacto-req">*</span></label>
@@ -169,7 +170,7 @@
             </div>
           {/if}
 
-          <button type="submit" class="info-contacto-submit" disabled={status === 'sending'}>
+          <button type="button" class="info-contacto-submit" disabled={status === 'sending'} on:click={handleSubmit}>
             {#if status === 'sending'}
               <svg class="info-contacto-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
               Enviando...
@@ -178,7 +179,7 @@
               Enviar Mensaje
             {/if}
           </button>
-        </form>
+        </div>
       </div>
     {/if}
 

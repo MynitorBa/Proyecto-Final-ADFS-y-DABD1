@@ -9,19 +9,9 @@
   let menuActive = false;
   let cartCount = 0;
 
-  function toggleMenu() {
-    menuActive = !menuActive;
-  }
-
-  function handleNavigation(page) {
-    navigateTo(page);
-    menuActive = false;
-  }
-
-  async function handleLogout() {
-    await logout();
-    navigateTo('home');
-  }
+  function toggleMenu() { menuActive = !menuActive; }
+  function handleNavigation(page) { navigateTo(page); menuActive = false; }
+  async function handleLogout() { await logout(); navigateTo('home'); }
 
   $: isLoggedIn = !!$sesion;
   $: isAdmin    = $sesion?.rolNombre === 'Administrador';
@@ -29,16 +19,41 @@
 
 <header class="broom-header">
   <div class="broom-header__container">
+
+    <!-- Logo -->
     <div class="broom-header__logo">
       <a href="#home" on:click|preventDefault={() => handleNavigation('home')}>
         <img src={logoPath} alt="Broom AirLine" class="broom-header__logo-img">
       </a>
     </div>
 
+    <!-- Links visibles siempre en desktop -->
+    <nav class="broom-header__inline-nav">
+      <a href="#destinos-destacados" class="broom-header__inline-link"
+        class:broom-header__inline-link--active={currentPage === 'destinos-destacados'}
+        on:click|preventDefault={() => handleNavigation('destinos-destacados')}>
+        Destinos
+      </a>
+      <a href="#VuelosGenerales" class="broom-header__inline-link"
+        class:broom-header__inline-link--active={currentPage === 'VuelosGenerales'}
+        on:click|preventDefault={() => handleNavigation('VuelosGenerales')}>
+        Vuelos
+      </a>
+      {#if isLoggedIn}
+        <a href="#reservas" class="broom-header__inline-link"
+          class:broom-header__inline-link--active={currentPage === 'reservas'}
+          on:click|preventDefault={() => handleNavigation('reservas')}>
+          Mis Reservas
+        </a>
+      {/if}
+    </nav>
+
+
+    <!-- Buscador desktop -->
     <div class="broom-header__search broom-header__search--desktop">
-      <input 
-        type="text" 
-        class="broom-header__search-input" 
+      <input
+        type="text"
+        class="broom-header__search-input"
         placeholder="Buscar vuelos, destinos..."
         aria-label="Buscar vuelos y destinos"
       >
@@ -51,7 +66,9 @@
       </button>
     </div>
 
+    <!-- Acciones derecha: carrito + perfil + hamburguesa -->
     <div class="broom-header__actions">
+
       <button class="broom-header__action-btn broom-header__cart" aria-label="Carrito de compras"
         on:click|preventDefault={() => handleNavigation('datos-pasajeros')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -70,13 +87,12 @@
         </svg>
       </button>
 
-      <button 
-        class="broom-header__menu-toggle" 
+      <button
+        class="broom-header__menu-toggle"
         class:broom-header__menu-toggle--active={menuActive}
         on:click={toggleMenu}
         aria-label="Menú de navegación"
-        aria-expanded={menuActive}
-      >
+        aria-expanded={menuActive}>
         <span class="broom-header__hamburger"></span>
         <span class="broom-header__hamburger"></span>
         <span class="broom-header__hamburger"></span>
@@ -84,18 +100,14 @@
     </div>
   </div>
 
-  <nav 
-    class="broom-header__nav" 
+  <!-- Nav hamburguesa: todo excepto Destinos, Vuelos, Mis Reservas -->
+  <nav
+    class="broom-header__nav"
     class:broom-header__nav--active={menuActive}
-    aria-label="Navegación principal"
-  >
+    aria-label="Navegación principal">
+
     <div class="broom-header__search broom-header__search--mobile">
-      <input 
-        type="text" 
-        class="broom-header__search-input" 
-        placeholder="Buscar vuelos, destinos..."
-        aria-label="Buscar vuelos y destinos"
-      >
+      <input type="text" class="broom-header__search-input" placeholder="Buscar vuelos, destinos..." aria-label="Buscar">
       <button class="broom-header__search-btn" aria-label="Buscar"
         on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
         <svg class="broom-header__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -107,24 +119,10 @@
 
     <ul class="broom-header__nav-list">
       <li class="broom-header__nav-item">
-        <a href="#home" class="broom-header__nav-link" 
+        <a href="#home" class="broom-header__nav-link"
           class:broom-header__nav-link--active={currentPage === 'home'}
           on:click|preventDefault={() => handleNavigation('home')}>
           Inicio
-        </a>
-      </li>
-      <li class="broom-header__nav-item">
-        <a href="#destinos-destacados" class="broom-header__nav-link"
-          class:broom-header__nav-link--active={currentPage === 'destinos-destacados'}
-          on:click|preventDefault={() => handleNavigation('destinos-destacados')}>
-          Destinos
-        </a>
-      </li>
-      <li class="broom-header__nav-item">
-        <a href="#VuelosGenerales" class="broom-header__nav-link"
-          class:broom-header__nav-link--active={currentPage === 'VuelosGenerales'}
-          on:click|preventDefault={() => handleNavigation('VuelosGenerales')}>
-          Vuelos
         </a>
       </li>
       <li class="broom-header__nav-item">
@@ -134,15 +132,6 @@
           Contacto
         </a>
       </li>
-      {#if isLoggedIn}
-        <li class="broom-header__nav-item">
-          <a href="#reservas" class="broom-header__nav-link"
-            class:broom-header__nav-link--active={currentPage === 'reservas'}
-            on:click|preventDefault={() => handleNavigation('reservas')}>
-            Mis Reservas
-          </a>
-        </li>
-      {/if}
       {#if isAdmin}
         <li class="broom-header__nav-item">
           <a href="#admin" class="broom-header__nav-link"
@@ -152,10 +141,16 @@
           </a>
         </li>
       {/if}
-      <li class="broom-header__nav-divider"></li>
       {#if isLoggedIn}
         <li class="broom-header__nav-item">
-          <a href="#logout" class="broom-header__nav-link"
+          <a href="#profile" class="broom-header__nav-link"
+            class:broom-header__nav-link--active={currentPage === 'profile'}
+            on:click|preventDefault={() => handleNavigation('profile')}>
+            Mi Perfil
+          </a>
+        </li>
+        <li class="broom-header__nav-item">
+          <a href="#logout" class="broom-header__nav-link broom-header__nav-link--logout"
             on:click|preventDefault={handleLogout}>
             Cerrar Sesión
           </a>

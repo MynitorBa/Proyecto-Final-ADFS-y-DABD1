@@ -1,442 +1,706 @@
 <script>
-// @ts-nocheck
-  import '../styles/misreservaciones.css';
-  import DetallesReservaModal from './DetallesReserva.svelte';
+  import '../styles/Misreservas.css';
+  import { sesion } from '../stores/sesion.js';
   import { onMount } from 'svelte';
 
   export let navigateTo;
 
-  let showDetailModal = false;
-  let detailReservation = null;
-  let usuarioId = null;
-  let loading = true;
-  let error = null;
-  
-  let reservasActivas = [];
-  let reservasFinalizadas = [];
-  
-  let cancelando = false;
-  let errorCancelacion = null;
+  const API = 'https://localhost:7107';
+
+  /* ── Estado general ── */
+  let reservas       = [];
+  let resumen        = null;
+  let loading        = true;
+  let error          = '';
+  let filtroActivo   = 'todas';
+
+  /* ── Comentarios del usuario ── */
+  let misComentarios = [];
+
+  /* ── Modal detalle ── */
+  let reservaDetalle    = null;
+  let detalleLoading    = false;
+  let detalleError      = '';
+
+  /* ── Cancelar ── */
+  let cancelarAbierto   = false;
+  let cancelMotivo      = '';
+  let cancelLoading     = false;
+  let cancelError       = '';
+
+  /* ── Comentar ruta ── */
+  let comentarEstrellas = 0;
+  let comentarHover     = 0;
+  let comentarContenido = '';
+  let comentarLoading   = false;
+  let comentarError     = '';
+  let comentarExito     = '';
+
+  /* ── Comprobante ── */
+  let comprobanteLoading = false;
+  let enviarCorreoLoading = false;
+
+  /* ── Toast ── */
+  let toasts = [];
 
   onMount(async () => {
-    const isLoggedIn = !!sessionStorage.getItem('usuarioId');
-    if (!isLoggedIn) {
-      navigateTo('acceso-denegado');
-      return;
-    }
-    
-    usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
-    await cargarReservaciones();
+    if (!$sesion) { navigateTo('login'); return; }
+    await Promise.all([cargarReservas(), cargarResumen(), cargarMisComentarios()]);
   });
 
-  async function cargarReservaciones() {
-    loading = true;
-    error = null;
-    
+  /* ═══════════════════════════════════════════
+     HELPERS
+  ═══════════════════════════════════════════ */
+  function addToast(msg, tipo = 'success') {
+    const id = Date.now();
+    toasts = [...toasts, { id, msg, tipo }];
+    setTimeout(() => { toasts = toasts.filter(t => t.id !== id); }, 4000);
+  }
+
+  function estadoClase(estado) {
+    if (!estado) return 'mr-badge--pendiente';
+    const e = estado.toLowerCase();
+    if (e === 'confirmada') return 'mr-badge--confirmada';
+    if (e === 'cancelada')  return 'mr-badge--cancelada';
+    if (e === 'completada') return 'mr-badge--completada';
+    if (e === 'expirada')   return 'mr-badge--expirada';
+    return 'mr-badge--pendiente';
+  }
+
+  function formatFechaHora(f) {
+    if (!f) return '--';
+    const d = new Date(f);
+    return d.toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' })
+      + ' ' + d.toLocaleTimeString('es-GT', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  function formatFecha(f) {
+    if (!f) return '--';
+    return new Date(f).toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function formatHora(h) {
+    if (!h) return '--';
+    return h.substring(0, 5);
+  }
+
+  function formatDuracion(min) {
+    if (!min) return '--';
+    const hrs = Math.floor(min / 60);
+    const m = min % 60;
+    return `${hrs}h${m > 0 ? ' ' + m + 'm' : ''}`;
+  }
+
+  function yaComentaRuta(rutaId) {
+    return misComentarios.some(c => c.rutaId === rutaId && c.comentarioPadreId === null && c.cantidadEstrellas !== null);
+  }
+
+  function obtenerComentarioRuta(rutaId) {
+    return misComentarios.find(c => c.rutaId === rutaId && c.comentarioPadreId === null && c.cantidadEstrellas !== null);
+  }
+
+  /* ═══════════════════════════════════════════
+     CARGAR DATOS
+  ═══════════════════════════════════════════ */
+  async function cargarReservas() {
+    loading = true; error = '';
     try {
-      const response = await fetch(`http://localhost:5190/api/mis-reservaciones/usuario/${usuarioId}`);
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar las reservaciones');
-      }
-      
-      const reservaciones = await response.json();
-      console.log('Reservaciones cargadas:', reservaciones);
-      
-      // Separar reservaciones activas (Pendiente o Confirmada) de finalizadas (Cancelada, Expirada)
-      reservasActivas = reservaciones.filter(r => 
-        r.estadoReservaId === 1 || r.estadoReservaId === 2
-      );
-      
-      reservasFinalizadas = reservaciones.filter(r => 
-        r.estadoReservaId === 3 || r.estadoReservaId === 4
-      );
-      
-    } catch (err) {
-      console.error('Error cargando reservaciones:', err);
-      error = 'No se pudieron cargar las reservaciones. Intenta de nuevo.';
-    } finally {
-      loading = false;
-    }
+      const r = await fetch(`${API}/api/mis-reservaciones`, { credentials: 'include' });
+      if (r.ok) reservas = await r.json();
+      else error = 'No se pudieron cargar tus reservas.';
+    } catch { error = 'Error de conexion.'; }
+    finally { loading = false; }
   }
 
-  function getStatusClass(estadoReserva) {
-    const statusMap = {
-      'Pendiente': 'reserva-card__status--pending',
-      'Confirmada': 'reserva-card__status--confirmed',
-      'Cancelada': 'reserva-card__status--cancelled',
-      'Expirada': 'reserva-card__status--expired'
-    };
-    return statusMap[estadoReserva] || '';
-  }
-
-  function getStatusText(estadoReserva) {
-    return estadoReserva;
-  }
-
-  function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
-    });
-  }
-
-  function formatTime(timeSpan) {
-    if (!timeSpan) return '';
-    const parts = timeSpan.split(':');
-    return `${parts[0]}:${parts[1]}`;
-  }
-
-  function formatDuration(minutes) {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  }
-
-  function viewDetails(reserva) {
-    detailReservation = reserva;
-    showDetailModal = true;
-  }
-
-  function closeModal() {
-    showDetailModal = false;
-    detailReservation = null;
-  }
-
-  function handleDownloadTicket(reservacionId) {
-    console.log('Descargar boleto para reserva:', reservacionId);
-    // Funcion pendiente - proximamente
-  }
-
-  async function handleCancelReservation(reservacionId) {
-    if (!confirm('¿Estas seguro de que deseas cancelar esta reservacion? Esta accion no se puede deshacer.')) {
-      return;
-    }
-    
-    cancelando = true;
-    errorCancelacion = null;
-    
+  async function cargarResumen() {
     try {
-      const response = await fetch(
-        `http://localhost:5190/api/mis-reservaciones/${reservacionId}/cancelar/usuario/${usuarioId}`,
-        { method: 'POST' }
-      );
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al cancelar la reservacion');
-      }
-      
-      alert('Reservacion cancelada exitosamente');
-      await cargarReservaciones();
-      
-    } catch (err) {
-      console.error('Error cancelando reservacion:', err);
-      errorCancelacion = err.message;
-      alert(errorCancelacion);
-    } finally {
-      cancelando = false;
-    }
+      const r = await fetch(`${API}/api/mis-reservaciones/resumen`, { credentials: 'include' });
+      if (r.ok) resumen = await r.json();
+    } catch {}
   }
 
-  function getTipoReserva(boletos) {
-    if (!boletos || boletos.length === 0) return 'Sin vuelos';
-    
-    const origenes = new Set(boletos.map(b => b.origenCodigo));
-    const destinos = new Set(boletos.map(b => b.destinoCodigo));
-    
-    if (origenes.size > 1 && destinos.size > 1) {
-      return 'Ida y Vuelta';
-    }
-    return 'Solo Ida';
+  async function cargarMisComentarios() {
+    try {
+      const r = await fetch(`${API}/api/comentarios/usuario`, { credentials: 'include' });
+      if (r.ok) misComentarios = await r.json();
+    } catch {}
   }
 
-  function agruparVuelosPorRuta(boletos) {
-    if (!boletos || boletos.length === 0) return [];
-    
-    const vuelos = {};
-    
-    boletos.forEach(boleto => {
-      const key = `${boleto.vueloId}-${boleto.origenCodigo}-${boleto.destinoCodigo}`;
-      
-      if (!vuelos[key]) {
-        vuelos[key] = {
-          vueloId: boleto.vueloId,
-          numeroVuelo: boleto.numeroVuelo,
-          origen: boleto.origenCiudad,
-          origenCodigo: boleto.origenCodigo,
-          destino: boleto.destinoCiudad,
-          destinoCodigo: boleto.destinoCodigo,
-          fecha: boleto.fechaVuelo,
-          horaSalida: boleto.horaSalida,
-          horaLlegada: boleto.horaLlegada,
-          duracion: boleto.duracionMinutos,
-          avion: `${boleto.avionMarca} ${boleto.avionModelo}`,
-          clase: boleto.clase,
-          cantidadPasajeros: 0
-        };
-      }
-      
-      vuelos[key].cantidadPasajeros++;
-    });
-    
-    return Object.values(vuelos);
+  /* ═══════════════════════════════════════════
+     DETALLE
+  ═══════════════════════════════════════════ */
+  async function abrirDetalle(reserva) {
+    detalleLoading = true;
+    detalleError = '';
+    reservaDetalle = reserva;
+    resetComentarForm();
+    cancelarAbierto = false;
+    cancelMotivo = '';
+    cancelError = '';
+    try {
+      const r = await fetch(`${API}/api/mis-reservaciones/${reserva.reservacionId}`, { credentials:'include' });
+      if (r.ok) reservaDetalle = await r.json();
+      else detalleError = 'No se pudo cargar el detalle.';
+    } catch { detalleError = 'Error de conexion.'; }
+    finally { detalleLoading = false; }
   }
 
-  function obtenerPasajerosUnicos(boletos) {
-    if (!boletos || boletos.length === 0) return [];
-    
-    const pasajerosMap = new Map();
-    
-    boletos.forEach(boleto => {
-      if (boleto.pasajero && boleto.pasajero.id) {
-        if (!pasajerosMap.has(boleto.pasajero.id)) {
-          pasajerosMap.set(boleto.pasajero.id, boleto.pasajero);
-        }
-      }
-    });
-    
-    return Array.from(pasajerosMap.values());
+  function cerrarDetalle() {
+    reservaDetalle = null;
+    detalleError = '';
+    cancelarAbierto = false;
+    resetComentarForm();
   }
+
+  /* ═══════════════════════════════════════════
+     CANCELAR
+  ═══════════════════════════════════════════ */
+  function toggleCancelar() {
+    cancelarAbierto = !cancelarAbierto;
+    cancelMotivo = '';
+    cancelError = '';
+  }
+
+  async function confirmarCancelar() {
+    if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo de cancelacion.'; return; }
+    cancelLoading = true; cancelError = '';
+    try {
+      const r = await fetch(`${API}/api/mis-reservaciones/${reservaDetalle.reservacionId}/cancelar`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo: cancelMotivo.trim() })
+      });
+      if (r.ok) {
+        addToast('Reservacion cancelada exitosamente');
+        cancelarAbierto = false;
+        await Promise.all([cargarReservas(), cargarResumen()]);
+        const r2 = await fetch(`${API}/api/mis-reservaciones/${reservaDetalle.reservacionId}`, { credentials:'include' });
+        if (r2.ok) reservaDetalle = await r2.json();
+      } else {
+        const body = await r.json().catch(() => ({}));
+        cancelError = body.message || 'No se pudo cancelar la reservacion.';
+      }
+    } catch { cancelError = 'Error de conexion.'; }
+    finally { cancelLoading = false; }
+  }
+
+  /* ═══════════════════════════════════════════
+     COMPROBANTE - DESCARGAR PDF
+  ═══════════════════════════════════════════ */
+  async function descargarComprobante(reservaId) {
+    comprobanteLoading = true;
+    try {
+      const r = await fetch(`${API}/api/mis-reservaciones/${reservaId}/comprobante`, { credentials:'include' });
+      if (r.ok) {
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `comprobante_${reservaId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        addToast('Comprobante descargado');
+      } else {
+        addToast('No se pudo descargar el comprobante', 'error');
+      }
+    } catch { addToast('Error de conexion', 'error'); }
+    finally { comprobanteLoading = false; }
+  }
+
+  /* ═══════════════════════════════════════════
+     COMPROBANTE - ENVIAR POR CORREO
+  ═══════════════════════════════════════════ */
+  async function enviarComprobantePorCorreo(reservaId) {
+    enviarCorreoLoading = true;
+    try {
+      const r = await fetch(`${API}/api/mis-reservaciones/${reservaId}/enviar-comprobante`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (r.ok) {
+        addToast('Comprobante enviado a tu correo');
+      } else {
+        const body = await r.json().catch(() => ({}));
+        addToast(body.message || 'No se pudo enviar el comprobante', 'error');
+      }
+    } catch { addToast('Error de conexion', 'error'); }
+    finally { enviarCorreoLoading = false; }
+  }
+
+  /* ═══════════════════════════════════════════
+     COMENTAR RUTA
+  ═══════════════════════════════════════════ */
+  function resetComentarForm() {
+    comentarEstrellas = 0;
+    comentarHover = 0;
+    comentarContenido = '';
+    comentarError = '';
+    comentarExito = '';
+  }
+
+  async function enviarComentario(rutaId) {
+    if (comentarEstrellas < 1) { comentarError = 'Selecciona al menos 1 estrella.'; return; }
+    if (!comentarContenido.trim()) { comentarError = 'Escribe tu comentario.'; return; }
+    comentarLoading = true; comentarError = '';
+    try {
+      const r = await fetch(`${API}/api/comentarios/ruta`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rutaId,
+          cantidadEstrellas: comentarEstrellas,
+          contenido: comentarContenido.trim()
+        })
+      });
+      if (r.ok) {
+        comentarExito = 'Comentario enviado exitosamente.';
+        addToast('Comentario enviado');
+        await cargarMisComentarios();
+      } else {
+        const body = await r.json().catch(() => ({}));
+        comentarError = body.message || 'No se pudo enviar el comentario.';
+      }
+    } catch { comentarError = 'Error de conexion.'; }
+    finally { comentarLoading = false; }
+  }
+
+  /* ═══════════════════════════════════════════
+     FILTROS
+  ═══════════════════════════════════════════ */
+  const filtros = [
+    { key: 'todas',      label: 'Todas' },
+    { key: 'confirmada', label: 'Confirmadas' },
+    { key: 'cancelada',  label: 'Canceladas' },
+    { key: 'expirada',   label: 'Expiradas' },
+    { key: 'completada', label: 'Completadas' },
+    { key: 'pendiente',  label: 'Pendientes' },
+  ];
+
+  $: reservasFiltradas = filtroActivo === 'todas'
+    ? reservas
+    : reservas.filter(r => r.estadoReserva?.toLowerCase() === filtroActivo);
 </script>
 
-{#if showDetailModal && detailReservation}
-  <DetallesReservaModal reservation={detailReservation} onClose={closeModal} />
-{/if}
-
-<div class="mis-reservas">
-  <div class="mis-reservas__container">
-    <div class="mis-reservas__header">
-      <button class="mis-reservas__back" on:click={() => navigateTo('home')}>
-        Volver al inicio
-      </button>
-      <h1 class="mis-reservas__title">Mis Reservas</h1>
-      <p class="mis-reservas__subtitle">Gestiona todas tus reservas de vuelo</p>
+<!-- ═══════════════════ TOASTS ═══════════════════ -->
+<div class="mr-toast-container">
+  {#each toasts as t (t.id)}
+    <div class="mr-toast mr-toast--{t.tipo}">
+      {#if t.tipo === 'success'}
+        <svg class="mr-toast__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      {:else}
+        <svg class="mr-toast__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      {/if}
+      <span>{t.msg}</span>
     </div>
+  {/each}
+</div>
 
-    {#if loading}
-      <div class="loading-state">
-        <p>Cargando tus reservaciones...</p>
-      </div>
-    {:else if error}
-      <div class="error-state">
-        <p>{error}</p>
-        <button class="action-btn action-btn--primary" on:click={cargarReservaciones}>
-          Reintentar
-        </button>
-      </div>
-    {:else}
-      <div class="mis-reservas__content">
-        <section class="reservas-section">
-          <h2 class="reservas-section__title">Reservas Activas</h2>
-          <p class="reservas-section__subtitle">
-            {reservasActivas.length} reserva{reservasActivas.length !== 1 ? 's' : ''} activa{reservasActivas.length !== 1 ? 's' : ''}
-          </p>
+<!-- ═══════════════════ MODAL UNICO ═══════════════════ -->
+{#if reservaDetalle}
+  <div class="mr-overlay" on:click={cerrarDetalle} role="dialog" aria-modal="true">
+    <div class="mr-detail-modal" on:click|stopPropagation>
 
-          {#if reservasActivas.length === 0}
-            <div class="empty-state">
-              <p>No tienes reservas activas en este momento</p>
-              <button class="action-btn action-btn--primary" on:click={() => navigateTo('home')}>
-                Buscar Vuelos
+      <button class="mr-modal__close-btn" on:click={cerrarDetalle}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      {#if detalleLoading}
+        <div class="mr-detail-modal__center">
+          <div class="mr-spinner"></div>
+          <p>Cargando detalle...</p>
+        </div>
+      {:else if detalleError}
+        <div class="mr-detail-modal__center">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" width="40" height="40"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <p>{detalleError}</p>
+        </div>
+      {:else}
+
+        <!-- ENCABEZADO -->
+        <div class="mr-detail__top">
+          <div class="mr-detail__top-left">
+            <span class="mr-detail__noreserva">{reservaDetalle.noReservacion}</span>
+            <span class="mr-badge {estadoClase(reservaDetalle.estadoReserva)}">{reservaDetalle.estadoReserva}</span>
+          </div>
+          <span class="mr-detail__total">${reservaDetalle.total?.toFixed(2)}</span>
+        </div>
+
+        <!-- Info general -->
+        <div class="mr-detail__info-row">
+          <div class="mr-detail__info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Creada: {formatFechaHora(reservaDetalle.fechaCreacion)}</span>
+          </div>
+          {#if reservaDetalle.fechaExpiracion}
+            <div class="mr-detail__info-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Expira: {formatFechaHora(reservaDetalle.fechaExpiracion)}</span>
+            </div>
+          {/if}
+          {#if reservaDetalle.fechaCancelacion}
+            <div class="mr-detail__info-item mr-detail__info-item--cancel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <span>Cancelada: {formatFechaHora(reservaDetalle.fechaCancelacion)}</span>
+            </div>
+          {/if}
+          {#if reservaDetalle.motivoCancelacion}
+            <div class="mr-detail__info-item mr-detail__info-item--cancel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>Motivo: {reservaDetalle.motivoCancelacion}</span>
+            </div>
+          {/if}
+          <div class="mr-detail__info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>{reservaDetalle.usuarioNombre}</span>
+          </div>
+        </div>
+
+        <!-- BOLETOS -->
+        <div class="mr-detail__section-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#8B6B4A" stroke-width="2" width="18" height="18"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span>Boletos ({reservaDetalle.boletos?.length ?? 0})</span>
+        </div>
+
+        <div class="mr-detail__boletos">
+          {#each reservaDetalle.boletos ?? [] as boleto}
+            <div class="mr-boleto">
+              <div class="mr-boleto__header">
+                <div class="mr-boleto__flight-info">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                  <span class="mr-boleto__vuelo-num">{boleto.numeroVuelo}</span>
+                  <span class="mr-boleto__avion">{boleto.avionMarca} {boleto.avionModelo}</span>
+                </div>
+                <span class="mr-badge mr-badge--sm {estadoClase(boleto.estadoBoleto)}">{boleto.estadoBoleto}</span>
+              </div>
+
+              <div class="mr-boleto__ruta">
+                <div class="mr-boleto__punto">
+                  <span class="mr-boleto__code">{boleto.origenCodigo}</span>
+                  <span class="mr-boleto__city">{boleto.origenCiudad}</span>
+                  <span class="mr-boleto__time">{formatHora(boleto.horaSalida)}</span>
+                </div>
+                <div class="mr-boleto__line">
+                  <div class="mr-boleto__line-track"></div>
+                  <svg class="mr-boleto__plane-svg" viewBox="0 0 24 24" fill="#8B6B4A" stroke="none" width="18" height="18"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                  <span class="mr-boleto__duration">{formatDuracion(boleto.duracionMinutos)}</span>
+                </div>
+                <div class="mr-boleto__punto mr-boleto__punto--right">
+                  <span class="mr-boleto__code">{boleto.destinoCodigo}</span>
+                  <span class="mr-boleto__city">{boleto.destinoCiudad}</span>
+                  <span class="mr-boleto__time">{formatHora(boleto.horaLlegada)}</span>
+                </div>
+              </div>
+
+              <div class="mr-boleto__grid">
+                <div class="mr-boleto__cell">
+                  <span class="mr-boleto__cell-label">Asiento</span>
+                  <span class="mr-boleto__cell-val">{boleto.noAsiento}</span>
+                </div>
+                <div class="mr-boleto__cell">
+                  <span class="mr-boleto__cell-label">Clase</span>
+                  <span class="mr-boleto__cell-val">{boleto.clase}</span>
+                </div>
+                <div class="mr-boleto__cell">
+                  <span class="mr-boleto__cell-label">Fecha vuelo</span>
+                  <span class="mr-boleto__cell-val">{formatFecha(boleto.fechaVuelo)}</span>
+                </div>
+                <div class="mr-boleto__cell">
+                  <span class="mr-boleto__cell-label">Precio</span>
+                  <span class="mr-boleto__cell-val mr-boleto__cell-val--price">${boleto.precio?.toFixed(2)}</span>
+                </div>
+                <div class="mr-boleto__cell mr-boleto__cell--wide">
+                  <span class="mr-boleto__cell-label">No. Boleto</span>
+                  <span class="mr-boleto__cell-val mr-boleto__cell-val--mono">{boleto.noBoleto}</span>
+                </div>
+              </div>
+
+              {#if boleto.pasajero}
+                <div class="mr-boleto__pasajero">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#8B6B4A" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <div class="mr-boleto__pasajero-data">
+                    <span class="mr-boleto__pasajero-name">{boleto.pasajero.nombre} {boleto.pasajero.apellido}</span>
+                    <span class="mr-boleto__pasajero-info">Pasaporte: {boleto.pasajero.pasaporte} &middot; Tel: {boleto.pasajero.telefono} &middot; {boleto.pasajero.ciudad}, {boleto.pasajero.pais}</span>
+                  </div>
+                </div>
+              {:else}
+                <div class="mr-boleto__pasajero mr-boleto__pasajero--empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span>Sin pasajero asignado</span>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        <!-- CALIFICAR RUTA (solo completadas) -->
+        {#if reservaDetalle.estadoReserva?.toLowerCase() === 'completada'}
+          {@const primerBoleto = reservaDetalle.boletos?.[0]}
+          {#if primerBoleto}
+            {@const rutaId = primerBoleto.rutaId}
+            {@const yaComento = yaComentaRuta(rutaId)}
+
+            <div class="mr-detail__section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#8B6B4A" stroke-width="2" width="18" height="18"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span>Calificar ruta {primerBoleto.origenCodigo} - {primerBoleto.destinoCodigo}</span>
+            </div>
+
+            {#if yaComento}
+              {@const miComentario = obtenerComentarioRuta(rutaId)}
+              <div class="mr-ya-comento">
+                <div class="mr-ya-comento__top">
+                  <div class="mr-ya-comento__stars">
+                    {#each [1,2,3,4,5] as n}
+                      <svg viewBox="0 0 24 24" fill={n <= (miComentario?.cantidadEstrellas ?? 0) ? '#D4A056' : 'none'} stroke={n <= (miComentario?.cantidadEstrellas ?? 0) ? '#D4A056' : '#D8D1C5'} stroke-width="2" width="20" height="20"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    {/each}
+                    <span class="mr-ya-comento__rating">{miComentario?.cantidadEstrellas}/5</span>
+                  </div>
+                  <span class="mr-ya-comento__date">{formatFechaHora(miComentario?.fecha)}</span>
+                </div>
+                <p class="mr-ya-comento__text">{miComentario?.contenido}</p>
+                <div class="mr-ya-comento__badge">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" width="14" height="14"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  <span>Ya dejaste tu calificacion en esta ruta</span>
+                </div>
+              </div>
+            {:else}
+              <div class="mr-comentar-form">
+                <div class="mr-stars">
+                  {#each [1,2,3,4,5] as n}
+                    <button class="mr-star" class:mr-star--active={n <= (comentarHover || comentarEstrellas)}
+                      on:mouseenter={() => comentarHover = n}
+                      on:mouseleave={() => comentarHover = 0}
+                      on:click={() => comentarEstrellas = n}
+                      type="button">
+                      <svg viewBox="0 0 24 24" fill={n <= (comentarHover || comentarEstrellas) ? '#D4A056' : 'none'} stroke={n <= (comentarHover || comentarEstrellas) ? '#D4A056' : '#B89A7A'} stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </button>
+                  {/each}
+                  <span class="mr-stars__label">{comentarEstrellas > 0 ? `${comentarEstrellas}/5` : 'Selecciona'}</span>
+                </div>
+                <textarea class="mr-comentar-form__textarea" bind:value={comentarContenido} placeholder="Cuenta tu experiencia en este vuelo..." rows="3"></textarea>
+                {#if comentarError}<p class="mr-form-error">{comentarError}</p>{/if}
+                {#if comentarExito}<p class="mr-form-exito">{comentarExito}</p>{/if}
+                <button class="mr-btn mr-btn--primary" on:click={() => enviarComentario(rutaId)} disabled={comentarLoading} type="button">
+                  {#if comentarLoading}
+                    <span class="mr-btn__spinner"></span> Enviando...
+                  {:else}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    Enviar calificacion
+                  {/if}
+                </button>
+              </div>
+            {/if}
+          {/if}
+        {/if}
+
+        <!-- CANCELAR (solo confirmadas) -->
+        {#if reservaDetalle.estadoReserva?.toLowerCase() === 'confirmada'}
+          {#if !cancelarAbierto}
+            <div class="mr-detail__cancel-trigger">
+              <button class="mr-btn mr-btn--danger-outline" on:click={toggleCancelar} type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                Cancelar esta reservacion
               </button>
             </div>
           {:else}
-            <div class="reservas-grid">
-              {#each reservasActivas as reserva}
-                {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
-                {@const pasajeros = obtenerPasajerosUnicos(reserva.boletos)}
-                
-                <article class="reserva-card">
-                  <div class="reserva-card__header">
-                    <div class="reserva-card__id-section">
-                      <h3 class="reserva-card__id">#{reserva.noReservacion}</h3>
-                      <span class="reserva-card__type">
-                        {getTipoReserva(reserva.boletos)}
-                      </span>
-                    </div>
-                    <span class="reserva-card__status {getStatusClass(reserva.estadoReserva)}">
-                      {getStatusText(reserva.estadoReserva)}
-                    </span>
-                  </div>
-
-                  <div class="reserva-card__flights">
-                    {#each vuelos as vuelo}
-                      <div class="flight-info">
-                        <div class="flight-info__badge">
-                          Vuelo
-                        </div>
-                        <div class="flight-info__main">
-                          <div class="flight-info__route">
-                            <span class="flight-info__airport">{vuelo.origen} ({vuelo.origenCodigo})</span>
-                            <span class="flight-info__arrow">→</span>
-                            <span class="flight-info__airport">{vuelo.destino} ({vuelo.destinoCodigo})</span>
-                          </div>
-                          <div class="flight-info__details">
-                            <span class="flight-info__detail">{vuelo.avion} - {vuelo.numeroVuelo}</span>
-                            <span class="flight-info__detail">{formatDate(vuelo.fecha)}</span>
-                            <span class="flight-info__detail">{formatTime(vuelo.horaSalida)} - {formatTime(vuelo.horaLlegada)}</span>
-                            <span class="flight-info__detail">Clase {vuelo.clase}</span>
-                            <span class="flight-info__detail">Duracion: {formatDuration(vuelo.duracion)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    {/each}
-                  </div>
-
-                  <div class="reserva-card__passengers">
-                    <h4 class="reserva-card__passengers-title">Pasajeros ({pasajeros.length})</h4>
-                    <ul class="passengers-list">
-                      {#if pasajeros.length > 0}
-                        {#each pasajeros as pasajero}
-                          <li class="passenger-item">
-                            <span class="passenger-item__name">{pasajero.nombre} {pasajero.apellido}</span>
-                            <span class="passenger-item__doc">Pasaporte: {pasajero.pasaporte}</span>
-                          </li>
-                        {/each}
-                      {:else}
-                        <li class="passenger-item">
-                          <span class="passenger-item__name">Datos de pasajeros pendientes</span>
-                        </li>
-                      {/if}
-                    </ul>
-                  </div>
-
-                  <div class="reserva-card__details">
-                    <div class="detail-row">
-                      <span class="detail-row__label">Codigo de confirmacion</span>
-                      <span class="detail-row__value">{reserva.noReservacion}</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="detail-row__label">Fecha de reserva</span>
-                      <span class="detail-row__value">{formatDate(reserva.fechaCreacion)}</span>
-                    </div>
-                    {#if reserva.fechaExpiracion}
-                      <div class="detail-row">
-                        <span class="detail-row__label">Expira el</span>
-                        <span class="detail-row__value">{formatDate(reserva.fechaExpiracion)}</span>
-                      </div>
-                    {/if}
-                    <div class="detail-row detail-row--total">
-                      <span class="detail-row__label">Total</span>
-                      <span class="detail-row__value">${reserva.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <div class="reserva-card__actions">
-                    <button class="action-btn action-btn--primary" on:click={() => viewDetails(reserva)}>
-                      Ver Detalles
-                    </button>
-                    <button class="action-btn" on:click={() => handleDownloadTicket(reserva.reservacionId)}>
-                      Descargar Boleto
-                    </button>
-                    <button 
-                      class="action-btn" 
-                      on:click={() => handleCancelReservation(reserva.reservacionId)}
-                      disabled={cancelando}>
-                      {cancelando ? 'Cancelando...' : 'Cancelar Reserva'}
-                    </button>
-                  </div>
-                </article>
-              {/each}
+            <div class="mr-cancel-section">
+              <div class="mr-cancel-section__header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" width="22" height="22"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                  <h4 class="mr-cancel-section__title">Cancelar reservacion</h4>
+                  <p class="mr-cancel-section__sub">Esta accion no se puede deshacer. Todos los boletos seran cancelados.</p>
+                </div>
+              </div>
+              <label class="mr-cancel-section__label">Motivo de cancelacion</label>
+              <textarea class="mr-cancel-section__textarea" bind:value={cancelMotivo} placeholder="Ej: Cambio de planes, enfermedad..." rows="3"></textarea>
+              {#if cancelError}<p class="mr-form-error">{cancelError}</p>{/if}
+              <div class="mr-cancel-section__actions">
+                <button class="mr-btn mr-btn--ghost" on:click={toggleCancelar} disabled={cancelLoading} type="button">Volver</button>
+                <button class="mr-btn mr-btn--danger" on:click={confirmarCancelar} disabled={cancelLoading} type="button">
+                  {#if cancelLoading}
+                    <span class="mr-btn__spinner"></span> Cancelando...
+                  {:else}
+                    Confirmar cancelacion
+                  {/if}
+                </button>
+              </div>
             </div>
           {/if}
-        </section>
+        {/if}
 
-        <section class="reservas-section">
-          <h2 class="reservas-section__title">Historial</h2>
-          <p class="reservas-section__subtitle">Reservas completadas, canceladas y expiradas</p>
-
-          {#if reservasFinalizadas.length === 0}
-            <div class="empty-state">
-              <p>No tienes reservas en tu historial</p>
-            </div>
-          {:else}
-            <div class="reservas-grid">
-              {#each reservasFinalizadas as reserva}
-                {@const vuelos = agruparVuelosPorRuta(reserva.boletos)}
-                {@const pasajeros = obtenerPasajerosUnicos(reserva.boletos)}
-                
-                <article class="reserva-card reserva-card--completed">
-                  <div class="reserva-card__header">
-                    <div class="reserva-card__id-section">
-                      <h3 class="reserva-card__id">#{reserva.noReservacion}</h3>
-                      <span class="reserva-card__type">
-                        {getTipoReserva(reserva.boletos)}
-                      </span>
-                    </div>
-                    <span class="reserva-card__status {getStatusClass(reserva.estadoReserva)}">
-                      {getStatusText(reserva.estadoReserva)}
-                    </span>
-                  </div>
-
-                  <div class="reserva-card__flights">
-                    {#each vuelos as vuelo}
-                      <div class="flight-info">
-                        <div class="flight-info__badge">
-                          Vuelo
-                        </div>
-                        <div class="flight-info__main">
-                          <div class="flight-info__route">
-                            <span class="flight-info__airport">{vuelo.origen} ({vuelo.origenCodigo})</span>
-                            <span class="flight-info__arrow">→</span>
-                            <span class="flight-info__airport">{vuelo.destino} ({vuelo.destinoCodigo})</span>
-                          </div>
-                          <div class="flight-info__details">
-                            <span class="flight-info__detail">{vuelo.avion} - {vuelo.numeroVuelo}</span>
-                            <span class="flight-info__detail">{formatDate(vuelo.fecha)}</span>
-                            <span class="flight-info__detail">Clase {vuelo.clase}</span>
-                          </div>
-                        </div>
-                      </div>
-                    {/each}
-                  </div>
-
-                  <div class="reserva-card__passengers">
-                    <h4 class="reserva-card__passengers-title">Pasajeros ({pasajeros.length})</h4>
-                    <ul class="passengers-list">
-                      {#if pasajeros.length > 0}
-                        {#each pasajeros as pasajero}
-                          <li class="passenger-item">
-                            <span class="passenger-item__name">{pasajero.nombre} {pasajero.apellido}</span>
-                            <span class="passenger-item__doc">Pasaporte: {pasajero.pasaporte}</span>
-                          </li>
-                        {/each}
-                      {:else}
-                        <li class="passenger-item">
-                          <span class="passenger-item__name">Sin datos de pasajeros</span>
-                        </li>
-                      {/if}
-                    </ul>
-                  </div>
-
-                  <div class="reserva-card__details">
-                    <div class="detail-row">
-                      <span class="detail-row__label">Fecha de reserva</span>
-                      <span class="detail-row__value">{formatDate(reserva.fechaCreacion)}</span>
-                    </div>
-                    <div class="detail-row detail-row--total">
-                      <span class="detail-row__label">Total</span>
-                      <span class="detail-row__value">${reserva.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <div class="reserva-card__actions">
-                    <button class="action-btn action-btn--primary" on:click={() => viewDetails(reserva)}>
-                      Ver Detalles
-                    </button>
-                    <button class="action-btn" on:click={() => handleDownloadTicket(reserva.reservacionId)}>
-                      Descargar Recibo
-                    </button>
-                  </div>
-                </article>
-              {/each}
-            </div>
+        <!-- FOOTER ACCIONES -->
+        <div class="mr-detail__footer-actions">
+          <button class="mr-btn mr-btn--ghost" on:click={cerrarDetalle} type="button">Cerrar</button>
+          {#if reservaDetalle.estadoReserva?.toLowerCase() === 'confirmada' || reservaDetalle.estadoReserva?.toLowerCase() === 'completada'}
+            <button class="mr-btn mr-btn--outline" on:click={() => descargarComprobante(reservaDetalle.reservacionId)} disabled={comprobanteLoading} type="button">
+              {#if comprobanteLoading}
+                <span class="mr-btn__spinner mr-btn__spinner--dark"></span> Descargando...
+              {:else}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Descargar comprobante
+              {/if}
+            </button>
+            <button class="mr-btn mr-btn--secondary" on:click={() => enviarComprobantePorCorreo(reservaDetalle.reservacionId)} disabled={enviarCorreoLoading} type="button">
+              {#if enviarCorreoLoading}
+                <span class="mr-btn__spinner mr-btn__spinner--dark"></span> Enviando...
+              {:else}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Enviar al correo
+              {/if}
+            </button>
           {/if}
-        </section>
+        </div>
+
+      {/if}
+    </div>
+  </div>
+{/if}
+
+<!-- ═══════════════════ PAGINA ═══════════════════ -->
+<div class="mr-page">
+  <div class="mr-container">
+
+    <div class="mr-header">
+      <div>
+        <h1 class="mr-title">Mis Reservaciones</h1>
+        <p class="mr-subtitle">Gestiona y consulta tu historial de vuelos</p>
+      </div>
+      <button class="mr-btn mr-btn--back" on:click={() => navigateTo('home')} type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Inicio
+      </button>
+    </div>
+
+    {#if resumen}
+      <div class="mr-resumen">
+        <div class="mr-resumen__card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#8B6B4A" stroke-width="2" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="mr-resumen__val">{resumen.totalReservaciones}</span>
+          <span class="mr-resumen__label">Total</span>
+        </div>
+        <div class="mr-resumen__card mr-resumen__card--confirmada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#27ae60" stroke-width="2" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span class="mr-resumen__val">{resumen.confirmadas}</span>
+          <span class="mr-resumen__label">Confirmadas</span>
+        </div>
+        <div class="mr-resumen__card mr-resumen__card--pendiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="mr-resumen__val">{resumen.pendientes}</span>
+          <span class="mr-resumen__label">Pendientes</span>
+        </div>
+        <div class="mr-resumen__card mr-resumen__card--completada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2980b9" stroke-width="2" width="22" height="22"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          <span class="mr-resumen__val">{resumen.completadas}</span>
+          <span class="mr-resumen__label">Completadas</span>
+        </div>
+        <div class="mr-resumen__card mr-resumen__card--cancelada">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <span class="mr-resumen__val">{resumen.canceladas}</span>
+          <span class="mr-resumen__label">Canceladas</span>
+        </div>
+        <div class="mr-resumen__card mr-resumen__card--gasto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#8B6B4A" stroke-width="2" width="22" height="22"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="mr-resumen__val">${resumen.totalGastado?.toFixed(2)}</span>
+          <span class="mr-resumen__label">Gastado</span>
+        </div>
       </div>
     {/if}
+
+    <div class="mr-filtros">
+      {#each filtros as f}
+        <button class="mr-filtro" class:mr-filtro--active={filtroActivo === f.key} on:click={() => filtroActivo = f.key} type="button">
+          {f.label}
+          {#if f.key !== 'todas' && resumen}
+            <span class="mr-filtro__count">
+              {f.key === 'confirmada' ? resumen.confirmadas :
+               f.key === 'cancelada' ? resumen.canceladas :
+               f.key === 'expirada' ? resumen.expiradas :
+               f.key === 'completada' ? resumen.completadas :
+               f.key === 'pendiente' ? resumen.pendientes : ''}
+            </span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+
+    {#if loading}
+      <div class="mr-empty-state">
+        <div class="mr-spinner mr-spinner--lg"></div>
+        <p class="mr-empty-state__text">Cargando tus reservaciones...</p>
+      </div>
+    {:else if error}
+      <div class="mr-empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2" width="48" height="48"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <p class="mr-empty-state__text">{error}</p>
+        <button class="mr-btn mr-btn--primary" on:click={cargarReservas} type="button">Reintentar</button>
+      </div>
+    {:else if reservasFiltradas.length === 0}
+      <div class="mr-empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#B89A7A" stroke-width="1.5" width="56" height="56"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+        {#if filtroActivo === 'todas'}
+          <p class="mr-empty-state__title">No tienes reservaciones aun</p>
+          <p class="mr-empty-state__text">Busca un vuelo y haz tu primera reserva</p>
+          <button class="mr-btn mr-btn--primary" on:click={() => navigateTo('home')} type="button">Buscar vuelos</button>
+        {:else}
+          <p class="mr-empty-state__title">Sin resultados</p>
+          <p class="mr-empty-state__text">No hay reservaciones con estado "{filtroActivo}"</p>
+          <button class="mr-btn mr-btn--ghost" on:click={() => filtroActivo = 'todas'} type="button">Ver todas</button>
+        {/if}
+      </div>
+    {:else}
+      <div class="mr-grid">
+        {#each reservasFiltradas as reserva (reserva.reservacionId)}
+          {@const pb = reserva.boletos?.[0]}
+          <article class="mr-card" on:click={() => abrirDetalle(reserva)} role="button" tabindex="0" on:keydown={e => e.key === 'Enter' && abrirDetalle(reserva)}>
+            <div class="mr-card__top">
+              <span class="mr-card__noreserva">{reserva.noReservacion}</span>
+              <span class="mr-badge {estadoClase(reserva.estadoReserva)}">{reserva.estadoReserva}</span>
+            </div>
+            {#if pb}
+              <div class="mr-card__ruta">
+                <div class="mr-card__punto">
+                  <span class="mr-card__code">{pb.origenCodigo}</span>
+                  <span class="mr-card__city">{pb.origenCiudad}</span>
+                </div>
+                <div class="mr-card__line">
+                  <div class="mr-card__line-track"></div>
+                  <svg class="mr-card__plane-icon" viewBox="0 0 24 24" fill="#8B6B4A" stroke="none" width="20" height="20"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                </div>
+                <div class="mr-card__punto mr-card__punto--right">
+                  <span class="mr-card__code">{pb.destinoCodigo}</span>
+                  <span class="mr-card__city">{pb.destinoCiudad}</span>
+                </div>
+              </div>
+              <div class="mr-card__meta">
+                <span class="mr-card__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                  {pb.numeroVuelo}
+                </span>
+                <span class="mr-card__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  {formatFecha(pb.fechaVuelo)}
+                </span>
+                <span class="mr-card__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {formatHora(pb.horaSalida)} - {formatHora(pb.horaLlegada)}
+                </span>
+              </div>
+            {/if}
+            <div class="mr-card__bottom">
+              <span class="mr-card__boletos">{reserva.boletos?.length ?? 0} boleto{(reserva.boletos?.length ?? 0) !== 1 ? 's' : ''}</span>
+              <span class="mr-card__total">${reserva.total?.toFixed(2)}</span>
+            </div>
+            <div class="mr-card__cta">
+              Ver detalle
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </article>
+        {/each}
+      </div>
+    {/if}
+
   </div>
 </div>

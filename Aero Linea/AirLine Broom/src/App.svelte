@@ -80,12 +80,9 @@
 
   // ── Inicialización ─────────────────────────────────────────────────
   onMount(async () => {
-    // 1. Determinar página desde URL
     actualizarPaginaDesdeURL();
     window.addEventListener('popstate', actualizarPaginaDesdeURL);
 
-    // 2. Si la página actual es 'vuelos' y no tenemos searchParams en memoria,
-    //    intentamos recuperarlos desde sessionStorage
     if (currentPage === 'vuelos' && !searchParams) {
       const guardados = loadSearchParams();
       if (guardados) searchParams = guardados;
@@ -106,7 +103,6 @@
     currentPage = path;
     pageKey = Date.now();
 
-    // Si navegamos a 'vuelos' via el botón Atrás del browser, restaurar params
     if (path === 'vuelos' && !searchParams) {
       const guardados = loadSearchParams();
       if (guardados) searchParams = guardados;
@@ -145,14 +141,12 @@
       } else {
         searchParams = data;
       }
-      // ── Guardar en sessionStorage para sobrevivir recargas ──
       saveSearchParams(searchParams);
 
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
 
     } else if (paginaFinal === 'datos-pasajeros') {
-      // Guardar reserva + searchData para DatosPasajeros.svelte
       searchParams = data;
 
     } else if (paginaFinal === 'confirmacion') {
@@ -176,8 +170,10 @@
   }
 
   const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','checkout','confirmacion'];
-  const noFooterPages     = ['profile','admin','login','register','acceso-denegado',...simpleHeaderPages];
-  const noHeaderPages     = ['login','register'];
+
+  // 'reservas' → header normal, sin footer (igual que profile/admin)
+  const noFooterPages = ['profile','admin','login','register','acceso-denegado','reservas',...simpleHeaderPages];
+  const noHeaderPages = ['login','register'];
 
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
   $: showHeader      = !noHeaderPages.includes(currentPage);
@@ -209,7 +205,9 @@
     {:else if currentPage === 'VuelosGenerales'}
       <VuelosGenerales {navigateTo} />
     {:else if currentPage === 'reservas'}
-      <MisReservas {navigateTo} />
+      {#key pageKey}
+        <MisReservas {navigateTo} />
+      {/key}
     {:else if currentPage === 'vuelos'}
       {#key pageKey}
         <Vuelos {navigateTo} {searchParams} />
@@ -244,7 +242,6 @@
       <InformacionSeguridad {navigateTo} />
     {:else if currentPage === 'acceso-denegado'}
       <AccesoDenegado {navigateTo} />
-
     {:else if currentPage === 'contactanos'}
       <Contactanos {navigateTo} />
     {:else if currentPage === 'centro-ayuda'}
@@ -261,7 +258,6 @@
       <PoliticaCancelacion {navigateTo} />
     {:else if currentPage === 'sobre-nosotros'}
       <SobreNosotros {navigateTo} />
-
     {:else}
       <Home {navigateTo} />
     {/if}
