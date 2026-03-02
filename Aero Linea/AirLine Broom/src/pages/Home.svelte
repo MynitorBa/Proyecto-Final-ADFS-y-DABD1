@@ -4,7 +4,8 @@
   import { onMount } from 'svelte';
 
   export let navigateTo;
-  export let suggestedDestination = null;
+  // CORREGIDO: ahora recibimos el objeto aeropuerto completo, no un string
+  export let suggestedAeropuerto = null;
 
   const API = 'https://localhost:7107';
 
@@ -35,8 +36,6 @@
   const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // Destinos: aeropuertos con imagen para mostrar en la sección
-  // Todos los aeropuertos que tengan imagen subida desde el admin
   $: destinosConImagen = aeropuertos.filter(a => a.imagenBase64);
 
   onMount(async () => {
@@ -50,12 +49,24 @@
     }
   });
 
-  $: if (suggestedDestination) {
-    toQuery = suggestedDestination;
-    const f = document.getElementById('toCity');
-    if (f) {
-      f.classList.add('broom-home__form-input--highlighted');
-      setTimeout(() => f.classList.remove('broom-home__form-input--highlighted'), 2000);
+  // Cuando llega un aeropuerto sugerido (del avión volador),
+  // hacemos la selección COMPLETA igual que si el usuario lo eligiera del autocomplete
+  $: if (suggestedAeropuerto) {
+    /** @type {any} */
+    const ap = suggestedAeropuerto;
+    if (ap.id) {
+      toSeleccionado = ap;
+      toQuery = `${ap.ciudad} (${ap.codigo})`;
+      toSugeridos = [];
+    
+      // Highlight visual del campo
+      setTimeout(() => {
+        const f = document.getElementById('toCity');
+        if (f) {
+          f.classList.add('broom-home__form-input--highlighted');
+          setTimeout(() => f.classList.remove('broom-home__form-input--highlighted'), 2000);
+        }
+      }, 50);
     }
   }
 

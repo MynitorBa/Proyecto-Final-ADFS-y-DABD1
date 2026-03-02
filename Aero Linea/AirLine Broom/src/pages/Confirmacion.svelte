@@ -5,8 +5,8 @@
   import { sesion } from '../stores/sesion.js';
 
   export let navigateTo;
-  export let reservaciones = [];   // viene directo desde App.svelte como prop
-  export let facturas      = [];   // si App.svelte lo pasa, si no lo cargamos del searchParams
+  export let reservaciones = [];
+  export let facturas      = [];
 
   const API = 'https://localhost:7107';
 
@@ -17,6 +17,14 @@
     if (!usuarioId) { navigateTo('login'); return; }
     return () => unsubscribe();
   });
+
+  /* ── Toast ── */
+  let toasts = [];
+  function addToast(msg, tipo = 'success') {
+    const id = Date.now();
+    toasts = [...toasts, { id, msg, tipo }];
+    setTimeout(() => { toasts = toasts.filter(t => t.id !== id); }, 4000);
+  }
 
   function formatFecha(f) {
     if (!f) return '—';
@@ -31,6 +39,7 @@
   }
 
   let descargando = {};
+  let enviando = {};
 
   async function descargarComprobante(reservacionId, noReservacion) {
     if (descargando[reservacionId]) return;
@@ -38,52 +47,73 @@
     descargando = { ...descargando };
 
     try {
-      // 1. Obtener HTML del backend
-      const res = await fetch(`${API}/api/reservaciones/${reservacionId}/comprobante`, {
+      const res = await fetch(`${API}/api/mis-reservaciones/${reservacionId}/comprobante`, {
         credentials: 'include'
       });
-      if (!res.ok) throw new Error('Error al obtener el comprobante');
-      const html = await res.text();
+      if (!res.ok) throw new Error();
 
-      // 2. Inyectar script de auto-print en el HTML del backend
-      //    Reemplaza el botón de imprimir por un trigger automático
-      const htmlConAutoPrint = html
-        .replace('</body>', `
-          <script>
-            // Ocultar botón manual y lanzar print automático
-            document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
-            window.onload = function() {
-              setTimeout(function() { window.print(); }, 400);
-            };
-          <\/script>
-        </body>`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `comprobante_${noReservacion}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast('Comprobante descargado');
 
-      // 3. Abrir en ventana nueva pequeña, print() se dispara solo
-      //    El usuario elige "Guardar como PDF" en el diálogo de impresión
-      const ventana = window.open('', '_blank', 'width=900,height=700');
-      if (!ventana) {
-        alert('Permite ventanas emergentes para descargar el comprobante.');
-        return;
-      }
-      ventana.document.open();
-      ventana.document.write(htmlConAutoPrint);
-      ventana.document.close();
-
-    } catch (err) {
-      console.error('Error generando comprobante:', err);
-      alert('No se pudo generar el comprobante. Intenta de nuevo.');
+    } catch {
+      addToast('No se pudo descargar el comprobante', 'error');
     } finally {
       descargando[reservacionId] = false;
       descargando = { ...descargando };
     }
   }
 
-  // Buscar boletos de la reserva que corresponde a cada factura
+  async function enviarComprobantePorCorreo(reservacionId) {
+    if (enviando[reservacionId]) return;
+    enviando[reservacionId] = true;
+    enviando = { ...enviando };
+
+    try {
+      const res = await fetch(`${API}/api/mis-reservaciones/${reservacionId}/enviar-comprobante`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        addToast('Comprobante enviado a tu correo');
+      } else {
+        const body = await res.json().catch(() => ({}));
+        addToast(body.message || 'No se pudo enviar el comprobante', 'error');
+      }
+    } catch {
+      addToast('Error de conexion', 'error');
+    } finally {
+      enviando[reservacionId] = false;
+      enviando = { ...enviando };
+    }
+  }
+
   function getBoletos(reservacionId) {
     const reserva = reservaciones.find(r => r.reservacionId === reservacionId);
     return reserva?.boletos ?? [];
   }
 </script>
+
+<!-- Toasts -->
+<div class="conf-toast-container">
+  {#each toasts as t (t.id)}
+    <div class="conf-toast conf-toast--{t.tipo}">
+      {#if t.tipo === 'success'}
+        <svg class="conf-toast__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      {:else}
+        <svg class="conf-toast__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      {/if}
+      <span>{t.msg}</span>
+    </div>
+  {/each}
+</div>
 
 <div class="confirmacion">
   <div class="confirmacion__container">
@@ -179,12 +209,21 @@
                   disabled={descargando[factura.reservacionId]}
                   on:click={() => descargarComprobante(factura.reservacionId, factura.noReservacion)}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/>
-                    <line x1="9" y1="15" x2="15" y2="15"/>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                  {descargando[factura.reservacionId] ? "Generando PDF..." : "Descargar comprobante PDF"}
+                  {descargando[factura.reservacionId] ? "Descargando..." : "Descargar PDF"}
+                </button>
+                <button class="btn-correo"
+                  class:btn-correo--loading={enviando[factura.reservacionId]}
+                  disabled={enviando[factura.reservacionId]}
+                  on:click={() => enviarComprobantePorCorreo(factura.reservacionId)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  {enviando[factura.reservacionId] ? "Enviando..." : "Enviar al correo"}
                 </button>
               </div>
             </div>
@@ -193,7 +232,6 @@
       </div>
 
     {:else}
-      <!-- Si no hay facturas (navegacion directa), mostrar resumen de reservaciones -->
       <div class="confirmacion__facturas">
         {#each reservaciones as reserva}
           <div class="factura-card">
@@ -225,12 +263,21 @@
                   disabled={descargando[reserva.reservacionId]}
                   on:click={() => descargarComprobante(reserva.reservacionId, reserva.noReservacion)}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="12" y1="18" x2="12" y2="12"/>
-                    <line x1="9" y1="15" x2="15" y2="15"/>
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                  {descargando[reserva.reservacionId] ? "Generando PDF..." : "Descargar comprobante PDF"}
+                  {descargando[reserva.reservacionId] ? "Descargando..." : "Descargar PDF"}
+                </button>
+                <button class="btn-correo"
+                  class:btn-correo--loading={enviando[reserva.reservacionId]}
+                  disabled={enviando[reserva.reservacionId]}
+                  on:click={() => enviarComprobantePorCorreo(reserva.reservacionId)}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  {enviando[reserva.reservacionId] ? "Enviando..." : "Enviar al correo"}
                 </button>
               </div>
             </div>

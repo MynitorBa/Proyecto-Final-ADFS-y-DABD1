@@ -1,17 +1,14 @@
 ﻿using DinkToPdf;
 using DinkToPdf.Contracts;
-
 namespace Aerolinea.API.Services
 {
     public class PdfService
     {
         private readonly IConverter _converter;
-
         public PdfService(IConverter converter)
         {
             _converter = converter;
         }
-
         public byte[] GenerarPdf(string html)
         {
             var doc = new HtmlToPdfDocument()
@@ -21,18 +18,27 @@ namespace Aerolinea.API.Services
                     ColorMode = ColorMode.Color,
                     Orientation = Orientation.Landscape,
                     PaperSize = PaperKind.A4,
-                    Margins = new MarginSettings { Top = 10, Bottom = 10, Left = 12, Right = 12 },
+                    Margins = new MarginSettings
+                    {
+                        Top = 0,
+                        Bottom = 0,
+                        Left = 0,
+                        Right = 0
+                    },
                 },
                 Objects =
                 {
                     new ObjectSettings
                     {
                         HtmlContent = html,
-                        WebSettings = { DefaultEncoding = "utf-8" }
+                        WebSettings = new WebSettings
+                        {
+                            DefaultEncoding = "utf-8",
+                            EnableIntelligentShrinking = false
+                        }
                     }
                 }
             };
-
             return _converter.Convert(doc);
         }
     }

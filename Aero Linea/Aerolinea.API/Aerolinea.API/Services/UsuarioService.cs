@@ -27,13 +27,30 @@ namespace Aerolinea.API.Services
 
         public async Task CrearUsuario(CrearUsuarioDTO dto)
         {
+            // ══════════════════════════════════════════════════════════════
+            //  VALIDACIONES DE FORMATO
+            // ══════════════════════════════════════════════════════════════
+
+            // Pasaporte: solo números
+            if (string.IsNullOrWhiteSpace(dto.Pasaporte))
+                throw new Exception("El número de pasaporte es obligatorio.");
+
+            if (!dto.Pasaporte.All(char.IsDigit))
+                throw new Exception("El número de pasaporte debe contener solo números.");
+
+            // Teléfono: solo dígitos, espacios y el signo +
+            if (string.IsNullOrWhiteSpace(dto.Telefono))
+                throw new Exception("El número de teléfono es obligatorio.");
+
+            string telefonoLimpio = dto.Telefono.Replace(" ", "").Replace("+", "");
+            if (!telefonoLimpio.All(char.IsDigit))
+                throw new Exception("El número de teléfono debe contener solo números.");
+
+            // ══════════════════════════════════════════════════════════════
+
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Se usa PaisRepository para obtener el PaisId
-            // Luego se usa ese PaisId para buscar/crear la Ciudad
-            // Pero en Usuario solo se guarda CiudadId
-            // (la relacion Pais se obtiene via Ciudad -> Pais)
             int paisId = await _paisRepository.ObtenerOCrearId(dto.Pais, connection);
             int ciudadId = await _ciudadRepository.ObtenerOCrearId(dto.Ciudad, paisId, connection);
 
@@ -55,6 +72,34 @@ namespace Aerolinea.API.Services
 
             if (dto.Nacionalidades != null && dto.Nacionalidades.Count > 0)
                 await _repository.AgregarNacionalidades(usuarioId, dto.Nacionalidades);
+
+            // ══════════════════════════════════════════════════════════════
+            //  ENVIAR CORREO DE BIENVENIDA al nuevo usuario
+            //  (no bloquea el registro si falla el envío)
+            // ══════════════════════════════════════════════════════════════
+            try
+            {
+                string html = EmailTemplates.CorreoBienvenida(
+                    dto.Nombre,
+                    dto.Apellido,
+                    dto.Username,
+                    dto.Correo,
+                    dto.Pasaporte,
+                    dto.Telefono,
+                    dto.Pais,
+                    dto.Ciudad,
+                    dto.FechaNacimiento.ToString("yyyy-MM-dd"),
+                    dto.Nacionalidades ?? new List<string>()
+                );
+
+                string asunto = "✈ Bienvenido a Broom AirLine — Cuenta creada exitosamente";
+                await EmailHelper.Enviar(dto.Correo, asunto, html);
+            }
+            catch (Exception ex)
+            {
+                // Log del error pero no interrumpir el registro
+                Console.WriteLine($"[WARN] No se pudo enviar correo de bienvenida a {dto.Correo}: {ex.Message}");
+            }
         }
 
         public async Task<RegisterConstraint> VerificarConstraints(CrearUsuarioDTO dto)
@@ -97,6 +142,7 @@ namespace Aerolinea.API.Services
                     rolNombre = rolNombre ?? "Desconocido"
                 });
             }
+
             return resultado;
         }
     }

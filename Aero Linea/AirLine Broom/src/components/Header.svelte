@@ -1,13 +1,134 @@
 <script>
+  // @ts-nocheck
   import '../styles/header.css';
   import logoPath from '../assets/logBAL.png';
   import { sesion, logout } from '../stores/sesion.js';
+  import { onMount } from 'svelte';
 
   export let navigateTo;
   export let currentPage = 'home';
 
+  const API = 'https://localhost:7107';
+
   let menuActive = false;
   let cartCount = 0;
+
+  // Buscador global
+  let aeropuertos = [];
+  let searchQuery = '';
+  let searchResults = [];
+  let showSearchResults = false;
+  let searchInputDesktop = null;
+  let searchInputMobile = null;
+  let searching = false;
+
+  onMount(async () => {
+    try {
+      const res = await fetch(`${API}/api/aeropuertos`);
+      aeropuertos = await res.json();
+    } catch (err) {
+      console.error('Error cargando aeropuertos para buscador:', err);
+    }
+
+    // Cargar contador del carrito (reservaciones pendientes)
+    await actualizarCartCount();
+
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  });
+
+  async function actualizarCartCount() {
+    if (!$sesion) { cartCount = 0; return; }
+    try {
+      const res = await fetch(`${API}/api/mis-reservaciones`, { credentials: 'include' });
+      if (res.ok) {
+        const todas = await res.json();
+        const pendientes = todas.filter(r => r.estadoReservaId === 1);
+        cartCount = pendientes.reduce((sum, r) => sum + (r.boletos?.length || 0), 0);
+      }
+    } catch { cartCount = 0; }
+  }
+
+  // Reactivo: actualizar cuando cambia la sesión
+  $: if ($sesion) actualizarCartCount();
+  $: if (!$sesion) cartCount = 0;
+
+  function handleClickOutside(e) {
+    const isInSearch = e.target.closest('.broom-header__search');
+    if (!isInSearch) {
+      showSearchResults = false;
+    }
+  }
+
+  function onSearchInput() {
+    const q = searchQuery.toLowerCase().trim();
+    if (q.length < 1) {
+      searchResults = [];
+      showSearchResults = false;
+      return;
+    }
+    searchResults = aeropuertos.filter(a =>
+      a.ciudad?.toLowerCase().includes(q) ||
+      a.nombre?.toLowerCase().includes(q) ||
+      a.codigo?.toLowerCase().includes(q) ||
+      a.pais?.toLowerCase().includes(q)
+    ).slice(0, 8);
+    showSearchResults = searchResults.length > 0;
+  }
+
+  // CAMBIADO: ahora busca vuelos con el endpoint general y navega a Vuelos
+  async function buscarYNavegar(queryText) {
+    if (!queryText || queryText.trim().length < 2) return;
+    showSearchResults = false;
+    searching = true;
+    const q = queryText.trim();
+
+    try {
+      const res = await fetch(`${API}/api/vuelos/busqueda-general?query=${encodeURIComponent(q)}`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Error en búsqueda');
+      const vuelos = await res.json();
+
+      // Navegar a vuelos con formato de búsqueda general
+      navigateTo('vuelos', {
+        fromGlobalSearch: true,
+        globalSearchQuery: q,
+        globalSearchResults: vuelos
+      });
+    } catch (err) {
+      console.error('Error en búsqueda global:', err);
+      navigateTo('vuelos', {
+        fromGlobalSearch: true,
+        globalSearchQuery: q,
+        globalSearchResults: []
+      });
+    } finally {
+      searching = false;
+      searchQuery = '';
+      menuActive = false;
+    }
+  }
+
+  function selectSearchResult(aeropuerto) {
+    showSearchResults = false;
+    // Buscar vuelos de esa ciudad/aeropuerto
+    buscarYNavegar(aeropuerto.ciudad);
+  }
+
+  function handleSearchKeydown(e) {
+    if (e.key === 'Enter') {
+      // Si hay resultados, buscar por la primera ciudad; si no, buscar el texto directo
+      if (searchResults.length > 0) {
+        selectSearchResult(searchResults[0]);
+      } else if (searchQuery.trim().length >= 2) {
+        buscarYNavegar(searchQuery);
+      }
+    } else if (e.key === 'Escape') {
+      showSearchResults = false;
+    }
+  }
 
   function toggleMenu() { menuActive = !menuActive; }
   function handleNavigation(page) { navigateTo(page); menuActive = false; }
@@ -27,18 +148,8 @@
       </a>
     </div>
 
-    <!-- Links visibles siempre en desktop -->
+    <!-- Links inline desktop -->
     <nav class="broom-header__inline-nav">
-      <a href="#destinos-destacados" class="broom-header__inline-link"
-        class:broom-header__inline-link--active={currentPage === 'destinos-destacados'}
-        on:click|preventDefault={() => handleNavigation('destinos-destacados')}>
-        Destinos
-      </a>
-      <a href="#VuelosGenerales" class="broom-header__inline-link"
-        class:broom-header__inline-link--active={currentPage === 'VuelosGenerales'}
-        on:click|preventDefault={() => handleNavigation('VuelosGenerales')}>
-        Vuelos
-      </a>
       {#if isLoggedIn}
         <a href="#reservas" class="broom-header__inline-link"
           class:broom-header__inline-link--active={currentPage === 'reservas'}
@@ -48,29 +159,56 @@
       {/if}
     </nav>
 
-
     <!-- Buscador desktop -->
     <div class="broom-header__search broom-header__search--desktop">
       <input
+        bind:this={searchInputDesktop}
+        bind:value={searchQuery}
+        on:input={onSearchInput}
+        on:keydown={handleSearchKeydown}
+        on:focus={() => { if (searchResults.length > 0) showSearchResults = true; }}
         type="text"
         class="broom-header__search-input"
-        placeholder="Buscar vuelos, destinos..."
-        aria-label="Buscar vuelos y destinos"
+        placeholder={searching ? 'Buscando vuelos...' : 'Buscar vuelos: ciudad, país, código...'}
+        aria-label="Buscar vuelos"
+        autocomplete="off"
+        disabled={searching}
       >
       <button class="broom-header__search-btn" aria-label="Buscar"
-        on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
+        on:click={() => {
+          if (searchResults.length > 0) selectSearchResult(searchResults[0]);
+          else if (searchQuery.trim().length >= 2) buscarYNavegar(searchQuery);
+        }}
+        disabled={searching}>
         <svg class="broom-header__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <path d="m21 21-4.35-4.35"></path>
         </svg>
       </button>
+
+      {#if showSearchResults && searchResults.length > 0}
+        <ul class="broom-header__search-results">
+          {#each searchResults as a}
+            <li class="broom-header__search-result-item">
+              <button type="button" class="broom-header__search-result-btn" on:click={() => selectSearchResult(a)}>
+                <span class="broom-header__search-result-code">{a.codigo}</span>
+                <div class="broom-header__search-result-info">
+                  <span class="broom-header__search-result-city">{a.ciudad}</span>
+                  <span class="broom-header__search-result-detail">{a.nombre} · {a.pais}</span>
+                </div>
+                <span class="broom-header__search-result-arrow">→</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
 
-    <!-- Acciones derecha: carrito + perfil + hamburguesa -->
+    <!-- Acciones derecha -->
     <div class="broom-header__actions">
 
       <button class="broom-header__action-btn broom-header__cart" aria-label="Carrito de compras"
-        on:click|preventDefault={() => handleNavigation('datos-pasajeros')}>
+        on:click|preventDefault={() => handleNavigation('carrito')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="9" cy="21" r="1"></circle>
           <circle cx="20" cy="21" r="1"></circle>
@@ -100,21 +238,55 @@
     </div>
   </div>
 
-  <!-- Nav hamburguesa: todo excepto Destinos, Vuelos, Mis Reservas -->
+  <!-- Nav hamburguesa -->
   <nav
     class="broom-header__nav"
     class:broom-header__nav--active={menuActive}
     aria-label="Navegación principal">
 
+    <!-- Buscador mobile -->
     <div class="broom-header__search broom-header__search--mobile">
-      <input type="text" class="broom-header__search-input" placeholder="Buscar vuelos, destinos..." aria-label="Buscar">
+      <input
+        bind:this={searchInputMobile}
+        bind:value={searchQuery}
+        on:input={onSearchInput}
+        on:keydown={handleSearchKeydown}
+        on:focus={() => { if (searchResults.length > 0) showSearchResults = true; }}
+        type="text"
+        class="broom-header__search-input"
+        placeholder={searching ? 'Buscando...' : 'Buscar vuelos...'}
+        aria-label="Buscar vuelos"
+        autocomplete="off"
+        disabled={searching}
+      >
       <button class="broom-header__search-btn" aria-label="Buscar"
-        on:click|preventDefault={() => handleNavigation('resultados-busqueda')}>
+        on:click={() => {
+          if (searchResults.length > 0) selectSearchResult(searchResults[0]);
+          else if (searchQuery.trim().length >= 2) buscarYNavegar(searchQuery);
+        }}
+        disabled={searching}>
         <svg class="broom-header__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <path d="m21 21-4.35-4.35"></path>
         </svg>
       </button>
+
+      {#if showSearchResults && searchResults.length > 0}
+        <ul class="broom-header__search-results">
+          {#each searchResults as a}
+            <li class="broom-header__search-result-item">
+              <button type="button" class="broom-header__search-result-btn" on:click={() => selectSearchResult(a)}>
+                <span class="broom-header__search-result-code">{a.codigo}</span>
+                <div class="broom-header__search-result-info">
+                  <span class="broom-header__search-result-city">{a.ciudad}</span>
+                  <span class="broom-header__search-result-detail">{a.nombre} · {a.pais}</span>
+                </div>
+                <span class="broom-header__search-result-arrow">→</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </div>
 
     <ul class="broom-header__nav-list">

@@ -9,6 +9,11 @@
 
   const API = 'https://localhost:7107';
 
+  // ── NUEVO: flag búsqueda global ──
+  let isGlobalSearch = false;
+  let globalSearchQuery = '';
+  let newGlobalQuery = '';
+
   let searchData = {
     origenId: null, destinoId: null,
     origenNombre: '', destinoNombre: '',
@@ -49,7 +54,16 @@
   let claseSeleccionada = '';
 
   /* ── Init ── */
-  if (searchParams?.searchData) {
+  if (searchParams?.fromGlobalSearch) {
+    // NUEVO: Búsqueda global desde Header
+    isGlobalSearch = true;
+    globalSearchQuery = searchParams.globalSearchQuery || '';
+    newGlobalQuery = globalSearchQuery;
+    const vuelos = searchParams.globalSearchResults || [];
+    vuelosIda = { directos: vuelos, conEscala: [] };
+    tabIda = 'directos';
+    searchData.tripType = 'oneway';
+  } else if (searchParams?.searchData) {
     searchData   = searchParams.searchData;
     vuelosIda    = searchParams.vuelosIda   ?? { directos: [], conEscala: [] };
     vuelosVuelta = searchParams.vuelosVuelta ?? { directos: [], conEscala: [] };
@@ -98,8 +112,31 @@
     else tabVuelta = tab;
   }
 
+  /* ── NUEVO: Re-búsqueda global ── */
+  async function reBuscarGlobal() {
+    const q = newGlobalQuery.trim();
+    if (q.length < 2) return;
+    loadingIda = true; errorIda = '';
+    try {
+      const res = await fetch(`${API}/api/vuelos/busqueda-general?query=${encodeURIComponent(q)}`, {
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error();
+      const vuelos = await res.json();
+      vuelosIda = { directos: vuelos, conEscala: [] };
+      globalSearchQuery = q;
+      tabIda = 'directos';
+      selectedOutbound = { type: null, flight: null, escala: null, clase: null };
+    } catch {
+      errorIda = 'Error al buscar vuelos.';
+    } finally {
+      loadingIda = false;
+    }
+  }
+
   /* ── Filtros ── */
   async function buscarVuelos(esIda) {
+    if (isGlobalSearch) return;
     const origen  = esIda ? searchData.origenId  : searchData.destinoId;
     const destino = esIda ? searchData.destinoId : searchData.origenId;
     const fecha   = esIda ? searchData.fechaIda  : searchData.fechaVuelta;
@@ -138,7 +175,10 @@
     }
   }
 
-  async function aplicarFiltros() { await buscarVuelos(currentView === 'outbound'); }
+  async function aplicarFiltros() {
+    if (isGlobalSearch) { reBuscarGlobal(); return; }
+    await buscarVuelos(currentView === 'outbound');
+  }
   function limpiarFiltros() {
     precioMin = ''; precioMax = ''; claseSeleccionada = '';
     aplicarFiltros();
@@ -172,7 +212,7 @@
   async function nextStep() {
     errorReserva = '';
     if (currentView === 'outbound' && selectedOutbound.type) {
-      if (searchData.tripType === 'roundtrip') {
+      if (!isGlobalSearch && searchData.tripType === 'roundtrip') {
         currentView = 'return';
         if ((vuelosVuelta.directos?.length ?? 0) === 0 && (vuelosVuelta.conEscala?.length ?? 0) === 0)
           await buscarVuelos(false);
@@ -233,6 +273,11 @@
     return `${Math.floor(min / 60)}h ${min % 60}m`;
   }
   function formatHora(h) { return h ? h.substring(0, 5) : ''; }
+  function formatFecha(f) {
+    if (!f) return '';
+    try { return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch { return f; }
+  }
 
   function getPrecioDirecto(vuelo, claseId) {
     return claseId === 1 ? vuelo.precioTurista : claseId === 2 ? vuelo.precioEjecutiva : null;
@@ -264,130 +309,173 @@
     <div class="vuelos-page__header">
       <button class="vuelos-page__back" on:click={goBack}>Volver</button>
 
-      <div class="search-summary">
-        <div class="search-summary__route">
-          <span class="search-summary__origin">{searchData.origenNombre || 'Origen'}</span>
-          <span class="search-summary__arrow">→</span>
-          <span class="search-summary__destination">{searchData.destinoNombre || 'Destino'}</span>
+      {#if isGlobalSearch}
+        <!-- ══ NUEVO: Header de búsqueda global ══ -->
+        <div class="search-summary">
+          <div class="search-summary__route">
+            <span class="search-summary__origin">Resultados para</span>
+            <span class="search-summary__destination">"{globalSearchQuery}"</span>
+          </div>
+          <div class="search-summary__details">
+            <div class="search-summary__item">
+              <span class="search-summary__label">Vuelos encontrados</span>
+              <span class="search-summary__value">{listaDirectos.length}</span>
+            </div>
+          </div>
+          <!-- Mini buscador para re-buscar -->
+          <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+            <input type="text" bind:value={newGlobalQuery}
+              on:keydown={e => e.key === 'Enter' && reBuscarGlobal()}
+              placeholder="Buscar otra vez..."
+              style="flex:1; padding:0.6rem 1rem; border:1px solid #B89A7A; border-radius:20px; font-size:0.85rem; font-family:inherit; outline:none;"
+            >
+            <button on:click={reBuscarGlobal}
+              style="padding:0.6rem 1.2rem; background:#1C1A18; color:#fff; border:none; border-radius:20px; cursor:pointer; font-family:inherit; font-size:0.8rem; font-weight:600;">
+              Buscar
+            </button>
+          </div>
         </div>
-        <div class="search-summary__details">
-          <div class="search-summary__item">
-            <span class="search-summary__label">Salida</span>
-            <span class="search-summary__value">{searchData.fechaIda || '—'}</span>
+      {:else}
+        <!-- ══ Header de búsqueda normal (sin cambios) ══ -->
+        <div class="search-summary">
+          <div class="search-summary__route">
+            <span class="search-summary__origin">{searchData.origenNombre || 'Origen'}</span>
+            <span class="search-summary__arrow">→</span>
+            <span class="search-summary__destination">{searchData.destinoNombre || 'Destino'}</span>
+          </div>
+          <div class="search-summary__details">
+            <div class="search-summary__item">
+              <span class="search-summary__label">Salida</span>
+              <span class="search-summary__value">{searchData.fechaIda || '—'}</span>
+            </div>
+            {#if searchData.tripType === 'roundtrip'}
+              <div class="search-summary__item">
+                <span class="search-summary__label">Regreso</span>
+                <span class="search-summary__value">{searchData.fechaVuelta || '—'}</span>
+              </div>
+            {/if}
+            <div class="search-summary__item">
+              <span class="search-summary__label">Pasajeros</span>
+              <span class="search-summary__value">{searchData.pasajeros}</span>
+            </div>
+            {#if searchData.flightMode && searchData.flightMode !== 'todos'}
+              <div class="search-summary__item">
+                <span class="search-summary__label">Tipo</span>
+                <span class="search-summary__value search-summary__value--mode">
+                  {searchData.flightMode === 'directo' ? '✈ Directo' : '⇌ Con escalas'}
+                </span>
+              </div>
+            {/if}
+          </div>
+        </div>
+
+        <div class="step-indicator">
+          <div class="step-indicator__item"
+            class:step-indicator__item--active={currentView === 'outbound'}
+            class:step-indicator__item--completed={selectedOutbound.type}>
+            <span class="step-indicator__number">1</span>
+            <span class="step-indicator__label">Vuelo de Ida</span>
           </div>
           {#if searchData.tripType === 'roundtrip'}
-            <div class="search-summary__item">
-              <span class="search-summary__label">Regreso</span>
-              <span class="search-summary__value">{searchData.fechaVuelta || '—'}</span>
-            </div>
-          {/if}
-          <div class="search-summary__item">
-            <span class="search-summary__label">Pasajeros</span>
-            <span class="search-summary__value">{searchData.pasajeros}</span>
-          </div>
-          {#if searchData.flightMode && searchData.flightMode !== 'todos'}
-            <div class="search-summary__item">
-              <span class="search-summary__label">Tipo</span>
-              <span class="search-summary__value search-summary__value--mode">
-                {searchData.flightMode === 'directo' ? '✈ Directo' : '⇌ Con escalas'}
-              </span>
+            <div class="step-indicator__line"></div>
+            <div class="step-indicator__item"
+              class:step-indicator__item--active={currentView === 'return'}
+              class:step-indicator__item--completed={selectedReturn.type}>
+              <span class="step-indicator__number">2</span>
+              <span class="step-indicator__label">Vuelo de Vuelta</span>
             </div>
           {/if}
         </div>
-      </div>
-
-      <div class="step-indicator">
-        <div class="step-indicator__item"
-          class:step-indicator__item--active={currentView === 'outbound'}
-          class:step-indicator__item--completed={selectedOutbound.type}>
-          <span class="step-indicator__number">1</span>
-          <span class="step-indicator__label">Vuelo de Ida</span>
-        </div>
-        {#if searchData.tripType === 'roundtrip'}
-          <div class="step-indicator__line"></div>
-          <div class="step-indicator__item"
-            class:step-indicator__item--active={currentView === 'return'}
-            class:step-indicator__item--completed={selectedReturn.type}>
-            <span class="step-indicator__number">2</span>
-            <span class="step-indicator__label">Vuelo de Vuelta</span>
-          </div>
-        {/if}
-      </div>
+      {/if}
     </div>
 
     <!-- CONTENT -->
-    <div class="vuelos-page__content">
+    <div class="vuelos-page__content" style={isGlobalSearch ? 'grid-template-columns: 1fr;' : ''}>
 
-      <!-- FILTROS -->
-      <aside class="vuelos-page__filters">
-        <div class="filters-panel">
-          <div class="filters-panel__header">
-            <h3 class="filters-panel__title">Filtros</h3>
-            <button class="filters-panel__clear" on:click={limpiarFiltros}>Limpiar</button>
-          </div>
-
-          <!-- Filtro tipo de vuelo -->
-          <div class="filter-group">
-            <span class="filter-group__label">Tipo de vuelo</span>
-            <div class="filter-flight-mode">
-              <button
-                class="filter-mode-btn"
-                class:filter-mode-btn--active={currentTab === 'directos'}
-                on:click={() => setTab('directos')}
-                disabled={listaDirectos.length === 0}
-              >
-                <span class="filter-mode-btn__icon">✈</span>
-                <span class="filter-mode-btn__text">Directo</span>
-                {#if listaDirectos.length > 0}
-                  <span class="filter-mode-btn__count">{listaDirectos.length}</span>
-                {/if}
-              </button>
-              <button
-                class="filter-mode-btn filter-mode-btn--escala"
-                class:filter-mode-btn--active={currentTab === 'escalas'}
-                on:click={() => setTab('escalas')}
-                disabled={listaEscalas.length === 0}
-              >
-                <span class="filter-mode-btn__icon">⇌</span>
-                <span class="filter-mode-btn__text">Con escalas</span>
-                {#if listaEscalas.length > 0}
-                  <span class="filter-mode-btn__count">{listaEscalas.length}</span>
-                {/if}
-              </button>
+      <!-- FILTROS (solo en búsqueda normal) -->
+      {#if !isGlobalSearch}
+        <aside class="vuelos-page__filters">
+          <div class="filters-panel">
+            <div class="filters-panel__header">
+              <h3 class="filters-panel__title">Filtros</h3>
+              <button class="filters-panel__clear" on:click={limpiarFiltros}>Limpiar</button>
             </div>
-          </div>
 
-          <div class="filter-group">
-            <label class="filter-group__label" for="precioMin">Rango de Precio (USD)</label>
-            <div class="filter-group__price-range">
-              <input id="precioMin" type="number" class="filter-group__input" placeholder="Min" bind:value={precioMin} />
-              <span>-</span>
-              <input type="number" class="filter-group__input" placeholder="Max" bind:value={precioMax} />
+            <!-- Filtro tipo de vuelo -->
+            <div class="filter-group">
+              <span class="filter-group__label">Tipo de vuelo</span>
+              <div class="filter-flight-mode">
+                <button
+                  class="filter-mode-btn"
+                  class:filter-mode-btn--active={currentTab === 'directos'}
+                  on:click={() => setTab('directos')}
+                  disabled={listaDirectos.length === 0}
+                >
+                  <span class="filter-mode-btn__icon">✈</span>
+                  <span class="filter-mode-btn__text">Directo</span>
+                  {#if listaDirectos.length > 0}
+                    <span class="filter-mode-btn__count">{listaDirectos.length}</span>
+                  {/if}
+                </button>
+                <button
+                  class="filter-mode-btn filter-mode-btn--escala"
+                  class:filter-mode-btn--active={currentTab === 'escalas'}
+                  on:click={() => setTab('escalas')}
+                  disabled={listaEscalas.length === 0}
+                >
+                  <span class="filter-mode-btn__icon">⇌</span>
+                  <span class="filter-mode-btn__text">Con escalas</span>
+                  {#if listaEscalas.length > 0}
+                    <span class="filter-mode-btn__count">{listaEscalas.length}</span>
+                  {/if}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div class="filter-group">
-            <label class="filter-group__label" for="filtroClase">Clase</label>
-            <div class="filter-group__select">
-              <select id="filtroClase" class="filter-group__select-element" bind:value={claseSeleccionada}>
-                <option value="">Todas</option>
-                {#each clases as c}
-                  <option value={c.id}>{c.tipoDeClase}</option>
-                {/each}
-              </select>
+            <div class="filter-group">
+              <label class="filter-group__label" for="precioMin">Rango de Precio (USD)</label>
+              <div class="filter-group__price-range">
+                <input id="precioMin" type="number" class="filter-group__input" placeholder="Min" bind:value={precioMin} />
+                <span>-</span>
+                <input type="number" class="filter-group__input" placeholder="Max" bind:value={precioMax} />
+              </div>
             </div>
-          </div>
 
-          <button class="filters-panel__apply" on:click={aplicarFiltros}>Aplicar Filtros</button>
-        </div>
-      </aside>
+            <div class="filter-group">
+              <label class="filter-group__label" for="filtroClase">Clase</label>
+              <div class="filter-group__select">
+                <select id="filtroClase" class="filter-group__select-element" bind:value={claseSeleccionada}>
+                  <option value="">Todas</option>
+                  {#each clases as c}
+                    <option value={c.id}>{c.tipoDeClase}</option>
+                  {/each}
+                </select>
+              </div>
+            </div>
+
+            <button class="filters-panel__apply" on:click={aplicarFiltros}>Aplicar Filtros</button>
+          </div>
+        </aside>
+      {/if}
 
       <!-- LISTA -->
       <div class="vuelos-page__main">
         <div class="flights-header">
-          <h2 class="flights-header__title">{currentView === 'outbound' ? 'Vuelos de Ida' : 'Vuelos de Regreso'}</h2>
+          <h2 class="flights-header__title">
+            {#if isGlobalSearch}
+              Vuelos disponibles
+            {:else}
+              {currentView === 'outbound' ? 'Vuelos de Ida' : 'Vuelos de Regreso'}
+            {/if}
+          </h2>
           <p class="flights-header__subtitle">
-            {loading ? 'Buscando vuelos...' : `${totalResultados} opciones — mostrando ${currentTab === 'directos' ? 'vuelos directos' : 'vuelos con escalas'}`}
+            {#if loading}
+              Buscando vuelos...
+            {:else if isGlobalSearch}
+              {totalResultados} vuelos encontrados para "{globalSearchQuery}"
+            {:else}
+              {totalResultados} opciones — mostrando {currentTab === 'directos' ? 'vuelos directos' : 'vuelos con escalas'}
+            {/if}
           </p>
         </div>
 
@@ -398,7 +486,13 @@
           <div class="vuelos-estado vuelos-estado--info">{errorActual}</div>
 
         {:else if totalResultados === 0}
-          <div class="vuelos-estado">No hay vuelos disponibles para esta ruta y fecha.</div>
+          <div class="vuelos-estado">
+            {#if isGlobalSearch}
+              No se encontraron vuelos para "{globalSearchQuery}". Intenta con otra búsqueda.
+            {:else}
+              No hay vuelos disponibles para esta ruta y fecha.
+            {/if}
+          </div>
 
         {:else if currentTab === 'directos'}
 
@@ -426,7 +520,11 @@
                         <span class="flight-card__code">{vuelo.numeroVuelo || 'N/A'}</span>
                         <span class="flight-card__airline">{vuelo.avionMarca || ''} {vuelo.avionModelo || ''}</span>
                       </div>
-                      <span class="flight-card__badge flight-card__badge--directo">Directo</span>
+                      {#if isGlobalSearch && vuelo.fecha}
+                        <span class="flight-card__badge flight-card__badge--directo">{formatFecha(vuelo.fecha)}</span>
+                      {:else}
+                        <span class="flight-card__badge flight-card__badge--directo">Directo</span>
+                      {/if}
                     </div>
 
                     <div class="flight-card__schedule">
@@ -443,7 +541,11 @@
                           <div class="schedule-duration__dot"></div>
                         </div>
                         <span class="schedule-duration__time">{formatDuracion(vuelo.duracionMinutos)}</span>
-                        <span class="schedule-duration__type">Directo</span>
+                        {#if isGlobalSearch}
+                          <span class="schedule-duration__type">{vuelo.origenCiudad || ''} → {vuelo.destinoCiudad || ''}</span>
+                        {:else}
+                          <span class="schedule-duration__type">Directo</span>
+                        {/if}
                       </div>
                       <div class="schedule-point schedule-point--right">
                         <span class="schedule-point__time">{formatHora(vuelo.horaLlegada)}</span>
@@ -455,7 +557,7 @@
                       {#each clases as clase}
                         {@const precio     = getPrecioDirecto(vuelo, clase.id)}
                         {@const boletos    = getBoletosDirecto(vuelo, clase.id)}
-                        {@const disponible = precio !== null && precio > 0 && boletos >= searchData.pasajeros}
+                        {@const disponible = precio !== null && precio > 0 && boletos >= (isGlobalSearch ? 1 : searchData.pasajeros)}
                         <button
                           class="class-option"
                           class:class-option--selected={isSelectedDirecto(vuelo, clase)}
@@ -613,7 +715,7 @@
         <button class="next-step-btn" on:click={nextStep} disabled={creandoReserva}>
           {#if creandoReserva}
             Creando reservación...
-          {:else if currentView === 'outbound' && searchData.tripType === 'roundtrip'}
+          {:else if !isGlobalSearch && currentView === 'outbound' && searchData.tripType === 'roundtrip'}
             Seleccionar Vuelo de Vuelta
           {:else}
             Siguiente Paso

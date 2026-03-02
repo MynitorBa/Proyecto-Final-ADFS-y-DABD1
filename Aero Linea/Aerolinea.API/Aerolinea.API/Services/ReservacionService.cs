@@ -22,6 +22,16 @@ namespace Aerolinea.API.Services
 
         public async Task AgregarPasajeros(AgregarPasajerosDTO dto)
         {
+            // Validar que el pasaporte de cada pasajero contenga solo números
+            foreach (var pasajero in dto.Pasajeros)
+            {
+                if (string.IsNullOrWhiteSpace(pasajero.Pasaporte))
+                    throw new Exception("El número de pasaporte es obligatorio.");
+
+                if (!pasajero.Pasaporte.All(char.IsDigit))
+                    throw new Exception($"El pasaporte de {pasajero.Nombre} {pasajero.Apellido} debe contener solo números.");
+            }
+
             await _repository.AgregarPasajerosAReservacion(dto.ReservacionId, dto.Pasajeros);
         }
     }

@@ -6,14 +6,12 @@ namespace Aerolinea.API.Helpers
     {
         private static string E(string? t) => EmailHelper.Esc(t ?? "");
         private static string Nn(string? s) => string.IsNullOrWhiteSpace(s) ? "—" : s;
-
-        // TimeSpan -> "HH:mm"  (evita crash si el valor es default)
         private static string Hm(TimeSpan t) =>
             t == default ? "—" : $"{(int)t.TotalHours:D2}:{t.Minutes:D2}";
 
         public static string GenerarComprobante(ReservacionDetalleDTO reservacion)
         {
-            string estadoColor = reservacion.EstadoReserva?.ToLower() switch
+            string ec = reservacion.EstadoReserva?.ToLower() switch
             {
                 "confirmada" => "#2C5F2D",
                 "cancelada" => "#ef4444",
@@ -21,277 +19,184 @@ namespace Aerolinea.API.Helpers
                 "expirada" => "#6b7280",
                 _ => "#8B6B4A"
             };
+            string eu = E(reservacion.EstadoReserva?.ToUpper() ?? "—");
 
-            // ── Filas de boletos ──────────────────────────────────────────
+            const string SEC = "background:#8B6B4A;color:#F2EFEA;padding:7px 14px;font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:1.2px";
+            const string TH = "padding:6px 8px;font-size:6.5pt;color:#D4C5B0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;text-align:left;background:#1C1A18;border-bottom:2px solid #8B6B4A";
+            const string THC = "padding:6px 8px;font-size:6.5pt;color:#D4C5B0;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;text-align:center;background:#1C1A18;border-bottom:2px solid #8B6B4A";
+            const string TD = "padding:5px 8px;font-size:8pt;border-bottom:1px solid #E6E1DA";
+            const string TDC = "padding:5px 8px;font-size:8pt;border-bottom:1px solid #E6E1DA;text-align:center";
+            const string TDR = "padding:5px 8px;font-size:8pt;border-bottom:1px solid #E6E1DA;text-align:right;font-weight:700";
+            const string IL = "padding:5px 8px;font-size:7.5pt;color:#8B6B4A;font-weight:600;background:#F7F4EF;border-bottom:1px solid #E6E1DA;white-space:nowrap";
+            const string IV = "padding:5px 8px;font-size:8pt;border-bottom:1px solid #E6E1DA";
+
             var sb = new System.Text.StringBuilder();
             int idx = 1;
             foreach (var b in reservacion.Boletos)
             {
-                string bg = idx % 2 == 0 ? "#F2EFEA" : "#ffffff";
-                sb.Append($@"
-                <tr style='background:{bg};'>
-                    <td class='td-c'>{idx}</td>
-                    <td class='td'>{E(b.NoBoleto)}</td>
-                    <td class='td'>{E(b.NumeroVuelo)}</td>
-                    <td class='td-c'>{E(b.NoAsiento)}</td>
-                    <td class='td'>{E(b.OrigenCodigo)} &rarr; {E(b.DestinoCodigo)}</td>
-                    <td class='td'>{E(b.OrigenCiudad)} &rarr; {E(b.DestinoCiudad)}</td>
-                    <td class='td'>{E(b.Clase)}</td>
-                    <td class='td-c'>{b.FechaVuelo:yyyy-MM-dd}</td>
-                    <td class='td-c'>{Hm(b.HoraSalida)}</td>
-                    <td class='td-c'>{Hm(b.HoraLlegada)}</td>
-                    <td class='td-c'>{b.DuracionMinutos} min</td>
-                    <td class='td-r bold'>Q {b.Precio:N2}</td>
+                string bg = idx % 2 == 0 ? "background:#F7F4EF" : "";
+                sb.Append($@"<tr style='{bg}'>
+                  <td style='{TDC}'>{idx}</td>
+                  <td style='{TD}'>{E(b.NoBoleto)}</td>
+                  <td style='{TD}'>{E(b.NumeroVuelo)}</td>
+                  <td style='{TDC}'>{E(b.NoAsiento)}</td>
+                  <td style='{TD}'>{E(b.OrigenCodigo)} &rarr; {E(b.DestinoCodigo)}</td>
+                  <td style='{TDC}'>{E(b.Clase)}</td>
+                  <td style='{TDC}'>{b.FechaVuelo:yyyy-MM-dd}</td>
+                  <td style='{TDC}'>{Hm(b.HoraSalida)} - {Hm(b.HoraLlegada)}</td>
+                  <td style='{TDC}'>{b.DuracionMinutos} min</td>
+                  <td style='{TDR}'>$ {b.Precio:N2}</td>
                 </tr>");
                 idx++;
             }
-            string filasBoletos = sb.ToString();
+            string filas = sb.ToString();
 
-            // ── Subtotales por vuelo ──────────────────────────────────────
-            var sbSub = new System.Text.StringBuilder();
+            var ss = new System.Text.StringBuilder();
             var grupos = reservacion.Boletos.GroupBy(b => b.NumeroVuelo).ToList();
             if (grupos.Count > 1)
-            {
                 foreach (var g in grupos)
                 {
                     decimal sub = g.Sum(b => b.Precio);
-                    sbSub.Append($@"
-                    <tr style='background:#EDE8E2;'>
-                        <td colspan='9' class='td' style='text-align:right;font-weight:600;color:#3A3531;'>
-                            Vuelo {E(g.Key)} ({g.Count()} boleto{(g.Count() > 1 ? "s" : "")})
-                        </td>
-                        <td colspan='3' class='td-r bold' style='color:#1C1A18;'>Q {sub:N2}</td>
+                    ss.Append($@"<tr style='background:#EDE8E2'>
+                      <td colspan='9' style='{TD};text-align:right;font-weight:600'>Vuelo {E(g.Key)} ({g.Count()} boleto{(g.Count() > 1 ? "s" : "")})</td>
+                      <td style='{TDR}'>$ {sub:N2}</td>
                     </tr>");
                 }
-                sbSub.Append("<tr><td colspan='12' style='height:1px;background:#C4B8AA;padding:0;'></td></tr>");
-            }
-            string subtotales = sbSub.ToString();
+            string subs = ss.ToString();
 
-            // ── Sección pasajeros ─────────────────────────────────────────
-            string seccionPasajeros = "";
-            var conPax = reservacion.Boletos.Where(b => b.Pasajero != null).ToList();
-            if (conPax.Any())
+            string paxHtml = "";
+            var cp = reservacion.Boletos.Where(b => b.Pasajero != null).ToList();
+            if (cp.Any())
             {
-                var sbPax = new System.Text.StringBuilder();
+                var sp = new System.Text.StringBuilder();
                 int pi = 1;
-                foreach (var b in conPax)
+                foreach (var b in cp)
                 {
                     var p = b.Pasajero!;
-                    string bgP = pi % 2 == 0 ? "#F2EFEA" : "#ffffff";
-                    sbPax.Append($@"
-                    <tr style='background:{bgP};'>
-                        <td class='td-c'>{pi}</td>
-                        <td class='td'>{E(p.Nombre)} {E(p.Apellido)}</td>
-                        <td class='td'>{E(p.Pasaporte)}</td>
-                        <td class='td'>{Nn(p.Telefono)}</td>
-                        <td class='td'>{Nn(p.Ciudad)}, {Nn(p.Pais)}</td>
-                        <td class='td-c'>{E(b.NoAsiento)}</td>
-                        <td class='td'>{E(b.NumeroVuelo)}</td>
+                    string bg = pi % 2 == 0 ? "background:#F7F4EF" : "";
+                    sp.Append($@"<tr style='{bg}'>
+                      <td style='{TDC}'>{pi}</td>
+                      <td style='{TD}'>{E(p.Nombre)} {E(p.Apellido)}</td>
+                      <td style='{TD}'>{E(p.Pasaporte)}</td>
+                      <td style='{TD}'>{Nn(p.Telefono)}</td>
+                      <td style='{TD}'>{Nn(p.Ciudad)}, {Nn(p.Pais)}</td>
+                      <td style='{TDC}'>{E(b.NoAsiento)}</td>
+                      <td style='{TD}' colspan='4'>{E(b.NumeroVuelo)}</td>
                     </tr>");
                     pi++;
                 }
-                seccionPasajeros = $@"
-                <div class='bloque' style='margin-top:22px;'>
-                    <div class='titulo-seccion'>DATOS DE PASAJEROS</div>
-                    <table class='tabla'>
-                        <tr class='th-row'>
-                            <th class='th-c'>#</th>
-                            <th class='th'>Nombre Completo</th>
-                            <th class='th'>Pasaporte</th>
-                            <th class='th'>Telefono</th>
-                            <th class='th'>Ciudad, Pais</th>
-                            <th class='th-c'>Asiento</th>
-                            <th class='th'>Vuelo</th>
-                        </tr>
-                        {sbPax}
-                    </table>
-                </div>";
+                paxHtml = $@"
+                <tr><td colspan='10' style='{SEC}'>Datos de Pasajeros</td></tr>
+                <tr>
+                  <th style='{THC}'>#</th><th style='{TH}'>Nombre Completo</th><th style='{TH}'>Pasaporte</th>
+                  <th style='{TH}'>Telefono</th><th style='{TH}'>Ciudad, Pais</th><th style='{THC}'>Asiento</th>
+                  <th style='{TH}' colspan='4'>Vuelo</th>
+                </tr>{sp}";
             }
 
-
-            // ── Sección factura ───────────────────────────────────────────
-            string seccionFactura = "";
+            string facHtml = "";
             if (reservacion.Factura != null)
             {
                 var f = reservacion.Factura;
-                seccionFactura = $@"
-    <div class='bloque' style='margin-top:22px;'>
-        <div class='titulo-seccion'>DATOS DE FACTURA</div>
-        <div class='info-grid'>
-            <div class='info-col'>
-                <h3>Factura</h3>
-                <div class='info-row'><div class='info-lbl'>Nro. Factura</div><div class='info-val highlight'>{f.Id}</div></div>
-                <div class='info-row'><div class='info-lbl'>Fecha</div><div class='info-val'>{f.Fecha:yyyy-MM-dd HH:mm}</div></div>
-                <div class='info-row'><div class='info-lbl'>NIT</div><div class='info-val'>{E(f.NIT)}</div></div>
-                <div class='info-row'><div class='info-lbl'>Codigo Postal</div><div class='info-val'>{E(f.CodigoPostal)}</div></div>
-                <div class='info-row'><div class='info-lbl'>Total Facturado</div><div class='info-val highlight'>Q {f.Total:N2}</div></div>
-            </div>
-        </div>
-    </div>";
+                facHtml = $@"
+                <tr><td colspan='10' style='{SEC}'>Datos Fiscales</td></tr>
+                <tr>
+                  <th colspan='3' style='{TH}'>NIT / RFC</th><th colspan='2' style='{TH}'>Codigo Postal</th>
+                  <th colspan='3' style='{TH}'>Fecha Emision</th><th colspan='2' style='{TH};text-align:right'>Total Factura</th>
+                </tr>
+                <tr>
+                  <td colspan='3' style='{TDC}'>{E(f.NIT)}</td><td colspan='2' style='{TDC}'>{E(f.CodigoPostal)}</td>
+                  <td colspan='3' style='{TDC}'>{f.Fecha:yyyy-MM-dd}</td><td colspan='2' style='{TDR}'>$ {f.Total:N2}</td>
+                </tr>";
             }
 
-            // ── Info avión ────────────────────────────────────────────────
-            string infoAvion = reservacion.Boletos.Any()
-                ? $"{E(reservacion.Boletos.First().AvionMarca)} {E(reservacion.Boletos.First().AvionModelo)}"
-                : "—";
+            string avion = reservacion.Boletos.Any()
+                ? $"{E(reservacion.Boletos.First().AvionMarca)} {E(reservacion.Boletos.First().AvionModelo)}" : "—";
 
             return $@"<!DOCTYPE html>
-<html lang='es'>
-<head>
-<meta charset='UTF-8'>
-<title>Comprobante — {E(reservacion.NoReservacion)}</title>
-<style>
-    @page {{ margin:10mm 12mm; size:A4 landscape; }}
-    *{{ margin:0;padding:0;box-sizing:border-box; }}
-    body{{ font-family:'Segoe UI',Roboto,Arial,sans-serif;color:#1C1A18;background:#F2EFEA;font-size:9pt; }}
+<html>
+<head><meta charset='UTF-8'></head>
+<body style='margin:0;padding:0;font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:8pt;color:#1C1A18;height:209mm'>
 
-    .header{{ background:#1C1A18;color:#F2EFEA;padding:20px 28px;display:flex;justify-content:space-between;align-items:center; }}
-    .header-left h1{{ font-size:22pt;font-weight:800;letter-spacing:1.5px;margin-bottom:4px;color:#F2EFEA; }}
-    .header-left p{{ font-size:7.5pt;color:#B89A7A; }}
-    .header-right{{ text-align:right; }}
-    .header-right .tipo{{ font-size:7.5pt;color:#B89A7A;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px; }}
-    .header-right .nro{{ font-size:13pt;font-weight:700;margin-bottom:6px;color:#F2EFEA; }}
-    .header-right .estado{{ font-size:7.5pt;font-weight:700;color:{estadoColor};margin-bottom:3px; }}
-    .header-right .fecha{{ font-size:7pt;color:#B89A7A; }}
-    .linea-header{{ height:3px;background:#8B6B4A; }}
+<table style='width:100%;height:209mm;border-collapse:collapse'>
 
-    .contenido{{ padding:20px 28px;background:#ffffff; }}
+  <tr>
+    <td style='background:#1C1A18;padding:14px 22px 10px;height:1px'>
+      <table style='width:100%;border-collapse:collapse'>
+        <tr>
+          <td style='vertical-align:top'>
+            <div style='font-size:22pt;font-weight:800;letter-spacing:2px;color:#F2EFEA;white-space:nowrap'>BROOM AIRLINE</div>
+            <div style='font-size:6.5pt;color:#B89A7A;margin-top:1px'>Aerolinea &middot; Guatemala City &middot; distribuidorapine@gmail.com</div>
+          </td>
+          <td style='vertical-align:top;text-align:right'>
+            <div style='display:inline-block;border:1px solid #8B6B4A;color:#D4A056;padding:2px 10px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:2px'>Comprobante</div>
+            <div style='font-size:12pt;font-weight:700;color:#F2EFEA;margin-top:5px'>{E(reservacion.NoReservacion)}</div>
+            <div style='font-size:8pt;font-weight:700;color:{ec};margin-top:2px'>&#9679; {eu}</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr><td style='background:#8B6B4A;height:3px;font-size:0;line-height:0'>&nbsp;</td></tr>
 
-    .bloque{{ border:0.8px solid #C4B8AA;background:#fff;overflow:hidden;margin-bottom:0; }}
-    .titulo-seccion{{ background:#3A3531;color:#F2EFEA;padding:10px 18px;font-size:7.5pt;font-weight:700;text-transform:uppercase;letter-spacing:1.2px; }}
+  <tr>
+    <td style='padding:12px 22px 6px;vertical-align:top;height:1px'>
+      <table style='width:100%;border-collapse:collapse;border:1px solid #D8D1C5'>
+        <tr><td colspan='10' style='{SEC}'>Datos de la Reservacion</td></tr>
+        <tr>
+          <td style='{IL}'>Nro. Reservacion</td><td colspan='4' style='{IV}'>{E(reservacion.NoReservacion)}</td>
+          <td style='{IL}'>Avion</td><td colspan='4' style='{IV}'>{Nn(avion)}</td>
+        </tr>
+        <tr>
+          <td style='{IL}'>Pasajero</td><td colspan='4' style='{IV}'>{E(reservacion.UsuarioNombre)}</td>
+          <td style='{IL}'>Email</td><td colspan='4' style='{IV}'>{E(reservacion.UsuarioEmail)}</td>
+        </tr>
+        <tr>
+          <td style='{IL}'>Fecha Emision</td><td colspan='4' style='{IV}'>{reservacion.FechaCreacion:yyyy-MM-dd HH:mm}</td>
+          <td style='{IL}'>Estado</td><td colspan='4' style='{IV};font-weight:700;color:{ec}'>{eu}</td>
+        </tr>
+        <tr><td colspan='10' style='{SEC}'>Detalle de Boletos</td></tr>
+        <tr>
+          <th style='{THC}'>#</th><th style='{TH}'>Nro. Boleto</th><th style='{TH}'>Vuelo</th>
+          <th style='{THC}'>Asiento</th><th style='{TH}'>Ruta</th><th style='{THC}'>Clase</th>
+          <th style='{THC}'>Fecha</th><th style='{THC}'>Horario</th><th style='{THC}'>Duracion</th><th style='{THC}'>Subtotal</th>
+        </tr>
+        {filas}
+        {subs}
+        <tr>
+          <td colspan='9' style='background:#3A3531;color:#F2EFEA;padding:8px 14px;font-size:9pt;font-weight:700'>TOTAL RESERVACION</td>
+          <td style='background:#3A3531;color:#F2EFEA;padding:8px 14px;font-size:9pt;font-weight:800;text-align:right'>$ {reservacion.Total:N2}</td>
+        </tr>
+        {paxHtml}
+        {facHtml}
+        <tr><td colspan='10' style='background:#F7F4EF;padding:5px 14px;font-size:7pt;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.5px'>Terminos y Condiciones</td></tr>
+        <tr><td colspan='10' style='padding:7px 14px;font-size:7pt;color:#5a5249;line-height:1.65'>
+          1. Este comprobante es valido unicamente para los vuelos indicados.<br>
+          2. Presentar pasaporte vigente al momento del check-in.<br>
+          3. Abordaje cierra 30 minutos antes de la hora de salida.<br>
+          4. Cancelaciones estan sujetas a la politica vigente de Broom AirLine.<br>
+          5. Este documento es comprobante oficial de reservacion.
+        </td></tr>
+      </table>
+    </td>
+  </tr>
 
-    .info-grid{{ display:flex; }}
-    .info-col{{ flex:1;padding:18px; }}
-    .info-col+.info-col{{ border-left:1px solid #C4B8AA; }}
-    .info-col h3{{ font-size:7.5pt;color:#8B6B4A;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px; }}
-    .info-row{{ display:flex;border-bottom:.6px solid #C4B8AA; }}
-    .info-row:last-child{{ border-bottom:none; }}
-    .info-lbl{{ width:130px;padding:8px 10px;font-size:7.5pt;color:#8B6B4A;font-weight:600;background:#F2EFEA; }}
-    .info-val{{ flex:1;padding:8px 10px;font-size:7.5pt;color:#1C1A18; }}
-    .info-val.highlight{{ font-weight:700; }}
+  <!-- SPACER: llena todo el espacio restante -->
+  <tr><td style='height:100%;font-size:0'>&nbsp;</td></tr>
 
-    .tabla{{ width:100%;border-collapse:collapse; }}
-    .th-row{{ background:#3A3531; }}
-    .th,.th-c{{ padding:10px 8px;font-size:7.5pt;color:#F2EFEA;font-weight:700;text-transform:uppercase;letter-spacing:.8px;text-align:left;border-bottom:1px solid #1C1A18;border-right:.5px solid #1C1A18; }}
-    .th-c{{ text-align:center; }}
-    .td,.td-c,.td-r{{ padding:9px 8px;font-size:8pt;color:#1C1A18;border-bottom:.6px solid #C4B8AA;border-right:.5px solid #C4B8AA; }}
-    .td-c{{ text-align:center; }}
-    .td-r{{ text-align:right; }}
-    .bold{{ font-weight:700; }}
+  <tr><td style='background:#8B6B4A;height:3px;font-size:0;line-height:0'>&nbsp;</td></tr>
+  <tr>
+    <td style='background:#1C1A18;padding:10px 22px;height:1px'>
+      <table style='width:100%;border-collapse:collapse'>
+        <tr>
+          <td style='font-size:6.5pt;color:#B89A7A'>BROOM AIRLINE &middot; distribuidorapine@gmail.com &middot; Guatemala City, Guatemala</td>
+          <td style='font-size:6.5pt;color:#B89A7A;text-align:right'>Comprobante oficial de reservacion</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
 
-    .total-row{{ background:#8B6B4A; }}
-    .total-row td{{ padding:11px 18px;color:#F2EFEA;font-size:9.5pt;font-weight:700; }}
-    .total-row .total-valor{{ background:#F2EFEA;color:#1C1A18;text-align:right;font-size:9.5pt;font-weight:800; }}
-
-    .condiciones{{ margin-top:22px; }}
-    .condiciones h4{{ background:#F2EFEA;padding:10px 18px;font-size:7.5pt;color:#8B6B4A;font-weight:700;letter-spacing:.8px;text-transform:uppercase;border-bottom:.8px solid #C4B8AA; }}
-    .condiciones p{{ padding:14px 18px;font-size:7.5pt;color:#3A3531;line-height:1.8;background:#fff; }}
-
-    .linea-footer{{ height:2px;background:#8B6B4A; }}
-    .footer{{ background:#1C1A18;color:#B89A7A;padding:12px 28px;display:flex;justify-content:space-between;font-size:7pt;margin-top:22px; }}
-
-    @media print{{
-        body{{ -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important; }}
-        .no-print{{ display:none!important; }}
-        .header,.total-row,.titulo-seccion,.th-row,.footer,.linea-header,.linea-footer{{
-            -webkit-print-color-adjust:exact!important;
-            print-color-adjust:exact!important;
-        }}
-        tr{{ page-break-inside:avoid; }}
-    }}
-</style>
-</head>
-<body>
-
-<div class='no-print' style='text-align:center;padding:16px;background:#1C1A18;'>
-    <button onclick='window.print()' style='padding:12px 32px;background:#8B6B4A;color:#F2EFEA;border:none;border-radius:0 16px 0 16px;font-size:14px;font-weight:700;cursor:pointer;'>
-        Imprimir / Guardar como PDF
-    </button>
-</div>
-
-<div class='header'>
-    <div class='header-left'>
-        <h1>BROOM AIRLINE</h1>
-        <p>Aerolinea &middot; Guatemala City &middot; distribuidorapine@gmail.com</p>
-    </div>
-    <div class='header-right'>
-        <div class='tipo'>COMPROBANTE</div>
-        <div class='nro'>{E(reservacion.NoReservacion)}</div>
-        <div class='estado'>&#9679; {E(reservacion.EstadoReserva?.ToUpper() ?? "—")}</div>
-        <div class='fecha'>Emitido: {reservacion.FechaCreacion:yyyy-MM-dd HH:mm}</div>
-    </div>
-</div>
-<div class='linea-header'></div>
-
-<div class='contenido'>
-    <div class='bloque'>
-        <div class='titulo-seccion'>DATOS DE LA RESERVACION</div>
-        <div class='info-grid'>
-            <div class='info-col'>
-                <h3>Reservacion</h3>
-                <div class='info-row'><div class='info-lbl'>Nro. Reservacion</div><div class='info-val highlight'>{E(reservacion.NoReservacion)}</div></div>
-                <div class='info-row'><div class='info-lbl'>Pasajero</div><div class='info-val'>{E(reservacion.UsuarioNombre)}</div></div>
-                <div class='info-row'><div class='info-lbl'>Email</div><div class='info-val'>{E(reservacion.UsuarioEmail)}</div></div>
-                <div class='info-row'><div class='info-lbl'>Avion</div><div class='info-val'>{Nn(infoAvion)}</div></div>
-                <div class='info-row'><div class='info-lbl'>Fecha Emision</div><div class='info-val'>{reservacion.FechaCreacion:yyyy-MM-dd HH:mm}</div></div>
-            </div>
-            <div class='info-col'>
-                <h3>Contacto</h3>
-                <div class='info-row'><div class='info-lbl'>Aerolinea</div><div class='info-val'>Broom AirLine</div></div>
-                <div class='info-row'><div class='info-lbl'>Email</div><div class='info-val'>distribuidorapine@gmail.com</div></div>
-                <div class='info-row'><div class='info-lbl'>Ciudad</div><div class='info-val'>Guatemala City, GT</div></div>
-            </div>
-        </div>
-    </div>
-
-    <div class='bloque' style='margin-top:22px;'>
-        <div class='titulo-seccion'>DETALLE DE BOLETOS</div>
-        <table class='tabla'>
-            <tr class='th-row'>
-                <th class='th-c'>#</th>
-                <th class='th'>Nro. Boleto</th>
-                <th class='th'>Vuelo</th>
-                <th class='th-c'>Asiento</th>
-                <th class='th'>Ruta</th>
-                <th class='th'>Ciudades</th>
-                <th class='th'>Clase</th>
-                <th class='th-c'>Fecha</th>
-                <th class='th-c'>Salida</th>
-                <th class='th-c'>Llegada</th>
-                <th class='th-c'>Duracion</th>
-                <th class='th-c'>Precio</th>
-            </tr>
-            {filasBoletos}
-            <tr><td colspan='12' style='height:1px;background:#C4B8AA;padding:0;'></td></tr>
-            {subtotales}
-            <tr class='total-row'>
-                <td colspan='11'>TOTAL RESERVACION</td>
-                <td class='total-valor'>Q {reservacion.Total:N2}</td>
-            </tr>
-        </table>
-    </div>
-
-    {seccionPasajeros}
-
-    {seccionFactura}
-
-    <div class='bloque condiciones' style='margin-top:22px;'>
-        <h4>Terminos y Condiciones</h4>
-        <p>
-            1. Este comprobante es valido unicamente para los vuelos indicados.<br>
-            2. Presentar pasaporte vigente al momento del check-in.<br>
-            3. Abordaje cierra 30 minutos antes de la hora de salida.<br>
-            4. Cancelaciones estan sujetas a la politica vigente de Broom AirLine.<br>
-            5. Este documento es comprobante oficial de reservacion.
-        </p>
-    </div>
-</div>
-
-<div class='linea-footer'></div>
-<div class='footer'>
-    <span>BROOM AIRLINE &middot; distribuidorapine@gmail.com &middot; Guatemala City, Guatemala</span>
-    <span>Comprobante oficial de reservacion</span>
-</div>
+</table>
 
 </body>
 </html>";

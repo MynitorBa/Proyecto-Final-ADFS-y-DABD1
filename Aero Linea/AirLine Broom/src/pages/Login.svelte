@@ -1,5 +1,5 @@
 <script>
-  import '../styles/reslog.css';
+  import '../styles/login.css';
   import { onMount } from 'svelte';
   import { login } from '../stores/sesion.js';
   export let navigateTo;
