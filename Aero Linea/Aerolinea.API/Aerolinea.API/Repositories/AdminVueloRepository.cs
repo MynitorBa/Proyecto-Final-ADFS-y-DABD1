@@ -1,5 +1,6 @@
 ﻿using Aerolinea.API.Data;
 using Aerolinea.API.Models.DTOs;
+using Aerolinea.API.Services;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
@@ -24,19 +25,27 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                // 2. Verificar o crear la ruta
-                int rutaId = await ObtenerOCrearRuta(
+                // 1. Verificar o crear la ruta y obtener su duración
+                var (rutaId, duracionMinutos) = await ObtenerOCrearRuta(
                     dto.AeropuertoOrigenId, dto.AeropuertoDestinoId, connection, transaction);
 
-                // 3. Validar que los boletos no superen la capacidad del avión
-                int capacidadAvion = await ObtenerCapacidadAvion(dto.AvionId, connection, transaction);
+                // 2. Obtener zonas horarias via FK → ZonaHoraria.Nombre
+                var (tzOrigen, tzDestino) = await ObtenerZonasHorarias(
+                    dto.AeropuertoOrigenId, dto.AeropuertoDestinoId, connection, transaction);
 
+                // 3. Calcular hora y fecha de llegada automáticamente
+                var horaSalida = TimeSpan.Parse(dto.HoraSalida);
+                var (horaLlegada, fechaLlegada, _, _) = RutaService.CalcularLlegadaConZonas(
+                    dto.Fecha, horaSalida, duracionMinutos, tzOrigen, tzDestino);
+
+                // 4. Validar que los boletos no superen la capacidad del avión
+                int capacidadAvion = await ObtenerCapacidadAvion(dto.AvionId, connection, transaction);
                 if (dto.BoletosTurista + dto.BoletosEjecutivo > capacidadAvion)
                     throw new ArgumentException(
                         $"La suma de boletos ({dto.BoletosTurista + dto.BoletosEjecutivo}) " +
                         $"supera la capacidad del avión ({capacidadAvion}).");
 
-                // 4. Crear el vuelo — los precios y boletos disponibles van directo en la tabla
+                // 5. Crear el vuelo
                 var insertVuelo = @"
                     INSERT INTO Vuelo
                         (NumeroVuelo, Fecha, HoraSalida, HoraLlegada, FechaLlegada, EstadoID,
@@ -53,10 +62,9 @@ namespace Aerolinea.API.Repositories
                 {
                     cmd.Parameters.AddWithValue("@NumeroVuelo", dto.NumeroVuelo);
                     cmd.Parameters.AddWithValue("@Fecha", dto.Fecha.Date);
-                    cmd.Parameters.AddWithValue("@HoraSalida", TimeSpan.Parse(dto.HoraSalida));
-                    cmd.Parameters.AddWithValue("@HoraLlegada", TimeSpan.Parse(dto.HoraLlegada));
-                    cmd.Parameters.AddWithValue("@FechaLlegada",
-                        dto.FechaLlegada.HasValue ? (object)dto.FechaLlegada.Value.Date : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@HoraSalida", horaSalida);
+                    cmd.Parameters.AddWithValue("@HoraLlegada", horaLlegada);
+                    cmd.Parameters.AddWithValue("@FechaLlegada", fechaLlegada.Date);
                     cmd.Parameters.AddWithValue("@EstadoId", 1);
                     cmd.Parameters.AddWithValue("@AvionId", dto.AvionId);
                     cmd.Parameters.AddWithValue("@RutaId", rutaId);
@@ -64,11 +72,10 @@ namespace Aerolinea.API.Repositories
                     cmd.Parameters.AddWithValue("@BoletosEjecutivo", dto.BoletosEjecutivo);
                     cmd.Parameters.AddWithValue("@PrecioTurista", dto.PrecioTurista);
                     cmd.Parameters.AddWithValue("@PrecioEjecutivo", dto.PrecioEjecutiva);
-
-                    vueloId = (int)await cmd.ExecuteScalarAsync();
+                    vueloId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 }
 
-                // 5. Asignar tripulación (EquipoPivote)
+                // 6. Asignar tripulación
                 if (dto.TripulantesIds != null && dto.TripulantesIds.Count > 0)
                 {
                     foreach (var tripulanteId in dto.TripulantesIds)
@@ -97,20 +104,26 @@ namespace Aerolinea.API.Repositories
         // ─────────────────────────────────────────────────────────────────
         //  HELPERS PRIVADOS
         // ─────────────────────────────────────────────────────────────────
-        private async Task<int> ObtenerOCrearRuta(
+
+        private async Task<(int rutaId, int duracion)> ObtenerOCrearRuta(
             int origenId, int destinoId, SqlConnection connection, SqlTransaction transaction)
         {
             var queryBuscar = @"
-                SELECT ID FROM Ruta
+                SELECT ID, DuracionEstimada FROM Ruta
                 WHERE OrigenID = @OrigenId AND DestinoID = @DestinoId";
 
             using var cmdBuscar = new SqlCommand(queryBuscar, connection, transaction);
             cmdBuscar.Parameters.AddWithValue("@OrigenId", origenId);
             cmdBuscar.Parameters.AddWithValue("@DestinoId", destinoId);
-            var resultado = await cmdBuscar.ExecuteScalarAsync();
 
-            if (resultado != null)
-                return (int)resultado;
+            using var reader = await cmdBuscar.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(0);
+                var duracion = reader.GetInt32(1);
+                return (id, duracion);
+            }
+            await reader.CloseAsync();
 
             var queryCrear = @"
                 INSERT INTO Ruta (OrigenID, DestinoID, DuracionEstimada)
@@ -121,13 +134,45 @@ namespace Aerolinea.API.Repositories
             cmdCrear.Parameters.AddWithValue("@OrigenId", origenId);
             cmdCrear.Parameters.AddWithValue("@DestinoId", destinoId);
             cmdCrear.Parameters.AddWithValue("@DuracionEstimada", 120);
-            return (int)await cmdCrear.ExecuteScalarAsync();
+
+            return (Convert.ToInt32(await cmdCrear.ExecuteScalarAsync()), 120);
+        }
+
+        /// <summary>
+        /// Obtiene los identificadores IANA de dos aeropuertos
+        /// haciendo JOIN con la tabla ZonaHoraria.
+        /// Devuelve null si el aeropuerto no tiene zona asignada.
+        /// </summary>
+        private async Task<(string? tzOrigen, string? tzDestino)> ObtenerZonasHorarias(
+            int origenId, int destinoId, SqlConnection connection, SqlTransaction transaction)
+        {
+            var query = @"
+                SELECT a.ID, zh.Nombre
+                FROM  Aeropuerto a
+                LEFT  JOIN ZonaHoraria zh ON zh.ID = a.ZonaHorariaID
+                WHERE a.ID IN (@OrigenId, @DestinoId)";
+
+            using var cmd = new SqlCommand(query, connection, transaction);
+            cmd.Parameters.AddWithValue("@OrigenId", origenId);
+            cmd.Parameters.AddWithValue("@DestinoId", destinoId);
+
+            string? tzOrigen = null, tzDestino = null;
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var id = reader.GetInt32(0);
+                var tz = reader.IsDBNull(1) ? null : reader.GetString(1);
+                if (id == origenId) tzOrigen = tz;
+                if (id == destinoId) tzDestino = tz;
+            }
+
+            return (tzOrigen, tzDestino);
         }
 
         private async Task<int> ObtenerCapacidadAvion(
             int avionId, SqlConnection connection, SqlTransaction transaction)
         {
-            var query = "SELECT CapacidadPasajeros FROM Avion WHERE ID = @AvionId";
+            const string query = "SELECT CapacidadPasajeros FROM Avion WHERE ID = @AvionId";
             using var cmd = new SqlCommand(query, connection, transaction);
             cmd.Parameters.AddWithValue("@AvionId", avionId);
             var resultado = await cmd.ExecuteScalarAsync();
@@ -136,6 +181,7 @@ namespace Aerolinea.API.Repositories
 
         // ─────────────────────────────────────────────────────────────────
         //  HISTORIAL
+        //  JOIN con ZonaHoraria para resolver los identificadores IANA.
         // ─────────────────────────────────────────────────────────────────
         public async Task<List<VueloHistorialDTO>> ObtenerHistorialVuelos()
         {
@@ -146,8 +192,8 @@ namespace Aerolinea.API.Repositories
                 SELECT
                     v.ID,
                     v.NumeroVuelo,
-                    aorigen.Codigo + ' - ' + corigen.Nombre  AS Origen,
-                    adestino.Codigo + ' - ' + cdestino.Nombre AS Destino,
+                    aorigen.Codigo  + ' - ' + corigen.Nombre   AS Origen,
+                    adestino.Codigo + ' - ' + cdestino.Nombre  AS Destino,
                     v.Fecha,
                     v.HoraSalida,
                     v.HoraLlegada,
@@ -157,14 +203,18 @@ namespace Aerolinea.API.Repositories
                     v.BoletosTurista,
                     v.BoletosEjecutivo,
                     v.PrecioTurista,
-                    v.PrecioEjecutivo
-                FROM Vuelo v
-                INNER JOIN Ruta r         ON v.RutaID    = r.ID
-                INNER JOIN Aeropuerto aorigen  ON r.OrigenID  = aorigen.ID
-                INNER JOIN Aeropuerto adestino ON r.DestinoID = adestino.ID
-                INNER JOIN Ciudad corigen      ON aorigen.CiudadID  = corigen.ID
-                INNER JOIN Ciudad cdestino     ON adestino.CiudadID = cdestino.ID
-                INNER JOIN Avion av            ON v.AvionID   = av.ID
+                    v.PrecioEjecutivo,
+                    zho.Nombre AS TzOrigen,
+                    zhd.Nombre AS TzDestino
+                FROM  Vuelo v
+                INNER JOIN Ruta r              ON r.ID  = v.RutaID
+                INNER JOIN Aeropuerto aorigen  ON aorigen.ID  = r.OrigenID
+                INNER JOIN Aeropuerto adestino ON adestino.ID = r.DestinoID
+                INNER JOIN Ciudad corigen      ON corigen.ID  = aorigen.CiudadID
+                INNER JOIN Ciudad cdestino     ON cdestino.ID = adestino.CiudadID
+                INNER JOIN Avion av            ON av.ID = v.AvionID
+                LEFT  JOIN ZonaHoraria zho     ON zho.ID = aorigen.ZonaHorariaID
+                LEFT  JOIN ZonaHoraria zhd     ON zhd.ID = adestino.ZonaHorariaID
                 ORDER BY v.Fecha DESC, v.HoraSalida DESC";
 
             using var cmd = new SqlCommand(query, connection);
@@ -213,8 +263,6 @@ namespace Aerolinea.API.Repositories
 
         // ─────────────────────────────────────────────────────────────────
         //  CANCELAR VUELO
-        //  Cancela: vuelo → boletos activos → reservaciones afectadas
-        //  Devuelve false si el vuelo ya estaba cancelado/finalizado
         // ─────────────────────────────────────────────────────────────────
         public async Task<bool> CancelarVuelo(int vueloId)
         {
@@ -224,11 +272,10 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                // 1. Cancelar el vuelo (solo si está Activo=1 o En curso=2)
                 var queryVuelo = @"
                     UPDATE Vuelo
-                    SET EstadoID        = 4,
-                        BoletosTurista  = 0,
+                    SET EstadoID         = 4,
+                        BoletosTurista   = 0,
                         BoletosEjecutivo = 0
                     WHERE ID = @VueloId AND EstadoID IN (1, 2)";
 
@@ -239,20 +286,15 @@ namespace Aerolinea.API.Repositories
                     filasVuelo = await cmd.ExecuteNonQueryAsync();
                 }
 
-                if (filasVuelo == 0)
-                {
-                    transaction.Rollback();
-                    return false;
-                }
+                if (filasVuelo == 0) { transaction.Rollback(); return false; }
 
-                // 2. Obtener IDs de reservaciones afectadas (boletos reservados/vendidos de este vuelo)
                 var reservacionIds = new List<int>();
                 var queryReservaciones = @"
                     SELECT DISTINCT ReservacionID
                     FROM Boleto
                     WHERE VueloID = @VueloId
                       AND ReservacionID IS NOT NULL
-                      AND EstadoBoletoID IN (2, 3)";   // 2=Reservado, 3=Pagado/Vendido
+                      AND EstadoBoletoID IN (2, 3)";
 
                 using (var cmd = new SqlCommand(queryReservaciones, connection, transaction))
                 {
@@ -262,12 +304,10 @@ namespace Aerolinea.API.Repositories
                         reservacionIds.Add(reader.GetInt32(0));
                 }
 
-                // 3. Cancelar los boletos activos de este vuelo
                 var queryBoletos = @"
                     UPDATE Boleto
                     SET EstadoBoletoID = 4
-                    WHERE VueloID = @VueloId
-                      AND EstadoBoletoID IN (2, 3)";
+                    WHERE VueloID = @VueloId AND EstadoBoletoID IN (2, 3)";
 
                 using (var cmd = new SqlCommand(queryBoletos, connection, transaction))
                 {
@@ -275,7 +315,6 @@ namespace Aerolinea.API.Repositories
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                // 4. Cancelar las reservaciones afectadas (EstadoReservaID = 3 = Cancelada)
                 if (reservacionIds.Count > 0)
                 {
                     var ids = string.Join(",", reservacionIds);
@@ -285,7 +324,7 @@ namespace Aerolinea.API.Repositories
                             FechaCancelacion  = GETDATE(),
                             MotivoCancelacion = 'Vuelo cancelado por la aerolínea'
                         WHERE ID IN ({ids})
-                          AND EstadoReservaID NOT IN (3, 4)";   // No cancelar las ya canceladas
+                          AND EstadoReservaID NOT IN (3, 4)";
 
                     using var cmd = new SqlCommand(queryCancel, connection, transaction);
                     await cmd.ExecuteNonQueryAsync();
@@ -300,5 +339,119 @@ namespace Aerolinea.API.Repositories
                 throw;
             }
         }
+        // ─────────────────────────────────────────────────────────────────
+        //  DISPONIBILIDAD
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Devuelve los IDs de aviones que YA están asignados a un vuelo
+        /// que se solapa con la fecha/hora de salida indicada.
+        /// Un avión se considera ocupado si tiene un vuelo activo el mismo día.
+        /// </summary>
+        public async Task<HashSet<int>> ObtenerAvionesOcupados(DateTime fecha)
+        {
+            var ocupados = new HashSet<int>();
+
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // Un avión está ocupado si tiene cualquier vuelo activo el mismo día
+            var query = @"
+                SELECT DISTINCT AvionID
+                FROM   Vuelo
+                WHERE  Fecha    = @Fecha
+                  AND  EstadoID <> 4";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@Fecha", fecha.Date);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                ocupados.Add(reader.GetInt32(0));
+
+            return ocupados;
+        }
+
+        /// <summary>
+        /// Devuelve los IDs de tripulantes que NO están disponibles para
+        /// la fecha/hora indicada.
+        ///
+        /// Un tripulante NO está disponible si:
+        ///   a) Tiene un vuelo asignado el mismo día (EstadoID != 4), O
+        ///   b) Su vuelo más reciente finaliza menos de 24h antes de la
+        ///      fecha/hora de salida solicitada.
+        ///
+        /// FechaLlegada + HoraLlegada = momento real de fin del vuelo.
+        /// </summary>
+        public async Task<HashSet<int>> ObtenerTripulantesOcupados(DateTime fecha, TimeSpan horaSalida)
+        {
+            var ocupados = new HashSet<int>();
+
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // Verificar si las columnas FechaLlegada y HoraLlegada existen en la tabla Vuelo
+            bool tieneFechaLlegada = await ColumnaExiste(connection, "Vuelo", "FechaLlegada");
+            bool tieneHoraLlegada = await ColumnaExiste(connection, "Vuelo", "HoraLlegada");
+
+            var salidaDateTime = fecha.Date + horaSalida;
+
+            string query;
+            if (tieneFechaLlegada && tieneHoraLlegada)
+            {
+                // Consulta completa con regla de 24h usando FechaLlegada + HoraLlegada
+                query = @"
+                    SELECT DISTINCT ep.MiembroTripulacionID
+                    FROM EquipoPivote ep
+                    INNER JOIN Vuelo v ON v.ID = ep.VueloID
+                    WHERE v.EstadoID <> 4
+                      AND (
+                        v.Fecha = @Fecha
+                        OR (
+                            v.FechaLlegada IS NOT NULL
+                            AND v.HoraLlegada  IS NOT NULL
+                            AND DATEADD(
+                                    SECOND,
+                                    DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                    CAST(v.FechaLlegada AS DATETIME)
+                                ) > DATEADD(HOUR, -24, @SalidaDateTime)
+                            AND DATEADD(
+                                    SECOND,
+                                    DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                    CAST(v.FechaLlegada AS DATETIME)
+                                ) <= @SalidaDateTime
+                        )
+                      )";
+            }
+            else
+            {
+                // Fallback: solo verificar si tienen vuelo el mismo día
+                query = @"
+                    SELECT DISTINCT ep.MiembroTripulacionID
+                    FROM EquipoPivote ep
+                    INNER JOIN Vuelo v ON v.ID = ep.VueloID
+                    WHERE v.EstadoID <> 4
+                      AND v.Fecha = @Fecha";
+            }
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@Fecha", fecha.Date);
+            if (tieneFechaLlegada && tieneHoraLlegada)
+                cmd.Parameters.AddWithValue("@SalidaDateTime", salidaDateTime);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                ocupados.Add(reader.GetInt32(0));
+
+            return ocupados;
+        }
+
+        private static async Task<bool> ColumnaExiste(SqlConnection connection, string tabla, string columna)
+        {
+            const string q = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=@T AND COLUMN_NAME=@C";
+            using var cmd = new SqlCommand(q, connection);
+            cmd.Parameters.AddWithValue("@T", tabla);
+            cmd.Parameters.AddWithValue("@C", columna);
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+        }
+
     }
 }

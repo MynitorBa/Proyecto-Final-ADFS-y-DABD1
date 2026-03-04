@@ -166,7 +166,7 @@ namespace Aerolinea.API.Repositories
             }
 
             int limiteMinutos = duracionDirectaMinutos.HasValue
-                ? (int)(duracionDirectaMinutos.Value * 1.5)
+                ? (int)(duracionDirectaMinutos.Value * 3)
                 : 12 * 60;
 
             var tramos1 = await BuscarTramos(
@@ -198,7 +198,7 @@ namespace Aerolinea.API.Repositories
                     if (minutosEscala < 60 || minutosEscala > 720)
                         continue;
 
-                    int duracionTotal = t1.DuracionMinutos + minutosEscala + t2.DuracionMinutos;
+                    int duracionTotal = t1.DuracionMinutos + t2.DuracionMinutos;
 
                     if (duracionTotal > limiteMinutos)
                         continue;

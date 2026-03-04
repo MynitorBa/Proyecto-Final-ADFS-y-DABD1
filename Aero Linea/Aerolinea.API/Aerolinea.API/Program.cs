@@ -29,6 +29,7 @@ builder.Services.AddScoped<VueloAdminInternoRepository>();
 builder.Services.AddScoped<PerfilRepository>();
 builder.Services.AddScoped<FacturaRepository>();
 builder.Services.AddScoped<MetricasRepository>();
+builder.Services.AddScoped<RutaRepository>();   // ← NUEVO: gestión de rutas
 
 
 // Servicios
@@ -47,6 +48,7 @@ builder.Services.AddScoped<AdminVueloService>();
 builder.Services.AddScoped<PerfilService>();
 builder.Services.AddScoped<FacturaService>();
 builder.Services.AddScoped<MetricasService>();
+builder.Services.AddScoped<RutaService>();       // ← NUEVO: gestión de rutas
 
 
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
@@ -63,12 +65,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.Cookie.Name = "aerolinea_session";
-        options.Cookie.HttpOnly = true;                      // No accesible desde JS, más seguro
-        options.Cookie.SameSite = SameSiteMode.None;         // Necesario para Svelte en origen distinto
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Requerido cuando SameSite=None
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
-        options.SlidingExpiration = true;                    // Renueva las 8h con cada request
-        // En lugar de redirigir a /login (comportamiento MVC), devolvemos 401/403 para APIs
+        options.SlidingExpiration = true;
         options.Events.OnRedirectToLogin = ctx =>
         {
             ctx.Response.StatusCode = 401;
@@ -83,28 +84,24 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
-// *** CORS para Svelte - WithCredentials requiere origen explícito ***
+// *** CORS — permite peticiones del frontend Svelte ***
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendPolicy", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:5173",   // Vite dev server (Svelte por defecto)
-                "http://localhost:4173",   // Vite preview
-                "http://localhost:3000"    // Por si usan otro puerto
-              )
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();         // Imprescindible para que la cookie viaje con fetch
+        policy
+            .WithOrigins("http://localhost:5173", "http://localhost:4173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-// *** ORDEN DEL PIPELINE - el orden importa ***
-app.UseCors("FrontendPolicy");           // CORS siempre primero
-// app.UseHttpsRedirection();
-app.UseAuthentication();                 // Primero autenticación
-app.UseAuthorization();                  // Luego autorización
+app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

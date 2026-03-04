@@ -9,5 +9,7 @@
         public string Pais { get; set; }
         // Base64 de la imagen (puede ser null si no tiene imagen)
         public string? ImagenBase64 { get; set; }
+        // Nombre IANA de la zona horaria (puede ser null si no está configurada)
+        public string? ZonaHoraria { get; set; }
     }
 }
