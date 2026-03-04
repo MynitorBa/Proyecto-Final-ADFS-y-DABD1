@@ -16,6 +16,7 @@
   import Carrito from './pages/Carrito.svelte';
   import Checkout from './pages/Checkout.svelte';
   import DatosPasajeros from './pages/DatosPasajeros.svelte';
+  import SeleccionAsientos from './pages/SeleccionAsientos.svelte'; // ← NUEVO
   import Login from './pages/Login.svelte';
   import Register from './pages/Register.svelte';
   import Profile from './pages/Profile.svelte';
@@ -49,7 +50,10 @@
   let facturasConfirmadas = [];
   let pageKey = Date.now();
 
-  const paginasProtegidas = ['profile','admin','reservas','checkout','datos-pasajeros','carrito'];
+  // ── NUEVO: datos para selección de asientos ──────────────────────────────
+  let asientosData = null;
+
+  const paginasProtegidas = ['profile','admin','reservas','checkout','datos-pasajeros','carrito','seleccion-asientos'];
   const paginasSoloAdmin  = ['admin'];
   const infoPages = [
     'contactanos','centro-ayuda','preguntas-frecuentes',
@@ -93,16 +97,13 @@
     };
   });
 
-  // ══ Flag: se completó un pago en esta sesión ══
   let pagoCompletado = false;
 
-  // Páginas del flujo de compra que se bloquean post-pago
-  const paginasFlujoCompra = ['vuelos', 'datos-pasajeros', 'carrito', 'checkout'];
+  const paginasFlujoCompra = ['vuelos', 'datos-pasajeros', 'seleccion-asientos', 'carrito', 'checkout'];
 
   function actualizarPaginaDesdeURL() {
     const path = window.location.pathname.slice(1) || 'home';
 
-    // ══ POST-PAGO: si ya pagó, no puede regresar al flujo de compra ══
     if (pagoCompletado && (paginasFlujoCompra.includes(path) || path === 'confirmacion')) {
       currentPage = 'home';
       pageKey = Date.now();
@@ -110,7 +111,6 @@
       return;
     }
 
-    // Si intenta volver a confirmación sin datos, ir a home
     if (path === 'confirmacion' && reservacionesConfirmadas.length === 0 && facturasConfirmadas.length === 0) {
       currentPage = 'home';
       pageKey = Date.now();
@@ -148,7 +148,6 @@
     }
 
     if (paginaFinal === 'vuelos') {
-      // NUEVO: búsqueda global desde Header
       if (data?.fromGlobalSearch) {
         searchParams = {
           fromGlobalSearch: true,
@@ -171,18 +170,19 @@
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
 
+    } else if (paginaFinal === 'seleccion-asientos') {
+      // data = array de grupos de vuelo: [{ vueloId, numeroVuelo, avionModelo, avionMarca, clase, boletos[] }, ...]
+      asientosData = data;
+
     } else if (paginaFinal === 'datos-pasajeros') {
-      // No sobreescribir searchParams — mantener los datos de vuelos
-      // para que si el usuario regresa a vuelos, siga viendo resultados
+      // No tocar searchParams
 
     } else if (paginaFinal === 'confirmacion') {
       if (data?.reservaciones) reservacionesConfirmadas = data.reservaciones;
       if (data?.facturas)      facturasConfirmadas      = data.facturas;
-      // ══ Post-pago: bloquear navegación hacia atrás ══
       pagoCompletado = true;
       searchParams = null;
       sessionStorage.removeItem(SS_SEARCH_PARAMS);
-      // Reemplazar historial para que "atrás" no vuelva a checkout/carrito/etc
       window.history.replaceState({ paid: true }, '', '/confirmacion');
 
     } else if (paginaFinal === 'home' && data?.suggestedAeropuerto) {
@@ -190,11 +190,10 @@
       searchParams = null;
       pagoCompletado = false;
 
-    } else if (!['vuelos', 'datos-pasajeros', 'carrito', 'checkout', 'confirmacion'].includes(paginaFinal)) {
+    } else if (!['vuelos','datos-pasajeros','seleccion-asientos','carrito','checkout','confirmacion'].includes(paginaFinal)) {
       searchParams = null;
     }
 
-    // Resetear flag de pago si navega a home (nueva sesión de compra)
     if (paginaFinal === 'home') pagoCompletado = false;
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -209,8 +208,7 @@
     }, 100);
   }
 
-  const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','checkout','confirmacion'];
-
+  const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','seleccion-asientos','checkout','confirmacion'];
   const noFooterPages = ['profile','admin','login','register','acceso-denegado','reservas',...simpleHeaderPages];
   const noHeaderPages = ['login','register'];
 
@@ -257,6 +255,11 @@
       <Carrito {navigateTo} />
     {:else if currentPage === 'checkout'}
       <Checkout {navigateTo} />
+    {:else if currentPage === 'seleccion-asientos'}
+      <!-- ── NUEVO ── -->
+      {#key pageKey}
+        <SeleccionAsientos {navigateTo} flightData={asientosData} />
+      {/key}
     {:else if currentPage === 'datos-pasajeros'}
       <DatosPasajeros {navigateTo} />
     {:else if currentPage === 'login'}

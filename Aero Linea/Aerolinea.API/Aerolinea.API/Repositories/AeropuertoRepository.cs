@@ -325,10 +325,10 @@ namespace Aerolinea.API.Repositories
         }
 
         public async Task<List<DateTime>> ObtenerFechasConVuelosPorRuta(
-            int? origenId,
-            int? destinoId,
-            int cantidadPersonas = 1,
-            int? claseId = null)
+     int? origenId,
+     int? destinoId,
+     int cantidadPersonas = 1,
+     int? claseId = null)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
@@ -339,14 +339,15 @@ namespace Aerolinea.API.Repositories
                     ? "AND v.BoletosEjecutivo >= @cantidadPersonas"
                     : "AND (v.BoletosTurista >= @cantidadPersonas OR v.BoletosEjecutivo >= @cantidadPersonas)";
 
+            // ── Vuelos directos ───────────────────────────────────────────────────
             string queryDirectos = $@"
-                SELECT DISTINCT v.Fecha
-                FROM Vuelo v
-                INNER JOIN Ruta   r ON r.ID = v.RutaID
-                INNER JOIN Estado e ON e.ID = v.EstadoID
-                WHERE v.Fecha  >= CAST(GETDATE() AS DATE)
-                  AND e.Estatus = 'A tiempo'
-                  {filtroDisponibilidad}";
+        SELECT DISTINCT v.Fecha
+        FROM Vuelo v
+        INNER JOIN Ruta   r ON r.ID = v.RutaID
+        INNER JOIN Estado e ON e.ID = v.EstadoID
+        WHERE v.Fecha  >= CAST(GETDATE() AS DATE)
+          AND e.Estatus = 'A tiempo'
+          {filtroDisponibilidad}";
 
             if (origenId.HasValue) queryDirectos += " AND r.OrigenID  = @origenId";
             if (destinoId.HasValue) queryDirectos += " AND r.DestinoID = @destinoId";
@@ -364,48 +365,146 @@ namespace Aerolinea.API.Repositories
                     fechas.Add(reader.GetDateTime(0));
             }
 
+            // ── Vuelos con escala (mismas reglas de negocio que VueloRepository) ──
             if (origenId.HasValue && destinoId.HasValue)
             {
-                string campoDispo1 = claseId == 1 ? "t1.BoletosTurista"
-                                   : claseId == 2 ? "t1.BoletosEjecutivo"
-                                   : "GREATEST(t1.BoletosTurista, t1.BoletosEjecutivo)";
+                // 1. Obtener duración de la ruta directa para calcular el límite 1.5x
+                int? duracionDirectaMinutos = null;
+                using (var cmd = new SqlCommand(
+                    "SELECT TOP 1 DuracionEstimada FROM Ruta WHERE OrigenID = @origenId AND DestinoID = @destinoId",
+                    connection))
+                {
+                    cmd.Parameters.AddWithValue("@origenId", origenId.Value);
+                    cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
+                    var result = await cmd.ExecuteScalarAsync();
+                    if (result != null && result != DBNull.Value)
+                        duracionDirectaMinutos = (int)result;
+                }
 
-                string campoDispo2 = claseId == 1 ? "t2.BoletosTurista"
-                                   : claseId == 2 ? "t2.BoletosEjecutivo"
-                                   : "GREATEST(t2.BoletosTurista, t2.BoletosEjecutivo)";
+                int limiteMinutos = duracionDirectaMinutos.HasValue
+                    ? (int)(duracionDirectaMinutos.Value * 1.5)
+                    : 12 * 60;
 
-                string queryEscalas = $@"
-                    SELECT DISTINCT t1.Fecha
-                    FROM Vuelo t1
-                    INNER JOIN Ruta   r1 ON r1.ID = t1.RutaID
-                    INNER JOIN Estado e1 ON e1.ID = t1.EstadoID
-                    INNER JOIN Vuelo  t2 ON t2.RutaID IN (
-                                               SELECT ID FROM Ruta
-                                               WHERE OrigenID  = r1.DestinoID
-                                                 AND DestinoID = @destinoId)
-                    INNER JOIN Estado e2 ON e2.ID = t2.EstadoID
-                    WHERE t1.Fecha    >= CAST(GETDATE() AS DATE)
-                      AND r1.OrigenID  = @origenId
-                      AND r1.DestinoID != @destinoId
-                      AND e1.Estatus   = 'A tiempo'
-                      AND e2.Estatus   = 'A tiempo'
-                      AND t2.Fecha BETWEEN t1.Fecha AND DATEADD(DAY, 1, t1.Fecha)
-                      AND DATEDIFF(MINUTE,
-                              CAST(t1.FechaLlegada AS DATETIME) + CAST(t1.HoraLlegada AS DATETIME),
-                              CAST(t2.Fecha AS DATETIME)        + CAST(t2.HoraSalida  AS DATETIME)
-                          ) BETWEEN 60 AND 720
-                      AND {campoDispo1} >= @cantidadPersonas
-                      AND ({campoDispo2} >= @cantidadPersonas
-                           OR t2.BoletosEjecutivo >= @cantidadPersonas)";
+                // 2. Traer tramos 1: salen del origen hacia cualquier escala (no el destino final)
+                //    y tramos 2: llegan al destino desde cualquier escala (no el origen)
+                //    para el mismo día y el día siguiente (igual que VueloRepository)
+                string filtroClaseT1 = claseId == 1
+                    ? "AND v.BoletosTurista   >= @cantidadPersonas"
+                    : claseId == 2
+                        ? "AND v.BoletosEjecutivo >= @cantidadPersonas"
+                        : "AND (v.BoletosTurista >= @cantidadPersonas OR v.BoletosEjecutivo >= @cantidadPersonas)";
 
-                using var cmd = new SqlCommand(queryEscalas, connection);
-                cmd.Parameters.AddWithValue("@origenId", origenId.Value);
-                cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
-                cmd.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
+                string sqlTramos = $@"
+            SELECT
+                v.ID, v.Fecha, v.HoraSalida, v.HoraLlegada, v.FechaLlegada,
+                r.OrigenID, r.DestinoID, r.DuracionEstimada,
+                v.BoletosTurista, v.BoletosEjecutivo
+            FROM Vuelo v
+            INNER JOIN Ruta   r ON r.ID = v.RutaID
+            INNER JOIN Estado e ON e.ID = v.EstadoID
+            WHERE v.Fecha IN (@fecha, @fechaSiguiente)
+              AND e.Estatus = 'A tiempo'
+              AND (
+                  (r.OrigenID = @origenId  AND r.DestinoID != @destinoId)
+               OR (r.DestinoID = @destinoId AND r.OrigenID  != @origenId)
+              )
+              {filtroClaseT1}
+            ORDER BY v.Fecha, v.HoraSalida";
 
-                using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                    fechas.Add(reader.GetDateTime(0));
+                // Recopilar fechas candidatas (vuelos directos ya obtenidos + futuras)
+                // Necesitamos verificar por cada fecha candidata de tramo1
+                // Estrategia: traer TODOS los tramos válidos de los próximos días y combinarlos en C#
+
+                string sqlTodosTramos = $@"
+            SELECT
+                v.ID, v.Fecha, v.HoraSalida, v.HoraLlegada, v.FechaLlegada,
+                r.OrigenID, r.DestinoID, r.DuracionEstimada,
+                v.BoletosTurista, v.BoletosEjecutivo
+            FROM Vuelo v
+            INNER JOIN Ruta   r ON r.ID = v.RutaID
+            INNER JOIN Estado e ON e.ID = v.EstadoID
+            WHERE v.Fecha >= CAST(GETDATE() AS DATE)
+              AND e.Estatus = 'A tiempo'
+              AND (
+                  (r.OrigenID  = @origenId  AND r.DestinoID != @destinoId)
+               OR (r.DestinoID = @destinoId AND r.OrigenID  != @origenId)
+              )
+              {filtroClaseT1}
+            ORDER BY v.Fecha, v.HoraSalida";
+
+                // Estructura auxiliar para los tramos
+                var tramos = new List<(int Id, DateTime Fecha, TimeSpan HoraSalida, TimeSpan HoraLlegada,
+                                        DateTime FechaLlegada, int OrigenId, int DestinoId,
+                                        int DuracionMinutos, int? BolTurista, int? BolEjecutiva)>();
+
+                using (var cmd = new SqlCommand(sqlTodosTramos, connection))
+                {
+                    cmd.Parameters.AddWithValue("@origenId", origenId.Value);
+                    cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
+                    cmd.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
+
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        tramos.Add((
+                            Id: reader.GetInt32(0),
+                            Fecha: reader.GetDateTime(1),
+                            HoraSalida: reader.IsDBNull(2) ? TimeSpan.Zero : reader.GetTimeSpan(2),
+                            HoraLlegada: reader.IsDBNull(3) ? TimeSpan.Zero : reader.GetTimeSpan(3),
+                            FechaLlegada: reader.GetDateTime(4),
+                            OrigenId: reader.GetInt32(5),
+                            DestinoId: reader.GetInt32(6),
+                            DuracionMinutos: reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                            BolTurista: reader.IsDBNull(8) ? (int?)null : reader.GetInt32(8),
+                            BolEjecutiva: reader.IsDBNull(9) ? (int?)null : reader.GetInt32(9)
+                        ));
+                    }
+                }
+
+                var tramos1 = tramos.Where(t => t.OrigenId == origenId.Value && t.DestinoId != destinoId.Value).ToList();
+                var tramos2 = tramos.Where(t => t.DestinoId == destinoId.Value && t.OrigenId != origenId.Value).ToList();
+
+                var combinacionesVistas = new HashSet<string>();
+
+                foreach (var t1 in tramos1)
+                {
+                    foreach (var t2 in tramos2.Where(t => t.OrigenId == t1.DestinoId))
+                    {
+                        var llegadaT1 = t1.FechaLlegada.Date + t1.HoraLlegada;
+                        var salidaT2 = t2.Fecha.Date + t2.HoraSalida;
+
+                        int minutosEscala = (int)(salidaT2 - llegadaT1).TotalMinutes;
+
+                        // Regla: escala entre 1h y 12h
+                        if (minutosEscala < 60 || minutosEscala > 720)
+                            continue;
+
+                        int duracionTotal = t1.DuracionMinutos + t2.DuracionMinutos;
+
+                        // Regla: duración total no mayor a 1.5x la ruta directa
+                        if (duracionTotal > limiteMinutos)
+                            continue;
+
+                        // Regla: disponibilidad de boletos según clase
+                        int? dispTurista = t1.BolTurista.HasValue && t2.BolTurista.HasValue
+                            ? Math.Min(t1.BolTurista.Value, t2.BolTurista.Value) : null;
+                        int? dispEjecutiva = t1.BolEjecutiva.HasValue && t2.BolEjecutiva.HasValue
+                            ? Math.Min(t1.BolEjecutiva.Value, t2.BolEjecutiva.Value) : null;
+
+                        if (claseId == 1 && (dispTurista == null || dispTurista < cantidadPersonas)) continue;
+                        if (claseId == 2 && (dispEjecutiva == null || dispEjecutiva < cantidadPersonas)) continue;
+                        if (claseId == null &&
+                            (dispTurista == null || dispTurista < cantidadPersonas) &&
+                            (dispEjecutiva == null || dispEjecutiva < cantidadPersonas)) continue;
+
+                        string key = $"{t1.Id}-{t2.Id}";
+                        if (!combinacionesVistas.Add(key))
+                            continue;
+
+                        // La fecha que le interesa al calendario es la del primer tramo
+                        fechas.Add(t1.Fecha.Date);
+                    }
+                }
             }
 
             return fechas.OrderBy(f => f).ToList();

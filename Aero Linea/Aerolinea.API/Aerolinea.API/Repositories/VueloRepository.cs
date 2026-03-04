@@ -166,7 +166,7 @@ namespace Aerolinea.API.Repositories
             }
 
             int limiteMinutos = duracionDirectaMinutos.HasValue
-                ? (int)(duracionDirectaMinutos.Value * 3)
+                ? (int)(duracionDirectaMinutos.Value * 1.5)
                 : 12 * 60;
 
             var tramos1 = await BuscarTramos(
@@ -230,7 +230,7 @@ namespace Aerolinea.API.Repositories
                     resultados.Add(new VueloConEscalaDTO
                     {
                         NumeroEscalas = 1,
-                        DuracionTotalMinutos = duracionTotal,
+                        DuracionTotalMinutos = duracionTotal + minutosEscala,
                         TiempoEscalaMinutos = minutosEscala,
                         PrecioTuristaTotal = precioTuristaTotal,
                         PrecioEjecutivaTotal = precioEjecutivaTotal,

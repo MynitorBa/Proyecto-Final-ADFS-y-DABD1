@@ -29,8 +29,8 @@ builder.Services.AddScoped<VueloAdminInternoRepository>();
 builder.Services.AddScoped<PerfilRepository>();
 builder.Services.AddScoped<FacturaRepository>();
 builder.Services.AddScoped<MetricasRepository>();
-builder.Services.AddScoped<RutaRepository>();   // ← NUEVO: gestión de rutas
-
+builder.Services.AddScoped<RutaRepository>();   
+builder.Services.AddScoped<AsientoRepository>();
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -48,7 +48,8 @@ builder.Services.AddScoped<AdminVueloService>();
 builder.Services.AddScoped<PerfilService>();
 builder.Services.AddScoped<FacturaService>();
 builder.Services.AddScoped<MetricasService>();
-builder.Services.AddScoped<RutaService>();       // ← NUEVO: gestión de rutas
+builder.Services.AddScoped<RutaService>();
+builder.Services.AddScoped<AsientoService>();
 
 
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));

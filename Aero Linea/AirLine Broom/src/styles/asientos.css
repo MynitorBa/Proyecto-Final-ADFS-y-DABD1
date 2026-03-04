@@ -1,0 +1,562 @@
+/* ══════════════════════════════════════════════════════════
+   asientos.css  —  Selección de asientos
+   Mismas variables CSS del proyecto (--primary-color, etc.)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Página ── */
+.asientos-page {
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    padding: 2rem 1rem 8rem;
+}
+.asientos-page__container {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* ── Header ── */
+.asientos-page__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+.asientos-page__back {
+    background: transparent;
+    border: 1px solid var(--perla-dark);
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px 15px 4px 15px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+    white-space: nowrap;
+}
+.asientos-page__back:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+.asientos-titulo__main {
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--secondary-color);
+    margin: 0 0 0.3rem;
+    letter-spacing: -0.3px;
+}
+.asientos-titulo__sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 0;
+}
+
+/* ── Layout principal ── */
+.asientos-page__body {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 3rem;
+    align-items: start;
+}
+
+/* ══════════════════════════════════════════════════════════
+   AVION
+   ══════════════════════════════════════════════════════════ */
+.asientos-page__mapa-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Nariz */
+.avion-nariz {
+    width: 100%;
+    max-width: 500px;
+}
+.avion-nariz__svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Cuerpo */
+.avion-cuerpo {
+    width: 100%;
+    max-width: 500px;
+    background: #1C1A18;
+    border-left: 1.5px solid #B89A7A;
+    border-right: 1.5px solid #B89A7A;
+    padding: 0.5rem 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Cabecera de columnas */
+.avion-cols-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0 0.3rem;
+    justify-content: center;
+}
+.avion-col-label {
+    width: 36px;
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #B89A7A;
+    flex-shrink: 0;
+}
+
+/* Zona label */
+.zona-label {
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0 0.3rem;
+}
+.zona-label span {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 700;
+    padding: 0.2rem 1rem;
+    border-radius: 20px;
+}
+.zona-label--ejecutiva span {
+    color: #c9a96e;
+    background: rgba(201,169,110,0.12);
+    border: 1px solid rgba(201,169,110,0.25);
+}
+.zona-label--turista span {
+    color: #8fa8c8;
+    background: rgba(59,79,107,0.15);
+    border: 1px solid rgba(59,79,107,0.25);
+}
+
+/* Separador de cabina */
+.zona-separador {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+}
+.zona-separador__line {
+    flex: 1;
+    height: 1px;
+    background: #B89A7A;
+    opacity: 0.3;
+}
+.zona-separador__label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #B89A7A;
+    opacity: 0.6;
+    white-space: nowrap;
+}
+
+/* Fila del avión */
+.avion-fila {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.18rem 0;
+    justify-content: center;
+}
+.avion-fila--ejecutiva {
+    padding: 0.28rem 0;
+}
+.avion-fila__num {
+    width: 22px;
+    text-align: right;
+    font-size: 0.58rem;
+    color: #B89A7A;
+    opacity: 0.5;
+    flex-shrink: 0;
+    margin-right: 0.2rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Pasillo */
+.avion-pasillo {
+    width: 22px;
+    flex-shrink: 0;
+}
+
+/* Cola */
+.avion-cola {
+    width: 100%;
+    max-width: 500px;
+}
+.avion-cola__svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ══════════════════════════════════════════════════════════
+   ASIENTOS
+   ══════════════════════════════════════════════════════════ */
+.asiento {
+    width: 36px;
+    height: 32px;
+    border-radius: 4px 4px 2px 2px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+}
+
+/* Ejecutiva: más grande */
+.avion-fila--ejecutiva .asiento {
+    width: 42px;
+    height: 38px;
+    border-radius: 6px 6px 3px 3px;
+}
+
+/* Libre */
+.asiento--libre {
+    background: #2c3a2c;
+    border: 1px solid #3d5c3d;
+}
+.asiento--libre:hover {
+    background: #3d5c3d;
+    border-color: #5c8c5c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(60,100,60,0.4);
+}
+
+/* Seleccionado */
+.asiento--seleccionado {
+    background: var(--primary-color) !important;
+    border: 1px solid #d4aa55 !important;
+    box-shadow: 0 0 0 2px rgba(201,169,97,0.35);
+    transform: translateY(-2px);
+}
+.asiento--seleccionado:hover {
+    background: #b07d2e !important;
+}
+.asiento__num {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
+/* Ocupado */
+.asiento--ocupado {
+    background: #2a1e1e;
+    border: 1px solid #4a2c2c;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Bloqueado */
+.asiento--bloqueado {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+/* Clase incorrecta */
+.asiento--clase-incorrecta {
+    background: #1e1c18;
+    border: 1px solid #2c2a22;
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+/* Vacio (espacio ficticio) */
+.asiento--vacio {
+    visibility: hidden;
+}
+
+/* Muestra en leyenda */
+.asiento--muestra {
+    width: 24px !important;
+    height: 20px !important;
+    border-radius: 3px 3px 1px 1px;
+    cursor: default;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR
+   ══════════════════════════════════════════════════════════ */
+.asientos-sidebar {
+    position: sticky;
+    top: 7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Progreso */
+.seleccion-progreso {
+    background: var(--white);
+    border-radius: 4px 20px 4px 20px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(28,26,24,0.06);
+    border-top: 3px solid var(--primary-color);
+}
+.seleccion-progreso__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.seleccion-progreso__titulo {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+.seleccion-progreso__conteo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+.seleccion-progreso__barra {
+    height: 4px;
+    background: var(--perla-dark);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.seleccion-progreso__fill {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Lista de pasajeros */
+.pasajeros-lista {
+    background: var(--white);
+    border-radius: 4px 20px 4px 20px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(28,26,24,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.pasajero-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 4px 10px 4px 10px;
+    border: 1.5px solid var(--perla-dark);
+    background: #fcfbf9;
+    transition: all 0.2s ease;
+}
+.pasajero-item--activo {
+    border-color: var(--primary-color);
+    background: rgba(201,169,97,0.05);
+}
+.pasajero-item--completo {
+    border-color: #3d5c3d;
+    background: rgba(60,100,60,0.04);
+}
+.pasajero-item__numero {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--perla-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.pasajero-item--activo  .pasajero-item__numero { background: var(--primary-color); color: #fff; }
+.pasajero-item--completo .pasajero-item__numero { background: #3d5c3d; color: #fff; }
+.pasajero-item__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.pasajero-item__label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+.pasajero-item__asiento {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+.pasajero-item--completo .pasajero-item__asiento { color: #3d7a3d; }
+.pasajero-item__quitar {
+    background: transparent;
+    border: 1px solid #e0d0c0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+.pasajero-item__quitar:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+/* Leyenda */
+.leyenda {
+    background: var(--white);
+    border-radius: 4px 20px 4px 20px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(28,26,24,0.06);
+}
+.leyenda__titulo {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin: 0 0 0.85rem;
+}
+.leyenda__items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+.leyenda__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--secondary-color);
+}
+.leyenda__muestra {
+    flex-shrink: 0;
+}
+
+/* Botón continuar */
+.asientos-continuar {
+    width: 100%;
+    padding: 1.1rem 1.5rem;
+    background: var(--perla-dark);
+    color: var(--text-muted);
+    border: none;
+    border-radius: 4px 18px 4px 18px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    cursor: not-allowed;
+    transition: all 0.3s ease;
+}
+.asientos-continuar--listo {
+    background: var(--secondary-color);
+    color: var(--white);
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(28,26,24,0.2);
+}
+.asientos-continuar--listo:hover {
+    background: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(201,169,97,0.35);
+}
+
+/* ── Estado carga / error ── */
+.asientos-estado {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px dashed var(--perla-dark);
+    border-radius: 4px 24px 4px 24px;
+    background: #fcfbf9;
+    margin-top: 2rem;
+}
+.asientos-estado--error {
+    border-color: #fca5a5;
+    border-style: solid;
+    color: #dc2626;
+    background: #fef2f2;
+    text-transform: none;
+    letter-spacing: 0;
+}
+.seleccion-progreso__guardando {
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0.5rem 0 0;
+    text-align: center;
+}
+.seleccion-progreso__error {
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin: 0.5rem 0 0;
+    text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    .asientos-page__body {
+        grid-template-columns: 1fr;
+    }
+    .asientos-sidebar {
+        position: relative;
+        top: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    .asientos-continuar {
+        grid-column: 1 / -1;
+    }
+}
+@media (max-width: 600px) {
+    .asientos-sidebar {
+        grid-template-columns: 1fr;
+    }
+    .avion-cuerpo {
+        padding: 0.5rem 0.75rem 1rem;
+    }
+    .asiento {
+        width: 30px;
+        height: 27px;
+    }
+    .avion-fila--ejecutiva .asiento {
+        width: 34px;
+        height: 32px;
+    }
+    .avion-col-label {
+        width: 30px;
+    }
+}

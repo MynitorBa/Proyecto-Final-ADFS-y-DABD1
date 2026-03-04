@@ -208,7 +208,7 @@
     <div class="broom-header__actions">
 
       <button class="broom-header__action-btn broom-header__cart" aria-label="Carrito de compras"
-        on:click|preventDefault={() => handleNavigation('carrito')}>
+        on:click|preventDefault={() => handleNavigation('datos-pasajeros')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="9" cy="21" r="1"></circle>
           <circle cx="20" cy="21" r="1"></circle>
