@@ -3,16 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\repositories\\vuelorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\repositories\\vuelorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\repositories\\aeropuertorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\repositories\\aeropuertorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\services\\gestionreservacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\services\\gestionreservacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\helpers\\emailtemplates.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\helpers\\emailtemplates.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\services\\pdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\services\\pdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\services\\gestionreservacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\services\\gestionreservacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\repositories\\gestionreservacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -91,16 +99,8 @@
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\controllers\\adminvueloscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\repositories\\aeropuertorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\repositories\\aeropuertorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\dtos\\vuelodetalledto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\dtos\\vuelodetalledto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\repositories\\vuelorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|solutionrelative:aerolinea.api\\repositories\\vuelorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D9126E24-E77D-43C2-8D31-9DC7194CD6A3}|Aerolinea.API\\Aerolinea.API.csproj|c:\\users\\usuario\\desktop\\proyecto final adfs babd1\\proyecto-final-adfs-y-dabd1\\aero linea\\aerolinea.api\\aerolinea.api\\dtos\\resultadobusquedadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -225,11 +225,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "EmailTemplates.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Helpers\\EmailTemplates.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Helpers\\EmailTemplates.cs",
@@ -242,32 +242,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "FacturaDTO.cs",
-              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\FacturaDTO.cs",
-              "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\FacturaDTO.cs",
-              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\FacturaDTO.cs",
-              "RelativeToolTip": "Aerolinea.API\\DTOs\\FacturaDTO.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T04:29:16.897Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "GestionReservacionRepository.cs",
-              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
-              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
-              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
-              "RelativeToolTip": "Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
-              "ViewState": "AgIAAI4BAAAAAAAAAAAkwLgBAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T17:33:45.862Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "MisReservacionesController.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\MisReservacionesController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\MisReservacionesController.cs",
@@ -275,8 +250,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\MisReservacionesController.cs",
               "ViewState": "AgIAAF8AAAAAAAAAAAAkwHcAAABAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T17:19:42.246Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-28T17:19:42.246Z"
             },
             {
               "$type": "Document",
@@ -293,7 +267,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "PdfService.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\PdfService.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Services\\PdfService.cs",
@@ -301,12 +275,61 @@
               "RelativeToolTip": "Aerolinea.API\\Services\\PdfService.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAAA8AAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T04:25:19.001Z",
+              "WhenOpened": "2026-03-01T04:25:19.001Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "VueloRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\VueloRepository.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\VueloRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\VueloRepository.cs",
+              "RelativeToolTip": "Aerolinea.API\\Repositories\\VueloRepository.cs",
+              "ViewState": "AgIAAHgAAAAAAAAAAAAAAIwAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T05:26:52.746Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
+              "Title": "AeropuertoRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
+              "RelativeToolTip": "Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
+              "ViewState": "AgIAAKAAAAAAAAAAAAAAAH4AAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T14:51:25.235Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "GestionReservacionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
+              "RelativeToolTip": "Aerolinea.API\\Repositories\\GestionReservacionRepository.cs",
+              "ViewState": "AgIAAI4BAAAAAAAAAAAkwLgBAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-28T17:33:45.862Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "FacturaDTO.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\FacturaDTO.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\FacturaDTO.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\FacturaDTO.cs",
+              "RelativeToolTip": "Aerolinea.API\\DTOs\\FacturaDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-01T04:29:16.897Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "NacionalidadRepository.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
@@ -314,12 +337,11 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\NacionalidadRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T05:26:16.833Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-01T05:26:16.833Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "SessionHelper.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Helpers\\SessionHelper.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Helpers\\SessionHelper.cs",
@@ -327,12 +349,11 @@
               "RelativeToolTip": "Aerolinea.API\\Helpers\\SessionHelper.cs",
               "ViewState": "AgIAAAsAAAAAAAAAAAAuwBMAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T05:13:31.559Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-01T05:13:31.559Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "VuelosController.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\VuelosController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\VuelosController.cs",
@@ -344,7 +365,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "ReservacionDetalleDTO.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\ReservacionDetalleDTO.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\ReservacionDetalleDTO.cs",
@@ -356,7 +377,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "EmailHelper.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Helpers\\EmailHelper.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Helpers\\EmailHelper.cs",
@@ -368,7 +389,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "ReservacionesController.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\ReservacionesController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\ReservacionesController.cs",
@@ -380,7 +401,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 21,
               "Title": "ReservacionRepository.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\ReservacionRepository.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\ReservacionRepository.cs",
@@ -392,7 +413,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "PdfHtmlHelper.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Helpers\\PdfHtmlHelper.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Helpers\\PdfHtmlHelper.cs",
@@ -404,7 +425,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 19,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.json",
               "RelativeDocumentMoniker": "Aerolinea.API\\appsettings.json",
@@ -416,7 +437,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 18,
               "Title": "Diagramclass.cd",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Diagramclass.cd",
               "RelativeDocumentMoniker": "Aerolinea.API\\Diagramclass.cd",
@@ -427,7 +448,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 17,
               "Title": "libwkhtmltox.dll",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\libwkhtmltox.dll",
               "RelativeDocumentMoniker": "Aerolinea.API\\libwkhtmltox.dll",
@@ -438,7 +459,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 16,
               "Title": "launchSettings.json",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "Aerolinea.API\\Properties\\launchSettings.json",
@@ -450,7 +471,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 15,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Program.cs",
@@ -462,7 +483,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 20,
               "Title": "AeropuertosController.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\AeropuertosController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\AeropuertosController.cs",
@@ -474,7 +495,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 22,
               "Title": "ReservacionCreadaDTO.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\ReservacionCreadaDTO.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\ReservacionCreadaDTO.cs",
@@ -486,7 +507,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 23,
               "Title": "AdminVuelosController.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Controllers\\AdminVuelosController.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\Controllers\\AdminVuelosController.cs",
@@ -498,7 +519,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 24,
               "Title": "VueloDetalleDTO.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\DTOs\\VueloDetalleDTO.cs",
               "RelativeDocumentMoniker": "Aerolinea.API\\DTOs\\VueloDetalleDTO.cs",
@@ -522,18 +543,6 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
-              "Title": "VueloRepository.cs",
-              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\VueloRepository.cs",
-              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\VueloRepository.cs",
-              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\VueloRepository.cs",
-              "RelativeToolTip": "Aerolinea.API\\Repositories\\VueloRepository.cs",
-              "ViewState": "AgIAAAcAAAAAAAAAAAAqwAsAAAAJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T05:26:52.746Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 28,
               "Title": "TarjetaHelper.cs",
               "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Helpers\\TarjetaHelper.cs",
@@ -543,18 +552,6 @@
               "ViewState": "AgIAAB8AAAAAAAAAAAAQwAYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-28T16:50:12.277Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 22,
-              "Title": "AeropuertoRepository.cs",
-              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
-              "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
-              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
-              "RelativeToolTip": "Aerolinea.API\\Repositories\\AeropuertoRepository.cs",
-              "ViewState": "AgIAADYBAAAAAAAAAAAYwEUBAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T14:51:25.235Z"
             },
             {
               "$type": "Document",
