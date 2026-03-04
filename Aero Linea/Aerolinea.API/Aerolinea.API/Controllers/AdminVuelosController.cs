@@ -145,5 +145,31 @@ namespace Aerolinea.API.Controllers
                 ? $"El valor \"{valorDuplicado}\" ya existe y no puede repetirse."
                 : "Ya existe un registro con esos datos. Verifica los campos e intenta de nuevo.";
         }
+        // GET /api/admin/vuelos/aviones-ocupados?fecha=2025-12-01
+        [HttpGet("aviones-ocupados")]
+        public async Task<IActionResult> AvionesOcupados([FromQuery] string fecha)
+        {
+            if (!DateTime.TryParse(fecha, out var fechaDate))
+                return BadRequest(new { message = "Formato de fecha inválido" });
+
+            var ids = await _adminVueloService.ObtenerAvionesOcupados(fechaDate);
+            return Ok(ids);
+        }
+
+        // GET /api/admin/vuelos/tripulantes-ocupados?fecha=2025-12-01&horaSalida=08:00
+        [HttpGet("tripulantes-ocupados")]
+        public async Task<IActionResult> TripulantesOcupados(
+            [FromQuery] string fecha, [FromQuery] string horaSalida)
+        {
+            if (!DateTime.TryParse(fecha, out var fechaDate))
+                return BadRequest(new { message = "Formato de fecha inválido" });
+
+            if (!TimeSpan.TryParse(horaSalida, out var hora))
+                return BadRequest(new { message = "Formato de hora inválido" });
+
+            var ids = await _adminVueloService.ObtenerTripulantesOcupados(fechaDate, hora);
+            return Ok(ids);
+        }
+
     }
 }

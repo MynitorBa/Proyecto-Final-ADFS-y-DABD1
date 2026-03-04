@@ -6,5 +6,7 @@
         public string Nombre { get; set; }
         public string Codigo { get; set; }
         public int CiudadId { get; set; }
+        // FK a la tabla ZonaHoraria — null si no fue configurada
+        public int? ZonaHorariaId { get; set; }
     }
 }

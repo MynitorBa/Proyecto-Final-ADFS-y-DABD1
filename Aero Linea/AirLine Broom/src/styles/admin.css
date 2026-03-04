@@ -1415,3 +1415,283 @@ body:has(.modal-overlay) { overflow: hidden; }
   .met-donut-wrap { flex-direction: column; align-items: flex-start; }
   .met-barra-row { grid-template-columns: 100px 1fr 40px; }
 }
+/* ============================================================
+   GESTIONAR RUTAS — Panel de zonas horarias y duración
+   ============================================================ */
+
+.rutas-tz-note {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  padding: .875rem 1.25rem;
+  background: var(--perla-dark);
+  border: 1px solid var(--marron-light);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: .85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.ruta-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-family: monospace;
+  background: var(--secondary-color);
+  color: var(--white);
+  border-radius: 4px;
+  padding: .15rem .5rem;
+  font-size: .78rem;
+  margin-right: .4rem;
+  letter-spacing: .5px;
+}
+
+.ruta-name {
+  color: var(--secondary-color);
+  font-size: .88rem;
+  display: block;
+  margin-top: .2rem;
+}
+
+/* ── Timezone badges ─────────────────────────────────────── */
+.tz-badge {
+  display: inline-block;
+  font-size: .72rem;
+  padding: .25rem .6rem;
+  border-radius: 4px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+
+.tz-badge--ok {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.tz-badge--missing {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+/* ── Duración editable inline ────────────────────────────── */
+.duracion-display {
+  color: var(--secondary-color);
+  font-size: .9rem;
+}
+
+.duracion-edit {
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+
+.duracion-input {
+  width: 90px !important;
+  padding: .4rem .6rem !important;
+  font-size: .88rem !important;
+  border: 2px solid var(--marron-light) !important;
+  border-radius: 4px !important;
+  background: var(--white) !important;
+  color: var(--secondary-color) !important;
+}
+
+.duracion-input:focus {
+  outline: none !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* ============================================================
+   PREVIEW LLEGADA — Cálculo automático en formulario vuelo
+   ============================================================ */
+
+.llegada-preview {
+  border: 2px solid var(--perla-dark);
+  border-radius: 0 10px 0 10px;
+  padding: .875rem 1rem;
+  background: var(--perla-dark);
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.llegada-preview--tz {
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+
+.llegada-preview--loading {
+  opacity: .7;
+  font-style: italic;
+  color: var(--text-muted);
+  justify-content: center;
+  align-items: center;
+}
+
+.llegada-preview--empty {
+  color: var(--text-muted);
+  font-size: .84rem;
+  justify-content: center;
+  align-items: flex-start;
+  border-style: dashed;
+}
+
+.llegada-preview__time {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  line-height: 1;
+}
+
+.llegada-preview__nextday {
+  font-size: .78rem;
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-left: .4rem;
+}
+
+.llegada-preview__meta {
+  font-size: .78rem;
+  color: var(--text-muted);
+  margin-top: .15rem;
+}
+
+.llegada-preview__nota {
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: .2rem;
+  line-height: 1.4;
+}
+
+/* ── Timezone display en aeropuerto (solo lectura) ───────── */
+.tz-detected-display {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  background: var(--perla-dark);
+  border: 2px solid var(--marron-light);
+  border-radius: 0 10px 0 10px;
+  color: var(--secondary-color);
+  font-size: .9rem;
+  font-weight: 500;
+  min-height: 48px;
+}
+
+.tz-detected-display--empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.tz-detected-display__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.tz-detect-btn {
+  padding: .6rem 1.1rem;
+  background: var(--secondary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 0 8px 0 8px;
+  font-size: .8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tz-detect-btn:hover:not(:disabled) {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.tz-detect-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ── Panel llegada: sin ruta ─────────────────────────────── */
+.llegada-preview--no-ruta {
+  border: 2px solid #fca5a5;
+  border-radius: 0 10px 0 10px;
+  padding: .875rem 1rem;
+  background: #fff5f5;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.llegada-preview__no-ruta-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.llegada-preview__no-ruta-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.llegada-preview__no-ruta-msg {
+  font-size: .78rem;
+  color: #7f1d1d;
+  line-height: 1.5;
+}
+
+.llegada-preview__no-ruta-btn {
+  margin-top: .3rem;
+  align-self: flex-start;
+  padding: .3rem .75rem;
+  background: #b91c1c;
+  color: #fff;
+  border: none;
+  border-radius: 0 6px 0 6px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.llegada-preview__no-ruta-btn:hover {
+  background: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+/* ── Disponibilidad de aviones / tripulantes ─────────────── */
+.disponibilidad-hint {
+  display: block;
+  margin-bottom: .45rem;
+  font-size: .78rem;
+  padding: .3rem .65rem;
+  border-radius: 4px;
+}
+.disponibilidad-hint--warn {
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 3px solid #f59e0b;
+}
+.disponibilidad-hint--ok {
+  background: #ecfdf5;
+  color: #065f46;
+  border-left: 3px solid #34d399;
+}
+.searchable-select__empty {
+  padding: .75rem 1rem;
+  color: #6b7280;
+  font-size: .82rem;
+  text-align: center;
+  line-height: 1.5;
+}

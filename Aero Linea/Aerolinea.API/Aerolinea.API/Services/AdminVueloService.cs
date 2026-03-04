@@ -6,10 +6,12 @@ namespace Aerolinea.API.Services
     public class AdminVueloService
     {
         private readonly AdminVueloRepository _adminVueloRepository;
+        private readonly RutaRepository _rutaRepository;
 
-        public AdminVueloService(AdminVueloRepository adminVueloRepository)
+        public AdminVueloService(AdminVueloRepository adminVueloRepository, RutaRepository rutaRepository)
         {
             _adminVueloRepository = adminVueloRepository;
+            _rutaRepository = rutaRepository;
         }
 
         public async Task<int> CrearVuelo(CrearVueloAdminDTO dto)
@@ -35,8 +37,9 @@ namespace Aerolinea.API.Services
             if (!TimeSpan.TryParse(dto.HoraSalida, out _))
                 throw new ArgumentException("El formato de hora de salida es inválido");
 
-            if (!TimeSpan.TryParse(dto.HoraLlegada, out _))
-                throw new ArgumentException("El formato de hora de llegada es inválido");
+            // NOTA: HoraLlegada y FechaLlegada ya NO se validan aquí.
+            // Son calculadas automáticamente en el repositorio usando:
+            //   DuracionEstimada de la Ruta + ZonaHoraria de los aeropuertos.
 
             if (dto.BoletosTurista < 0)
                 throw new ArgumentException("Los boletos de clase turista no pueden ser negativos");
@@ -53,6 +56,15 @@ namespace Aerolinea.API.Services
             if (dto.PrecioEjecutiva <= 0)
                 throw new ArgumentException("El precio de clase ejecutiva debe ser mayor a 0");
 
+            // Validar que exista una ruta entre los aeropuertos seleccionados
+            bool rutaExiste = await _rutaRepository.ExisteRuta(
+                dto.AeropuertoOrigenId, dto.AeropuertoDestinoId);
+
+            if (!rutaExiste)
+                throw new InvalidOperationException(
+                    "No existe una ruta entre los aeropuertos seleccionados. " +
+                    "Ve a 'Gestionar Rutas' y crea la ruta antes de crear el vuelo.");
+
             return await _adminVueloRepository.CrearVuelo(dto);
         }
 
@@ -68,5 +80,12 @@ namespace Aerolinea.API.Services
 
             return await _adminVueloRepository.CancelarVuelo(vueloId);
         }
+        // ── Disponibilidad ───────────────────────────────────────────────
+        public async Task<HashSet<int>> ObtenerAvionesOcupados(DateTime fecha)
+            => await _adminVueloRepository.ObtenerAvionesOcupados(fecha);
+
+        public async Task<HashSet<int>> ObtenerTripulantesOcupados(DateTime fecha, TimeSpan horaSalida)
+            => await _adminVueloRepository.ObtenerTripulantesOcupados(fecha, horaSalida);
+
     }
 }

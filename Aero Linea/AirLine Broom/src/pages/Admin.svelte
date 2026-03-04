@@ -135,9 +135,35 @@
   let tripulanteImagenBase64  = null;
 
   // ========= FORMULARIO AEROPUERTO =========
-  let aeropuertoForm          = { id: null, codigo: '', nombre: '', ciudad: '', pais: '' };
+  let aeropuertoForm          = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
   let aeropuertoImagenPreview = null;
   let aeropuertoImagenBase64  = null;
+
+  // ========= RUTAS =========
+  let rutas           = [];
+  let loadingRutas    = false;
+  let editandoRutaId  = null;
+  let rutaDuracionEdit = '';
+  let guardandoDuracion = false;
+
+  // ── CREAR RUTA (modal) ────────────────────────────────────────
+  let mostrarModalCrearRuta = false;
+  let nuevaRuta = { origenId: '', destinoId: '', duracion: 120 };
+  let creandoRuta = false;
+
+  // ========= PREVIEW LLEGADA (formulario vuelo) =========
+  let previewLlegada      = null;   // { horaLlegada, fechaLlegada, nota, usoZonas, duracionMinutos }
+  let loadingPreview      = false;
+  let previewDebounceTimer = null;
+  let rutaExisteStatus    = null;  // null | 'checking' | 'ok' | 'missing'
+
+  // ── DISPONIBILIDAD aviones / tripulantes ─────────────────────────────
+  let avionesOcupadosIds     = new Set();   // IDs de aviones no disponibles para la fecha
+  let tripulantesOcupadosIds = new Set();   // IDs de tripulantes no disponibles
+  let cargandoDisponibilidad = false;
+
+  // ========= TIMEZONE AUTODETECT (formulario aeropuerto) =========
+  let detectandoTimezone  = false;
 
   // ========= MÉTRICAS =========
   let metricasResumen = null;
@@ -276,7 +302,7 @@
     await Promise.all([
       cargarUsuarios(), cargarAviones(), cargarTripulantes(),
       cargarAeropuertos(), cargarRolesTripulacion(),
-      cargarPaises(), cargarHistorialVuelos()
+      cargarPaises(), cargarHistorialVuelos(), cargarRutas()
     ]);
   }
 
@@ -337,6 +363,199 @@
       const r = await fetch(`${API}/api/admin/vuelos/historial`, { credentials: 'include' });
       if (r.ok) historialVuelos = await r.json();
     } catch (e) { console.error(e); } finally { loadingHistorialVuelos = false; }
+  }
+
+  async function cargarRutas() {
+    loadingRutas = true;
+    try {
+      const r = await fetch(`${API}/api/rutas`, { credentials: 'include' });
+      if (r.ok) rutas = await r.json();
+    } catch (e) { console.error(e); } finally { loadingRutas = false; }
+  }
+
+  async function handleCrearRuta() {
+    if (!nuevaRuta.origenId)  { mostrarToast('error', 'Selecciona el aeropuerto de origen'); return; }
+    if (!nuevaRuta.destinoId) { mostrarToast('error', 'Selecciona el aeropuerto de destino'); return; }
+    if (nuevaRuta.origenId === nuevaRuta.destinoId) { mostrarToast('error', 'El origen y destino no pueden ser el mismo'); return; }
+    if (!nuevaRuta.duracion || nuevaRuta.duracion <= 0) { mostrarToast('error', 'Ingresa una duración válida'); return; }
+
+    creandoRuta = true;
+    try {
+      const r = await fetch(`${API}/api/rutas`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origenId: parseInt(nuevaRuta.origenId),
+          destinoId: parseInt(nuevaRuta.destinoId),
+          duracionEstimada: parseInt(nuevaRuta.duracion)
+        })
+      });
+      if (r.ok) {
+        mostrarToast('success', '¡Ruta creada correctamente!');
+        mostrarModalCrearRuta = false;
+        nuevaRuta = { origenId: '', destinoId: '', duracion: 120 };
+        await cargarRutas();
+      } else {
+        const err = await r.json();
+        mostrarToast('error', err.message || 'Error al crear la ruta');
+      }
+    } catch(e) {
+      mostrarToast('error', 'Error de conexión al crear la ruta');
+    } finally {
+      creandoRuta = false;
+    }
+  }
+
+  async function guardarDuracionRuta(rutaId) {
+    const minutos = parseInt(rutaDuracionEdit);
+    if (!minutos || minutos <= 0) { mostrarToast('error', 'La duración debe ser mayor a 0 minutos'); return; }
+    guardandoDuracion = true;
+    try {
+      const r = await fetch(`${API}/api/rutas/${rutaId}/duracion`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duracionEstimada: minutos })
+      });
+      if (r.ok) {
+        mostrarToast('success', 'Duración actualizada correctamente');
+        editandoRutaId = null; rutaDuracionEdit = '';
+        await cargarRutas();
+      } else {
+        const err = await r.json();
+        mostrarToast('error', err.message || 'Error al actualizar la duración');
+      }
+    } catch (e) { mostrarToast('error', 'Error de conexión'); }
+    finally { guardandoDuracion = false; }
+  }
+
+  // ─── PREVIEW DE LLEGADA ─────────────────────────────────────────────────
+  // Calcula la hora de llegada localmente usando las rutas ya cargadas en memoria.
+  // No hace fetch adicional — evita problemas de red/auth/timeout.
+  let _rutaCheckTimer = null;
+  let _lastCheckKey   = '';   // "origenId-destinoId" del último fetch de existencia
+
+  function recalcularPreviewLlegada() {
+    const origenId  = parseInt(nuevoVuelo.aeropuertoOrigenId);
+    const destinoId = parseInt(nuevoVuelo.aeropuertoDestinoId);
+    const fecha     = nuevoVuelo.fecha;
+    const hora      = nuevoVuelo.horaSalida;
+
+    // Resetear si faltan aeropuertos
+    if (!origenId || !destinoId) {
+      _lastCheckKey = '';
+      rutaExisteStatus = null; previewLlegada = null; loadingPreview = false; return;
+    }
+    if (!fecha || !hora) {
+      previewLlegada = null; loadingPreview = false; return;
+    }
+    // Validar año completo (evita fechas como 0002-03-30)
+    const anio = parseInt((fecha.split('-')[0]) || '0');
+    if (anio < 2000) { previewLlegada = null; loadingPreview = false; return; }
+
+    // Buscar la ruta en los datos ya cargados en memoria
+    const ao = aeropuertos.find(a => a.id === origenId);
+    const ad = aeropuertos.find(a => a.id === destinoId);
+    const ruta = rutas.find(r =>
+      ao && ad && r.codigoOrigen === ao.codigo && r.codigoDestino === ad.codigo
+    );
+
+    if (ruta) {
+      // Tenemos la ruta localmente — calcular al instante, sin fetch
+      _lastCheckKey    = '';
+      rutaExisteStatus = 'ok';
+      const duracion   = ruta.duracionEstimada || 120;
+      const [hh, mm]   = hora.split(':').map(Number);
+      const salidaMins = hh * 60 + mm;
+      const llegadaMins = salidaMins + duracion;
+      const llegadaH   = Math.floor(llegadaMins / 60) % 24;
+      const llegadaM   = llegadaMins % 60;
+      const horaStr    = String(llegadaH).padStart(2,'0') + ':' + String(llegadaM).padStart(2,'0');
+      const pasaDia    = llegadaMins >= 1440;
+      let fechaStr     = fecha;
+      if (pasaDia) {
+        const d = new Date(fecha + 'T12:00:00');
+        d.setDate(d.getDate() + 1);
+        fechaStr = d.toISOString().split('T')[0];
+      }
+      const tzO = ruta.zonaHorariaOrigen || null;
+      const tzD = ruta.zonaHorariaDestino || null;
+      previewLlegada = {
+        horaLlegada:      horaStr,
+        fechaLlegada:     fechaStr,
+        duracionMinutos:  duracion,
+        usoZonasHorarias: !!(tzO && tzD),
+        nota: (tzO && tzD)
+          ? `${tzO} → ${tzD}. Vuelo de ${duracion} min.`
+          : `Vuelo de ${duracion} min. (sin zona horaria configurada)`
+      };
+      loadingPreview = false;
+      return;
+    }
+
+    // No está en memoria — verificar con el API solo si cambió el par origen/destino
+    const checkKey = `${origenId}-${destinoId}`;
+    if (checkKey === _lastCheckKey) return;   // ya consultamos este par, no titilear
+
+    _lastCheckKey    = checkKey;
+    previewLlegada   = null;
+    rutaExisteStatus = 'checking';
+
+    clearTimeout(_rutaCheckTimer);
+    _rutaCheckTimer = setTimeout(() => {
+      fetch(`${API}/api/rutas/existe?origenId=${origenId}&destinoId=${destinoId}`, { credentials: 'include' })
+        .then(r => r.ok ? r.json() : { existe: false })
+        .then(({ existe }) => { rutaExisteStatus = existe ? 'ok' : 'missing'; })
+        .catch(() => { rutaExisteStatus = null; });
+    }, 400);
+  }
+
+  function verificarRutaSiCambioAeropuerto() { recalcularPreviewLlegada(); }
+  function actualizarPreviewLlegada()         { recalcularPreviewLlegada(); }
+  function calcularPreviewLlegada()           { recalcularPreviewLlegada(); }
+
+    // ─── AUTODETECT TIMEZONE VIA NOMINATIM + TIMEAPI.IO ─────────────────────
+  async function autoDetectarTimezone() {
+    if (!aeropuertoForm.ciudad || !aeropuertoForm.pais) {
+      mostrarToast('error', 'Selecciona ciudad y país primero');
+      return;
+    }
+    detectandoTimezone = true;
+    try {
+      // 1. Geocoding con Nominatim (gratuito, sin API key)
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?` +
+        `city=${encodeURIComponent(aeropuertoForm.ciudad)}&` +
+        `country=${encodeURIComponent(aeropuertoForm.pais)}&format=json&limit=1`;
+
+      const geoR = await fetch(nominatimUrl, {
+        headers: { 'Accept-Language': 'en', 'User-Agent': 'AirbroomAirline/1.0' }
+      });
+      const geoData = await geoR.json();
+
+      if (!geoData || geoData.length === 0) {
+        mostrarToast('error', 'No se pudo geolocalizar la ciudad. Ingresa el timezone manualmente.');
+        return;
+      }
+
+      const lat = parseFloat(geoData[0].lat);
+      const lon = parseFloat(geoData[0].lon);
+
+      // 2. Obtener timezone por coordenadas con timeapi.io (gratuito, sin API key)
+      const tzR = await fetch(
+        `https://timeapi.io/api/timezone/coordinate?latitude=${lat}&longitude=${lon}`
+      );
+      const tzData = await tzR.json();
+
+      if (tzData && tzData.timeZone) {
+        aeropuertoForm.zonaHoraria = tzData.timeZone;
+        mostrarToast('success', `Timezone detectado: ${tzData.timeZone}`);
+      } else {
+        mostrarToast('error', 'No se pudo detectar el timezone automáticamente');
+      }
+    } catch (e) {
+      mostrarToast('error', 'Error al detectar timezone. Ingrésalo manualmente (ej: America/Guatemala)');
+    } finally {
+      detectandoTimezone = false;
+    }
   }
 
   // ========= IMAGEN HELPER =========
@@ -411,17 +630,21 @@
     a.codigo.toLowerCase().includes(busquedaDestino.toLowerCase()) ||
     a.ciudad.toLowerCase().includes(busquedaDestino.toLowerCase())
   );
-  $: avionesFiltrados = aviones.filter(a =>
-    a.nombreCompleto.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
-    a.marca.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
-    a.modelo.toLowerCase().includes(busquedaAvion.toLowerCase())
-  );
+  $: avionesFiltrados = aviones.filter(a => {
+    const coincide =
+      a.nombreCompleto.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
+      a.marca.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
+      a.modelo.toLowerCase().includes(busquedaAvion.toLowerCase());
+    const ocupado = avionesOcupadosIds.has(a.id);
+    return coincide && !ocupado;
+  });
   $: tripulantesFiltrados = tripulantes.filter(t => {
     const yaSeleccionado = nuevoVuelo.tripulantesSeleccionados.some(ts => ts.id === t.id);
+    const ocupado        = tripulantesOcupadosIds.has(t.id);
     const coincide =
       t.nombreCompleto.toLowerCase().includes(busquedaTripulante.toLowerCase()) ||
       t.nombreRol.toLowerCase().includes(busquedaTripulante.toLowerCase());
-    return !yaSeleccionado && coincide;
+    return !yaSeleccionado && !ocupado && coincide;
   });
 
   $: aeropuertoOrigen  = aeropuertos.find(a => a.id === parseInt(nuevoVuelo.aeropuertoOrigenId));
@@ -430,6 +653,23 @@
 
   $: if (nuevoVuelo.fecha && !nuevoVuelo.fechaLlegada) {
     nuevoVuelo.fechaLlegada = nuevoVuelo.fecha;
+  }
+
+  // Recalcular preview cuando cambia cualquier campo relevante
+  $: {
+    nuevoVuelo.aeropuertoOrigenId;
+    nuevoVuelo.aeropuertoDestinoId;
+    nuevoVuelo.fecha;
+    nuevoVuelo.horaSalida;
+    rutas; // también cuando se cargan las rutas
+    recalcularPreviewLlegada();
+  }
+
+  // Disponibilidad de aviones/tripulantes: solo al cambiar fecha/hora
+  $: {
+    nuevoVuelo.fecha;
+    nuevoVuelo.horaSalida;
+    cargarDisponibilidad();
   }
 
   $: if (avionSeleccionado && !nuevoVuelo.boletosTurista && !nuevoVuelo.boletosEjecutivo) {
@@ -472,6 +712,47 @@
   function quitarTripulante(id) {
     nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== id);
   }
+  // Carga los aviones y tripulantes ocupados para la fecha/hora seleccionada
+  async function cargarDisponibilidad() {
+    if (!nuevoVuelo.fecha) {
+      avionesOcupadosIds     = new Set();
+      tripulantesOcupadosIds = new Set();
+      return;
+    }
+    cargandoDisponibilidad = true;
+    try {
+      const [rAviones, rTrip] = await Promise.all([
+        fetch(`${API}/api/admin/vuelos/aviones-ocupados?fecha=${nuevoVuelo.fecha}`,
+              { credentials: 'include' }),
+        nuevoVuelo.horaSalida
+          ? fetch(`${API}/api/admin/vuelos/tripulantes-ocupados?fecha=${nuevoVuelo.fecha}&horaSalida=${nuevoVuelo.horaSalida}`,
+                  { credentials: 'include' })
+          : Promise.resolve(null)
+      ]);
+
+      if (rAviones.ok) {
+        const ids = await rAviones.json();
+        avionesOcupadosIds = new Set(ids);
+      }
+      if (rTrip && rTrip.ok) {
+        const ids = await rTrip.json();
+        tripulantesOcupadosIds = new Set(ids);
+      }
+
+      // Si el avión seleccionado ahora está ocupado, limpiarlo
+      if (nuevoVuelo.avionId && avionesOcupadosIds.has(parseInt(nuevoVuelo.avionId))) {
+        nuevoVuelo.avionId = '';
+        nuevoVuelo.boletosTurista = '';
+        nuevoVuelo.boletosEjecutivo = '';
+      }
+      // Quitar tripulantes seleccionados que ya estén ocupados
+      nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados
+        .filter(t => !tripulantesOcupadosIds.has(t.id));
+
+    } catch(e) { console.error('Error cargando disponibilidad', e); }
+    finally { cargandoDisponibilidad = false; }
+  }
+
   function limpiarFormularioVuelo() {
     nuevoVuelo = {
       numeroVuelo: '', aeropuertoOrigenId: '', aeropuertoDestinoId: '',
@@ -480,6 +761,7 @@
       precioTurista: '', precioEjecutiva: '', tripulantesSeleccionados: []
     };
     busquedaOrigen = ''; busquedaDestino = ''; busquedaAvion = ''; busquedaTripulante = '';
+    previewLlegada = null;
   }
 
   async function handleCrearVuelo() {
@@ -488,13 +770,27 @@
     if (!nuevoVuelo.aeropuertoDestinoId) { mostrarToast('error', 'Selecciona el aeropuerto de destino'); return; }
     if (!nuevoVuelo.avionId)             { mostrarToast('error', 'Selecciona un avión'); return; }
     if (!nuevoVuelo.fecha)               { mostrarToast('error', 'Selecciona la fecha del vuelo'); return; }
-    if (!nuevoVuelo.horaSalida || !nuevoVuelo.horaLlegada) { mostrarToast('error', 'Ingresa las horas de salida y llegada'); return; }
-    if (!nuevoVuelo.fechaLlegada) { mostrarToast('error', 'Ingresa la fecha de llegada'); return; }
-    if (nuevoVuelo.fechaLlegada < nuevoVuelo.fecha) { mostrarToast('error', 'La fecha de llegada no puede ser anterior a la fecha de salida'); return; }
+    if (!nuevoVuelo.horaSalida)          { mostrarToast('error', 'Ingresa la hora de salida'); return; }
+    // NOTA: HoraLlegada y FechaLlegada son calculadas automáticamente por el servidor
     if (!nuevoVuelo.boletosTurista || parseInt(nuevoVuelo.boletosTurista) < 0)   { mostrarToast('error', 'Ingresa los boletos de clase turista'); return; }
     if (!nuevoVuelo.boletosEjecutivo || parseInt(nuevoVuelo.boletosEjecutivo) < 0) { mostrarToast('error', 'Ingresa los boletos de clase ejecutiva'); return; }
     if (excedeLimite) { mostrarToast('error', `La suma de boletos (${totalBoletosAsignados}) excede la capacidad del avión (${capacidadAvion})`); return; }
     if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) { mostrarToast('error', 'Ingresa los precios de ambas clases'); return; }
+
+    // Verificar que exista una ruta entre los aeropuertos seleccionados
+    try {
+      const rCheck = await fetch(
+        `${API}/api/rutas/existe?origenId=${nuevoVuelo.aeropuertoOrigenId}&destinoId=${nuevoVuelo.aeropuertoDestinoId}`,
+        { credentials: 'include' }
+      );
+      if (rCheck.ok) {
+        const { existe } = await rCheck.json();
+        if (!existe) {
+          mostrarToast('error', 'No existe una ruta entre estos aeropuertos. Ve a "Gestionar Rutas" y crea la ruta primero.');
+          return;
+        }
+      }
+    } catch(e) { /* si falla la verificación dejamos pasar, el backend validará */ }
 
     try {
       const datos = {
@@ -504,8 +800,7 @@
         avionId:             parseInt(nuevoVuelo.avionId),
         fecha:               nuevoVuelo.fecha,
         horaSalida:          nuevoVuelo.horaSalida,
-        horaLlegada:         nuevoVuelo.horaLlegada,
-        fechaLlegada:        nuevoVuelo.fechaLlegada || null,
+        // horaLlegada y fechaLlegada son calculadas en el backend
         boletosTurista:      parseInt(nuevoVuelo.boletosTurista),
         boletosEjecutivo:    parseInt(nuevoVuelo.boletosEjecutivo),
         precioTurista:       parseFloat(nuevoVuelo.precioTurista),
@@ -681,7 +976,7 @@
   // ===== AEROPUERTOS =====
   function abrirFormularioNuevoAeropuerto() {
     modoEdicion = false;
-    aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '' };
+    aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
     paisQueryAeropuerto = ''; ciudadQueryAeropuerto = '';
     paisSeleccionadoAeropuerto = null; ciudadSeleccionadaAeropuerto = false;
     paisesSugeridosAeropuerto = []; ciudadesSugeridasAeropuerto = [];
@@ -695,7 +990,7 @@
       const r = await fetch(`${API}/api/aeropuertos/${aeropuerto.id}`);
       if (r.ok) {
         const completo = await r.json();
-        aeropuertoForm = { id: completo.id, codigo: completo.codigo, nombre: completo.nombre, ciudad: completo.ciudad, pais: completo.pais };
+        aeropuertoForm = { id: completo.id, codigo: completo.codigo, nombre: completo.nombre, ciudad: completo.ciudad, pais: completo.pais, zonaHoraria: completo.zonaHoraria || '' };
         paisQueryAeropuerto   = completo.pais;
         ciudadQueryAeropuerto = completo.ciudad;
         const paisEncontrado = todosLosPaises.find(p => p.country.toLowerCase() === completo.pais.toLowerCase());
@@ -710,7 +1005,7 @@
 
   function cerrarFormularioAeropuerto() {
     mostrarFormularioAeropuerto = false;
-    aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '' };
+    aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
     paisQueryAeropuerto = ''; ciudadQueryAeropuerto = '';
     paisSeleccionadoAeropuerto = null; ciudadSeleccionadaAeropuerto = false;
     paisesSugeridosAeropuerto = []; ciudadesSugeridasAeropuerto = [];
@@ -728,6 +1023,7 @@
       const payload = {
         nombre: aeropuertoForm.nombre, codigo: aeropuertoForm.codigo.toUpperCase(),
         ciudad: aeropuertoForm.ciudad, pais: aeropuertoForm.pais,
+        zonaHoraria: aeropuertoForm.zonaHoraria?.trim() || null,
         imagenBase64: aeropuertoImagenBase64 || null
       };
       const url    = modoEdicion ? `${API}/api/aeropuertos/${aeropuertoForm.id}` : `${API}/api/aeropuertos`;
@@ -819,6 +1115,8 @@
         <nav class="admin-nav">
           <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'crear-vuelo'}
             on:click={() => activeSection = 'crear-vuelo'}>Crear Vuelo</button>
+          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-rutas'}
+            on:click={() => { activeSection = 'gestionar-rutas'; cargarRutas(); }}>Gestionar Rutas</button>
           <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-aviones'}
             on:click={() => activeSection = 'gestionar-aviones'}>Gestionar Aviones</button>
           <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-tripulantes'}
@@ -929,22 +1227,48 @@
                     <label for="horaSalida" class="admin-form__label">Hora de Salida *</label>
                     <input type="time" id="horaSalida" class="admin-form__input"
                       bind:value={nuevoVuelo.horaSalida} required />
+                    <small class="img-hint">Hora local en el aeropuerto de origen</small>
                   </div>
                   <div class="admin-form__field">
-                    <label for="horaLlegada" class="admin-form__label">Hora de Llegada *</label>
-                    <input type="time" id="horaLlegada" class="admin-form__input"
-                      bind:value={nuevoVuelo.horaLlegada} required />
-                  </div>
-                </div>
-                <div class="admin-form__row" style="margin-top:1.25rem">
-                  <div class="admin-form__field">
-                    <label for="fechaLlegada" class="admin-form__label">Fecha de Llegada *</label>
-                    <input type="date" id="fechaLlegada" class="admin-form__input"
-                      bind:value={nuevoVuelo.fechaLlegada}
-                      min={nuevoVuelo.fecha || undefined}
-                      required />
-                    {#if nuevoVuelo.fecha && nuevoVuelo.fechaLlegada && nuevoVuelo.fechaLlegada > nuevoVuelo.fecha}
-                      <p class="vuelo-nextday-note">✈ Vuelo con llegada al día siguiente o posterior</p>
+                    <label class="admin-form__label">Hora de Llegada</label>
+                    {#if previewLlegada}
+                      <div class="llegada-preview" class:llegada-preview--tz={previewLlegada.usoZonasHorarias}>
+                        <span class="llegada-preview__time">
+                          🛬 {previewLlegada.horaLlegada}
+                          {#if previewLlegada.fechaLlegada !== nuevoVuelo.fecha}
+                            <span class="llegada-preview__nextday">(+1 día)</span>
+                          {/if}
+                        </span>
+                        <span class="llegada-preview__meta">
+                          {previewLlegada.duracionMinutos} min ·
+                          {#if previewLlegada.usoZonasHorarias}
+                            <span class="tz-badge tz-badge--ok">✔ Con zona horaria</span>
+                          {:else}
+                            <span class="tz-badge tz-badge--missing">⚠ Sin zona horaria</span>
+                          {/if}
+                        </span>
+                        <small class="llegada-preview__nota">{previewLlegada.nota}</small>
+                      </div>
+                    {:else if rutaExisteStatus === 'missing'}
+                      <div class="llegada-preview llegada-preview--no-ruta">
+                        <span class="llegada-preview__no-ruta-icon">🚫</span>
+                        <span class="llegada-preview__no-ruta-title">No existe esta ruta</span>
+                        <small class="llegada-preview__no-ruta-msg">
+                          Debes crearla en <strong>Gestionar Rutas</strong> antes de poder crear el vuelo.
+                        </small>
+                        <button type="button" class="llegada-preview__no-ruta-btn"
+                          on:click={() => { activeSection = 'gestionar-rutas'; mostrarModalCrearRuta = true; }}>
+                          → Ir a crear la ruta
+                        </button>
+                      </div>
+                    {:else if rutaExisteStatus === 'checking'}
+                      <div class="llegada-preview llegada-preview--loading">🔍 Verificando ruta...</div>
+                    {:else if nuevoVuelo.aeropuertoOrigenId && nuevoVuelo.aeropuertoDestinoId && nuevoVuelo.fecha && nuevoVuelo.horaSalida}
+                      <div class="llegada-preview llegada-preview--loading">⏳ Calculando...</div>
+                    {:else}
+                      <div class="llegada-preview llegada-preview--empty">
+                        Completa origen, destino, fecha y hora para ver la llegada estimada
+                      </div>
                     {/if}
                   </div>
                 </div>
@@ -954,6 +1278,15 @@
                 <h3 class="admin-form__group-title">Aeronave</h3>
                 <div class="admin-form__field admin-form__field--full">
                   <label class="admin-form__label">Seleccionar Avion *</label>
+                  {#if nuevoVuelo.fecha && avionesOcupadosIds.size > 0}
+                    <small class="disponibilidad-hint disponibilidad-hint--warn">
+                      ⚠ {avionesOcupadosIds.size} avión(es) no disponibles para esta fecha — ya están asignados a otro vuelo
+                    </small>
+                  {:else if nuevoVuelo.fecha && !cargandoDisponibilidad}
+                    <small class="disponibilidad-hint disponibilidad-hint--ok">
+                      ✔ Mostrando aviones disponibles para {nuevoVuelo.fecha}
+                    </small>
+                  {/if}
                   {#if loadingAviones}
                     <p class="loading-text">Cargando aviones...</p>
                   {:else}
@@ -974,6 +1307,12 @@
                               <span class="searchable-select__option-detail">{a.capacidadPasajeros} pasajeros</span>
                             </button>
                           {/each}
+                        </div>
+                      {:else if mostrarDropdownAvion && avionesFiltrados.length === 0 && aviones.length > 0}
+                        <div class="searchable-select__dropdown">
+                          <p class="searchable-select__empty">
+                            🚫 Todos los aviones están ocupados para el {nuevoVuelo.fecha || 'día seleccionado'}
+                          </p>
                         </div>
                       {/if}
                       {#if avionSeleccionado}
@@ -1040,6 +1379,15 @@
                 <h3 class="admin-form__group-title">Tripulacion</h3>
                 <div class="admin-form__field admin-form__field--full">
                   <label class="admin-form__label">Agregar Tripulantes</label>
+                  {#if nuevoVuelo.fecha && tripulantesOcupadosIds.size > 0}
+                    <small class="disponibilidad-hint disponibilidad-hint--warn">
+                      ⚠ {tripulantesOcupadosIds.size} tripulante(s) no disponibles — tienen vuelo ese día o finalizaron uno hace menos de 24h
+                    </small>
+                  {:else if nuevoVuelo.fecha && nuevoVuelo.horaSalida && !cargandoDisponibilidad}
+                    <small class="disponibilidad-hint disponibilidad-hint--ok">
+                      ✔ Mostrando tripulantes disponibles para {nuevoVuelo.fecha} a las {nuevoVuelo.horaSalida}
+                    </small>
+                  {/if}
                   {#if loadingTripulantes}
                     <p class="loading-text">Cargando tripulantes...</p>
                   {:else}
@@ -1061,6 +1409,13 @@
                               <span class="searchable-select__option-role">{t.nombreRol}</span>
                             </button>
                           {/each}
+                        </div>
+                      {:else if mostrarDropdownTripulante && tripulantesFiltrados.length === 0 && tripulantes.length > 0}
+                        <div class="searchable-select__dropdown">
+                          <p class="searchable-select__empty">
+                            🚫 Ningún tripulante disponible para esta fecha/hora.<br>
+                            <small>Deben pasar 24h desde que finalice su vuelo anterior.</small>
+                          </p>
                         </div>
                       {/if}
                     </div>
@@ -1092,6 +1447,108 @@
                 <button type="button" class="admin-form__cancel" on:click={limpiarFormularioVuelo}>Limpiar</button>
               </div>
             </form>
+          </section>
+
+        <!-- ===== GESTIONAR RUTAS ===== -->
+        {:else if activeSection === 'gestionar-rutas'}
+          <section class="admin-section">
+            <div class="section-header">
+              <div>
+                <h2 class="admin-section__title">Gestionar Rutas</h2>
+                <p class="admin-section__subtitle">Edita la duración estimada en minutos de cada ruta. La hora de llegada se calculará automáticamente usando las zonas horarias de cada aeropuerto.</p>
+              </div>
+              <div style="display:flex;gap:.75rem">
+                <button class="btn-add" on:click={() => mostrarModalCrearRuta = true}>
+                  + Nueva Ruta
+                </button>
+                <button class="btn-add" on:click={cargarRutas} style="background:#4b5563">
+                  ↻ Actualizar
+                </button>
+              </div>
+            </div>
+
+            {#if loadingRutas}
+              <p class="loading-text">Cargando rutas...</p>
+            {:else if rutas.length === 0}
+              <div class="placeholder-card">
+                <p class="placeholder-card__text">No hay rutas registradas. Crea una ruta manualmente con el botón <strong>+ Nueva Ruta</strong>, o selecciona aeropuertos al crear un vuelo para generarla automáticamente.</p>
+              </div>
+            {:else}
+              <div class="rutas-tz-note">
+                <span>💡</span>
+                <span>Las rutas con <strong>✔ TZ</strong> en ambos aeropuertos calcularán la hora de llegada con conversión de zona horaria real. Si algún aeropuerto no tiene timezone, edítalo en <em>Gestionar Aeropuertos</em>.</span>
+              </div>
+              <table class="table">
+                <thead class="table__head">
+                  <tr>
+                    <th class="table__header">Origen</th>
+                    <th class="table__header">Destino</th>
+                    <th class="table__header">TZ Origen</th>
+                    <th class="table__header">TZ Destino</th>
+                    <th class="table__header">Duración (min)</th>
+                    <th class="table__header">Vuelos</th>
+                    <th class="table__header">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="table__body">
+                  {#each rutas as ruta}
+                    <tr class="table__row">
+                      <td class="table__cell" data-label="Origen">
+                        <span class="ruta-code">{ruta.codigoOrigen}</span>
+                        <span class="ruta-name">{ruta.origen}</span>
+                      </td>
+                      <td class="table__cell" data-label="Destino">
+                        <span class="ruta-code">{ruta.codigoDestino}</span>
+                        <span class="ruta-name">{ruta.destino}</span>
+                      </td>
+                      <td class="table__cell" data-label="TZ Origen">
+                        {#if ruta.zonaHorariaOrigen}
+                          <span class="tz-badge tz-badge--ok">✔ {ruta.zonaHorariaOrigen}</span>
+                        {:else}
+                          <span class="tz-badge tz-badge--missing">⚠ Sin TZ</span>
+                        {/if}
+                      </td>
+                      <td class="table__cell" data-label="TZ Destino">
+                        {#if ruta.zonaHorariaDestino}
+                          <span class="tz-badge tz-badge--ok">✔ {ruta.zonaHorariaDestino}</span>
+                        {:else}
+                          <span class="tz-badge tz-badge--missing">⚠ Sin TZ</span>
+                        {/if}
+                      </td>
+                      <td class="table__cell" data-label="Duración">
+                        {#if editandoRutaId === ruta.id}
+                          <div class="duracion-edit">
+                            <input type="number" class="form-input duracion-input" min="1" max="10000"
+                              bind:value={rutaDuracionEdit} placeholder="min" />
+                            <button class="table__action-btn table__action-btn--view"
+                              disabled={guardandoDuracion}
+                              on:click={() => guardarDuracionRuta(ruta.id)}>
+                              {guardandoDuracion ? '...' : '✔'}
+                            </button>
+                            <button class="table__action-btn table__action-btn--cancel"
+                              on:click={() => { editandoRutaId = null; rutaDuracionEdit = ''; }}>✕</button>
+                          </div>
+                        {:else}
+                          <span class="duracion-display">
+                            <strong>{ruta.duracionEstimada}</strong> min
+                            ({Math.floor(ruta.duracionEstimada / 60)}h {ruta.duracionEstimada % 60}m)
+                          </span>
+                        {/if}
+                      </td>
+                      <td class="table__cell" data-label="Vuelos">{ruta.totalVuelos}</td>
+                      <td class="table__cell" data-label="Acciones">
+                        {#if editandoRutaId !== ruta.id}
+                          <button class="table__action-btn table__action-btn--view"
+                            on:click={() => { editandoRutaId = ruta.id; rutaDuracionEdit = String(ruta.duracionEstimada); }}>
+                            ✎ Editar duración
+                          </button>
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            {/if}
           </section>
 
         <!-- ===== GESTIONAR AVIONES ===== -->
@@ -1733,6 +2190,64 @@
   </div>
 </div>
 
+<!-- ===== MODAL CREAR RUTA ===== -->
+{#if mostrarModalCrearRuta}
+  <div class="modal-overlay" on:click={() => mostrarModalCrearRuta = false}>
+    <div class="modal" on:click|stopPropagation style="max-width:480px">
+      <div class="modal__header">
+        <h3 class="modal__title">Crear Nueva Ruta</h3>
+        <button class="modal__close" on:click={() => mostrarModalCrearRuta = false}>×</button>
+      </div>
+      <form class="modal__form" on:submit|preventDefault={handleCrearRuta}>
+        <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:1rem">
+          Una ruta define el trayecto entre dos aeropuertos y su duración estimada. Los vuelos solo pueden crearse si existe la ruta correspondiente.
+        </p>
+
+        <div class="form-field">
+          <label class="form-label">Aeropuerto de Origen *</label>
+          <select class="form-input" bind:value={nuevaRuta.origenId} required>
+            <option value="">Selecciona aeropuerto de origen...</option>
+            {#each aeropuertos as a}
+              <option value={a.id}>{a.codigo} — {a.nombre} ({a.ciudad}, {a.pais})</option>
+            {/each}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Aeropuerto de Destino *</label>
+          <select class="form-input" bind:value={nuevaRuta.destinoId} required>
+            <option value="">Selecciona aeropuerto de destino...</option>
+            {#each aeropuertos.filter(a => a.id !== parseInt(nuevaRuta.origenId)) as a}
+              <option value={a.id}>{a.codigo} — {a.nombre} ({a.ciudad}, {a.pais})</option>
+            {/each}
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Duración Estimada (minutos) *</label>
+          <input type="number" class="form-input" bind:value={nuevaRuta.duracion}
+            min="1" max="10000" placeholder="Ej: 180 para 3 horas" required />
+          {#if nuevaRuta.duracion > 0}
+            <small class="img-hint">
+              ≈ {Math.floor(nuevaRuta.duracion / 60)}h {nuevaRuta.duracion % 60}m
+            </small>
+          {/if}
+        </div>
+
+        <div class="modal__actions">
+          <button type="button" class="btn-secondary"
+            on:click={() => mostrarModalCrearRuta = false}>
+            Cancelar
+          </button>
+          <button type="submit" class="btn-primary" disabled={creandoRuta}>
+            {creandoRuta ? 'Creando...' : 'Crear Ruta'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{/if}
+
 <!-- ===== MODAL AVIÓN ===== -->
 {#if mostrarFormularioAvion}
   <div class="modal-overlay" on:click={cerrarFormularioAvion}>
@@ -1891,6 +2406,21 @@
           {/if}
           <input type="file" accept="image/*" class="form-input" on:change={onAeropuertoImagenChange} />
           <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Zona Horaria</label>
+          <div style="display:flex;gap:.6rem;align-items:stretch">
+            <div class="tz-detected-display" class:tz-detected-display--empty={!aeropuertoForm.zonaHoraria} style="flex:1">
+              <span class="tz-detected-display__icon">{aeropuertoForm.zonaHoraria ? '🌐' : '—'}</span>
+              <span>{aeropuertoForm.zonaHoraria || 'Sin zona horaria detectada'}</span>
+            </div>
+            <button type="button" class="tz-detect-btn"
+              disabled={detectandoTimezone || !aeropuertoForm.ciudad || !aeropuertoForm.pais}
+              on:click={autoDetectarTimezone}>
+              {detectandoTimezone ? '⏳ Detectando...' : '🌐 Auto-detectar'}
+            </button>
+          </div>
+          <small class="img-hint">Haz clic en "Auto-detectar" para obtener la zona horaria de la ciudad seleccionada. Es necesaria para calcular correctamente la hora de llegada en vuelos internacionales.</small>
         </div>
         <div class="modal__actions">
           <button type="submit" class="btn-primary">{modoEdicion ? 'Actualizar' : 'Crear'} Aeropuerto</button>
