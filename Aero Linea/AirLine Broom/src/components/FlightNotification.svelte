@@ -3,7 +3,8 @@
   import avionPath from '../assets/AvionB.png';
   import { onMount } from 'svelte';
 
-  export let onDestinationClick = (city: string) => {};
+  // CORREGIDO: el callback ahora pasa el objeto aeropuerto completo
+  export let onDestinationClick = (aeropuertoObj: any) => {};
 
   let destinations = [];
   let loadingDestinations = true;
@@ -16,11 +17,13 @@
       const res = await fetch('https://localhost:7107/api/aeropuertos');
       const aeropuertos = await res.json();
       
+      // CORREGIDO: guardamos el aeropuerto original completo para pasarlo después
       destinations = aeropuertos.map(a => ({
         city: `${a.ciudad} (${a.codigo})`,
         country: a.pais || 'Destino internacional',
         codigo: a.codigo,
-        id: a.id
+        id: a.id,
+        aeropuertoOriginal: a
       }));
       
       console.log('Destinos cargados para notificaciones:', destinations.length);
@@ -69,7 +72,8 @@
 
   function handleDestinationClick() {
     if (currentDestination) {
-      onDestinationClick(currentDestination.city);
+      // CORREGIDO: pasamos el objeto aeropuerto completo (con id, ciudad, codigo, nombre, pais, etc.)
+      onDestinationClick(currentDestination.aeropuertoOriginal);
       isVisible = false;
       setTimeout(() => {
         showNotification = false;

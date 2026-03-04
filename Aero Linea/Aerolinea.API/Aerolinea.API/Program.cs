@@ -1,6 +1,8 @@
 using Aerolinea.API.Data;
 using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +47,10 @@ builder.Services.AddScoped<AdminVueloService>();
 builder.Services.AddScoped<PerfilService>();
 builder.Services.AddScoped<FacturaService>();
 builder.Services.AddScoped<MetricasService>();
+
+
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+builder.Services.AddScoped<PdfService>();
 
 // Servicio de búsquedas temporales (Singleton)
 builder.Services.AddSingleton<BusquedaTemporalService>();

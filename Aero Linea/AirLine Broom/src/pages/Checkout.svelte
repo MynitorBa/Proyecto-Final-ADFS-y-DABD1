@@ -16,7 +16,6 @@
   let submitting = false;
   let reservacionesPendientes = [];
 
-  // Errores por campo
   let errores = {
     numeroTarjeta:   '',
     nombreTitular:   '',
@@ -62,18 +61,13 @@
     }
   }
 
-  // ── Formateo de inputs ─────────────────────────────────────────────
-
   function onNumeroInput(e) {
-    // Solo dígitos, máx 16
     let v = e.target.value.replace(/\D/g, '').substring(0, 16);
-    // Mostrar con espacios cada 4
     cardInfo.numeroTarjeta = v.replace(/(.{4})/g, '$1 ').trim();
     errores.numeroTarjeta = '';
   }
 
   function onExpiryInput(e) {
-    // Solo dígitos y /
     let v = e.target.value.replace(/[^\d]/g, '').substring(0, 4);
     if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
     cardInfo.fechaExpiracion = v;
@@ -86,7 +80,6 @@
   }
 
   function onNitInput(e) {
-    // CF permitido, o solo números
     let v = e.target.value.toUpperCase();
     if (v === 'C' || v === 'CF') {
       cardInfo.nit = v;
@@ -100,8 +93,6 @@
     cardInfo.codigoPostal = e.target.value.replace(/\D/g, '').substring(0, 10);
     errores.codigoPostal = '';
   }
-
-  // ── Validación inline ──────────────────────────────────────────────
 
   function validar() {
     let ok = true;
@@ -126,7 +117,7 @@
       errores.fechaExpiracion = 'Formato MM/AA requerido (ej. 12/28).'; ok = false;
     } else {
       const [mm, yy] = cardInfo.fechaExpiracion.split('/');
-      const exp = new Date(2000 + parseInt(yy), parseInt(mm) - 1 + 1, 0); // último día del mes
+      const exp = new Date(2000 + parseInt(yy), parseInt(mm) - 1 + 1, 0);
       if (exp < new Date()) {
         errores.fechaExpiracion = 'Esta tarjeta está vencida.'; ok = false;
       }
@@ -221,12 +212,10 @@
 
     <div class="checkout__content">
 
-      <!-- COLUMNA IZQUIERDA -->
       <div class="checkout__main">
         <section class="checkout-section">
           <h2 class="checkout-section__title">Datos de la tarjeta</h2>
 
-          <!-- Tarjeta visual -->
           <div class="card-visual">
             <div class="card-visual__chip">
               <svg viewBox="0 0 40 30" width="40" height="30">
@@ -257,7 +246,6 @@
             </div>
           </div>
 
-          <!-- Campos -->
           <div class="form-campo">
             <label for="card-numero" class="form-campo__label">Número de tarjeta</label>
             <input
@@ -270,6 +258,7 @@
               placeholder="1234 5678 9012 3456"
               maxlength="19"
               inputmode="numeric"
+              autocomplete="one-time-code"
             />
             {#if errores.numeroTarjeta}
               <span class="form-campo__error">{errores.numeroTarjeta}</span>
@@ -286,6 +275,7 @@
               bind:value={cardInfo.nombreTitular}
               on:input={() => errores.nombreTitular = ''}
               placeholder="Como aparece en la tarjeta"
+              autocomplete="one-time-code"
             />
             {#if errores.nombreTitular}
               <span class="form-campo__error">{errores.nombreTitular}</span>
@@ -305,6 +295,7 @@
                 placeholder="MM/AA"
                 maxlength="5"
                 inputmode="numeric"
+                autocomplete="one-time-code"
               />
               {#if errores.fechaExpiracion}
                 <span class="form-campo__error">{errores.fechaExpiracion}</span>
@@ -314,14 +305,15 @@
               <label for="card-cvv" class="form-campo__label">CVV</label>
               <input
                 id="card-cvv"
-                type="password"
-                class="form-campo__input"
+                type="text"
+                class="form-campo__input form-campo__input--cvv"
                 class:form-campo__input--error={errores.cvv}
                 value={cardInfo.cvv}
                 on:input={onCvvInput}
                 placeholder="•••"
                 maxlength="4"
                 inputmode="numeric"
+                autocomplete="one-time-code"
               />
               {#if errores.cvv}
                 <span class="form-campo__error">{errores.cvv}</span>
@@ -341,6 +333,7 @@
                 on:input={onNitInput}
                 placeholder="CF"
                 maxlength="12"
+                autocomplete="off"
               />
               {#if errores.nit}
                 <span class="form-campo__error">{errores.nit}</span>
@@ -358,6 +351,7 @@
                 placeholder="01001"
                 maxlength="10"
                 inputmode="numeric"
+                autocomplete="off"
               />
               {#if errores.codigoPostal}
                 <span class="form-campo__error">{errores.codigoPostal}</span>
@@ -383,7 +377,6 @@
         </section>
       </div>
 
-      <!-- COLUMNA DERECHA: Resumen -->
       <aside class="checkout__sidebar">
         {#if loading}
           <div class="order-summary"><p class="checkout-loading">Cargando...</p></div>

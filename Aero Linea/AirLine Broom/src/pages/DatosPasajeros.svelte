@@ -28,18 +28,115 @@
   let ciudadesSugeridas = {};
   let ciudadesSeleccionadas = {};
 
+  // ══════════════════════════════════════════════════════════════════
+  // TELÉFONO — código de marcado por país (hardcoded ITU)
+  // ══════════════════════════════════════════════════════════════════
+  let dialCodes = {};       // por boletoId
+  let phoneDigitCounts = {}; // por boletoId
+  let phoneErrors = {};     // por boletoId
+  let pasaporteErrors = {}; // por boletoId
+  let dialCodesMap = {};
+
+  const knownDigits = {
+    '+1':10,'+7':10,'+20':10,'+27':9,'+30':10,
+    '+31':9,'+32':9,'+33':9,'+34':9,'+36':9,
+    '+39':10,'+40':9,'+41':9,'+43':10,'+44':10,
+    '+45':8,'+46':9,'+47':8,'+48':9,'+49':10,
+    '+51':9,'+52':10,'+53':8,'+54':10,'+55':11,
+    '+56':9,'+57':10,'+58':10,'+60':9,'+61':9,
+    '+62':9,'+63':10,'+64':9,'+65':8,'+66':9,
+    '+81':10,'+82':10,'+84':9,'+86':11,'+90':10,
+    '+91':10,'+92':10,'+93':9,'+94':9,'+95':8,
+    '+98':10,'+212':9,'+213':9,'+216':8,'+218':9,
+    '+220':7,'+221':9,'+222':8,'+223':8,'+224':9,
+    '+225':8,'+226':8,'+227':8,'+228':8,'+229':8,
+    '+230':8,'+231':8,'+232':8,'+233':9,'+234':10,
+    '+235':8,'+236':8,'+237':9,'+238':7,'+239':7,
+    '+240':9,'+241':8,'+242':9,'+243':9,'+244':9,
+    '+245':7,'+246':7,'+247':4,'+248':7,'+249':9,
+    '+250':9,'+251':9,'+252':8,'+253':8,'+254':9,
+    '+255':9,'+256':9,'+257':8,'+258':9,'+260':9,
+    '+261':9,'+262':9,'+263':9,'+264':9,'+265':9,
+    '+266':8,'+267':8,'+268':8,'+269':7,'+290':4,
+    '+291':7,'+297':7,'+298':6,'+299':6,'+350':8,
+    '+351':9,'+352':9,'+353':9,'+354':7,'+355':9,
+    '+356':8,'+357':8,'+358':9,'+359':9,'+370':8,
+    '+371':8,'+372':8,'+373':8,'+374':8,'+375':9,
+    '+376':6,'+377':8,'+378':10,'+380':9,'+381':9,
+    '+382':8,'+385':9,'+386':8,'+387':8,'+389':8,
+    '+420':9,'+421':9,'+423':7,'+500':5,'+501':7,
+    '+502':8,'+503':8,'+504':8,'+505':8,'+506':8,
+    '+507':8,'+508':6,'+509':8,'+590':9,'+591':8,
+    '+592':7,'+593':9,'+594':9,'+595':9,'+596':9,
+    '+597':7,'+598':8,'+599':7,'+670':8,'+672':6,
+    '+673':7,'+674':7,'+675':8,'+676':7,'+677':7,
+    '+678':7,'+679':7,'+680':7,'+681':6,'+682':5,
+    '+683':4,'+685':7,'+686':8,'+687':6,'+688':5,
+    '+689':8,'+690':4,'+691':7,'+692':7,'+850':10,
+    '+852':8,'+853':8,'+855':9,'+856':10,'+880':10,
+    '+886':9,'+960':7,'+961':8,'+962':9,'+963':9,
+    '+964':10,'+965':8,'+966':9,'+967':9,'+968':8,
+    '+970':9,'+971':9,'+972':9,'+973':8,'+974':8,
+    '+975':8,'+976':8,'+977':10,'+992':9,'+993':8,
+    '+994':9,'+995':9,'+996':9,'+998':9,
+  };
+
+  function formatLocalPhone(digits, total) {
+    if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
+    if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
+    if (total === 9) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim();
+    if (total === 10) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,4})/, '$1 $2 $3').trim();
+    return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
+  }
+
+  function onPhoneInput(e, boletoId) {
+    const raw = e.target.value.replace(/\D/g, '');
+    const maxDigits = phoneDigitCounts[boletoId] || 8;
+    const capped = raw.slice(0, maxDigits);
+    passengerData[boletoId].telefono = formatLocalPhone(capped, maxDigits);
+    passengerData = { ...passengerData };
+    phoneErrors[boletoId] = '';
+    phoneErrors = { ...phoneErrors };
+  }
+
+  function getPhonePlaceholder(digits) {
+    const sample = '5'.repeat(digits);
+    return formatLocalPhone(sample, digits);
+  }
+
   onMount(async () => {
     if (!usuarioId) {
       navigateTo('login');
       return;
     }
 
+    // Países y ciudades
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
       const data = await res.json();
       todosLosPaises = data.data;
     } catch (err) {
       console.error('Error cargando países:', err);
+    }
+
+    // Dial codes desde restcountries
+    try {
+      const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd');
+      const data = await res.json();
+      data.forEach(p => {
+        if (p.idd?.root) {
+          const suffixes = p.idd.suffixes ?? [''];
+          const code = suffixes.length === 1
+            ? p.idd.root + suffixes[0]
+            : p.idd.root;
+          const digits = knownDigits[code] ?? 9;
+          const key = p.name.common.toLowerCase();
+          dialCodesMap[key] = { code, digits };
+          if (p.name.official) dialCodesMap[p.name.official.toLowerCase()] = { code, digits };
+        }
+      });
+    } catch {
+      console.error('Error cargando dial codes');
     }
 
     await cargarReservacionesPendientes();
@@ -78,13 +175,52 @@
         });
       });
 
-      // Si todos ya tienen pasajero → ir al carrito
+      // Si todos ya tienen pasajero → precargar datos existentes (permite editar)
       if (todosLosBoletos.length > 0 && todosTienenPasajero) {
-        navigateTo('carrito');
-        return;
-      }
-
-      todosLosBoletos.forEach(boleto => {
+        todosLosBoletos.forEach(boleto => {
+          const p = boleto.pasajero;
+          passengerData[boleto.boletoId] = {
+            boletoId:  boleto.boletoId,
+            nombre:    p?.nombre   || '',
+            apellido:  p?.apellido || '',
+            pasaporte: p?.pasaporte || '',
+            telefono:  '', // se asigna abajo después de configurar dial code
+            pais:      p?.pais      || '',
+            ciudad:    p?.ciudad    || ''
+          };
+          paisQueries[boleto.boletoId]          = p?.pais || '';
+          paisesSugeridos[boleto.boletoId]      = [];
+          // Marcar país como seleccionado si existe
+          if (p?.pais) {
+            const paisObj = todosLosPaises.find(tp => tp.country.toLowerCase() === p.pais.toLowerCase());
+            paisesSeleccionados[boleto.boletoId] = paisObj || null;
+            // Configurar dial code
+            const info = dialCodesMap[p.pais.toLowerCase()];
+            const dc = info?.code ?? '';
+            dialCodes[boleto.boletoId] = dc;
+            phoneDigitCounts[boleto.boletoId] = info?.digits ?? 9;
+            // Quitar dial code del teléfono guardado para no duplicar
+            let tel = p?.telefono || '';
+            if (dc && tel.startsWith(dc)) {
+              tel = tel.slice(dc.length).trim();
+            }
+            // Formatear el número local
+            const digits = tel.replace(/\D/g, '');
+            passengerData[boleto.boletoId].telefono = formatLocalPhone(digits, info?.digits ?? 9);
+          } else {
+            paisesSeleccionados[boleto.boletoId] = null;
+            dialCodes[boleto.boletoId] = '';
+            phoneDigitCounts[boleto.boletoId] = 8;
+            passengerData[boleto.boletoId].telefono = p?.telefono || '';
+          }
+          ciudadQueries[boleto.boletoId]        = p?.ciudad || '';
+          ciudadesSugeridas[boleto.boletoId]    = [];
+          ciudadesSeleccionadas[boleto.boletoId] = !!p?.ciudad;
+          phoneErrors[boleto.boletoId]          = '';
+          pasaporteErrors[boleto.boletoId]      = '';
+        });
+      } else {
+        todosLosBoletos.forEach(boleto => {
         passengerData[boleto.boletoId] = {
           boletoId:  boleto.boletoId,
           nombre:    '',
@@ -100,7 +236,12 @@
         ciudadQueries[boleto.boletoId]        = '';
         ciudadesSugeridas[boleto.boletoId]    = [];
         ciudadesSeleccionadas[boleto.boletoId] = false;
-      });
+        dialCodes[boleto.boletoId]            = '';
+        phoneDigitCounts[boleto.boletoId]     = 8;
+        phoneErrors[boleto.boletoId]          = '';
+        pasaporteErrors[boleto.boletoId]      = '';
+        });
+      }
 
     } catch (err) {
       console.error('Error cargando reservaciones:', err);
@@ -128,12 +269,24 @@
     passengerData[boletoId].ciudad    = '';
     ciudadesSugeridas[boletoId]       = [];
     ciudadesSeleccionadas[boletoId]   = false;
-    paisQueries          = { ...paisQueries };
-    paisesSeleccionados  = { ...paisesSeleccionados };
-    paisesSugeridos      = { ...paisesSugeridos };
-    ciudadQueries        = { ...ciudadQueries };
-    ciudadesSugeridas    = { ...ciudadesSugeridas };
+
+    // Dial code del país seleccionado
+    const info = dialCodesMap[pais.country.toLowerCase()];
+    dialCodes[boletoId] = info?.code ?? '';
+    phoneDigitCounts[boletoId] = info?.digits ?? 9;
+    passengerData[boletoId].telefono = '';
+    phoneErrors[boletoId] = '';
+
+    paisQueries           = { ...paisQueries };
+    paisesSeleccionados   = { ...paisesSeleccionados };
+    paisesSugeridos       = { ...paisesSugeridos };
+    ciudadQueries         = { ...ciudadQueries };
+    ciudadesSugeridas     = { ...ciudadesSugeridas };
     ciudadesSeleccionadas = { ...ciudadesSeleccionadas };
+    dialCodes             = { ...dialCodes };
+    phoneDigitCounts      = { ...phoneDigitCounts };
+    passengerData         = { ...passengerData };
+    phoneErrors           = { ...phoneErrors };
   }
 
   function validarPaisSeleccionado(boletoId) {
@@ -181,13 +334,54 @@
       todosLosBoletos.forEach(boleto => {
         if (!boletosAgrupados[boleto.reservacionId])
           boletosAgrupados[boleto.reservacionId] = [];
-        boletosAgrupados[boleto.reservacionId].push(passengerData[boleto.boletoId]);
+
+        const pd = passengerData[boleto.boletoId];
+        const dc = dialCodes[boleto.boletoId] || '';
+
+        // Construir teléfono completo con dial code
+        const telefonoCompleto = dc
+          ? dc + ' ' + pd.telefono.replace(/\s/g, '')
+          : pd.telefono;
+
+        boletosAgrupados[boleto.reservacionId].push({
+          ...pd,
+          telefono: telefonoCompleto
+        });
       });
 
       for (const reservacionId in boletosAgrupados) {
         for (const p of boletosAgrupados[reservacionId]) {
           if (!p.nombre || !p.apellido || !p.pasaporte || !p.telefono || !p.pais || !p.ciudad) {
             alert('Por favor completa todos los campos de todos los pasajeros');
+            submitting = false;
+            return;
+          }
+        }
+      }
+
+      // Validar pasaporte solo números
+      for (const boleto of todosLosBoletos) {
+        const pasaporte = passengerData[boleto.boletoId].pasaporte;
+        if (!/^\d+$/.test(pasaporte)) {
+          pasaporteErrors[boleto.boletoId] = 'El pasaporte debe contener solo números.';
+          pasaporteErrors = { ...pasaporteErrors };
+          currentPassengerIndex = todosLosBoletos.indexOf(boleto);
+          submitting = false;
+          return;
+        }
+      }
+
+      // Validar dígitos de teléfono
+      for (const boleto of todosLosBoletos) {
+        const dc = dialCodes[boleto.boletoId];
+        if (dc) {
+          const digitosIngresados = passengerData[boleto.boletoId].telefono.replace(/\D/g, '').length;
+          const requeridos = phoneDigitCounts[boleto.boletoId];
+          if (digitosIngresados !== requeridos) {
+            phoneErrors[boleto.boletoId] = `Se requieren ${requeridos} dígitos (ingresaste ${digitosIngresados}).`;
+            phoneErrors = { ...phoneErrors };
+            // Ir al pasajero con error
+            currentPassengerIndex = todosLosBoletos.indexOf(boleto);
             submitting = false;
             return;
           }
@@ -207,9 +401,21 @@
       const allSuccess = responses.every(r => r.ok);
 
       if (allSuccess) {
-        navigateTo('carrito');  // ← carrito, no checkout
+        navigateTo('carrito');
       } else {
-        alert('Hubo un error al procesar algunos datos. Por favor intenta de nuevo.');
+        // Intentar leer el mensaje de error del backend
+        for (const res of responses) {
+          if (!res.ok) {
+            try {
+              const errData = await res.json();
+              const msg = errData.message || errData.mensaje || 'Error al procesar los datos.';
+              alert(msg);
+            } catch {
+              alert('Hubo un error al procesar algunos datos. Por favor intenta de nuevo.');
+            }
+            break;
+          }
+        }
       }
 
     } catch (err) {
@@ -342,32 +548,34 @@
 
                   <div class="form-row">
                     <div class="form-field">
-                      <label for="pasaporte-{currentBoleto.boletoId}" class="form-field__label">Número de Pasaporte *</label>
+                      <label for="pasaporte-{currentBoleto.boletoId}" class="form-field__label">Número de Pasaporte (solo números) *</label>
                       <input
                         type="text"
                         id="pasaporte-{currentBoleto.boletoId}"
                         class="form-field__input"
-                        bind:value={passengerData[currentBoleto.boletoId].pasaporte}
-                        placeholder="A12345678"
+                        class:form-field__input--error={pasaporteErrors[currentBoleto.boletoId]}
+                        value={passengerData[currentBoleto.boletoId].pasaporte}
+                        on:input={(e) => {
+                          const raw = e.target.value;
+                          const soloNumeros = raw.replace(/[^0-9]/g, '');
+                          passengerData[currentBoleto.boletoId].pasaporte = soloNumeros;
+                          passengerData = { ...passengerData };
+                          if (raw !== soloNumeros) {
+                            pasaporteErrors[currentBoleto.boletoId] = 'Solo se permiten números.';
+                            pasaporteErrors = { ...pasaporteErrors };
+                          } else {
+                            pasaporteErrors[currentBoleto.boletoId] = '';
+                            pasaporteErrors = { ...pasaporteErrors };
+                          }
+                        }}
+                        placeholder="12345678"
                         autocomplete="off"
                         required
                       />
+                      {#if pasaporteErrors[currentBoleto.boletoId]}
+                        <span class="form-field__error">{pasaporteErrors[currentBoleto.boletoId]}</span>
+                      {/if}
                     </div>
-                    <div class="form-field">
-                      <label for="telefono-{currentBoleto.boletoId}" class="form-field__label">Teléfono de contacto *</label>
-                      <input
-                        type="tel"
-                        id="telefono-{currentBoleto.boletoId}"
-                        class="form-field__input"
-                        bind:value={passengerData[currentBoleto.boletoId].telefono}
-                        placeholder="+502 1234-5678"
-                        autocomplete="off"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div class="form-row">
                     <!-- País con autocomplete -->
                     <div class="form-field">
                       <label for="pais-{currentBoleto.boletoId}" class="form-field__label">País *</label>
@@ -399,6 +607,46 @@
                           </ul>
                         {/if}
                       </div>
+                    </div>
+                  </div>
+
+                  <!-- Teléfono con dial code -->
+                  <div class="form-row">
+                    <div class="form-field">
+                      <label for="telefono-{currentBoleto.boletoId}" class="form-field__label">
+                        Teléfono de contacto *
+                        {#if dialCodes[currentBoleto.boletoId]}
+                          <span class="form-field__label-hint">— {phoneDigitCounts[currentBoleto.boletoId]} dígitos</span>
+                        {/if}
+                      </label>
+                      <div class="phone-field" class:phone-field--error={phoneErrors[currentBoleto.boletoId]}>
+                        {#if dialCodes[currentBoleto.boletoId]}
+                          <span class="phone-field__prefix">{dialCodes[currentBoleto.boletoId]}</span>
+                        {/if}
+                        <input
+                          type="tel"
+                          id="telefono-{currentBoleto.boletoId}"
+                          class="form-field__input"
+                          bind:value={passengerData[currentBoleto.boletoId].telefono}
+                          on:input={(e) => onPhoneInput(e, currentBoleto.boletoId)}
+                          placeholder={dialCodes[currentBoleto.boletoId] ? getPhonePlaceholder(phoneDigitCounts[currentBoleto.boletoId]) : 'Selecciona un país primero'}
+                          disabled={!dialCodes[currentBoleto.boletoId]}
+                          autocomplete="off"
+                          required
+                        />
+                      </div>
+                      {#if passengerData[currentBoleto.boletoId]?.telefono && !phoneErrors[currentBoleto.boletoId] && dialCodes[currentBoleto.boletoId]}
+                        {@const d = passengerData[currentBoleto.boletoId].telefono.replace(/\D/g, '').length}
+                        {@const total = phoneDigitCounts[currentBoleto.boletoId]}
+                        {#if d === total}
+                          <span class="form-field__ok">✓ Número completo</span>
+                        {:else}
+                          <span class="form-field__hint">{d}/{total} dígitos</span>
+                        {/if}
+                      {/if}
+                      {#if phoneErrors[currentBoleto.boletoId]}
+                        <span class="form-field__error">{phoneErrors[currentBoleto.boletoId]}</span>
+                      {/if}
                     </div>
 
                     <!-- Ciudad con autocomplete -->

@@ -1,4 +1,5 @@
 ﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
@@ -33,6 +34,19 @@ namespace Aerolinea.API.Services
         public async Task CancelarReservacion(int reservacionId, int usuarioId, string motivo)
         {
             await _repository.CancelarReservacion(reservacionId, usuarioId, motivo);
+        }
+
+        public async Task EnviarComprobanteEmail(int reservacionId, int usuarioId)
+        {
+            var reservacion = await ObtenerDetalleReservacion(reservacionId, usuarioId);
+
+            string html = EmailTemplates.CorreoReservacion(reservacion);
+
+            await EmailHelper.Enviar(
+                reservacion.UsuarioEmail,
+                $"Comprobante de Reservacion {reservacion.NoReservacion} — Broom AirLine",
+                html
+            );
         }
     }
 }

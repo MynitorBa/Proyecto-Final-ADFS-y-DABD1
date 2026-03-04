@@ -39,7 +39,6 @@
 
   // @ts-ignore
   onMount(async () => {
-    // Si el store aún no cargó o no hay sesión, redirigir
     if (!usuarioId) {
       navigateTo('login');
       return;
@@ -47,7 +46,7 @@
 
     try {
       const res = await fetch(`${API}/api/perfil/${usuarioId}`, {
-        credentials: 'include'   // la cookie viaja automáticamente
+        credentials: 'include'
       });
       if (!res.ok) { navigateTo('acceso-denegado'); return; }
 
@@ -145,7 +144,7 @@
   }
 
   async function handleLogout() {
-    await logout();        // limpia cookie + store
+    await logout();
     navigateTo('home');
   }
 </script>
@@ -284,24 +283,30 @@
               <div class="profile-form">
                 <div class="profile-form__row">
                   <div class="profile-form__field profile-form__field--full">
-                    <label class="profile-form__label">Contraseña Actual</label>
+                    <label for="profile-current-pw" class="profile-form__label">Contraseña Actual</label>
                     <input
                       type="password"
+                      id="profile-current-pw"
+                      name="profile-current-pw"
                       class="profile-form__input"
                       bind:value={passwordData.currentPassword}
                       placeholder="Tu contraseña actual"
+                      autocomplete="new-password"
                     />
                   </div>
                 </div>
 
                 <div class="profile-form__row">
                   <div class="profile-form__field">
-                    <label class="profile-form__label">Nueva Contraseña</label>
+                    <label for="profile-new-pw" class="profile-form__label">Nueva Contraseña</label>
                     <input
                       type="password"
+                      id="profile-new-pw"
+                      name="profile-new-pw"
                       class="profile-form__input"
                       bind:value={passwordData.newPassword}
                       placeholder="Mínimo 8 caracteres"
+                      autocomplete="new-password"
                     />
                     {#if passwordData.newPassword.length > 0}
                       <div class="password-strength">
@@ -312,12 +317,15 @@
                     {/if}
                   </div>
                   <div class="profile-form__field">
-                    <label class="profile-form__label">Confirmar Nueva Contraseña</label>
+                    <label for="profile-confirm-pw" class="profile-form__label">Confirmar Nueva Contraseña</label>
                     <input
                       type="password"
+                      id="profile-confirm-pw"
+                      name="profile-confirm-pw"
                       class="profile-form__input"
                       bind:value={passwordData.confirmPassword}
                       placeholder="Repite la contraseña"
+                      autocomplete="new-password"
                     />
                     {#if passwordData.confirmPassword.length > 0 && passwordData.newPassword !== passwordData.confirmPassword}
                       <span class="register-form__field-error">Las contraseñas no coinciden.</span>

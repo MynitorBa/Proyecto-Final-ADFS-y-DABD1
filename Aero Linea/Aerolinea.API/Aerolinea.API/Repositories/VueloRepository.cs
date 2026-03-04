@@ -13,7 +13,75 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        // ═══════════════════════════════════════════════════════════
+        //  NUEVO: BÚSQUEDA GENERAL — busca vuelos por cualquier término
+        // ═══════════════════════════════════════════════════════════
+        public async Task<List<VueloDetalleDTO>> BusquedaGeneral(string query)
+        {
+            var vuelos = new List<VueloDetalleDTO>();
+
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            string filtro = @"
+                    AND (
+                        co.Nombre       LIKE @busqueda
+                        OR cd.Nombre    LIKE @busqueda
+                        OR ao.Codigo    LIKE @busqueda
+                        OR ad.Codigo    LIKE @busqueda
+                        OR po.Nombre    LIKE @busqueda
+                        OR pd.Nombre    LIKE @busqueda
+                        OR ao.Nombre    LIKE @busqueda
+                        OR ad.Nombre    LIKE @busqueda
+                        OR v.NumeroVuelo LIKE @busqueda
+                    )";
+
+            string sql = $@"
+                SELECT TOP 50
+                    v.ID, v.NumeroVuelo, v.Fecha, v.HoraSalida, v.HoraLlegada,
+                    e.ID AS EstadoId, e.Estatus,
+                    a.ID AS AvionId, a.Modelo, a.Marca, a.CapacidadPasajeros,
+                    ao.ID, ao.Nombre, ao.Codigo, co.Nombre, po.Nombre,
+                    ad.ID, ad.Nombre, ad.Codigo, cd.Nombre, pd.Nombre,
+                    r.ID AS RutaId, r.DuracionEstimada,
+                    v.PrecioTurista, v.PrecioEjecutivo,
+                    v.BoletosTurista, v.BoletosEjecutivo,
+                    v.FechaLlegada
+                FROM Vuelo v
+                INNER JOIN Estado     e  ON v.EstadoID  = e.ID
+                INNER JOIN Avion      a  ON v.AvionID   = a.ID
+                INNER JOIN Ruta       r  ON v.RutaID    = r.ID
+                INNER JOIN Aeropuerto ao ON r.OrigenID  = ao.ID
+                INNER JOIN Aeropuerto ad ON r.DestinoID = ad.ID
+                INNER JOIN Ciudad     co ON ao.CiudadID = co.ID
+                INNER JOIN Ciudad     cd ON ad.CiudadID = cd.ID
+                INNER JOIN Pais       po ON co.PaisID   = po.ID
+                INNER JOIN Pais       pd ON cd.PaisID   = pd.ID
+                WHERE e.Estatus = 'A tiempo'
+                  AND v.Fecha >= CAST(GETDATE() AS DATE)
+                  AND (v.BoletosTurista > 0 OR v.BoletosEjecutivo > 0)
+                  {filtro}
+                ORDER BY v.Fecha, v.HoraSalida";
+
+            using var cmd = new SqlCommand(sql, connection);
+
+            cmd.Parameters.AddWithValue("@busqueda", $"%{query}%");
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                vuelos.Add(MapearVuelo(reader));
+
+            reader.Close();
+
+            foreach (var vuelo in vuelos)
+                vuelo.Tripulantes = await ObtenerTripulantesPorVuelo(connection, vuelo.Id);
+
+            return vuelos;
+        }
+
+        // ═══════════════════════════════════════════════════════════
         //  BÚSQUEDA DIRECTA  (sin cambios)
+        // ═══════════════════════════════════════════════════════════
         public async Task<List<VueloDetalleDTO>> BuscarVuelos(
             int origenId, int destinoId, DateTime fecha,
             int cantidadPasajeros, int? claseId = null)
@@ -83,7 +151,6 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // ── 1. Duración estimada del vuelo directo (si existe) ────────
             int? duracionDirectaMinutos = null;
             string queryDirecta = @"
                 SELECT TOP 1 DuracionEstimada FROM Ruta
@@ -98,17 +165,14 @@ namespace Aerolinea.API.Repositories
                     duracionDirectaMinutos = (int)result;
             }
 
-            // Límite de duración total: 1.5× la directa, o 12h si no hay ruta directa
             int limiteMinutos = duracionDirectaMinutos.HasValue
                 ? (int)(duracionDirectaMinutos.Value * 1.5)
                 : 12 * 60;
 
-            // ── 2. Traer tramos 1: origen → aeropuerto intermedio (día pedido) ──
             var tramos1 = await BuscarTramos(
                 connection, origenId, destinoId,
                 fecha, cantidadPasajeros, claseId, esOrigen: true);
 
-            // ── 3. Traer tramos 2: aeropuerto intermedio → destino ────────
             var tramos2DiaMismo = await BuscarTramos(
                 connection, origenId, destinoId,
                 fecha, cantidadPasajeros, claseId, esOrigen: false);
@@ -119,37 +183,30 @@ namespace Aerolinea.API.Repositories
 
             var tramos2 = tramos2DiaMismo.Concat(tramos2DiaSiguiente).ToList();
 
-            // ── 4. Cruzar y filtrar ───────────────────────────────────────
             var resultados = new List<VueloConEscalaDTO>();
             var combinacionesVistas = new HashSet<string>();
 
             foreach (var t1 in tramos1)
             {
-                // El aeropuerto de escala es el destino del tramo 1
                 foreach (var t2 in tramos2.Where(t => t.OrigenId == t1.DestinoId))
                 {
-                    // Cálculo limpio con FechaLlegada — sin lógica de medianoche
                     var llegadaT1 = t1.FechaLlegada + t1.HoraLlegada;
                     var salidaT2 = t2.Fecha.Date + t2.HoraSalida;
 
                     int minutosEscala = (int)(salidaT2 - llegadaT1).TotalMinutes;
 
-                    // Ventana de escala: 1h a 12h
                     if (minutosEscala < 60 || minutosEscala > 720)
                         continue;
 
                     int duracionTotal = t1.DuracionMinutos + minutosEscala + t2.DuracionMinutos;
 
-                    // Filtro de 1.5× duración directa
                     if (duracionTotal > limiteMinutos)
                         continue;
 
-                    // Evitar duplicados (misma combinación de vuelos)
                     string key = $"{t1.Id}-{t2.Id}";
                     if (!combinacionesVistas.Add(key))
                         continue;
 
-                    // Disponibilidad = mínimo entre ambos tramos por clase
                     int? dispTurista = t1.BoletosDisponiblesTurista.HasValue && t2.BoletosDisponiblesTurista.HasValue
                         ? Math.Min(t1.BoletosDisponiblesTurista.Value, t2.BoletosDisponiblesTurista.Value)
                         : null;
@@ -158,7 +215,6 @@ namespace Aerolinea.API.Repositories
                         ? Math.Min(t1.BoletosDisponiblesEjecutiva.Value, t2.BoletosDisponiblesEjecutiva.Value)
                         : null;
 
-                    // Filtrar por disponibilidad de la clase pedida
                     if (claseId == 1 && (dispTurista == null || dispTurista < cantidadPasajeros)) continue;
                     if (claseId == 2 && (dispEjecutiva == null || dispEjecutiva < cantidadPasajeros)) continue;
                     if (claseId == null &&
@@ -166,7 +222,6 @@ namespace Aerolinea.API.Repositories
                         (dispEjecutiva == null || dispEjecutiva < cantidadPasajeros))
                         continue;
 
-                    // Precio total = suma de ambos tramos
                     decimal? precioTuristaTotal = t1.PrecioTurista.HasValue && t2.PrecioTurista.HasValue
                         ? t1.PrecioTurista + t2.PrecioTurista : null;
                     decimal? precioEjecutivaTotal = t1.PrecioEjecutiva.HasValue && t2.PrecioEjecutiva.HasValue
@@ -186,7 +241,6 @@ namespace Aerolinea.API.Repositories
                 }
             }
 
-            // Cargar tripulantes para todos los tramos únicos
             var vuelosUnicos = resultados
                 .SelectMany(r => r.Tramos)
                 .GroupBy(v => v.Id)
@@ -201,7 +255,6 @@ namespace Aerolinea.API.Repositories
                 foreach (var tramo in resultado.Tramos)
                     tramo.Tripulantes = tripulantesPorVuelo[tramo.Id];
 
-            // Ordenar por duración total
             return resultados.OrderBy(r => r.DuracionTotalMinutos).ToList();
         }
 
@@ -212,11 +265,6 @@ namespace Aerolinea.API.Repositories
             DateTime fecha, int cantidadPasajeros, int? claseId,
             bool esOrigen)
         {
-            // esOrigen=true  → buscamos vuelos que SALEN del origenId (tramo 1)
-            //                   pero NO llegan al destino final (eso sería directo)
-            // esOrigen=false → buscamos vuelos que LLEGAN al destinoId (tramo 2)
-            //                   pero NO salen del origen original (eso sería directo)
-
             string filtroClase = claseId == 1
                 ? "AND v.BoletosTurista   >= @cantidadPasajeros"
                 : claseId == 2
@@ -301,7 +349,7 @@ namespace Aerolinea.API.Repositories
             await cmdInsert.ExecuteNonQueryAsync();
         }
 
-        
+
 
         private VueloDetalleDTO MapearVuelo(SqlDataReader reader)
         {

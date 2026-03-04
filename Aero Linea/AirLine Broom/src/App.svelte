@@ -11,7 +11,6 @@
 
   import Home from './pages/Home.svelte';
   import Vuelos from './pages/Vuelos.svelte';
-  import VuelosGenerales from './pages/VuelosGenerales.svelte';
   import ResultadosBusqueda from './pages/ResultadosBusqueda.svelte';
   import Comfirmacion from './pages/Confirmacion.svelte';
   import Carrito from './pages/Carrito.svelte';
@@ -22,7 +21,6 @@
   import Profile from './pages/Profile.svelte';
   import MisReservas from './pages/MisReservas.svelte';
   import Admin from './pages/Admin.svelte';
-  import DestinosDestacados from './pages/DestinosDestacados.svelte';
   import InformacionAsientos from './pages/InformacionAsientos.svelte';
   import InformacionSeguridad from './pages/InformacionSeguridad.svelte';
   import AccesoDenegado from './pages/Accesodenegado.svelte';
@@ -38,14 +36,13 @@
 
   import './app.css';
 
-  // ── Claves de sessionStorage ───────────────────────────────────────
   const SS_SEARCH_PARAMS = 'broom_searchParams';
   const SS_PAGE          = 'broom_currentPage';
 
   let isLoading = true;
   let sesionCargada = false;
   let currentPage = 'home';
-  let suggestedDestination = null;
+  let suggestedAeropuerto = null;
   let currentFlightId = null;
   let searchParams = null;
   let reservacionesConfirmadas = [];
@@ -59,12 +56,11 @@
     'privacidad','terminos','cookies','politica-cancelacion','sobre-nosotros',
   ];
 
-  // ── sessionStorage helpers ─────────────────────────────────────────
   function saveSearchParams(params) {
     try {
       if (params) sessionStorage.setItem(SS_SEARCH_PARAMS, JSON.stringify(params));
       else        sessionStorage.removeItem(SS_SEARCH_PARAMS);
-    } catch (e) { /* incognito o lleno */ }
+    } catch (e) { }
   }
 
   function loadSearchParams() {
@@ -78,14 +74,10 @@
     try { sessionStorage.setItem(SS_PAGE, page); } catch {}
   }
 
-  // ── Inicialización ─────────────────────────────────────────────────
   onMount(async () => {
-    // 1. Determinar página desde URL
     actualizarPaginaDesdeURL();
     window.addEventListener('popstate', actualizarPaginaDesdeURL);
 
-    // 2. Si la página actual es 'vuelos' y no tenemos searchParams en memoria,
-    //    intentamos recuperarlos desde sessionStorage
     if (currentPage === 'vuelos' && !searchParams) {
       const guardados = loadSearchParams();
       if (guardados) searchParams = guardados;
@@ -101,12 +93,34 @@
     };
   });
 
+  // ══ Flag: se completó un pago en esta sesión ══
+  let pagoCompletado = false;
+
+  // Páginas del flujo de compra que se bloquean post-pago
+  const paginasFlujoCompra = ['vuelos', 'datos-pasajeros', 'carrito', 'checkout'];
+
   function actualizarPaginaDesdeURL() {
     const path = window.location.pathname.slice(1) || 'home';
+
+    // ══ POST-PAGO: si ya pagó, no puede regresar al flujo de compra ══
+    if (pagoCompletado && (paginasFlujoCompra.includes(path) || path === 'confirmacion')) {
+      currentPage = 'home';
+      pageKey = Date.now();
+      window.history.replaceState({}, '', '/home');
+      return;
+    }
+
+    // Si intenta volver a confirmación sin datos, ir a home
+    if (path === 'confirmacion' && reservacionesConfirmadas.length === 0 && facturasConfirmadas.length === 0) {
+      currentPage = 'home';
+      pageKey = Date.now();
+      window.history.replaceState({}, '', '/home');
+      return;
+    }
+
     currentPage = path;
     pageKey = Date.now();
 
-    // Si navegamos a 'vuelos' via el botón Atrás del browser, restaurar params
     if (path === 'vuelos' && !searchParams) {
       const guardados = loadSearchParams();
       if (guardados) searchParams = guardados;
@@ -134,7 +148,14 @@
     }
 
     if (paginaFinal === 'vuelos') {
-      if (data?.searchData) {
+      // NUEVO: búsqueda global desde Header
+      if (data?.fromGlobalSearch) {
+        searchParams = {
+          fromGlobalSearch: true,
+          globalSearchQuery: data.globalSearchQuery,
+          globalSearchResults: data.globalSearchResults
+        };
+      } else if (data?.searchData) {
         searchParams = {
           vuelosIda:    data.vuelosIda    ?? [],
           vuelosVuelta: data.vuelosVuelta ?? [],
@@ -145,29 +166,42 @@
       } else {
         searchParams = data;
       }
-      // ── Guardar en sessionStorage para sobrevivir recargas ──
       saveSearchParams(searchParams);
 
     } else if (paginaFinal === 'resultados-busqueda') {
       searchParams = data;
 
     } else if (paginaFinal === 'datos-pasajeros') {
-      // Guardar reserva + searchData para DatosPasajeros.svelte
-      searchParams = data;
+      // No sobreescribir searchParams — mantener los datos de vuelos
+      // para que si el usuario regresa a vuelos, siga viendo resultados
 
     } else if (paginaFinal === 'confirmacion') {
       if (data?.reservaciones) reservacionesConfirmadas = data.reservaciones;
       if (data?.facturas)      facturasConfirmadas      = data.facturas;
+      // ══ Post-pago: bloquear navegación hacia atrás ══
+      pagoCompletado = true;
+      searchParams = null;
+      sessionStorage.removeItem(SS_SEARCH_PARAMS);
+      // Reemplazar historial para que "atrás" no vuelva a checkout/carrito/etc
+      window.history.replaceState({ paid: true }, '', '/confirmacion');
 
-    } else if (!['vuelos', 'datos-pasajeros', 'confirmacion'].includes(paginaFinal)) {
+    } else if (paginaFinal === 'home' && data?.suggestedAeropuerto) {
+      suggestedAeropuerto = data.suggestedAeropuerto;
+      searchParams = null;
+      pagoCompletado = false;
+
+    } else if (!['vuelos', 'datos-pasajeros', 'carrito', 'checkout', 'confirmacion'].includes(paginaFinal)) {
       searchParams = null;
     }
+
+    // Resetear flag de pago si navega a home (nueva sesión de compra)
+    if (paginaFinal === 'home') pagoCompletado = false;
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function handleDestinationSuggestion(destination) {
-    suggestedDestination = destination;
+  function handleDestinationSuggestion(aeropuertoData) {
+    suggestedAeropuerto = aeropuertoData;
     if (currentPage !== 'home') navigateTo('home');
     setTimeout(() => {
       const searchSection = document.querySelector('.broom-home__search-section');
@@ -176,8 +210,9 @@
   }
 
   const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','checkout','confirmacion'];
-  const noFooterPages     = ['profile','admin','login','register','acceso-denegado',...simpleHeaderPages];
-  const noHeaderPages     = ['login','register'];
+
+  const noFooterPages = ['profile','admin','login','register','acceso-denegado','reservas',...simpleHeaderPages];
+  const noHeaderPages = ['login','register'];
 
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
   $: showHeader      = !noHeaderPages.includes(currentPage);
@@ -205,11 +240,11 @@
     {#if !sesionCargada && paginasProtegidas.includes(currentPage)}
       <p style="text-align:center; padding:4rem; color:#888">Cargando...</p>
     {:else if currentPage === 'home'}
-      <Home {navigateTo} {suggestedDestination} />
-    {:else if currentPage === 'VuelosGenerales'}
-      <VuelosGenerales {navigateTo} />
+      <Home {navigateTo} {suggestedAeropuerto} />
     {:else if currentPage === 'reservas'}
-      <MisReservas {navigateTo} />
+      {#key pageKey}
+        <MisReservas {navigateTo} />
+      {/key}
     {:else if currentPage === 'vuelos'}
       {#key pageKey}
         <Vuelos {navigateTo} {searchParams} />
@@ -236,15 +271,12 @@
       <Profile {navigateTo} />
     {:else if currentPage === 'admin'}
       <Admin {navigateTo} />
-    {:else if currentPage === 'destinos-destacados'}
-      <DestinosDestacados {navigateTo} />
     {:else if currentPage === 'info-asientos'}
       <InformacionAsientos {navigateTo} />
     {:else if currentPage === 'info-seguridad'}
       <InformacionSeguridad {navigateTo} />
     {:else if currentPage === 'acceso-denegado'}
       <AccesoDenegado {navigateTo} />
-
     {:else if currentPage === 'contactanos'}
       <Contactanos {navigateTo} />
     {:else if currentPage === 'centro-ayuda'}
@@ -261,7 +293,6 @@
       <PoliticaCancelacion {navigateTo} />
     {:else if currentPage === 'sobre-nosotros'}
       <SobreNosotros {navigateTo} />
-
     {:else}
       <Home {navigateTo} />
     {/if}

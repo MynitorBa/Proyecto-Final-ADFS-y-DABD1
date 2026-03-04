@@ -5,6 +5,121 @@ namespace Aerolinea.API.Helpers
     public static class EmailTemplates
     {
         // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE BIENVENIDA — enviado al usuario al crear su cuenta
+        // ══════════════════════════════════════════════════════════════════
+        public static string CorreoBienvenida(
+            string nombre,
+            string apellido,
+            string username,
+            string correo,
+            string pasaporte,
+            string telefono,
+            string pais,
+            string ciudad,
+            string fechaNacimiento,
+            List<string> nacionalidades)
+        {
+            var e = EmailHelper.Esc;
+
+            string filasNacionalidades = (nacionalidades != null && nacionalidades.Count > 0)
+                ? string.Join(", ", nacionalidades.Select(n => e(n)))
+                : "—";
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:32px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:26px;color:#F2EFEA;font-weight:800;letter-spacing:1.5px;'>BROOM AIRLINE</h1>
+        <p style='margin:10px 0 0;font-size:14px;color:#B89A7A;'>Bienvenido a bordo</p>
+    </div>
+    <div style='height:3px;background:#8B6B4A;'></div>
+
+    <!-- SALUDO -->
+    <div style='padding:30px 24px 10px;text-align:center;background:#ffffff;'>
+        <div style='width:72px;height:72px;margin:0 auto 16px;background:#8B6B4A;border-radius:50%;text-align:center;line-height:72px;'>
+            <span style='font-size:32px;color:#F2EFEA;font-weight:700;'>{e(nombre.Length > 0 ? nombre.Substring(0, 1).ToUpper() : "?")}</span>
+        </div>
+        <h2 style='margin:0 0 6px;font-size:22px;color:#1C1A18;font-weight:700;'>¡Hola {e(nombre)}!</h2>
+        <p style='margin:0;font-size:14px;color:#3A3531;line-height:1.6;'>
+            Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesion y comenzar a reservar tus vuelos.
+        </p>
+    </div>
+
+    <!-- DATOS DE LA CUENTA -->
+    <div style='padding:20px 24px 28px;background:#ffffff;'>
+
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.25);border-radius:4px 16px 4px 16px;padding:20px;border-left:4px solid #8B6B4A;margin-bottom:16px;'>
+            <h3 style='margin:0 0 14px;font-size:12px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;'>Datos de tu Cuenta</h3>
+            <table style='width:100%;border-collapse:collapse;table-layout:fixed;'>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;width:120px;vertical-align:top;'>Nombre completo</td>
+                    <td style='padding:7px 0;font-size:14px;color:#1C1A18;font-weight:600;word-break:break-word;'>{e(nombre)} {e(apellido)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Username</td>
+                    <td style='padding:7px 0;font-size:14px;color:#1C1A18;font-weight:700;word-break:break-word;'>{e(username)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Correo</td>
+                    <td style='padding:7px 0;font-size:14px;color:#8B6B4A;font-weight:600;word-break:break-all;'>{e(correo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Telefono</td>
+                    <td style='padding:7px 0;font-size:14px;color:#3A3531;word-break:break-word;'>{e(telefono)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Pasaporte</td>
+                    <td style='padding:7px 0;font-size:14px;color:#3A3531;word-break:break-word;'>{e(pasaporte)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Fecha nacimiento</td>
+                    <td style='padding:7px 0;font-size:14px;color:#3A3531;'>{e(fechaNacimiento)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Ubicacion</td>
+                    <td style='padding:7px 0;font-size:14px;color:#3A3531;word-break:break-word;'>{e(ciudad)}, {e(pais)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:7px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Nacionalidad(es)</td>
+                    <td style='padding:7px 0;font-size:14px;color:#3A3531;word-break:break-word;'>{filasNacionalidades}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- SEGURIDAD -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;margin-bottom:20px;'>
+            <h4 style='margin:0 0 8px;font-size:11px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Seguridad</h4>
+            <p style='margin:0;font-size:12px;color:#3A3531;line-height:1.7;'>
+                Tu contrasena ha sido almacenada de forma segura y encriptada. Por tu seguridad, nunca compartiremos tu contrasena por correo. Si olvidas tu contrasena, puedes restablecerla desde la pagina de inicio de sesion.
+            </p>
+        </div>
+
+        <!-- CTA -->
+        <div style='text-align:center;'>
+            <a href='http://localhost:5173/login' style='display:inline-block;padding:14px 36px;background:#8B6B4A;color:#F2EFEA;text-decoration:none;border-radius:0 16px 0 16px;font-size:14px;font-weight:700;letter-spacing:0.5px;'>Iniciar Sesion →</a>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         //  CORREO DE RESERVACIÓN — enviado al usuario con detalle de boletos
         // ══════════════════════════════════════════════════════════════════
         public static string CorreoReservacion(ReservacionDetalleDTO reservacion)
@@ -24,7 +139,7 @@ namespace Aerolinea.API.Helpers
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.OrigenCodigo)} → {e(boleto.DestinoCodigo)}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.Clase)}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.FechaVuelo:yyyy-MM-dd}</td>
-                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.HoraSalida:hh\\:mm}</td>
+                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.HoraSalida.Hours:D2}:{boleto.HoraSalida.Minutes:D2}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:right;font-weight:700;border-bottom:1px solid rgba(139,107,74,0.15);'>Q {boleto.Precio:N2}</td>
                 </tr>";
                 idx++;
@@ -93,7 +208,6 @@ namespace Aerolinea.API.Helpers
     <!-- CUERPO -->
     <div style='padding:24px 20px;background:#ffffff;'>
 
-        <!-- INFO RESERVACIÓN -->
         <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.25);border-radius:4px 16px 4px 16px;padding:20px;margin-bottom:20px;border-left:4px solid #8B6B4A;'>
             <table style='width:100%;border-collapse:collapse;'>
                 <tr>
@@ -119,7 +233,6 @@ namespace Aerolinea.API.Helpers
             </table>
         </div>
 
-        <!-- TABLA DE BOLETOS -->
         <div style='border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);'>
             <div style='background:#1C1A18;padding:14px 20px;'>
                 <h3 style='margin:0;font-size:13px;color:#F2EFEA;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;'>Detalle de Boletos</h3>
@@ -138,7 +251,6 @@ namespace Aerolinea.API.Helpers
                 {filasBoletos}
             </table>
 
-            <!-- TOTAL -->
             <div style='background:#8B6B4A;padding:16px 20px;'>
                 <table style='width:100%;'>
                     <tr>
@@ -151,7 +263,6 @@ namespace Aerolinea.API.Helpers
 
         {seccionPasajeros}
 
-        <!-- TÉRMINOS -->
         <div style='margin-top:24px;background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;'>
             <h4 style='margin:0 0 8px;font-size:11px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Terminos y Condiciones</h4>
             <p style='margin:0;font-size:11px;color:#3A3531;line-height:1.8;'>
@@ -165,7 +276,6 @@ namespace Aerolinea.API.Helpers
 
     </div>
 
-    <!-- FOOTER -->
     <div style='height:3px;background:#8B6B4A;'></div>
     <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
         <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>

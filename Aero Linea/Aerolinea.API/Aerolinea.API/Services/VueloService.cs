@@ -12,6 +12,17 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
+        // ═══════════════════════════════════════════════════════════
+        //  NUEVO: Búsqueda general por cualquier término
+        // ═══════════════════════════════════════════════════════════
+        public async Task<List<VueloDetalleDTO>> BusquedaGeneral(string query)
+        {
+            return await _repository.BusquedaGeneral(query);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Búsqueda normal (sin cambios)
+        // ═══════════════════════════════════════════════════════════
         public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
         {
             // Guardar búsqueda
@@ -61,7 +72,7 @@ namespace Aerolinea.API.Services
             };
         }
 
-        
+
         private List<VueloDetalleDTO> AplicarFiltroPrecio(List<VueloDetalleDTO> vuelos, BuscarVueloDTO dto)
         {
             if (!dto.PrecioMinimo.HasValue && !dto.PrecioMaximo.HasValue)

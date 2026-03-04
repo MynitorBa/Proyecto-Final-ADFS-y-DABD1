@@ -123,6 +123,8 @@ namespace Aerolinea.API.Repositories
 
             reader.Close();
             await CargarBoletos(reservacion, connection);
+
+            reservacion.Factura = await ObtenerFactura(reservacionId, connection);
             return reservacion;
         }
 
@@ -403,6 +405,33 @@ namespace Aerolinea.API.Repositories
                     Telefono = reader.GetString(4),
                     Ciudad = reader.GetString(5),
                     Pais = reader.GetString(6)
+                };
+            }
+
+            return null;
+        }
+
+        private async Task<FacturaDTO?> ObtenerFactura(int reservacionId, SqlConnection connection)
+        {
+            string query = @"
+        SELECT ID, ReservacionID, Fecha, NIT, CodigoPostal, Total
+        FROM Factura
+        WHERE ReservacionID = @reservacionId";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new FacturaDTO
+                {
+                    Id = reader.GetInt32(0),
+                    ReservacionId = reader.GetInt32(1),
+                    Fecha = reader.GetDateTime(2),
+                    NIT = reader.GetString(3),
+                    CodigoPostal = reader.GetString(4),
+                    Total = reader.GetDecimal(5)
                 };
             }
 
