@@ -81,8 +81,9 @@ namespace Aerolinea.API.Services
             return await _adminVueloRepository.CancelarVuelo(vueloId);
         }
         // ── Disponibilidad ───────────────────────────────────────────────
-        public async Task<HashSet<int>> ObtenerAvionesOcupados(DateTime fecha)
-            => await _adminVueloRepository.ObtenerAvionesOcupados(fecha);
+        public async Task<HashSet<int>> ObtenerAvionesOcupados(
+            DateTime fecha, TimeSpan horaSalida, int aeropuertoOrigenId)
+            => await _adminVueloRepository.ObtenerAvionesOcupados(fecha, horaSalida, aeropuertoOrigenId);
 
         public async Task<HashSet<int>> ObtenerTripulantesOcupados(DateTime fecha, TimeSpan horaSalida)
             => await _adminVueloRepository.ObtenerTripulantesOcupados(fecha, horaSalida);

@@ -1568,6 +1568,19 @@ body:has(.modal-overlay) { overflow: hidden; }
   line-height: 1.4;
 }
 
+.llegada-preview__tz-label {
+  font-size: .78rem;
+  color: var(--primary-color);
+  margin-top: .25rem;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.llegada-preview__tz-label strong {
+  font-weight: 600;
+}
+
 /* ── Timezone display en aeropuerto (solo lectura) ───────── */
 .tz-detected-display {
   display: flex;

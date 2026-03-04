@@ -161,6 +161,7 @@
   let avionesOcupadosIds     = new Set();   // IDs de aviones no disponibles para la fecha
   let tripulantesOcupadosIds = new Set();   // IDs de tripulantes no disponibles
   let cargandoDisponibilidad = false;
+  let _disponibilidadTimer = null;  // debounce para cargarDisponibilidad
 
   // ========= TIMEZONE AUTODETECT (formulario aeropuerto) =========
   let detectandoTimezone  = false;
@@ -434,6 +435,63 @@
   let _rutaCheckTimer = null;
   let _lastCheckKey   = '';   // "origenId-destinoId" del último fetch de existencia
 
+  // ── Calcula offset TZ en ms (local - UTC) usando Intl ─────────────────
+  function getTZOffsetMs(date, tz) {
+    try {
+      const utcStr   = date.toLocaleString('en-US', { timeZone: 'UTC' });
+      const localStr = date.toLocaleString('en-US', { timeZone: tz });
+      return new Date(localStr) - new Date(utcStr);
+    } catch { return 0; }
+  }
+
+  // ── Calcula llegada local en destino usando IANA names del navegador ──
+  function calcularLlegadaJS(fecha, hora, duracionMinutos, tzOrigen, tzDestino) {
+    const [hh, mm] = hora.split(':').map(Number);
+    const naiveDep = new Date(`${fecha}T${hora}:00Z`); // naive: tratamos local como UTC
+
+    if (tzOrigen && tzDestino) {
+      try {
+        // Offset de origen en el momento de salida: cuánto ms adelanta el TZ sobre UTC
+        const originOffsetMs = getTZOffsetMs(naiveDep, tzOrigen);
+        // Salida real en UTC = naiveDep (local origen) - originOffset
+        const departureUTC   = naiveDep.getTime() - originOffsetMs;
+        // Llegada en UTC
+        const arrivalUTC     = new Date(departureUTC + duracionMinutos * 60 * 1000);
+        // Offset destino en momento de llegada
+        const destOffsetMs   = getTZOffsetMs(arrivalUTC, tzDestino);
+        // Hora local destino = UTC + destOffset
+        const arrivalLocal   = new Date(arrivalUTC.getTime() + destOffsetMs);
+
+        const horaLlegada = String(arrivalLocal.getUTCHours()).padStart(2,'0') + ':' +
+                            String(arrivalLocal.getUTCMinutes()).padStart(2,'0');
+        const fechaLlegada = arrivalLocal.toISOString().split('T')[0];
+
+        const diffHours = (destOffsetMs - originOffsetMs) / 3600000;
+        const nota = diffHours === 0
+          ? `Misma zona horaria. Vuelo de ${duracionMinutos} min.`
+          : `Diferencia de zona horaria: ${diffHours > 0 ? '+' : ''}${diffHours}h respecto al origen. Vuelo de ${duracionMinutos} min.`;
+
+        return { horaLlegada, fechaLlegada, duracionMinutos, usoZonasHorarias: true,
+                 zonaOrigen: tzOrigen, zonaDestino: tzDestino, nota };
+      } catch (_) { /* si Intl no reconoce el TZ, usar fallback */ }
+    }
+
+    // Fallback sin zonas horarias
+    const llegadaMins = hh * 60 + mm + duracionMinutos;
+    const llegadaH    = Math.floor(llegadaMins / 60) % 24;
+    const llegadaM    = llegadaMins % 60;
+    const horaStr     = String(llegadaH).padStart(2,'0') + ':' + String(llegadaM).padStart(2,'0');
+    let fechaStr      = fecha;
+    if (llegadaMins >= 1440) {
+      const d = new Date(fecha + 'T12:00:00');
+      d.setDate(d.getDate() + 1);
+      fechaStr = d.toISOString().split('T')[0];
+    }
+    return { horaLlegada: horaStr, fechaLlegada: fechaStr, duracionMinutos,
+             usoZonasHorarias: false, zonaOrigen: null, zonaDestino: null,
+             nota: `Vuelo de ${duracionMinutos} min. (sin zona horaria configurada)` };
+  }
+
   function recalcularPreviewLlegada() {
     const origenId  = parseInt(nuevoVuelo.aeropuertoOrigenId);
     const destinoId = parseInt(nuevoVuelo.aeropuertoDestinoId);
@@ -450,62 +508,76 @@
     }
     // Validar año completo (evita fechas como 0002-03-30)
     const anio = parseInt((fecha.split('-')[0]) || '0');
-    if (anio < 2000) { previewLlegada = null; loadingPreview = false; return; }
+    if (anio < 2000 || fecha.length < 10) { previewLlegada = null; loadingPreview = false; return; }
 
-    // Buscar la ruta en los datos ya cargados en memoria
+    // Buscar ruta en el array local
     const ao = aeropuertos.find(a => a.id === origenId);
     const ad = aeropuertos.find(a => a.id === destinoId);
-    const ruta = rutas.find(r =>
+    const rutaLocal = rutas.find(r =>
       ao && ad && r.codigoOrigen === ao.codigo && r.codigoDestino === ad.codigo
     );
 
-    if (ruta) {
-      // Tenemos la ruta localmente — calcular al instante, sin fetch
-      _lastCheckKey    = '';
+    const checkKey = `${origenId}-${destinoId}-${fecha}-${hora}`;
+    if (checkKey === _lastCheckKey) return;
+    _lastCheckKey = checkKey;
+
+    if (rutaLocal) {
+      // Tenemos la ruta localmente con sus zonas horarias → calcular al instante en JS
       rutaExisteStatus = 'ok';
-      const duracion   = ruta.duracionEstimada || 120;
-      const [hh, mm]   = hora.split(':').map(Number);
-      const salidaMins = hh * 60 + mm;
-      const llegadaMins = salidaMins + duracion;
-      const llegadaH   = Math.floor(llegadaMins / 60) % 24;
-      const llegadaM   = llegadaMins % 60;
-      const horaStr    = String(llegadaH).padStart(2,'0') + ':' + String(llegadaM).padStart(2,'0');
-      const pasaDia    = llegadaMins >= 1440;
-      let fechaStr     = fecha;
-      if (pasaDia) {
-        const d = new Date(fecha + 'T12:00:00');
-        d.setDate(d.getDate() + 1);
-        fechaStr = d.toISOString().split('T')[0];
-      }
-      const tzO = ruta.zonaHorariaOrigen || null;
-      const tzD = ruta.zonaHorariaDestino || null;
-      previewLlegada = {
-        horaLlegada:      horaStr,
-        fechaLlegada:     fechaStr,
-        duracionMinutos:  duracion,
-        usoZonasHorarias: !!(tzO && tzD),
-        nota: (tzO && tzD)
-          ? `${tzO} → ${tzD}. Vuelo de ${duracion} min.`
-          : `Vuelo de ${duracion} min. (sin zona horaria configurada)`
-      };
+      previewLlegada = calcularLlegadaJS(
+        fecha, hora,
+        rutaLocal.duracionEstimada || 120,
+        rutaLocal.zonaHorariaOrigen || null,
+        rutaLocal.zonaHorariaDestino || null
+      );
       loadingPreview = false;
       return;
     }
 
-    // No está en memoria — verificar con el API solo si cambió el par origen/destino
-    const checkKey = `${origenId}-${destinoId}`;
-    if (checkKey === _lastCheckKey) return;   // ya consultamos este par, no titilear
-
-    _lastCheckKey    = checkKey;
-    previewLlegada   = null;
+    // Ruta no cargada en memoria → verificar con API y calcular con backend
     rutaExisteStatus = 'checking';
+    previewLlegada   = null;
+    loadingPreview   = true;
 
     clearTimeout(_rutaCheckTimer);
-    _rutaCheckTimer = setTimeout(() => {
-      fetch(`${API}/api/rutas/existe?origenId=${origenId}&destinoId=${destinoId}`, { credentials: 'include' })
-        .then(r => r.ok ? r.json() : { existe: false })
-        .then(({ existe }) => { rutaExisteStatus = existe ? 'ok' : 'missing'; })
-        .catch(() => { rutaExisteStatus = null; });
+    _rutaCheckTimer = setTimeout(async () => {
+      try {
+        // Verificar existencia
+        const rExiste = await fetch(
+          `${API}/api/rutas/existe?origenId=${origenId}&destinoId=${destinoId}`,
+          { credentials: 'include' }
+        );
+        const { existe } = rExiste.ok ? await rExiste.json() : { existe: false };
+        rutaExisteStatus = existe ? 'ok' : 'missing';
+        if (!existe) { loadingPreview = false; return; }
+
+        // Calcular llegada via API (devuelve TZ correcto desde el backend)
+        const rCalc = await fetch(`${API}/api/rutas/calcular-llegada`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            aeropuertoOrigenId:  origenId,
+            aeropuertoDestinoId: destinoId,
+            fechaSalida:         fecha,
+            horaSalida:          hora
+          })
+        });
+        if (rCalc.ok) {
+          const d = await rCalc.json();
+          // Soportar tanto PascalCase (ASP.NET default) como camelCase
+          previewLlegada = {
+            horaLlegada:      d.horaLlegada      ?? d.HoraLlegada,
+            fechaLlegada:     d.fechaLlegada     ?? d.FechaLlegada,
+            duracionMinutos:  d.duracionMinutos  ?? d.DuracionMinutos,
+            usoZonasHorarias: d.usoZonasHorarias ?? d.UsoZonasHorarias ?? false,
+            zonaOrigen:       d.zonaHorariaOrigen  ?? d.ZonaHorariaOrigen  ?? null,
+            zonaDestino:      d.zonaHorariaDestino ?? d.ZonaHorariaDestino ?? null,
+            nota:             d.nota ?? d.Nota ?? ''
+          };
+        }
+      } catch { /* ruta no verificable, no cambiar estado */ }
+      loadingPreview = false;
     }, 400);
   }
 
@@ -665,11 +737,13 @@
     recalcularPreviewLlegada();
   }
 
-  // Disponibilidad de aviones/tripulantes: solo al cambiar fecha/hora
+  // Disponibilidad de aviones/tripulantes: solo al cambiar fecha/hora (con debounce)
   $: {
     nuevoVuelo.fecha;
     nuevoVuelo.horaSalida;
-    cargarDisponibilidad();
+    nuevoVuelo.aeropuertoOrigenId;
+    clearTimeout(_disponibilidadTimer);
+    _disponibilidadTimer = setTimeout(() => cargarDisponibilidad(), 500);
   }
 
   $: if (avionSeleccionado && !nuevoVuelo.boletosTurista && !nuevoVuelo.boletosEjecutivo) {
@@ -719,18 +793,23 @@
       tripulantesOcupadosIds = new Set();
       return;
     }
+    // Evitar llamadas con fechas incompletas (ej: '202', '2025-1')
+    const anioFecha = parseInt((nuevoVuelo.fecha.split('-')[0]) || '0');
+    if (anioFecha < 2000 || nuevoVuelo.fecha.length < 10) return;
     cargandoDisponibilidad = true;
     try {
       const [rAviones, rTrip] = await Promise.all([
-        fetch(`${API}/api/admin/vuelos/aviones-ocupados?fecha=${nuevoVuelo.fecha}`,
-              { credentials: 'include' }),
+        (nuevoVuelo.horaSalida && nuevoVuelo.aeropuertoOrigenId)
+          ? fetch(`${API}/api/admin/vuelos/aviones-ocupados?fecha=${nuevoVuelo.fecha}&horaSalida=${nuevoVuelo.horaSalida}&aeropuertoOrigenId=${nuevoVuelo.aeropuertoOrigenId}`,
+                  { credentials: 'include' })
+          : Promise.resolve(null),
         nuevoVuelo.horaSalida
           ? fetch(`${API}/api/admin/vuelos/tripulantes-ocupados?fecha=${nuevoVuelo.fecha}&horaSalida=${nuevoVuelo.horaSalida}`,
                   { credentials: 'include' })
           : Promise.resolve(null)
       ]);
 
-      if (rAviones.ok) {
+      if (rAviones && rAviones.ok) {
         const ids = await rAviones.json();
         avionesOcupadosIds = new Set(ids);
       }
@@ -1239,6 +1318,11 @@
                             <span class="llegada-preview__nextday">(+1 día)</span>
                           {/if}
                         </span>
+                        {#if previewLlegada.usoZonasHorarias && previewLlegada.zonaDestino}
+                          <span class="llegada-preview__tz-label">
+                            🌍 Hora local en <strong>{previewLlegada.zonaDestino}</strong>
+                          </span>
+                        {/if}
                         <span class="llegada-preview__meta">
                           {previewLlegada.duracionMinutos} min ·
                           {#if previewLlegada.usoZonasHorarias}
