@@ -1455,7 +1455,7 @@
             <div class="section-header">
               <div>
                 <h2 class="admin-section__title">Gestionar Rutas</h2>
-                <p class="admin-section__subtitle">Edita la duración estimada en minutos de cada ruta. La hora de llegada se calculará automáticamente usando las zonas horarias de cada aeropuerto.</p>
+              <p>Administra las rutas de los vuelos</p>
               </div>
               <div style="display:flex;gap:.75rem">
                 <button class="btn-add" on:click={() => mostrarModalCrearRuta = true}>
@@ -1474,10 +1474,7 @@
                 <p class="placeholder-card__text">No hay rutas registradas. Crea una ruta manualmente con el botón <strong>+ Nueva Ruta</strong>, o selecciona aeropuertos al crear un vuelo para generarla automáticamente.</p>
               </div>
             {:else}
-              <div class="rutas-tz-note">
-                <span>💡</span>
-                <span>Las rutas con <strong>✔ TZ</strong> en ambos aeropuertos calcularán la hora de llegada con conversión de zona horaria real. Si algún aeropuerto no tiene timezone, edítalo en <em>Gestionar Aeropuertos</em>.</span>
-              </div>
+           
               <table class="table">
                 <thead class="table__head">
                   <tr>
