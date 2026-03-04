@@ -344,26 +344,85 @@ namespace Aerolinea.API.Repositories
         // ─────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Devuelve los IDs de aviones que YA están asignados a un vuelo
-        /// que se solapa con la fecha/hora de salida indicada.
-        /// Un avión se considera ocupado si tiene un vuelo activo el mismo día.
+        /// Devuelve los IDs de aviones que NO están disponibles para un vuelo
+        /// que parte de @aeropuertoOrigenId en la fecha/hora indicada.
+        ///
+        /// Un avión NO está disponible si:
+        ///   a) Todavía está en vuelo al momento de la nueva salida, O
+        ///   b) Aterrizó en el mismo aeropuerto de origen y hace menos de 24 h, O
+        ///   c) Aterrizó en un aeropuerto diferente y hace menos de 48 h.
+        ///
+        /// FechaLlegada + HoraLlegada = momento real de aterrizaje.
         /// </summary>
-        public async Task<HashSet<int>> ObtenerAvionesOcupados(DateTime fecha)
+        public async Task<HashSet<int>> ObtenerAvionesOcupados(
+            DateTime fecha, TimeSpan horaSalida, int aeropuertoOrigenId)
         {
             var ocupados = new HashSet<int>();
 
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Un avión está ocupado si tiene cualquier vuelo activo el mismo día
-            var query = @"
-                SELECT DISTINCT AvionID
-                FROM   Vuelo
-                WHERE  Fecha    = @Fecha
-                  AND  EstadoID <> 4";
+            var salidaDateTime = fecha.Date + horaSalida;
+
+            // Verificar si las columnas FechaLlegada y HoraLlegada existen
+            bool tieneFechaLlegada = await ColumnaExiste(connection, "Vuelo", "FechaLlegada");
+            bool tieneHoraLlegada  = await ColumnaExiste(connection, "Vuelo", "HoraLlegada");
+
+            string query;
+            if (tieneFechaLlegada && tieneHoraLlegada)
+            {
+                // Consulta completa con reglas de 24h (mismo aeropuerto) y 48h (diferente aeropuerto)
+                query = @"
+                    SELECT DISTINCT v.AvionID
+                    FROM  Vuelo v
+                    INNER JOIN Ruta r ON r.ID = v.RutaID
+                    WHERE v.EstadoID <> 4
+                      AND (
+                        /* Regla 1: el avión sigue en el aire al momento de la nueva salida */
+                        DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                CAST(v.FechaLlegada AS DATETIME)) > @SalidaDateTime
+
+                        OR
+
+                        /* Regla 2: aterrizó en el mismo aeropuerto → requiere 24 h de descanso */
+                        (
+                            r.DestinoID = @AeropuertoOrigenId
+                            AND DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                        CAST(v.FechaLlegada AS DATETIME)) <= @SalidaDateTime
+                            AND DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                        CAST(v.FechaLlegada AS DATETIME)) > DATEADD(HOUR, -24, @SalidaDateTime)
+                        )
+
+                        OR
+
+                        /* Regla 3: aterrizó en aeropuerto diferente → requiere 48 h de descanso */
+                        (
+                            r.DestinoID <> @AeropuertoOrigenId
+                            AND DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                        CAST(v.FechaLlegada AS DATETIME)) <= @SalidaDateTime
+                            AND DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraLlegada),
+                                        CAST(v.FechaLlegada AS DATETIME)) > DATEADD(HOUR, -48, @SalidaDateTime)
+                        )
+                      )";
+            }
+            else
+            {
+                // Fallback: bloquear si tiene cualquier vuelo activo el mismo día
+                query = @"
+                    SELECT DISTINCT AvionID
+                    FROM   Vuelo
+                    WHERE  Fecha    = @Fecha
+                      AND  EstadoID <> 4";
+            }
 
             using var cmd = new SqlCommand(query, connection);
             cmd.Parameters.AddWithValue("@Fecha", fecha.Date);
+            if (tieneFechaLlegada && tieneHoraLlegada)
+            {
+                cmd.Parameters.AddWithValue("@SalidaDateTime",    salidaDateTime);
+                cmd.Parameters.AddWithValue("@AeropuertoOrigenId", aeropuertoOrigenId);
+            }
+
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
                 ocupados.Add(reader.GetInt32(0));
