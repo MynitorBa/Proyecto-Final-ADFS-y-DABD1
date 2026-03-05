@@ -1,0 +1,528 @@
+/* ═══════════════════════════════════════════════
+   DETALLE VUELO — Movent
+   Paleta: #1C1A18 | #FFCC00 | #D40511 | #F5F2EC
+   ═══════════════════════════════════════════════ */
+
+.dv-page {
+  background: #F5F2EC;
+  min-height: calc(100vh - 64px);
+  padding: 24px 0 60px;
+}
+
+.dv-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── BREADCRUMB ── */
+.dv-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.dv-breadcrumb__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #5a5047;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.dv-breadcrumb__btn:hover { color: #1C1A18; }
+.dv-breadcrumb__sep { color: #c0b9b0; font-size: 13px; }
+.dv-breadcrumb__actual { font-size: 13px; color: #1C1A18; font-weight: 600; }
+
+/* ── GRID ── */
+.dv-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── LEFT ── */
+.dv-left { display: flex; flex-direction: column; gap: 20px; }
+
+/* ── HERO ── */
+.dv-hero {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8e3dc;
+  padding: 24px;
+}
+
+.dv-hero__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.dv-hero__aerolinea { display: flex; align-items: center; gap: 12px; }
+
+.dv-hero__logo {
+  width: 44px;
+  height: 44px;
+  background: #1C1A18;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dv-hero__aerolinea-nombre { font-size: 16px; font-weight: 700; color: #1C1A18; margin: 0 0 2px; display: block; }
+.dv-hero__vuelo-num { font-size: 12px; color: #9a9089; display: block; }
+
+.dv-hero__tags { display: flex; gap: 6px; }
+
+.dv-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.dv-tag--directo { background: #dcfce7; color: #166534; }
+.dv-tag--escala  { background: #fef3c7; color: #92400e; }
+
+/* Ruta hero */
+.dv-hero__ruta {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dv-hero__punto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 90px;
+}
+
+.dv-hero__punto--r { align-items: flex-end; }
+
+.dv-hero__iata {
+  font-size: 38px;
+  font-weight: 900;
+  color: #1C1A18;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.dv-hero__ciudad { font-size: 12px; color: #9a9089; margin-top: 2px; }
+.dv-hero__pais   { font-size: 11px; color: #c0b9b0; }
+.dv-hero__hora   { font-size: 18px; font-weight: 800; color: #1C1A18; margin-top: 8px; }
+.dv-hero__fecha  { font-size: 11px; color: #9a9089; margin-top: 2px; }
+
+.dv-hero__medio {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.dv-hero__dur { font-size: 12px; color: #9a9089; font-weight: 600; }
+
+.dv-hero__track {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.dv-hero__track-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d0c9be;
+  flex-shrink: 0;
+}
+
+.dv-hero__track-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, #d0c9be, #FFCC00);
+}
+
+.dv-hero__track-avion { flex-shrink: 0; }
+
+/* Paradas */
+.dv-hero__paradas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.dv-hero__parada {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f5f2ec;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.dv-hero__parada-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFCC00;
+  flex-shrink: 0;
+}
+
+.dv-hero__parada-info { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dv-hero__parada-iata { font-size: 14px; font-weight: 700; color: #1C1A18; }
+.dv-hero__parada-ciudad { font-size: 12px; color: #6a6058; }
+.dv-hero__parada-espera { font-size: 11px; color: #9a9089; background: #fff; border-radius: 10px; padding: 2px 8px; }
+
+/* Info avión */
+.dv-hero__avion-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid #f0ebe3;
+}
+
+.dv-hero__avion-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6a6058;
+}
+
+/* ── SECCIÓN ── */
+.dv-section {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8e3dc;
+  padding: 24px;
+}
+
+.dv-section__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1C1A18;
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dv-section__sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9a9089;
+  background: #f5f2ec;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+/* ── CLASES ── */
+.dv-clases { display: flex; flex-direction: column; gap: 12px; }
+
+.dv-clase-card {
+  border: 2px solid #e8e3dc;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.dv-clase-card:hover { border-color: #FFCC00; background: #fffbeb; }
+
+.dv-clase-card--active {
+  border-color: #FFCC00;
+  background: #fffbeb;
+  box-shadow: 0 0 0 1px #FFCC00;
+}
+
+.dv-clase-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.dv-clase-card__nombre { font-size: 15px; font-weight: 700; color: #1C1A18; margin: 0 0 2px; }
+.dv-clase-card__asientos { font-size: 12px; color: #9a9089; margin: 0; }
+
+.dv-clase-card__precio-wrap { text-align: right; }
+.dv-clase-card__precio-lbl { font-size: 10px; color: #9a9089; display: block; }
+.dv-clase-card__precio { font-size: 22px; font-weight: 800; color: #1C1A18; display: block; }
+
+.dv-clase-card__beneficios { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+
+.dv-clase-card__beneficio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #3a3530;
+}
+
+.dv-clase-card__equipaje { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+
+.dv-clase-card__eq-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6a6058;
+  background: #f5f2ec;
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.dv-clase-card__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1C1A18;
+  color: #FFCC00;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-top: 10px;
+}
+
+/* ── PASAJEROS ── */
+.dv-pasajero {
+  border: 1px solid #e8e3dc;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.dv-pasajero__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.dv-pasajero__num {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1C1A18;
+}
+
+.dv-pasajero__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #D40511;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.dv-pasajero__remove:hover { background: #fde8e8; }
+
+.dv-pasajero__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Fields */
+.dv-field { display: flex; flex-direction: column; gap: 5px; }
+
+.dv-field__label { font-size: 11px; font-weight: 700; color: #9a9089; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.dv-field__input {
+  border: 1px solid #e0d9cf;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #1C1A18;
+  background: #fff;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dv-field__input:focus { border-color: #FFCC00; box-shadow: 0 0 0 2px rgba(255,204,0,0.15); }
+
+.dv-add-pasajero {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ── RIGHT: RESUMEN ── */
+.dv-right { position: sticky; top: 24px; }
+
+.dv-resumen {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e8e3dc;
+  padding: 24px;
+}
+
+.dv-resumen__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1C1A18;
+  margin: 0 0 16px;
+}
+
+.dv-resumen__ruta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1C1A18;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.dv-resumen__iata {
+  font-size: 20px;
+  font-weight: 800;
+  color: #FFCC00;
+  flex: 1;
+}
+
+.dv-resumen__iata:last-child { text-align: right; }
+
+.dv-resumen__rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+
+.dv-resumen__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.dv-resumen__row span:first-child { color: #6a6058; }
+.dv-resumen__row span:last-child { font-weight: 600; color: #1C1A18; }
+
+.dv-resumen__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #F5F2EC;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.dv-resumen__total span { font-size: 14px; color: #6a6058; }
+.dv-resumen__total strong { font-size: 22px; font-weight: 800; color: #1C1A18; }
+
+.dv-resumen__cta {
+  width: 100%;
+  justify-content: center;
+  padding: 12px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.dv-resumen__cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dv-resumen__nota {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #9a9089;
+  margin: 0;
+  justify-content: center;
+}
+
+.dv-form-error {
+  font-size: 12px;
+  color: #D40511;
+  background: #fde8e8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+/* ── EMPTY / LOADING ── */
+.dv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 80px 20px;
+  text-align: center;
+  color: #9a9089;
+}
+
+.dv-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e8e3dc;
+  border-top-color: #FFCC00;
+  border-radius: 50%;
+  animation: dv-spin 0.7s linear infinite;
+}
+
+@keyframes dv-spin { to { transform: rotate(360deg); } }
+
+/* ── BOTONES ── */
+.dv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.dv-btn--yellow { background: #FFCC00; color: #1C1A18; }
+.dv-btn--yellow:hover { background: #f0c000; }
+
+.dv-btn--ghost {
+  background: transparent;
+  border: 1px solid #e0d9cf;
+  color: #5a5047;
+}
+.dv-btn--ghost:hover { background: #f5f2ec; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .dv-grid { grid-template-columns: 1fr; }
+  .dv-right { position: static; }
+}
+
+@media (max-width: 580px) {
+  .dv-hero__iata { font-size: 28px; }
+  .dv-pasajero__grid { grid-template-columns: 1fr; }
+  .dv-hero__ruta { gap: 8px; }
+  .dv-hero__avion-info { flex-direction: column; gap: 10px; }
+}
