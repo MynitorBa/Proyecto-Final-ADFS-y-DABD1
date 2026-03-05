@@ -156,8 +156,10 @@ namespace Aerolinea.API.Repositories
                     ISNULL(SUM(f.Total), 0) AS TotalIngresos,
                     COUNT(*)                AS TotalFacturas
                 FROM Factura f
+                INNER JOIN Reservacion r ON r.ID = f.ReservacionID
                 WHERE f.Fecha >= @FechaDesde
-                  AND f.Fecha <= @FechaHasta";
+                  AND f.Fecha <= @FechaHasta
+                  AND r.EstadoReservaID <> 3";
 
             decimal totalIngresos = 0;
             int totalReservaciones = 0;
@@ -186,6 +188,7 @@ namespace Aerolinea.API.Repositories
                 INNER JOIN Factura     f  ON f.ReservacionID = rv.ID
                 WHERE  f.Fecha >= @FechaDesde
                   AND  f.Fecha <= @FechaHasta
+                  AND  rv.EstadoReservaID <> 3
                 GROUP BY c.TipoDeClase";
 
             var dist = new List<DistribucionClaseDTO>();

@@ -337,8 +337,7 @@
               "RelativeToolTip": "Aerolinea.API\\DTOs\\MetricasDTO.cs",
               "ViewState": "AgIAADAAAAAAAAAAAAAAwFIAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T02:54:19.4Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-01T02:54:19.4Z"
             },
             {
               "$type": "Document",
@@ -350,8 +349,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\MetricasRepository.cs",
               "ViewState": "AgIAAE0BAAAAAAAAAAAAAGYBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T02:53:20.177Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-01T02:53:20.177Z"
             },
             {
               "$type": "Document",
@@ -376,8 +374,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\MetricasController.cs",
               "ViewState": "AgIAADcAAAAAAAAAAAAwwBABAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T02:52:49.694Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-01T02:52:49.694Z"
             },
             {
               "$type": "Document",
@@ -401,8 +398,7 @@
               "RelativeToolTip": "Aerolinea.API\\Services\\GestionReservacionService.cs",
               "ViewState": "AgIAAAUAAAAAAAAAAAAmwCYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-28T17:42:32.245Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-28T17:42:32.245Z"
             },
             {
               "$type": "Document",
@@ -426,8 +422,7 @@
               "RelativeToolTip": "Aerolinea.API\\Services\\AdminVueloService.cs",
               "ViewState": "AgIAADwAAAAAAAAAAAAUwFIAAABMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-01T01:08:44.464Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-01T01:08:44.464Z"
             },
             {
               "$type": "Document",
