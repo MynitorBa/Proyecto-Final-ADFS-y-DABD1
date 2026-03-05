@@ -47,5 +47,20 @@ namespace Aerolinea.API.Services
         {
             return await _repository.ObtenerListado(filtro);
         }
+
+        // Obtiene TODO el listado sin paginado (para exportar)
+        public async Task<ListadoBusquedasDTO> ObtenerListadoCompleto(MetricasFiltroDTO filtro)
+        {
+            var sinPaginado = new MetricasFiltroDTO
+            {
+                FechaDesde = filtro.FechaDesde,
+                FechaHasta = filtro.FechaHasta,
+                Tipo = filtro.Tipo,
+                Usuario = filtro.Usuario,
+                Pagina = 1,
+                TamañoPagina = 9999   // sin límite práctico
+            };
+            return await _repository.ObtenerListado(sinPaginado);
+        }
     }
 }

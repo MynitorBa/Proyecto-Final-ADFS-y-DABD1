@@ -1568,19 +1568,6 @@ body:has(.modal-overlay) { overflow: hidden; }
   line-height: 1.4;
 }
 
-.llegada-preview__tz-label {
-  font-size: .78rem;
-  color: var(--primary-color);
-  margin-top: .25rem;
-  display: flex;
-  align-items: center;
-  gap: .3rem;
-}
-
-.llegada-preview__tz-label strong {
-  font-weight: 600;
-}
-
 /* ── Timezone display en aeropuerto (solo lectura) ───────── */
 .tz-detected-display {
   display: flex;
@@ -1707,4 +1694,192 @@ body:has(.modal-overlay) { overflow: hidden; }
   font-size: .82rem;
   text-align: center;
   line-height: 1.5;
+}
+
+/* ── Métricas: KPI verde (ingresos) ─────────────────── */
+.met-kpi--green {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  color: #fff;
+}
+.met-kpi--green .met-kpi__label { color: rgba(255,255,255,.75); }
+
+/* ── Sub-pills de clase ──────────────────────────────── */
+.met-clase-pills {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.met-clase-pill {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: #f7f4f0;
+  border: 1px solid #EBE6E0;
+  border-radius: 8px;
+  padding: .5rem 1rem;
+  font-size: .85rem;
+  color: var(--text-muted);
+}
+.met-clase-pill--turista  { border-left: 4px solid #D4AF37; }
+.met-clase-pill--ejecutivo { border-left: 4px solid #1C1A18; }
+.met-clase-pill strong { color: var(--text-primary); font-weight: 700; }
+
+/* ── Barras dobles (gráfica 2) ───────────────────────── */
+.met-barras-dobles { display: flex; flex-direction: column; gap: .6rem; }
+.met-barra-doble-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: .5rem;
+}
+.met-barra-doble-label {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+.met-barra-doble-tracks { display: flex; flex-direction: column; gap: .2rem; }
+.met-barra-doble-track {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  height: 12px;
+}
+.met-barra-fill {
+  height: 100%;
+  border-radius: 3px;
+  min-width: 2px;
+  transition: width .4s ease;
+}
+.met-barra-fill--gold  { background: #D4AF37; }
+.met-barra-fill--green { background: #10b981; }
+.met-barra-val { font-size: .72rem; color: var(--text-muted); white-space: nowrap; }
+
+/* ── Donut leyenda extra ─────────────────────────────── */
+.met-ley-sub {
+  display: block;
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+
+/* ── Canal Web vs REST (mini bars) ──────────────────── */
+.met-canal-wrap {
+  background: #f7f4f0;
+  border: 1px solid #EBE6E0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.met-canal__titulo {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+.met-canal-pills { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.met-canal-pill  { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: .3rem; }
+.met-canal-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--color, #D4AF37) var(--pct, 0%), #EBE6E0 var(--pct, 0%));
+}
+.met-canal-tipo { font-size: .8rem; font-weight: 600; color: var(--text-primary); }
+.met-canal-num  { font-size: .78rem; color: var(--text-muted); }
+
+/* ── Tabla: badges canal ─────────────────────────────── */
+.met-tipo-badge {
+  display: inline-block;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 600;
+}
+.met-tipo-badge--web  { background: #fef9e7; color: #92400e; border: 1px solid #D4AF37; }
+.met-tipo-badge--rest { background: #f0fdf4; color: #065f46; border: 1px solid #10b981; }
+.met-ruta-tag {
+  display: inline-block;
+  background: #EBE6E0;
+  border-radius: 4px;
+  padding: .1rem .35rem;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Banner de ingresos totales ──────────────────────────────── */
+.met-ingresos-banner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: linear-gradient(135deg, #1C1A18 0%, #2d2a26 100%);
+  border-radius: 14px;
+  padding: 1.6rem 2rem;
+  margin-bottom: 1.5rem;
+  color: white;
+  flex-wrap: wrap;
+}
+.met-ing-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  border-right: 1px solid rgba(255,255,255,.15);
+  padding-right: 2rem;
+  flex-shrink: 0;
+}
+.met-ing-label {
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  margin-bottom: .3rem;
+}
+.met-ing-valor {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #D4AF37;
+  line-height: 1.1;
+}
+.met-ing-sub {
+  font-size: .78rem;
+  color: rgba(255,255,255,.45);
+  margin-top: .4rem;
+}
+.met-ing-stats {
+  display: flex;
+  gap: 1.6rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.met-ing-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+}
+.met-ing-stat__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.met-ing-stat__dot--turista   { background: #D4AF37; }
+.met-ing-stat__dot--ejecutivo { background: #10b981; }
+.met-ing-stat__dot--ticket    { background: #94a3b8; }
+.met-ing-stat__dot--busq      { background: #60a5fa; }
+.met-ing-stat__label {
+  display: block;
+  font-size: .7rem;
+  color: rgba(255,255,255,.5);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.met-ing-stat__val {
+  display: block;
+  font-size: .95rem;
+  font-weight: 700;
+  color: white;
+}
+@media (max-width: 640px) {
+  .met-ingresos-banner { flex-direction: column; align-items: flex-start; }
+  .met-ing-main { border-right: none; border-bottom: 1px solid rgba(255,255,255,.15); padding-right: 0; padding-bottom: 1rem; }
 }

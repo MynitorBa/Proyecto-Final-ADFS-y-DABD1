@@ -44,6 +44,23 @@
         public int TamañoPagina { get; set; } = 25;
     }
 
+
+    public class IngresosKpiDTO
+    {
+        public decimal IngresosTotales { get; set; }
+        public decimal IngresosTurista { get; set; }
+        public decimal IngresosEjecutivo { get; set; }
+        public int TotalBoletos { get; set; }
+        public int TotalReservaciones { get; set; }
+        public decimal TicketPromedio { get; set; }
+    }
+
+    public class DistribucionClaseDTO
+    {
+        public string Clase { get; set; } = "";
+        public decimal Ingresos { get; set; }
+        public int Boletos { get; set; }
+    }
     public class MetricasResumenDTO
     {
         public List<BusquedasPorDiaDTO> BusquedasPorDia { get; set; } = new();
@@ -52,6 +69,8 @@
         public int TotalBusquedas { get; set; }
         public int TotalBusquedasWeb { get; set; }
         public int TotalBusquedasRest { get; set; }
+        public IngresosKpiDTO IngresosKpi { get; set; } = new();
+        public List<DistribucionClaseDTO> DistribucionClase { get; set; } = new();
     }
 
     public class ListadoBusquedasDTO

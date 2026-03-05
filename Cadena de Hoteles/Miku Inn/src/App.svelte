@@ -16,6 +16,7 @@
   import Profile from './pages/Profile.svelte';
   import Administrador from './pages/Administrador.svelte';
   import WebService from './pages/WebService.svelte';
+  import AccesoDenegado from './pages/AccesoDenegado.svelte';
 
   import SobreNosotros       from './pages/SobreNosotros.svelte';
   import CentroAyuda         from './pages/CentroAyuda.svelte';
@@ -92,8 +93,9 @@
   }
 
   function navigateTo(page, data = null) {
-    if (page === 'administrador' && userRolId !== 2) { navigateTo('home'); return; }
-    if (page === 'webservice'    && userRolId !== 3) { navigateTo('home'); return; }
+    // Rutas protegidas: mostrar acceso denegado en lugar de redirigir silenciosamente
+    if (page === 'administrador' && userRolId !== 2) { showAccesoDenegado(); return; }
+    if (page === 'webservice'    && userRolId !== 3) { showAccesoDenegado(); return; }
 
     currentPage = page;
     pageKey     = Date.now();
@@ -104,6 +106,13 @@
     if (page === 'checkout')       checkoutData       = data;
     if (page === 'agradecimiento') agradecimientoData = data;
 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showAccesoDenegado() {
+    currentPage = 'acceso-denegado';
+    pageKey     = Date.now();
+    window.history.pushState({}, '', '/acceso-denegado');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -120,7 +129,8 @@
     navigateTo('home');
   }
 
-  const noHeaderFooter = ['login', 'register', 'administrador', 'webservice'];
+  // acceso-denegado no lleva header ni footer (pantalla completa como login/register)
+  const noHeaderFooter = ['login', 'register', 'administrador', 'webservice', 'acceso-denegado'];
   $: showHeaderFooter = !noHeaderFooter.includes(currentPage);
 </script>
 
@@ -177,6 +187,13 @@
 
       {:else if currentPage === 'webservice' && userRolId === 3}
         <WebService {navigateTo} />
+
+      <!-- Alguien entró directo por URL sin permisos -->
+      {:else if currentPage === 'administrador' || currentPage === 'webservice'}
+        {#key pageKey}<AccesoDenegado {navigateTo} />{/key}
+
+      {:else if currentPage === 'acceso-denegado'}
+        {#key pageKey}<AccesoDenegado {navigateTo} />{/key}
 
       {:else if currentPage === 'sobre-nosotros'}
         {#key pageKey}<SobreNosotros {navigateTo} />{/key}

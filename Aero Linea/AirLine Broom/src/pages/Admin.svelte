@@ -161,7 +161,6 @@
   let avionesOcupadosIds     = new Set();   // IDs de aviones no disponibles para la fecha
   let tripulantesOcupadosIds = new Set();   // IDs de tripulantes no disponibles
   let cargandoDisponibilidad = false;
-  let _disponibilidadTimer = null;  // debounce para cargarDisponibilidad
 
   // ========= TIMEZONE AUTODETECT (formulario aeropuerto) =========
   let detectandoTimezone  = false;
@@ -429,163 +428,106 @@
     finally { guardandoDuracion = false; }
   }
 
-  // ─── PREVIEW DE LLEGADA ─────────────────────────────────────────────────
-  // Calcula la hora de llegada localmente usando las rutas ya cargadas en memoria.
-  // No hace fetch adicional — evita problemas de red/auth/timeout.
-  let _rutaCheckTimer = null;
-  let _lastCheckKey   = '';   // "origenId-destinoId" del último fetch de existencia
+  // ─── PREVIEW DE LLEGADA (se llama cuando cambian origen/destino/fecha/horaSalida) ─────
+  // ── Verificar ruta (solo cuando cambian aeropuertos) ───────────────────
+  // Tiene su propio debounce para no titilar con cada tecla
+  let rutaCheckTimer = null;
+  let lastOrigenId = null;
+  let lastDestinoId = null;
 
-  // ── Calcula offset TZ en ms (local - UTC) usando Intl ─────────────────
-  function getTZOffsetMs(date, tz) {
-    try {
-      const utcStr   = date.toLocaleString('en-US', { timeZone: 'UTC' });
-      const localStr = date.toLocaleString('en-US', { timeZone: tz });
-      return new Date(localStr) - new Date(utcStr);
-    } catch { return 0; }
-  }
+  function verificarRutaSiCambioAeropuerto() {
+    const origenId  = nuevoVuelo.aeropuertoOrigenId;
+    const destinoId = nuevoVuelo.aeropuertoDestinoId;
 
-  // ── Calcula llegada local en destino usando IANA names del navegador ──
-  function calcularLlegadaJS(fecha, hora, duracionMinutos, tzOrigen, tzDestino) {
-    const [hh, mm] = hora.split(':').map(Number);
-    const naiveDep = new Date(`${fecha}T${hora}:00Z`); // naive: tratamos local como UTC
-
-    if (tzOrigen && tzDestino) {
-      try {
-        // Offset de origen en el momento de salida: cuánto ms adelanta el TZ sobre UTC
-        const originOffsetMs = getTZOffsetMs(naiveDep, tzOrigen);
-        // Salida real en UTC = naiveDep (local origen) - originOffset
-        const departureUTC   = naiveDep.getTime() - originOffsetMs;
-        // Llegada en UTC
-        const arrivalUTC     = new Date(departureUTC + duracionMinutos * 60 * 1000);
-        // Offset destino en momento de llegada
-        const destOffsetMs   = getTZOffsetMs(arrivalUTC, tzDestino);
-        // Hora local destino = UTC + destOffset
-        const arrivalLocal   = new Date(arrivalUTC.getTime() + destOffsetMs);
-
-        const horaLlegada = String(arrivalLocal.getUTCHours()).padStart(2,'0') + ':' +
-                            String(arrivalLocal.getUTCMinutes()).padStart(2,'0');
-        const fechaLlegada = arrivalLocal.toISOString().split('T')[0];
-
-        const diffHours = (destOffsetMs - originOffsetMs) / 3600000;
-        const nota = diffHours === 0
-          ? `Misma zona horaria. Vuelo de ${duracionMinutos} min.`
-          : `Diferencia de zona horaria: ${diffHours > 0 ? '+' : ''}${diffHours}h respecto al origen. Vuelo de ${duracionMinutos} min.`;
-
-        return { horaLlegada, fechaLlegada, duracionMinutos, usoZonasHorarias: true,
-                 zonaOrigen: tzOrigen, zonaDestino: tzDestino, nota };
-      } catch (_) { /* si Intl no reconoce el TZ, usar fallback */ }
-    }
-
-    // Fallback sin zonas horarias
-    const llegadaMins = hh * 60 + mm + duracionMinutos;
-    const llegadaH    = Math.floor(llegadaMins / 60) % 24;
-    const llegadaM    = llegadaMins % 60;
-    const horaStr     = String(llegadaH).padStart(2,'0') + ':' + String(llegadaM).padStart(2,'0');
-    let fechaStr      = fecha;
-    if (llegadaMins >= 1440) {
-      const d = new Date(fecha + 'T12:00:00');
-      d.setDate(d.getDate() + 1);
-      fechaStr = d.toISOString().split('T')[0];
-    }
-    return { horaLlegada: horaStr, fechaLlegada: fechaStr, duracionMinutos,
-             usoZonasHorarias: false, zonaOrigen: null, zonaDestino: null,
-             nota: `Vuelo de ${duracionMinutos} min. (sin zona horaria configurada)` };
-  }
-
-  function recalcularPreviewLlegada() {
-    const origenId  = parseInt(nuevoVuelo.aeropuertoOrigenId);
-    const destinoId = parseInt(nuevoVuelo.aeropuertoDestinoId);
-    const fecha     = nuevoVuelo.fecha;
-    const hora      = nuevoVuelo.horaSalida;
-
-    // Resetear si faltan aeropuertos
     if (!origenId || !destinoId) {
-      _lastCheckKey = '';
-      rutaExisteStatus = null; previewLlegada = null; loadingPreview = false; return;
+      rutaExisteStatus = null;
+      previewLlegada   = null;
+      return;
     }
-    if (!fecha || !hora) {
-      previewLlegada = null; loadingPreview = false; return;
-    }
-    // Validar año completo (evita fechas como 0002-03-30)
-    const anio = parseInt((fecha.split('-')[0]) || '0');
-    if (anio < 2000 || fecha.length < 10) { previewLlegada = null; loadingPreview = false; return; }
 
-    // Buscar ruta en el array local
-    const ao = aeropuertos.find(a => a.id === origenId);
-    const ad = aeropuertos.find(a => a.id === destinoId);
-    const rutaLocal = rutas.find(r =>
-      ao && ad && r.codigoOrigen === ao.codigo && r.codigoDestino === ad.codigo
-    );
+    // Si los aeropuertos no cambiaron, no relanzar el check
+    if (origenId === lastOrigenId && destinoId === lastDestinoId) return;
+    lastOrigenId  = origenId;
+    lastDestinoId = destinoId;
 
-    const checkKey = `${origenId}-${destinoId}-${fecha}-${hora}`;
-    if (checkKey === _lastCheckKey) return;
-    _lastCheckKey = checkKey;
+    clearTimeout(rutaCheckTimer);
+    rutaCheckTimer = setTimeout(async () => {
+      rutaExisteStatus = 'checking';
+      try {
+        const rc = await fetch(
+          `${API}/api/rutas/existe?origenId=${origenId}&destinoId=${destinoId}`,
+          { credentials: 'include' }
+        );
+        if (rc.ok) {
+          const { existe } = await rc.json();
+          rutaExisteStatus = existe ? 'ok' : 'missing';
+        } else {
+          rutaExisteStatus = null;
+        }
+      } catch { rutaExisteStatus = null; }
 
-    if (rutaLocal) {
-      // Tenemos la ruta localmente con sus zonas horarias → calcular al instante en JS
-      rutaExisteStatus = 'ok';
-      previewLlegada = calcularLlegadaJS(
-        fecha, hora,
-        rutaLocal.duracionEstimada || 120,
-        rutaLocal.zonaHorariaOrigen || null,
-        rutaLocal.zonaHorariaDestino || null
-      );
+      // Si hay ruta y ya hay fecha/hora, lanzar cálculo
+      if (rutaExisteStatus === 'ok') {
+        calcularPreviewLlegada();
+      } else {
+        previewLlegada = null;
+        loadingPreview = false;
+      }
+    }, 300);
+  }
+
+  // ── Calcular hora de llegada (solo cuando cambian fecha/hora) ────────────
+  // NO re-verifica la ruta, solo calcula si ya sabemos que existe
+  function actualizarPreviewLlegada() {
+    if (rutaExisteStatus !== 'ok') return;
+    calcularPreviewLlegada();
+  }
+
+  function calcularPreviewLlegada() {
+    if (!nuevoVuelo.aeropuertoOrigenId || !nuevoVuelo.aeropuertoDestinoId ||
+        !nuevoVuelo.fecha || !nuevoVuelo.horaSalida) {
+      previewLlegada = null;
       loadingPreview = false;
       return;
     }
 
-    // Ruta no cargada en memoria → verificar con API y calcular con backend
-    rutaExisteStatus = 'checking';
-    previewLlegada   = null;
-    loadingPreview   = true;
+    clearTimeout(previewDebounceTimer);
+    previewDebounceTimer = setTimeout(async () => {
+      loadingPreview = true;
+      previewLlegada = null;
 
-    clearTimeout(_rutaCheckTimer);
-    _rutaCheckTimer = setTimeout(async () => {
+      // AbortController para que el fetch no se quede colgado indefinidamente
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 8000);
+
       try {
-        // Verificar existencia
-        const rExiste = await fetch(
-          `${API}/api/rutas/existe?origenId=${origenId}&destinoId=${destinoId}`,
-          { credentials: 'include' }
-        );
-        const { existe } = rExiste.ok ? await rExiste.json() : { existe: false };
-        rutaExisteStatus = existe ? 'ok' : 'missing';
-        if (!existe) { loadingPreview = false; return; }
-
-        // Calcular llegada via API (devuelve TZ correcto desde el backend)
-        const rCalc = await fetch(`${API}/api/rutas/calcular-llegada`, {
+        const r = await fetch(`${API}/api/rutas/calcular-llegada`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
-            aeropuertoOrigenId:  origenId,
-            aeropuertoDestinoId: destinoId,
-            fechaSalida:         fecha,
-            horaSalida:          hora
+            aeropuertoOrigenId:  parseInt(nuevoVuelo.aeropuertoOrigenId),
+            aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
+            fechaSalida: nuevoVuelo.fecha,
+            horaSalida:  nuevoVuelo.horaSalida
           })
         });
-        if (rCalc.ok) {
-          const d = await rCalc.json();
-          // Soportar tanto PascalCase (ASP.NET default) como camelCase
-          previewLlegada = {
-            horaLlegada:      d.horaLlegada      ?? d.HoraLlegada,
-            fechaLlegada:     d.fechaLlegada     ?? d.FechaLlegada,
-            duracionMinutos:  d.duracionMinutos  ?? d.DuracionMinutos,
-            usoZonasHorarias: d.usoZonasHorarias ?? d.UsoZonasHorarias ?? false,
-            zonaOrigen:       d.zonaHorariaOrigen  ?? d.ZonaHorariaOrigen  ?? null,
-            zonaDestino:      d.zonaHorariaDestino ?? d.ZonaHorariaDestino ?? null,
-            nota:             d.nota ?? d.Nota ?? ''
-          };
+        if (r.ok) {
+          previewLlegada = await r.json();
+        } else {
+          previewLlegada = null;
         }
-      } catch { /* ruta no verificable, no cambiar estado */ }
-      loadingPreview = false;
-    }, 400);
+      } catch (e) {
+        previewLlegada = null;
+      } finally {
+        clearTimeout(timeoutId);
+        loadingPreview = false;
+      }
+    }, 500);
   }
 
-  function verificarRutaSiCambioAeropuerto() { recalcularPreviewLlegada(); }
-  function actualizarPreviewLlegada()         { recalcularPreviewLlegada(); }
-  function calcularPreviewLlegada()           { recalcularPreviewLlegada(); }
-
-    // ─── AUTODETECT TIMEZONE VIA NOMINATIM + TIMEAPI.IO ─────────────────────
+  // ─── AUTODETECT TIMEZONE VIA NOMINATIM + TIMEAPI.IO ─────────────────────
   async function autoDetectarTimezone() {
     if (!aeropuertoForm.ciudad || !aeropuertoForm.pais) {
       mostrarToast('error', 'Selecciona ciudad y país primero');
@@ -727,23 +669,30 @@
     nuevoVuelo.fechaLlegada = nuevoVuelo.fecha;
   }
 
-  // Recalcular preview cuando cambia cualquier campo relevante
+  // Tasa de conversión (métricas)
+  $: tasaConversion = (metricasResumen && metricasResumen.totalBusquedas > 0)
+    ? ((metricasResumen.ingresosKpi.totalReservaciones / metricasResumen.totalBusquedas) * 100).toFixed(1)
+    : '0.0';
+
+  // Solo re-verifica la ruta cuando cambian los aeropuertos
   $: {
     nuevoVuelo.aeropuertoOrigenId;
     nuevoVuelo.aeropuertoDestinoId;
-    nuevoVuelo.fecha;
-    nuevoVuelo.horaSalida;
-    rutas; // también cuando se cargan las rutas
-    recalcularPreviewLlegada();
+    verificarRutaSiCambioAeropuerto();
   }
 
-  // Disponibilidad de aviones/tripulantes: solo al cambiar fecha/hora (con debounce)
+  // Solo recalcula la hora cuando cambian fecha u hora (ruta ya verificada)
   $: {
     nuevoVuelo.fecha;
     nuevoVuelo.horaSalida;
-    nuevoVuelo.aeropuertoOrigenId;
-    clearTimeout(_disponibilidadTimer);
-    _disponibilidadTimer = setTimeout(() => cargarDisponibilidad(), 500);
+    actualizarPreviewLlegada();
+  }
+
+  // Disponibilidad de aviones/tripulantes: solo al cambiar fecha/hora
+  $: {
+    nuevoVuelo.fecha;
+    nuevoVuelo.horaSalida;
+    cargarDisponibilidad();
   }
 
   $: if (avionSeleccionado && !nuevoVuelo.boletosTurista && !nuevoVuelo.boletosEjecutivo) {
@@ -793,23 +742,18 @@
       tripulantesOcupadosIds = new Set();
       return;
     }
-    // Evitar llamadas con fechas incompletas (ej: '202', '2025-1')
-    const anioFecha = parseInt((nuevoVuelo.fecha.split('-')[0]) || '0');
-    if (anioFecha < 2000 || nuevoVuelo.fecha.length < 10) return;
     cargandoDisponibilidad = true;
     try {
       const [rAviones, rTrip] = await Promise.all([
-        (nuevoVuelo.horaSalida && nuevoVuelo.aeropuertoOrigenId)
-          ? fetch(`${API}/api/admin/vuelos/aviones-ocupados?fecha=${nuevoVuelo.fecha}&horaSalida=${nuevoVuelo.horaSalida}&aeropuertoOrigenId=${nuevoVuelo.aeropuertoOrigenId}`,
-                  { credentials: 'include' })
-          : Promise.resolve(null),
+        fetch(`${API}/api/admin/vuelos/aviones-ocupados?fecha=${nuevoVuelo.fecha}`,
+              { credentials: 'include' }),
         nuevoVuelo.horaSalida
           ? fetch(`${API}/api/admin/vuelos/tripulantes-ocupados?fecha=${nuevoVuelo.fecha}&horaSalida=${nuevoVuelo.horaSalida}`,
                   { credentials: 'include' })
           : Promise.resolve(null)
       ]);
 
-      if (rAviones && rAviones.ok) {
+      if (rAviones.ok) {
         const ids = await rAviones.json();
         avionesOcupadosIds = new Set(ids);
       }
@@ -1310,7 +1254,24 @@
                   </div>
                   <div class="admin-form__field">
                     <label class="admin-form__label">Hora de Llegada</label>
-                    {#if previewLlegada}
+                    {#if rutaExisteStatus === 'checking'}
+                      <div class="llegada-preview llegada-preview--loading">🔍 Verificando ruta...</div>
+                    {:else if rutaExisteStatus === 'missing'}
+                      <div class="llegada-preview llegada-preview--no-ruta">
+                        <span class="llegada-preview__no-ruta-icon">🚫</span>
+                        <span class="llegada-preview__no-ruta-title">No existe esta ruta</span>
+                        <small class="llegada-preview__no-ruta-msg">
+                          No hay una ruta creada entre estos dos aeropuertos.
+                          Debes crearla en <strong>Gestionar Rutas</strong> antes de poder crear el vuelo.
+                        </small>
+                        <button type="button" class="llegada-preview__no-ruta-btn"
+                          on:click={() => { activeSection = 'gestionar-rutas'; mostrarModalCrearRuta = true; }}>
+                          → Ir a crear la ruta
+                        </button>
+                      </div>
+                    {:else if loadingPreview}
+                      <div class="llegada-preview llegada-preview--loading">⏳ Calculando llegada...</div>
+                    {:else if previewLlegada}
                       <div class="llegada-preview" class:llegada-preview--tz={previewLlegada.usoZonasHorarias}>
                         <span class="llegada-preview__time">
                           🛬 {previewLlegada.horaLlegada}
@@ -1318,11 +1279,6 @@
                             <span class="llegada-preview__nextday">(+1 día)</span>
                           {/if}
                         </span>
-                        {#if previewLlegada.usoZonasHorarias && previewLlegada.zonaDestino}
-                          <span class="llegada-preview__tz-label">
-                            🌍 Hora local en <strong>{previewLlegada.zonaDestino}</strong>
-                          </span>
-                        {/if}
                         <span class="llegada-preview__meta">
                           {previewLlegada.duracionMinutos} min ·
                           {#if previewLlegada.usoZonasHorarias}
@@ -1333,25 +1289,11 @@
                         </span>
                         <small class="llegada-preview__nota">{previewLlegada.nota}</small>
                       </div>
-                    {:else if rutaExisteStatus === 'missing'}
-                      <div class="llegada-preview llegada-preview--no-ruta">
-                        <span class="llegada-preview__no-ruta-icon">🚫</span>
-                        <span class="llegada-preview__no-ruta-title">No existe esta ruta</span>
-                        <small class="llegada-preview__no-ruta-msg">
-                          Debes crearla en <strong>Gestionar Rutas</strong> antes de poder crear el vuelo.
-                        </small>
-                        <button type="button" class="llegada-preview__no-ruta-btn"
-                          on:click={() => { activeSection = 'gestionar-rutas'; mostrarModalCrearRuta = true; }}>
-                          → Ir a crear la ruta
-                        </button>
-                      </div>
-                    {:else if rutaExisteStatus === 'checking'}
-                      <div class="llegada-preview llegada-preview--loading">🔍 Verificando ruta...</div>
                     {:else if nuevoVuelo.aeropuertoOrigenId && nuevoVuelo.aeropuertoDestinoId && nuevoVuelo.fecha && nuevoVuelo.horaSalida}
-                      <div class="llegada-preview llegada-preview--loading">⏳ Calculando...</div>
+                      <div class="llegada-preview llegada-preview--empty">Calculando llegada...</div>
                     {:else}
                       <div class="llegada-preview llegada-preview--empty">
-                        Completa origen, destino, fecha y hora para ver la llegada estimada
+                        Se calcula automáticamente al completar origen, destino, fecha y hora de salida
                       </div>
                     {/if}
                   </div>
@@ -1539,7 +1481,7 @@
             <div class="section-header">
               <div>
                 <h2 class="admin-section__title">Gestionar Rutas</h2>
-              <p>Administra las rutas de los vuelos</p>
+                <p class="admin-section__subtitle">Edita la duración estimada en minutos de cada ruta. La hora de llegada se calculará automáticamente usando las zonas horarias de cada aeropuerto.</p>
               </div>
               <div style="display:flex;gap:.75rem">
                 <button class="btn-add" on:click={() => mostrarModalCrearRuta = true}>
@@ -1558,7 +1500,10 @@
                 <p class="placeholder-card__text">No hay rutas registradas. Crea una ruta manualmente con el botón <strong>+ Nueva Ruta</strong>, o selecciona aeropuertos al crear un vuelo para generarla automáticamente.</p>
               </div>
             {:else}
-           
+              <div class="rutas-tz-note">
+                <span>💡</span>
+                <span>Las rutas con <strong>✔ TZ</strong> en ambos aeropuertos calcularán la hora de llegada con conversión de zona horaria real. Si algún aeropuerto no tiene timezone, edítalo en <em>Gestionar Aeropuertos</em>.</span>
+              </div>
               <table class="table">
                 <thead class="table__head">
                   <tr>
@@ -1929,7 +1874,7 @@
             <div class="met-header">
               <div>
                 <h2 class="admin-section__title">Analiticos y Reportes</h2>
-                <p class="admin-section__subtitle">Registro y visualizacion de busquedas del sistema</p>
+                <p class="admin-section__subtitle">Busquedas, ingresos y conversion del sistema</p>
               </div>
             </div>
 
@@ -1944,7 +1889,7 @@
                 <input type="date" class="met-input" bind:value={metFechaHasta} />
               </div>
               <div class="met-filtro-grupo">
-                <label class="met-label">Tipo</label>
+                <label class="met-label">Canal</label>
                 <select class="met-input" bind:value={metTipo}>
                   <option value="">Todos</option>
                   <option value="Web">Web</option>
@@ -1961,167 +1906,217 @@
             </div>
 
             {#if loadingMetricas}
-              <div class="met-loading">
-                <div class="met-spinner"></div>
-                <p>Cargando analiticos...</p>
-              </div>
+              <div class="met-loading"><div class="met-spinner"></div><p>Cargando analiticos...</p></div>
             {:else if metricasResumen}
 
-              <!-- ── KPI Cards ───────────────────────────────────────── -->
-              <div class="met-kpis">
-                <div class="met-kpi">
-                  <span class="met-kpi__icon">🔍</span>
-                  <span class="met-kpi__value">{metricasResumen.totalBusquedas.toLocaleString()}</span>
-                  <span class="met-kpi__label">Total Busquedas</span>
+              <!-- ── Banner de ingresos totales ─────────────────────── -->
+              {#each [metricasResumen.ingresosKpi ?? {ingresosTotales:0,ingresosTurista:0,ingresosEjecutivo:0,totalBoletos:0,totalReservaciones:0,ticketPromedio:0}] as kpi}
+              <div class="met-ingresos-banner">
+                <div class="met-ing-main">
+                  <span class="met-ing-label">Ingresos Totales</span>
+                  <span class="met-ing-valor">
+                    ${kpi.ingresosTotales.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}
+                  </span>
+                  <span class="met-ing-sub">{kpi.totalBoletos} boletos · {kpi.totalReservaciones} reservaciones</span>
                 </div>
-                <div class="met-kpi met-kpi--gold">
-                  <span class="met-kpi__icon">🌐</span>
-                  <span class="met-kpi__value">{metricasResumen.totalBusquedasWeb.toLocaleString()}</span>
-                  <span class="met-kpi__label">Busquedas Web</span>
-                </div>
-                <div class="met-kpi met-kpi--dark">
-                  <span class="met-kpi__icon">⚡</span>
-                  <span class="met-kpi__value">{metricasResumen.totalBusquedasRest.toLocaleString()}</span>
-                  <span class="met-kpi__label">Busquedas REST</span>
-                </div>
-                <div class="met-kpi">
-                  <span class="met-kpi__icon">📅</span>
-                  <span class="met-kpi__value">{metricasResumen.busquedasPorDia.length}</span>
-                  <span class="met-kpi__label">Dias con actividad</span>
+                <div class="met-ing-stats">
+                  <div class="met-ing-stat">
+                    <span class="met-ing-stat__dot met-ing-stat__dot--turista"></span>
+                    <div>
+                      <span class="met-ing-stat__label">Turista</span>
+                      <span class="met-ing-stat__val">${kpi.ingresosTurista.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+                    </div>
+                  </div>
+                  <div class="met-ing-stat">
+                    <span class="met-ing-stat__dot met-ing-stat__dot--ejecutivo"></span>
+                    <div>
+                      <span class="met-ing-stat__label">Ejecutivo</span>
+                      <span class="met-ing-stat__val">${kpi.ingresosEjecutivo.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+                    </div>
+                  </div>
+                  <div class="met-ing-stat">
+                    <span class="met-ing-stat__dot met-ing-stat__dot--ticket"></span>
+                    <div>
+                      <span class="met-ing-stat__label">Ticket promedio</span>
+                      <span class="met-ing-stat__val">${kpi.ticketPromedio.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
+                    </div>
+                  </div>
+                  <div class="met-ing-stat">
+                    <span class="met-ing-stat__dot met-ing-stat__dot--busq"></span>
+                    <div>
+                      <span class="met-ing-stat__label">Búsquedas totales</span>
+                      <span class="met-ing-stat__val">{metricasResumen.totalBusquedas.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              {/each}
 
-              <!-- ── Gráficas ────────────────────────────────────────── -->
+              <!-- ── 3 Gráficas ─────────────────────────────────────── -->
               <div class="met-graficas">
 
-                <!-- Gráfica 1: Línea temporal de búsquedas por día -->
+                <!-- ══ GRÁFICA 1: Búsquedas por día ══ -->
                 <div class="met-grafica met-grafica--wide">
-                  <h3 class="met-grafica__titulo">Busquedas por dia</h3>
-                  <p class="met-grafica__subtitulo">Volumen diario de busquedas en el periodo seleccionado</p>
+                  <h3 class="met-grafica__titulo">Busquedas diarias</h3>
+                  <p class="met-grafica__subtitulo">Volumen de busquedas por dia en el periodo seleccionado</p>
                   {#if metricasResumen.busquedasPorDia.length === 0}
                     <div class="met-empty">Sin datos en el periodo seleccionado</div>
                   {:else}
                     {@const datos = metricasResumen.busquedasPorDia}
-                    {@const maxVal = Math.max(...datos.map(d => d.total), 1)}
-                    {@const W = 700} {@const H = 200}
+                    {@const maxBusc = Math.max(...datos.map(d => d.total), 1)}
+                    {@const W = 700} {@const H = 220} {@const PAD = {l:44, r:20, t:20, b:30}}
+                    {@const gW = W - PAD.l - PAD.r}
+                    {@const gH = H - PAD.t - PAD.b}
                     <div class="met-svg-wrap">
                       <svg viewBox="0 0 {W} {H}" class="met-svg" preserveAspectRatio="xMidYMid meet">
-                        <!-- Grid lines -->
-                        {#each [0.25, 0.5, 0.75, 1] as pct}
-                          <line x1="20" y1={H - 20 - pct * (H - 40)} x2={W - 10} y2={H - 20 - pct * (H - 40)}
-                            stroke="#EBE6E0" stroke-width="1" />
-                          <text x="14" y={H - 20 - pct * (H - 40) + 4} font-size="9" fill="#b8b0a5" text-anchor="end">
-                            {Math.round(maxVal * pct)}
-                          </text>
-                        {/each}
-                        <!-- Área rellena -->
                         <defs>
-                          <linearGradient id="gradLinea" x1="0" y1="0" x2="0" y2="1">
+                          <linearGradient id="gradBusc" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.3"/>
                             <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
                           </linearGradient>
                         </defs>
+                        {#each [0, 0.25, 0.5, 0.75, 1] as pct}
+                          {@const y = PAD.t + gH - pct * gH}
+                          <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="#EBE6E0" stroke-width="1"/>
+                          <text x={PAD.l - 4} y={y + 4} font-size="9" fill="#b8b0a5" text-anchor="end">
+                            {Math.round(maxBusc * pct)}
+                          </text>
+                        {/each}
                         {#if datos.length > 1}
                           {@const pts = datos.map((d,i) => {
-                            const x = (i/(datos.length-1))*(W-40)+20;
-                            const y = H-20-((d.total/maxVal)*(H-40));
+                            const x = PAD.l + (i/(datos.length-1)) * gW;
+                            const y = PAD.t + gH - (d.total / maxBusc) * gH;
                             return `${x},${y}`;
                           })}
                           <polygon
-                            points={`20,${H-20} ${pts.join(' ')} ${(W-20)},${H-20}`}
-                            fill="url(#gradLinea)" />
-                          <polyline points={pts.join(' ')}
-                            fill="none" stroke="#D4AF37" stroke-width="2.5"
-                            stroke-linejoin="round" stroke-linecap="round" />
-                          <!-- Puntos interactivos -->
+                            points={`${PAD.l},${PAD.t+gH} ${pts.join(' ')} ${W-PAD.r},${PAD.t+gH}`}
+                            fill="url(#gradBusc)"/>
+                          <polyline points={pts.join(' ')} fill="none"
+                            stroke="#D4AF37" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                           {#each datos as d, i}
-                            {@const x = (i/(datos.length-1))*(W-40)+20}
-                            {@const y = H-20-((d.total/maxVal)*(H-40))}
-                            <circle cx={x} cy={y} r="4" fill="#D4AF37" stroke="white" stroke-width="2">
+                            {@const x = PAD.l + (i/(datos.length-1)) * gW}
+                            {@const y = PAD.t + gH - (d.total / maxBusc) * gH}
+                            <circle cx={x} cy={y} r="3.5" fill="#D4AF37" stroke="white" stroke-width="1.5">
                               <title>{d.fecha}: {d.total} busquedas</title>
                             </circle>
                           {/each}
                         {:else}
-                          <!-- Solo 1 punto -->
-                          <circle cx={W/2} cy={H/2} r="6" fill="#D4AF37" stroke="white" stroke-width="2" />
+                          <circle cx={PAD.l + gW/2} cy={PAD.t + gH/2} r="6" fill="#D4AF37"/>
                         {/if}
-                        <!-- Eje X: etiquetas de fechas (cada ~5) -->
                         {#each datos as d, i}
-                          {#if i % Math.ceil(datos.length / 6) === 0 || i === datos.length - 1}
-                            {@const x = datos.length > 1 ? (i/(datos.length-1))*(W-40)+20 : W/2}
-                            <text x={x} y={H - 4} font-size="8" fill="#b8b0a5" text-anchor="middle">
-                              {d.fecha.slice(5)}
-                            </text>
+                          {#if i % Math.ceil(datos.length / 7) === 0 || i === datos.length - 1}
+                            {@const x = datos.length > 1 ? PAD.l + (i/(datos.length-1))*gW : PAD.l+gW/2}
+                            <text x={x} y={H - 6} font-size="8" fill="#b8b0a5" text-anchor="middle">{d.fecha.slice(5)}</text>
                           {/if}
                         {/each}
                       </svg>
                     </div>
                     <div class="met-grafica__leyenda">
-                      <span class="met-leyenda-dot" style="background:#D4AF37"></span>
-                      Busquedas totales por dia
+                      <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Busquedas diarias</span>
                     </div>
                   {/if}
                 </div>
 
-                <!-- Gráfica 2: Rutas más buscadas (barras horizontales) -->
+                <!-- ══ GRÁFICA 2: Top rutas — búsquedas vs ingresos (grouped horizontal bar) ══ -->
                 <div class="met-grafica">
-                  <h3 class="met-grafica__titulo">Rutas mas buscadas</h3>
-                  <p class="met-grafica__subtitulo">Top 10 rutas con mayor demanda</p>
+                  <h3 class="met-grafica__titulo">Top rutas por demanda e ingresos</h3>
+                  <p class="met-grafica__subtitulo">Busquedas (dorado) vs Ingresos generados (verde) por ruta</p>
                   {#if metricasResumen.rutasMasBuscadas.length === 0}
                     <div class="met-empty">Sin datos en el periodo seleccionado</div>
                   {:else}
-                    {@const maxRuta = Math.max(...metricasResumen.rutasMasBuscadas.map(r => r.total), 1)}
-                    <div class="met-barras">
+                    {@const maxBuscRuta = Math.max(...metricasResumen.rutasMasBuscadas.map(r => r.total), 1)}
+                    {@const maxIngRuta  = Math.max(...metricasResumen.rutasMasBuscadas.map(r => r.ingresos), 1)}
+                    <div class="met-barras-dobles">
                       {#each metricasResumen.rutasMasBuscadas as ruta, i}
-                        <div class="met-barra-row">
-                          <div class="met-barra-label">
+                        <div class="met-barra-doble-row">
+                          <div class="met-barra-doble-label">
                             <span class="met-barra-rank">#{i+1}</span>
                             <span class="met-barra-ruta">{ruta.origenCodigo} → {ruta.destinoCodigo}</span>
                           </div>
-                          <div class="met-barra-track">
-                            <div class="met-barra-fill"
-                              style="width:{(ruta.total/maxRuta)*100}%;
-                                     background: {i < 3 ? '#D4AF37' : i < 6 ? '#C9A961' : '#b8a080'}">
+                          <div class="met-barra-doble-tracks">
+                            <!-- Barra búsquedas -->
+                            <div class="met-barra-doble-track">
+                              <div class="met-barra-fill met-barra-fill--gold"
+                                style="width:{(ruta.total/maxBuscRuta)*100}%">
+                              </div>
+                              <span class="met-barra-val">{ruta.total}</span>
+                            </div>
+                            <!-- Barra ingresos -->
+                            <div class="met-barra-doble-track">
+                              <div class="met-barra-fill met-barra-fill--green"
+                                style="width:{(ruta.ingresos/maxIngRuta)*100}%">
+                              </div>
+                              <span class="met-barra-val">${(ruta.ingresos/1000).toFixed(1)}k</span>
                             </div>
                           </div>
-                          <span class="met-barra-val">{ruta.total}</span>
                         </div>
                       {/each}
+                    </div>
+                    <div class="met-grafica__leyenda">
+                      <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Busquedas</span>
+                      <span><span class="met-leyenda-dot" style="background:#10b981"></span> Ingresos</span>
                     </div>
                   {/if}
                 </div>
 
-                <!-- Gráfica 3: Donut Web vs REST -->
+                <!-- ══ GRÁFICA 3: Distribución de ingresos por clase de asiento (donut) ══ -->
                 <div class="met-grafica met-grafica--donut">
-                  <h3 class="met-grafica__titulo">Canal de busqueda</h3>
-                  <p class="met-grafica__subtitulo">Proporcion Web vs REST</p>
-                  {#if metricasResumen.busquedasPorTipo.length === 0}
-                    <div class="met-empty">Sin datos en el periodo seleccionado</div>
+                  <h3 class="met-grafica__titulo">Ingresos por clase de asiento</h3>
+                  <p class="met-grafica__subtitulo">Contribucion de Turista vs Ejecutivo al revenue total</p>
+                  {#if !metricasResumen.distribucionClase || metricasResumen.distribucionClase.length === 0}
+                    <div class="met-empty">Sin boletos vendidos en el periodo</div>
                   {:else}
-                    {@const segmentos = calcularDonut(metricasResumen.busquedasPorTipo)}
+                    {@const donutData = metricasResumen.distribucionClase}
+                    {@const totalIngClase = donutData.reduce((s,c) => s + (c.ingresos ?? 0), 0) || 1}
+                    {@const colores = ['#D4AF37','#1C1A18','#10b981','#C9A961']}
+                    {@const segClase = (() => {
+                      let ang = -90;
+                      return donutData.map((c, i) => {
+                        const ing = c.ingresos ?? 0;
+                        const pct = ing / totalIngClase;
+                        const start = ang;
+                        ang += pct * 360;
+                        const angle = pct * 360;
+                        return { clase: c.clase ?? c.Clase ?? '', ingresos: ing,
+                                 boletos: c.boletos ?? c.Boletos ?? 0,
+                                 start, angle, color: colores[i % colores.length],
+                                 pct: (pct*100).toFixed(1) };
+                      });
+                    })()}
                     <div class="met-donut-wrap">
                       <svg viewBox="0 0 200 200" class="met-donut-svg">
-                        {#each segmentos as seg}
-                          <path
-                            d={donutPath(seg.start, seg.start + seg.angle)}
-                            fill={seg.color}
-                            stroke="white"
-                            stroke-width="2">
-                            <title>{seg.tipo}: {seg.total} ({seg.porcentaje}%)</title>
-                          </path>
+                        {#each segClase as seg}
+                          {#if seg.angle > 0.5}
+                            {@const cx=100} {@const cy=100} {@const R=80} {@const r=48}
+                            {@const s = seg.start * Math.PI/180}
+                            {@const e = (seg.start + seg.angle) * Math.PI/180}
+                            {@const large = seg.angle > 180 ? 1 : 0}
+                            {@const x1=cx+R*Math.cos(s)} {@const y1=cy+R*Math.sin(s)}
+                            {@const x2=cx+R*Math.cos(e)} {@const y2=cy+R*Math.sin(e)}
+                            {@const x3=cx+r*Math.cos(e)} {@const y3=cy+r*Math.sin(e)}
+                            {@const x4=cx+r*Math.cos(s)} {@const y4=cy+r*Math.sin(s)}
+                            <path d="M{x1},{y1} A{R},{R} 0 {large},1 {x2},{y2} L{x3},{y3} A{r},{r} 0 {large},0 {x4},{y4} Z"
+                              fill={seg.color} stroke="white" stroke-width="2">
+                              <title>{seg.clase}: ${seg.ingresos.toLocaleString('es-GT')} ({seg.pct}%)</title>
+                            </path>
+                          {/if}
                         {/each}
-                        <!-- Texto central -->
-                        <text x="100" y="97" text-anchor="middle" font-size="22" font-weight="700" fill="#1C1A18">
-                          {metricasResumen.totalBusquedas}
+                        <!-- Centro -->
+                        <circle cx="100" cy="100" r="44" fill="white"/>
+                        <text x="100" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#1C1A18">
+                          ${(totalIngClase/1000).toFixed(1)}k
                         </text>
-                        <text x="100" y="113" text-anchor="middle" font-size="9" fill="#b8b0a5">TOTAL</text>
+                        <text x="100" y="111" text-anchor="middle" font-size="8" fill="#b8b0a5">INGRESOS</text>
                       </svg>
                       <div class="met-donut-leyenda">
-                        {#each segmentos as seg}
+                        {#each segClase as seg}
                           <div class="met-ley-item">
                             <span class="met-leyenda-dot" style="background:{seg.color}"></span>
-                            <span class="met-ley-tipo">{seg.tipo}</span>
-                            <span class="met-ley-num">{seg.total} <em>({seg.porcentaje}%)</em></span>
+                            <div>
+                              <span class="met-ley-tipo">{seg.clase}</span>
+                              <span class="met-ley-num">${seg.ingresos.toLocaleString('es-GT')} <em>({seg.pct}%)</em></span>
+                              <span class="met-ley-sub">{seg.boletos} boletos</span>
+                            </div>
                           </div>
                         {/each}
                       </div>
@@ -2131,9 +2126,29 @@
 
               </div>
               <!-- /Gráficas -->
+
+              <!-- ── Canal Web vs REST (mini donut) ────────────────── -->
+              {#if metricasResumen.busquedasPorTipo.length > 0}
+                {@const totalTipo = metricasResumen.totalBusquedas || 1}
+                <div class="met-canal-wrap">
+                  <h3 class="met-canal__titulo">Canal de busqueda: Web vs REST</h3>
+                  <div class="met-canal-pills">
+                    {#each metricasResumen.busquedasPorTipo as tipo}
+                      {@const pct = ((tipo.total / totalTipo)*100).toFixed(1)}
+                      {@const color = tipo.tipo === 'Web' ? '#D4AF37' : '#1C1A18'}
+                      <div class="met-canal-pill">
+                        <div class="met-canal-bar" style="--pct:{pct}%;--color:{color}"></div>
+                        <span class="met-canal-tipo">{tipo.tipo}</span>
+                        <span class="met-canal-num">{tipo.total.toLocaleString()} <em>({pct}%)</em></span>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+
             {/if}
 
-            <!-- ── Listado de datos ───────────────────────────────────── -->
+            <!-- ── Listado de búsquedas (tabla paginada) ──────────── -->
             <div class="met-listado">
               <div class="met-listado__header">
                 <h3 class="met-listado__titulo">Registro de busquedas</h3>
@@ -2143,10 +2158,7 @@
               </div>
 
               {#if loadingListado}
-                <div class="met-loading met-loading--sm">
-                  <div class="met-spinner"></div>
-                  <p>Cargando listado...</p>
-                </div>
+                <div class="met-loading met-loading--sm"><div class="met-spinner"></div><p>Cargando listado...</p></div>
               {:else if metricasListado}
                 <div class="met-tabla-wrap">
                   <table class="table">
@@ -2157,28 +2169,26 @@
                         <th class="table__header">Fecha Salida</th>
                         <th class="table__header">Pasajeros</th>
                         <th class="table__header">Usuario</th>
-                        <th class="table__header">Tipo</th>
+                        <th class="table__header">Canal</th>
                         <th class="table__header">Fecha Busqueda</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {#each metricasListado.registros as r}
+                      {#each metricasListado.registros as b}
                         <tr class="table__row">
-                          <td class="table__cell">{r.id}</td>
+                          <td class="table__cell">{b.id}</td>
                           <td class="table__cell">
-                            <span class="met-ruta-badge">{r.origenCodigo}</span>
-                            <span class="met-ruta-arrow">→</span>
-                            <span class="met-ruta-badge">{r.destinoCodigo}</span>
+                            <span class="met-ruta-tag">{b.origenCodigo}</span>
+                            <span style="color:var(--text-muted);padding:0 .3rem">→</span>
+                            <span class="met-ruta-tag">{b.destinoCodigo}</span>
                           </td>
-                          <td class="table__cell">{r.fechaSalida}</td>
-                          <td class="table__cell">{r.cantidadPersonas}</td>
-                          <td class="table__cell">{r.usuario ?? '— anon —'}</td>
+                          <td class="table__cell">{b.fechaSalida}</td>
+                          <td class="table__cell">{b.cantidadPersonas}</td>
+                          <td class="table__cell">{b.usuario ?? '—'}</td>
                           <td class="table__cell">
-                            <span class="status-badge status-badge--{r.tipo === 'Web' ? 'activo' : 'cancelado'}">
-                              {r.tipo}
-                            </span>
+                            <span class="met-tipo-badge met-tipo-badge--{b.tipo.toLowerCase()}">{b.tipo}</span>
                           </td>
-                          <td class="table__cell">{r.fechaBusqueda}</td>
+                          <td class="table__cell" style="font-size:.8rem;color:var(--text-muted)">{b.fechaBusqueda}</td>
                         </tr>
                       {/each}
                     </tbody>
@@ -2189,23 +2199,16 @@
                 {#if metricasListado.totalPaginas > 1}
                   <div class="met-paginado">
                     <button class="met-pag-btn" disabled={metricasListado.paginaActual <= 1}
-                      on:click={() => cargarListadoBusquedas(metricasListado.paginaActual - 1)}>
-                      ← Anterior
-                    </button>
+                      on:click={() => cambiarPaginaMetricas(metricasListado.paginaActual - 1)}>← Anterior</button>
                     <span class="met-pag-info">
                       Pagina {metricasListado.paginaActual} de {metricasListado.totalPaginas}
-                      &nbsp;·&nbsp; {metricasListado.totalRegistros} registros
+                      &nbsp;·&nbsp; {metricasListado.totalRegistros.toLocaleString()} registros
                     </span>
-                    <button class="met-pag-btn"
-                      disabled={metricasListado.paginaActual >= metricasListado.totalPaginas}
-                      on:click={() => cargarListadoBusquedas(metricasListado.paginaActual + 1)}>
-                      Siguiente →
-                    </button>
+                    <button class="met-pag-btn" disabled={metricasListado.paginaActual >= metricasListado.totalPaginas}
+                      on:click={() => cambiarPaginaMetricas(metricasListado.paginaActual + 1)}>Siguiente →</button>
                   </div>
                 {:else}
-                  <p class="met-pag-info" style="text-align:right;padding:1rem 0">
-                    {metricasListado.totalRegistros} registros encontrados
-                  </p>
+                  <p class="met-pag-info" style="padding:.75rem 0">{metricasListado.totalRegistros.toLocaleString()} registros totales</p>
                 {/if}
               {:else}
                 <div class="met-empty">Aplica filtros para ver el listado</div>

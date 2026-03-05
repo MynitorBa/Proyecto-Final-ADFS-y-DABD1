@@ -1,0 +1,301 @@
+/* ============================================
+   ACCESO-DENEGADO.CSS - MIKU INN
+   ============================================ */
+
+/* ── Página base ── */
+.acceso-denegado-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #0a0a1a;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Fondo animado ── */
+.ad-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ad-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.22;
+  animation: adOrbFloat 9s ease-in-out infinite;
+}
+
+.ad-orb--1 {
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, #667eea, transparent 70%);
+  top: -160px;
+  left: -160px;
+  animation-delay: 0s;
+}
+
+.ad-orb--2 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, #764ba2, transparent 70%);
+  bottom: -120px;
+  right: -120px;
+  animation-delay: -3.5s;
+}
+
+.ad-orb--3 {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, #a855f7, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.1;
+  animation-delay: -7s;
+}
+
+.ad-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(102, 126, 234, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 126, 234, 0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── Card ── */
+.ad-card {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow:
+    0 0 0 1px rgba(102, 126, 234, 0.15),
+    0 32px 80px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  animation: adCardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Candado ── */
+.ad-lock-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 1.5rem;
+}
+
+.ad-lock-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, #667eea, #764ba2) border-box;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  animation: adRingPulse 2.5s ease-in-out infinite;
+}
+
+.ad-lock-icon {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  animation: adLockShake 6s ease-in-out infinite;
+}
+
+.ad-lock-icon svg {
+  filter: drop-shadow(0 0 16px rgba(102, 126, 234, 0.6));
+}
+
+/* ── Código de error ── */
+.ad-error-code {
+  font-size: 6rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #667eea 0%, #a855f7 50%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  letter-spacing: -4px;
+  filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.35));
+}
+
+/* ── Textos ── */
+.ad-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.5px;
+}
+
+.ad-subtitle {
+  font-size: 1rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.ad-detail {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* ── Cuenta regresiva ── */
+.ad-countdown {
+  margin-bottom: 1.75rem;
+}
+
+.ad-countdown__label {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.ad-countdown__number {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #667eea;
+}
+
+.ad-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.ad-progress-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 9999px;
+  animation: adProgressDrain 5s linear forwards;
+  box-shadow: 0 0 12px rgba(102, 126, 234, 0.6);
+}
+
+/* ── Botón ── */
+.ad-home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 24px rgba(102, 126, 234, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.ad-home-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ad-home-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.5);
+}
+
+.ad-home-btn:hover::before {
+  opacity: 1;
+}
+
+.ad-home-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Animaciones ── */
+@keyframes adCardIn {
+  from { opacity: 0; transform: translateY(32px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes adOrbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(28px, -18px) scale(1.05); }
+  66%       { transform: translate(-18px, 28px) scale(0.95); }
+}
+
+@keyframes adRingPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.08); }
+}
+
+@keyframes adLockShake {
+  0%, 85%, 100% { transform: rotate(0deg); }
+  88%            { transform: rotate(-5deg); }
+  91%            { transform: rotate(5deg); }
+  94%            { transform: rotate(-3deg); }
+  97%            { transform: rotate(3deg); }
+}
+
+@keyframes adProgressDrain {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .ad-card {
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+  }
+
+  .ad-error-code {
+    font-size: 4.5rem;
+    letter-spacing: -2px;
+  }
+
+  .ad-title {
+    font-size: 1.4rem;
+  }
+}
+
+/* ── Reduce motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .ad-orb,
+  .ad-lock-ring,
+  .ad-lock-icon,
+  .ad-card {
+    animation: none;
+  }
+
+  .ad-progress-fill {
+    animation: none;
+    width: 0;
+  }
+}

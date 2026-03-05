@@ -137,6 +137,94 @@ namespace Aerolinea.API.Repositories
             return lista;
         }
 
+
+        // ── Ingresos reales desde Factura ────────────────────────────────────
+        // Factura.Total = lo que el usuario realmente pagó en checkout.
+        // Filtra por fecha de la factura (fecha de compra), no por fecha del vuelo.
+        public async Task<(IngresosKpiDTO kpi, List<DistribucionClaseDTO> dist)> ObtenerIngresos(
+            DateTime? desde, DateTime? hasta)
+        {
+            var fechaDesde = desde ?? DateTime.Now.AddDays(-30);
+            var fechaHasta = hasta ?? DateTime.Now;
+
+            using var conn = _connectionFactory.CreateConnection();
+            await conn.OpenAsync();
+
+            // ── 1. Total de ingresos y reservaciones pagadas ─────────────────────
+            string queryFacturas = @"
+                SELECT
+                    ISNULL(SUM(f.Total), 0) AS TotalIngresos,
+                    COUNT(*)                AS TotalFacturas
+                FROM Factura f
+                WHERE f.Fecha >= @FechaDesde
+                  AND f.Fecha <= @FechaHasta";
+
+            decimal totalIngresos = 0;
+            int totalReservaciones = 0;
+            using (var cmd = new SqlCommand(queryFacturas, conn))
+            {
+                cmd.Parameters.AddWithValue("@FechaDesde", fechaDesde.Date);
+                cmd.Parameters.AddWithValue("@FechaHasta", fechaHasta.Date.AddDays(1).AddSeconds(-1));
+                using var r = await cmd.ExecuteReaderAsync();
+                if (await r.ReadAsync())
+                {
+                    totalIngresos = r.GetDecimal(0);
+                    totalReservaciones = r.GetInt32(1);
+                }
+            }
+
+            // ── 2. Desglose por clase: suma Boleto.Precio de los boletos comprados ─
+            // Filtramos por fecha de Factura para que coincida con el periodo
+            string queryDist = @"
+                SELECT
+                    c.TipoDeClase                  AS Clase,
+                    ISNULL(SUM(b.Precio), 0)       AS Ingresos,
+                    COUNT(*)                        AS Boletos
+                FROM   Boleto     b
+                INNER JOIN Clase       c  ON c.ID  = b.ClaseID
+                INNER JOIN Reservacion rv ON rv.ID = b.ReservacionID
+                INNER JOIN Factura     f  ON f.ReservacionID = rv.ID
+                WHERE  f.Fecha >= @FechaDesde
+                  AND  f.Fecha <= @FechaHasta
+                GROUP BY c.TipoDeClase";
+
+            var dist = new List<DistribucionClaseDTO>();
+            using (var cmd = new SqlCommand(queryDist, conn))
+            {
+                cmd.Parameters.AddWithValue("@FechaDesde", fechaDesde.Date);
+                cmd.Parameters.AddWithValue("@FechaHasta", fechaHasta.Date.AddDays(1).AddSeconds(-1));
+                using var r = await cmd.ExecuteReaderAsync();
+                while (await r.ReadAsync())
+                {
+                    dist.Add(new DistribucionClaseDTO
+                    {
+                        Clase = r.GetString(0),
+                        Ingresos = r.GetDecimal(1),
+                        Boletos = r.GetInt32(2)
+                    });
+                }
+            }
+
+            // ── 3. KPI derivados ─────────────────────────────────────────────────
+            int totalBoletos = dist.Sum(d => d.Boletos);
+            decimal ingTurista = dist.FirstOrDefault(d => d.Clase.ToLower().Contains("turista"))?.Ingresos ?? 0;
+            decimal ingEjecutivo = dist.FirstOrDefault(d => d.Clase.ToLower().Contains("ejecutivo"))?.Ingresos ?? 0;
+
+            var kpi = new IngresosKpiDTO
+            {
+                IngresosTotales = totalIngresos,
+                IngresosTurista = ingTurista,
+                IngresosEjecutivo = ingEjecutivo,
+                TotalBoletos = totalBoletos,
+                TotalReservaciones = totalReservaciones,
+                // Ticket promedio = ingreso total / número de facturas (compras)
+                TicketPromedio = totalReservaciones > 0
+                    ? Math.Round(totalIngresos / totalReservaciones, 2) : 0
+            };
+
+            return (kpi, dist);
+        }
+
         // ── Resumen general (KPIs) ────────────────────────────────────────────
         public async Task<MetricasResumenDTO> ObtenerResumen(DateTime? desde, DateTime? hasta)
         {
@@ -147,6 +235,8 @@ namespace Aerolinea.API.Repositories
             int totalWeb = porTipo.FirstOrDefault(t => t.Tipo == "Web")?.Total ?? 0;
             int totalRest = porTipo.FirstOrDefault(t => t.Tipo == "REST")?.Total ?? 0;
 
+            var (ingresoKpi, distribucion) = await ObtenerIngresos(desde, hasta);
+
             return new MetricasResumenDTO
             {
                 BusquedasPorDia = porDia,
@@ -154,7 +244,9 @@ namespace Aerolinea.API.Repositories
                 BusquedasPorTipo = porTipo,
                 TotalBusquedas = totalWeb + totalRest,
                 TotalBusquedasWeb = totalWeb,
-                TotalBusquedasRest = totalRest
+                TotalBusquedasRest = totalRest,
+                IngresosKpi = ingresoKpi,
+                DistribucionClase = distribucion
             };
         }
 
