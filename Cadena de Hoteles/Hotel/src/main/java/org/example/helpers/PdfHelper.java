@@ -55,7 +55,6 @@ public class PdfHelper {
     private static final float MT    = HDR_H + 26f;
     private static final float MB    = FTR_H + 24f;
 
-    // Espacio entre bloques — siempre generoso
     private static final float GAP = 22f;
 
     public static byte[] generarPdfReservacion(List<ReservacionDetalleDTO> detalles, Object[] factura) {
@@ -71,28 +70,23 @@ public class PdfHelper {
         Document doc = new Document(pdf, PageSize.A4);
         doc.setMargins(MT, MH, MB, MH);
 
-        // BLOQUE 1 — Datos de la reservación + facturación
         doc.add(bloque(buildInfoBlock(p0, esF, factura)));
         doc.add(sp(GAP));
 
-        // BLOQUE 2 — Tabla de habitaciones + totales integrados al final
         doc.add(bloque(buildTablaConTotales(detalles, p0, esF)));
         doc.add(sp(GAP));
 
-        // BLOQUE 3 — Datos fiscales (solo si hay factura)
         if (esF) {
             doc.add(bloque(buildDatosFactura(factura, p0)));
             doc.add(sp(GAP));
         }
 
-        // BLOQUE 4 — Términos y condiciones
         doc.add(new Div().setKeepTogether(true).add(bloque(buildCondiciones())));
 
         doc.close();
         return baos.toByteArray();
     }
 
-    // Envoltorio de bloque con borde exterior y fondo blanco
     private static Div bloque(Table inner) {
         return new Div()
                 .setBorder(new SolidBorder(BDR_DARK, 0.8f))
@@ -241,7 +235,6 @@ public class PdfHelper {
 
     // ══════════════════════════════════════════════════════════════════
     //  BLOQUE 2 — Tabla de habitaciones + filas de total al final
-    //             Todo dentro del mismo bloque, mismo diseño de celda
     // ══════════════════════════════════════════════════════════════════
 
     private static Table buildTablaConTotales(List<ReservacionDetalleDTO> detalles,
@@ -249,15 +242,12 @@ public class PdfHelper {
         Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
                 .setWidth(UnitValue.createPercentValue(100));
 
-        // Barra de título
         outer.addCell(titleBar(esF ? "CONCEPTOS Y SERVICIOS" : "DETALLE DE HABITACIONES"));
 
-        // Tabla interior de 8 columnas
         Cell tableWrap = new Cell().setBorder(Border.NO_BORDER).setPadding(0);
         Table t = new Table(UnitValue.createPercentArray(new float[]{5, 22, 15, 8, 8, 14, 14, 14}))
                 .setWidth(UnitValue.createPercentValue(100));
 
-        // Encabezados
         String[]        hs = {"#", "Habitación", "Cama", "Noches", "Pers.", "Check-in", "Check-out", "Subtotal"};
         TextAlignment[] ta = {
                 TextAlignment.CENTER, TextAlignment.LEFT,   TextAlignment.LEFT,
@@ -266,7 +256,6 @@ public class PdfHelper {
         };
         for (int i = 0; i < hs.length; i++) t.addHeaderCell(thC(hs[i], ta[i]));
 
-        // Filas de habitaciones
         for (int i = 0; i < detalles.size(); i++) {
             ReservacionDetalleDTO d = detalles.get(i);
             Color bg = i % 2 == 0 ? BG_WHITE : BG_ROW;
@@ -277,18 +266,15 @@ public class PdfHelper {
             t.addCell(tdC(String.valueOf(d.getCantidadPersonas()),   TextAlignment.CENTER, bg, false));
             t.addCell(tdC(nn(d.getFechaCheckIn()),                   TextAlignment.CENTER, bg, false));
             t.addCell(tdC(nn(d.getFechaCheckOut()),                  TextAlignment.CENTER, bg, false));
-            t.addCell(tdC("Q " + fmt(d.getTotalDetalle()),           TextAlignment.RIGHT,  bg, true));
+            t.addCell(tdC("$ " + fmt(d.getTotalDetalle()),           TextAlignment.RIGHT,  bg, true));
         }
 
-        // Separador antes de totales
         t.addCell(new Cell(1, 8).setHeight(1f).setBackgroundColor(BDR)
                 .setBorder(Border.NO_BORDER).setPadding(0));
 
-        // Filas de subtotales (solo si hay más de 1 hab) — misma tabla, colspan para alinear a la derecha
         if (detalles.size() > 1) {
             for (int i = 0; i < detalles.size(); i++) {
                 ReservacionDetalleDTO d = detalles.get(i);
-                // Celdas vacías a la izquierda (colspan 5) + label + valor (colspan 2)
                 t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
                         .setBackgroundColor(BG_WHITE).setPadding(0));
                 t.addCell(new Cell(1, 2)
@@ -300,7 +286,7 @@ public class PdfHelper {
                         .setBorderRight(new SolidBorder(BDR, 0.5f))
                         .setBorderBottom(new SolidBorder(BDR, 0.5f)));
                 t.addCell(new Cell(1, 1)
-                        .add(new Paragraph("Q " + fmt(d.getTotalDetalle()))
+                        .add(new Paragraph("$ " + fmt(d.getTotalDetalle()))
                                 .setFontSize(8).setFontColor(INK).setBold()
                                 .setTextAlignment(TextAlignment.RIGHT))
                         .setBackgroundColor(BG_WHITE)
@@ -309,14 +295,12 @@ public class PdfHelper {
                         .setBorderRight(Border.NO_BORDER)
                         .setBorderBottom(new SolidBorder(BDR, 0.5f)));
             }
-            // Línea separadora antes del total
             t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
                     .setBackgroundColor(BG_WHITE).setPadding(0));
             t.addCell(new Cell(1, 3).setHeight(1f).setBackgroundColor(BDR_DARK)
                     .setBorder(Border.NO_BORDER).setPadding(0));
         }
 
-        // Fila TOTAL RESERVACIÓN — misma tabla, destaca con fondo oscuro
         t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
                 .setBackgroundColor(BG_WHITE).setPadding(0));
         t.addCell(new Cell(1, 2)
@@ -328,7 +312,7 @@ public class PdfHelper {
                 .setBorderRight(new SolidBorder(new DeviceRgb(0x44, 0x54, 0x70), 0.5f))
                 .setBorderBottom(Border.NO_BORDER));
         t.addCell(new Cell(1, 1)
-                .add(new Paragraph("Q " + fmt(p0.getTotal()))
+                .add(new Paragraph("$ " + fmt(p0.getTotal()))
                         .setFontSize(9.5f).setBold().setFontColor(ACCENT)
                         .setTextAlignment(TextAlignment.RIGHT))
                 .setBackgroundColor(ACCENTBG)
@@ -352,7 +336,7 @@ public class PdfHelper {
         outer.addCell(titleBar("DATOS FISCALES"));
 
         String[] lbls = {"NIT / RFC", "Código Postal", "Fecha Emisión", "Total Factura"};
-        String[] vals = {s(fac[2]), s(fac[3]), s(fac[1]), "Q " + fmt(p0.getTotal())};
+        String[] vals = {s(fac[2]), s(fac[3]), s(fac[1]), "$ " + fmt(p0.getTotal())};
 
         Table grid = new Table(UnitValue.createPercentArray(new float[]{28, 18, 20, 34}))
                 .setWidth(UnitValue.createPercentValue(100));

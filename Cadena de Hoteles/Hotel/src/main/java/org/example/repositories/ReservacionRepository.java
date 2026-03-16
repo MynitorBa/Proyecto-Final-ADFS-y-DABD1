@@ -10,10 +10,11 @@ import java.util.List;
 public class ReservacionRepository {
 
     public double[] obtenerPrecios(int habitacionId) {
-        String sql = "SELECT Precio_por_Noche, Precio_por_Persona FROM Habitacion WHERE ID = ?";
+        String sql = "SELECT Precio_por_Noche, Precio_por_Persona, Capacidad_Maxima FROM Habitacion WHERE ID = ?";
         List<double[]> result = DatabaseManager.executeQuery(sql, rs -> new double[]{
                 rs.getDouble("Precio_por_Noche"),
-                rs.getDouble("Precio_por_Persona")
+                rs.getDouble("Precio_por_Persona"),
+                rs.getDouble("Capacidad_Maxima")
         }, habitacionId);
 
         if (result.isEmpty()) throw new RuntimeException("Habitación no encontrada: " + habitacionId);

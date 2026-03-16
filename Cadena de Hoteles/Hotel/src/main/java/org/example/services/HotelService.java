@@ -134,6 +134,16 @@ public class HotelService {
     }
 
     // ════════════════════════════════════════════════════
+    //  HOTEL — eliminar
+    // ════════════════════════════════════════════════════
+
+    public void eliminarHotel(int hotelId) {
+        if (!hotelRepository.existe(hotelId))
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        hotelRepository.eliminarHotel(hotelId);
+    }
+
+    // ════════════════════════════════════════════════════
     //  AMENIDADES DEL HOTEL
     // ════════════════════════════════════════════════════
 
@@ -283,6 +293,16 @@ public class HotelService {
                 req.getCapacidadMaxima(), req.getMetrosCuadrados(),
                 safe(req.getDescripcion()), req.getEstadoId()
         );
+    }
+
+    // ════════════════════════════════════════════════════
+    //  HABITACIONES — eliminar
+    // ════════════════════════════════════════════════════
+
+    public void eliminarHabitacion(int habitacionId) {
+        if (!hotelRepository.existeHabitacion(habitacionId))
+            throw new IllegalArgumentException("Habitación no encontrada: " + habitacionId);
+        hotelRepository.eliminarHabitacion(habitacionId);
     }
 
     // ════════════════════════════════════════════════════

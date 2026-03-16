@@ -52,6 +52,7 @@
   // ── UI state ─────────────────────────────────────────────
   let activeTab         = 'overview';
   let selectedRoom      = null;
+  let selectedRoomIsExtra = false;
   let currentImageIndex = 0;
   let showImageGallery  = false;
 
@@ -120,10 +121,50 @@
     return { slots, esAproximada: true, capacidadTotal: sumCap };
   })();
 
+  // ── Helpers combinaciones (declarados antes del reactivo que los usa) ──
+  $: hayCombosSugeridos  = combosSugeridos.length > 0;
+  $: hayComboAproximado  = !!comboAproximada;
+  $: hayCombinaciones    = hayCombosSugeridos || hayComboAproximado;
+
+  // ── Combinaciones especiales (rooms de cap-1 combinadas) ──
+  $: combosEspeciales = (() => {
+    if (!hotel || cantidadPersonas <= 1) return [];
+    if (hayCombinaciones) return [];
+
+    const capTarget = cantidadPersonas - 1;
+    const porCap = hotel.habitacionesPorCapacidad || {};
+    const rooms = porCap[String(capTarget)] || [];
+    const roomsNeeded = Math.ceil(cantidadPersonas / capTarget);
+    if (rooms.length < roomsNeeded) return [];
+
+    const combos = [];
+    function combine(start, current) {
+      if (current.length === roomsNeeded) {
+        const slots = current.map(room => ({
+          capRequerida: capTarget,
+          opciones: rooms,
+          seleccionada: room
+        }));
+        combos.push({ slots, esAproximada: false, esEspecial: true, capacidadTotal: capTarget * roomsNeeded });
+        return;
+      }
+      for (let i = start; i < rooms.length && combos.length < 3; i++) {
+        combine(i + 1, [...current, rooms[i]]);
+      }
+    }
+    combine(0, []);
+    return combos;
+  })();
+
+  $: hayCombosEspeciales = combosEspeciales.length > 0;
+
+  // ── Inicializar comboActivo ───────────────────────────────
   $: if (combosSugeridos.length > 0 && comboActivo === null) {
     comboActivo = deepCloneCombo(combosSugeridos[0]);
   } else if (combosSugeridos.length === 0 && comboAproximada && comboActivo === null) {
     comboActivo = deepCloneCombo(comboAproximada);
+  } else if (!hayCombinaciones && combosEspeciales.length > 0 && comboActivo === null) {
+    comboActivo = deepCloneCombo(combosEspeciales[0]);
   }
 
   function deepCloneCombo(combo) {
@@ -139,6 +180,10 @@
 
   function selectComboAproximado() {
     if (comboAproximada) comboActivo = deepCloneCombo(comboAproximada);
+  }
+
+  function selectComboEspecial(idx) {
+    comboActivo = deepCloneCombo(combosEspeciales[idx]);
   }
 
   function cambiarHabEnSlot(slotIdx, habitacion) {
@@ -165,17 +210,18 @@
     : 0;
 
   $: comboTotalConPersonas = comboActivo
-    ? comboActivo.slots.reduce((sum, s, i) => {
-        const h = s.seleccionada;
-        if (!h) return sum;
-        const personas = personasPorSlotActivo[i] || 0;
-        return sum + h.precioPorNoche + h.precioPorPersona * personas;
-      }, 0)
-    : 0;
+      ? comboActivo.slots.reduce((sum, s) => {
+          const h = s.seleccionada;
+          if (!h) return sum;
+          return sum + h.precioPorNoche;
+        }, 0)
+      : 0;
 
   // ── Precio habitación individual ─────────────────────────
   $: totalPrice = selectedRoom
-    ? (selectedRoom.precioPorNoche + selectedRoom.precioPorPersona * cantidadPersonas) * nights
+    ? selectedRoomIsExtra
+      ? (selectedRoom.precioPorNoche + selectedRoom.precioPorPersona) * nights
+      : selectedRoom.precioPorNoche * nights
     : 0;
 
   // ── Modo de reserva ───────────────────────────────────────
@@ -236,8 +282,9 @@
   function prevImage() { currentImageIndex = (currentImageIndex - 1 + images.length) % images.length; }
 
   // ── Selección habitación individual ──────────────────────
-  function selectRoom(room) {
+  function selectRoom(room, isExtra = false) {
     selectedRoom = room;
+    selectedRoomIsExtra = isExtra;
     bookMode = 'single';
     document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -260,9 +307,6 @@
     return true;
   }
 
-  /**
-   * Detecta si un error del servidor es por falta de autenticación.
-   */
   function esErrorDeAutenticacion(status, mensaje) {
     if (status === 401 || status === 403) return true;
     const m = (mensaje || '').toLowerCase();
@@ -276,6 +320,11 @@
     if (!selectedRoom) return;
     if (!validarFechas()) return;
     bookError = ''; booking = true; reservacion = null;
+
+    const personasAEnviar = selectedRoomIsExtra
+      ? selectedRoom.capacidadMaxima + 1
+      : cantidadPersonas;
+
     try {
       const res = await fetch(`${API}/reservaciones`, {
         method: 'POST',
@@ -284,7 +333,7 @@
         body: JSON.stringify({
           habitaciones: [{
             habitacionId:    selectedRoom.id,
-            cantidadPersonas,
+            cantidadPersonas: personasAEnviar,
             fechaCheckIn:    checkInDate,
             fechaCheckOut:   checkOutDate,
           }]
@@ -297,7 +346,6 @@
           msg = data.mensaje || data.message || data.error || msg;
         } catch(_) {}
 
-        // Detectar error de autenticación
         if (esErrorDeAutenticacion(res.status, msg)) {
           promptLogin();
           return;
@@ -307,7 +355,6 @@
       reservacion = await res.json();
       reservacion._modo = 'single';
     } catch(e) {
-      // También detectar en catch general (errores de parsing, etc.)
       if (esErrorDeAutenticacion(0, e.message)) {
         promptLogin();
         return;
@@ -418,7 +465,8 @@
           _checkIn:  checkInDate,
           _checkOut: checkOutDate,
           _nights:   nights,
-          _guests:   cantidadPersonas,
+          _guests:   selectedRoomIsExtra ? selectedRoom.capacidadMaxima + 1 : cantidadPersonas,
+          _isPersonaExtra: selectedRoomIsExtra,
         }],
       });
     }
@@ -539,11 +587,6 @@
     return ['','Muy malo','Malo','Regular','Bueno','Excelente'][n] || '';
   }
 
-  // ── Helpers combinaciones ─────────────────────────────────
-  $: hayCombosSugeridos  = combosSugeridos.length > 0;
-  $: hayComboAproximado  = !!comboAproximada;
-  $: hayCombinaciones    = hayCombosSugeridos || hayComboAproximado;
-
   $: habitacionesSuperiores = (() => {
     if (!hotel) return [];
     const directas = hotel.habitaciones || [];
@@ -555,6 +598,26 @@
       }
     }
     return todas.filter(r => r.capacidadMaxima >= cantidadPersonas && !directas.find(d => d.id === r.id));
+  })();
+
+  // ── Habitaciones con persona extra (+1) ───────────────────
+  $: habitacionesPersonaExtra = (() => {
+    if (!hotel || cantidadPersonas <= 1) return [];
+    const directas = hotel.habitaciones || [];
+    const porCap   = hotel.habitacionesPorCapacidad || {};
+    const todas    = [...directas];
+    for (const rooms of Object.values(porCap)) {
+      for (const r of rooms) {
+        if (!todas.find(x => x.id === r.id)) todas.push(r);
+      }
+    }
+    const idsDirectas    = new Set(directas.map(h => h.id));
+    const idsSuperiores  = new Set(habitacionesSuperiores.map(h => h.id));
+    return todas.filter(r =>
+      r.capacidadMaxima === cantidadPersonas - 1 &&
+      !idsDirectas.has(r.id) &&
+      !idsSuperiores.has(r.id)
+    );
   })();
 </script>
 
@@ -683,7 +746,7 @@
                 </p>
                 <div class="rooms-list">
                   {#each habitacionesDisponibles as room}
-                    <article class="room-detail-card" class:selected={selectedRoom?.id === room.id && bookMode === 'single'}>
+                    <article class="room-detail-card" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}>
                       <div class="room-images-section">
                         {#if room.imagenesIds?.length > 0}
                           <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
@@ -698,50 +761,24 @@
                           Máx. {room.capacidadMaxima}
                         </div>
                       </div>
-
                       <div class="room-content-section">
                         <div>
                           <h3 class="room-name">{room.tipoHabitacion}</h3>
                           <p class="room-description">{room.descripcion}</p>
                         </div>
                         <div class="room-specs">
-                          <div class="spec-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                            {room.tipoCama}
-                          </div>
-                          <div class="spec-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                            {room.metrosCuadrados} m²
-                          </div>
-                          <div class="spec-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                            Máx. {room.capacidadMaxima} huéspedes
-                          </div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> {room.tipoCama}</div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg> {room.metrosCuadrados} m²</div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Máx. {room.capacidadMaxima} huéspedes</div>
                         </div>
                         <div class="room-footer">
                           <div class="room-pricing">
-                            <div class="current-price-room">
-                              <span class="hdet__price-amount">{fmt(room.precioPorNoche)}</span>
-                              <span class="price-period">/ noche</span>
-                            </div>
-                            <div class="price-per-person price-per-person--prominent">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                              + {fmt(room.precioPorPersona)} / persona
-                            </div>
-                            {#if nights > 0}
-                              <div class="total-nights-price">
-                                Total estimado: {fmt((room.precioPorNoche + room.precioPorPersona * cantidadPersonas) * nights)}
-                                {#if nights > 1}· {nights} noches{/if}
-                              </div>
-                            {/if}
+                            <div class="current-price-room"><span class="hdet__price-amount">{fmt(room.precioPorNoche)}</span><span class="price-period">/ noche</span></div>
+                            <div class="price-per-person price-per-person--prominent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> + {fmt(room.precioPorPersona)} / persona</div>
+                            {#if nights > 0}<div class="total-nights-price">Total estimado: {fmt(room.precioPorNoche * nights)} {#if nights > 1}· {nights} noches{/if}</div>{/if}
                           </div>
-                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single'} on:click={() => selectRoom(room)}>
-                            {#if selectedRoom?.id === room.id && bookMode === 'single'}
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                              Seleccionada
-                            {:else}
-                              Seleccionar
-                            {/if}
+                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra} on:click={() => selectRoom(room, false)}>
+                            {#if selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar{/if}
                           </button>
                         </div>
                       </div>
@@ -755,75 +792,71 @@
             {#if habitacionesSuperiores.length > 0}
               <section class="content-section hdet__superior-section">
                 <div class="hdet__superior-header">
-                  <div class="hdet__superior-badge">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Capacidad superior
-                  </div>
+                  <div class="hdet__superior-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Capacidad superior</div>
                   <h2 class="hdet__section-title">Habitaciones para más huéspedes</h2>
-                  <p class="hdet__section-description">
-                    Estas habitaciones tienen una capacidad mayor a {cantidadPersonas} personas. Puedes reservarlas si deseas más espacio.
-                  </p>
+                  <p class="hdet__section-description">Estas habitaciones tienen una capacidad mayor a {cantidadPersonas} personas. Puedes reservarlas si deseas más espacio.</p>
                 </div>
                 <div class="rooms-list">
                   {#each habitacionesSuperiores as room}
-                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.id === room.id && bookMode === 'single'}>
+                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}>
                       <div class="room-images-section">
-                        {#if room.imagenesIds?.length > 0}
-                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />
-                        {:else}
-                          <div class="room-no-image">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                            <span>Sin imagen disponible</span>
-                          </div>
-                        {/if}
-                        <div class="room-capacity-badge room-capacity-badge--superior">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                          Máx. {room.capacidadMaxima}
-                        </div>
+                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
+                        <div class="room-capacity-badge room-capacity-badge--superior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Máx. {room.capacidadMaxima}</div>
                       </div>
                       <div class="room-content-section">
-                        <div>
-                          <h3 class="room-name">{room.tipoHabitacion}</h3>
-                          <p class="room-description">{room.descripcion}</p>
-                        </div>
+                        <div><h3 class="room-name">{room.tipoHabitacion}</h3><p class="room-description">{room.descripcion}</p></div>
                         <div class="room-specs">
-                          <div class="spec-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                            {room.tipoCama}
-                          </div>
-                          <div class="spec-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                            {room.metrosCuadrados} m²
-                          </div>
-                          <div class="spec-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                            Máx. {room.capacidadMaxima} huéspedes
-                          </div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> {room.tipoCama}</div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg> {room.metrosCuadrados} m²</div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Máx. {room.capacidadMaxima} huéspedes</div>
                         </div>
                         <div class="room-footer">
                           <div class="room-pricing">
-                            <div class="current-price-room">
-                              <span class="hdet__price-amount">{fmt(room.precioPorNoche)}</span>
-                              <span class="price-period">/ noche</span>
-                            </div>
-                            <div class="price-per-person price-per-person--prominent">
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                              + {fmt(room.precioPorPersona)} / persona
-                            </div>
-                            {#if nights > 0}
-                              <div class="total-nights-price">
-                                Total estimado: {fmt((room.precioPorNoche + room.precioPorPersona * cantidadPersonas) * nights)}
-                                {#if nights > 1}· {nights} noches{/if}
-                              </div>
-                            {/if}
+                            <div class="current-price-room"><span class="hdet__price-amount">{fmt(room.precioPorNoche)}</span><span class="price-period">/ noche</span></div>
+                            <div class="price-per-person price-per-person--prominent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> + {fmt(room.precioPorPersona)} / persona</div>
+                            {#if nights > 0}<div class="total-nights-price">Total estimado: {fmt(room.precioPorNoche * nights)} {#if nights > 1}· {nights} noches{/if}</div>{/if}
                           </div>
-                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single'} on:click={() => selectRoom(room)}>
-                            {#if selectedRoom?.id === room.id && bookMode === 'single'}
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                              Seleccionada
-                            {:else}
-                              Seleccionar
-                            {/if}
+                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra} on:click={() => selectRoom(room, false)}>
+                            {#if selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar{/if}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  {/each}
+                </div>
+              </section>
+            {/if}
+
+            <!-- ═══ HABITACIONES CON PERSONA EXTRA (+1) ═══ -->
+            {#if habitacionesPersonaExtra.length > 0}
+              <section class="content-section hdet__superior-section">
+                <div class="hdet__superior-header">
+                  <div class="hdet__combo-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> +1 persona extra</div>
+                  <h2 class="hdet__section-title">Habitaciones con persona extra</h2>
+                  <p class="hdet__section-description">Estas habitaciones tienen capacidad para {cantidadPersonas - 1} {cantidadPersonas - 1 === 1 ? 'persona' : 'personas'}, pero permiten agregar 1 huésped adicional con un cargo por persona extra.</p>
+                </div>
+                <div class="rooms-list">
+                  {#each habitacionesPersonaExtra as room}
+                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && selectedRoomIsExtra}>
+                      <div class="room-images-section">
+                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
+                        <div class="room-capacity-badge room-capacity-badge--superior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> {room.capacidadMaxima} + 1 extra</div>
+                      </div>
+                      <div class="room-content-section">
+                        <div><h3 class="room-name">{room.tipoHabitacion}</h3><p class="room-description">{room.descripcion}</p></div>
+                        <div class="room-specs">
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg> {room.tipoCama}</div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg> {room.metrosCuadrados} m²</div>
+                          <div class="spec-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Máx. {room.capacidadMaxima} + 1 extra</div>
+                        </div>
+                        <div class="room-footer">
+                          <div class="room-pricing">
+                            <div class="current-price-room"><span class="hdet__price-amount">{fmt(room.precioPorNoche)}</span><span class="price-period">/ noche</span></div>
+                            <div class="price-per-person price-per-person--prominent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> + {fmt(room.precioPorPersona)} / persona extra</div>
+                            {#if nights > 0}<div class="total-nights-price">Total estimado: {fmt((room.precioPorNoche + room.precioPorPersona) * nights)} {#if nights > 1}· {nights} noches{/if} (incluye +1 persona)</div>{/if}
+                          </div>
+                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && selectedRoomIsExtra} on:click={() => selectRoom(room, true)}>
+                            {#if selectedRoom?.id === room.id && bookMode === 'single' && selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar +1 extra{/if}
                           </button>
                         </div>
                       </div>
@@ -834,7 +867,7 @@
             {/if}
 
             <!-- ═══ SIN HABITACIONES DISPONIBLES ═══ -->
-            {#if habitacionesDisponibles.length === 0 && habitacionesSuperiores.length === 0 && !hayCombinaciones}
+            {#if habitacionesDisponibles.length === 0 && habitacionesSuperiores.length === 0 && habitacionesPersonaExtra.length === 0 && !hayCombinaciones && !hayCombosEspeciales}
               <section class="content-section">
                 <h2 class="hdet__section-title">Habitaciones</h2>
                 <div class="hdet__no-rooms">
@@ -845,161 +878,140 @@
               </section>
             {/if}
 
-            <!-- ═══ CREAR TU COMBINACIÓN ═══ -->
+            <!-- ═══ CREAR TU COMBINACIÓN (regulares) ═══ -->
             {#if hayCombinaciones}
               <section class="content-section hdet__combo-section">
                 <div class="hdet__combo-header">
-                  <div class="hdet__combo-badge">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>
-                    Combinación recomendada
-                  </div>
+                  <div class="hdet__combo-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg> Combinación recomendada</div>
                   <h2 class="hdet__section-title">Crea tu combinación de habitaciones</h2>
-                  <p class="hdet__section-description">
-                    Para {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}, el hotel sugiere combinar varias habitaciones.
-                    Puedes elegir qué habitación va en cada slot.
-                  </p>
+                  <p class="hdet__section-description">Para {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}, el hotel sugiere combinar varias habitaciones. Puedes elegir qué habitación va en cada slot.</p>
                 </div>
 
-                <!-- Selector de combinación cuando hay varias exactas -->
                 {#if combosSugeridos.length > 1}
                   <div class="hdet__combo-selector">
                     <p class="hdet__combo-selector-label">Elige una combinación sugerida:</p>
                     <div class="hdet__combo-selector-btns">
                       {#each combosSugeridos as combo, idx}
-                        <button
-                          class="hdet__combo-selector-btn"
-                          class:active={comboActivo && !comboActivo.esAproximada && JSON.stringify(comboActivo.slots.map(s=>s.capRequerida)) === JSON.stringify(combo.slots.map(s=>s.capRequerida))}
-                          on:click={() => selectComboSugerido(idx)}
-                        >
-                          {combo.slots.map(s => s.capRequerida + ' pers.').join(' + ')}
-                        </button>
+                        <button class="hdet__combo-selector-btn" class:active={comboActivo && !comboActivo.esAproximada && !comboActivo.esEspecial && JSON.stringify(comboActivo.slots.map(s=>s.capRequerida)) === JSON.stringify(combo.slots.map(s=>s.capRequerida))} on:click={() => selectComboSugerido(idx)}>{combo.slots.map(s => s.capRequerida + ' pers.').join(' + ')}</button>
                       {/each}
                       {#if hayComboAproximado}
-                        <button
-                          class="hdet__combo-selector-btn hdet__combo-selector-btn--aprox"
-                          class:active={comboActivo?.esAproximada}
-                          on:click={selectComboAproximado}
-                        >
-                          Opción cercana ({comboAproximada.capacidadTotal} pers.)
-                        </button>
+                        <button class="hdet__combo-selector-btn hdet__combo-selector-btn--aprox" class:active={comboActivo?.esAproximada} on:click={selectComboAproximado}>Opción cercana ({comboAproximada.capacidadTotal} pers.)</button>
                       {/if}
                     </div>
                   </div>
                 {:else if hayComboAproximado && combosSugeridos.length === 0}
                   <div class="hdet__combo-aprox-notice">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    No hay combinación exacta para {cantidadPersonas} personas. Mostramos la opción más cercana
-                    con capacidad para {comboAproximada.capacidadTotal} personas.
+                    No hay combinación exacta para {cantidadPersonas} personas. Mostramos la opción más cercana con capacidad para {comboAproximada.capacidadTotal} personas.
                   </div>
                 {/if}
 
-                <!-- Slots de la combinación activa -->
-                {#if comboActivo}
+                {#if comboActivo && !comboActivo.esEspecial}
                   <div class="hdet__combo-slots">
                     {#each comboActivo.slots as slot, slotIdx}
                       {@const personasEnSlot = personasPorSlotActivo[slotIdx] || 0}
-                      {@const precioSlotConPersonas = slot.seleccionada
-                        ? slot.seleccionada.precioPorNoche + slot.seleccionada.precioPorPersona * personasEnSlot
-                        : 0}
+                      {@const precioSlotConPersonas = slot.seleccionada ? slot.seleccionada.precioPorNoche : 0}
                       <div class="hdet__combo-slot">
                         <div class="hdet__combo-slot-header">
                           <div class="hdet__combo-slot-num">Hab. {slotIdx + 1}</div>
-                          <div class="hdet__combo-slot-cap">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                            {slot.capRequerida} {slot.capRequerida === 1 ? 'persona' : 'personas'}
-                          </div>
-                          {#if personasEnSlot > 0}
-                            <div class="hdet__combo-slot-personas">
-                              {personasEnSlot} {personasEnSlot === 1 ? 'huésped' : 'huéspedes'} asignados
-                            </div>
-                          {/if}
+                          <div class="hdet__combo-slot-cap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> {slot.capRequerida} {slot.capRequerida === 1 ? 'persona' : 'personas'}</div>
+                          {#if personasEnSlot > 0}<div class="hdet__combo-slot-personas">{personasEnSlot} {personasEnSlot === 1 ? 'huésped' : 'huéspedes'} asignados</div>{/if}
                         </div>
-
-                        <!-- Opciones para este slot -->
                         <div class="hdet__combo-slot-opciones">
                           {#each slot.opciones as opcion}
                             {@const bloqueada = esOpcionBloqueada(comboActivo, slotIdx, opcion.id)}
-                            <button
-                              class="hdet__combo-slot-opcion"
-                              class:active={slot.seleccionada?.id === opcion.id}
-                              class:blocked={bloqueada}
-                              disabled={bloqueada}
-                              on:click={() => cambiarHabEnSlot(slotIdx, opcion)}
-                              title={bloqueada ? 'Seleccionada en otro slot (cámbiala allí primero)' : opcion.tipoHabitacion}
-                            >
-                              <div class="hdet__combo-opcion-img">
-                                {#if opcion.imagenesIds?.length > 0}
-                                  <img src="{API}/imagenes/habitacion/{opcion.imagenesIds[0]}" alt={opcion.tipoHabitacion} on:error={handleImgError} />
-                                {:else}
-                                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                                {/if}
-                              </div>
+                            <button class="hdet__combo-slot-opcion" class:active={slot.seleccionada?.id === opcion.id} class:blocked={bloqueada} disabled={bloqueada} on:click={() => cambiarHabEnSlot(slotIdx, opcion)} title={bloqueada ? 'Seleccionada en otro slot (cámbiala allí primero)' : opcion.tipoHabitacion}>
+                              <div class="hdet__combo-opcion-img">{#if opcion.imagenesIds?.length > 0}<img src="{API}/imagenes/habitacion/{opcion.imagenesIds[0]}" alt={opcion.tipoHabitacion} on:error={handleImgError} />{:else}<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>{/if}</div>
                               <div class="hdet__combo-opcion-info">
                                 <span class="hdet__combo-opcion-tipo">{opcion.tipoHabitacion}</span>
                                 <span class="hdet__combo-opcion-cama">{opcion.tipoCama} · {opcion.metrosCuadrados}m²</span>
-                                <div class="hdet__combo-opcion-precios">
-                                  <span class="hdet__combo-opcion-precio">{fmt(opcion.precioPorNoche)}<span class="hdet__combo-opcion-precio-lbl">/noche</span></span>
-                                  <span class="hdet__combo-opcion-ppersona">+ {fmt(opcion.precioPorPersona)}<span class="hdet__combo-opcion-precio-lbl">/persona</span></span>
-                                </div>
+                                <div class="hdet__combo-opcion-precios"><span class="hdet__combo-opcion-precio">{fmt(opcion.precioPorNoche)}<span class="hdet__combo-opcion-precio-lbl">/noche</span></span><span class="hdet__combo-opcion-ppersona">+ {fmt(opcion.precioPorPersona)}<span class="hdet__combo-opcion-precio-lbl">/persona</span></span></div>
                               </div>
-                              {#if slot.seleccionada?.id === opcion.id}
-                                <div class="hdet__combo-opcion-check">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                              {/if}
-                              {#if bloqueada}
-                                <div class="hdet__combo-opcion-blocked">
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                </div>
-                              {/if}
+                              {#if slot.seleccionada?.id === opcion.id}<div class="hdet__combo-opcion-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>{/if}
+                              {#if bloqueada}<div class="hdet__combo-opcion-blocked"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>{/if}
                             </button>
                           {/each}
                         </div>
-
-                        <!-- Resumen del slot seleccionado -->
                         {#if slot.seleccionada}
                           <div class="hdet__combo-slot-resumen">
-                            <div class="hdet__combo-slot-resumen-left">
-                              <span class="hdet__combo-slot-resumen-name">{slot.seleccionada.tipoHabitacion}</span>
-                              <span class="hdet__combo-slot-resumen-breakdown">
-                                {fmt(slot.seleccionada.precioPorNoche)} hab. + {fmt(slot.seleccionada.precioPorPersona)} × {personasEnSlot} pers.
-                              </span>
-                            </div>
-                            <span class="hdet__combo-slot-resumen-precio">
-                              {fmt(precioSlotConPersonas)}/noche
-                              {#if nights > 1}
-                                <span class="hdet__combo-slot-resumen-total">· {fmt(precioSlotConPersonas * nights)} total</span>
-                              {/if}
-                            </span>
+                            <div class="hdet__combo-slot-resumen-left"><span class="hdet__combo-slot-resumen-name">{slot.seleccionada.tipoHabitacion}</span><span class="hdet__combo-slot-resumen-breakdown">{fmt(slot.seleccionada.precioPorNoche)} /noche</span></div>
+                            <span class="hdet__combo-slot-resumen-precio">{fmt(precioSlotConPersonas)}/noche{#if nights > 1}<span class="hdet__combo-slot-resumen-total">· {fmt(precioSlotConPersonas * nights)} total</span>{/if}</span>
                           </div>
                         {/if}
                       </div>
                     {/each}
                   </div>
-
-                  <!-- Resumen total del combo -->
                   <div class="hdet__combo-total-bar">
-                    <div class="hdet__combo-total-info">
-                      <span class="hdet__combo-total-label">Total combinación</span>
-                      <span class="hdet__combo-total-habs">{comboActivo.slots.length} habitaciones · {cantidadPersonas} huéspedes</span>
+                    <div class="hdet__combo-total-info"><span class="hdet__combo-total-label">Total combinación</span><span class="hdet__combo-total-habs">{comboActivo.slots.length} habitaciones · {cantidadPersonas} huéspedes</span></div>
+                    <div class="hdet__combo-total-precios"><span class="hdet__combo-total-precio-noche">{fmt(comboTotalConPersonas)}/noche</span>{#if nights > 1}<span class="hdet__combo-total-precio-total">{fmt(comboTotalConPersonas * nights)} por {nights} noches</span>{/if}</div>
+                    <button class="hdet__combo-btn-seleccionar" class:active={bookMode === 'combo'} on:click={() => { bookMode = 'combo'; selectedRoom = null; selectedRoomIsExtra = false; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                      {#if bookMode === 'combo'}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Combinación activa{:else}Reservar esta combinación{/if}
+                    </button>
+                  </div>
+                {/if}
+              </section>
+            {/if}
+
+            <!-- ═══ COMBINACIONES ESPECIALES ═══ -->
+            {#if hayCombosEspeciales}
+              <section class="content-section hdet__combo-section">
+                <div class="hdet__combo-header">
+                  <div class="hdet__combo-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Combinación especial</div>
+                  <h2 class="hdet__section-title">Combinación con habitaciones más pequeñas</h2>
+                  <p class="hdet__section-description">No hay una habitación individual para {cantidadPersonas} personas, pero puedes combinar {combosEspeciales[0]?.slots.length || 2} habitaciones de {cantidadPersonas - 1} personas para alojar a tu grupo.</p>
+                </div>
+
+                {#if combosEspeciales.length > 1}
+                  <div class="hdet__combo-selector">
+                    <p class="hdet__combo-selector-label">Elige una combinación:</p>
+                    <div class="hdet__combo-selector-btns">
+                      {#each combosEspeciales as combo, idx}
+                        <button class="hdet__combo-selector-btn" class:active={comboActivo?.esEspecial && JSON.stringify(comboActivo.slots.map(s=>s.seleccionada?.id)) === JSON.stringify(combo.slots.map(s=>s.seleccionada?.id))} on:click={() => selectComboEspecial(idx)}>{combo.slots.map((s, i) => s.seleccionada?.tipoHabitacion || `Hab.${i+1}`).join(' + ')}</button>
+                      {/each}
                     </div>
-                    <div class="hdet__combo-total-precios">
-                      <span class="hdet__combo-total-precio-noche">{fmt(comboTotalConPersonas)}/noche</span>
-                      {#if nights > 1}
-                        <span class="hdet__combo-total-precio-total">{fmt(comboTotalConPersonas * nights)} por {nights} noches</span>
-                      {/if}
-                    </div>
-                    <button
-                      class="hdet__combo-btn-seleccionar"
-                      class:active={bookMode === 'combo'}
-                      on:click={() => { bookMode = 'combo'; selectedRoom = null; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
-                    >
-                      {#if bookMode === 'combo'}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                        Combinación activa
-                      {:else}
-                        Reservar esta combinación
-                      {/if}
+                  </div>
+                {/if}
+
+                {#if comboActivo && comboActivo.esEspecial}
+                  <div class="hdet__combo-slots">
+                    {#each comboActivo.slots as slot, slotIdx}
+                      {@const personasEnSlot = personasPorSlotActivo[slotIdx] || 0}
+                      {@const precioSlot = slot.seleccionada ? slot.seleccionada.precioPorNoche : 0}
+                      <div class="hdet__combo-slot">
+                        <div class="hdet__combo-slot-header">
+                          <div class="hdet__combo-slot-num">Hab. {slotIdx + 1}</div>
+                          <div class="hdet__combo-slot-cap"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> {slot.capRequerida} {slot.capRequerida === 1 ? 'persona' : 'personas'}</div>
+                          {#if personasEnSlot > 0}<div class="hdet__combo-slot-personas">{personasEnSlot} {personasEnSlot === 1 ? 'huésped' : 'huéspedes'} asignados</div>{/if}
+                        </div>
+                        <div class="hdet__combo-slot-opciones">
+                          {#each slot.opciones as opcion}
+                            {@const bloqueada = esOpcionBloqueada(comboActivo, slotIdx, opcion.id)}
+                            <button class="hdet__combo-slot-opcion" class:active={slot.seleccionada?.id === opcion.id} class:blocked={bloqueada} disabled={bloqueada} on:click={() => cambiarHabEnSlot(slotIdx, opcion)} title={bloqueada ? 'Seleccionada en otro slot' : opcion.tipoHabitacion}>
+                              <div class="hdet__combo-opcion-img">{#if opcion.imagenesIds?.length > 0}<img src="{API}/imagenes/habitacion/{opcion.imagenesIds[0]}" alt={opcion.tipoHabitacion} on:error={handleImgError} />{:else}<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>{/if}</div>
+                              <div class="hdet__combo-opcion-info">
+                                <span class="hdet__combo-opcion-tipo">{opcion.tipoHabitacion}</span>
+                                <span class="hdet__combo-opcion-cama">{opcion.tipoCama} · {opcion.metrosCuadrados}m²</span>
+                                <div class="hdet__combo-opcion-precios"><span class="hdet__combo-opcion-precio">{fmt(opcion.precioPorNoche)}<span class="hdet__combo-opcion-precio-lbl">/noche</span></span></div>
+                              </div>
+                              {#if slot.seleccionada?.id === opcion.id}<div class="hdet__combo-opcion-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>{/if}
+                              {#if bloqueada}<div class="hdet__combo-opcion-blocked"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>{/if}
+                            </button>
+                          {/each}
+                        </div>
+                        {#if slot.seleccionada}
+                          <div class="hdet__combo-slot-resumen">
+                            <div class="hdet__combo-slot-resumen-left"><span class="hdet__combo-slot-resumen-name">{slot.seleccionada.tipoHabitacion}</span><span class="hdet__combo-slot-resumen-breakdown">{fmt(slot.seleccionada.precioPorNoche)} /noche</span></div>
+                            <span class="hdet__combo-slot-resumen-precio">{fmt(precioSlot)}/noche{#if nights > 1}<span class="hdet__combo-slot-resumen-total">· {fmt(precioSlot * nights)} total</span>{/if}</span>
+                          </div>
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                  <div class="hdet__combo-total-bar">
+                    <div class="hdet__combo-total-info"><span class="hdet__combo-total-label">Total combinación especial</span><span class="hdet__combo-total-habs">{comboActivo.slots.length} habitaciones · {cantidadPersonas} huéspedes</span></div>
+                    <div class="hdet__combo-total-precios"><span class="hdet__combo-total-precio-noche">{fmt(comboTotalConPersonas)}/noche</span>{#if nights > 1}<span class="hdet__combo-total-precio-total">{fmt(comboTotalConPersonas * nights)} por {nights} noches</span>{/if}</div>
+                    <button class="hdet__combo-btn-seleccionar" class:active={bookMode === 'combo'} on:click={() => { bookMode = 'combo'; selectedRoom = null; selectedRoomIsExtra = false; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                      {#if bookMode === 'combo'}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Combinación activa{:else}Reservar esta combinación{/if}
                     </button>
                   </div>
                 {/if}
@@ -1009,54 +1021,11 @@
           {:else if activeTab === 'comments'}
             <section class="content-section">
               <h2 class="hdet__section-title">Reseñas y Comentarios</h2>
-
-              {#if comentLoading}
-                <div class="cmt-loading">
-                  <div class="cmt-spinner"></div>
-                  <span>Cargando comentarios...</span>
-                </div>
-              {:else if comentarios.length === 0}
-                <div class="cmt-empty">
-                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  <p>Este hotel aún no tiene comentarios.</p>
-                </div>
+              {#if comentLoading}<div class="cmt-loading"><div class="cmt-spinner"></div><span>Cargando comentarios...</span></div>
+              {:else if comentarios.length === 0}<div class="cmt-empty"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Este hotel aún no tiene comentarios.</p></div>
               {:else}
-                {#if resenasRaiz.length > 0}
-                  <h3 class="cmt-group-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                    Reseñas de huéspedes
-                  </h3>
-                  <div class="cmt-list">
-                    {#each resenasRaiz as c (c.id)}
-                      <CommentNode
-                        comment={c}
-                        allComments={comentarios}
-                        misDowns={misDowns}
-                        isReply={false}
-                        on:vote={e => handleDown(e.detail.comentarioId, e.detail.valor)}
-                        on:reply={e => sendReplyFromNode(e.detail)}
-                      />
-                    {/each}
-                  </div>
-                {/if}
-                {#if comentariosRaiz.length > 0}
-                  <h3 class="cmt-group-title" style="margin-top: 2rem;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    Comentarios
-                  </h3>
-                  <div class="cmt-list">
-                    {#each comentariosRaiz as c (c.id)}
-                      <CommentNode
-                        comment={c}
-                        allComments={comentarios}
-                        misDowns={misDowns}
-                        isReply={false}
-                        on:vote={e => handleDown(e.detail.comentarioId, e.detail.valor)}
-                        on:reply={e => sendReplyFromNode(e.detail)}
-                      />
-                    {/each}
-                  </div>
-                {/if}
+                {#if resenasRaiz.length > 0}<h3 class="cmt-group-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reseñas de huéspedes</h3><div class="cmt-list">{#each resenasRaiz as c (c.id)}<CommentNode comment={c} allComments={comentarios} misDowns={misDowns} isReply={false} on:vote={e => handleDown(e.detail.comentarioId, e.detail.valor)} on:reply={e => sendReplyFromNode(e.detail)} />{/each}</div>{/if}
+                {#if comentariosRaiz.length > 0}<h3 class="cmt-group-title" style="margin-top: 2rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Comentarios</h3><div class="cmt-list">{#each comentariosRaiz as c (c.id)}<CommentNode comment={c} allComments={comentarios} misDowns={misDowns} isReply={false} on:vote={e => handleDown(e.detail.comentarioId, e.detail.valor)} on:reply={e => sendReplyFromNode(e.detail)} />{/each}</div>{/if}
               {/if}
             </section>
           {/if}
@@ -1066,33 +1035,19 @@
         <aside class="booking-sidebar">
           <div class="booking-summary">
             <h3 class="booking-title">Reserva tu Estancia</h3>
-
             <div class="booking-section">
               <p class="booking-label">Fechas</p>
               <div class="date-inputs">
-                <div class="date-input-group">
-                  <span class="input-label">Check-in</span>
-                  <input type="date" bind:value={checkInDate} min={todayStr} class="date-input" />
-                </div>
-                <div class="date-input-group">
-                  <span class="input-label">Check-out</span>
-                  <input type="date" bind:value={checkOutDate} min={checkInDate ? (() => { const d = new Date(checkInDate); d.setDate(d.getDate()+1); return toLocalDateStr(d); })() : ''} class="date-input" />
-                </div>
+                <div class="date-input-group"><span class="input-label">Check-in</span><input type="date" bind:value={checkInDate} min={todayStr} class="date-input" /></div>
+                <div class="date-input-group"><span class="input-label">Check-out</span><input type="date" bind:value={checkOutDate} min={checkInDate ? (() => { const d = new Date(checkInDate); d.setDate(d.getDate()+1); return toLocalDateStr(d); })() : ''} class="date-input" /></div>
               </div>
-              {#if nights > 0}
-                <div class="nights-display">{nights} {nights === 1 ? 'noche' : 'noches'}</div>
-              {/if}
+              {#if nights > 0}<div class="nights-display">{nights} {nights === 1 ? 'noche' : 'noches'}</div>{/if}
             </div>
-
             <div class="booking-section">
               <p class="booking-label">Huéspedes</p>
-              <div class="hdet__guests-display">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                <span>{cantidadPersonas} {cantidadPersonas === 1 ? 'huésped' : 'huéspedes'}</span>
-              </div>
+              <div class="hdet__guests-display"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span>{cantidadPersonas} {cantidadPersonas === 1 ? 'huésped' : 'huéspedes'}</span></div>
             </div>
 
-            <!-- ── Resumen selección ── -->
             {#if bookMode === 'single' && selectedRoom}
               <div class="booking-section selected-room-section">
                 <p class="booking-label">Habitación Seleccionada</p>
@@ -1100,10 +1055,9 @@
                   <div class="selected-room-info">
                     <strong>{selectedRoom.tipoHabitacion}</strong>
                     <span>{fmt(selectedRoom.precioPorNoche)}/noche</span>
+                    {#if selectedRoomIsExtra}<span style="color: var(--primary); font-weight: 700; font-size: .82rem;">+1 persona extra · +{fmt(selectedRoom.precioPorPersona)}/noche</span>{/if}
                   </div>
-                  <button class="remove-room-btn" on:click={() => { selectedRoom = null; bookMode = 'single'; }} aria-label="Quitar">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                  </button>
+                  <button class="remove-room-btn" on:click={() => { selectedRoom = null; selectedRoomIsExtra = false; bookMode = 'single'; }} aria-label="Quitar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                 </div>
               </div>
             {:else if bookMode === 'combo' && comboActivo}
@@ -1112,112 +1066,62 @@
                 <div class="hdet__sidebar-combo">
                   {#each comboActivo.slots as slot, i}
                     {@const personas = personasPorSlotActivo[i] || 0}
-                    {@const precioConPersonas = slot.seleccionada
-                      ? slot.seleccionada.precioPorNoche + slot.seleccionada.precioPorPersona * personas
-                      : 0}
+                    {@const precioConPersonas = slot.seleccionada ? slot.seleccionada.precioPorNoche : 0}
                     <div class="hdet__sidebar-combo-slot">
                       <span class="hdet__sidebar-combo-num">Hab.{i+1}</span>
-                      <div class="hdet__sidebar-combo-middle">
-                        <span class="hdet__sidebar-combo-name">{slot.seleccionada?.tipoHabitacion || '—'}</span>
-                        <span class="hdet__sidebar-combo-personas">{personas} {personas === 1 ? 'huésped' : 'huéspedes'}</span>
-                      </div>
+                      <div class="hdet__sidebar-combo-middle"><span class="hdet__sidebar-combo-name">{slot.seleccionada?.tipoHabitacion || '—'}</span><span class="hdet__sidebar-combo-personas">{personas} {personas === 1 ? 'huésped' : 'huéspedes'}</span></div>
                       <span class="hdet__sidebar-combo-precio">{fmt(precioConPersonas)}</span>
                     </div>
                   {/each}
                 </div>
-                <button class="remove-room-btn" style="margin-top:.5rem;" on:click={() => bookMode = 'single'} aria-label="Quitar combinación">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+                <button class="remove-room-btn" style="margin-top:.5rem;" on:click={() => { bookMode = 'single'; selectedRoomIsExtra = false; }} aria-label="Quitar combinación"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
               </div>
             {:else}
-              <div class="no-room-selected">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                <p>Selecciona una habitación o combinación para continuar</p>
-              </div>
+              <div class="no-room-selected"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg><p>Selecciona una habitación o combinación para continuar</p></div>
             {/if}
 
-            <!-- Desglose de precios -->
             {#if bookMode === 'single' && selectedRoom && nights > 0}
               <div class="price-summary">
-                <div class="price-row">
-                  <span>{fmt(selectedRoom.precioPorNoche)}/noche × {nights} {nights === 1 ? 'noche' : 'noches'}</span>
-                  <span>{fmt(selectedRoom.precioPorNoche * nights)}</span>
-                </div>
-                <div class="price-row price-row--persona">
-                  <span>{fmt(selectedRoom.precioPorPersona)}/persona × {cantidadPersonas} × {nights}</span>
-                  <span>{fmt(selectedRoom.precioPorPersona * cantidadPersonas * nights)}</span>
-                </div>
+                <div class="price-row"><span>{fmt(selectedRoom.precioPorNoche)}/noche × {nights} {nights === 1 ? 'noche' : 'noches'}</span><span>{fmt(selectedRoom.precioPorNoche * nights)}</span></div>
+                {#if selectedRoomIsExtra}<div class="price-row" style="color: var(--primary); font-weight: 600;"><span>+1 persona extra × {fmt(selectedRoom.precioPorPersona)} × {nights}n</span><span>{fmt(selectedRoom.precioPorPersona * nights)}</span></div>{/if}
                 <div class="hdet__price-divider"></div>
-                <div class="price-row total">
-                  <span>Total</span>
-                  <span class="total-amount">{fmt(totalPrice)}</span>
-                </div>
+                <div class="price-row total"><span>Total</span><span class="total-amount">{fmt(totalPrice)}</span></div>
                 <div class="taxes-note">Incluye impuestos y cargos</div>
               </div>
             {:else if bookMode === 'combo' && comboActivo && nights > 0}
               <div class="price-summary">
                 {#each comboActivo.slots as slot, i}
                   {#if slot.seleccionada}
-                    {@const personas = personasPorSlotActivo[i] || 0}
                     {@const precioHab = slot.seleccionada.precioPorNoche * nights}
-                    {@const precioPersonas = slot.seleccionada.precioPorPersona * personas * nights}
-                    <div class="price-row price-row--hab-label">
-                      <span>Hab.{i+1} — {slot.seleccionada.tipoHabitacion}</span>
-                    </div>
-                    <div class="price-row price-row--sub">
-                      <span>{fmt(slot.seleccionada.precioPorNoche)} × {nights}n</span>
-                      <span>{fmt(precioHab)}</span>
-                    </div>
-                    <div class="price-row price-row--sub price-row--persona">
-                      <span>{fmt(slot.seleccionada.precioPorPersona)}/pers. × {personas} × {nights}n</span>
-                      <span>{fmt(precioPersonas)}</span>
-                    </div>
+                    <div class="price-row price-row--hab-label"><span>Hab.{i+1} — {slot.seleccionada.tipoHabitacion}</span></div>
+                    <div class="price-row price-row--sub"><span>{fmt(slot.seleccionada.precioPorNoche)} × {nights}n</span><span>{fmt(precioHab)}</span></div>
                   {/if}
                 {/each}
                 <div class="hdet__price-divider"></div>
-                <div class="price-row total">
-                  <span>Total</span>
-                  <span class="total-amount">{fmt(comboTotalConPersonas * nights)}</span>
-                </div>
+                <div class="price-row total"><span>Total</span><span class="total-amount">{fmt(comboTotalConPersonas * nights)}</span></div>
                 <div class="taxes-note">Incluye impuestos y cargos</div>
               </div>
             {/if}
 
-            {#if bookError}
-              <div class="hdet__book-notice">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                {bookError}
-              </div>
-            {/if}
+            {#if bookError}<div class="hdet__book-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> {bookError}</div>{/if}
 
             <div class="booking-actions">
               {#if bookMode === 'single'}
-                <button class="btn-book-now" on:click={bookNow} disabled={!selectedRoom || booking}>
-                  {booking ? 'Procesando...' : 'Reservar Ahora'}
-                </button>
+                <button class="btn-book-now" on:click={bookNow} disabled={!selectedRoom || booking}>{booking ? 'Procesando...' : selectedRoomIsExtra ? 'Reservar con +1 extra' : 'Reservar Ahora'}</button>
               {:else if bookMode === 'combo'}
-                <button class="btn-book-now btn-book-combo" on:click={bookCombo} disabled={!comboActivo || booking}>
-                  {booking ? 'Procesando...' : `Reservar ${comboActivo?.slots.length || ''} habitaciones`}
-                </button>
+                <button class="btn-book-now btn-book-combo" on:click={bookCombo} disabled={!comboActivo || booking}>{booking ? 'Procesando...' : `Reservar ${comboActivo?.slots.length || ''} habitaciones`}</button>
               {/if}
             </div>
 
             <div class="trust-badges">
-              <div class="trust-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>Pago Seguro</span>
-              </div>
-              <div class="trust-badge">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span>Mejor Precio Garantizado</span>
-              </div>
+              <div class="trust-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span>Pago Seguro</span></div>
+              <div class="trust-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Mejor Precio Garantizado</span></div>
             </div>
           </div>
         </aside>
       </div>
     </div>
 
-    <!-- Modal confirmación reserva -->
     {#if reservacion}
       <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
         <div class="hdet__confirm-modal">
@@ -1226,90 +1130,45 @@
           <p class="hdet__confirm-code">{reservacion.noReservacion}</p>
           <div class="hdet__confirm-rows">
             <div class="hdet__confirm-row"><span>Hotel</span><strong>{hotel?.nombre}</strong></div>
-            {#if reservacion._modo === 'combo' && reservacion._comboSlots}
-              {#each reservacion._comboSlots as r, i}
-                <div class="hdet__confirm-row"><span>Hab.{i+1}</span><strong>{r.tipoHabitacion}</strong></div>
-              {/each}
-            {:else}
-              <div class="hdet__confirm-row"><span>Habitación</span><strong>{selectedRoom?.tipoHabitacion}</strong></div>
-            {/if}
+            {#if reservacion._modo === 'combo' && reservacion._comboSlots}{#each reservacion._comboSlots as r, i}<div class="hdet__confirm-row"><span>Hab.{i+1}</span><strong>{r.tipoHabitacion}</strong></div>{/each}{:else}<div class="hdet__confirm-row"><span>Habitación</span><strong>{selectedRoom?.tipoHabitacion}{selectedRoomIsExtra ? ' (+1 extra)' : ''}</strong></div>{/if}
             <div class="hdet__confirm-row"><span>Check-in</span><strong>{checkInDate}</strong></div>
             <div class="hdet__confirm-row"><span>Check-out</span><strong>{checkOutDate}</strong></div>
-            <div class="hdet__confirm-row"><span>Huéspedes</span><strong>{cantidadPersonas}</strong></div>
+            <div class="hdet__confirm-row"><span>Huéspedes</span><strong>{selectedRoomIsExtra ? selectedRoom?.capacidadMaxima + 1 : cantidadPersonas}</strong></div>
             <div class="hdet__confirm-row"><span>Estado</span><strong class="hdet__confirm-estado">{reservacion.estado}</strong></div>
             <div class="hdet__confirm-row hdet__confirm-row--total"><span>Total</span><strong>{fmt(reservacion.total)}</strong></div>
           </div>
           <p class="hdet__confirm-expira">Expira: {reservacion.fechaExpiracion}</p>
           <div class="hdet__confirm-btns">
             <button class="hdet__confirm-btn-home" on:click={() => navigateTo('home')}>Volver al inicio</button>
-            <button class="hdet__confirm-btn-pay" on:click={goToCheckout}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-              Pagar ahora
-            </button>
+            <button class="hdet__confirm-btn-pay" on:click={goToCheckout}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg> Pagar ahora</button>
             <button class="hdet__confirm-btn-close" on:click={() => reservacion = null}>Cerrar</button>
           </div>
         </div>
       </div>
     {/if}
 
-    <!-- ═══ MODAL: Iniciar sesión requerido ═══ -->
     {#if showLoginRequired}
       <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
         <div class="hdet__login-prompt-modal">
-          <div class="hdet__login-prompt-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </div>
+          <div class="hdet__login-prompt-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
           <h2 class="hdet__login-prompt-title">¡Necesitas iniciar sesión!</h2>
-          <p class="hdet__login-prompt-text">
-            Para poder reservar una habitación necesitas tener una cuenta e iniciar sesión.
-            Es rápido, sencillo y podrás gestionar todas tus reservas.
-          </p>
+          <p class="hdet__login-prompt-text">Para poder reservar una habitación necesitas tener una cuenta e iniciar sesión. Es rápido, sencillo y podrás gestionar todas tus reservas.</p>
           <div class="hdet__login-prompt-btns">
-            <button class="hdet__login-prompt-btn-login" on:click={() => { closeLoginPrompt(); navigateTo('login'); }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                <polyline points="10 17 15 12 10 7"></polyline>
-                <line x1="15" y1="12" x2="3" y2="12"></line>
-              </svg>
-              Iniciar Sesión
-            </button>
-            <button class="hdet__login-prompt-btn-register" on:click={() => { closeLoginPrompt(); navigateTo('register'); }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="23" y1="11" x2="17" y2="11"></line>
-              </svg>
-              Crear Cuenta
-            </button>
-            <button class="hdet__login-prompt-btn-close" on:click={closeLoginPrompt}>
-              Seguir explorando
-            </button>
+            <button class="hdet__login-prompt-btn-login" on:click={() => { closeLoginPrompt(); navigateTo('login'); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Iniciar Sesión</button>
+            <button class="hdet__login-prompt-btn-register" on:click={() => { closeLoginPrompt(); navigateTo('register'); }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg> Crear Cuenta</button>
+            <button class="hdet__login-prompt-btn-close" on:click={closeLoginPrompt}>Seguir explorando</button>
           </div>
         </div>
       </div>
     {/if}
   </div>
 
-  <!-- Gallery Modal -->
   {#if showImageGallery && images.length > 0}
     <div class="gallery-modal" role="dialog" aria-modal="true" aria-label="Galería de fotos">
-      <button class="gallery-close" on:click={closeGallery} aria-label="Cerrar galería">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-      <button class="gallery-nav-btn gallery-prev" on:click={prevImage} aria-label="Anterior">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </button>
-      <button class="gallery-nav-btn gallery-next" on:click={nextImage} aria-label="Siguiente">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </button>
-      <div class="gallery-content">
-        <img src={images[currentImageIndex]} alt="{hotel.nombre} {currentImageIndex + 1}" class="gallery-image" on:error={handleImgError} />
-        <div class="gallery-counter">{currentImageIndex + 1} / {images.length}</div>
-      </div>
+      <button class="gallery-close" on:click={closeGallery} aria-label="Cerrar galería"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+      <button class="gallery-nav-btn gallery-prev" on:click={prevImage} aria-label="Anterior"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+      <button class="gallery-nav-btn gallery-next" on:click={nextImage} aria-label="Siguiente"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+      <div class="gallery-content"><img src={images[currentImageIndex]} alt="{hotel.nombre} {currentImageIndex + 1}" class="gallery-image" on:error={handleImgError} /><div class="gallery-counter">{currentImageIndex + 1} / {images.length}</div></div>
     </div>
   {/if}
 
