@@ -376,3 +376,34 @@
   font-size: 0.75rem;
   color: #94a3b8;
 }
+
+/* Nacionalidades — fila con botón quitar */
+.nac-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-quitar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  margin-top: 2px;
+}
+
+.btn-quitar:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}

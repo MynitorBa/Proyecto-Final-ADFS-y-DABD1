@@ -34,25 +34,27 @@
     return `${y}-${m}-${d}`;
   }
 
+  const today = toLocalDateStr(new Date());
+
+  // Reactivo: mínimo del checkout siempre un día después del checkin
+  $: minCheckOut = (() => {
+    if (!checkIn) return today;
+    const d = new Date(checkIn);
+    d.setDate(d.getDate() + 1);
+    return toLocalDateStr(d);
+  })();
+
   onMount(() => {
-    const today    = new Date();
-    const tomorrow = new Date(today);
+    const todayDate    = new Date();
+    const tomorrow = new Date(todayDate);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    checkIn  = toLocalDateStr(today);
+    checkIn  = toLocalDateStr(todayDate);
     checkOut = toLocalDateStr(tomorrow);
 
     if (destinationSuggestion) ciudadQuery = destinationSuggestion;
   });
 
   $: if (destinationSuggestion) ciudadQuery = destinationSuggestion;
-
-  function updateCheckOut() {
-    if (checkIn && (!checkOut || new Date(checkOut) <= new Date(checkIn))) {
-      const d = new Date(checkIn);
-      d.setDate(d.getDate() + 1);
-      checkOut = toLocalDateStr(d);
-    }
-  }
 
   // ── País ──
   function onPaisInput() {
@@ -79,7 +81,6 @@
     paisSeleccionado = p;
     paisQuery = p.country;
     paisesSugeridos = [];
-    // cargar ciudades
     ciudadQuery = ''; ciudadSeleccionada = false;
     ciudadesSugeridas = []; todasLasCiudades = [];
     ciudadLoading = true;
@@ -130,6 +131,10 @@
 
     if (!paisSeleccionado) { searchError = 'Por favor selecciona un país de la lista.'; return; }
     if (!ciudadSeleccionada) { searchError = 'Por favor selecciona una ciudad de la lista.'; return; }
+    if (!checkIn) { searchError = 'Selecciona la fecha de check-in.'; return; }
+    if (!checkOut) { searchError = 'Selecciona la fecha de check-out.'; return; }
+    if (new Date(checkOut) <= new Date(checkIn)) { searchError = 'El check-out debe ser al menos un día después del check-in.'; return; }
+    if (checkIn < today) { searchError = 'El check-in no puede ser una fecha pasada.'; return; }
 
     isSearching = true;
     try {
@@ -250,8 +255,9 @@
                 Check-in
               </label>
               <input type="date" id="h-checkin" class="home__form-input"
-                bind:value={checkIn} on:change={updateCheckOut}
-                min={toLocalDateStr(new Date())} required />
+                bind:value={checkIn}
+                min={today}
+                required />
             </div>
 
             <!-- Check-out -->
@@ -261,7 +267,9 @@
                 Check-out
               </label>
               <input type="date" id="h-checkout" class="home__form-input"
-                bind:value={checkOut} min={checkIn} required />
+                bind:value={checkOut}
+                min={minCheckOut}
+                required />
             </div>
 
             <!-- Huéspedes -->
@@ -321,9 +329,9 @@
             Explorar Hoteles
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </button>
-            <a href="http://localhost:5173/destinations" class="home__cta-button secondary">
-              Ver Destinos
-            </a>
+          <a href="http://localhost:5173/destinations" class="home__cta-button secondary">
+            Ver Destinos
+          </a>
         </div>
       </div>
     </div>

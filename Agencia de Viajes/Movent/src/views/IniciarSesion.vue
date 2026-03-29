@@ -57,19 +57,20 @@
           </div>
 
           <form v-else @submit.prevent="handleLogin" class="login-form">
+
             <div v-if="serverError" class="alert-error">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               {{ serverError }}
             </div>
 
             <div class="form-field">
-              <label for="email">Usuario o Correo Electrónico</label>
+              <label for="login">Usuario o Correo Electrónico</label>
               <div class="input-icon-wrap">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <input type="text" id="email" v-model="formData.email" @input="onFieldChange"
-                  placeholder="usuario o tu@email.com" :class="{ error: errors.email }" autocomplete="username" />
+                <input type="text" id="login" v-model="formData.login" @input="onFieldChange"
+                  placeholder="usuario o tu@email.com" :class="{ error: errors.login }" autocomplete="username" />
               </div>
-              <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
+              <span v-if="errors.login" class="error-text">{{ errors.login }}</span>
             </div>
 
             <div class="form-field">
@@ -108,9 +109,11 @@
               ¿No tienes una cuenta?
               <router-link to="/registro" class="link-btn">Regístrate aquí</router-link>
             </p>
+
           </form>
         </div>
       </div>
+
     </div>
   </div>
 </template>
@@ -120,9 +123,11 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '../styles/iniciarsesion.css'
 
+const API_BASE = 'http://localhost:8080'
+
 const router = useRouter()
 
-const formData     = ref({ email: '', password: '' })
+const formData     = ref({ login: '', password: '' })
 const showPassword = ref(false)
 const rememberMe   = ref(false)
 const errors       = ref({})
@@ -132,21 +137,16 @@ const serverError  = ref('')
 const esAdmin      = ref(false)
 const captchaToken = ref('')
 
-// ── CAPTCHA ──────────────────────────────────
-const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI' // clave TEST de Google (siempre pasa)
-
+// ── CAPTCHA ──────────────────────────────────────────────────────────
+const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
 let recaptchaWidgetId = null
 
 const loadRecaptcha = () => {
-  if (window.grecaptcha) {
-    renderCaptcha()
-    return
-  }
-  // Inyectar script solo una vez
+  if (window.grecaptcha) { renderCaptcha(); return }
   if (!document.getElementById('recaptcha-script')) {
     const script = document.createElement('script')
-    script.id  = 'recaptcha-script'
-    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit'
+    script.id    = 'recaptcha-script'
+    script.src   = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit'
     script.async = true
     script.defer = true
     document.head.appendChild(script)
@@ -157,27 +157,24 @@ const loadRecaptcha = () => {
 const renderCaptcha = () => {
   if (!window.grecaptcha || !document.getElementById('recaptcha-login')) return
   recaptchaWidgetId = window.grecaptcha.render('recaptcha-login', {
-    sitekey:  RECAPTCHA_SITE_KEY,
-    theme:    'light',
-    callback: (token) => { captchaToken.value = token; errors.value.captcha = '' },
+    sitekey:           RECAPTCHA_SITE_KEY,
+    theme:             'light',
+    callback:          (token) => { captchaToken.value = token; errors.value.captcha = '' },
     'expired-callback': () => { captchaToken.value = '' },
   })
 }
 
-onMounted(() => loadRecaptcha())
-
-onUnmounted(() => {
-  delete window.onRecaptchaLoad
-})
-
-// ── USUARIO ADMIN HARDCODEADO (solo para demo sin backend) ──
-const ADMIN_DEMO = {
-  usuario:  'meme',
-  password: 'meme1234',
-  nombre:   'meme',
-  rol:      'Administrador',
+const resetCaptcha = () => {
+  if (window.grecaptcha && recaptchaWidgetId !== null) {
+    window.grecaptcha.reset(recaptchaWidgetId)
+    captchaToken.value = ''
+  }
 }
 
+onMounted(() => loadRecaptcha())
+onUnmounted(() => { delete window.onRecaptchaLoad })
+
+// ── Helpers ───────────────────────────────────────────────────────────
 const onFieldChange = () => {
   serverError.value = ''
   errors.value = {}
@@ -185,58 +182,64 @@ const onFieldChange = () => {
 
 const validateForm = () => {
   errors.value = {}
-  if (!formData.value.email.trim())  errors.value.email    = 'El usuario o email es requerido'
-  if (!formData.value.password)      errors.value.password = 'La contraseña es requerida'
-  if (!captchaToken.value)           errors.value.captcha  = 'Completa el CAPTCHA para continuar'
+  if (!formData.value.login.trim())    errors.value.login    = 'El usuario o email es requerido'
+  if (!formData.value.password)        errors.value.password = 'La contraseña es requerida'
+  if (!captchaToken.value)             errors.value.captcha  = 'Completa el CAPTCHA para continuar'
   return Object.keys(errors.value).length === 0
 }
 
+// ── Login ─────────────────────────────────────────────────────────────
 const handleLogin = async () => {
   if (!validateForm()) return
   isSubmitting.value = true
   serverError.value  = ''
 
   try {
-    await new Promise(r => setTimeout(r, 800))
+    // El backend recibe: { login, contrasena }
+    // login acepta tanto username como correo
+    const res = await fetch(`${API_BASE}/api/usuarios/login`, {
+      method:  'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        login:      formData.value.login.trim(),
+        contrasena: formData.value.password,
+      }),
+    })
 
-    const u = formData.value.email.trim().toLowerCase()
-    const p = formData.value.password
+    let data = null
+    const text = await res.text()
+    try { data = JSON.parse(text) } catch { /* no-JSON */ }
 
-    // Verificar admin demo
-    if (
-      (u === ADMIN_DEMO.usuario || u === ADMIN_DEMO.usuario + '@movent.gt') &&
-      p === ADMIN_DEMO.password
-    ) {
-      sessionStorage.setItem('usuario_sesion', JSON.stringify({
-        nombre:  ADMIN_DEMO.nombre,
-        usuario: ADMIN_DEMO.usuario,
-        rol:     ADMIN_DEMO.rol,
-        isAdmin: true,
-      }))
-      esAdmin.value      = true
-      loginSuccess.value = true
-      setTimeout(() => router.push('/admin/dashboard'), 1400)
+    if (!res.ok) {
+      // El backend devuelve: { "error": "Usuario o contraseña incorrectos" }
+      serverError.value = data?.error || `Error ${res.status}`
+      resetCaptcha()
       return
     }
 
-    // Aquí iría llamada al backend real con captchaToken.value
+    // El backend devuelve:
+    // { id, nombre, apellido, correo, username, rol_id }
+    // rol_id: 1 = Registrado, 2 = Administrador
+    const adminFlag = data.rol_id === 2
+
     sessionStorage.setItem('usuario_sesion', JSON.stringify({
-      nombre:  u,
-      usuario: u,
-      rol:     'Cliente Registrado',
-      isAdmin: false,
+      id:      data.id,
+      nombre:  data.nombre,
+      apellido: data.apellido,
+      usuario: data.username,
+      correo:  data.correo,
+      rol:     adminFlag ? 'Administrador' : 'Registrado',
+      isAdmin: adminFlag,
     }))
-    esAdmin.value      = false
+
+    esAdmin.value      = adminFlag
     loginSuccess.value = true
-    setTimeout(() => router.push('/principal'), 1400)
+    setTimeout(() => router.push(adminFlag ? '/admin/dashboard' : '/principal'), 1400)
 
   } catch (err) {
-    serverError.value = 'Error de conexión: ' + (err.message || 'intenta de nuevo')
-    // Reset captcha en error
-    if (window.grecaptcha && recaptchaWidgetId !== null) {
-      window.grecaptcha.reset(recaptchaWidgetId)
-      captchaToken.value = ''
-    }
+    serverError.value = 'Error de conexión. Verifica que el servidor esté activo.'
+    resetCaptcha()
   } finally {
     isSubmitting.value = false
   }

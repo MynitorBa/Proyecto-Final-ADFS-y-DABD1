@@ -40,6 +40,65 @@
 
   const todayStr = toLocalDateStr(new Date());
 
+  let datesWarning  = false;
+  let fetchingAvail = false;
+
+  function onSidebarDateChange() {
+    selectedRoom      = null;
+    selectedRoomIsExtra = false;
+    bookMode          = 'single';
+    comboActivo       = null;
+    bookError         = '';
+    datesWarning      = true;
+  }
+
+  async function refetchDisponibilidad() {
+    if (!checkInDate || !checkOutDate) return;
+    if (new Date(checkOutDate) <= new Date(checkInDate)) {
+      bookError = 'El check-out debe ser posterior al check-in.';
+      return;
+    }
+    if (checkInDate < todayStr) {
+      bookError = 'El check-in no puede ser una fecha pasada.';
+      return;
+    }
+    fetchingAvail = true;
+    bookError = '';
+    try {
+      const res = await fetch(`${API}/busqueda`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          pais:             hotel.pais,
+          ciudad:           hotel.ciudad,
+          fechaCheckIn:     checkInDate,
+          fechaCheckOut:    checkOutDate,
+          cantidadPersonas: cantidadPersonas
+        })
+      });
+      if (!res.ok) { bookError = 'Error al actualizar disponibilidad.'; return; }
+      const hoteles = await res.json();
+      const actualizado = hoteles.find(h => h.id === hotel.id);
+      if (actualizado) {
+        hotel = { ...hotel, ...actualizado };
+        comboActivo = null;
+        datesWarning = false;
+      } else {
+        bookError = 'Este hotel no tiene disponibilidad para las fechas seleccionadas.';
+      }
+    } catch(e) {
+      bookError = 'Error de conexión al actualizar disponibilidad.';
+    } finally {
+      fetchingAvail = false;
+    }
+  }
+
+  // Solo esto: min reactivo para el checkout (no modifica ninguna variable, solo calcula el mínimo)
+  $: minCheckOut = checkInDate
+    ? toLocalDateStr(new Date(new Date(checkInDate).getTime() + 86400000))
+    : todayStr;
+
   $: nights = (() => {
     if (!checkInDate || !checkOutDate) return 0;
     return Math.max(0, Math.ceil(
@@ -47,7 +106,7 @@
     ));
   })();
 
-  $: habitacionesDisponibles = hotel?.habitaciones || [];
+  $: habitacionesDisponibles = hotel?.tiposHabitacion || [];
 
   // ── UI state ─────────────────────────────────────────────
   let activeTab         = 'overview';
@@ -75,7 +134,7 @@
     const combNums = hotel.combinacionesNumericas || [];
     return combNums.map(combo => {
       const slots = combo.map(cap => {
-        const opciones = (hotel.habitacionesPorCapacidad?.[String(cap)] || []);
+        const opciones = (hotel.tiposHabitacionPorCapacidad?.[String(cap)] || []);
         return { capRequerida: cap, opciones, seleccionada: opciones[0] || null };
       });
       return { slots, esAproximada: false };
@@ -84,11 +143,11 @@
 
   $: comboAproximada = (() => {
     if (!hotel) return null;
-    const tieneDirecta = hotel.habitaciones && hotel.habitaciones.length > 0;
+    const tieneDirecta = hotel.tiposHabitacion && hotel.tiposHabitacion.length > 0;
     const tieneExacta  = (hotel.combinacionesNumericas || []).length > 0;
     if (tieneDirecta || tieneExacta) return null;
 
-    const porCapacidad = hotel.habitacionesPorCapacidad;
+    const porCapacidad = hotel.tiposHabitacionPorCapacidad;
     if (!porCapacidad || Object.keys(porCapacidad).length === 0) return null;
 
     const todasHabs = [];
@@ -115,7 +174,7 @@
 
     const slots = selec.map(hab => {
       const capStr = String(hab.cap);
-      const opciones = hotel.habitacionesPorCapacidad?.[capStr] || [];
+      const opciones = hotel.tiposHabitacionPorCapacidad?.[capStr] || [];
       return { capRequerida: hab.cap, opciones, seleccionada: hab };
     });
     return { slots, esAproximada: true, capacidadTotal: sumCap };
@@ -132,7 +191,7 @@
     if (hayCombinaciones) return [];
 
     const capTarget = cantidadPersonas - 1;
-    const porCap = hotel.habitacionesPorCapacidad || {};
+    const porCap = hotel.tiposHabitacionPorCapacidad || {};
     const rooms = porCap[String(capTarget)] || [];
     const roomsNeeded = Math.ceil(cantidadPersonas / capTarget);
     if (rooms.length < roomsNeeded) return [];
@@ -234,8 +293,8 @@
     if (hotel.imagenesIds?.length > 0) {
       for (const imgId of hotel.imagenesIds) imgs.push(`${API}/imagenes/hotel/${imgId}`);
     }
-    if (hotel.habitaciones?.length > 0) {
-      for (const room of hotel.habitaciones) {
+    if (hotel.tiposHabitacion?.length > 0) {
+      for (const room of hotel.tiposHabitacion) {
         if (room.imagenesIds?.length > 0) {
           for (const imgId of room.imagenesIds) imgs.push(`${API}/imagenes/habitacion/${imgId}`);
         }
@@ -286,6 +345,7 @@
     selectedRoom = room;
     selectedRoomIsExtra = isExtra;
     bookMode = 'single';
+    datesWarning = false;
     document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -298,6 +358,10 @@
   function validarFechas() {
     if (!checkInDate || !checkOutDate) {
       bookError = 'Por favor selecciona las fechas de check-in y check-out.';
+      return false;
+    }
+    if (checkInDate < todayStr) {
+      bookError = 'El check-in no puede ser una fecha pasada.';
       return false;
     }
     if (new Date(checkOutDate) <= new Date(checkInDate)) {
@@ -325,6 +389,15 @@
       ? selectedRoom.capacidadMaxima + 1
       : cantidadPersonas;
 
+    // Elegir una habitación disponible aleatoria del tipo seleccionado
+    const disponibles = selectedRoom.habitacionesDisponibles || [];
+    if (disponibles.length === 0) {
+      bookError = 'No hay habitaciones disponibles de este tipo.';
+      booking = false;
+      return;
+    }
+    const habitacionElegida = disponibles[Math.floor(Math.random() * disponibles.length)];
+
     try {
       const res = await fetch(`${API}/reservaciones`, {
         method: 'POST',
@@ -332,7 +405,7 @@
         credentials: 'include',
         body: JSON.stringify({
           habitaciones: [{
-            habitacionId:    selectedRoom.id,
+            habitacionId:    habitacionElegida.id,
             cantidadPersonas: personasAEnviar,
             fechaCheckIn:    checkInDate,
             fechaCheckOut:   checkOutDate,
@@ -387,6 +460,27 @@
 
     const personasPorSlot = distribuirPersonas(comboActivo.slots, cantidadPersonas);
 
+    // Elegir una habitación disponible aleatoria por cada slot
+    const habitacionesPorSlot = comboActivo.slots.map(s => {
+      const disponibles = s.seleccionada?.habitacionesDisponibles || [];
+      if (disponibles.length === 0) return null;
+      return disponibles[Math.floor(Math.random() * disponibles.length)];
+    });
+
+    if (habitacionesPorSlot.some(h => !h)) {
+      bookError = 'Una o más habitaciones del combo no tienen disponibilidad.';
+      booking = false;
+      return;
+    }
+
+    // Verificar que no se repita el mismo ID de habitación física
+    const idsElegidos = habitacionesPorSlot.map(h => h.id);
+    if (new Set(idsElegidos).size !== idsElegidos.length) {
+      bookError = 'No hay suficientes habitaciones físicas disponibles para esta combinación.';
+      booking = false;
+      return;
+    }
+
     try {
       const res = await fetch(`${API}/reservaciones`, {
         method: 'POST',
@@ -394,7 +488,7 @@
         credentials: 'include',
         body: JSON.stringify({
           habitaciones: comboActivo.slots.map((s, i) => ({
-            habitacionId:    s.seleccionada.id,
+            habitacionId:    habitacionesPorSlot[i].id,
             cantidadPersonas: personasPorSlot[i],
             fechaCheckIn:    checkInDate,
             fechaCheckOut:   checkOutDate,
@@ -589,8 +683,8 @@
 
   $: habitacionesSuperiores = (() => {
     if (!hotel) return [];
-    const directas = hotel.habitaciones || [];
-    const porCap   = hotel.habitacionesPorCapacidad || {};
+    const directas = hotel.tiposHabitacion || [];
+    const porCap   = hotel.tiposHabitacionPorCapacidad || {};
     const todas    = [...directas];
     for (const rooms of Object.values(porCap)) {
       for (const r of rooms) {
@@ -603,8 +697,8 @@
   // ── Habitaciones con persona extra (+1) ───────────────────
   $: habitacionesPersonaExtra = (() => {
     if (!hotel || cantidadPersonas <= 1) return [];
-    const directas = hotel.habitaciones || [];
-    const porCap   = hotel.habitacionesPorCapacidad || {};
+    const directas = hotel.tiposHabitacion || [];
+    const porCap   = hotel.tiposHabitacionPorCapacidad || {};
     const todas    = [...directas];
     for (const rooms of Object.values(porCap)) {
       for (const r of rooms) {
@@ -746,10 +840,10 @@
                 </p>
                 <div class="rooms-list">
                   {#each habitacionesDisponibles as room}
-                    <article class="room-detail-card" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}>
+                    <article class="room-detail-card" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra}>
                       <div class="room-images-section">
                         {#if room.imagenesIds?.length > 0}
-                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
+                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { /** @type {HTMLImageElement} */ /** @type {HTMLImageElement} */ (e.target).parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
                         {:else}
                           <div class="room-no-image">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -777,8 +871,8 @@
                             <div class="price-per-person price-per-person--prominent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> + {fmt(room.precioPorPersona)} / persona</div>
                             {#if nights > 0}<div class="total-nights-price">Total estimado: {fmt(room.precioPorNoche * nights)} {#if nights > 1}· {nights} noches{/if}</div>{/if}
                           </div>
-                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra} on:click={() => selectRoom(room, false)}>
-                            {#if selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar{/if}
+                          <button class="btn-select-room" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra} on:click={() => selectRoom(room, false)}>
+                            {#if selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar{/if}
                           </button>
                         </div>
                       </div>
@@ -798,9 +892,9 @@
                 </div>
                 <div class="rooms-list">
                   {#each habitacionesSuperiores as room}
-                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}>
+                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra}>
                       <div class="room-images-section">
-                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
+                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
                         <div class="room-capacity-badge room-capacity-badge--superior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Máx. {room.capacidadMaxima}</div>
                       </div>
                       <div class="room-content-section">
@@ -816,8 +910,8 @@
                             <div class="price-per-person price-per-person--prominent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> + {fmt(room.precioPorPersona)} / persona</div>
                             {#if nights > 0}<div class="total-nights-price">Total estimado: {fmt(room.precioPorNoche * nights)} {#if nights > 1}· {nights} noches{/if}</div>{/if}
                           </div>
-                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra} on:click={() => selectRoom(room, false)}>
-                            {#if selectedRoom?.id === room.id && bookMode === 'single' && !selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar{/if}
+                          <button class="btn-select-room" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra} on:click={() => selectRoom(room, false)}>
+                            {#if selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar{/if}
                           </button>
                         </div>
                       </div>
@@ -837,9 +931,9 @@
                 </div>
                 <div class="rooms-list">
                   {#each habitacionesPersonaExtra as room}
-                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && selectedRoomIsExtra}>
+                    <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && selectedRoomIsExtra}>
                       <div class="room-images-section">
-                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
+                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
                         <div class="room-capacity-badge room-capacity-badge--superior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> {room.capacidadMaxima} + 1 extra</div>
                       </div>
                       <div class="room-content-section">
@@ -855,8 +949,8 @@
                             <div class="price-per-person price-per-person--prominent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> + {fmt(room.precioPorPersona)} / persona extra</div>
                             {#if nights > 0}<div class="total-nights-price">Total estimado: {fmt((room.precioPorNoche + room.precioPorPersona) * nights)} {#if nights > 1}· {nights} noches{/if} (incluye +1 persona)</div>{/if}
                           </div>
-                          <button class="btn-select-room" class:selected={selectedRoom?.id === room.id && bookMode === 'single' && selectedRoomIsExtra} on:click={() => selectRoom(room, true)}>
-                            {#if selectedRoom?.id === room.id && bookMode === 'single' && selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar +1 extra{/if}
+                          <button class="btn-select-room" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && selectedRoomIsExtra} on:click={() => selectRoom(room, true)}>
+                            {#if selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && selectedRoomIsExtra}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Seleccionada{:else}Seleccionar +1 extra{/if}
                           </button>
                         </div>
                       </div>
@@ -944,7 +1038,7 @@
                   <div class="hdet__combo-total-bar">
                     <div class="hdet__combo-total-info"><span class="hdet__combo-total-label">Total combinación</span><span class="hdet__combo-total-habs">{comboActivo.slots.length} habitaciones · {cantidadPersonas} huéspedes</span></div>
                     <div class="hdet__combo-total-precios"><span class="hdet__combo-total-precio-noche">{fmt(comboTotalConPersonas)}/noche</span>{#if nights > 1}<span class="hdet__combo-total-precio-total">{fmt(comboTotalConPersonas * nights)} por {nights} noches</span>{/if}</div>
-                    <button class="hdet__combo-btn-seleccionar" class:active={bookMode === 'combo'} on:click={() => { bookMode = 'combo'; selectedRoom = null; selectedRoomIsExtra = false; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                    <button class="hdet__combo-btn-seleccionar" class:active={bookMode === 'combo'} on:click={() => { bookMode = 'combo'; selectedRoom = null; selectedRoomIsExtra = false; datesWarning = false; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
                       {#if bookMode === 'combo'}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Combinación activa{:else}Reservar esta combinación{/if}
                     </button>
                   </div>
@@ -1010,7 +1104,7 @@
                   <div class="hdet__combo-total-bar">
                     <div class="hdet__combo-total-info"><span class="hdet__combo-total-label">Total combinación especial</span><span class="hdet__combo-total-habs">{comboActivo.slots.length} habitaciones · {cantidadPersonas} huéspedes</span></div>
                     <div class="hdet__combo-total-precios"><span class="hdet__combo-total-precio-noche">{fmt(comboTotalConPersonas)}/noche</span>{#if nights > 1}<span class="hdet__combo-total-precio-total">{fmt(comboTotalConPersonas * nights)} por {nights} noches</span>{/if}</div>
-                    <button class="hdet__combo-btn-seleccionar" class:active={bookMode === 'combo'} on:click={() => { bookMode = 'combo'; selectedRoom = null; selectedRoomIsExtra = false; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
+                    <button class="hdet__combo-btn-seleccionar" class:active={bookMode === 'combo'} on:click={() => { bookMode = 'combo'; selectedRoom = null; selectedRoomIsExtra = false; datesWarning = false; document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}>
                       {#if bookMode === 'combo'}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Combinación activa{:else}Reservar esta combinación{/if}
                     </button>
                   </div>
@@ -1038,9 +1132,23 @@
             <div class="booking-section">
               <p class="booking-label">Fechas</p>
               <div class="date-inputs">
-                <div class="date-input-group"><span class="input-label">Check-in</span><input type="date" bind:value={checkInDate} min={todayStr} class="date-input" /></div>
-                <div class="date-input-group"><span class="input-label">Check-out</span><input type="date" bind:value={checkOutDate} min={checkInDate ? (() => { const d = new Date(checkInDate); d.setDate(d.getDate()+1); return toLocalDateStr(d); })() : ''} class="date-input" /></div>
+                <div class="date-input-group"><span class="input-label">Check-in</span><input type="date" bind:value={checkInDate} min={todayStr} on:change={onSidebarDateChange} class="date-input" /></div>
+                <div class="date-input-group"><span class="input-label">Check-out</span><input type="date" bind:value={checkOutDate} min={minCheckOut} on:change={onSidebarDateChange} class="date-input" /></div>
               </div>
+              {#if datesWarning}
+                <div class="hdet__book-notice" style="background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.4);color:#92400e;flex-direction:column;gap:0.5rem;align-items:flex-start;">
+                  <div style="display:flex;align-items:center;gap:0.4rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Fechas cambiadas. Actualiza la disponibilidad para continuar.
+                  </div>
+                  <button
+                    style="background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:white;padding:0.45rem 1rem;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;width:100%;"
+                    on:click={refetchDisponibilidad}
+                    disabled={fetchingAvail}>
+                    {fetchingAvail ? 'Actualizando...' : '🔄 Actualizar disponibilidad'}
+                  </button>
+                </div>
+              {/if}
               {#if nights > 0}<div class="nights-display">{nights} {nights === 1 ? 'noche' : 'noches'}</div>{/if}
             </div>
             <div class="booking-section">

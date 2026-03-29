@@ -18,6 +18,19 @@ func main() {
 
 	router := gin.Default()
 
+	// ── CORS ──────────────────────────────────────────────────
+	router.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+	// ──────────────────────────────────────────────────────────
+
 	// Servicios
 	ubicacionService := services.NewUbicacionService(db)
 	usuarioService := services.NewUsuarioService(db, ubicacionService)

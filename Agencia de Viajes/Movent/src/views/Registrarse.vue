@@ -14,6 +14,7 @@
           <p>Únete a Movent y comienza a reservar experiencias de viaje</p>
         </div>
 
+        <!-- Success -->
         <div v-if="registrationSuccess" class="success-box">
           <div class="success-icon">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -25,7 +26,7 @@
 
         <form v-else @submit.prevent="handleRegister" class="register-form">
 
-          <!-- Información Personal -->
+          <!-- ── Información Personal ── -->
           <div class="form-section">
             <h3 class="section-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -35,12 +36,14 @@
             <div class="form-grid-2">
               <div class="form-field">
                 <label>Nombre <span class="req">*</span></label>
-                <input type="text" v-model="formData.firstName" placeholder="Nombres" :class="{ error: errors.firstName }" autocomplete="given-name" />
+                <input type="text" v-model="formData.firstName" placeholder="Nombres"
+                  :class="{ error: errors.firstName }" autocomplete="given-name" />
                 <span v-if="errors.firstName" class="error-text">{{ errors.firstName }}</span>
               </div>
               <div class="form-field">
                 <label>Apellidos <span class="req">*</span></label>
-                <input type="text" v-model="formData.lastName" placeholder="Apellidos" :class="{ error: errors.lastName }" autocomplete="family-name" />
+                <input type="text" v-model="formData.lastName" placeholder="Apellidos"
+                  :class="{ error: errors.lastName }" autocomplete="family-name" />
                 <span v-if="errors.lastName" class="error-text">{{ errors.lastName }}</span>
               </div>
             </div>
@@ -55,20 +58,20 @@
               </div>
               <div class="form-field">
                 <label>Número de Pasaporte <span class="req">*</span></label>
-                <input type="text" v-model="formData.pasaporte" placeholder="AB123456" :class="{ error: errors.pasaporte }" autocomplete="off" />
+                <input type="text" v-model="formData.pasaporte" placeholder="AB123456"
+                  :class="{ error: errors.pasaporte }" autocomplete="off" />
                 <span v-if="errors.pasaporte" class="error-text">{{ errors.pasaporte }}</span>
               </div>
             </div>
 
-            <!-- País autocomplete -->
+            <!-- País + Teléfono -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>País <span class="req">*</span></label>
                 <div class="autocomplete-wrap">
                   <input type="text" v-model="paisQuery" @input="onPaisInput" @blur="blurPais"
                     placeholder="Escribe tu país..." :class="{ error: errors.country }" autocomplete="off" />
-                  <div v-if="paisLoading" class="autocomplete-loading">Buscando...</div>
-                  <ul v-else-if="paisesSugeridos.length > 0" class="autocomplete-list">
+                  <ul v-if="paisesSugeridos.length > 0" class="autocomplete-list">
                     <li v-for="p in paisesSugeridos" :key="p.country">
                       <button type="button" class="autocomplete-btn" @click="seleccionarPais(p)">{{ p.country }}</button>
                     </li>
@@ -77,7 +80,6 @@
                 <span v-if="errors.country" class="error-text">{{ errors.country }}</span>
               </div>
 
-              <!-- Teléfono con dial code -->
               <div class="form-field">
                 <label>
                   Teléfono <span class="req">*</span>
@@ -97,15 +99,14 @@
               </div>
             </div>
 
-            <!-- Ciudad autocomplete -->
+            <!-- Ciudad -->
             <div class="form-field">
-              <label>
-                Ciudad <span class="req">*</span>
+              <label>Ciudad <span class="req">*</span>
                 <span v-if="ciudadLoading" class="label-hint">— Cargando ciudades...</span>
               </label>
               <div class="autocomplete-wrap">
                 <input type="text" v-model="ciudadQuery" @input="onCiudadInput" @blur="blurCiudad"
-                  :placeholder="!paisSeleccionado ? 'Primero selecciona un país' : ciudadLoading ? 'Cargando ciudades...' : 'Escribe tu ciudad...'"
+                  :placeholder="!paisSeleccionado ? 'Primero selecciona un país' : ciudadLoading ? 'Cargando...' : 'Escribe tu ciudad...'"
                   :disabled="!paisSeleccionado || ciudadLoading"
                   :class="{ error: errors.city }" autocomplete="off" />
                 <ul v-if="ciudadesSugeridas.length > 0" class="autocomplete-list">
@@ -116,9 +117,35 @@
               </div>
               <span v-if="errors.city" class="error-text">{{ errors.city }}</span>
             </div>
+
+            <!-- Nacionalidades (múltiples, desde API) -->
+            <div class="form-field">
+              <label>Nacionalidad(es) <span class="req">*</span></label>
+              <div v-for="(nac, i) in nacionalidades" :key="i" class="nac-row">
+                <div class="autocomplete-wrap" style="flex:1">
+                  <input type="text" v-model="nacionalidades[i].query"
+                    @input="onNacInput(i)" @blur="blurNac(i)"
+                    placeholder="Ej: Guatemalteca"
+                    :class="{ error: errors.nacionalidades && !nacionalidades[i].seleccionada }"
+                    autocomplete="off" />
+                  <ul v-if="nacionalidades[i].sugerencias.length > 0" class="autocomplete-list">
+                    <li v-for="s in nacionalidades[i].sugerencias" :key="s.pais">
+                      <button type="button" class="autocomplete-btn" @click="seleccionarNac(i, s)">
+                        {{ s.pais }} — {{ s.demonym }}
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+                <button v-if="i > 0" type="button" class="btn-quitar" @click="quitarNac(i)">✕</button>
+              </div>
+              <button type="button" class="link-btn" style="margin-top:0.5rem;font-size:0.875rem;" @click="agregarNac">
+                + Agregar otra nacionalidad
+              </button>
+              <span v-if="errors.nacionalidades" class="error-text">{{ errors.nacionalidades }}</span>
+            </div>
           </div>
 
-          <!-- Credenciales -->
+          <!-- ── Credenciales ── -->
           <div class="form-section">
             <h3 class="section-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -140,7 +167,8 @@
               <label>Correo Electrónico <span class="req">*</span></label>
               <div class="input-icon-wrap">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                <input type="email" v-model="formData.email" placeholder="tu@email.com" :class="{ error: errors.email }" autocomplete="email" />
+                <input type="email" v-model="formData.email" placeholder="tu@email.com"
+                  :class="{ error: errors.email }" autocomplete="email" />
               </div>
               <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
             </div>
@@ -226,9 +254,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '../styles/registrarse.css'
 
-const router = useRouter()
+const API_BASE = 'http://localhost:8080'
+const router   = useRouter()
 
-// ── Dial codes hardcodeados ──
+// ── Dial codes (ITU) ────────────────────────────────────────────────
 const knownDigits = {
   '+1':10,'+7':10,'+20':10,'+27':9,'+30':10,'+31':9,'+32':9,'+33':9,'+34':9,
   '+36':9,'+39':10,'+40':9,'+41':9,'+43':10,'+44':10,'+45':8,'+46':9,'+47':8,
@@ -251,39 +280,78 @@ const knownDigits = {
   '+994':9,'+995':9,'+996':9,'+998':9,
 }
 
-// ── State ──
-const formData = ref({
-  firstName:'', lastName:'', birthDate:'', pasaporte:'',
-  phone:'', username:'', email:'', password:'', confirmPassword:''
+// ── Datos de API (cargados en onMounted) ────────────────────────────
+const todosLosPaises     = ref([])  // [{ country, cities[] }] — countriesnow
+const dialCodesMap       = ref({})  // { 'guatemala': { code: '+502', digits: 8 } }
+const todosNacionalidades= ref([])  // [{ pais: 'Guatemala', demonym: 'Guatemalan' }]
+
+onMounted(async () => {
+  // Países + ciudades
+  try {
+    const res  = await fetch('https://countriesnow.space/api/v0.1/countries')
+    const data = await res.json()
+    todosLosPaises.value = data.data || []
+  } catch { console.error('Error cargando países') }
+
+  // Dial codes + demónimos de nacionalidad (misma llamada, igual que el Svelte)
+  try {
+    const res  = await fetch('https://restcountries.com/v3.1/all?fields=name,demonyms,idd')
+    const data = await res.json()
+
+    data.forEach(p => {
+      if (p.idd?.root) {
+        const suffixes = p.idd.suffixes ?? ['']
+        const code     = suffixes.length === 1 ? p.idd.root + suffixes[0] : p.idd.root
+        const digits   = knownDigits[code] ?? 9
+        const key      = p.name.common.toLowerCase()
+        dialCodesMap.value[key] = { code, digits }
+        if (p.name.official)
+          dialCodesMap.value[p.name.official.toLowerCase()] = { code, digits }
+      }
+    })
+
+    todosNacionalidades.value = data
+      .filter(p => p.demonyms?.eng?.m)
+      .map(p => ({ pais: p.name.common, demonym: p.demonyms.eng.m }))
+      .sort((a, b) => a.pais.localeCompare(b.pais))
+  } catch { console.error('Error cargando nationalidades / dial codes') }
 })
 
-const showPassword = ref(false)
+// ── Form state ──────────────────────────────────────────────────────
+const formData = ref({
+  firstName: '', lastName: '', birthDate: '', pasaporte: '',
+  phone: '', username: '', email: '', password: '', confirmPassword: ''
+})
+
+const showPassword        = ref(false)
 const showConfirmPassword = ref(false)
-const acceptTerms = ref(false)
-const acceptPrivacy = ref(false)
-const errors = ref({})
-const isSubmitting = ref(false)
+const acceptTerms         = ref(false)
+const acceptPrivacy       = ref(false)
+const errors              = ref({})
+const isSubmitting        = ref(false)
 const registrationSuccess = ref(false)
 
-// País
-const paisQuery = ref('')
-const paisesSugeridos = ref([])
+// ── País ────────────────────────────────────────────────────────────
+const paisQuery        = ref('')
+const paisesSugeridos  = ref([])
 const paisSeleccionado = ref(null)
-const paisLoading = ref(false)
-let paisTimer = null
 
-// Ciudad
-const ciudadQuery = ref('')
-const ciudadesSugeridas = ref([])
+// ── Ciudad ──────────────────────────────────────────────────────────
+const ciudadQuery        = ref('')
+const ciudadesSugeridas  = ref([])
 const ciudadSeleccionada = ref(false)
-const ciudadLoading = ref(false)
-const todasLasCiudades = ref([])
+const ciudadLoading      = ref(false)
+const todasLasCiudades   = ref([])
 
-// Teléfono
-const dialCode = ref('')
+// ── Teléfono ────────────────────────────────────────────────────────
+const dialCode        = ref('')
 const phoneDigitCount = ref(9)
 
-// ── Computed ──
+// ── Nacionalidades — array de objetos igual que el Svelte ───────────
+// Cada elemento: { query: '', seleccionada: false, sugerencias: [] }
+const nacionalidades = ref([{ query: '', seleccionada: false, sugerencias: [] }])
+
+// ── Computed ────────────────────────────────────────────────────────
 const userAge = computed(() => {
   if (!formData.value.birthDate) return 0
   const today = new Date(), birth = new Date(formData.value.birthDate)
@@ -304,91 +372,61 @@ const passVal = computed(() => ({
 
 const passwordStrength = computed(() => {
   const n = Object.values(passVal.value).filter(Boolean).length
-  if (n <= 1) return { text:'Muy débil', color:'#ef4444', width:'25%' }
-  if (n <= 2) return { text:'Débil',     color:'#f59e0b', width:'50%' }
-  if (n <= 3) return { text:'Buena',     color:'#3b82f6', width:'75%' }
-  return              { text:'Excelente', color:'#10b981', width:'100%' }
+  if (n <= 1) return { text: 'Muy débil', color: '#ef4444', width: '25%' }
+  if (n <= 2) return { text: 'Débil',     color: '#f59e0b', width: '50%' }
+  if (n <= 3) return { text: 'Buena',     color: '#3b82f6', width: '75%' }
+  return              { text: 'Excelente', color: '#10b981', width: '100%' }
 })
 
-// ── Teléfono helpers ──
+// ── Teléfono helpers ─────────────────────────────────────────────────
 function formatLocalPhone(digits, total) {
-  if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim()
-  if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim()
-  if (total === 9) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim()
+  if (total <= 7)   return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim()
+  if (total === 8)  return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim()
+  if (total === 9)  return digits.replace(/^(\d{3})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim()
   if (total === 10) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,4})/, '$1 $2 $3').trim()
   return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim()
 }
-
-function getPhonePlaceholder(total) {
-  return formatLocalPhone('5'.repeat(total), total)
-}
-
+function getPhonePlaceholder(total) { return formatLocalPhone('5'.repeat(total), total) }
 function onPhoneInput(e) {
   const raw = e.target.value.replace(/\D/g, '').slice(0, phoneDigitCount.value)
   formData.value.phone = formatLocalPhone(raw, phoneDigitCount.value)
 }
 
-// ── Username ──
+// ── Username ─────────────────────────────────────────────────────────
 function onUsernameInput() {
   formData.value.username = formData.value.username.replace(/[^a-zA-Z0-9_.]/g, '')
   if (errors.value.username) errors.value.username = ''
 }
 
-// ── País ──
+// ── País ─────────────────────────────────────────────────────────────
 function onPaisInput() {
   paisSeleccionado.value = null
   ciudadQuery.value = ''; ciudadSeleccionada.value = false
   ciudadesSugeridas.value = []; todasLasCiudades.value = []
   dialCode.value = ''
-  const q = paisQuery.value.trim()
-  if (q.length < 2) { paisesSugeridos.value = []; return }
-  clearTimeout(paisTimer)
-  paisTimer = setTimeout(async () => {
-    paisLoading.value = true
-    try {
-      const res  = await fetch('https://countriesnow.space/api/v0.1/countries')
-      const data = await res.json()
-      paisesSugeridos.value = (data.data || [])
-        .filter(p => p.country.toLowerCase().includes(q.toLowerCase()))
-        .slice(0, 6)
-    } catch { paisesSugeridos.value = [] }
-    paisLoading.value = false
-  }, 300)
+  const q = paisQuery.value.trim().toLowerCase()
+  paisesSugeridos.value = q.length < 2 ? [] :
+    todosLosPaises.value
+      .filter(p => p.country.toLowerCase().includes(q))
+      .slice(0, 6)
 }
 
-async function seleccionarPais(p) {
+function seleccionarPais(p) {
   paisSeleccionado.value = p
   paisQuery.value = p.country
   paisesSugeridos.value = []
   errors.value.country = ''
   ciudadQuery.value = ''; ciudadSeleccionada.value = false
-  ciudadesSugeridas.value = []; todasLasCiudades.value = []
+  ciudadesSugeridas.value = []
   formData.value.phone = ''
 
-  // Cargar ciudades
-  ciudadLoading.value = true
-  try {
-    const res  = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ country: p.country })
-    })
-    const data = await res.json()
-    todasLasCiudades.value = data.data || []
-  } catch { todasLasCiudades.value = [] }
-  ciudadLoading.value = false
+  // Ciudades ya vienen con el objeto de countriesnow
+  todasLasCiudades.value = p.cities || []
 
-  // Obtener dial code via restcountries
-  try {
-    const res  = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(p.country)}?fields=idd`)
-    const data = await res.json()
-    if (data[0]?.idd?.root) {
-      const suffixes = data[0].idd.suffixes ?? ['']
-      const code = suffixes.length === 1 ? data[0].idd.root + suffixes[0] : data[0].idd.root
-      dialCode.value = code
-      phoneDigitCount.value = knownDigits[code] ?? 9
-    }
-  } catch { dialCode.value = '' }
+  // Dial code desde el map cargado en onMounted
+  const info = dialCodesMap.value[p.country.toLowerCase()]
+  dialCode.value        = info?.code   ?? ''
+  phoneDigitCount.value = info?.digits ?? 9
 }
 
 function blurPais() {
@@ -396,59 +434,97 @@ function blurPais() {
     if (paisQuery.value && !paisSeleccionado.value) {
       errors.value.country = 'Selecciona un país de la lista'
       paisQuery.value = ''; paisesSugeridos.value = []
-    } else {
-      paisesSugeridos.value = []
-    }
+    } else { paisesSugeridos.value = [] }
   }, 200)
 }
 
-// ── Ciudad ──
+// ── Ciudad ───────────────────────────────────────────────────────────
 function onCiudadInput() {
   ciudadSeleccionada.value = false
   const q = ciudadQuery.value.toLowerCase().trim()
-  ciudadesSugeridas.value = q.length < 2
-    ? []
-    : todasLasCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+  ciudadesSugeridas.value = q.length < 2 ? [] :
+    todasLasCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
 }
-
 function seleccionarCiudad(c) {
   ciudadQuery.value = c; ciudadSeleccionada.value = true
   ciudadesSugeridas.value = []
   errors.value.city = ''
 }
-
 function blurCiudad() {
   setTimeout(() => {
     if (ciudadQuery.value && !ciudadSeleccionada.value) {
       errors.value.city = 'Selecciona una ciudad de la lista'
       ciudadQuery.value = ''; ciudadesSugeridas.value = []
+    } else { ciudadesSugeridas.value = [] }
+  }, 200)
+}
+
+// ── Nacionalidades (igual que Svelte) ─────────────────────────────────
+function onNacInput(i) {
+  const q = nacionalidades.value[i].query.toLowerCase().trim()
+  nacionalidades.value[i].seleccionada = false
+  if (q.length < 2) { nacionalidades.value[i].sugerencias = []; return }
+  nacionalidades.value[i].sugerencias = todosNacionalidades.value
+    .filter(n =>
+      n.pais.toLowerCase().includes(q) ||
+      n.demonym.toLowerCase().includes(q)
+    )
+    .slice(0, 6)
+}
+
+function seleccionarNac(i, s) {
+  nacionalidades.value[i].query       = s.demonym
+  nacionalidades.value[i].seleccionada= true
+  nacionalidades.value[i].sugerencias = []
+  errors.value.nacionalidades = ''
+}
+
+function blurNac(i) {
+  setTimeout(() => {
+    if (nacionalidades.value[i].query && !nacionalidades.value[i].seleccionada) {
+      errors.value.nacionalidades = 'Selecciona una nacionalidad de la lista'
+      nacionalidades.value[i].query = ''
+      nacionalidades.value[i].sugerencias = []
     } else {
-      ciudadesSugeridas.value = []
+      nacionalidades.value[i].sugerencias = []
     }
   }, 200)
 }
 
-// ── Validación ──
+function agregarNac() {
+  nacionalidades.value.push({ query: '', seleccionada: false, sugerencias: [] })
+}
+function quitarNac(i) {
+  nacionalidades.value.splice(i, 1)
+}
+
+// ── Validación ────────────────────────────────────────────────────────
 function validateForm() {
   errors.value = {}
   if (!formData.value.firstName.trim() || formData.value.firstName.trim().length < 2)
     errors.value.firstName = !formData.value.firstName.trim() ? 'Nombre requerido' : 'Mínimo 2 caracteres'
   if (!formData.value.lastName.trim() || formData.value.lastName.trim().length < 2)
     errors.value.lastName = !formData.value.lastName.trim() ? 'Apellidos requeridos' : 'Mínimo 2 caracteres'
-  if (!formData.value.birthDate)      errors.value.birthDate = 'Fecha de nacimiento requerida'
-  else if (userAge.value < 18)        errors.value.birthDate = 'Debes tener al menos 18 años'
+  if (!formData.value.birthDate)  errors.value.birthDate = 'Fecha de nacimiento requerida'
+  else if (userAge.value < 18)    errors.value.birthDate = 'Debes tener al menos 18 años'
   if (!formData.value.pasaporte.trim() || formData.value.pasaporte.trim().length < 5)
     errors.value.pasaporte = !formData.value.pasaporte.trim() ? 'Pasaporte requerido' : 'Número de pasaporte inválido'
-  if (!paisSeleccionado.value)        errors.value.country = 'Selecciona un país de la lista'
-  if (!ciudadSeleccionada.value)      errors.value.city    = 'Selecciona una ciudad de la lista'
+  if (!paisSeleccionado.value)    errors.value.country = 'Selecciona un país de la lista'
+  if (!ciudadSeleccionada.value)  errors.value.city    = 'Selecciona una ciudad de la lista'
   if (!formData.value.phone.trim()) {
     errors.value.phone = 'Teléfono requerido'
   } else if (phoneDigits.value !== phoneDigitCount.value) {
     errors.value.phone = `Número incompleto: se requieren ${phoneDigitCount.value} dígitos (ingresaste ${phoneDigits.value})`
   }
+
+  // Nacionalidades válidas
+  const nacsValidas = nacionalidades.value.filter(n => n.query.trim() && n.seleccionada)
+  if (nacsValidas.length === 0)   errors.value.nacionalidades = 'Selecciona al menos una nacionalidad'
+
   if (!formData.value.username.trim()) errors.value.username = 'Usuario requerido'
   else if (formData.value.username.length < 3) errors.value.username = 'Mínimo 3 caracteres'
   else if (!/^[a-zA-Z0-9_.]+$/.test(formData.value.username)) errors.value.username = 'Solo letras, números, puntos y guion bajo'
+
   if (!formData.value.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email))
     errors.value.email = 'Email inválido'
   if (!formData.value.password) errors.value.password = 'Contraseña requerida'
@@ -461,47 +537,66 @@ function validateForm() {
   return Object.keys(errors.value).length === 0
 }
 
-// ── Submit ──
+// ── Submit ────────────────────────────────────────────────────────────
 async function handleRegister() {
   if (!validateForm()) {
     document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     return
   }
   isSubmitting.value = true
+
   try {
+    const nacsValidas = nacionalidades.value
+      .filter(n => n.query.trim() && n.seleccionada)
+      .map(n => n.query.trim())
+
     const payload = {
-      username:        formData.value.username.trim(),
-      correo:          formData.value.email.toLowerCase(),
-      contrasena:      formData.value.password,
-      pasaporte:       formData.value.pasaporte.trim(),
-      nombre:          formData.value.firstName.trim(),
-      apellido:        formData.value.lastName.trim(),
-      telefono:        dialCode.value + ' ' + formData.value.phone.replace(/\s/g, ''),
-      fechaNacimiento: formData.value.birthDate,
-      pais:            paisQuery.value,
-      ciudad:          ciudadQuery.value,
+      correo:           formData.value.email.toLowerCase().trim(),
+      pasaporte:        formData.value.pasaporte.trim().toUpperCase(),
+      username:         formData.value.username.trim(),
+      nombre:           formData.value.firstName.trim(),
+      apellido:         formData.value.lastName.trim(),
+      contrasena:       formData.value.password,
+      telefono: dialCode.value
+                        ? dialCode.value + ' ' + formData.value.phone.replace(/\s/g, '')
+                        : formData.value.phone.replace(/\s/g, ''),
+      fecha_nacimiento: formData.value.birthDate,
+      ciudad:           ciudadQuery.value,
+      pais:             paisQuery.value,
+      nacionalidades:   nacsValidas,           // ["Guatemalan", "Polish"]
     }
-    const res = await fetch('http://localhost:7000/usuarios/registrar', {
-      method: 'POST',
+
+    const res = await fetch(`${API_BASE}/api/usuarios/registro`, {
+      method:  'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body:    JSON.stringify(payload),
     })
+
     const text = await res.text()
     let data = null
-    try { data = JSON.parse(text) } catch {}
+    try { data = JSON.parse(text) } catch { /* no-JSON */ }
 
-    if (res.status === 409 && data?.campos) {
-      if (data.campos.correoExiste)    errors.value.email    = 'Este correo ya está registrado.'
-      if (data.campos.pasaporteExiste) errors.value.pasaporte = 'Este pasaporte ya está registrado.'
-      if (data.campos.usernameExiste)  errors.value.username  = 'Este nombre de usuario ya está en uso.'
+    // 409 — { correo: true, pasaporte: true, username: true }
+    if (res.status === 409 && data) {
+      if (data.correo)    errors.value.email     = 'Este correo ya está registrado.'
+      if (data.pasaporte) errors.value.pasaporte = 'Este pasaporte ya está registrado.'
+      if (data.username)  errors.value.username  = 'Este nombre de usuario ya está en uso.'
+      document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
-    if (!res.ok) { errors.value.submit = `Error del servidor (${res.status})`; return }
 
+    if (!res.ok) {
+      errors.value.submit = data?.error || data?.mensaje || `Error del servidor (${res.status})`
+      return
+    }
+
+    // Éxito — { "mensaje": "Usuario registrado exitosamente" }
     registrationSuccess.value = true
     setTimeout(() => router.push('/ingreso'), 2000)
+
   } catch (err) {
-    errors.value.submit = 'Error de conexión: ' + err.message
+    errors.value.submit = 'Error de conexión. Verifica que el servidor esté activo.'
   } finally {
     isSubmitting.value = false
   }

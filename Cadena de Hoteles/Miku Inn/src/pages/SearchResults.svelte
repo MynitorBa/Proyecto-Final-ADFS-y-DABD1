@@ -12,10 +12,30 @@
   let viewMode     = 'list';
   let searchError  = '';
 
+  // Solo mostrar resultados si ya hubo una búsqueda real
+  let searchDone = !!(searchParams && Array.isArray(searchParams.hotels));
+
   let fechaCheckIn     = (searchParams && searchParams.fechaCheckIn)     ? searchParams.fechaCheckIn     : '';
   let fechaCheckOut    = (searchParams && searchParams.fechaCheckOut)    ? searchParams.fechaCheckOut    : '';
   let cantidadPersonas = (searchParams && searchParams.cantidadPersonas) ? searchParams.cantidadPersonas : 1;
   let hotelsRaw        = (searchParams && Array.isArray(searchParams.hotels)) ? searchParams.hotels      : [];
+
+  // Fecha mínima: hoy
+  function toLocalDateStr(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  const today = toLocalDateStr(new Date());
+
+  $: minCheckOut = (() => {
+    if (!fechaCheckIn) return today;
+    const d = new Date(fechaCheckIn);
+    d.setDate(d.getDate() + 1);
+    return toLocalDateStr(d);
+  })();
 
   // País autocomplete
   let paisQuery = (searchParams && searchParams.pais) ? searchParams.pais : '';
@@ -136,16 +156,15 @@
 
   $: allTiposHab = (() => {
     const set = new Set();
-    hotelsRaw.forEach(h => h.habitaciones?.forEach(r => set.add(r.tipoHabitacion)));
+    hotelsRaw.forEach(h => h.tiposHabitacion?.forEach(r => set.add(r.tipoHabitacion)));
     return [...set].sort();
   })();
 
   $: filteredHotels = filterAndSort(hotelsRaw, filters);
 
-  /** Precio mínimo de habitación directa. Null si no hay ninguna. */
   function getMinPrice(hotel) {
-    if (!hotel.habitaciones || hotel.habitaciones.length === 0) return null;
-    return Math.min(...hotel.habitaciones.map(r => r.precioPorNoche));
+    if (!hotel.tiposHabitacion || hotel.tiposHabitacion.length === 0) return null;
+    return Math.min(...hotel.tiposHabitacion.map(r => r.precioPorNoche));
   }
 
   function getComboHabs(hotel) {
@@ -156,7 +175,7 @@
     const result = [];
     for (const cap of combo) {
       const key   = String(cap);
-      const rooms = hotel.habitacionesPorCapacidad?.[key];
+      const rooms = hotel.tiposHabitacionPorCapacidad?.[key];
       if (!rooms?.length) return null;
       const idx = usados[key] ?? 0;
       if (idx >= rooms.length) return null;
@@ -167,11 +186,11 @@
   }
 
   function getComboAproximado(hotel, personas) {
-    const tieneDirecta = hotel.habitaciones && hotel.habitaciones.length > 0;
+    const tieneDirecta = hotel.tiposHabitacion && hotel.tiposHabitacion.length > 0;
     const tieneCombo   = !!getComboHabs(hotel);
     if (tieneDirecta || tieneCombo) return null;
 
-    const porCapacidad = hotel.habitacionesPorCapacidad;
+    const porCapacidad = hotel.tiposHabitacionPorCapacidad;
     if (!porCapacidad || Object.keys(porCapacidad).length === 0) return null;
 
     const todasHabs = [];
@@ -200,10 +219,9 @@
     return { habs: selec, capacidadTotal: sumCap, esAproximado: true };
   }
 
-  /** Habitación con persona extra: capacidad = personas - 1, se cobra precioPorPersona adicional */
   function getPersonaExtraMin(hotel, personas) {
     if (personas <= 1) return null;
-    const porCap = hotel.habitacionesPorCapacidad;
+    const porCap = hotel.tiposHabitacionPorCapacidad;
     if (!porCap) return null;
     const target = String(personas - 1);
     const rooms = porCap[target];
@@ -236,7 +254,7 @@
   function filterAndSort(hotels, f) {
     return hotels
       .filter(h => {
-        const tieneDirecta = h.habitaciones && h.habitaciones.length > 0;
+        const tieneDirecta = h.tiposHabitacion && h.tiposHabitacion.length > 0;
         const tieneCombo   = !!getComboHabs(h);
         const tieneAprox   = !!getComboAproximado(h, cantidadPersonas);
         const tieneExtra   = !!getPersonaExtraMin(h, cantidadPersonas);
@@ -246,7 +264,7 @@
         const priceOk = desde === null || (desde >= f.priceMin && (f.priceMax === 0 || desde <= f.priceMax));
 
         const tipoOk = f.tiposHab.length === 0 ||
-          h.habitaciones?.some(r => f.tiposHab.includes(r.tipoHabitacion));
+          h.tiposHabitacion?.some(r => f.tiposHab.includes(r.tipoHabitacion));
 
         const amenOk = f.amenidades.length === 0 ||
           f.amenidades.every(a => h.amenidades?.some(am => am.nombre === a));
@@ -273,10 +291,16 @@
 
   async function handleReSearch(e) {
     e.preventDefault();
+    searchError = '';
+
     if (!paisSeleccionado) { searchError = 'Por favor selecciona un país de la lista.'; return; }
     if (!ciudadSeleccionada) { searchError = 'Por favor selecciona una ciudad de la lista.'; return; }
+    if (!fechaCheckIn) { searchError = 'Selecciona la fecha de check-in.'; return; }
+    if (!fechaCheckOut) { searchError = 'Selecciona la fecha de check-out.'; return; }
+    if (new Date(fechaCheckOut) <= new Date(fechaCheckIn)) { searchError = 'El check-out debe ser al menos un día después del check-in.'; return; }
+    if (fechaCheckIn < today) { searchError = 'El check-in no puede ser una fecha pasada.'; return; }
+
     isSearching = true;
-    searchError = '';
     try {
       const res = await fetch(`${API}/busqueda`, {
         method: 'POST',
@@ -291,10 +315,11 @@
         })
       });
       if (!res.ok) { searchError = 'Error al buscar.'; return; }
-      hotelsRaw = await res.json();
+      hotelsRaw  = await res.json();
+      searchDone = true;
       resetFilters();
     } catch(err) {
-      searchError = 'Error de conexion: ' + err.message;
+      searchError = 'Error de conexión: ' + err.message;
     } finally {
       isSearching = false;
     }
@@ -381,20 +406,34 @@
 
             <div class="sr-field-group">
               <label for="sr-checkin">Check-in</label>
-              <input id="sr-checkin" type="date" bind:value={fechaCheckIn} required />
+              <input
+                id="sr-checkin"
+                type="date"
+                bind:value={fechaCheckIn}
+                min={today}
+                required />
             </div>
+
             <div class="sr-field-group">
               <label for="sr-checkout">Check-out</label>
-              <input id="sr-checkout" type="date" bind:value={fechaCheckOut} min={fechaCheckIn} required />
+              <input
+                id="sr-checkout"
+                type="date"
+                bind:value={fechaCheckOut}
+                min={minCheckOut}
+                required />
             </div>
+
             <div class="sr-field-group">
               <label for="sr-personas">Huéspedes</label>
               <input id="sr-personas" type="number" bind:value={cantidadPersonas} min="1" placeholder="Nº huéspedes" />
             </div>
           </div>
+
           {#if searchError}
             <p class="sr-error">{searchError}</p>
           {/if}
+
           <button type="submit" class="btn-modify" disabled={isSearching}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             {isSearching ? 'Buscando...' : 'Buscar'}
@@ -403,333 +442,337 @@
       </div>
     </div>
 
-    <div class="sr-header">
-      <div>
-        <h1>{ciudadQuery}{paisQuery ? ', ' + paisQuery : ''}: {filteredHotels.length} hotel{filteredHotels.length !== 1 ? 'es' : ''} encontrado{filteredHotels.length !== 1 ? 's' : ''}</h1>
-        <p class="sr-subtitle">{nights} {nights === 1 ? 'noche' : 'noches'} · {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}</p>
-      </div>
-      <div class="sr-actions">
-        <div class="view-toggle">
-          <button class="vbtn" class:active={viewMode === 'list'} on:click={() => viewMode = 'list'} title="Lista">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          </button>
-          <button class="vbtn" class:active={viewMode === 'grid'} on:click={() => viewMode = 'grid'} title="Cuadricula">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </button>
+    <!-- Header y resultados: solo se muestran si ya hubo búsqueda -->
+    {#if searchDone}
+      <div class="sr-header">
+        <div>
+          <h1>{ciudadQuery}{paisQuery ? ', ' + paisQuery : ''}: {filteredHotels.length} hotel{filteredHotels.length !== 1 ? 'es' : ''} encontrado{filteredHotels.length !== 1 ? 's' : ''}</h1>
+          <p class="sr-subtitle">{nights} {nights === 1 ? 'noche' : 'noches'} · {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}</p>
+        </div>
+        <div class="sr-actions">
+          <div class="view-toggle">
+            <button class="vbtn" class:active={viewMode === 'list'} on:click={() => viewMode = 'list'} title="Lista">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+            <button class="vbtn" class:active={viewMode === 'grid'} on:click={() => viewMode = 'grid'} title="Cuadricula">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="sr-layout">
+      <div class="sr-layout">
 
-      <aside class="sr-filters">
-        <div class="sr-filters-hdr">
-          <h2>Filtrar por:</h2>
-          <button class="btn-reset" on:click={resetFilters}>Limpiar</button>
-        </div>
-
-        <div class="filter-group">
-          <h3 class="filter-title">Precio por noche</h3>
-          <div class="price-row">
-            <label for="pmin">Min
-              <div class="price-inp-wrap">
-                <span>$</span>
-                <input id="pmin" type="number" bind:value={filters.priceMin} min="0" />
-              </div>
-            </label>
-            <span>—</span>
-            <label for="pmax">Max
-              <div class="price-inp-wrap">
-                <span>$</span>
-                <input id="pmax" type="number" bind:value={filters.priceMax} min="0" />
-              </div>
-            </label>
+        <aside class="sr-filters">
+          <div class="sr-filters-hdr">
+            <h2>Filtrar por:</h2>
+            <button class="btn-reset" on:click={resetFilters}>Limpiar</button>
           </div>
-          <div class="price-display">${filters.priceMin || '0'} — {filters.priceMax ? '$' + filters.priceMax : 'Sin límite'} / noche</div>
-        </div>
 
-        {#if allTiposHab.length > 0}
           <div class="filter-group">
-            <h3 class="filter-title">Tipo de habitacion</h3>
-            {#each allTiposHab as tipo}
-              <label class="chk-label">
-                <input type="checkbox" checked={filters.tiposHab.includes(tipo)} on:change={() => toggleArr(filters.tiposHab, tipo)} />
-                <span>{tipo}</span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-
-        {#if allAmenidades.length > 0}
-          <div class="filter-group">
-            <h3 class="filter-title">Servicios y amenidades</h3>
-            {#each allAmenidades as amen}
-              <label class="chk-label">
-                <input type="checkbox" checked={filters.amenidades.includes(amen)} on:change={() => toggleArr(filters.amenidades, amen)} />
-                <span>{amen}</span>
-              </label>
-            {/each}
-          </div>
-        {/if}
-      </aside>
-
-      <main class="sr-main">
-
-        <div class="sort-bar">
-          <span class="sort-lbl">Ordenar:</span>
-          {#each SORTS as s}
-            <button class="sort-btn" class:active={filters.sortBy === s.id} on:click={() => filters.sortBy = s.id}>{s.label}</button>
-          {/each}
-        </div>
-
-        {#if isLoading || isSearching}
-          {#each Array(3) as _}
-            <div class="hotel-card skeleton">
-              <div class="sk-img"></div>
-              <div class="sk-body">
-                <div class="sk-line"></div>
-                <div class="sk-line short"></div>
-                <div class="sk-line medium"></div>
-              </div>
-            </div>
-          {/each}
-
-        {:else if hotelsRaw.length === 0}
-          <div class="no-results">
-            <div class="no-results-icon">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            </div>
-            <h2>No encontramos hoteles</h2>
-            <p>Intenta con otro país, ciudad o fechas diferentes.</p>
-            <button class="btn-primary" on:click={() => navigateTo('home')}>Nueva búsqueda</button>
-          </div>
-
-        {:else if filteredHotels.length === 0}
-          <div class="no-results">
-            <div class="no-results-icon">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            </div>
-            <h2>No hay hoteles con esos filtros</h2>
-            <p>Intenta ajustar los filtros de la izquierda</p>
-            <button class="btn-primary" on:click={resetFilters}>Limpiar filtros</button>
-          </div>
-
-        {:else}
-          <div class="hotels-grid" class:list-view={viewMode === 'list'} class:grid-view={viewMode === 'grid'}>
-            {#each filteredHotels as hotel (hotel.id)}
-              {@const minPrice  = getMinPrice(hotel)}
-              {@const comboHabs = getComboHabs(hotel)}
-              {@const comboAprox = getComboAproximado(hotel, cantidadPersonas)}
-              {@const comboTotal = comboHabs ? sumPrecios(comboHabs) : null}
-              {@const aproxTotal = comboAprox ? sumPrecios(comboAprox.habs) : null}
-              {@const extraInfo  = getPersonaExtraMin(hotel, cantidadPersonas)}
-              {@const desde     = getDesde(hotel)}
-
-              <div class="hotel-card"
-                role="button"
-                tabindex="0"
-                on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}
-                on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
-
-                <div class="hotel-gallery">
-                  {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
-                    <img
-                      src="{API}/imagenes/hotel/{hotel.imagenesIds[0]}"
-                      alt={hotel.nombre}
-                      class="hotel-img-real"
-                      on:error={e => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div class="hotel-img-placeholder" style="display:none">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                      <p class="img-count">Sin imagenes aun</p>
-                    </div>
-                  {:else}
-                    <div class="hotel-img-placeholder">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                      <p class="img-count">Sin imagenes aun</p>
-                    </div>
-                  {/if}
-                  {#if hotel.estado === 'Activo'}
-                    <div class="hotel-estado-badge hotel-estado-badge--activo">Disponible</div>
-                  {/if}
-                  {#if comboAprox}
-                    <div class="hotel-estado-badge hotel-estado-badge--aprox" style="left:auto;right:0.75rem;">
-                      Opción cercana · {comboAprox.capacidadTotal} pers.
-                    </div>
-                  {/if}
+            <h3 class="filter-title">Precio por noche</h3>
+            <div class="price-row">
+              <label for="pmin">Min
+                <div class="price-inp-wrap">
+                  <span>$</span>
+                  <input id="pmin" type="number" bind:value={filters.priceMin} min="0" />
                 </div>
+              </label>
+              <span>—</span>
+              <label for="pmax">Max
+                <div class="price-inp-wrap">
+                  <span>$</span>
+                  <input id="pmax" type="number" bind:value={filters.priceMax} min="0" />
+                </div>
+              </label>
+            </div>
+            <div class="price-display">${filters.priceMin || '0'} — {filters.priceMax ? '$' + filters.priceMax : 'Sin límite'} / noche</div>
+          </div>
 
-                <div class="hotel-content">
-                  <div class="hotel-hdr">
-                    <div class="hotel-title-wrap">
-                      <h2 class="hotel-name">{hotel.nombre}</h2>
-                      <div class="hotel-loc">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        {hotel.direccion}
+          {#if allTiposHab.length > 0}
+            <div class="filter-group">
+              <h3 class="filter-title">Tipo de habitacion</h3>
+              {#each allTiposHab as tipo}
+                <label class="chk-label">
+                  <input type="checkbox" checked={filters.tiposHab.includes(tipo)} on:change={() => toggleArr(filters.tiposHab, tipo)} />
+                  <span>{tipo}</span>
+                </label>
+              {/each}
+            </div>
+          {/if}
+
+          {#if allAmenidades.length > 0}
+            <div class="filter-group">
+              <h3 class="filter-title">Servicios y amenidades</h3>
+              {#each allAmenidades as amen}
+                <label class="chk-label">
+                  <input type="checkbox" checked={filters.amenidades.includes(amen)} on:change={() => toggleArr(filters.amenidades, amen)} />
+                  <span>{amen}</span>
+                </label>
+              {/each}
+            </div>
+          {/if}
+        </aside>
+
+        <main class="sr-main">
+
+          <div class="sort-bar">
+            <span class="sort-lbl">Ordenar:</span>
+            {#each SORTS as s}
+              <button class="sort-btn" class:active={filters.sortBy === s.id} on:click={() => filters.sortBy = s.id}>{s.label}</button>
+            {/each}
+          </div>
+
+          {#if isLoading || isSearching}
+            {#each Array(3) as _}
+              <div class="hotel-card skeleton">
+                <div class="sk-img"></div>
+                <div class="sk-body">
+                  <div class="sk-line"></div>
+                  <div class="sk-line short"></div>
+                  <div class="sk-line medium"></div>
+                </div>
+              </div>
+            {/each}
+
+          {:else if hotelsRaw.length === 0}
+            <div class="no-results">
+              <div class="no-results-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <h2>No encontramos hoteles</h2>
+              <p>Intenta con otro país, ciudad o fechas diferentes.</p>
+              <button class="btn-primary" on:click={() => navigateTo('home')}>Nueva búsqueda</button>
+            </div>
+
+          {:else if filteredHotels.length === 0}
+            <div class="no-results">
+              <div class="no-results-icon">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <h2>No hay hoteles con esos filtros</h2>
+              <p>Intenta ajustar los filtros de la izquierda</p>
+              <button class="btn-primary" on:click={resetFilters}>Limpiar filtros</button>
+            </div>
+
+          {:else}
+            <div class="hotels-grid" class:list-view={viewMode === 'list'} class:grid-view={viewMode === 'grid'}>
+              {#each filteredHotels as hotel (hotel.id)}
+                {@const minPrice  = getMinPrice(hotel)}
+                {@const comboHabs = getComboHabs(hotel)}
+                {@const comboAprox = getComboAproximado(hotel, cantidadPersonas)}
+                {@const comboTotal = comboHabs ? sumPrecios(comboHabs) : null}
+                {@const aproxTotal = comboAprox ? sumPrecios(comboAprox.habs) : null}
+                {@const extraInfo  = getPersonaExtraMin(hotel, cantidadPersonas)}
+                {@const desde     = getDesde(hotel)}
+
+                <div class="hotel-card"
+                  role="button"
+                  tabindex="0"
+                  on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}
+                  on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
+
+                  <div class="hotel-gallery">
+                    {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
+                      <img
+                        src="{API}/imagenes/hotel/{hotel.imagenesIds[0]}"
+                        alt={hotel.nombre}
+                        class="hotel-img-real"
+                        on:error={e => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                      <div class="hotel-img-placeholder" style="display:none">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <p class="img-count">Sin imagenes aun</p>
                       </div>
-                    </div>
-                    {#if hotel.rating}
-                      <div class="rating-box">
-                        <div class="rating-score">{hotel.rating.toFixed(1)}</div>
-                        <div class="rating-text">{hotel.rating >= 4.8 ? 'Extraordinario' : hotel.rating >= 4.5 ? 'Fabuloso' : hotel.rating >= 4 ? 'Muy bueno' : 'Bueno'}</div>
+                    {:else}
+                      <div class="hotel-img-placeholder">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <p class="img-count">Sin imagenes aun</p>
+                      </div>
+                    {/if}
+                    {#if hotel.estado === 'Activo'}
+                      <div class="hotel-estado-badge hotel-estado-badge--activo">Disponible</div>
+                    {/if}
+                    {#if comboAprox}
+                      <div class="hotel-estado-badge hotel-estado-badge--aprox" style="left:auto;right:0.75rem;">
+                        Opción cercana · {comboAprox.capacidadTotal} pers.
                       </div>
                     {/if}
                   </div>
 
-                  <p class="hotel-desc">{hotel.descripcion}</p>
-
-                  {#if hotel.amenidades && hotel.amenidades.length > 0}
-                    <div class="amenities-row">
-                      {#each hotel.amenidades.slice(0, 5) as am}
-                        <span class="amenity-pill">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d={amenidadIcon(am.nombre)}/></svg>
-                          {am.nombre}
-                        </span>
-                      {/each}
-                      {#if hotel.amenidades.length > 5}
-                        <span class="amenity-more">+{hotel.amenidades.length - 5} mas</span>
-                      {/if}
-                    </div>
-                  {/if}
-
-                  {#if hotel.habitaciones && hotel.habitaciones.length > 0}
-                    <div class="habitaciones-preview">
-                      <p class="habitaciones-label">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 4v16M22 4v16M2 8h20M2 16h20M6 8v8M10 8v8M14 8v8M18 8v8"/></svg>
-                        {hotel.habitaciones.length} tipo{hotel.habitaciones.length !== 1 ? 's' : ''} de habitacion disponible{hotel.habitaciones.length !== 1 ? 's' : ''}
-                      </p>
-                      <div class="hab-chips">
-                        {#each hotel.habitaciones.slice(0, 3) as hab}
-                          <span class="hab-chip">
-                            {hab.tipoHabitacion}
-                            <span class="hab-chip-price">{fmt(hab.precioPorNoche)}/noche</span>
-                          </span>
-                        {/each}
-                        {#if hotel.habitaciones.length > 3}
-                          <span class="hab-chip hab-chip--more">+{hotel.habitaciones.length - 3} mas</span>
-                        {/if}
+                  <div class="hotel-content">
+                    <div class="hotel-hdr">
+                      <div class="hotel-title-wrap">
+                        <h2 class="hotel-name">{hotel.nombre}</h2>
+                        <div class="hotel-loc">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          {hotel.direccion}
+                        </div>
                       </div>
-                    </div>
-                  {/if}
-
-                  <div class="hotel-footer">
-                    <div class="pricing">
-
-                      {#if desde !== null}
-                        <div class="desde-badge">
-                          <span class="desde-lbl">Desde</span>
-                          <span class="desde-precio">{fmt(desde)}</span>
-                          <span class="desde-sub">/ noche · {fmt(desde * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</span>
+                      {#if hotel.rating}
+                        <div class="rating-box">
+                          <div class="rating-score">{hotel.rating.toFixed(1)}</div>
+                          <div class="rating-text">{hotel.rating >= 4.8 ? 'Extraordinario' : hotel.rating >= 4.5 ? 'Fabuloso' : hotel.rating >= 4 ? 'Muy bueno' : 'Bueno'}</div>
                         </div>
                       {/if}
+                    </div>
 
-                      <div class="price-boxes">
+                    <p class="hotel-desc">{hotel.descripcion}</p>
 
-                        {#if minPrice !== null}
-                          <div class="price-box">
-                            <div class="price-box-label">Habitación directa</div>
-                            <div class="curr-price">
-                              <span class="price-amount">{fmt(minPrice)}</span>
-                              <span class="price-lbl">/ noche</span>
-                            </div>
-                            <div class="per-night">{fmt(minPrice * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</div>
+                    {#if hotel.amenidades && hotel.amenidades.length > 0}
+                      <div class="amenities-row">
+                        {#each hotel.amenidades.slice(0, 5) as am}
+                          <span class="amenity-pill">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d={amenidadIcon(am.nombre)}/></svg>
+                            {am.nombre}
+                          </span>
+                        {/each}
+                        {#if hotel.amenidades.length > 5}
+                          <span class="amenity-more">+{hotel.amenidades.length - 5} mas</span>
+                        {/if}
+                      </div>
+                    {/if}
+
+                    {#if hotel.tiposHabitacion && hotel.tiposHabitacion.length > 0}
+                      <div class="habitaciones-preview">
+                        <p class="habitaciones-label">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 4v16M22 4v16M2 8h20M2 16h20M6 8v8M10 8v8M14 8v8M18 8v8"/></svg>
+                          {hotel.tiposHabitacion.length} tipo{hotel.tiposHabitacion.length !== 1 ? 's' : ''} de habitacion disponible{hotel.tiposHabitacion.length !== 1 ? 's' : ''}
+                        </p>
+                        <div class="hab-chips">
+                          {#each hotel.tiposHabitacion.slice(0, 3) as hab}
+                            <span class="hab-chip">
+                              {hab.tipoHabitacion}
+                              <span class="hab-chip-price">{fmt(hab.precioPorNoche)}/noche</span>
+                            </span>
+                          {/each}
+                          {#if hotel.tiposHabitacion.length > 3}
+                            <span class="hab-chip hab-chip--more">+{hotel.tiposHabitacion.length - 3} mas</span>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+
+                    <div class="hotel-footer">
+                      <div class="pricing">
+
+                        {#if desde !== null}
+                          <div class="desde-badge">
+                            <span class="desde-lbl">Desde</span>
+                            <span class="desde-precio">{fmt(desde)}</span>
+                            <span class="desde-sub">/ noche · {fmt(desde * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</span>
                           </div>
                         {/if}
 
-                        {#if minPrice !== null && comboHabs}
-                          <div class="price-box-divider">ó</div>
-                        {/if}
+                        <div class="price-boxes">
 
-                        {#if comboHabs}
-                          <div class="price-box price-box--combo">
-                            <div class="price-box-label">Combinación de habitaciones</div>
-                            {#each comboHabs as hab, i}
-                              <div class="combo-hab-row">
-                                <span class="combo-hab-name">
-                                  Hab.{i + 1} · {hab.tipo}
-                                  <span class="combo-cap">({hab.cap} pers.)</span>
-                                </span>
-                                <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
+                          {#if minPrice !== null}
+                            <div class="price-box">
+                              <div class="price-box-label">Habitación directa</div>
+                              <div class="curr-price">
+                                <span class="price-amount">{fmt(minPrice)}</span>
+                                <span class="price-lbl">/ noche</span>
                               </div>
-                            {/each}
-                            <div class="combo-total">
-                              Total: <strong>{fmt(comboTotal)}/noche</strong>
-                              · {fmt(comboTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                              <div class="per-night">{fmt(minPrice * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</div>
                             </div>
-                          </div>
-                        {/if}
+                          {/if}
 
-                        {#if comboAprox}
-                          <div class="price-box price-box--aprox">
-                            <div class="price-box-label">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                              Opción cercana — {comboAprox.capacidadTotal} de {cantidadPersonas} pers.
-                            </div>
-                            {#each comboAprox.habs as hab, i}
-                              <div class="combo-hab-row">
-                                <span class="combo-hab-name">
-                                  Hab.{i + 1} · {hab.tipo}
-                                  <span class="combo-cap">({hab.cap} pers.)</span>
-                                </span>
-                                <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
-                              </div>
-                            {/each}
-                            <div class="combo-total">
-                              Total: <strong>{fmt(aproxTotal)}/noche</strong>
-                              · {fmt(aproxTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
-                            </div>
-                          </div>
-                        {/if}
-
-                        {#if extraInfo}
-                          {#if (minPrice !== null || comboHabs || comboAprox)}
+                          {#if minPrice !== null && comboHabs}
                             <div class="price-box-divider">ó</div>
                           {/if}
-                          <div class="price-box price-box--combo">
-                            <div class="price-box-label">Habitación + 1 persona extra</div>
-                            <div class="combo-hab-row">
-                              <span class="combo-hab-name">
-                                {extraInfo.tipo}
-                                <span class="combo-cap">(cap. {extraInfo.cap} +1 extra)</span>
-                              </span>
-                              <span class="combo-hab-price">{fmt(extraInfo.precioPorNoche)}<span class="price-lbl">/noche</span></span>
-                            </div>
-                            <div class="combo-hab-row">
-                              <span class="combo-hab-name" style="color: var(--primary);">+1 persona extra</span>
-                              <span class="combo-hab-price" style="color: var(--primary);">+{fmt(extraInfo.precioPorPersona)}<span class="price-lbl">/noche</span></span>
-                            </div>
-                            <div class="combo-total">
-                              Total: <strong>{fmt(extraInfo.total)}/noche</strong>
-                              · {fmt(extraInfo.total * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
-                            </div>
-                          </div>
-                        {/if}
 
-                        {#if minPrice === null && !comboHabs && !comboAprox && !extraInfo}
-                          <div class="price-box">
-                            <div class="price-box-label">Precio a consultar</div>
-                          </div>
-                        {/if}
+                          {#if comboHabs}
+                            <div class="price-box price-box--combo">
+                              <div class="price-box-label">Combinación de habitaciones</div>
+                              {#each comboHabs as hab, i}
+                                <div class="combo-hab-row">
+                                  <span class="combo-hab-name">
+                                    Hab.{i + 1} · {hab.tipo}
+                                    <span class="combo-cap">({hab.cap} pers.)</span>
+                                  </span>
+                                  <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
+                                </div>
+                              {/each}
+                              <div class="combo-total">
+                                Total: <strong>{fmt(comboTotal)}/noche</strong>
+                                · {fmt(comboTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          {/if}
 
+                          {#if comboAprox}
+                            <div class="price-box price-box--aprox">
+                              <div class="price-box-label">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                Opción cercana — {comboAprox.capacidadTotal} de {cantidadPersonas} pers.
+                              </div>
+                              {#each comboAprox.habs as hab, i}
+                                <div class="combo-hab-row">
+                                  <span class="combo-hab-name">
+                                    Hab.{i + 1} · {hab.tipo}
+                                    <span class="combo-cap">({hab.cap} pers.)</span>
+                                  </span>
+                                  <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
+                                </div>
+                              {/each}
+                              <div class="combo-total">
+                                Total: <strong>{fmt(aproxTotal)}/noche</strong>
+                                · {fmt(aproxTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          {/if}
+
+                          {#if extraInfo}
+                            {#if (minPrice !== null || comboHabs || comboAprox)}
+                              <div class="price-box-divider">ó</div>
+                            {/if}
+                            <div class="price-box price-box--combo">
+                              <div class="price-box-label">Habitación + 1 persona extra</div>
+                              <div class="combo-hab-row">
+                                <span class="combo-hab-name">
+                                  {extraInfo.tipo}
+                                  <span class="combo-cap">(cap. {extraInfo.cap} +1 extra)</span>
+                                </span>
+                                <span class="combo-hab-price">{fmt(extraInfo.precioPorNoche)}<span class="price-lbl">/noche</span></span>
+                              </div>
+                              <div class="combo-hab-row">
+                                <span class="combo-hab-name" style="color: var(--primary);">+1 persona extra</span>
+                                <span class="combo-hab-price" style="color: var(--primary);">+{fmt(extraInfo.precioPorPersona)}<span class="price-lbl">/noche</span></span>
+                              </div>
+                              <div class="combo-total">
+                                Total: <strong>{fmt(extraInfo.total)}/noche</strong>
+                                · {fmt(extraInfo.total * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          {/if}
+
+                          {#if minPrice === null && !comboHabs && !comboAprox && !extraInfo}
+                            <div class="price-box">
+                              <div class="price-box-label">Precio a consultar</div>
+                            </div>
+                          {/if}
+
+                        </div>
+
+                        <button class="btn-view" on:click|stopPropagation={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
+                          Ver disponibilidad
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </button>
                       </div>
-
-                      <button class="btn-view" on:click|stopPropagation={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
-                        Ver disponibilidad
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      </button>
                     </div>
+
                   </div>
-
                 </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
+              {/each}
+            </div>
+          {/if}
 
-      </main>
-    </div>
+        </main>
+      </div>
+    {/if}
+
   </div>
 </div>
