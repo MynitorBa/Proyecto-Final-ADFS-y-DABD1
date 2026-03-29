@@ -44,6 +44,14 @@
 
   const API = 'http://localhost:7000';
 
+  const VALID_ROUTES = new Set([
+    'home', 'search-results', 'hotel-detail', 'checkout', 'agradecimiento',
+    'login', 'register', 'reservations', 'destinations', 'profile',
+    'administrador', 'webservice', 'acceso-denegado',
+    'sobre-nosotros', 'centro-ayuda', 'contactanos', 'preguntas-frecuentes',
+    'politica-cancelacion', 'privacidad', 'terminos', 'cookies'
+  ]);
+
   let currentPage           = 'home';
   let checkoutData          = null;
   let agradecimientoData    = null;
@@ -88,11 +96,19 @@
 
   function syncFromURL() {
     const path = window.location.pathname.slice(1) || 'home';
+    if (!VALID_ROUTES.has(path)) {
+      currentPage = 'home';
+      pageKey = Date.now();
+      window.history.replaceState({}, '', '/home');
+      return;
+    }
     currentPage = path;
     pageKey = Date.now();
   }
 
   function navigateTo(page, data = null) {
+    if (!VALID_ROUTES.has(page)) { page = 'home'; }
+
     // Rutas protegidas: mostrar acceso denegado en lugar de redirigir silenciosamente
     if (page === 'administrador' && userRolId !== 2) { showAccesoDenegado(); return; }
     if (page === 'webservice'    && userRolId !== 3) { showAccesoDenegado(); return; }

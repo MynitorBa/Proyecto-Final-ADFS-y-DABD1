@@ -200,6 +200,20 @@
     return { habs: selec, capacidadTotal: sumCap, esAproximado: true };
   }
 
+  /** Habitación con persona extra: capacidad = personas - 1, se cobra precioPorPersona adicional */
+  function getPersonaExtraMin(hotel, personas) {
+    if (personas <= 1) return null;
+    const porCap = hotel.habitacionesPorCapacidad;
+    if (!porCap) return null;
+    const target = String(personas - 1);
+    const rooms = porCap[target];
+    if (!rooms?.length) return null;
+    const best = rooms.reduce((min, r) =>
+      (r.precioPorNoche + r.precioPorPersona) < (min.precioPorNoche + min.precioPorPersona) ? r : min
+    , rooms[0]);
+    return { tipo: best.tipoHabitacion, precioPorNoche: best.precioPorNoche, precioPorPersona: best.precioPorPersona, cap: personas - 1, total: best.precioPorNoche + best.precioPorPersona };
+  }
+
   function sumPrecios(habs) {
     return habs.reduce((s, h) => s + h.precio, 0);
   }
@@ -208,11 +222,13 @@
     const directo = getMinPrice(hotel);
     const combo   = getComboHabs(hotel);
     const aprox   = getComboAproximado(hotel, cantidadPersonas);
+    const extra   = getPersonaExtraMin(hotel, cantidadPersonas);
 
     const precios = [];
     if (directo !== null)  precios.push(directo);
     if (combo   !== null)  precios.push(sumPrecios(combo));
     if (aprox   !== null)  precios.push(sumPrecios(aprox.habs));
+    if (extra   !== null)  precios.push(extra.total);
 
     return precios.length ? Math.min(...precios) : null;
   }
@@ -223,7 +239,8 @@
         const tieneDirecta = h.habitaciones && h.habitaciones.length > 0;
         const tieneCombo   = !!getComboHabs(h);
         const tieneAprox   = !!getComboAproximado(h, cantidadPersonas);
-        if (!tieneDirecta && !tieneCombo && !tieneAprox) return false;
+        const tieneExtra   = !!getPersonaExtraMin(h, cantidadPersonas);
+        if (!tieneDirecta && !tieneCombo && !tieneAprox && !tieneExtra) return false;
 
         const desde  = getDesde(h);
         const priceOk = desde === null || (desde >= f.priceMin && (f.priceMax === 0 || desde <= f.priceMax));
@@ -505,6 +522,7 @@
               {@const comboAprox = getComboAproximado(hotel, cantidadPersonas)}
               {@const comboTotal = comboHabs ? sumPrecios(comboHabs) : null}
               {@const aproxTotal = comboAprox ? sumPrecios(comboAprox.habs) : null}
+              {@const extraInfo  = getPersonaExtraMin(hotel, cantidadPersonas)}
               {@const desde     = getDesde(hotel)}
 
               <div class="hotel-card"
@@ -666,7 +684,31 @@
                           </div>
                         {/if}
 
-                        {#if minPrice === null && !comboHabs && !comboAprox}
+                        {#if extraInfo}
+                          {#if (minPrice !== null || comboHabs || comboAprox)}
+                            <div class="price-box-divider">ó</div>
+                          {/if}
+                          <div class="price-box price-box--combo">
+                            <div class="price-box-label">Habitación + 1 persona extra</div>
+                            <div class="combo-hab-row">
+                              <span class="combo-hab-name">
+                                {extraInfo.tipo}
+                                <span class="combo-cap">(cap. {extraInfo.cap} +1 extra)</span>
+                              </span>
+                              <span class="combo-hab-price">{fmt(extraInfo.precioPorNoche)}<span class="price-lbl">/noche</span></span>
+                            </div>
+                            <div class="combo-hab-row">
+                              <span class="combo-hab-name" style="color: var(--primary);">+1 persona extra</span>
+                              <span class="combo-hab-price" style="color: var(--primary);">+{fmt(extraInfo.precioPorPersona)}<span class="price-lbl">/noche</span></span>
+                            </div>
+                            <div class="combo-total">
+                              Total: <strong>{fmt(extraInfo.total)}/noche</strong>
+                              · {fmt(extraInfo.total * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                        {/if}
+
+                        {#if minPrice === null && !comboHabs && !comboAprox && !extraInfo}
                           <div class="price-box">
                             <div class="price-box-label">Precio a consultar</div>
                           </div>

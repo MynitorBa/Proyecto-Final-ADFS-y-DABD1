@@ -27,7 +27,7 @@ public class HotelRepository {
     }
 
     // ════════════════════════════════════════════════════
-    //  HOTEL — listado, creación, edición
+    //  HOTEL — listado, creación, edición, eliminación
     // ════════════════════════════════════════════════════
 
     public List<HotelAdminDTO> listarTodos() {
@@ -72,6 +72,35 @@ public class HotelRepository {
                 nombre, direccion, descripcion, rating, estadoId, hotelId);
     }
 
+    /** Elimina un hotel y TODOS sus datos asociados (imágenes, amenidades, habitaciones). */
+    public void eliminarHotel(int hotelId) {
+        // 1) Eliminar imágenes de habitaciones del hotel
+        DatabaseManager.executeUpdate(
+                "DELETE FROM ImagenHabitacion WHERE HabitacionID IN (SELECT ID FROM Habitacion WHERE HotelID=?)",
+                hotelId);
+
+        // 2) Eliminar habitaciones del hotel
+        DatabaseManager.executeUpdate(
+                "DELETE FROM Habitacion WHERE HotelID=?", hotelId);
+
+        // 3) Eliminar imágenes de amenidades del hotel
+        DatabaseManager.executeUpdate(
+                "DELETE FROM ImagenHotelAmenidad WHERE HotelAmenidadID IN (SELECT ID FROM HotelAmenidad WHERE HotelID=?)",
+                hotelId);
+
+        // 4) Eliminar amenidades del hotel
+        DatabaseManager.executeUpdate(
+                "DELETE FROM HotelAmenidad WHERE HotelID=?", hotelId);
+
+        // 5) Eliminar imágenes del hotel
+        DatabaseManager.executeUpdate(
+                "DELETE FROM ImagenHotel WHERE HotelID=?", hotelId);
+
+        // 6) Eliminar el hotel
+        DatabaseManager.executeUpdate(
+                "DELETE FROM Hotel WHERE ID=?", hotelId);
+    }
+
     public boolean existe(int hotelId) {
         List<Integer> r = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) FROM Hotel WHERE ID=?", rs -> rs.getInt(1), hotelId);
@@ -108,7 +137,6 @@ public class HotelRepository {
         }, hotelId);
     }
 
-    /** Inserta una amenidad en un hotel y devuelve el ID de HotelAmenidad generado. */
     /** Devuelve true si el hotel ya tiene esa amenidad asignada. */
     public boolean tieneAmenidad(int hotelId, int amenidadId) {
         List<Integer> r = DatabaseManager.executeQuery(
@@ -117,6 +145,7 @@ public class HotelRepository {
         return !r.isEmpty() && r.get(0) > 0;
     }
 
+    /** Inserta una amenidad en un hotel y devuelve el ID de HotelAmenidad generado. */
     public int agregarAmenidadHotel(int hotelId, int amenidadId, String descripcion) {
         return DatabaseManager.executeInsertReturnId(
                 "INSERT INTO HotelAmenidad (HotelID, AmenidadID, Descripcion) VALUES (?, ?, ?)",
@@ -175,7 +204,7 @@ public class HotelRepository {
     }
 
     // ════════════════════════════════════════════════════
-    //  HABITACIONES — listado, creación, edición
+    //  HABITACIONES — listado, creación, edición, eliminación
     // ════════════════════════════════════════════════════
 
     public List<HabitacionAdminDTO> listarHabitacionesPorHotel(int hotelId) {
@@ -242,6 +271,16 @@ public class HotelRepository {
                         "WHERE ID=?",
                 tipoHabitacionId, camaId, precioPorPersona, precioPorNoche,
                 capacidadMaxima, metrosCuadrados, descripcion, estadoId, habitacionId);
+    }
+
+    /** Elimina una habitación y todas sus imágenes asociadas. */
+    public void eliminarHabitacion(int habitacionId) {
+        // 1) Eliminar imágenes de la habitación
+        DatabaseManager.executeUpdate(
+                "DELETE FROM ImagenHabitacion WHERE HabitacionID=?", habitacionId);
+        // 2) Eliminar la habitación
+        DatabaseManager.executeUpdate(
+                "DELETE FROM Habitacion WHERE ID=?", habitacionId);
     }
 
     // ════════════════════════════════════════════════════

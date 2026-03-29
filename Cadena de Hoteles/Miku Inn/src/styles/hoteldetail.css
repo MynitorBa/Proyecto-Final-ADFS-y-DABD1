@@ -678,11 +678,6 @@
   padding-left: .5rem;
 }
 
-.price-row--persona {
-  color: var(--primary) !important;
-  font-weight: 600 !important;
-}
-
 /* ── Slot header personas asignadas ── */
 .hdet__combo-slot-personas {
   margin-left: auto;

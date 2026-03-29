@@ -53,6 +53,17 @@ public class HotelController {
             }
         });
 
+        // DELETE /admin/hoteles/{id}  →  eliminar hotel completo
+        app.delete("/admin/hoteles/{id}", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                hotelService.eliminarHotel(id(ctx, "id"));
+                ctx.json(Map.of("mensaje", "Hotel eliminado"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
         // ════════════════════════════════════════════════════
         //  IMÁGENES DE HOTEL
         // ════════════════════════════════════════════════════
@@ -164,6 +175,17 @@ public class HotelController {
                 ctx.json(Map.of("mensaje", "Habitación actualizada"));
             } catch (IllegalArgumentException e) {
                 ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // DELETE /admin/habitaciones/{id}  →  eliminar habitación
+        app.delete("/admin/habitaciones/{id}", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                hotelService.eliminarHabitacion(id(ctx, "id"));
+                ctx.json(Map.of("mensaje", "Habitación eliminada"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
             }
         });
 

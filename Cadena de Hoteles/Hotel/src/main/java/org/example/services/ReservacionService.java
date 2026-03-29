@@ -45,8 +45,28 @@ public class ReservacionService {
                 );
             }
 
+            // precios[0] = precioPorNoche, precios[1] = precioPorPersona, precios[2] = capacidadMaxima
             double[] precios = reservacionRepository.obtenerPrecios(item.getHabitacionId());
-            totalGeneral += (dias * precios[0]) + (dias * item.getCantidadPersonas() * precios[1]);
+            double precioPorNoche   = precios[0];
+            double precioPorPersona = precios[1];
+            int capacidadMaxima     = (int) precios[2];
+
+            int personasSolicitadas = item.getCantidadPersonas();
+
+            // Validar que no exceda capacidad + 1 (máximo 1 persona extra por habitación)
+            if (personasSolicitadas > capacidadMaxima + 1) {
+                throw new IllegalArgumentException(
+                        "La habitación " + item.getHabitacionId() +
+                                " tiene capacidad máxima de " + capacidadMaxima +
+                                " personas (+1 extra). No se pueden alojar " + personasSolicitadas + " personas."
+                );
+            }
+
+            // Calcular personas extra (las que exceden la capacidad base)
+            int personasExtra = Math.max(0, personasSolicitadas - capacidadMaxima);
+
+            // Total = (noches * precioPorNoche) + (personasExtra * noches * precioPorPersona)
+            totalGeneral += (dias * precioPorNoche) + (personasExtra * dias * precioPorPersona);
         }
 
         String noReservacion  = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -64,8 +84,15 @@ public class ReservacionService {
             LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
             long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
 
-            double[] precios       = reservacionRepository.obtenerPrecios(item.getHabitacionId());
-            double totalHabitacion = (dias * precios[0]) + (dias * item.getCantidadPersonas() * precios[1]);
+            double[] precios = reservacionRepository.obtenerPrecios(item.getHabitacionId());
+            double precioPorNoche   = precios[0];
+            double precioPorPersona = precios[1];
+            int capacidadMaxima     = (int) precios[2];
+
+            int personasSolicitadas = item.getCantidadPersonas();
+            int personasExtra = Math.max(0, personasSolicitadas - capacidadMaxima);
+
+            double totalHabitacion = (dias * precioPorNoche) + (personasExtra * dias * precioPorPersona);
 
             reservacionRepository.crearDetalle(
                     reservacionId,
