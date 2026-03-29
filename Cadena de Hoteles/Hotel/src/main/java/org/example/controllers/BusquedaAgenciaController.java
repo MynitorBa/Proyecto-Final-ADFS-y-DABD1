@@ -9,7 +9,7 @@ import java.util.Map;
 public class BusquedaAgenciaController {
 
     private final BusquedaAgenciaService busquedaAgenciaService = new BusquedaAgenciaService();
-
+/*
     public void registerRoutes(Javalin app) {
 
         // POST /agencia/busqueda — requiere sesión con rol Webservice
@@ -30,5 +30,5 @@ public class BusquedaAgenciaController {
                 ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             }
         });
-    }
+    }*/
 }

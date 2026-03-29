@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public class BusquedaAgenciaService {
 
     private final BusquedaAgenciaRepository repository = new BusquedaAgenciaRepository();
-
+/*
     public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, int usuarioId) {
 
         // Verificar agencia activa y obtener descuento
@@ -107,5 +107,5 @@ public class BusquedaAgenciaService {
         dto.setPrecioPorPersonaConDescuento(Math.round(hab.getPrecioPorPersona() * factor * 100.0) / 100.0);
 
         return dto;
-    }
+    }*/
 }

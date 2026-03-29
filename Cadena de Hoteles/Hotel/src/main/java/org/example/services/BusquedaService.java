@@ -3,6 +3,8 @@ package org.example.services;
 import org.example.dtos.*;
 import org.example.helpers.CombinacionHelper;
 import org.example.repositories.BusquedaRepository;
+import org.example.dtos.TipoHabitacionResultadoDTO;
+import org.example.dtos.HabitacionResumenDTO;
 
 import java.sql.Date;
 import java.time.LocalDate;
@@ -42,38 +44,50 @@ public class BusquedaService {
             }
             hotel.setAmenidades(amenidades);
 
-            // Habitaciones que cumplen capacidad >= cantidadPersonas (comportamiento original)
-            List<HabitacionDTO> habitaciones = busquedaRepository.buscarHabitacionesDisponibles(
-                    hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut
-            );
-            for (HabitacionDTO hab : habitaciones) {
-                hab.setImagenesIds(busquedaRepository.buscarImagenesHabitacion(hab.getId()));
+            // Tipos que cumplen capacidad >= cantidadPersonas
+            List<TipoHabitacionResultadoDTO> tiposCumplen = busquedaRepository
+                    .buscarTiposHabitacionDisponibles(
+                            hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut);
+
+            for (TipoHabitacionResultadoDTO tipo : tiposCumplen) {
+                tipo.setImagenesIds(busquedaRepository.buscarImagenesHabitacion(tipo.getTipoHabitacionId()));
+                tipo.setHabitacionesDisponibles(busquedaRepository.buscarHabitacionesResumenPorTipo(
+                        hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
-            hotel.setHabitaciones(habitaciones);
+            hotel.setTiposHabitacion(tiposCumplen);
 
-            // Todas las habitaciones disponibles con capacidad < cantidadPersonas (para combinaciones)
-            List<HabitacionDTO> todasDisponibles = busquedaRepository.buscarHabitacionesDisponibles(
-                    hotel.getId(), 1, fechaCheckIn, fechaCheckOut
-            );
-            for (HabitacionDTO hab : todasDisponibles) {
-                hab.setImagenesIds(busquedaRepository.buscarImagenesHabitacion(hab.getId()));
+            // Todos los tipos disponibles (capacidad >= 1) para combinaciones
+            List<TipoHabitacionResultadoDTO> todosLosTipos = busquedaRepository
+                    .buscarTiposHabitacionDisponibles(
+                            hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
+
+            for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
+                tipo.setHabitacionesDisponibles(busquedaRepository.buscarHabitacionesResumenPorTipo(
+                        hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
 
-            // Agrupar por capacidad — excluir las que ya cumplen solas (>= cantidadPersonas)
-            Map<Integer, List<HabitacionDTO>> porCapacidad = todasDisponibles.stream()
-                    .filter(h -> h.getCapacidadMaxima() < request.getCantidadPersonas())
-                    .collect(Collectors.groupingBy(HabitacionDTO::getCapacidadMaxima));
-
-            hotel.setHabitacionesPorCapacidad(porCapacidad);
-
-            // Stock por capacidad para validar combinaciones
+            // Stock por capacidad: cuántas habitaciones físicas hay de cada tipo
             Map<Integer, Integer> stockPorCapacidad = new HashMap<>();
-            porCapacidad.forEach((cap, habs) -> stockPorCapacidad.put(cap, habs.size()));
+            for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
+                if (tipo.getCapacidadMaxima() < request.getCantidadPersonas()) {
+                    stockPorCapacidad.merge(
+                            tipo.getCapacidadMaxima(),
+                            tipo.getHabitacionesDisponibles().size(),
+                            Integer::sum
+                    );
+                }
+            }
 
-            // Calcular combinaciones numéricas validando existencias reales
+            // Tipos agrupados por capacidad (solo los que no cumplen solos)
+            Map<Integer, List<TipoHabitacionResultadoDTO>> tiposPorCapacidad = todosLosTipos.stream()
+                    .filter(t -> t.getCapacidadMaxima() < request.getCantidadPersonas())
+                    .collect(Collectors.groupingBy(TipoHabitacionResultadoDTO::getCapacidadMaxima));
+
+            hotel.setTiposHabitacionPorCapacidad(tiposPorCapacidad);
+
+            // Combinaciones (misma lógica, ahora con stock real de habitaciones físicas)
             List<List<Integer>> combinaciones = CombinacionHelper.calcular(
-                    request.getCantidadPersonas(), stockPorCapacidad
-            );
+                    request.getCantidadPersonas(), stockPorCapacidad);
             hotel.setCombinacionesNumericas(combinaciones);
         }
 

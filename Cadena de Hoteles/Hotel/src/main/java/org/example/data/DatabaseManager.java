@@ -38,6 +38,7 @@ public class DatabaseManager {
             return results;
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new DataAccessException("Error ejecutando query", e);
         }
     }
@@ -53,6 +54,7 @@ public class DatabaseManager {
             return stmt.executeUpdate();
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new DataAccessException("Error ejecutando update", e);
         }
     }
@@ -78,6 +80,7 @@ public class DatabaseManager {
         } catch (DataAccessException e) {
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new DataAccessException("Error ejecutando insert con ID retornado", e);
         }
     }

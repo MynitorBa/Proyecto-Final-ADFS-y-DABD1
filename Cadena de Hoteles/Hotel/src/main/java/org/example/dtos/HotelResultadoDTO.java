@@ -14,12 +14,9 @@ public class HotelResultadoDTO {
     private String estado;
     private List<Integer>          imagenesIds;
     private List<AmenidadHotelDTO> amenidades;
-    private List<HabitacionDTO>    habitaciones;
-
-    // Combinaciones numéricas: ej. [[1,3],[2,2],[1,1,2]]
-    private List<List<Integer>>            combinacionesNumericas;
-    // Habitaciones agrupadas por capacidad: {"1": [...], "2": [...], "3": [...]}
-    private Map<Integer, List<HabitacionDTO>> habitacionesPorCapacidad;
+    private List<TipoHabitacionResultadoDTO> tiposHabitacion;
+    private List<List<Integer>> combinacionesNumericas;
+    private Map<Integer, List<TipoHabitacionResultadoDTO>> tiposHabitacionPorCapacidad;
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -51,12 +48,15 @@ public class HotelResultadoDTO {
     public List<AmenidadHotelDTO> getAmenidades() { return amenidades; }
     public void setAmenidades(List<AmenidadHotelDTO> amenidades) { this.amenidades = amenidades; }
 
-    public List<HabitacionDTO> getHabitaciones() { return habitaciones; }
-    public void setHabitaciones(List<HabitacionDTO> habitaciones) { this.habitaciones = habitaciones; }
+    // — Tipos de habitación —
+    public List<TipoHabitacionResultadoDTO> getTiposHabitacion() { return tiposHabitacion; }
+    public void setTiposHabitacion(List<TipoHabitacionResultadoDTO> tiposHabitacion) { this.tiposHabitacion = tiposHabitacion; }
 
+    // — Combinaciones —
     public List<List<Integer>> getCombinacionesNumericas() { return combinacionesNumericas; }
     public void setCombinacionesNumericas(List<List<Integer>> combinacionesNumericas) { this.combinacionesNumericas = combinacionesNumericas; }
 
-    public Map<Integer, List<HabitacionDTO>> getHabitacionesPorCapacidad() { return habitacionesPorCapacidad; }
-    public void setHabitacionesPorCapacidad(Map<Integer, List<HabitacionDTO>> habitacionesPorCapacidad) { this.habitacionesPorCapacidad = habitacionesPorCapacidad; }
+    // — Tipos agrupados por capacidad —
+    public Map<Integer, List<TipoHabitacionResultadoDTO>> getTiposHabitacionPorCapacidad() { return tiposHabitacionPorCapacidad; }
+    public void setTiposHabitacionPorCapacidad(Map<Integer, List<TipoHabitacionResultadoDTO>> tiposHabitacionPorCapacidad) { this.tiposHabitacionPorCapacidad = tiposHabitacionPorCapacidad; }
 }
