@@ -37,16 +37,17 @@ public class PdfReservacionRepository {
                 "dr.ID AS DetalleID, dr.HabitacionID, dr.FechaCheckIn, dr.FechaCheckOut, " +
                 "dr.CantidadPersonas, dr.Total AS TotalDetalle, " +
                 "h.Descripcion AS DescripcionHabitacion, " +
-                "t.nombre AS TipoHabitacion, " +
-                "c.Tipo_de_clase AS TipoCama, " +
+                "h.NUMEROHABITACION, " +
+                "t.NOMBRE AS TipoHabitacion, " +
+                "c.TIPO_DE_CLASE AS TipoCama, " +
                 "hot.ID AS HotelID, hot.Nombre AS NombreHotel " +
                 "FROM Reservacion r " +
-                "JOIN EstadoReserva      er  ON r.EstadoID          = er.ID " +
-                "JOIN DetallesReservacion dr  ON dr.ReservacionID   = r.ID " +
-                "JOIN Habitacion          h   ON dr.HabitacionID    = h.ID " +
-                "JOIN TipoHabitacion      t   ON h.TipoHabitacionID = t.ID " +
-                "JOIN Cama                c   ON h.CamaID           = c.ID " +
-                "JOIN Hotel               hot ON h.HotelID          = hot.ID " +
+                "JOIN EstadoReserva       er  ON r.EstadoID           = er.ID " +
+                "JOIN DetallesReservacion dr  ON dr.ReservacionID     = r.ID " +
+                "JOIN Habitacion          h   ON dr.HabitacionID      = h.ID " +
+                "JOIN TipoHabitacion      t   ON h.TIPOHABITACIONID   = t.ID " +
+                "JOIN Cama                c   ON t.TIPOCAMAID         = c.ID " +
+                "JOIN Hotel               hot ON h.HOTELID            = hot.ID " +
                 "WHERE r.ID = ? " +
                 "ORDER BY dr.ID";
 
@@ -62,6 +63,7 @@ public class PdfReservacionRepository {
             dto.setMotivoCancelacion(rs.getString("Motivo_Cancelacion"));
             dto.setDetalleId(rs.getInt("DetalleID"));
             dto.setHabitacionId(rs.getInt("HabitacionID"));
+            dto.setNumeroHabitacion(rs.getString("NUMEROHABITACION"));
             dto.setFechaCheckIn(rs.getDate("FechaCheckIn").toString());
             dto.setFechaCheckOut(rs.getDate("FechaCheckOut").toString());
             dto.setCantidadPersonas(rs.getInt("CantidadPersonas"));

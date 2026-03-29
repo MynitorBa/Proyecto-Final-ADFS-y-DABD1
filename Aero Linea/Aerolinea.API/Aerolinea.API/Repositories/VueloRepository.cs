@@ -13,9 +13,22 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  NUEVO: BÚSQUEDA GENERAL — busca vuelos por cualquier término
-        // ═══════════════════════════════════════════════════════════
+        // Representa un camino parcial durante el BFS
+        private class CaminoParcial
+        {
+            public List<VueloDetalleDTO> Tramos { get; set; } = new();
+            public DateTime UltimaFechaLlegada { get; set; }
+            public TimeSpan UltimaHoraLlegada { get; set; }
+            public int DuracionVueloAcumulada { get; set; }   // solo tiempo en aire, sin escalas
+            public HashSet<int> AeropuertosVisitados { get; set; } = new();
+            public int UltimoDestinoId { get; set; }
+            public decimal? PrecioTuristaAcumulado { get; set; }
+            public decimal? PrecioEjecutivaAcumulado { get; set; }
+            public int? BoletosDisponiblesTurista { get; set; }
+            public int? BoletosDisponiblesEjecutiva { get; set; }
+        }
+
+        //  BÚSQUEDA GENERAL — busca vuelos por cualquier término
         public async Task<List<VueloDetalleDTO>> BusquedaGeneral(string query)
         {
             var vuelos = new List<VueloDetalleDTO>();
@@ -24,17 +37,17 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             string filtro = @"
-                    AND (
-                        co.Nombre       LIKE @busqueda
-                        OR cd.Nombre    LIKE @busqueda
-                        OR ao.Codigo    LIKE @busqueda
-                        OR ad.Codigo    LIKE @busqueda
-                        OR po.Nombre    LIKE @busqueda
-                        OR pd.Nombre    LIKE @busqueda
-                        OR ao.Nombre    LIKE @busqueda
-                        OR ad.Nombre    LIKE @busqueda
-                        OR v.NumeroVuelo LIKE @busqueda
-                    )";
+                AND (
+                    co.Nombre        LIKE @busqueda
+                    OR cd.Nombre     LIKE @busqueda
+                    OR ao.Codigo     LIKE @busqueda
+                    OR ad.Codigo     LIKE @busqueda
+                    OR po.Nombre     LIKE @busqueda
+                    OR pd.Nombre     LIKE @busqueda
+                    OR ao.Nombre     LIKE @busqueda
+                    OR ad.Nombre     LIKE @busqueda
+                    OR v.NumeroVuelo LIKE @busqueda
+                )";
 
             string sql = $@"
                 SELECT TOP 50
@@ -64,7 +77,6 @@ namespace Aerolinea.API.Repositories
                 ORDER BY v.Fecha, v.HoraSalida";
 
             using var cmd = new SqlCommand(sql, connection);
-
             cmd.Parameters.AddWithValue("@busqueda", $"%{query}%");
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -79,9 +91,7 @@ namespace Aerolinea.API.Repositories
             return vuelos;
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  BÚSQUEDA DIRECTA  (sin cambios)
-        // ═══════════════════════════════════════════════════════════
+        //  BÚSQUEDA DIRECTA
         public async Task<List<VueloDetalleDTO>> BuscarVuelos(
             int origenId, int destinoId, DateTime fecha,
             int cantidadPasajeros, int? claseId = null)
@@ -91,11 +101,7 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            string filtroClase = claseId == 1
-                ? "AND v.BoletosTurista   >= @cantidadPasajeros"
-                : claseId == 2
-                    ? "AND v.BoletosEjecutivo >= @cantidadPasajeros"
-                    : "AND (v.BoletosTurista >= @cantidadPasajeros OR v.BoletosEjecutivo >= @cantidadPasajeros)";
+            string filtroClase = BuildFiltroClase(claseId);
 
             string query = $@"
                 SELECT 
@@ -143,104 +149,176 @@ namespace Aerolinea.API.Repositories
             return vuelos;
         }
 
-        //  BÚSQUEDA CON 1 ESCALA
-        public async Task<List<VueloConEscalaDTO>> BuscarVuelosConEscala(
+        //  BÚSQUEDA CON ESCALAS — soporta de 1 a maxEscalas (default 3) usando BFS por capas
+        public async Task<List<VueloConEscalaDTO>> BuscarVuelosConEscalas(
             int origenId, int destinoId, DateTime fecha,
-            int cantidadPasajeros, int? claseId = null)
+            int cantidadPasajeros, int? claseId = null,
+            int maxEscalas = 3)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            int? duracionDirectaMinutos = null;
-            string queryDirecta = @"
-                SELECT TOP 1 DuracionEstimada FROM Ruta
-                WHERE OrigenID = @origenId AND DestinoID = @destinoId";
+            // Buscamos la duración de la ruta directa para aplicar la regla del 1.5x solo en tiempo de vuelo
+            int limiteVueloMinutos = await ObtenerLimiteVuelo(connection, origenId, destinoId, maxEscalas);
 
-            using (var cmd = new SqlCommand(queryDirecta, connection))
+            // Capa 0: todos los vuelos que salen del origen en la fecha dada
+            // Excluimos el destino final para que no aparezca como primer tramo directo
+            var tramosIniciales = await BuscarTramosDesdeLista(
+                connection,
+                new List<int> { origenId },
+                destinoId,
+                fecha,
+                cantidadPasajeros,
+                claseId,
+                excluirDestino: true);
+
+            // Inicializamos los caminos parciales con cada vuelo del primer tramo
+            var caminosActivos = new List<CaminoParcial>();
+            foreach (var tramo in tramosIniciales)
             {
-                cmd.Parameters.AddWithValue("@origenId", origenId);
-                cmd.Parameters.AddWithValue("@destinoId", destinoId);
-                var result = await cmd.ExecuteScalarAsync();
-                if (result != null && result != DBNull.Value)
-                    duracionDirectaMinutos = (int)result;
+                // Saltamos vuelos que ya superan el límite de tiempo en aire solos
+                if (tramo.DuracionMinutos > limiteVueloMinutos)
+                    continue;
+
+                caminosActivos.Add(new CaminoParcial
+                {
+                    Tramos = new List<VueloDetalleDTO> { tramo },
+                    UltimaFechaLlegada = tramo.FechaLlegada,
+                    UltimaHoraLlegada = tramo.HoraLlegada,
+                    DuracionVueloAcumulada = tramo.DuracionMinutos,
+                    UltimoDestinoId = tramo.DestinoId,
+                    AeropuertosVisitados = new HashSet<int> { origenId, tramo.DestinoId },
+                    PrecioTuristaAcumulado = tramo.PrecioTurista,
+                    PrecioEjecutivaAcumulado = tramo.PrecioEjecutiva,
+                    BoletosDisponiblesTurista = tramo.BoletosDisponiblesTurista,
+                    BoletosDisponiblesEjecutiva = tramo.BoletosDisponiblesEjecutiva,
+                });
             }
-
-            int limiteMinutos = duracionDirectaMinutos.HasValue
-                ? (int)(duracionDirectaMinutos.Value * 1.5)
-                : 12 * 60;
-
-            var tramos1 = await BuscarTramos(
-                connection, origenId, destinoId,
-                fecha, cantidadPasajeros, claseId, esOrigen: true);
-
-            var tramos2DiaMismo = await BuscarTramos(
-                connection, origenId, destinoId,
-                fecha, cantidadPasajeros, claseId, esOrigen: false);
-
-            var tramos2DiaSiguiente = await BuscarTramos(
-                connection, origenId, destinoId,
-                fecha.AddDays(1), cantidadPasajeros, claseId, esOrigen: false);
-
-            var tramos2 = tramos2DiaMismo.Concat(tramos2DiaSiguiente).ToList();
 
             var resultados = new List<VueloConEscalaDTO>();
             var combinacionesVistas = new HashSet<string>();
 
-            foreach (var t1 in tramos1)
+            // BFS: expandimos capa por capa hasta maxEscalas
+            for (int escala = 1; escala <= maxEscalas && caminosActivos.Count > 0; escala++)
             {
-                foreach (var t2 in tramos2.Where(t => t.OrigenId == t1.DestinoId))
+                // Recopilamos los aeropuertos únicos desde donde necesitamos seguir buscando
+                var origenesActuales = caminosActivos
+                    .Select(c => c.UltimoDestinoId)
+                    .Distinct()
+                    .ToList();
+
+                // Traemos todos los vuelos que salen de esos aeropuertos
+                // Incluimos el destino final porque en esta capa ya podría ser el último tramo
+                var tramosNuevos = await BuscarTramosDesdeLista(
+                    connection,
+                    origenesActuales,
+                    destinoId,
+                    fecha,
+                    cantidadPasajeros,
+                    claseId,
+                    excluirDestino: false);
+
+                // Indexamos los nuevos tramos por origen para no hacer Where en cada iteración
+                var tramosPorOrigen = tramosNuevos
+                    .GroupBy(t => t.OrigenId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                var caminosSiguienteCapa = new List<CaminoParcial>();
+
+                foreach (var camino in caminosActivos)
                 {
-                    var llegadaT1 = t1.FechaLlegada + t1.HoraLlegada;
-                    var salidaT2 = t2.Fecha.Date + t2.HoraSalida;
-
-                    int minutosEscala = (int)(salidaT2 - llegadaT1).TotalMinutes;
-
-                    if (minutosEscala < 60 || minutosEscala > 720)
+                    if (!tramosPorOrigen.TryGetValue(camino.UltimoDestinoId, out var candidatos))
                         continue;
 
-                    int duracionTotal = t1.DuracionMinutos + t2.DuracionMinutos;
-
-                    if (duracionTotal > limiteMinutos)
-                        continue;
-
-                    string key = $"{t1.Id}-{t2.Id}";
-                    if (!combinacionesVistas.Add(key))
-                        continue;
-
-                    int? dispTurista = t1.BoletosDisponiblesTurista.HasValue && t2.BoletosDisponiblesTurista.HasValue
-                        ? Math.Min(t1.BoletosDisponiblesTurista.Value, t2.BoletosDisponiblesTurista.Value)
-                        : null;
-
-                    int? dispEjecutiva = t1.BoletosDisponiblesEjecutiva.HasValue && t2.BoletosDisponiblesEjecutiva.HasValue
-                        ? Math.Min(t1.BoletosDisponiblesEjecutiva.Value, t2.BoletosDisponiblesEjecutiva.Value)
-                        : null;
-
-                    if (claseId == 1 && (dispTurista == null || dispTurista < cantidadPasajeros)) continue;
-                    if (claseId == 2 && (dispEjecutiva == null || dispEjecutiva < cantidadPasajeros)) continue;
-                    if (claseId == null &&
-                        (dispTurista == null || dispTurista < cantidadPasajeros) &&
-                        (dispEjecutiva == null || dispEjecutiva < cantidadPasajeros))
-                        continue;
-
-                    decimal? precioTuristaTotal = t1.PrecioTurista.HasValue && t2.PrecioTurista.HasValue
-                        ? t1.PrecioTurista + t2.PrecioTurista : null;
-                    decimal? precioEjecutivaTotal = t1.PrecioEjecutiva.HasValue && t2.PrecioEjecutiva.HasValue
-                        ? t1.PrecioEjecutiva + t2.PrecioEjecutiva : null;
-
-                    resultados.Add(new VueloConEscalaDTO
+                    foreach (var tramo in candidatos)
                     {
-                        NumeroEscalas = 1,
-                        DuracionTotalMinutos = duracionTotal + minutosEscala,
-                        TiempoEscalaMinutos = minutosEscala,
-                        PrecioTuristaTotal = precioTuristaTotal,
-                        PrecioEjecutivaTotal = precioEjecutivaTotal,
-                        BoletosDisponiblesTurista = dispTurista,
-                        BoletosDisponiblesEjecutiva = dispEjecutiva,
-                        Tramos = new List<VueloDetalleDTO> { t1, t2 }
-                    });
+                        // Evitamos ciclos: el tramo no puede ir a un aeropuerto ya visitado
+                        // (excepto si es el destino final, que tampoco debería estar en visitados)
+                        if (camino.AeropuertosVisitados.Contains(tramo.DestinoId) && tramo.DestinoId != destinoId)
+                            continue;
+
+                        // Validamos la escala: tiempo entre llegada del tramo anterior y salida de este
+                        var llegadaAnterior = camino.UltimaFechaLlegada.Date + camino.UltimaHoraLlegada;
+                        var salidaActual = tramo.Fecha.Date + tramo.HoraSalida;
+
+                        int minutosEscala = (int)(salidaActual - llegadaAnterior).TotalMinutes;
+
+                        // Regla: espera en aeropuerto entre 1h y 12h
+                        if (minutosEscala < 60 || minutosEscala > 720)
+                            continue;
+
+                        // Regla: duración acumulada de vuelo (sin escalas) no supera el 1.5x de la ruta directa
+                        int nuevaDuracionVuelo = camino.DuracionVueloAcumulada + tramo.DuracionMinutos;
+                        if (nuevaDuracionVuelo > limiteVueloMinutos)
+                            continue;
+
+                        // Disponibilidad: tomamos el mínimo entre todos los tramos
+                        int? dispTurista = MinDisponible(camino.BoletosDisponiblesTurista, tramo.BoletosDisponiblesTurista);
+                        int? dispEjecutiva = MinDisponible(camino.BoletosDisponiblesEjecutiva, tramo.BoletosDisponiblesEjecutiva);
+
+                        // Validamos disponibilidad según la clase pedida
+                        if (!TieneDisponibilidad(claseId, dispTurista, dispEjecutiva, cantidadPasajeros))
+                            continue;
+
+                        // Construimos la clave única para no repetir combinaciones
+                        var tramosIds = string.Join("-", camino.Tramos.Select(t => t.Id)) + $"-{tramo.Id}";
+                        if (!combinacionesVistas.Add(tramosIds))
+                            continue;
+
+                        // Precios acumulados
+                        decimal? precioTurista = SumarPrecios(camino.PrecioTuristaAcumulado, tramo.PrecioTurista);
+                        decimal? precioEjecutiva = SumarPrecios(camino.PrecioEjecutivaAcumulado, tramo.PrecioEjecutiva);
+
+                        var nuevosTramos = new List<VueloDetalleDTO>(camino.Tramos) { tramo };
+
+                        // Si llegamos al destino final guardamos el resultado
+                        if (tramo.DestinoId == destinoId)
+                        {
+                            // Duración total real = tiempo de vuelo + tiempo de todas las escalas
+                            int duracionTotalConEscalas = nuevaDuracionVuelo +
+                                CalcularTiempoTotalEscalas(nuevosTramos);
+
+                            resultados.Add(new VueloConEscalaDTO
+                            {
+                                NumeroEscalas = escala,
+                                DuracionTotalMinutos = duracionTotalConEscalas,
+                                TiempoEscalaMinutos = duracionTotalConEscalas - nuevaDuracionVuelo,
+                                PrecioTuristaTotal = precioTurista,
+                                PrecioEjecutivaTotal = precioEjecutiva,
+                                BoletosDisponiblesTurista = dispTurista,
+                                BoletosDisponiblesEjecutiva = dispEjecutiva,
+                                Tramos = nuevosTramos
+                            });
+
+                            continue;
+                        }
+
+                        // Si no llegamos al destino y aún tenemos escalas disponibles, seguimos expandiendo
+                        if (escala < maxEscalas)
+                        {
+                            var nuevosVisitados = new HashSet<int>(camino.AeropuertosVisitados) { tramo.DestinoId };
+
+                            caminosSiguienteCapa.Add(new CaminoParcial
+                            {
+                                Tramos = nuevosTramos,
+                                UltimaFechaLlegada = tramo.FechaLlegada,
+                                UltimaHoraLlegada = tramo.HoraLlegada,
+                                DuracionVueloAcumulada = nuevaDuracionVuelo,
+                                UltimoDestinoId = tramo.DestinoId,
+                                AeropuertosVisitados = nuevosVisitados,
+                                PrecioTuristaAcumulado = precioTurista,
+                                PrecioEjecutivaAcumulado = precioEjecutiva,
+                                BoletosDisponiblesTurista = dispTurista,
+                                BoletosDisponiblesEjecutiva = dispEjecutiva,
+                            });
+                        }
+                    }
                 }
+
+                caminosActivos = caminosSiguienteCapa;
             }
 
+            // Cargamos tripulantes solo de los vuelos únicos que aparecen en los resultados
             var vuelosUnicos = resultados
                 .SelectMany(r => r.Tramos)
                 .GroupBy(v => v.Id)
@@ -258,23 +336,32 @@ namespace Aerolinea.API.Repositories
             return resultados.OrderBy(r => r.DuracionTotalMinutos).ToList();
         }
 
-        //  TRAER TRAMOS (origen fijo o destino fijo)
-        private async Task<List<VueloDetalleDTO>> BuscarTramos(
+        //  TRAER TRAMOS DESDE UNA LISTA DE ORÍGENES — query única con IN (...)
+        private async Task<List<VueloDetalleDTO>> BuscarTramosDesdeLista(
             SqlConnection connection,
-            int origenId, int destinoId,
-            DateTime fecha, int cantidadPasajeros, int? claseId,
-            bool esOrigen)
+            List<int> origenIds,
+            int destinoFinalId,
+            DateTime fechaDesde,
+            int cantidadPasajeros,
+            int? claseId,
+            bool excluirDestino)
         {
-            string filtroClase = claseId == 1
-                ? "AND v.BoletosTurista   >= @cantidadPasajeros"
-                : claseId == 2
-                    ? "AND v.BoletosEjecutivo >= @cantidadPasajeros"
-                    : "AND (v.BoletosTurista >= @cantidadPasajeros OR v.BoletosEjecutivo >= @cantidadPasajeros)";
+            if (origenIds.Count == 0)
+                return new List<VueloDetalleDTO>();
 
-            string filtroPosicion = esOrigen
-                ? "AND r.OrigenID  = @fijoId AND r.DestinoID != @excluirId"
-                : "AND r.DestinoID = @fijoId AND r.OrigenID  != @excluirId";
+            string filtroClase = BuildFiltroClase(claseId);
 
+            // Construimos los parámetros para el IN (...)
+            var paramNames = origenIds.Select((_, i) => $"@origen{i}").ToList();
+            string inClause = string.Join(", ", paramNames);
+
+            // Si es la primera capa o una intermedia, excluimos el destino final para no mezclar
+            // con vuelos directos. En la última capa no excluimos para poder cerrar el camino.
+            string filtroDestino = excluirDestino
+                ? "AND r.DestinoID != @destinoFinalId"
+                : string.Empty;
+
+            // Buscamos en un rango amplio de fechas para cubrir escalas que cruzan días
             string query = $@"
                 SELECT 
                     v.ID, v.NumeroVuelo, v.Fecha, v.HoraSalida, v.HoraLlegada,
@@ -296,17 +383,22 @@ namespace Aerolinea.API.Repositories
                 INNER JOIN Ciudad     cd ON ad.CiudadID = cd.ID
                 INNER JOIN Pais       po ON co.PaisID   = po.ID
                 INNER JOIN Pais       pd ON cd.PaisID   = pd.ID
-                WHERE v.Fecha   = @fecha
-                  AND e.Estatus = 'A tiempo'
-                  {filtroPosicion}
+                WHERE r.OrigenID IN ({inClause})
+                  AND v.Fecha   >= @fechaDesde
+                  AND e.Estatus  = 'A tiempo'
+                  {filtroDestino}
                   {filtroClase}
-                ORDER BY v.HoraSalida";
+                ORDER BY v.Fecha, v.HoraSalida";
 
             using var cmd = new SqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@fecha", fecha.Date);
+            cmd.Parameters.AddWithValue("@fechaDesde", fechaDesde.Date);
             cmd.Parameters.AddWithValue("@cantidadPasajeros", cantidadPasajeros);
-            cmd.Parameters.AddWithValue("@fijoId", esOrigen ? origenId : destinoId);
-            cmd.Parameters.AddWithValue("@excluirId", esOrigen ? destinoId : origenId);
+
+            if (excluirDestino)
+                cmd.Parameters.AddWithValue("@destinoFinalId", destinoFinalId);
+
+            for (int i = 0; i < origenIds.Count; i++)
+                cmd.Parameters.AddWithValue(paramNames[i], origenIds[i]);
 
             using var reader = await cmd.ExecuteReaderAsync();
             var lista = new List<VueloDetalleDTO>();
@@ -314,6 +406,28 @@ namespace Aerolinea.API.Repositories
                 lista.Add(MapearVuelo(reader));
 
             return lista;
+        }
+
+        //  OBTENER LÍMITE DE TIEMPO DE VUELO — 1.5x la ruta directa (solo tiempo en aire)
+        private async Task<int> ObtenerLimiteVuelo(
+            SqlConnection connection,
+            int origenId, int destinoId,
+            int maxEscalas)
+        {
+            using var cmd = new SqlCommand(
+                "SELECT TOP 1 DuracionEstimada FROM Ruta WHERE OrigenID = @origenId AND DestinoID = @destinoId",
+                connection);
+
+            cmd.Parameters.AddWithValue("@origenId", origenId);
+            cmd.Parameters.AddWithValue("@destinoId", destinoId);
+
+            var result = await cmd.ExecuteScalarAsync();
+
+            if (result != null && result != DBNull.Value)
+                return (int)((int)result * 1.5);
+
+            // Si no hay ruta directa usamos un fallback proporcional al número de escalas
+            return maxEscalas * 8 * 60;
         }
 
         //  GUARDAR BÚSQUEDA
@@ -349,7 +463,80 @@ namespace Aerolinea.API.Repositories
             await cmdInsert.ExecuteNonQueryAsync();
         }
 
+    
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Genera el filtro SQL de clase para reutilizarlo en todas las queries
+        private static string BuildFiltroClase(int? claseId) => claseId == 1
+            ? "AND v.BoletosTurista   >= @cantidadPasajeros"
+            : claseId == 2
+                ? "AND v.BoletosEjecutivo >= @cantidadPasajeros"
+                : "AND (v.BoletosTurista >= @cantidadPasajeros OR v.BoletosEjecutivo >= @cantidadPasajeros)";
+
+        // Toma el mínimo de disponibilidad entre dos tramos (null si alguno es null)
+        private static int? MinDisponible(int? a, int? b) =>
+            a.HasValue && b.HasValue ? Math.Min(a.Value, b.Value) : null;
+
+        // Suma dos precios, retorna null si alguno es null
+        private static decimal? SumarPrecios(decimal? a, decimal? b) =>
+            a.HasValue && b.HasValue ? a + b : null;
+
+        // Valida que haya disponibilidad según la clase pedida
+        private static bool TieneDisponibilidad(
+            int? claseId, int? dispTurista, int? dispEjecutiva, int cantidadPasajeros)
+        {
+            if (claseId == 1) return dispTurista.HasValue && dispTurista >= cantidadPasajeros;
+            if (claseId == 2) return dispEjecutiva.HasValue && dispEjecutiva >= cantidadPasajeros;
+
+            // Sin clase específica: al menos una clase debe tener disponibilidad
+            bool okTurista = dispTurista.HasValue && dispTurista >= cantidadPasajeros;
+            bool okEjecutiva = dispEjecutiva.HasValue && dispEjecutiva >= cantidadPasajeros;
+            return okTurista || okEjecutiva;
+        }
+
+        // Calcula el tiempo total de espera en aeropuertos sumando todas las escalas de un camino
+        private static int CalcularTiempoTotalEscalas(List<VueloDetalleDTO> tramos)
+        {
+            int totalEscalas = 0;
+            for (int i = 0; i < tramos.Count - 1; i++)
+            {
+                var llegada = tramos[i].FechaLlegada.Date + tramos[i].HoraLlegada;
+                var salida = tramos[i + 1].Fecha.Date + tramos[i + 1].HoraSalida;
+                totalEscalas += (int)(salida - llegada).TotalMinutes;
+            }
+            return totalEscalas;
+        }
 
         private VueloDetalleDTO MapearVuelo(SqlDataReader reader)
         {

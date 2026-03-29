@@ -12,10 +12,9 @@ import java.util.stream.Collectors;
 public class BusquedaAgenciaService {
 
     private final BusquedaAgenciaRepository repository = new BusquedaAgenciaRepository();
-/*
+
     public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, int usuarioId) {
 
-        // Verificar agencia activa y obtener descuento
         Double porcentajeDescuento = repository.obtenerDescuentoAgencia(usuarioId);
         if (porcentajeDescuento == null) {
             throw new IllegalArgumentException("El usuario no tiene una agencia activa asociada");
@@ -32,11 +31,9 @@ public class BusquedaAgenciaService {
         Date fechaCheckIn  = Date.valueOf(LocalDate.parse(request.getFechaCheckIn()));
         Date fechaCheckOut = Date.valueOf(LocalDate.parse(request.getFechaCheckOut()));
 
-        //Guardar búsqueda tipo 2 (Agencia)
         repository.guardarBusqueda(ciudadId, fechaCheckIn, fechaCheckOut,
                 request.getCantidadPersonas(), usuarioId);
 
-        // Construir resultados
         List<HotelResultadoDTO> hoteles = repository.buscarHotelesPorCiudad(ciudadId);
 
         for (HotelResultadoDTO hotel : hoteles) {
@@ -48,64 +45,56 @@ public class BusquedaAgenciaService {
             }
             hotel.setAmenidades(amenidades);
 
-            // Habitaciones que cumplen capacidad >= cantidadPersonas
-            List<HabitacionDTO> habitaciones = repository.buscarHabitacionesDisponibles(
-                    hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut
-            );
-            List<HabitacionDTO> habitacionesConDescuento = new ArrayList<>();
-            for (HabitacionDTO hab : habitaciones) {
-                hab.setImagenesIds(repository.buscarImagenesHabitacion(hab.getId()));
-                habitacionesConDescuento.add(aplicarDescuento(hab, porcentajeDescuento));
+            // Tipos que cumplen capacidad >= cantidadPersonas — con descuento aplicado
+            List<TipoHabitacionResultadoDTO> tiposCumplen = repository
+                    .buscarTiposHabitacionDisponibles(
+                            hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut);
+
+            for (TipoHabitacionResultadoDTO tipo : tiposCumplen) {
+                aplicarDescuento(tipo, porcentajeDescuento);
+                tipo.setImagenesIds(repository.buscarImagenesHabitacion(tipo.getTipoHabitacionId()));
+                tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
+                        hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
-            hotel.setHabitaciones(habitacionesConDescuento);
+            hotel.setTiposHabitacion(tiposCumplen);
 
-            // Todas disponibles para combinaciones
-            List<HabitacionDTO> todasDisponibles = repository.buscarHabitacionesDisponibles(
-                    hotel.getId(), 1, fechaCheckIn, fechaCheckOut
-            );
+            // Todos los tipos para combinaciones
+            List<TipoHabitacionResultadoDTO> todosLosTipos = repository
+                    .buscarTiposHabitacionDisponibles(
+                            hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
-            // Agrupar por capacidad — excluir las que ya cumplen solas
-            Map<Integer, List<HabitacionDTO>> porCapacidad = new HashMap<>();
-            for (HabitacionDTO hab : todasDisponibles) {
-                if (hab.getCapacidadMaxima() < request.getCantidadPersonas()) {
-                    hab.setImagenesIds(repository.buscarImagenesHabitacion(hab.getId()));
-                    HabitacionAgenciaDTO habConDesc = aplicarDescuento(hab, porcentajeDescuento);
-                    porCapacidad.computeIfAbsent(hab.getCapacidadMaxima(), k -> new ArrayList<>()).add(habConDesc);
+            for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
+                tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
+                        hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
+            }
+
+            Map<Integer, Integer> stockPorCapacidad = new HashMap<>();
+            for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
+                if (tipo.getCapacidadMaxima() < request.getCantidadPersonas()) {
+                    stockPorCapacidad.merge(
+                            tipo.getCapacidadMaxima(),
+                            tipo.getHabitacionesDisponibles().size(),
+                            Integer::sum
+                    );
                 }
             }
-            hotel.setHabitacionesPorCapacidad(porCapacidad);
 
-            // Combinaciones numéricas validando stock
-            Map<Integer, Integer> stockPorCapacidad = new HashMap<>();
-            porCapacidad.forEach((cap, habs) -> stockPorCapacidad.put(cap, habs.size()));
+            Map<Integer, List<TipoHabitacionResultadoDTO>> tiposPorCapacidad = todosLosTipos.stream()
+                    .filter(t -> t.getCapacidadMaxima() < request.getCantidadPersonas())
+                    .collect(Collectors.groupingBy(TipoHabitacionResultadoDTO::getCapacidadMaxima));
+
+            hotel.setTiposHabitacionPorCapacidad(tiposPorCapacidad);
+
             hotel.setCombinacionesNumericas(
-                    CombinacionHelper.calcular(request.getCantidadPersonas(), stockPorCapacidad)
-            );
+                    CombinacionHelper.calcular(request.getCantidadPersonas(), stockPorCapacidad));
         }
 
         return hoteles;
     }
 
-    // ----------------- Crea un HabitacionAgenciaDTO con los precios con descuento ---------------
-
-    private HabitacionAgenciaDTO aplicarDescuento(HabitacionDTO hab, double porcentaje) {
-        HabitacionAgenciaDTO dto = new HabitacionAgenciaDTO();
-        dto.setId(hab.getId());
-        dto.setTipoHabitacion(hab.getTipoHabitacion());
-        dto.setPrecioPorPersona(hab.getPrecioPorPersona());
-        dto.setPrecioPorNoche(hab.getPrecioPorNoche());
-        dto.setCapacidadMaxima(hab.getCapacidadMaxima());
-        dto.setTipoCama(hab.getTipoCama());
-        dto.setMetrosCuadrados(hab.getMetrosCuadrados());
-        dto.setDescripcion(hab.getDescripcion());
-        dto.setEstado(hab.getEstado());
-        dto.setImagenesIds(hab.getImagenesIds());
-
+    private void aplicarDescuento(TipoHabitacionResultadoDTO tipo, double porcentaje) {
         double factor = 1.0 - (porcentaje / 100.0);
-        dto.setPorcentajeDescuento(porcentaje);
-        dto.setPrecioPorNocheConDescuento(Math.round(hab.getPrecioPorNoche() * factor * 100.0) / 100.0);
-        dto.setPrecioPorPersonaConDescuento(Math.round(hab.getPrecioPorPersona() * factor * 100.0) / 100.0);
-
-        return dto;
-    }*/
+        tipo.setPrecioPorPersona(Math.round(tipo.getPrecioPorPersona() * factor * 100.0) / 100.0);
+        tipo.setPrecioPorNoche(Math.round(tipo.getPrecioPorNoche() * factor * 100.0) / 100.0);
+    }
 }

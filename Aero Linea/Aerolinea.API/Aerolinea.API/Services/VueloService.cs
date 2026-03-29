@@ -12,17 +12,12 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  NUEVO: Búsqueda general por cualquier término
-        // ═══════════════════════════════════════════════════════════
         public async Task<List<VueloDetalleDTO>> BusquedaGeneral(string query)
         {
             return await _repository.BusquedaGeneral(query);
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  Búsqueda normal (sin cambios)
-        // ═══════════════════════════════════════════════════════════
+
         public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
         {
             // Guardar búsqueda
@@ -42,8 +37,8 @@ namespace Aerolinea.API.Services
             // Filtro de precio en memoria para directos
             directos = AplicarFiltroPrecio(directos, dto);
 
-            // Vuelos con 1 escala 
-            var conEscala = await _repository.BuscarVuelosConEscala(
+            // Vuelos con escala 
+            var conEscala = await _repository.BuscarVuelosConEscalas(
                 dto.OrigenId, dto.DestinoId,
                 dto.Fecha, dto.CantidadPasajeros, dto.ClaseId);
 

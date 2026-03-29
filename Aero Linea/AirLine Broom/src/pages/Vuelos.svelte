@@ -9,7 +9,7 @@
 
   const API = 'https://localhost:7107';
 
-  // ── NUEVO: flag búsqueda global ──
+  // ── flag búsqueda global ──
   let isGlobalSearch = false;
   let globalSearchQuery = '';
   let newGlobalQuery = '';
@@ -112,7 +112,7 @@
     else tabVuelta = tab;
   }
 
-  /* ── NUEVO: Re-búsqueda global ── */
+  /* ── Re-búsqueda global ── */
   async function reBuscarGlobal() {
     const q = newGlobalQuery.trim();
     if (q.length < 2) return;
@@ -648,15 +648,20 @@
                         </div>
 
                         {#if ti < escala.tramos.length - 1}
-                          <div class="escala-conexion">
-                            <div class="escala-conexion__line"></div>
-                            <div class="escala-conexion__badge">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/></svg>
-                              Escala · {formatDuracion(escala.tiempoEscalaMinutos)} en {escala.tramos[ti].destinoCiudad}
+                            {@const llegada = new Date(`1970-01-01T${escala.tramos[ti].horaLlegada}`)}
+                            {@const salida  = new Date(`1970-01-01T${escala.tramos[ti + 1].horaSalida}`)}
+                            {@const minutos = ((salida - llegada) / 60000 + 1440) % 1440}
+                            <div class="escala-conexion">
+                              <div class="escala-conexion__line"></div>
+                              <div class="escala-conexion__badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <circle cx="12" cy="12" r="4"/>
+                                </svg>
+                                Escala · {formatDuracion(minutos)} en {escala.tramos[ti].destinoCiudad}
+                              </div>
+                              <div class="escala-conexion__line"></div>
                             </div>
-                            <div class="escala-conexion__line"></div>
-                          </div>
-                        {/if}
+                          {/if}
                       {/each}
                     </div>
 

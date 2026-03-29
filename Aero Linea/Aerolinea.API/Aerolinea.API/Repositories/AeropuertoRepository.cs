@@ -325,21 +325,22 @@ namespace Aerolinea.API.Repositories
         }
 
         public async Task<List<DateTime>> ObtenerFechasConVuelosPorRuta(
-     int? origenId,
-     int? destinoId,
-     int cantidadPersonas = 1,
-     int? claseId = null)
+    int? origenId,
+    int? destinoId,
+    int cantidadPersonas = 1,
+    int? claseId = null,
+    int maxEscalas = 3)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            string filtroDisponibilidad = claseId == 1
+            string filtroClase = claseId == 1
                 ? "AND v.BoletosTurista   >= @cantidadPersonas"
                 : claseId == 2
                     ? "AND v.BoletosEjecutivo >= @cantidadPersonas"
                     : "AND (v.BoletosTurista >= @cantidadPersonas OR v.BoletosEjecutivo >= @cantidadPersonas)";
 
-            // ── Vuelos directos ───────────────────────────────────────────────────
+            // ── Vuelos directos ──────────────────────────────────────────────────
             string queryDirectos = $@"
         SELECT DISTINCT v.Fecha
         FROM Vuelo v
@@ -347,7 +348,7 @@ namespace Aerolinea.API.Repositories
         INNER JOIN Estado e ON e.ID = v.EstadoID
         WHERE v.Fecha  >= CAST(GETDATE() AS DATE)
           AND e.Estatus = 'A tiempo'
-          {filtroDisponibilidad}";
+          {filtroClase}";
 
             if (origenId.HasValue) queryDirectos += " AND r.OrigenID  = @origenId";
             if (destinoId.HasValue) queryDirectos += " AND r.DestinoID = @destinoId";
@@ -365,131 +366,139 @@ namespace Aerolinea.API.Repositories
                     fechas.Add(reader.GetDateTime(0));
             }
 
-            // ── Vuelos con escala (mismas reglas de negocio que VueloRepository) ──
-            if (origenId.HasValue && destinoId.HasValue)
+            // ── Vuelos con escalas (BFS igual que VueloRepository) ──────────────
+            if (!origenId.HasValue || !destinoId.HasValue)
+                return fechas.OrderBy(f => f).ToList();
+
+            // Límite de tiempo de vuelo acumulado: 1.5x la ruta directa
+            int limiteMinutos;
+            using (var cmd = new SqlCommand(
+                "SELECT TOP 1 DuracionEstimada FROM Ruta WHERE OrigenID = @o AND DestinoID = @d", connection))
             {
-                // 1. Obtener duración de la ruta directa para calcular el límite 1.5x
-                int? duracionDirectaMinutos = null;
-                using (var cmd = new SqlCommand(
-                    "SELECT TOP 1 DuracionEstimada FROM Ruta WHERE OrigenID = @origenId AND DestinoID = @destinoId",
-                    connection))
-                {
-                    cmd.Parameters.AddWithValue("@origenId", origenId.Value);
-                    cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
-                    var result = await cmd.ExecuteScalarAsync();
-                    if (result != null && result != DBNull.Value)
-                        duracionDirectaMinutos = (int)result;
-                }
+                cmd.Parameters.AddWithValue("@o", origenId.Value);
+                cmd.Parameters.AddWithValue("@d", destinoId.Value);
+                var result = await cmd.ExecuteScalarAsync();
+                limiteMinutos = result != null && result != DBNull.Value
+                    ? (int)((int)result * 1.5)
+    :               maxEscalas * 8 * 60;
+            }
 
-                int limiteMinutos = duracionDirectaMinutos.HasValue
-                    ? (int)(duracionDirectaMinutos.Value * 1.5)
-                    : 12 * 60;
+            // Traemos TODOS los tramos útiles de una sola vez:
+            // - salen del origen o de cualquier aeropuerto intermedio (no el destino final como origen)
+            // - llegan al destino o a cualquier aeropuerto intermedio (no el origen como destino)
+            // Esto es equivalente a lo que hace BuscarTramosDesdeLista en VueloRepository
+            string sqlTodos = $@"
+                        SELECT
+                    v.ID, v.Fecha, v.HoraSalida, v.HoraLlegada, v.FechaLlegada,
+                    r.OrigenID, r.DestinoID, r.DuracionEstimada,
+                    v.BoletosTurista, v.BoletosEjecutivo
+                FROM Vuelo v
+                INNER JOIN Ruta   r ON r.ID = v.RutaID
+                INNER JOIN Estado e ON e.ID = v.EstadoID
+                WHERE v.Fecha  >= CAST(GETDATE() AS DATE)
+                  AND e.Estatus = 'A tiempo'
+                  AND r.OrigenID != @destinoId
+                  {filtroClase}
+                ORDER BY v.Fecha, v.HoraSalida";
 
-                // 2. Traer tramos 1: salen del origen hacia cualquier escala (no el destino final)
-                //    y tramos 2: llegan al destino desde cualquier escala (no el origen)
-                //    para el mismo día y el día siguiente (igual que VueloRepository)
-                string filtroClaseT1 = claseId == 1
-                    ? "AND v.BoletosTurista   >= @cantidadPersonas"
-                    : claseId == 2
-                        ? "AND v.BoletosEjecutivo >= @cantidadPersonas"
-                        : "AND (v.BoletosTurista >= @cantidadPersonas OR v.BoletosEjecutivo >= @cantidadPersonas)";
-
-                string sqlTramos = $@"
-            SELECT
-                v.ID, v.Fecha, v.HoraSalida, v.HoraLlegada, v.FechaLlegada,
-                r.OrigenID, r.DestinoID, r.DuracionEstimada,
-                v.BoletosTurista, v.BoletosEjecutivo
-            FROM Vuelo v
-            INNER JOIN Ruta   r ON r.ID = v.RutaID
-            INNER JOIN Estado e ON e.ID = v.EstadoID
-            WHERE v.Fecha IN (@fecha, @fechaSiguiente)
-              AND e.Estatus = 'A tiempo'
-              AND (
-                  (r.OrigenID = @origenId  AND r.DestinoID != @destinoId)
-               OR (r.DestinoID = @destinoId AND r.OrigenID  != @origenId)
-              )
-              {filtroClaseT1}
-            ORDER BY v.Fecha, v.HoraSalida";
-
-                // Recopilar fechas candidatas (vuelos directos ya obtenidos + futuras)
-                // Necesitamos verificar por cada fecha candidata de tramo1
-                // Estrategia: traer TODOS los tramos válidos de los próximos días y combinarlos en C#
-
-                string sqlTodosTramos = $@"
-            SELECT
-                v.ID, v.Fecha, v.HoraSalida, v.HoraLlegada, v.FechaLlegada,
-                r.OrigenID, r.DestinoID, r.DuracionEstimada,
-                v.BoletosTurista, v.BoletosEjecutivo
-            FROM Vuelo v
-            INNER JOIN Ruta   r ON r.ID = v.RutaID
-            INNER JOIN Estado e ON e.ID = v.EstadoID
-            WHERE v.Fecha >= CAST(GETDATE() AS DATE)
-              AND e.Estatus = 'A tiempo'
-              AND (
-                  (r.OrigenID  = @origenId  AND r.DestinoID != @destinoId)
-               OR (r.DestinoID = @destinoId AND r.OrigenID  != @origenId)
-              )
-              {filtroClaseT1}
-            ORDER BY v.Fecha, v.HoraSalida";
-
-                // Estructura auxiliar para los tramos
-                var tramos = new List<(int Id, DateTime Fecha, TimeSpan HoraSalida, TimeSpan HoraLlegada,
+            // (int Id, DateTime Fecha, TimeSpan HoraSalida, TimeSpan HoraLlegada,
+            //  DateTime FechaLlegada, int OrigenId, int DestinoId, int DuracionMinutos,
+            //  int? BolTurista, int? BolEjecutiva)
+            var todosTramos = new List<(int Id, DateTime Fecha, TimeSpan HoraSalida, TimeSpan HoraLlegada,
                                         DateTime FechaLlegada, int OrigenId, int DestinoId,
                                         int DuracionMinutos, int? BolTurista, int? BolEjecutiva)>();
 
-                using (var cmd = new SqlCommand(sqlTodosTramos, connection))
-                {
-                    cmd.Parameters.AddWithValue("@origenId", origenId.Value);
-                    cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
-                    cmd.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
+            using (var cmd = new SqlCommand(sqlTodos, connection))
+            {
+                cmd.Parameters.AddWithValue("@cantidadPersonas", cantidadPersonas);
+                cmd.Parameters.AddWithValue("@origenId", origenId.Value);
+                cmd.Parameters.AddWithValue("@destinoId", destinoId.Value);
 
-                    using var reader = await cmd.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                    {
-                        tramos.Add((
-                            Id: reader.GetInt32(0),
-                            Fecha: reader.GetDateTime(1),
-                            HoraSalida: reader.IsDBNull(2) ? TimeSpan.Zero : reader.GetTimeSpan(2),
-                            HoraLlegada: reader.IsDBNull(3) ? TimeSpan.Zero : reader.GetTimeSpan(3),
-                            FechaLlegada: reader.GetDateTime(4),
-                            OrigenId: reader.GetInt32(5),
-                            DestinoId: reader.GetInt32(6),
-                            DuracionMinutos: reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
-                            BolTurista: reader.IsDBNull(8) ? (int?)null : reader.GetInt32(8),
-                            BolEjecutiva: reader.IsDBNull(9) ? (int?)null : reader.GetInt32(9)
-                        ));
-                    }
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    todosTramos.Add((
+                        Id: reader.GetInt32(0),
+                        Fecha: reader.GetDateTime(1),
+                        HoraSalida: reader.IsDBNull(2) ? TimeSpan.Zero : reader.GetTimeSpan(2),
+                        HoraLlegada: reader.IsDBNull(3) ? TimeSpan.Zero : reader.GetTimeSpan(3),
+                        FechaLlegada: reader.GetDateTime(4),
+                        OrigenId: reader.GetInt32(5),
+                        DestinoId: reader.GetInt32(6),
+                        DuracionMinutos: reader.IsDBNull(7) ? 0 : reader.GetInt32(7),
+                        BolTurista: reader.IsDBNull(8) ? (int?)null : reader.GetInt32(8),
+                        BolEjecutiva: reader.IsDBNull(9) ? (int?)null : reader.GetInt32(9)
+                    ));
                 }
+            }
 
-                var tramos1 = tramos.Where(t => t.OrigenId == origenId.Value && t.DestinoId != destinoId.Value).ToList();
-                var tramos2 = tramos.Where(t => t.DestinoId == destinoId.Value && t.OrigenId != origenId.Value).ToList();
+            // Indexamos por OrigenId para no hacer Where en cada iteración del BFS
+            var tramosPorOrigen = todosTramos
+                .GroupBy(t => t.OrigenId)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
-                var combinacionesVistas = new HashSet<string>();
+            // BFS: cada camino activo es (FechaInicioViaje, FechaLlegadaUltimoTramo, HoraLlegadaUltimoTramo,
+            //                             DuracionVueloAcumulada, UltimoDestinoId, AeropuertosVisitados,
+            //                             BolTurista, BolEjecutiva)
+            var caminosActivos = new List<(DateTime FechaInicio, DateTime FechaLlegada, TimeSpan HoraLlegada,
+                                           int DuracionAcumulada, int UltimoDestino,
+                                           HashSet<int> Visitados, int? BolTurista, int? BolEjecutiva)>();
 
-                foreach (var t1 in tramos1)
+            // Capa 0: tramos que salen del origen (excluimos destino final, igual que VueloRepository)
+            if (tramosPorOrigen.TryGetValue(origenId.Value, out var tramosIniciales))
+            {
+                foreach (var t in tramosIniciales.Where(t => t.DestinoId != destinoId.Value))
                 {
-                    foreach (var t2 in tramos2.Where(t => t.OrigenId == t1.DestinoId))
+                    if (t.DuracionMinutos > limiteMinutos) continue;
+
+                    caminosActivos.Add((
+                        FechaInicio: t.Fecha.Date,
+                        FechaLlegada: t.FechaLlegada,
+                        HoraLlegada: t.HoraLlegada,
+                        DuracionAcumulada: t.DuracionMinutos,
+                        UltimoDestino: t.DestinoId,
+                        Visitados: new HashSet<int> { origenId.Value, t.DestinoId },
+                        BolTurista: t.BolTurista,
+                        BolEjecutiva: t.BolEjecutiva
+                    ));
+                }
+            }
+
+            var combinacionesVistas = new HashSet<string>();
+
+            for (int escala = 1; escala <= maxEscalas && caminosActivos.Count > 0; escala++)
+            {
+                var siguienteCapa = new List<(DateTime FechaInicio, DateTime FechaLlegada, TimeSpan HoraLlegada,
+                                              int DuracionAcumulada, int UltimoDestino,
+                                              HashSet<int> Visitados, int? BolTurista, int? BolEjecutiva)>();
+
+                foreach (var camino in caminosActivos)
+                {
+                    if (!tramosPorOrigen.TryGetValue(camino.UltimoDestino, out var candidatos))
+                        continue;
+
+                    foreach (var tramo in candidatos)
                     {
-                        var llegadaT1 = t1.FechaLlegada.Date + t1.HoraLlegada;
-                        var salidaT2 = t2.Fecha.Date + t2.HoraSalida;
-
-                        int minutosEscala = (int)(salidaT2 - llegadaT1).TotalMinutes;
-
-                        // Regla: escala entre 1h y 12h
-                        if (minutosEscala < 60 || minutosEscala > 720)
+                        // Sin ciclos
+                        if (camino.Visitados.Contains(tramo.DestinoId) && tramo.DestinoId != destinoId.Value)
                             continue;
 
-                        int duracionTotal = t1.DuracionMinutos + t2.DuracionMinutos;
+                        // Validar escala: entre 1h y 12h
+                        var llegadaAnterior = camino.FechaLlegada.Date + camino.HoraLlegada;
+                        var salidaActual = tramo.Fecha.Date + tramo.HoraSalida;
+                        int minutosEscala = (int)(salidaActual - llegadaAnterior).TotalMinutes;
 
-                        // Regla: duración total no mayor a 1.5x la ruta directa
-                        if (duracionTotal > limiteMinutos)
-                            continue;
+                        if (minutosEscala < 60 || minutosEscala > 720) continue;
 
-                        // Regla: disponibilidad de boletos según clase
-                        int? dispTurista = t1.BolTurista.HasValue && t2.BolTurista.HasValue
-                            ? Math.Min(t1.BolTurista.Value, t2.BolTurista.Value) : null;
-                        int? dispEjecutiva = t1.BolEjecutiva.HasValue && t2.BolEjecutiva.HasValue
-                            ? Math.Min(t1.BolEjecutiva.Value, t2.BolEjecutiva.Value) : null;
+                        // Validar duración acumulada de vuelo (sin escalas)
+                        int nuevaDuracion = camino.DuracionAcumulada + tramo.DuracionMinutos;
+                        if (nuevaDuracion > limiteMinutos) continue;
+
+                        // Disponibilidad mínima entre tramos
+                        int? dispTurista = camino.BolTurista.HasValue && tramo.BolTurista.HasValue
+                            ? Math.Min(camino.BolTurista.Value, tramo.BolTurista.Value) : null;
+                        int? dispEjecutiva = camino.BolEjecutiva.HasValue && tramo.BolEjecutiva.HasValue
+                            ? Math.Min(camino.BolEjecutiva.Value, tramo.BolEjecutiva.Value) : null;
 
                         if (claseId == 1 && (dispTurista == null || dispTurista < cantidadPersonas)) continue;
                         if (claseId == 2 && (dispEjecutiva == null || dispEjecutiva < cantidadPersonas)) continue;
@@ -497,19 +506,40 @@ namespace Aerolinea.API.Repositories
                             (dispTurista == null || dispTurista < cantidadPersonas) &&
                             (dispEjecutiva == null || dispEjecutiva < cantidadPersonas)) continue;
 
-                        string key = $"{t1.Id}-{t2.Id}";
-                        if (!combinacionesVistas.Add(key))
-                            continue;
+                        // Clave única para no repetir combinaciones
+                        string key = $"{camino.FechaInicio:yyyyMMdd}-{camino.UltimoDestino}-{tramo.Id}";
+                        if (!combinacionesVistas.Add(key)) continue;
 
-                        // La fecha que le interesa al calendario es la del primer tramo
-                        fechas.Add(t1.Fecha.Date);
+                        // Si llegamos al destino final, registramos la fecha de inicio del viaje
+                        if (tramo.DestinoId == destinoId.Value)
+                        {
+                            fechas.Add(camino.FechaInicio);
+                            continue;
+                        }
+
+                        // Si no, seguimos expandiendo
+                        if (escala < maxEscalas)
+                        {
+                            var nuevosVisitados = new HashSet<int>(camino.Visitados) { tramo.DestinoId };
+                            siguienteCapa.Add((
+                                FechaInicio: camino.FechaInicio,
+                                FechaLlegada: tramo.FechaLlegada,
+                                HoraLlegada: tramo.HoraLlegada,
+                                DuracionAcumulada: nuevaDuracion,
+                                UltimoDestino: tramo.DestinoId,
+                                Visitados: nuevosVisitados,
+                                BolTurista: dispTurista,
+                                BolEjecutiva: dispEjecutiva
+                            ));
+                        }
                     }
                 }
+
+                caminosActivos = siguienteCapa;
             }
 
             return fechas.OrderBy(f => f).ToList();
         }
-
         // ── CIUDADES / PAÍSES ─────────────────────────────────────────────
 
         public async Task<List<CiudadDTO>> ObtenerCiudades()
@@ -592,7 +622,8 @@ namespace Aerolinea.API.Repositories
 
             return Convert.ToInt32(await commandCrear.ExecuteScalarAsync());
         }
-        // ── Helper: verifica si una columna existe en la tabla ────────────
+
+
         private static async Task<bool> ColumnaExiste(SqlConnection connection, string tabla, string columna)
         {
             var query = @"

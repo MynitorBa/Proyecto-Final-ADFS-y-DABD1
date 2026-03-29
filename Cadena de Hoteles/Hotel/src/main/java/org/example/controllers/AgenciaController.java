@@ -14,9 +14,6 @@ public class AgenciaController {
 
     public void registerRoutes(Javalin app) {
 
-        // ════════════════════════════════════════════════════
-        //  WEBSERVICE — rutas accesibles solo por rol 3
-        // ════════════════════════════════════════════════════
 
         // GET /webservice/agencias
         app.get("/webservice/agencias", ctx -> {

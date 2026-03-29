@@ -78,7 +78,7 @@ public class Main {
         //agencia
         new CancelacionAgenciaController().registerRoutes(app);
         new ReservacionAgenciaController().registerRoutes(app);
-        //new BusquedaAgenciaController().registerRoutes(app);
+        new BusquedaAgenciaController().registerRoutes(app);
         new PagoAgenciaController().registerRoutes(app);
 
 
