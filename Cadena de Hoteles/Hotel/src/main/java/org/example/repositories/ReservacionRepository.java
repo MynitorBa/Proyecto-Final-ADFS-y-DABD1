@@ -10,11 +10,14 @@ import java.util.List;
 public class ReservacionRepository {
 
     public double[] obtenerPrecios(int habitacionId) {
-        String sql = "SELECT Precio_por_Noche, Precio_por_Persona, Capacidad_Maxima FROM Habitacion WHERE ID = ?";
+        String sql = "SELECT t.PRECIONOCHE, t.PRECIOPERSONA, t.CAPACIDADMAXIMA " +
+                "FROM Habitacion h " +
+                "JOIN TipoHabitacion t ON h.TIPOHABITACIONID = t.ID " +
+                "WHERE h.ID = ?";
         List<double[]> result = DatabaseManager.executeQuery(sql, rs -> new double[]{
-                rs.getDouble("Precio_por_Noche"),
-                rs.getDouble("Precio_por_Persona"),
-                rs.getDouble("Capacidad_Maxima")
+                rs.getDouble("PRECIONOCHE"),
+                rs.getDouble("PRECIOPERSONA"),
+                rs.getDouble("CAPACIDADMAXIMA")
         }, habitacionId);
 
         if (result.isEmpty()) throw new RuntimeException("Habitación no encontrada: " + habitacionId);
@@ -96,17 +99,18 @@ public class ReservacionRepository {
                 "dr.ID AS DetalleID, dr.HabitacionID, dr.FechaCheckIn, dr.FechaCheckOut, " +
                 "dr.CantidadPersonas, dr.Total AS TotalDetalle, " +
                 "h.Descripcion AS DescripcionHabitacion, " +
-                "t.nombre AS TipoHabitacion, " +
-                "c.Tipo_de_clase AS TipoCama, " +
+                "h.NUMEROHABITACION, " +
+                "t.NOMBRE AS TipoHabitacion, " +
+                "c.TIPO_DE_CLASE AS TipoCama, " +
                 "hot.ID AS HotelID, " +
                 "hot.Nombre AS NombreHotel " +
                 "FROM Reservacion r " +
-                "JOIN EstadoReserva      er  ON r.EstadoID          = er.ID " +
-                "JOIN DetallesReservacion dr  ON dr.ReservacionID   = r.ID " +
-                "JOIN Habitacion          h   ON dr.HabitacionID    = h.ID " +
-                "JOIN TipoHabitacion      t   ON h.TipoHabitacionID = t.ID " +
-                "JOIN Cama                c   ON h.CamaID           = c.ID " +
-                "JOIN Hotel               hot ON h.HotelID          = hot.ID " +
+                "JOIN EstadoReserva       er  ON r.EstadoID           = er.ID " +
+                "JOIN DetallesReservacion dr  ON dr.ReservacionID     = r.ID " +
+                "JOIN Habitacion          h   ON dr.HabitacionID      = h.ID " +
+                "JOIN TipoHabitacion      t   ON h.TIPOHABITACIONID   = t.ID " +
+                "JOIN Cama                c   ON t.TIPOCAMAID         = c.ID " +
+                "JOIN Hotel               hot ON h.HOTELID            = hot.ID " +
                 "WHERE r.Usuario_ID = ? " +
                 "ORDER BY r.Fecha_Creacion DESC, r.ID, dr.ID";
 
@@ -127,6 +131,7 @@ public class ReservacionRepository {
             dto.setCantidadPersonas(rs.getInt("CantidadPersonas"));
             dto.setTotalDetalle(rs.getDouble("TotalDetalle"));
             dto.setDescripcionHabitacion(rs.getString("DescripcionHabitacion"));
+            dto.setNumeroHabitacion(rs.getString("NUMEROHABITACION"));
             dto.setTipoHabitacion(rs.getString("TipoHabitacion"));
             dto.setTipoCama(rs.getString("TipoCama"));
             dto.setHotelId(rs.getInt("HotelID"));

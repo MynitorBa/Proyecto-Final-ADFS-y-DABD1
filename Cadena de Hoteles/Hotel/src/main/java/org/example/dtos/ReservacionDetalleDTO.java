@@ -15,6 +15,7 @@ public class ReservacionDetalleDTO {
     // Detalle de habitación
     private int    detalleId;
     private int    habitacionId;
+    private String numeroHabitacion;
     private String fechaCheckIn;
     private String fechaCheckOut;
     private int    cantidadPersonas;
@@ -60,6 +61,9 @@ public class ReservacionDetalleDTO {
 
     public int getHabitacionId() { return habitacionId; }
     public void setHabitacionId(int habitacionId) { this.habitacionId = habitacionId; }
+
+    public String getNumeroHabitacion() { return numeroHabitacion; }
+    public void setNumeroHabitacion(String numeroHabitacion) { this.numeroHabitacion = numeroHabitacion; }
 
     public String getFechaCheckIn() { return fechaCheckIn; }
     public void setFechaCheckIn(String fechaCheckIn) { this.fechaCheckIn = fechaCheckIn; }

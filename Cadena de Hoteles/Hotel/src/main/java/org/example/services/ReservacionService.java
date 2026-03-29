@@ -29,11 +29,27 @@ public class ReservacionService {
 
             LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
             LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
-            long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
+            LocalDate hoy      = LocalDate.now();
 
-            if (dias <= 0) throw new IllegalArgumentException(
-                    "Las fechas de la habitación " + item.getHabitacionId() + " son inválidas"
-            );
+            // Fechas no pueden ser en el pasado
+            if (checkIn.isBefore(hoy)) {
+                throw new IllegalArgumentException(
+                        "La fecha de check-in no puede ser anterior a hoy"
+                );
+            }
+            if (checkOut.isBefore(hoy)) {
+                throw new IllegalArgumentException(
+                        "La fecha de check-out no puede ser anterior a hoy"
+                );
+            }
+
+            // Check-out debe ser al menos 1 día después del check-in
+            long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
+            if (dias < 1) {
+                throw new IllegalArgumentException(
+                        "La fecha de check-out debe ser al menos 1 día después del check-in"
+                );
+            }
 
             Date fechaCheckIn  = Date.valueOf(checkIn);
             Date fechaCheckOut = Date.valueOf(checkOut);
@@ -69,7 +85,7 @@ public class ReservacionService {
             totalGeneral += (dias * precioPorNoche) + (personasExtra * dias * precioPorPersona);
         }
 
-        String noReservacion  = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String noReservacion      = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
         Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
 
@@ -84,13 +100,13 @@ public class ReservacionService {
             LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
             long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
 
-            double[] precios = reservacionRepository.obtenerPrecios(item.getHabitacionId());
+            double[] precios        = reservacionRepository.obtenerPrecios(item.getHabitacionId());
             double precioPorNoche   = precios[0];
             double precioPorPersona = precios[1];
             int capacidadMaxima     = (int) precios[2];
 
             int personasSolicitadas = item.getCantidadPersonas();
-            int personasExtra = Math.max(0, personasSolicitadas - capacidadMaxima);
+            int personasExtra       = Math.max(0, personasSolicitadas - capacidadMaxima);
 
             double totalHabitacion = (dias * precioPorNoche) + (personasExtra * dias * precioPorPersona);
 
@@ -120,7 +136,6 @@ public class ReservacionService {
     public List<ReservacionDetalleDTO> obtenerReservaciones(int usuarioId) {
         List<ReservacionDetalleDTO> reservaciones = reservacionRepository.obtenerReservacionesDeUsuario(usuarioId);
 
-        // Agregar IDs de imágenes a cada detalle
         for (ReservacionDetalleDTO dto : reservaciones) {
             dto.setImagenesHotelIds(reservacionRepository.obtenerImagenesHotel(dto.getHotelId()));
             dto.setImagenesHabitacionIds(reservacionRepository.obtenerImagenesHabitacion(dto.getHabitacionId()));
