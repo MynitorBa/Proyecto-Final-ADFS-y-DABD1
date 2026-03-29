@@ -1,0 +1,37 @@
+# Binarios
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/agencia-viajes
+/server
+
+# Archivos de test
+*.test
+*.out
+
+# Dependencias
+vendor/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cobertura de tests
+coverage.out
+coverage.html
