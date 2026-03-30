@@ -8,6 +8,8 @@ namespace Aerolinea.API.Repositories
     public class AgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
+        public SqlConnection CrearConexion() => _connectionFactory.CreateConnection();
+
 
         public AgenciaRepository(DbConnectionFactory connectionFactory)
         {
@@ -143,6 +145,19 @@ namespace Aerolinea.API.Repositories
                 };
             }
             return null;
+        }
+
+        public async Task<decimal> ObtenerDescuento(int agenciaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT PorcentajeDescuento FROM Agencia WHERE ID = @Id", connection);
+            command.Parameters.AddWithValue("@Id", agenciaId);
+
+            var result = await command.ExecuteScalarAsync();
+            return result == null ? 0 : Convert.ToDecimal(result);
         }
     }
 }

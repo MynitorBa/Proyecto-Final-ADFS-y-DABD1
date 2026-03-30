@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Aerolinea.API.Controllers
 {
     [ApiController]
-    [Route("api/rutas")]
+    [Route("api/rutas-agencia")]
     [ServiceFilter(typeof(AgenciaAuthMiddleware))]
     public class RutaAgenciaController : ControllerBase
     {
@@ -26,7 +26,10 @@ namespace Aerolinea.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                // Temporal para debug
+                Console.WriteLine($"[RUTAS ERROR] {ex.Message}");
+                Console.WriteLine($"[RUTAS ERROR] {ex.StackTrace}");
+                return StatusCode(500, new { message = ex.Message });
             }
         }
     }

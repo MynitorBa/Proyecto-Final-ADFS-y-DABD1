@@ -37,6 +37,7 @@ func main() {
 	loginService := services.NewLoginService(db)
 	proveedorService := services.NewProveedorService(db)
 	handshakeService := services.NewHandshakeService(db, cfg)
+	catalogoService := services.NewCatalogoService(db, ubicacionService)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -44,6 +45,7 @@ func main() {
 	sesionController := controllers.NewSesionController()
 	proveedorController := controllers.NewProveedorController(proveedorService)
 	handshakeController := controllers.NewHandshakeController(handshakeService)
+	catalogoController := controllers.NewCatalogoController(catalogoService)
 
 	api := router.Group("/api")
 	{
@@ -66,6 +68,12 @@ func main() {
 			middlewares.RolRequerido(2), // solo administradores
 			proveedorController.CrearProveedor,
 		)
+		protegido.POST(
+			"/catalogo/actualizar",
+			middlewares.RolRequerido(2),
+			catalogoController.ActualizarCatalogo,
+		)
+
 		protegido.POST(
 			"/proveedores/:id/handshake",
 			middlewares.RolRequerido(2),

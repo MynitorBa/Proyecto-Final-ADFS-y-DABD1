@@ -21,11 +21,11 @@ namespace Aerolinea.API.Repositories
             var query = @"
                 SELECT 
                     r.ID,
-                    co.Nombre  AS CiudadOrigen,
-                    po.Nombre  AS PaisOrigen,
-                    cd.Nombre  AS CiudadDestino,
-                    pd.Nombre  AS PaisDestino,
-                    r.Duracion
+                    co.Nombre          AS CiudadOrigen,
+                    po.Nombre          AS PaisOrigen,
+                    cd.Nombre          AS CiudadDestino,
+                    pd.Nombre          AS PaisDestino,
+                    r.DuracionEstimada
                 FROM Ruta r
                 INNER JOIN Aeropuerto ao ON ao.ID = r.OrigenID
                 INNER JOIN Aeropuerto ad ON ad.ID = r.DestinoID
