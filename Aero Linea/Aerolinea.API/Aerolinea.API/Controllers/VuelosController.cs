@@ -16,9 +16,7 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  NUEVO: GET api/vuelos/busqueda-general?query=madrid
-        // ═══════════════════════════════════════════════════════════
+
         [HttpGet("busqueda-general")]
         public async Task<IActionResult> BusquedaGeneral([FromQuery] string query)
         {
@@ -36,9 +34,7 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        //  POST api/vuelos/buscar (sin cambios)
-        // ═══════════════════════════════════════════════════════════
+
         [HttpPost("buscar")]
         public async Task<IActionResult> BuscarVuelos([FromBody] BuscarVueloDTO dto)
         {
