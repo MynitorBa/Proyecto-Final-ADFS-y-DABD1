@@ -57,6 +57,9 @@ public class PdfHelper {
 
     private static final float GAP = 22f;
 
+    // Número de columnas de la tabla de habitaciones (usado en colspans)
+    private static final int COLS = 9;
+
     public static byte[] generarPdfReservacion(List<ReservacionDetalleDTO> detalles, Object[] factura) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdf = new PdfDocument(new PdfWriter(baos));
@@ -245,37 +248,49 @@ public class PdfHelper {
         outer.addCell(titleBar(esF ? "CONCEPTOS Y SERVICIOS" : "DETALLE DE HABITACIONES"));
 
         Cell tableWrap = new Cell().setBorder(Border.NO_BORDER).setPadding(0);
-        Table t = new Table(UnitValue.createPercentArray(new float[]{5, 22, 15, 8, 8, 14, 14, 14}))
+
+        // ── 9 columnas: se añadió "Nro. Hab." entre "Habitación" y "Cama" ──
+        Table t = new Table(UnitValue.createPercentArray(new float[]{5, 19, 10, 13, 7, 7, 13, 13, 13}))
                 .setWidth(UnitValue.createPercentValue(100));
 
-        String[]        hs = {"#", "Habitación", "Cama", "Noches", "Pers.", "Check-in", "Check-out", "Subtotal"};
+        String[]        hs = {"#", "Habitación", "Nro. Hab.", "Cama", "Noches", "Pers.", "Check-in", "Check-out", "Subtotal"};
         TextAlignment[] ta = {
-                TextAlignment.CENTER, TextAlignment.LEFT,   TextAlignment.LEFT,
-                TextAlignment.CENTER, TextAlignment.CENTER,
-                TextAlignment.CENTER, TextAlignment.CENTER, TextAlignment.RIGHT
+                TextAlignment.CENTER,   // #
+                TextAlignment.LEFT,     // Habitación
+                TextAlignment.CENTER,   // Nro. Hab.  ← NUEVO
+                TextAlignment.LEFT,     // Cama
+                TextAlignment.CENTER,   // Noches
+                TextAlignment.CENTER,   // Pers.
+                TextAlignment.CENTER,   // Check-in
+                TextAlignment.CENTER,   // Check-out
+                TextAlignment.RIGHT     // Subtotal
         };
         for (int i = 0; i < hs.length; i++) t.addHeaderCell(thC(hs[i], ta[i]));
 
         for (int i = 0; i < detalles.size(); i++) {
             ReservacionDetalleDTO d = detalles.get(i);
             Color bg = i % 2 == 0 ? BG_WHITE : BG_ROW;
-            t.addCell(tdC(String.valueOf(i + 1),                    TextAlignment.CENTER, bg, false));
-            t.addCell(tdC(nn(d.getTipoHabitacion()),                 TextAlignment.LEFT,   bg, false));
-            t.addCell(tdC(nn(d.getTipoCama()),                       TextAlignment.LEFT,   bg, false));
+            t.addCell(tdC(String.valueOf(i + 1),                            TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(nn(d.getTipoHabitacion()),                         TextAlignment.LEFT,   bg, false));
+            t.addCell(tdC(nn(d.getNumeroHabitacion()),                       TextAlignment.CENTER, bg, false)); // ← NUEVO
+            t.addCell(tdC(nn(d.getTipoCama()),                               TextAlignment.LEFT,   bg, false));
             t.addCell(tdC(nights(d.getFechaCheckIn(), d.getFechaCheckOut()), TextAlignment.CENTER, bg, false));
-            t.addCell(tdC(String.valueOf(d.getCantidadPersonas()),   TextAlignment.CENTER, bg, false));
-            t.addCell(tdC(nn(d.getFechaCheckIn()),                   TextAlignment.CENTER, bg, false));
-            t.addCell(tdC(nn(d.getFechaCheckOut()),                  TextAlignment.CENTER, bg, false));
-            t.addCell(tdC("$ " + fmt(d.getTotalDetalle()),           TextAlignment.RIGHT,  bg, true));
+            t.addCell(tdC(String.valueOf(d.getCantidadPersonas()),           TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(nn(d.getFechaCheckIn()),                           TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(nn(d.getFechaCheckOut()),                          TextAlignment.CENTER, bg, false));
+            t.addCell(tdC("$ " + fmt(d.getTotalDetalle()),                   TextAlignment.RIGHT,  bg, true));
         }
 
-        t.addCell(new Cell(1, 8).setHeight(1f).setBackgroundColor(BDR)
+        // Separador horizontal — abarca COLS columnas
+        t.addCell(new Cell(1, COLS).setHeight(1f).setBackgroundColor(BDR)
                 .setBorder(Border.NO_BORDER).setPadding(0));
 
+        // Sub-totales por habitación (solo si hay más de una)
         if (detalles.size() > 1) {
             for (int i = 0; i < detalles.size(); i++) {
                 ReservacionDetalleDTO d = detalles.get(i);
-                t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
+                // Celda vacía ocupa las primeras (COLS - 3) columnas
+                t.addCell(new Cell(1, COLS - 3).setBorder(Border.NO_BORDER)
                         .setBackgroundColor(BG_WHITE).setPadding(0));
                 t.addCell(new Cell(1, 2)
                         .add(new Paragraph("Hab. " + (i + 1) + "  " + nn(d.getTipoHabitacion()))
@@ -295,13 +310,15 @@ public class PdfHelper {
                         .setBorderRight(Border.NO_BORDER)
                         .setBorderBottom(new SolidBorder(BDR, 0.5f)));
             }
-            t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
+            // Línea divisoria antes del total general
+            t.addCell(new Cell(1, COLS - 3).setBorder(Border.NO_BORDER)
                     .setBackgroundColor(BG_WHITE).setPadding(0));
             t.addCell(new Cell(1, 3).setHeight(1f).setBackgroundColor(BDR_DARK)
                     .setBorder(Border.NO_BORDER).setPadding(0));
         }
 
-        t.addCell(new Cell(1, 5).setBorder(Border.NO_BORDER)
+        // Fila TOTAL RESERVACIÓN — misma lógica de colspan
+        t.addCell(new Cell(1, COLS - 3).setBorder(Border.NO_BORDER)
                 .setBackgroundColor(BG_WHITE).setPadding(0));
         t.addCell(new Cell(1, 2)
                 .add(new Paragraph("TOTAL RESERVACIÓN")

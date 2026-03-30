@@ -26,8 +26,15 @@ public class HotelRepository {
         );
     }
 
+    public int crearAmenidad(String nombre) {
+        return DatabaseManager.executeInsertReturnId(
+                "INSERT INTO Amenidad (Nombre) VALUES (?)",
+                "ID", nombre.trim()
+        );
+    }
+
     // ════════════════════════════════════════════════════
-    //  HOTEL — listado, creación, edición, eliminación
+    //  HOTEL
     // ════════════════════════════════════════════════════
 
     public List<HotelAdminDTO> listarTodos() {
@@ -72,33 +79,17 @@ public class HotelRepository {
                 nombre, direccion, descripcion, rating, estadoId, hotelId);
     }
 
-    /** Elimina un hotel y TODOS sus datos asociados (imágenes, amenidades, habitaciones). */
     public void eliminarHotel(int hotelId) {
-        // 1) Eliminar imágenes de habitaciones del hotel
         DatabaseManager.executeUpdate(
                 "DELETE FROM ImagenHabitacion WHERE HabitacionID IN (SELECT ID FROM Habitacion WHERE HotelID=?)",
                 hotelId);
-
-        // 2) Eliminar habitaciones del hotel
-        DatabaseManager.executeUpdate(
-                "DELETE FROM Habitacion WHERE HotelID=?", hotelId);
-
-        // 3) Eliminar imágenes de amenidades del hotel
+        DatabaseManager.executeUpdate("DELETE FROM Habitacion WHERE HotelID=?", hotelId);
         DatabaseManager.executeUpdate(
                 "DELETE FROM ImagenHotelAmenidad WHERE HotelAmenidadID IN (SELECT ID FROM HotelAmenidad WHERE HotelID=?)",
                 hotelId);
-
-        // 4) Eliminar amenidades del hotel
-        DatabaseManager.executeUpdate(
-                "DELETE FROM HotelAmenidad WHERE HotelID=?", hotelId);
-
-        // 5) Eliminar imágenes del hotel
-        DatabaseManager.executeUpdate(
-                "DELETE FROM ImagenHotel WHERE HotelID=?", hotelId);
-
-        // 6) Eliminar el hotel
-        DatabaseManager.executeUpdate(
-                "DELETE FROM Hotel WHERE ID=?", hotelId);
+        DatabaseManager.executeUpdate("DELETE FROM HotelAmenidad WHERE HotelID=?", hotelId);
+        DatabaseManager.executeUpdate("DELETE FROM ImagenHotel WHERE HotelID=?", hotelId);
+        DatabaseManager.executeUpdate("DELETE FROM Hotel WHERE ID=?", hotelId);
     }
 
     public boolean existe(int hotelId) {
@@ -117,7 +108,6 @@ public class HotelRepository {
     //  AMENIDADES DEL HOTEL
     // ════════════════════════════════════════════════════
 
-    /** Devuelve todas las amenidades asignadas a un hotel con sus ids de imagen. */
     public List<HotelAmenidadDTO> listarAmenidadesHotel(int hotelId) {
         String sql = """
                 SELECT ha.ID, ha.HotelID, ha.AmenidadID, a.Nombre AS AmenidadNombre, ha.Descripcion
@@ -137,7 +127,6 @@ public class HotelRepository {
         }, hotelId);
     }
 
-    /** Devuelve true si el hotel ya tiene esa amenidad asignada. */
     public boolean tieneAmenidad(int hotelId, int amenidadId) {
         List<Integer> r = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) FROM HotelAmenidad WHERE HotelID=? AND AmenidadID=?",
@@ -145,14 +134,12 @@ public class HotelRepository {
         return !r.isEmpty() && r.get(0) > 0;
     }
 
-    /** Inserta una amenidad en un hotel y devuelve el ID de HotelAmenidad generado. */
     public int agregarAmenidadHotel(int hotelId, int amenidadId, String descripcion) {
         return DatabaseManager.executeInsertReturnId(
                 "INSERT INTO HotelAmenidad (HotelID, AmenidadID, Descripcion) VALUES (?, ?, ?)",
                 "ID", hotelId, amenidadId, descripcion);
     }
 
-    /** Actualiza la descripción de una amenidad de hotel. */
     public void actualizarAmenidadHotel(int hotelAmenidadId, String descripcion) {
         DatabaseManager.executeUpdate(
                 "UPDATE HotelAmenidad SET Descripcion=? WHERE ID=?",
@@ -160,11 +147,9 @@ public class HotelRepository {
     }
 
     public void eliminarAmenidadHotel(int hotelAmenidadId) {
-        // Primero eliminar imágenes asociadas
         DatabaseManager.executeUpdate(
                 "DELETE FROM ImagenHotelAmenidad WHERE HotelAmenidadID=?", hotelAmenidadId);
-        DatabaseManager.executeUpdate(
-                "DELETE FROM HotelAmenidad WHERE ID=?", hotelAmenidadId);
+        DatabaseManager.executeUpdate("DELETE FROM HotelAmenidad WHERE ID=?", hotelAmenidadId);
     }
 
     public List<Integer> obtenerImagenesAmenidadIds(int hotelAmenidadId) {
@@ -204,22 +189,29 @@ public class HotelRepository {
     }
 
     // ════════════════════════════════════════════════════
-    //  HABITACIONES — listado, creación, edición, eliminación
+    //  HABITACIONES
     // ════════════════════════════════════════════════════
 
     public List<HabitacionAdminDTO> listarHabitacionesPorHotel(int hotelId) {
         String sql = """
-                SELECT h.ID, h.HotelID,
-                       h.TipoHabitacionID, t.Nombre AS TipoHabitacion,
-                       h.CamaID, c.Tipo_de_clase AS TipoCama,
-                       h.Precio_por_Persona, h.Precio_por_Noche,
-                       h.Capacidad_Maxima, h.Metros_Cuadrados,
+                SELECT h.ID,
+                       h.HotelID,
+                       h.TIPOHABITACIONID,
+                       t.NOMBRE          AS TipoHabitacion,
+                       h.NUMEROHABITACION,
+                       t.TIPOCAMAID      AS CamaID,
+                       c.TIPO_DE_CLASE   AS TipoCama,
+                       t.PRECIOPERSONA   AS Precio_por_Persona,
+                       t.PRECIONOCHE     AS Precio_por_Noche,
+                       t.CAPACIDADMAXIMA AS Capacidad_Maxima,
+                       t.METROSCUADRADOS AS Metros_Cuadrados,
                        h.Descripcion,
-                       h.Estado_ID, e.Tipo_de_clase AS Estado
+                       h.ESTADO_ID,
+                       e.TIPO_DE_CLASE   AS Estado
                 FROM   Habitacion       h
-                JOIN   TipoHabitacion   t ON h.TipoHabitacionID = t.ID
-                JOIN   Cama             c ON h.CamaID           = c.ID
-                JOIN   EstadoHabitacion e ON h.Estado_ID        = e.ID
+                JOIN   TipoHabitacion   t ON h.TIPOHABITACIONID = t.ID
+                JOIN   Cama             c ON t.TIPOCAMAID       = c.ID
+                JOIN   EstadoHabitacion e ON h.ESTADO_ID        = e.ID
                 WHERE  h.HotelID = ?
                 ORDER BY h.ID
                 """;
@@ -227,32 +219,39 @@ public class HotelRepository {
             HabitacionAdminDTO d = new HabitacionAdminDTO();
             d.setId(rs.getInt("ID"));
             d.setHotelId(rs.getInt("HotelID"));
-            d.setTipoHabitacionId(rs.getInt("TipoHabitacionID"));
+            d.setTipoHabitacionId(rs.getInt("TIPOHABITACIONID"));
             d.setTipoHabitacion(rs.getString("TipoHabitacion"));
-            d.setCamaId(rs.getInt("CamaID"));
+            d.setNumeroHabitacion(rs.getString("NUMEROHABITACION"));
             d.setTipoCama(rs.getString("TipoCama"));
             d.setPrecioPorPersona(rs.getDouble("Precio_por_Persona"));
             d.setPrecioPorNoche(rs.getDouble("Precio_por_Noche"));
             d.setCapacidadMaxima(rs.getInt("Capacidad_Maxima"));
             d.setMetrosCuadrados(rs.getDouble("Metros_Cuadrados"));
             d.setDescripcion(rs.getString("Descripcion"));
-            d.setEstadoId(rs.getInt("Estado_ID"));
+            d.setEstadoId(rs.getInt("ESTADO_ID"));
             d.setEstado(rs.getString("Estado"));
             return d;
         }, hotelId);
     }
 
-    public int crearHabitacion(int hotelId, int tipoHabitacionId, int camaId,
-                               double precioPorPersona, double precioPorNoche,
-                               int capacidadMaxima, double metrosCuadrados,
+    /**
+     * Crea una habitación y auto-asigna el NUMEROHABITACION
+     * basado en cuántas habitaciones ya existen en el hotel.
+     * Si hay 3 existentes, la nueva será "4".
+     */
+    public int crearHabitacion(int hotelId, int tipoHabitacionId,
                                String descripcion, int estadoId) {
-        String sqlHab = "INSERT INTO Habitacion " +
-                "(HotelID, TipoHabitacionID, CamaID, Precio_por_Persona, Precio_por_Noche, " +
-                " Capacidad_Maxima, Metros_Cuadrados, Descripcion, Estado_ID) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        return DatabaseManager.executeInsertReturnId(sqlHab, "ID",
-                hotelId, tipoHabitacionId, camaId, precioPorPersona, precioPorNoche,
-                capacidadMaxima, metrosCuadrados, descripcion, estadoId);
+        // Contar habitaciones actuales del hotel para asignar número correlativo
+        List<Integer> cnt = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) FROM Habitacion WHERE HotelID=?",
+                rs -> rs.getInt(1), hotelId);
+        int numero = (cnt.isEmpty() ? 0 : cnt.get(0)) + 1;
+
+        String sql = "INSERT INTO Habitacion " +
+                "(HotelID, TIPOHABITACIONID, NUMEROHABITACION, Descripcion, ESTADO_ID) " +
+                "VALUES (?, ?, ?, ?, ?)";
+        return DatabaseManager.executeInsertReturnId(sql, "ID",
+                hotelId, tipoHabitacionId, String.valueOf(numero), descripcion, estadoId);
     }
 
     public boolean existeHabitacion(int habitacionId) {
@@ -261,26 +260,19 @@ public class HotelRepository {
         return !r.isEmpty() && r.get(0) > 0;
     }
 
-    public void actualizarHabitacion(int habitacionId, int tipoHabitacionId, int camaId,
-                                     double precioPorPersona, double precioPorNoche,
-                                     int capacidadMaxima, double metrosCuadrados,
-                                     String descripcion, int estadoId) {
+    public void actualizarHabitacion(int habitacionId, int tipoHabitacionId,
+                                     String numeroHabitacion, String descripcion, int estadoId) {
         DatabaseManager.executeUpdate(
-                "UPDATE Habitacion SET TipoHabitacionID=?, CamaID=?, Precio_por_Persona=?, " +
-                        "Precio_por_Noche=?, Capacidad_Maxima=?, Metros_Cuadrados=?, Descripcion=?, Estado_ID=? " +
+                "UPDATE Habitacion " +
+                        "SET TIPOHABITACIONID=?, NUMEROHABITACION=?, Descripcion=?, ESTADO_ID=? " +
                         "WHERE ID=?",
-                tipoHabitacionId, camaId, precioPorPersona, precioPorNoche,
-                capacidadMaxima, metrosCuadrados, descripcion, estadoId, habitacionId);
+                tipoHabitacionId, numeroHabitacion, descripcion, estadoId, habitacionId);
     }
 
-    /** Elimina una habitación y todas sus imágenes asociadas. */
     public void eliminarHabitacion(int habitacionId) {
-        // 1) Eliminar imágenes de la habitación
         DatabaseManager.executeUpdate(
                 "DELETE FROM ImagenHabitacion WHERE HabitacionID=?", habitacionId);
-        // 2) Eliminar la habitación
-        DatabaseManager.executeUpdate(
-                "DELETE FROM Habitacion WHERE ID=?", habitacionId);
+        DatabaseManager.executeUpdate("DELETE FROM Habitacion WHERE ID=?", habitacionId);
     }
 
     // ════════════════════════════════════════════════════
@@ -332,56 +324,50 @@ public class HotelRepository {
                 """;
         return DatabaseManager.executeQuery(sql, rs -> {
             java.util.Map<String, Object> row = new java.util.LinkedHashMap<>();
-            row.put("id",           rs.getInt("ID"));
-            row.put("noReservacion",rs.getString("No_Reservacion"));
-            row.put("total",        rs.getDouble("Total"));
-            row.put("estado",       rs.getString("Estado").toLowerCase());
-            row.put("usuario",      rs.getString("Username"));
+            row.put("id",             rs.getInt("ID"));
+            row.put("noReservacion",  rs.getString("No_Reservacion"));
+            row.put("total",          rs.getDouble("Total"));
+            row.put("estado",         rs.getString("Estado").toLowerCase());
+            row.put("usuario",        rs.getString("Username"));
             row.put("nombreCompleto", rs.getString("UsuarioNombre") + " " + rs.getString("UsuarioApellido"));
-            row.put("hotel",        rs.getString("HotelNombre"));
-            row.put("checkIn",      rs.getDate("CheckIn") != null  ? rs.getDate("CheckIn").toString()  : null);
-            row.put("checkOut",     rs.getDate("CheckOut") != null ? rs.getDate("CheckOut").toString() : null);
-            row.put("fechaCreacion",rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null);
+            row.put("hotel",          rs.getString("HotelNombre"));
+            row.put("checkIn",        rs.getDate("CheckIn")  != null ? rs.getDate("CheckIn").toString()  : null);
+            row.put("checkOut",       rs.getDate("CheckOut") != null ? rs.getDate("CheckOut").toString() : null);
+            row.put("fechaCreacion",  rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null);
             return row;
         });
     }
 
     // ════════════════════════════════════════════════════
-    //  ADMIN — MÉTRICAS DEL DASHBOARD
+    //  ADMIN — MÉTRICAS
     // ════════════════════════════════════════════════════
 
     public java.util.Map<String, Object> obtenerMetricas() {
         java.util.Map<String, Object> metricas = new java.util.LinkedHashMap<>();
 
-        // Usuarios totales
         List<Integer> totalUsuarios = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) AS total FROM Usuario", rs -> rs.getInt("total"));
         metricas.put("totalUsuarios", totalUsuarios.isEmpty() ? 0 : totalUsuarios.get(0));
 
-        // Hoteles activos
         List<Integer> hotelesActivos = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) AS total FROM Hotel h JOIN Estado e ON h.EstadoID = e.ID WHERE LOWER(e.Estado) = 'activo'",
                 rs -> rs.getInt("total"));
         metricas.put("hotelesActivos", hotelesActivos.isEmpty() ? 0 : hotelesActivos.get(0));
 
-        // Reservas confirmadas activas
         List<Integer> reservasActivas = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) AS total FROM Reservacion r JOIN EstadoReserva er ON r.EstadoID = er.ID WHERE LOWER(TRIM(er.Estado)) = 'confirmada'",
                 rs -> rs.getInt("total"));
         metricas.put("reservasActivas", reservasActivas.isEmpty() ? 0 : reservasActivas.get(0));
 
-        // Reservas totales
         List<Integer> reservasTotales = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) AS total FROM Reservacion", rs -> rs.getInt("total"));
         metricas.put("reservasTotales", reservasTotales.isEmpty() ? 0 : reservasTotales.get(0));
 
-        // Ingresos totales (solo reservas confirmadas)
         List<Double> ingresosTotales = DatabaseManager.executeQuery(
                 "SELECT NVL(SUM(r.Total), 0) AS total FROM Reservacion r JOIN EstadoReserva er ON r.EstadoID = er.ID WHERE LOWER(TRIM(er.Estado)) = 'confirmada'",
                 rs -> rs.getDouble("total"));
         metricas.put("ingresosTotales", ingresosTotales.isEmpty() ? 0.0 : ingresosTotales.get(0));
 
-        // Conteos por estado de reserva
         List<java.util.Map<String, Object>> porEstado = DatabaseManager.executeQuery(
                 "SELECT LOWER(TRIM(er.Estado)) AS estado, COUNT(*) AS total FROM Reservacion r JOIN EstadoReserva er ON r.EstadoID = er.ID GROUP BY LOWER(TRIM(er.Estado))",
                 rs -> {
@@ -392,7 +378,6 @@ public class HotelRepository {
                 });
         metricas.put("reservasPorEstado", porEstado);
 
-        // Hoteles totales
         List<Integer> hotTotales = DatabaseManager.executeQuery(
                 "SELECT COUNT(*) AS total FROM Hotel", rs -> rs.getInt("total"));
         metricas.put("hotesTotales", hotTotales.isEmpty() ? 0 : hotTotales.get(0));

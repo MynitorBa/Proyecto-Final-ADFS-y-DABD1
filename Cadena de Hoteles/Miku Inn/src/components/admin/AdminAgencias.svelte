@@ -78,9 +78,12 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje ?? `Error ${res.status}`);
+
+      // Activa=1, Inactiva=2  (tabla EstadoAgencia)
+      const estadoTexto = Number(editAgencia.estadoId) === 1 ? 'Activa' : 'Inactiva';
       agencias = agencias.map(a =>
         a.id === agenciaEditando.id
-          ? { ...a, ...editAgencia, estado: Number(editAgencia.estadoId) === 1 ? 'Activo' : 'Cerrado' }
+          ? { ...a, ...editAgencia, estado: estadoTexto }
           : a
       );
       mensajeAgencia = { tipo: 'ok', texto: 'Agencia actualizada correctamente.' };
@@ -182,9 +185,10 @@
         </div>
         <div class="adm__field">
           <label for="ea-estado">Estado</label>
+          <!-- EstadoAgencia: 1=Activa, 2=Inactiva -->
           <select id="ea-estado" bind:value={editAgencia.estadoId}>
-            <option value={1}>Activo</option>
-            <option value={2}>Cerrado</option>
+            <option value={1}>Activa</option>
+            <option value={2}>Inactiva</option>
           </select>
         </div>
       </div>

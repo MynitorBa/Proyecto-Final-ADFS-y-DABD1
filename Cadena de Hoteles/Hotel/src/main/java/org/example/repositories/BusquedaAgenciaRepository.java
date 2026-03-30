@@ -2,7 +2,6 @@ package org.example.repositories;
 
 import org.example.data.DatabaseManager;
 import org.example.dtos.AmenidadHotelDTO;
-import org.example.dtos.HabitacionDTO;
 import org.example.dtos.HotelResultadoDTO;
 import org.example.dtos.TipoHabitacionResultadoDTO;
 import org.example.dtos.HabitacionResumenDTO;
@@ -12,7 +11,7 @@ import java.util.List;
 
 public class BusquedaAgenciaRepository {
 
-    // -------------------------Obtener descuento de la agencia asociada al usuario webservice ------------
+    // ── Descuento de la agencia asociada al usuario webservice ────────────────
 
     public Double obtenerDescuentoAgencia(int usuarioId) {
         String sql = "SELECT PorcentajeDescuento FROM Agencia " +
@@ -24,7 +23,7 @@ public class BusquedaAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    //---------------------Buscar ciudad -------------------------------------------
+    // ── Buscar ciudad ─────────────────────────────────────────────────────────
 
     public Integer buscarCiudadId(String nombreCiudad, String nombrePais) {
         String sql = "SELECT c.ID FROM Ciudad c JOIN Pais p ON c.Pais_ID = p.ID " +
@@ -35,7 +34,7 @@ public class BusquedaAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // --------------------Guardar búsqueda — tipo 2 (Agencia) --------------------------------
+    // ── Guardar búsqueda — tipo 2 (Agencia) ──────────────────────────────────
 
     public void guardarBusqueda(int ciudadId, Date fechaCheckIn, Date fechaCheckOut,
                                 int cantidadPersonas, int usuarioId) {
@@ -45,7 +44,7 @@ public class BusquedaAgenciaRepository {
         DatabaseManager.executeUpdate(sql, ciudadId, fechaCheckIn, fechaCheckOut, cantidadPersonas, usuarioId);
     }
 
-    // ------------------------------ Hoteles activos --------------------------------------------
+    // ── Hoteles activos en una ciudad ─────────────────────────────────────────
 
     public List<HotelResultadoDTO> buscarHotelesPorCiudad(int ciudadId) {
         String sql = "SELECT h.ID, h.Nombre, h.Direccion, h.Descripcion, h.Rating, " +
@@ -97,44 +96,8 @@ public class BusquedaAgenciaRepository {
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelAmenidadId);
     }
 
-    public List<HabitacionDTO> buscarHabitacionesDisponibles(int hotelId, int cantidadPersonas,
-                                                             Date fechaCheckIn, Date fechaCheckOut) {
-        String sql = "SELECT h.ID, h.Precio_por_Persona, h.Precio_por_Noche, " +
-                "h.Capacidad_Maxima, h.Metros_Cuadrados, h.Descripcion, " +
-                "t.nombre AS TipoHabitacion, " +
-                "c.Tipo_de_clase AS TipoCama, " +
-                "e.Tipo_de_clase AS Estado " +
-                "FROM Habitacion h " +
-                "JOIN TipoHabitacion   t ON h.TipoHabitacionID = t.ID " +
-                "JOIN Cama             c ON h.CamaID           = c.ID " +
-                "JOIN EstadoHabitacion e ON h.Estado_ID        = e.ID " +
-                "WHERE h.HotelID = ? " +
-                "AND h.Capacidad_Maxima >= ? " +
-                "AND LOWER(TRIM(e.Tipo_de_clase)) = 'activa' " +
-                "AND h.ID NOT IN (" +
-                "  SELECT dr.HabitacionID " +
-                "  FROM DetallesReservacion dr " +
-                "  JOIN Reservacion r ON dr.ReservacionID = r.ID " +
-                "  JOIN EstadoReserva er ON r.EstadoID = er.ID " +
-                "  WHERE LOWER(TRIM(er.Estado)) IN ('pendiente', 'confirmada') " +
-                "  AND dr.FechaCheckIn  < ? " +
-                "  AND dr.FechaCheckOut > ? " +
-                ")";
-
-        return DatabaseManager.executeQuery(sql, rs -> {
-            HabitacionDTO dto = new HabitacionDTO();
-            dto.setId(rs.getInt("ID"));
-            dto.setTipoHabitacion(rs.getString("TipoHabitacion"));
-            dto.setPrecioPorPersona(rs.getDouble("Precio_por_Persona"));
-            dto.setPrecioPorNoche(rs.getDouble("Precio_por_Noche"));
-            dto.setCapacidadMaxima(rs.getInt("Capacidad_Maxima"));
-            dto.setTipoCama(rs.getString("TipoCama"));
-            dto.setMetrosCuadrados(rs.getDouble("Metros_Cuadrados"));
-            dto.setDescripcion(rs.getString("Descripcion"));
-            dto.setEstado(rs.getString("Estado"));
-            return dto;
-        }, hotelId, cantidadPersonas, fechaCheckOut, fechaCheckIn);
-    }
+    // ── Tipos de habitación disponibles (capacidad >= mínima, sin traslape) ──
+    //    Precio y cama vienen de TipoHabitacion, ya NO de Habitacion.
 
     public List<TipoHabitacionResultadoDTO> buscarTiposHabitacionDisponibles(
             int hotelId, int capacidadMinima, Date fechaCheckIn, Date fechaCheckOut) {
@@ -173,6 +136,8 @@ public class BusquedaAgenciaRepository {
         }, capacidadMinima, hotelId, fechaCheckOut, fechaCheckIn);
     }
 
+    // ── Habitaciones concretas disponibles de un tipo (para reservar) ─────────
+
     public List<HabitacionResumenDTO> buscarHabitacionesResumenPorTipo(
             int hotelId, int tipoHabitacionId, Date fechaCheckIn, Date fechaCheckOut) {
 
@@ -197,6 +162,8 @@ public class BusquedaAgenciaRepository {
             return dto;
         }, hotelId, tipoHabitacionId, fechaCheckOut, fechaCheckIn);
     }
+
+    // ── Imágenes de habitación ────────────────────────────────────────────────
 
     public List<Integer> buscarImagenesHabitacion(int habitacionId) {
         String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
