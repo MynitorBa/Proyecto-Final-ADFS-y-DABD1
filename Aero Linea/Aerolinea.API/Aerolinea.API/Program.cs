@@ -33,7 +33,7 @@ builder.Services.AddScoped<MetricasRepository>();
 builder.Services.AddScoped<RutaRepository>();   
 builder.Services.AddScoped<AsientoRepository>();
 builder.Services.AddScoped<AgenciaRepository>();
-
+builder.Services.AddScoped<AgenciaAuthMiddleware>();
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -55,8 +55,6 @@ builder.Services.AddScoped<RutaService>();
 builder.Services.AddScoped<AsientoService>();
 builder.Services.AddScoped<AgenciaService>();
 builder.Services.AddScoped<HandshakeService>();
-builder.Services.AddScoped<AgenciaAuthMiddleware>();
-
 
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 builder.Services.AddScoped<PdfService>();
