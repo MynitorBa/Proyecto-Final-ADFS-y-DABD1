@@ -453,3 +453,26 @@
 }
 .cancel-modal-confirm:hover:not(:disabled) { background: #dc2626; }
 .cancel-modal-confirm:disabled { opacity: .5; cursor: not-allowed; }
+
+.panel-room-number {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 20px;
+  padding: .18rem .6rem;
+  margin: .25rem 0 .2rem;
+}
+
+.total-row-num {
+  font-size: .75rem;
+  font-weight: 600;
+  color: #667eea;
+  background: #eef0ff;
+  border-radius: 4px;
+  padding: .05rem .35rem;
+  margin-left: .3rem;
+}

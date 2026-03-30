@@ -1,30 +1,26 @@
 <script>
   import '../styles/myreservations.css';
 
-  // navigateTo no se usa pero se mantiene por compatibilidad con App.svelte
   export let navigateTo = (/** @type {string} */ _page, /** @type {any} */ _data = null) => {};
 
   const API = 'http://localhost:7000';
 
-  let reservations     = [];
-  let loading          = true;
-  let loadError        = '';
+  let reservations        = [];
+  let loading             = true;
+  let loadError           = '';
   /** @type {any} */
   let selectedReservation = null;
 
-  // IDs de hoteles donde el usuario YA tiene reseña (resena != null)
   /** @type {Set<number>} */
   let hotelesConResena = new Set();
 
-  // ── Comentario ────────────────────────────────────────────
   let comentario       = { resena: 5, contenido: '' };
   let comentarioSaving = false;
   let comentarioError  = '';
   let comentarioOk     = false;
 
-  // ── Descarga de factura ───────────────────────────────────
-  let downloadingId  = null;
-  let downloadError  = '';
+  let downloadingId = null;
+  let downloadError = '';
 
   async function downloadFactura(reservacionId) {
     downloadingId = reservacionId;
@@ -33,21 +29,16 @@
       const res = await fetch(`${API}/reservaciones/${reservacionId}/pdf`, {
         credentials: 'include',
       });
-
       if (!res.ok) {
         let msg = `Error ${res.status}`;
         try { const d = await res.json(); msg = d.mensaje || d.message || msg; } catch(_) {}
         throw new Error(msg);
       }
-
-      const contentType = res.headers.get('Content-Type') || '';
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
       a.href     = url;
-      a.download = contentType.includes('pdf')
-        ? `factura-${reservacionId}.pdf`
-        : `factura-${reservacionId}.pdf`;
+      a.download = `factura-${reservacionId}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -81,6 +72,7 @@
       map.get(row.id).habitaciones.push({
         detalleId:             row.detalleId,
         habitacionId:          row.habitacionId,
+        numeroHabitacion:      row.numeroHabitacion,   // ← AÑADIDO
         hotelId:               row.hotelId,
         fechaCheckIn:          row.fechaCheckIn,
         fechaCheckOut:         row.fechaCheckOut,
@@ -94,22 +86,18 @@
     return Array.from(map.values());
   }
 
-  // ── Carga reservaciones + comentarios del usuario ────────
   async function fetchAll() {
     loading = true; loadError = '';
     try {
       const resRes = await fetch(`${API}/reservaciones`, { credentials: 'include' });
-
       if (!resRes.ok) {
         let msg = `Error ${resRes.status}`;
         try { const d = await resRes.json(); msg = d.mensaje || d.message || msg; } catch(_) {}
         throw new Error(msg);
       }
-
       const rawRes = await resRes.json();
       reservations = groupReservations(rawRes);
 
-      // Cargar comentarios del usuario (no-bloqueante si falla)
       try {
         const comRes = await fetch(`${API}/comentarios/usuario`, { credentials: 'include' });
         if (comRes.ok) {
@@ -175,7 +163,6 @@
     return matchFilter && matchSearch;
   });
 
-  // ── Cancelación con motivo ───────────────────────────────
   let cancelingId  = null;
   let cancelMotivo = '';
   let cancelError  = '';
@@ -416,7 +403,7 @@
 
       <div class="panel-body">
 
-        <!-- ── Botón descargar factura en el panel ── -->
+        <!-- Botón descargar -->
         <div class="panel-download-wrap">
           <button
             class="panel-download-btn"
@@ -477,6 +464,18 @@
               <div class="panel-room-top">
                 <div class="panel-room-title-wrap">
                   <strong class="panel-room-name">{h.tipoHabitacion}</strong>
+
+                  <!-- ── Número de habitación ── -->
+                  {#if h.numeroHabitacion}
+                    <span class="panel-room-number">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="M9 9h6M9 12h6M9 15h4"/>
+                      </svg>
+                      Hab. {h.numeroHabitacion}
+                    </span>
+                  {/if}
+
                   <span class="panel-room-bed">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                     {h.tipoCama}
@@ -508,7 +507,13 @@
           <h4 class="panel-section-title">Desglose de costos</h4>
           {#each sr.habitaciones as h}
             <div class="panel-total-row">
-              <span>{h.tipoHabitacion}</span>
+              <!-- Muestra tipo + número para identificar fácilmente cada línea -->
+              <span>
+                {h.tipoHabitacion}
+                {#if h.numeroHabitacion}
+                  <span class="total-row-num">#{h.numeroHabitacion}</span>
+                {/if}
+              </span>
               <span>{fmt(h.totalDetalle)}</span>
             </div>
           {/each}
@@ -518,7 +523,7 @@
           </div>
         </div>
 
-        <!-- ── Reseña: solo si completada ── -->
+        <!-- Reseña: solo si completada -->
         {#if esCompletada}
           <div class="panel-section panel-comment-section">
             <h4 class="panel-section-title">
@@ -595,7 +600,7 @@
   </div>
 {/if}
 
-<!-- ── Modal de cancelación con motivo ── -->
+<!-- ── Modal de cancelación ── -->
 {#if cancelingId !== null}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
