@@ -50,7 +50,7 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 		int(24*time.Hour.Seconds()),
 		"/",
 		"",
-		false, 
+		false,
 		true,
 	)
 

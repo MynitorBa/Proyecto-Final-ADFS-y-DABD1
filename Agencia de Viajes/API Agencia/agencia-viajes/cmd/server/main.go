@@ -35,11 +35,15 @@ func main() {
 	ubicacionService := services.NewUbicacionService(db)
 	usuarioService := services.NewUsuarioService(db, ubicacionService)
 	loginService := services.NewLoginService(db)
+	proveedorService := services.NewProveedorService(db)
+	handshakeService := services.NewHandshakeService(db, cfg)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
 	loginController := controllers.NewLoginController(loginService)
 	sesionController := controllers.NewSesionController()
+	proveedorController := controllers.NewProveedorController(proveedorService)
+	handshakeController := controllers.NewHandshakeController(handshakeService)
 
 	api := router.Group("/api")
 	{
@@ -57,6 +61,16 @@ func main() {
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
 		}
+		protegido.POST(
+			"/proveedores",
+			middlewares.RolRequerido(2), // solo administradores
+			proveedorController.CrearProveedor,
+		)
+		protegido.POST(
+			"/proveedores/:id/handshake",
+			middlewares.RolRequerido(2),
+			handshakeController.IniciarHandshake,
+		)
 	}
 
 	log.Println("Servidor corriendo en puerto " + cfg.ServerPort)

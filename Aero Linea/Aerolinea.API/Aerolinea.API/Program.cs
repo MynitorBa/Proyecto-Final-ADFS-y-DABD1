@@ -1,4 +1,5 @@
 using Aerolinea.API.Data;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
 using DinkToPdf;
@@ -31,6 +32,8 @@ builder.Services.AddScoped<FacturaRepository>();
 builder.Services.AddScoped<MetricasRepository>();
 builder.Services.AddScoped<RutaRepository>();   
 builder.Services.AddScoped<AsientoRepository>();
+builder.Services.AddScoped<AgenciaRepository>();
+
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -50,6 +53,9 @@ builder.Services.AddScoped<FacturaService>();
 builder.Services.AddScoped<MetricasService>();
 builder.Services.AddScoped<RutaService>();
 builder.Services.AddScoped<AsientoService>();
+builder.Services.AddScoped<AgenciaService>();
+builder.Services.AddScoped<HandshakeService>();
+builder.Services.AddScoped<AgenciaAuthMiddleware>();
 
 
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
