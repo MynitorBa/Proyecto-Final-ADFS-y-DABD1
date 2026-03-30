@@ -38,6 +38,8 @@ func main() {
 	proveedorService := services.NewProveedorService(db)
 	handshakeService := services.NewHandshakeService(db, cfg)
 	catalogoService := services.NewCatalogoService(db, ubicacionService)
+	handshakeHoteleraService := services.NewHandshakeHoteleraService(db, cfg)
+	busquedaService := services.NewBusquedaService(db)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -46,6 +48,8 @@ func main() {
 	proveedorController := controllers.NewProveedorController(proveedorService)
 	handshakeController := controllers.NewHandshakeController(handshakeService)
 	catalogoController := controllers.NewCatalogoController(catalogoService)
+	handshakeHoteleraController := controllers.NewHandshakeHoteleraController(handshakeHoteleraService)
+	busquedaController := controllers.NewBusquedaController(busquedaService)
 
 	api := router.Group("/api")
 	{
@@ -73,11 +77,21 @@ func main() {
 			middlewares.RolRequerido(2),
 			catalogoController.ActualizarCatalogo,
 		)
+		protegido.Use(middlewares.AuthRequerido())
+		{
+			protegido.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
+			protegido.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
+		}
 
 		protegido.POST(
 			"/proveedores/:id/handshake",
 			middlewares.RolRequerido(2),
 			handshakeController.IniciarHandshake,
+		)
+		protegido.POST(
+			"/proveedores/:id/handshake-hotelera",
+			middlewares.RolRequerido(2),
+			handshakeHoteleraController.IniciarHandshake,
 		)
 	}
 

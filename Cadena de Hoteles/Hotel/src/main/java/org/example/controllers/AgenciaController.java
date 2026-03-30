@@ -4,13 +4,17 @@ import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.example.dtos.CrearAgenciaRequestDTO;
 import org.example.dtos.EditarAgenciaRequestDTO;
+import org.example.dtos.HandshakeRequestDTO;
+import org.example.dtos.HandshakeResponseDTO;
 import org.example.services.AgenciaService;
+import org.example.services.HandshakeService;
 
 import java.util.Map;
 
 public class AgenciaController {
 
     private final AgenciaService agenciaService = new AgenciaService();
+    private final HandshakeService handshakeService = new HandshakeService();
 
     public void registerRoutes(Javalin app) {
 
@@ -57,6 +61,21 @@ public class AgenciaController {
             }
         });
 
+        // POST /api/agencias/handshake
+        app.post("/api/agencias/handshake", ctx -> {
+            System.out.println("[HANDSHAKE] url_agencia recibida: '" + ctx.body() + "'");
+            try {
+                HandshakeRequestDTO dto = ctx.bodyAsClass(HandshakeRequestDTO.class);
+                System.out.println("[HANDSHAKE] url_agencia: '" + dto.getUrlAgencia() + "'");
+                System.out.println("[HANDSHAKE] token_entrada: '" + dto.getTokenEntrada() + "'");
+
+                HandshakeResponseDTO response = handshakeService.procesarHandshake(dto);
+                ctx.json(response);
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
         // ════════════════════════════════════════════════════
         //  ADMIN — rutas accesibles solo por rol 2
         // ════════════════════════════════════════════════════
@@ -77,6 +96,7 @@ public class AgenciaController {
                 ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             }
         });
+
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

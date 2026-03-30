@@ -637,5 +637,19 @@ namespace Aerolinea.API.Repositories
             return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
         }
 
+
+        public async Task<int> ObtenerIdPorCiudad(int ciudadId, SqlConnection connection)
+        {
+            // Buscamos el primer aeropuerto registrado para esa ciudad
+            string sql = "SELECT TOP 1 ID FROM Aeropuerto WHERE CiudadID = @ciudadId";
+            using var cmd = new SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@ciudadId", ciudadId);
+
+            var result = await cmd.ExecuteScalarAsync();
+            if (result == null) throw new Exception($"No hay aeropuertos configurados para la ciudad {ciudadId}");
+
+            return (int)result;
+        }
+
     }
 }

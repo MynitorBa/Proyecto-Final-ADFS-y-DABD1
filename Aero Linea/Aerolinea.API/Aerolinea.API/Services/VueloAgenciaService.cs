@@ -1,0 +1,100 @@
+﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Repositories;
+
+namespace Aerolinea.API.Services
+{
+    public class VueloAgenciaService
+    {
+        private readonly VueloRepository _vueloRepository;
+        private readonly PaisRepository _paisRepository;
+        private readonly CiudadRepository _ciudadRepository;
+        private readonly AgenciaRepository _agenciaRepository;
+        private readonly AeropuertoRepository _aeropuertoRepository;
+
+        public VueloAgenciaService(
+            VueloRepository vueloRepository,
+            PaisRepository paisRepository,
+            CiudadRepository ciudadRepository,
+            AgenciaRepository agenciaRepository,
+            AeropuertoRepository aeropuertoRepository) 
+        {
+            _vueloRepository = vueloRepository;
+            _paisRepository = paisRepository;
+            _ciudadRepository = ciudadRepository;
+            _agenciaRepository = agenciaRepository;
+            _aeropuertoRepository = aeropuertoRepository;
+        }
+
+        public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloAgenciaDTO dto, int agenciaId)
+        {
+            // 1. Obtener descuento de la agencia
+            decimal descuento = await _agenciaRepository.ObtenerDescuento(agenciaId);
+            decimal factor = 1 - (descuento / 100);
+
+            // 2. Resolver IDs
+            using var connection = _agenciaRepository.CrearConexion();
+            await connection.OpenAsync();
+
+            int paisOrigenId = await _paisRepository.ObtenerOCrearId(dto.OrigenPais, connection);
+            int paisDestinoId = await _paisRepository.ObtenerOCrearId(dto.DestinoPais, connection);
+
+            // CORRECCIÓN 3: ¡ESTAS LÍNEAS SON LAS QUE FALTABAN! 
+            // Primero obtienes el ID de la Ciudad...
+            int ciudadOrigenId = await _ciudadRepository.ObtenerOCrearId(dto.Origen, paisOrigenId, connection);
+            int ciudadDestinoId = await _ciudadRepository.ObtenerOCrearId(dto.Destino, paisDestinoId, connection);
+
+            // ...y luego usas ese ID de ciudad para buscar el Aeropuerto
+            int origenId = await _aeropuertoRepository.ObtenerIdPorCiudad(ciudadOrigenId, connection);
+            int destinoId = await _aeropuertoRepository.ObtenerIdPorCiudad(ciudadDestinoId, connection);
+
+            // 3. Buscar vuelos
+            var interno = new BuscarVueloDTO
+            {
+                OrigenId = origenId,
+                DestinoId = destinoId,
+                Fecha = dto.Fecha,
+                CantidadPasajeros = dto.CantidadPasajeros,
+                ClaseId = dto.ClaseId,
+                PrecioMinimo = dto.PrecioMinimo,
+                PrecioMaximo = dto.PrecioMaximo
+            };
+
+            var resultado = await _vueloRepository.BuscarVuelos(
+                interno.OrigenId, interno.DestinoId,
+                interno.Fecha, interno.CantidadPasajeros, interno.ClaseId);
+
+            var conEscala = await _vueloRepository.BuscarVuelosConEscalas(
+                interno.OrigenId, interno.DestinoId,
+                interno.Fecha, interno.CantidadPasajeros, interno.ClaseId);
+
+            // 4. Aplicar descuento a directos
+            foreach (var vuelo in resultado)
+            {
+                vuelo.PrecioTurista = AplicarDescuento(vuelo.PrecioTurista, factor);
+                vuelo.PrecioEjecutiva = AplicarDescuento(vuelo.PrecioEjecutiva, factor);
+            }
+
+            // 5. Aplicar descuento a vuelos con escala
+            foreach (var escala in conEscala)
+            {
+                escala.PrecioTuristaTotal = AplicarDescuento(escala.PrecioTuristaTotal, factor);
+                escala.PrecioEjecutivaTotal = AplicarDescuento(escala.PrecioEjecutivaTotal, factor);
+
+                foreach (var tramo in escala.Tramos)
+                {
+                    tramo.PrecioTurista = AplicarDescuento(tramo.PrecioTurista, factor);
+                    tramo.PrecioEjecutiva = AplicarDescuento(tramo.PrecioEjecutiva, factor);
+                }
+            }
+
+            return new ResultadoBusquedaDTO
+            {
+                Directos = resultado,
+                ConEscala = conEscala
+            };
+        }
+
+        private static decimal? AplicarDescuento(decimal? precio, decimal factor)
+            => precio.HasValue ? Math.Round(precio.Value * factor, 2) : null;
+    }
+}

@@ -4,6 +4,7 @@ import org.example.data.DatabaseManager;
 import org.example.dtos.AgenciaDTO;
 import org.example.dtos.CrearAgenciaRequestDTO;
 import org.example.dtos.EditarAgenciaRequestDTO;
+import org.example.dtos.AgenciaIdentidad;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -129,5 +130,37 @@ public class AgenciaRepository {
             throw new IllegalArgumentException("Agencia no encontrada o no pertenece a este usuario");
 
         DatabaseManager.executeUpdate("DELETE FROM Agencia WHERE ID=?", agenciaId);
+    }
+
+
+
+
+
+
+
+
+
+
+    public Integer obtenerAgenciaIdPorURL(String urlAgencia) {
+        String sql = "SELECT ID FROM Agencia WHERE URL_Agencia = ?";
+        List<Integer> result = DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), urlAgencia);
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+    public boolean guardarTokens(int agenciaId, String tokenEntrada, String tokenSalida) {
+        String sql = "UPDATE Agencia SET Token_HASH_Entrada = ?, Token_HASH_Salida = ? WHERE ID = ?";
+        return DatabaseManager.executeUpdate(sql, tokenEntrada, tokenSalida, agenciaId) > 0;
+    }
+
+    public AgenciaIdentidad obtenerAgenciaPorToken(String token) {
+        String sql = "SELECT ID, Nombre, URL_Agencia FROM Agencia WHERE Token_HASH_Entrada = ?";
+        List<AgenciaIdentidad> result = DatabaseManager.executeQuery(sql, rs -> {
+            AgenciaIdentidad a = new AgenciaIdentidad();
+            a.setId(rs.getInt("ID"));
+            a.setNombre(rs.getString("Nombre"));
+            a.setUrlAgencia(rs.getString("URL_Agencia"));
+            return a;
+        }, token);
+        return result.isEmpty() ? null : result.get(0);
     }
 }

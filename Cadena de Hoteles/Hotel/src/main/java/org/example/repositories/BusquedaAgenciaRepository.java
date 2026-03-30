@@ -169,4 +169,24 @@ public class BusquedaAgenciaRepository {
         String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
     }
+
+
+    public void guardarBusquedaSinUsuario(int ciudadId, Date fechaCheckIn, Date fechaCheckOut,
+                                          int cantidadPersonas) {
+        String sql = "INSERT INTO Busqueda " +
+                "(CiudadID, FechaCheckIn, FechaCheckOut, CantidadPersonas, UsuarioID, AgenciaID, TipoBusquedaID, Fecha) " +
+                "VALUES (?, ?, ?, ?, NULL, NULL, 2, SYSDATE)";
+        DatabaseManager.executeUpdate(sql, ciudadId, fechaCheckIn, fechaCheckOut, cantidadPersonas);
+    }
+
+
+    public Double obtenerDescuentoAgenciaPorToken(String token) {
+        String sql = "SELECT PorcentajeDescuento FROM Agencia " +
+                "WHERE Token_HASH_Entrada = ? AND EstadoID = " +
+                "(SELECT ID FROM EstadoAgencia WHERE LOWER(Estado) = 'activa')";
+        List<Double> result = DatabaseManager.executeQuery(
+                sql, rs -> rs.getDouble("PorcentajeDescuento"), token
+        );
+        return result.isEmpty() ? null : result.get(0);
+    }
 }

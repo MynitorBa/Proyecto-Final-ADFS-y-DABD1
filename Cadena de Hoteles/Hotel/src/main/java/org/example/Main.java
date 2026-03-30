@@ -3,6 +3,7 @@ package org.example;
 import io.javalin.Javalin;
 import org.example.config.ServerConfig;
 import org.example.controllers.AgenciaController;
+import org.example.controllers.HotelAgenciaController;
 import org.example.controllers.AuthController;
 import org.example.controllers.BusquedaController;
 import org.example.controllers.CancelacionController;
@@ -73,6 +74,7 @@ public class Main {
         new HotelController().registerRoutes(app);
         new AgenciaController().registerRoutes(app);
         new PdfReservacionController().registerRoutes(app);
+        new HotelAgenciaController().registrarRutas(app);
 
 
         //agencia
