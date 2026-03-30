@@ -30,6 +30,10 @@ namespace Aerolinea.API.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             catch (SqlException ex)
             {
                 return BadRequest(new { message = TraducirErrorSql(ex, dto) });
@@ -87,44 +91,69 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        // ─── Traducción de errores SQL a mensajes legibles ───────────────────
+        // ── GET /api/admin/vuelos/aviones-ocupados ───────────────────────────
+        // horaSalida y aeropuertoOrigenId son opcionales:
+        //   - si no viene horaSalida se usa 00:00 (bloquea todo el día)
+        //   - si no viene aeropuertoOrigenId se usa 0 (sin filtro de aeropuerto)
+        [HttpGet("aviones-ocupados")]
+        public async Task<IActionResult> AvionesOcupados(
+            [FromQuery] string fecha,
+            [FromQuery] string? horaSalida = null,
+            [FromQuery] int aeropuertoOrigenId = 0)
+        {
+            if (!DateTime.TryParse(fecha, out var fechaDate))
+                return BadRequest(new { message = "Formato de fecha inválido" });
+
+            // Si no viene horaSalida usar medianoche como fallback
+            var hora = TimeSpan.Zero;
+            if (!string.IsNullOrEmpty(horaSalida) && !TimeSpan.TryParse(horaSalida, out hora))
+                return BadRequest(new { message = "Formato de hora inválido" });
+
+            var ids = await _adminVueloService.ObtenerAvionesOcupados(fechaDate, hora, aeropuertoOrigenId);
+            return Ok(ids);
+        }
+
+        // ── GET /api/admin/vuelos/tripulantes-ocupados ───────────────────────
+        // horaSalida es opcional — si no viene se usa 00:00
+        [HttpGet("tripulantes-ocupados")]
+        public async Task<IActionResult> TripulantesOcupados(
+            [FromQuery] string fecha,
+            [FromQuery] string? horaSalida = null)
+        {
+            if (!DateTime.TryParse(fecha, out var fechaDate))
+                return BadRequest(new { message = "Formato de fecha inválido" });
+
+            var hora = TimeSpan.Zero;
+            if (!string.IsNullOrEmpty(horaSalida) && !TimeSpan.TryParse(horaSalida, out hora))
+                return BadRequest(new { message = "Formato de hora inválido" });
+
+            var ids = await _adminVueloService.ObtenerTripulantesOcupados(fechaDate, hora);
+            return Ok(ids);
+        }
+
+        // ── Traducción de errores SQL a mensajes legibles ────────────────────
         private static string TraducirErrorSql(SqlException ex, CrearVueloAdminDTO? dto)
         {
             return ex.Number switch
             {
-                // Unique key / primary key violation
                 2601 or 2627 => TraducirDuplicado(ex.Message, dto),
-
-                // Foreign key violation
                 547 => "Uno de los datos seleccionados (avión, aeropuerto o ruta) ya no existe en el sistema.",
-
-                // Cannot insert null
                 515 => "Faltan datos obligatorios. Verifica que todos los campos estén completos.",
-
-                // String or binary data would be truncated
                 8152 => "Uno de los campos excede el tamaño máximo permitido.",
-
-                // Deadlock
                 1205 => "El servidor está ocupado en este momento. Intenta de nuevo en unos segundos.",
-
-                // Timeout
                 -2 => "La operación tardó demasiado. Intenta de nuevo.",
-
                 _ => "Error al procesar la solicitud. Intenta de nuevo."
             };
         }
 
         private static string TraducirDuplicado(string sqlMessage, CrearVueloAdminDTO? dto)
         {
-            // Extraer el valor duplicado del mensaje SQL si está disponible
-            // El mensaje tiene el formato: "...The duplicate key value is (AA 500)."
             string valorDuplicado = "";
             var match = System.Text.RegularExpressions.Regex
                 .Match(sqlMessage, @"The duplicate key value is \((.+?)\)");
             if (match.Success)
                 valorDuplicado = match.Groups[1].Value;
 
-            // Identificar qué campo es por el nombre de la constraint o el valor
             if (sqlMessage.Contains("UQ__Vuelo") || sqlMessage.Contains("NumeroVuelo") ||
                 sqlMessage.Contains("IX_Vuelo"))
             {
@@ -140,42 +169,9 @@ namespace Aerolinea.API.Controllers
             if (sqlMessage.Contains("EquipoPivote") || sqlMessage.Contains("Tripulacion"))
                 return "Uno de los tripulantes ya está asignado a este vuelo.";
 
-            // Genérico con el valor si lo tenemos
             return !string.IsNullOrEmpty(valorDuplicado)
                 ? $"El valor \"{valorDuplicado}\" ya existe y no puede repetirse."
                 : "Ya existe un registro con esos datos. Verifica los campos e intenta de nuevo.";
         }
-        // GET /api/admin/vuelos/aviones-ocupados?fecha=2025-12-01&horaSalida=08:00&aeropuertoOrigenId=3
-        [HttpGet("aviones-ocupados")]
-        public async Task<IActionResult> AvionesOcupados(
-            [FromQuery] string fecha,
-            [FromQuery] string horaSalida,
-            [FromQuery] int aeropuertoOrigenId = 0)
-        {
-            if (!DateTime.TryParse(fecha, out var fechaDate))
-                return BadRequest(new { message = "Formato de fecha inválido" });
-
-            if (!TimeSpan.TryParse(horaSalida, out var hora))
-                return BadRequest(new { message = "Formato de hora inválido" });
-
-            var ids = await _adminVueloService.ObtenerAvionesOcupados(fechaDate, hora, aeropuertoOrigenId);
-            return Ok(ids);
-        }
-
-        // GET /api/admin/vuelos/tripulantes-ocupados?fecha=2025-12-01&horaSalida=08:00
-        [HttpGet("tripulantes-ocupados")]
-        public async Task<IActionResult> TripulantesOcupados(
-            [FromQuery] string fecha, [FromQuery] string horaSalida)
-        {
-            if (!DateTime.TryParse(fecha, out var fechaDate))
-                return BadRequest(new { message = "Formato de fecha inválido" });
-
-            if (!TimeSpan.TryParse(horaSalida, out var hora))
-                return BadRequest(new { message = "Formato de hora inválido" });
-
-            var ids = await _adminVueloService.ObtenerTripulantesOcupados(fechaDate, hora);
-            return Ok(ids);
-        }
-
     }
 }

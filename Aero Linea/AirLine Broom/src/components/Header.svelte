@@ -13,7 +13,6 @@
   let menuActive = false;
   let cartCount = 0;
 
-  // Buscador global
   let aeropuertos = [];
   let searchQuery = '';
   let searchResults = [];
@@ -29,11 +28,7 @@
     } catch (err) {
       console.error('Error cargando aeropuertos para buscador:', err);
     }
-
-    // Cargar contador del carrito (reservaciones pendientes)
     await actualizarCartCount();
-
-    // Cerrar resultados al hacer clic fuera
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   });
@@ -50,24 +45,17 @@
     } catch { cartCount = 0; }
   }
 
-  // Reactivo: actualizar cuando cambia la sesión
   $: if ($sesion) actualizarCartCount();
   $: if (!$sesion) cartCount = 0;
 
   function handleClickOutside(e) {
     const isInSearch = e.target.closest('.broom-header__search');
-    if (!isInSearch) {
-      showSearchResults = false;
-    }
+    if (!isInSearch) showSearchResults = false;
   }
 
   function onSearchInput() {
     const q = searchQuery.toLowerCase().trim();
-    if (q.length < 1) {
-      searchResults = [];
-      showSearchResults = false;
-      return;
-    }
+    if (q.length < 1) { searchResults = []; showSearchResults = false; return; }
     searchResults = aeropuertos.filter(a =>
       a.ciudad?.toLowerCase().includes(q) ||
       a.nombre?.toLowerCase().includes(q) ||
@@ -77,21 +65,17 @@
     showSearchResults = searchResults.length > 0;
   }
 
-  // CAMBIADO: ahora busca vuelos con el endpoint general y navega a Vuelos
   async function buscarYNavegar(queryText) {
     if (!queryText || queryText.trim().length < 2) return;
     showSearchResults = false;
     searching = true;
     const q = queryText.trim();
-
     try {
       const res = await fetch(`${API}/api/vuelos/busqueda-general?query=${encodeURIComponent(q)}`, {
         credentials: 'include'
       });
       if (!res.ok) throw new Error('Error en búsqueda');
       const vuelos = await res.json();
-
-      // Navegar a vuelos con formato de búsqueda general
       navigateTo('vuelos', {
         fromGlobalSearch: true,
         globalSearchQuery: q,
@@ -113,26 +97,30 @@
 
   function selectSearchResult(aeropuerto) {
     showSearchResults = false;
-    // Buscar vuelos de esa ciudad/aeropuerto
     buscarYNavegar(aeropuerto.ciudad);
   }
 
   function handleSearchKeydown(e) {
     if (e.key === 'Enter') {
-      // Si hay resultados, buscar por la primera ciudad; si no, buscar el texto directo
-      if (searchResults.length > 0) {
-        selectSearchResult(searchResults[0]);
-      } else if (searchQuery.trim().length >= 2) {
-        buscarYNavegar(searchQuery);
-      }
+      if (searchResults.length > 0) selectSearchResult(searchResults[0]);
+      else if (searchQuery.trim().length >= 2) buscarYNavegar(searchQuery);
     } else if (e.key === 'Escape') {
       showSearchResults = false;
     }
   }
 
   function toggleMenu() { menuActive = !menuActive; }
-  function handleNavigation(page) { navigateTo(page); menuActive = false; }
-  async function handleLogout() { await logout(); navigateTo('home'); }
+
+  // ── Navegación con recarga completa de página ────────────────────
+  function handleNavigation(page) {
+    menuActive = false;
+    window.location.href = '/' + page;
+  }
+
+  async function handleLogout() {
+    await logout();
+    window.location.href = '/home';
+  }
 
   $: isLoggedIn = !!$sesion;
   $: isAdmin    = $sesion?.rolNombre === 'Administrador';
@@ -143,7 +131,7 @@
 
     <!-- Logo -->
     <div class="broom-header__logo">
-      <a href="#home" on:click|preventDefault={() => handleNavigation('home')}>
+      <a href="/home" on:click|preventDefault={() => handleNavigation('home')}>
         <img src={logoPath} alt="Broom AirLine" class="broom-header__logo-img">
       </a>
     </div>
@@ -151,10 +139,17 @@
     <!-- Links inline desktop -->
     <nav class="broom-header__inline-nav">
       {#if isLoggedIn}
-        <a href="#reservas" class="broom-header__inline-link"
+        <a href="/reservas" class="broom-header__inline-link"
           class:broom-header__inline-link--active={currentPage === 'reservas'}
           on:click|preventDefault={() => handleNavigation('reservas')}>
           Mis Reservas
+        </a>
+      {/if}
+      {#if isAdmin}
+        <a href="/admin" class="broom-header__inline-link broom-header__inline-link--admin"
+          class:broom-header__inline-link--active={currentPage === 'admin'}
+          on:click|preventDefault={() => handleNavigation('admin')}>
+          ✦ Panel Admin
         </a>
       {/if}
     </nav>
@@ -207,7 +202,7 @@
     <!-- Acciones derecha -->
     <div class="broom-header__actions">
 
-      <button class="broom-header__action-btn broom-header__cart" aria-label="Carrito de compras"
+      <button class="broom-header__action-btn broom-header__cart" aria-label="Carrito"
         on:click|preventDefault={() => handleNavigation('datos-pasajeros')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <circle cx="9" cy="21" r="1"></circle>
@@ -217,7 +212,7 @@
         <span class="broom-header__cart-count">{cartCount}</span>
       </button>
 
-      <button class="broom-header__action-btn broom-header__user" aria-label="Perfil de usuario"
+      <button class="broom-header__action-btn broom-header__user" aria-label="Perfil"
         on:click|preventDefault={() => handleNavigation('profile')}>
         <svg class="broom-header__action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -291,14 +286,14 @@
 
     <ul class="broom-header__nav-list">
       <li class="broom-header__nav-item">
-        <a href="#home" class="broom-header__nav-link"
+        <a href="/home" class="broom-header__nav-link"
           class:broom-header__nav-link--active={currentPage === 'home'}
           on:click|preventDefault={() => handleNavigation('home')}>
           Inicio
         </a>
       </li>
       <li class="broom-header__nav-item">
-        <a href="#contactanos" class="broom-header__nav-link"
+        <a href="/contactanos" class="broom-header__nav-link"
           class:broom-header__nav-link--active={currentPage === 'contactanos'}
           on:click|preventDefault={() => handleNavigation('contactanos')}>
           Contacto
@@ -306,16 +301,16 @@
       </li>
       {#if isAdmin}
         <li class="broom-header__nav-item">
-          <a href="#admin" class="broom-header__nav-link"
+          <a href="/admin" class="broom-header__nav-link broom-header__nav-link--admin"
             class:broom-header__nav-link--active={currentPage === 'admin'}
             on:click|preventDefault={() => handleNavigation('admin')}>
-            Administración
+            ✦ Panel Administración
           </a>
         </li>
       {/if}
       {#if isLoggedIn}
         <li class="broom-header__nav-item">
-          <a href="#profile" class="broom-header__nav-link"
+          <a href="/profile" class="broom-header__nav-link"
             class:broom-header__nav-link--active={currentPage === 'profile'}
             on:click|preventDefault={() => handleNavigation('profile')}>
             Mi Perfil
@@ -329,14 +324,14 @@
         </li>
       {:else}
         <li class="broom-header__nav-item">
-          <a href="#login" class="broom-header__nav-link"
+          <a href="/login" class="broom-header__nav-link"
             class:broom-header__nav-link--active={currentPage === 'login'}
             on:click|preventDefault={() => handleNavigation('login')}>
             Iniciar Sesión
           </a>
         </li>
         <li class="broom-header__nav-item">
-          <a href="#register" class="broom-header__nav-link broom-header__nav-link--register"
+          <a href="/register" class="broom-header__nav-link broom-header__nav-link--register"
             class:broom-header__nav-link--active={currentPage === 'register'}
             on:click|preventDefault={() => handleNavigation('register')}>
             Registrarse

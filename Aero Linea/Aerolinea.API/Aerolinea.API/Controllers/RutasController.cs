@@ -16,7 +16,7 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
-        // GET /api/rutas — lista todas las rutas (solo administradores)
+        // GET /api/rutas
         [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> ObtenerTodas()
@@ -25,7 +25,7 @@ namespace Aerolinea.API.Controllers
             return Ok(rutas);
         }
 
-        // PUT /api/rutas/{id}/duracion — actualiza duración en minutos
+        // PUT /api/rutas/{id}/duracion
         [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/duracion")]
         public async Task<IActionResult> ActualizarDuracion(int id, [FromBody] EditarDuracionRutaDTO dto)
@@ -44,12 +44,19 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        // POST /api/rutas/calcular-llegada — calcula hora de llegada con zonas horarias
-        // Usado por el formulario de creación de vuelo para mostrar preview
+        // POST /api/rutas/calcular-llegada
         [Authorize(Roles = "Administrador")]
         [HttpPost("calcular-llegada")]
         public async Task<IActionResult> CalcularLlegada([FromBody] CalculoLlegadaRequestDTO request)
         {
+            // Si faltan datos retorna null en lugar de error — el frontend lo ignora
+            if (request == null ||
+                request.AeropuertoOrigenId <= 0 ||
+                request.AeropuertoDestinoId <= 0 ||
+                string.IsNullOrWhiteSpace(request.FechaSalida) ||
+                string.IsNullOrWhiteSpace(request.HoraSalida))
+                return Ok((object)null);
+
             try
             {
                 var resultado = await _service.CalcularLlegada(request);
@@ -60,7 +67,8 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-        // POST /api/rutas — crea una ruta manualmente
+
+        // POST /api/rutas
         [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> CrearRuta([FromBody] CrearRutaDTO dto)
@@ -74,7 +82,7 @@ namespace Aerolinea.API.Controllers
             return Ok(new { id = rutaId, message = mensaje });
         }
 
-        // GET /api/rutas/existe?origenId=1&destinoId=2 — verifica si existe una ruta
+        // GET /api/rutas/existe?origenId=1&destinoId=2
         [Authorize(Roles = "Administrador")]
         [HttpGet("existe")]
         public async Task<IActionResult> ExisteRuta(
@@ -83,6 +91,5 @@ namespace Aerolinea.API.Controllers
             var existe = await _service.ExisteRuta(origenId, destinoId);
             return Ok(new { existe });
         }
-
     }
 }

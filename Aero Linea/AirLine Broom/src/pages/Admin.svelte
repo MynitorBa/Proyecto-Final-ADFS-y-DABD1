@@ -4,59 +4,37 @@
   import { onMount, onDestroy } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
-  export let navigateTo;
+  import AdminCrearVuelo   from '../components/admin/AdminCrearVuelo.svelte';
+  import AdminRutas        from '../components/admin/AdminRutas.svelte';
+  import AdminAviones      from '../components/admin/AdminAviones.svelte';
+  import AdminTripulantes  from '../components/admin/AdminTripulantes.svelte';
+  import AdminAeropuertos  from '../components/admin/AdminAeropuertos.svelte';
+  import AdminHistorial    from '../components/admin/AdminHistorial.svelte';
+  import AdminUsuarios     from '../components/admin/AdminUsuarios.svelte';
+  import AdminMetricas     from '../components/admin/AdminMetricas.svelte';
+
+  export let navigateTo = (page, data = null) => {};
 
   const API = 'http://localhost:5190';
 
-  // ========= SESIÓN =========
+  // ── Sesión ───────────────────────────────────────────────────────
   let rolNombre = null;
-  const unsubscribeSesion = sesion.subscribe(s => {
-    rolNombre = s?.rolNombre ?? null;
-  });
+  const unsubscribeSesion = sesion.subscribe(s => { rolNombre = s?.rolNombre ?? null; });
 
+  // ── Navegación ───────────────────────────────────────────────────
   let activeSection = 'crear-vuelo';
 
-  // ========= DATOS =========
-  let usuarios        = [];
-  let aviones         = [];
-  let tripulantes     = [];
-  let aeropuertos     = [];
-  let historialVuelos = [];
-  let rolesTripulacion = [];
-  let todosLosPaises  = [];
+  // ── Datos compartidos (los módulos que crean vuelos los necesitan) ─
+  // AdminCrearVuelo los recibe como props para sus dropdowns.
+  // Se recargan cuando los módulos hijos emiten eventos de actualización.
+  let aeropuertos = [];
+  let aviones     = [];
+  let tripulantes = [];
 
-  // ========= LOADING =========
-  let loadingUsuarios        = false;
-  let loadingAviones         = false;
-  let loadingTripulantes     = false;
-  let loadingAeropuertos     = false;
-  let loadingHistorialVuelos = false;
+  // ── Referencia al historial para recargarlo tras crear un vuelo ──
+  let historialRef;
 
-  // ========= BÚSQUEDA VUELO =========
-  let busquedaOrigen        = '';
-  let busquedaDestino       = '';
-  let busquedaAvion         = '';
-  let busquedaTripulante    = '';
-  let mostrarDropdownOrigen     = false;
-  let mostrarDropdownDestino    = false;
-  let mostrarDropdownAvion      = false;
-  let mostrarDropdownTripulante = false;
-
-  // ========= MODALES ENTIDADES =========
-  let mostrarFormularioAvion      = false;
-  let mostrarFormularioTripulante = false;
-  let mostrarFormularioAeropuerto = false;
-  let modoEdicion = false;
-
-  // ========= ROLES =========
-  let rolesDisponibles = [
-    { id: 1, nombre: 'Usuario' },
-    { id: 2, nombre: 'Administrador' }
-  ];
-
-  // ─────────────────────────────────────────────────────────────────
-  //  SISTEMA DE TOASTS
-  // ─────────────────────────────────────────────────────────────────
+  // ── Sistema de toasts ────────────────────────────────────────────
   let toasts  = [];
   let toastId = 0;
 
@@ -66,13 +44,9 @@
     setTimeout(() => { toasts = toasts.filter(t => t.id !== id); }, duracion);
   }
 
-  function cerrarToast(id) {
-    toasts = toasts.filter(t => t.id !== id);
-  }
+  function cerrarToast(id) { toasts = toasts.filter(t => t.id !== id); }
 
-  // ─────────────────────────────────────────────────────────────────
-  //  MODAL DE CONFIRMACIÓN
-  // ─────────────────────────────────────────────────────────────────
+  // ── Modal de confirmación ────────────────────────────────────────
   let confirmVisible  = false;
   let confirmMensaje  = '';
   let confirmSubtexto = '';
@@ -99,987 +73,65 @@
     confirmResolve = null;
   }
 
-  // ========= AUTOCOMPLETE AEROPUERTO =========
-  let paisQueryAeropuerto       = '';
-  let paisesSugeridosAeropuerto = [];
-  let paisSeleccionadoAeropuerto = null;
-  let ciudadQueryAeropuerto       = '';
-  let ciudadesSugeridasAeropuerto = [];
-  let ciudadSeleccionadaAeropuerto = false;
-
-  // ========= FORMULARIO VUELO =========
-  let nuevoVuelo = {
-    numeroVuelo: '',
-    aeropuertoOrigenId: '',
-    aeropuertoDestinoId: '',
-    avionId: '',
-    fecha: '',
-    horaSalida: '',
-    horaLlegada: '',
-    fechaLlegada: '',
-    boletosTurista: '',
-    boletosEjecutivo: '',
-    precioTurista: '',
-    precioEjecutiva: '',
-    tripulantesSeleccionados: []
-  };
-
-  // ========= FORMULARIO AVIÓN =========
-  let avionForm          = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
-  let avionImagenPreview = null;
-  let avionImagenBase64  = null;
-
-  // ========= FORMULARIO TRIPULANTE =========
-  let tripulanteForm          = { id: null, nombre: '', apellido: '', rolID: '' };
-  let tripulanteImagenPreview = null;
-  let tripulanteImagenBase64  = null;
-
-  // ========= FORMULARIO AEROPUERTO =========
-  let aeropuertoForm          = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
-  let aeropuertoImagenPreview = null;
-  let aeropuertoImagenBase64  = null;
-
-  // ========= RUTAS =========
-  let rutas           = [];
-  let loadingRutas    = false;
-  let editandoRutaId  = null;
-  let rutaDuracionEdit = '';
-  let guardandoDuracion = false;
-
-  // ── CREAR RUTA (modal) ────────────────────────────────────────
-  let mostrarModalCrearRuta = false;
-  let nuevaRuta = { origenId: '', destinoId: '', duracion: 120 };
-  let creandoRuta = false;
-
-  // ========= PREVIEW LLEGADA (formulario vuelo) =========
-  let previewLlegada      = null;   // { horaLlegada, fechaLlegada, nota, usoZonas, duracionMinutos }
-  let loadingPreview      = false;
-  let previewDebounceTimer = null;
-  let rutaExisteStatus    = null;  // null | 'checking' | 'ok' | 'missing'
-
-  // ── DISPONIBILIDAD aviones / tripulantes ─────────────────────────────
-  let avionesOcupadosIds     = new Set();   // IDs de aviones no disponibles para la fecha
-  let tripulantesOcupadosIds = new Set();   // IDs de tripulantes no disponibles
-  let cargandoDisponibilidad = false;
-
-  // ========= TIMEZONE AUTODETECT (formulario aeropuerto) =========
-  let detectandoTimezone  = false;
-
-  // ========= MÉTRICAS =========
-  let metricasResumen = null;
-  let metricasListado = null;
-  let loadingMetricas = false;
-  let loadingListado  = false;
-
-  // Filtros
-  let metFechaDesde = (() => {
-    const d = new Date(); d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
-  })();
-  let metFechaHasta = new Date().toISOString().split('T')[0];
-  let metTipo       = '';    // '' | 'Web' | 'REST'
-  let metUsuario    = '';
-  let metPagina     = 1;
-
-  // Estado de envío de correo del listado
-  let correoExportar       = '';
-  let mostrarModalExportar = false;
-  let enviandoCorreo       = false;
-
-  async function cargarMetricas() {
-    loadingMetricas = true;
-    try {
-      const params = new URLSearchParams({
-        fechaDesde: metFechaDesde,
-        fechaHasta: metFechaHasta
-      });
-      const r = await fetch(`${API}/api/metricas/resumen?${params}`, { credentials: 'include' });
-      if (r.ok) metricasResumen = await r.json();
-      else mostrarToast('error', 'Error al cargar métricas');
-    } catch (e) {
-      mostrarToast('error', 'Error de conexión con métricas');
-    } finally {
-      loadingMetricas = false;
-    }
-  }
-
-  async function cargarListadoBusquedas(pagina = 1) {
-    loadingListado = true;
-    metPagina = pagina;
-    try {
-      const r = await fetch(`${API}/api/metricas/listado`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fechaDesde: metFechaDesde,
-          fechaHasta: metFechaHasta,
-          tipo:       metTipo     || null,
-          usuario:    metUsuario  || null,
-          pagina,
-          tamañoPagina: 25
-        })
-      });
-      if (r.ok) metricasListado = await r.json();
-      else mostrarToast('error', 'Error al cargar listado');
-    } catch (e) {
-      mostrarToast('error', 'Error de conexión');
-    } finally {
-      loadingListado = false;
-    }
-  }
-
-  function aplicarFiltrosMetricas() {
-    cargarMetricas();
-    cargarListadoBusquedas(1);
-  }
-
-  async function activarMetricas() {
-    if (!metricasResumen) await cargarMetricas();
-    if (!metricasListado) await cargarListadoBusquedas(1);
-  }
-
-  // Gráficas SVG helpers
-  function svgLinea(datos, w = 700, h = 200) {
-    if (!datos || datos.length === 0) return '';
-    const maxVal = Math.max(...datos.map(d => d.total), 1);
-    const pts = datos.map((d, i) => {
-      const x = (i / (datos.length - 1)) * (w - 40) + 20;
-      const y = h - 20 - ((d.total / maxVal) * (h - 40));
-      return `${x},${y}`;
-    });
-    return pts.join(' ');
-  }
-
-  function svgPuntos(datos, w = 700, h = 200) {
-    if (!datos || datos.length === 0) return [];
-    const maxVal = Math.max(...datos.map(d => d.total), 1);
-    return datos.map((d, i) => ({
-      x: (i / (datos.length - 1)) * (w - 40) + 20,
-      y: h - 20 - ((d.total / maxVal) * (h - 40)),
-      val: d.total,
-      label: d.fecha
-    }));
-  }
-
-  // Donut helpers
-  function calcularDonut(porTipo) {
-    if (!porTipo || porTipo.length === 0) return [];
-    const total = porTipo.reduce((s, t) => s + t.total, 0);
-    let startAngle = 0;
-    const colores = { 'Web': '#D4AF37', 'REST': '#1C1A18' };
-    return porTipo.map(t => {
-      const angle = (t.total / total) * 360;
-      const start = startAngle;
-      startAngle += angle;
-      return { ...t, angle, start, color: colores[t.tipo] || '#888', porcentaje: Math.round((t.total / total) * 100) };
-    });
-  }
-
-  function polarToXY(angleDeg, r) {
-    const rad = ((angleDeg - 90) * Math.PI) / 180;
-    return { x: 100 + r * Math.cos(rad), y: 100 + r * Math.sin(rad) };
-  }
-
-  function donutPath(startDeg, endDeg, r = 70, innerR = 40) {
-    const s = polarToXY(startDeg, r);
-    const e = polarToXY(endDeg, r);
-    const si = polarToXY(startDeg, innerR);
-    const ei = polarToXY(endDeg, innerR);
-    const large = endDeg - startDeg > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y} L ${ei.x} ${ei.y} A ${innerR} ${innerR} 0 ${large} 0 ${si.x} ${si.y} Z`;
-  }
-
-  // ========= LIFECYCLE =========
-  onMount(async () => {
-    if (rolNombre !== 'Administrador') { navigateTo('acceso-denegado'); return; }
-    await cargarDatosIniciales();
-  });
-
-  onDestroy(() => { unsubscribeSesion(); });
-
-  async function cargarDatosIniciales() {
-    await Promise.all([
-      cargarUsuarios(), cargarAviones(), cargarTripulantes(),
-      cargarAeropuertos(), cargarRolesTripulacion(),
-      cargarPaises(), cargarHistorialVuelos(), cargarRutas()
-    ]);
-  }
-
-  // ========= CARGA DE DATOS =========
-  async function cargarUsuarios() {
-    loadingUsuarios = true;
-    try {
-      const r = await fetch(`${API}/api/usuarios`, { credentials: 'include' });
-      if (r.ok) usuarios = await r.json();
-    } catch (e) { console.error(e); } finally { loadingUsuarios = false; }
-  }
-
-  async function cargarAviones() {
-    loadingAviones = true;
-    try {
-      const r = await fetch(`${API}/api/aviones`);
-      if (r.ok) aviones = await r.json();
-    } catch (e) { console.error(e); } finally { loadingAviones = false; }
-  }
-
-  async function cargarTripulantes() {
-    loadingTripulantes = true;
-    try {
-      const r = await fetch(`${API}/api/tripulacion`);
-      if (r.ok) tripulantes = await r.json();
-    } catch (e) { console.error(e); } finally { loadingTripulantes = false; }
-  }
-
+  // ── Carga de datos compartidos ───────────────────────────────────
   async function cargarAeropuertos() {
-    loadingAeropuertos = true;
     try {
       const r = await fetch(`${API}/api/aeropuertos`);
       if (r.ok) aeropuertos = await r.json();
-    } catch (e) { console.error(e); } finally { loadingAeropuertos = false; }
+    } catch { console.error('Error cargando aeropuertos'); }
   }
 
-  async function cargarRolesTripulacion() {
+  async function cargarAviones() {
     try {
-      const r = await fetch(`${API}/api/tripulacion/roles`);
-      if (r.ok) {
-        const roles = await r.json();
-        rolesTripulacion = roles.map(rol => ({ id: rol.id, nombre: rol.cargo }));
-      }
-    } catch (e) { console.error(e); }
+      const r = await fetch(`${API}/api/aviones`);
+      if (r.ok) aviones = await r.json();
+    } catch { console.error('Error cargando aviones'); }
   }
 
-  async function cargarPaises() {
+  async function cargarTripulantes() {
     try {
-      const r = await fetch('https://countriesnow.space/api/v0.1/countries');
-      const data = await r.json();
-      todosLosPaises = data.data;
-    } catch (e) { console.error(e); }
+      const r = await fetch(`${API}/api/tripulacion`);
+      if (r.ok) tripulantes = await r.json();
+    } catch { console.error('Error cargando tripulantes'); }
   }
 
-  async function cargarHistorialVuelos() {
-    loadingHistorialVuelos = true;
-    try {
-      const r = await fetch(`${API}/api/admin/vuelos/historial`, { credentials: 'include' });
-      if (r.ok) historialVuelos = await r.json();
-    } catch (e) { console.error(e); } finally { loadingHistorialVuelos = false; }
+  async function cargarDatosCompartidos() {
+    await Promise.all([cargarAeropuertos(), cargarAviones(), cargarTripulantes()]);
   }
 
-  async function cargarRutas() {
-    loadingRutas = true;
-    try {
-      const r = await fetch(`${API}/api/rutas`, { credentials: 'include' });
-      if (r.ok) rutas = await r.json();
-    } catch (e) { console.error(e); } finally { loadingRutas = false; }
+  // ── Eventos de los módulos hijos ─────────────────────────────────
+  function onVueloCreado() {
+    // Cambia a historial y lo recarga (AdminHistorial se auto-recarga en onMount,
+    // pero si ya estaba montado necesitamos un mecanismo manual)
+    activeSection = 'historial';
   }
 
-  async function handleCrearRuta() {
-    if (!nuevaRuta.origenId)  { mostrarToast('error', 'Selecciona el aeropuerto de origen'); return; }
-    if (!nuevaRuta.destinoId) { mostrarToast('error', 'Selecciona el aeropuerto de destino'); return; }
-    if (nuevaRuta.origenId === nuevaRuta.destinoId) { mostrarToast('error', 'El origen y destino no pueden ser el mismo'); return; }
-    if (!nuevaRuta.duracion || nuevaRuta.duracion <= 0) { mostrarToast('error', 'Ingresa una duración válida'); return; }
+  function onAvionesActualizados()     { cargarAviones(); }
+  function onTripulantesActualizados() { cargarTripulantes(); }
+  function onAeropuertosActualizados() { cargarAeropuertos(); }
 
-    creandoRuta = true;
-    try {
-      const r = await fetch(`${API}/api/rutas`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          origenId: parseInt(nuevaRuta.origenId),
-          destinoId: parseInt(nuevaRuta.destinoId),
-          duracionEstimada: parseInt(nuevaRuta.duracion)
-        })
-      });
-      if (r.ok) {
-        mostrarToast('success', '¡Ruta creada correctamente!');
-        mostrarModalCrearRuta = false;
-        nuevaRuta = { origenId: '', destinoId: '', duracion: 120 };
-        await cargarRutas();
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al crear la ruta');
-      }
-    } catch(e) {
-      mostrarToast('error', 'Error de conexión al crear la ruta');
-    } finally {
-      creandoRuta = false;
-    }
-  }
+  // ── Nav items ────────────────────────────────────────────────────
+  const navItems = [
+    { id: 'crear-vuelo',          label: 'Crear Vuelo',         icon: 'M12 4v16m8-8H4' },
+    { id: 'gestionar-rutas',      label: 'Gestionar Rutas',     icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
+    { id: 'gestionar-aviones',    label: 'Gestionar Aviones',   icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064' },
+    { id: 'gestionar-tripulantes',label: 'Tripulantes',          icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+    { id: 'gestionar-aeropuertos',label: 'Aeropuertos',          icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
+    { id: 'historial',            label: 'Historial',            icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { id: 'usuarios',             label: 'Usuarios',             icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+    { id: 'metricas',             label: 'Métricas',             icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+  ];
 
-  async function guardarDuracionRuta(rutaId) {
-    const minutos = parseInt(rutaDuracionEdit);
-    if (!minutos || minutos <= 0) { mostrarToast('error', 'La duración debe ser mayor a 0 minutos'); return; }
-    guardandoDuracion = true;
-    try {
-      const r = await fetch(`${API}/api/rutas/${rutaId}/duracion`, {
-        method: 'PUT', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ duracionEstimada: minutos })
-      });
-      if (r.ok) {
-        mostrarToast('success', 'Duración actualizada correctamente');
-        editandoRutaId = null; rutaDuracionEdit = '';
-        await cargarRutas();
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al actualizar la duración');
-      }
-    } catch (e) { mostrarToast('error', 'Error de conexión'); }
-    finally { guardandoDuracion = false; }
-  }
-
-  // ─── PREVIEW DE LLEGADA (se llama cuando cambian origen/destino/fecha/horaSalida) ─────
-  // ── Verificar ruta (solo cuando cambian aeropuertos) ───────────────────
-  // Tiene su propio debounce para no titilar con cada tecla
-  let rutaCheckTimer = null;
-  let lastOrigenId = null;
-  let lastDestinoId = null;
-
-  function verificarRutaSiCambioAeropuerto() {
-    const origenId  = nuevoVuelo.aeropuertoOrigenId;
-    const destinoId = nuevoVuelo.aeropuertoDestinoId;
-
-    if (!origenId || !destinoId) {
-      rutaExisteStatus = null;
-      previewLlegada   = null;
-      return;
-    }
-
-    // Si los aeropuertos no cambiaron, no relanzar el check
-    if (origenId === lastOrigenId && destinoId === lastDestinoId) return;
-    lastOrigenId  = origenId;
-    lastDestinoId = destinoId;
-
-    clearTimeout(rutaCheckTimer);
-    rutaCheckTimer = setTimeout(async () => {
-      rutaExisteStatus = 'checking';
-      try {
-        const rc = await fetch(
-          `${API}/api/rutas/existe?origenId=${origenId}&destinoId=${destinoId}`,
-          { credentials: 'include' }
-        );
-        if (rc.ok) {
-          const { existe } = await rc.json();
-          rutaExisteStatus = existe ? 'ok' : 'missing';
-        } else {
-          rutaExisteStatus = null;
-        }
-      } catch { rutaExisteStatus = null; }
-
-      // Si hay ruta y ya hay fecha/hora, lanzar cálculo
-      if (rutaExisteStatus === 'ok') {
-        calcularPreviewLlegada();
-      } else {
-        previewLlegada = null;
-        loadingPreview = false;
-      }
-    }, 300);
-  }
-
-  // ── Calcular hora de llegada (solo cuando cambian fecha/hora) ────────────
-  // NO re-verifica la ruta, solo calcula si ya sabemos que existe
-  function actualizarPreviewLlegada() {
-    if (rutaExisteStatus !== 'ok') return;
-    calcularPreviewLlegada();
-  }
-
-  function calcularPreviewLlegada() {
-    if (!nuevoVuelo.aeropuertoOrigenId || !nuevoVuelo.aeropuertoDestinoId ||
-        !nuevoVuelo.fecha || !nuevoVuelo.horaSalida) {
-      previewLlegada = null;
-      loadingPreview = false;
-      return;
-    }
-
-    clearTimeout(previewDebounceTimer);
-    previewDebounceTimer = setTimeout(async () => {
-      loadingPreview = true;
-      previewLlegada = null;
-
-      // AbortController para que el fetch no se quede colgado indefinidamente
-      const controller = new AbortController();
-      const timeoutId  = setTimeout(() => controller.abort(), 8000);
-
-      try {
-        const r = await fetch(`${API}/api/rutas/calcular-llegada`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            aeropuertoOrigenId:  parseInt(nuevoVuelo.aeropuertoOrigenId),
-            aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
-            fechaSalida: nuevoVuelo.fecha,
-            horaSalida:  nuevoVuelo.horaSalida
-          })
-        });
-        if (r.ok) {
-          previewLlegada = await r.json();
-        } else {
-          previewLlegada = null;
-        }
-      } catch (e) {
-        previewLlegada = null;
-      } finally {
-        clearTimeout(timeoutId);
-        loadingPreview = false;
-      }
-    }, 500);
-  }
-
-  // ─── AUTODETECT TIMEZONE VIA NOMINATIM + TIMEAPI.IO ─────────────────────
-  async function autoDetectarTimezone() {
-    if (!aeropuertoForm.ciudad || !aeropuertoForm.pais) {
-      mostrarToast('error', 'Selecciona ciudad y país primero');
-      return;
-    }
-    detectandoTimezone = true;
-    try {
-      // 1. Geocoding con Nominatim (gratuito, sin API key)
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?` +
-        `city=${encodeURIComponent(aeropuertoForm.ciudad)}&` +
-        `country=${encodeURIComponent(aeropuertoForm.pais)}&format=json&limit=1`;
-
-      const geoR = await fetch(nominatimUrl, {
-        headers: { 'Accept-Language': 'en', 'User-Agent': 'AirbroomAirline/1.0' }
-      });
-      const geoData = await geoR.json();
-
-      if (!geoData || geoData.length === 0) {
-        mostrarToast('error', 'No se pudo geolocalizar la ciudad. Ingresa el timezone manualmente.');
-        return;
-      }
-
-      const lat = parseFloat(geoData[0].lat);
-      const lon = parseFloat(geoData[0].lon);
-
-      // 2. Obtener timezone por coordenadas con timeapi.io (gratuito, sin API key)
-      const tzR = await fetch(
-        `https://timeapi.io/api/timezone/coordinate?latitude=${lat}&longitude=${lon}`
-      );
-      const tzData = await tzR.json();
-
-      if (tzData && tzData.timeZone) {
-        aeropuertoForm.zonaHoraria = tzData.timeZone;
-        mostrarToast('success', `Timezone detectado: ${tzData.timeZone}`);
-      } else {
-        mostrarToast('error', 'No se pudo detectar el timezone automáticamente');
-      }
-    } catch (e) {
-      mostrarToast('error', 'Error al detectar timezone. Ingrésalo manualmente (ej: America/Guatemala)');
-    } finally {
-      detectandoTimezone = false;
-    }
-  }
-
-  // ========= IMAGEN HELPER =========
-  function leerImagenComoBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function onAvionImagenChange(e) {
-    const file = e.target.files[0]; if (!file) return;
-    leerImagenComoBase64(file).then(b64 => { avionImagenBase64 = b64; avionImagenPreview = b64; });
-  }
-  function onTripulanteImagenChange(e) {
-    const file = e.target.files[0]; if (!file) return;
-    leerImagenComoBase64(file).then(b64 => { tripulanteImagenBase64 = b64; tripulanteImagenPreview = b64; });
-  }
-  function onAeropuertoImagenChange(e) {
-    const file = e.target.files[0]; if (!file) return;
-    leerImagenComoBase64(file).then(b64 => { aeropuertoImagenBase64 = b64; aeropuertoImagenPreview = b64; });
-  }
-
-  // ========= AUTOCOMPLETE AEROPUERTO =========
-  function onPaisAeropuertoInput() {
-    const q = paisQueryAeropuerto.toLowerCase();
-    paisesSugeridosAeropuerto = q.length < 2 ? [] :
-      todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
-    if (paisQueryAeropuerto && !paisSeleccionadoAeropuerto) aeropuertoForm.pais = '';
-  }
-
-  function seleccionarPaisAeropuerto(p) {
-    paisSeleccionadoAeropuerto = p;
-    paisQueryAeropuerto = p.country;
-    aeropuertoForm.pais = p.country;
-    paisesSugeridosAeropuerto = [];
-    ciudadQueryAeropuerto = ''; aeropuertoForm.ciudad = '';
-    ciudadesSugeridasAeropuerto = []; ciudadSeleccionadaAeropuerto = false;
-  }
-
-  function validarPaisAeropuertoSeleccionado() {
-    if (paisQueryAeropuerto && !paisSeleccionadoAeropuerto) paisQueryAeropuerto = '';
-  }
-
-  function onCiudadAeropuertoInput() {
-    if (!paisSeleccionadoAeropuerto) return;
-    const q = ciudadQueryAeropuerto.toLowerCase();
-    ciudadesSugeridasAeropuerto = q.length < 2 ? [] :
-      paisSeleccionadoAeropuerto.cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
-    if (ciudadQueryAeropuerto && !ciudadSeleccionadaAeropuerto) aeropuertoForm.ciudad = '';
-  }
-
-  function seleccionarCiudadAeropuerto(c) {
-    ciudadQueryAeropuerto = c; aeropuertoForm.ciudad = c;
-    ciudadesSugeridasAeropuerto = []; ciudadSeleccionadaAeropuerto = true;
-  }
-
-  function validarCiudadAeropuertoSeleccionada() {
-    if (ciudadQueryAeropuerto && !ciudadSeleccionadaAeropuerto) ciudadQueryAeropuerto = '';
-  }
-
-  // ========= FILTROS REACTIVOS =========
-  $: aeropuertosFiltradosOrigen = aeropuertos.filter(a =>
-    a.nombre.toLowerCase().includes(busquedaOrigen.toLowerCase()) ||
-    a.codigo.toLowerCase().includes(busquedaOrigen.toLowerCase()) ||
-    a.ciudad.toLowerCase().includes(busquedaOrigen.toLowerCase())
-  );
-  $: aeropuertosFiltradosDestino = aeropuertos.filter(a =>
-    a.nombre.toLowerCase().includes(busquedaDestino.toLowerCase()) ||
-    a.codigo.toLowerCase().includes(busquedaDestino.toLowerCase()) ||
-    a.ciudad.toLowerCase().includes(busquedaDestino.toLowerCase())
-  );
-  $: avionesFiltrados = aviones.filter(a => {
-    const coincide =
-      a.nombreCompleto.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
-      a.marca.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
-      a.modelo.toLowerCase().includes(busquedaAvion.toLowerCase());
-    const ocupado = avionesOcupadosIds.has(a.id);
-    return coincide && !ocupado;
-  });
-  $: tripulantesFiltrados = tripulantes.filter(t => {
-    const yaSeleccionado = nuevoVuelo.tripulantesSeleccionados.some(ts => ts.id === t.id);
-    const ocupado        = tripulantesOcupadosIds.has(t.id);
-    const coincide =
-      t.nombreCompleto.toLowerCase().includes(busquedaTripulante.toLowerCase()) ||
-      t.nombreRol.toLowerCase().includes(busquedaTripulante.toLowerCase());
-    return !yaSeleccionado && !ocupado && coincide;
+  // ── Lifecycle ────────────────────────────────────────────────────
+  onMount(async () => {
+    if (rolNombre !== 'Administrador') { navigateTo('acceso-denegado'); return; }
+    await cargarDatosCompartidos();
   });
 
-  $: aeropuertoOrigen  = aeropuertos.find(a => a.id === parseInt(nuevoVuelo.aeropuertoOrigenId));
-  $: aeropuertoDestino = aeropuertos.find(a => a.id === parseInt(nuevoVuelo.aeropuertoDestinoId));
-  $: avionSeleccionado = aviones.find(a => a.id === parseInt(nuevoVuelo.avionId));
-
-  $: if (nuevoVuelo.fecha && !nuevoVuelo.fechaLlegada) {
-    nuevoVuelo.fechaLlegada = nuevoVuelo.fecha;
-  }
-
-  // Tasa de conversión (métricas)
-  $: tasaConversion = (metricasResumen && metricasResumen.totalBusquedas > 0)
-    ? ((metricasResumen.ingresosKpi.totalReservaciones / metricasResumen.totalBusquedas) * 100).toFixed(1)
-    : '0.0';
-
-  // Solo re-verifica la ruta cuando cambian los aeropuertos
-  $: {
-    nuevoVuelo.aeropuertoOrigenId;
-    nuevoVuelo.aeropuertoDestinoId;
-    verificarRutaSiCambioAeropuerto();
-  }
-
-  // Solo recalcula la hora cuando cambian fecha u hora (ruta ya verificada)
-  $: {
-    nuevoVuelo.fecha;
-    nuevoVuelo.horaSalida;
-    actualizarPreviewLlegada();
-  }
-
-  // Disponibilidad de aviones/tripulantes: solo al cambiar fecha/hora
-  $: {
-    nuevoVuelo.fecha;
-    nuevoVuelo.horaSalida;
-    cargarDisponibilidad();
-  }
-
-  $: if (avionSeleccionado && !nuevoVuelo.boletosTurista && !nuevoVuelo.boletosEjecutivo) {
-    const cap = avionSeleccionado.capacidadPasajeros;
-    const eje = Math.floor(cap * 0.25);
-    nuevoVuelo.boletosEjecutivo = eje;
-    nuevoVuelo.boletosTurista   = cap - eje;
-  }
-
-  $: totalBoletosAsignados = (parseInt(nuevoVuelo.boletosTurista)   || 0) +
-                             (parseInt(nuevoVuelo.boletosEjecutivo) || 0);
-  $: capacidadAvion = avionSeleccionado?.capacidadPasajeros ?? 0;
-  $: excedeLimite   = capacidadAvion > 0 && totalBoletosAsignados > capacidadAvion;
-  $: porcentajeOcupado = capacidadAvion > 0
-    ? Math.min(100, Math.round(totalBoletosAsignados / capacidadAvion * 100))
-    : 0;
-
-  // ========= VUELO HELPERS =========
-  function seleccionarAeropuertoOrigen(a) {
-    nuevoVuelo.aeropuertoOrigenId = a.id;
-    busquedaOrigen = `${a.codigo} - ${a.nombre}`;
-    mostrarDropdownOrigen = false;
-  }
-  function seleccionarAeropuertoDestino(a) {
-    nuevoVuelo.aeropuertoDestinoId = a.id;
-    busquedaDestino = `${a.codigo} - ${a.nombre}`;
-    mostrarDropdownDestino = false;
-  }
-  function seleccionarAvion(a) {
-    nuevoVuelo.avionId = a.id;
-    busquedaAvion = a.nombreCompleto;
-    mostrarDropdownAvion = false;
-    nuevoVuelo.boletosTurista   = '';
-    nuevoVuelo.boletosEjecutivo = '';
-  }
-  function agregarTripulante(t) {
-    nuevoVuelo.tripulantesSeleccionados = [...nuevoVuelo.tripulantesSeleccionados, t];
-    busquedaTripulante = ''; mostrarDropdownTripulante = false;
-  }
-  function quitarTripulante(id) {
-    nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== id);
-  }
-  // Carga los aviones y tripulantes ocupados para la fecha/hora seleccionada
-  async function cargarDisponibilidad() {
-    if (!nuevoVuelo.fecha) {
-      avionesOcupadosIds     = new Set();
-      tripulantesOcupadosIds = new Set();
-      return;
-    }
-    cargandoDisponibilidad = true;
-    try {
-      const [rAviones, rTrip] = await Promise.all([
-        fetch(`${API}/api/admin/vuelos/aviones-ocupados?fecha=${nuevoVuelo.fecha}`,
-              { credentials: 'include' }),
-        nuevoVuelo.horaSalida
-          ? fetch(`${API}/api/admin/vuelos/tripulantes-ocupados?fecha=${nuevoVuelo.fecha}&horaSalida=${nuevoVuelo.horaSalida}`,
-                  { credentials: 'include' })
-          : Promise.resolve(null)
-      ]);
-
-      if (rAviones.ok) {
-        const ids = await rAviones.json();
-        avionesOcupadosIds = new Set(ids);
-      }
-      if (rTrip && rTrip.ok) {
-        const ids = await rTrip.json();
-        tripulantesOcupadosIds = new Set(ids);
-      }
-
-      // Si el avión seleccionado ahora está ocupado, limpiarlo
-      if (nuevoVuelo.avionId && avionesOcupadosIds.has(parseInt(nuevoVuelo.avionId))) {
-        nuevoVuelo.avionId = '';
-        nuevoVuelo.boletosTurista = '';
-        nuevoVuelo.boletosEjecutivo = '';
-      }
-      // Quitar tripulantes seleccionados que ya estén ocupados
-      nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados
-        .filter(t => !tripulantesOcupadosIds.has(t.id));
-
-    } catch(e) { console.error('Error cargando disponibilidad', e); }
-    finally { cargandoDisponibilidad = false; }
-  }
-
-  function limpiarFormularioVuelo() {
-    nuevoVuelo = {
-      numeroVuelo: '', aeropuertoOrigenId: '', aeropuertoDestinoId: '',
-      avionId: '', fecha: '', horaSalida: '', horaLlegada: '',
-      fechaLlegada: '', boletosTurista: '', boletosEjecutivo: '',
-      precioTurista: '', precioEjecutiva: '', tripulantesSeleccionados: []
-    };
-    busquedaOrigen = ''; busquedaDestino = ''; busquedaAvion = ''; busquedaTripulante = '';
-    previewLlegada = null;
-  }
-
-  async function handleCrearVuelo() {
-    if (!nuevoVuelo.numeroVuelo)         { mostrarToast('error', 'Ingresa el número de vuelo'); return; }
-    if (!nuevoVuelo.aeropuertoOrigenId)  { mostrarToast('error', 'Selecciona el aeropuerto de origen'); return; }
-    if (!nuevoVuelo.aeropuertoDestinoId) { mostrarToast('error', 'Selecciona el aeropuerto de destino'); return; }
-    if (!nuevoVuelo.avionId)             { mostrarToast('error', 'Selecciona un avión'); return; }
-    if (!nuevoVuelo.fecha)               { mostrarToast('error', 'Selecciona la fecha del vuelo'); return; }
-    if (!nuevoVuelo.horaSalida)          { mostrarToast('error', 'Ingresa la hora de salida'); return; }
-    // NOTA: HoraLlegada y FechaLlegada son calculadas automáticamente por el servidor
-    if (!nuevoVuelo.boletosTurista || parseInt(nuevoVuelo.boletosTurista) < 0)   { mostrarToast('error', 'Ingresa los boletos de clase turista'); return; }
-    if (!nuevoVuelo.boletosEjecutivo || parseInt(nuevoVuelo.boletosEjecutivo) < 0) { mostrarToast('error', 'Ingresa los boletos de clase ejecutiva'); return; }
-    if (excedeLimite) { mostrarToast('error', `La suma de boletos (${totalBoletosAsignados}) excede la capacidad del avión (${capacidadAvion})`); return; }
-    if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) { mostrarToast('error', 'Ingresa los precios de ambas clases'); return; }
-
-    // Verificar que exista una ruta entre los aeropuertos seleccionados
-    try {
-      const rCheck = await fetch(
-        `${API}/api/rutas/existe?origenId=${nuevoVuelo.aeropuertoOrigenId}&destinoId=${nuevoVuelo.aeropuertoDestinoId}`,
-        { credentials: 'include' }
-      );
-      if (rCheck.ok) {
-        const { existe } = await rCheck.json();
-        if (!existe) {
-          mostrarToast('error', 'No existe una ruta entre estos aeropuertos. Ve a "Gestionar Rutas" y crea la ruta primero.');
-          return;
-        }
-      }
-    } catch(e) { /* si falla la verificación dejamos pasar, el backend validará */ }
-
-    try {
-      const datos = {
-        numeroVuelo:         nuevoVuelo.numeroVuelo,
-        aeropuertoOrigenId:  parseInt(nuevoVuelo.aeropuertoOrigenId),
-        aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
-        avionId:             parseInt(nuevoVuelo.avionId),
-        fecha:               nuevoVuelo.fecha,
-        horaSalida:          nuevoVuelo.horaSalida,
-        // horaLlegada y fechaLlegada son calculadas en el backend
-        boletosTurista:      parseInt(nuevoVuelo.boletosTurista),
-        boletosEjecutivo:    parseInt(nuevoVuelo.boletosEjecutivo),
-        precioTurista:       parseFloat(nuevoVuelo.precioTurista),
-        precioEjecutiva:     parseFloat(nuevoVuelo.precioEjecutiva),
-        tripulantesIds:      nuevoVuelo.tripulantesSeleccionados.map(t => t.id)
-      };
-
-      const r = await fetch(`${API}/api/admin/vuelos`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      });
-
-      if (r.ok) {
-        mostrarToast('success', '¡Vuelo creado exitosamente!');
-        limpiarFormularioVuelo();
-        await cargarHistorialVuelos();
-        activeSection = 'historial';
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al crear el vuelo');
-      }
-    } catch (e) {
-      mostrarToast('error', 'Error de conexión al crear el vuelo');
-    }
-  }
-
-  async function handleCambiarRol(userId, nuevoRolId) {
-    try {
-      const r = await fetch(`${API}/api/usuarios/cambiar-rol`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuarioId: parseInt(userId), nuevoRolId: parseInt(nuevoRolId) })
-      });
-      if (r.ok) {
-        mostrarToast('success', 'Rol actualizado correctamente');
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al cambiar el rol');
-      }
-    } catch (e) { mostrarToast('error', 'Error de conexión al cambiar el rol'); }
-  }
-
-  async function handleCambiarEstadoVuelo(vueloId) {
-    const ok = await mostrarConfirm(
-      '¿Cancelar este vuelo?',
-      'Se cancelarán también los boletos activos y las reservaciones asociadas.',
-      'danger'
-    );
-    if (!ok) return;
-
-    try {
-      const r = await fetch(`${API}/api/admin/vuelos/${vueloId}/cancelar`, {
-        method: 'PUT', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (r.ok) {
-        mostrarToast('success', 'Vuelo cancelado exitosamente');
-        await cargarHistorialVuelos();
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al cancelar el vuelo');
-      }
-    } catch (e) { mostrarToast('error', 'Error de conexión al cancelar el vuelo'); }
-  }
-
-  // ===== AVIONES =====
-  function abrirFormularioNuevoAvion() {
-    modoEdicion = false;
-    avionForm = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
-    avionImagenPreview = null; avionImagenBase64 = null;
-    mostrarFormularioAvion = true;
-  }
-  function abrirFormularioEditarAvion(avion) {
-    modoEdicion = true;
-    avionForm = { id: avion.id, marca: avion.marca, modelo: avion.modelo, capacidadPasajeros: avion.capacidadPasajeros };
-    avionImagenBase64 = null; avionImagenPreview = avion.imagenBase64 || null;
-    mostrarFormularioAvion = true;
-  }
-  function cerrarFormularioAvion() {
-    mostrarFormularioAvion = false;
-    avionForm = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
-    avionImagenPreview = null; avionImagenBase64 = null;
-  }
-
-  async function handleGuardarAvion() {
-    try {
-      const payload = {
-        marca: avionForm.marca, modelo: avionForm.modelo,
-        capacidadPasajeros: parseInt(avionForm.capacidadPasajeros),
-        imagenBase64: avionImagenBase64 || null
-      };
-      const url    = modoEdicion ? `${API}/api/aviones/${avionForm.id}` : `${API}/api/aviones`;
-      const method = modoEdicion ? 'PUT' : 'POST';
-      const r = await fetch(url, {
-        method, credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (r.ok) {
-        mostrarToast('success', modoEdicion ? 'Avión actualizado correctamente' : 'Avión creado correctamente');
-        await cargarAviones(); cerrarFormularioAvion();
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al guardar el avión');
-      }
-    } catch (e) { mostrarToast('error', 'Error de conexión al guardar el avión'); }
-  }
-
-  async function handleEliminarImagenAvion(avionId) {
-    const ok = await mostrarConfirm('¿Quitar la imagen de este avión?', '', 'warning');
-    if (!ok) return;
-    try {
-      const r = await fetch(`${API}/api/aviones/${avionId}/imagen`, { method: 'DELETE', credentials: 'include' });
-      if (r.ok) { mostrarToast('success', 'Imagen eliminada'); await cargarAviones(); }
-      else mostrarToast('error', 'Error al eliminar la imagen');
-    } catch (e) { mostrarToast('error', 'Error de conexión'); }
-  }
-
-  // ===== TRIPULANTES =====
-  function abrirFormularioNuevoTripulante() {
-    modoEdicion = false;
-    tripulanteForm = { id: null, nombre: '', apellido: '', rolID: '' };
-    tripulanteImagenPreview = null; tripulanteImagenBase64 = null;
-    mostrarFormularioTripulante = true;
-  }
-  function abrirFormularioEditarTripulante(t) {
-    modoEdicion = true;
-    tripulanteForm = { id: t.id, nombre: t.nombre, apellido: t.apellido, rolID: t.rolID };
-    tripulanteImagenBase64 = null; tripulanteImagenPreview = t.imagenBase64 || null;
-    mostrarFormularioTripulante = true;
-  }
-  function cerrarFormularioTripulante() {
-    mostrarFormularioTripulante = false;
-    tripulanteForm = { id: null, nombre: '', apellido: '', rolID: '' };
-    tripulanteImagenPreview = null; tripulanteImagenBase64 = null;
-  }
-
-  async function handleGuardarTripulante() {
-    try {
-      const payload = {
-        nombre: tripulanteForm.nombre, apellido: tripulanteForm.apellido,
-        rolID: parseInt(tripulanteForm.rolID),
-        imagenBase64: tripulanteImagenBase64 || null
-      };
-      const url    = modoEdicion ? `${API}/api/tripulacion/${tripulanteForm.id}` : `${API}/api/tripulacion`;
-      const method = modoEdicion ? 'PUT' : 'POST';
-      const r = await fetch(url, {
-        method, credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (r.ok) {
-        mostrarToast('success', modoEdicion ? 'Tripulante actualizado correctamente' : 'Tripulante creado correctamente');
-        await cargarTripulantes(); cerrarFormularioTripulante();
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al guardar el tripulante');
-      }
-    } catch (e) { mostrarToast('error', 'Error de conexión al guardar el tripulante'); }
-  }
-
-  async function handleEliminarImagenTripulante(tripulanteId) {
-    const ok = await mostrarConfirm('¿Quitar la foto de este tripulante?', '', 'warning');
-    if (!ok) return;
-    try {
-      const r = await fetch(`${API}/api/tripulacion/${tripulanteId}/imagen`, { method: 'DELETE', credentials: 'include' });
-      if (r.ok) { mostrarToast('success', 'Foto eliminada'); await cargarTripulantes(); }
-      else mostrarToast('error', 'Error al eliminar la foto');
-    } catch (e) { mostrarToast('error', 'Error de conexión'); }
-  }
-
-  // ===== AEROPUERTOS =====
-  function abrirFormularioNuevoAeropuerto() {
-    modoEdicion = false;
-    aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
-    paisQueryAeropuerto = ''; ciudadQueryAeropuerto = '';
-    paisSeleccionadoAeropuerto = null; ciudadSeleccionadaAeropuerto = false;
-    paisesSugeridosAeropuerto = []; ciudadesSugeridasAeropuerto = [];
-    aeropuertoImagenPreview = null; aeropuertoImagenBase64 = null;
-    mostrarFormularioAeropuerto = true;
-  }
-
-  async function abrirFormularioEditarAeropuerto(aeropuerto) {
-    modoEdicion = true;
-    try {
-      const r = await fetch(`${API}/api/aeropuertos/${aeropuerto.id}`);
-      if (r.ok) {
-        const completo = await r.json();
-        aeropuertoForm = { id: completo.id, codigo: completo.codigo, nombre: completo.nombre, ciudad: completo.ciudad, pais: completo.pais, zonaHoraria: completo.zonaHoraria || '' };
-        paisQueryAeropuerto   = completo.pais;
-        ciudadQueryAeropuerto = completo.ciudad;
-        const paisEncontrado = todosLosPaises.find(p => p.country.toLowerCase() === completo.pais.toLowerCase());
-        if (paisEncontrado) paisSeleccionadoAeropuerto = paisEncontrado;
-        ciudadSeleccionadaAeropuerto = true;
-        aeropuertoImagenBase64  = null;
-        aeropuertoImagenPreview = completo.imagenBase64 || null;
-        mostrarFormularioAeropuerto = true;
-      }
-    } catch (e) { mostrarToast('error', 'Error al cargar los datos del aeropuerto'); }
-  }
-
-  function cerrarFormularioAeropuerto() {
-    mostrarFormularioAeropuerto = false;
-    aeropuertoForm = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
-    paisQueryAeropuerto = ''; ciudadQueryAeropuerto = '';
-    paisSeleccionadoAeropuerto = null; ciudadSeleccionadaAeropuerto = false;
-    paisesSugeridosAeropuerto = []; ciudadesSugeridasAeropuerto = [];
-    aeropuertoImagenPreview = null; aeropuertoImagenBase64 = null;
-  }
-
-  async function handleGuardarAeropuerto() {
-    if (!paisSeleccionadoAeropuerto || !aeropuertoForm.pais) {
-      mostrarToast('error', 'Debes seleccionar un país de la lista'); return;
-    }
-    if (!ciudadSeleccionadaAeropuerto || !aeropuertoForm.ciudad) {
-      mostrarToast('error', 'Debes seleccionar una ciudad de la lista'); return;
-    }
-    try {
-      const payload = {
-        nombre: aeropuertoForm.nombre, codigo: aeropuertoForm.codigo.toUpperCase(),
-        ciudad: aeropuertoForm.ciudad, pais: aeropuertoForm.pais,
-        zonaHoraria: aeropuertoForm.zonaHoraria?.trim() || null,
-        imagenBase64: aeropuertoImagenBase64 || null
-      };
-      const url    = modoEdicion ? `${API}/api/aeropuertos/${aeropuertoForm.id}` : `${API}/api/aeropuertos`;
-      const method = modoEdicion ? 'PUT' : 'POST';
-      const r = await fetch(url, {
-        method, credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (r.ok) {
-        mostrarToast('success', modoEdicion ? 'Aeropuerto actualizado correctamente' : 'Aeropuerto creado correctamente');
-        await cargarAeropuertos(); cerrarFormularioAeropuerto();
-      } else {
-        const err = await r.json();
-        mostrarToast('error', err.message || 'Error al guardar el aeropuerto');
-      }
-    } catch (e) { mostrarToast('error', 'Error de conexión al guardar el aeropuerto'); }
-  }
-
-  async function handleEliminarImagenAeropuerto(aeropuertoId) {
-    const ok = await mostrarConfirm('¿Quitar la imagen de este aeropuerto?', '', 'warning');
-    if (!ok) return;
-    try {
-      const r = await fetch(`${API}/api/aeropuertos/${aeropuertoId}/imagen`, { method: 'DELETE', credentials: 'include' });
-      if (r.ok) { mostrarToast('success', 'Imagen eliminada'); await cargarAeropuertos(); }
-      else mostrarToast('error', 'Error al eliminar la imagen');
-    } catch (e) { mostrarToast('error', 'Error de conexión'); }
-  }
+  onDestroy(() => { unsubscribeSesion(); });
 </script>
 
-<!-- ═══════════════════════════════════════════════════════════
-     TOASTS
-════════════════════════════════════════════════════════════ -->
+<!-- ── Toasts ─────────────────────────────────────────────────────── -->
 <div class="toast-stack" aria-live="polite">
   {#each toasts as toast (toast.id)}
     <div class="toast toast--{toast.tipo}" role="alert">
@@ -1092,17 +144,19 @@
   {/each}
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     MODAL CONFIRMACIÓN
-════════════════════════════════════════════════════════════ -->
+<!-- ── Modal confirmación ─────────────────────────────────────────── -->
 {#if confirmVisible}
   <div class="modal-overlay" on:click={cancelarConfirm} role="dialog" aria-modal="true">
     <div class="confirm-dialog" on:click|stopPropagation>
       <div class="confirm-dialog__icon confirm-dialog__icon--{confirmTipo}">
         {#if confirmTipo === 'danger'}
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
         {:else}
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+          </svg>
         {/if}
       </div>
       <h3 class="confirm-dialog__title">{confirmMensaje}</h3>
@@ -1121,1396 +175,133 @@
   </div>
 {/if}
 
-<!-- ═══════════════════════════════════════════════════════════
-     PANEL PRINCIPAL
-════════════════════════════════════════════════════════════ -->
+<!-- ── Panel principal ────────────────────────────────────────────── -->
 <div class="admin">
   <div class="admin__container">
 
     <div class="admin__header">
       <button class="admin__back" on:click={() => navigateTo('home')}>← Salir del Panel</button>
-      <h1 class="admin__title">Panel de Administracion</h1>
-      <p class="admin__subtitle">Gestion de vuelos, usuarios y metricas</p>
+      <h1 class="admin__title">Panel de Administración</h1>
+      <p class="admin__subtitle">Gestión de vuelos, usuarios y métricas</p>
     </div>
 
     <div class="admin__content">
+
+      <!-- ── Sidebar ── -->
       <aside class="admin__sidebar">
         <nav class="admin-nav">
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'crear-vuelo'}
-            on:click={() => activeSection = 'crear-vuelo'}>Crear Vuelo</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-rutas'}
-            on:click={() => { activeSection = 'gestionar-rutas'; cargarRutas(); }}>Gestionar Rutas</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-aviones'}
-            on:click={() => activeSection = 'gestionar-aviones'}>Gestionar Aviones</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-tripulantes'}
-            on:click={() => activeSection = 'gestionar-tripulantes'}>Gestionar Tripulantes</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'gestionar-aeropuertos'}
-            on:click={() => activeSection = 'gestionar-aeropuertos'}>Gestionar Aeropuertos</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'historial'}
-            on:click={() => activeSection = 'historial'}>Historial</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'usuarios'}
-            on:click={() => activeSection = 'usuarios'}>Usuarios</button>
-          <button class="admin-nav__item" class:admin-nav__item--active={activeSection === 'metricas'}
-            on:click={() => { activeSection = 'metricas'; activarMetricas(); }}>Metricas</button>
+          {#each navItems as item}
+            <button
+              class="admin-nav__item"
+              class:admin-nav__item--active={activeSection === item.id}
+              on:click={() => activeSection = item.id}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d={item.icon} />
+              </svg>
+              {item.label}
+            </button>
+          {/each}
         </nav>
+        <div class="admin__sidebar-footer" style="padding:1rem">
+          <button class="admin__back" on:click={() => navigateTo('home')}>
+            ← Volver al sitio
+          </button>
+        </div>
       </aside>
 
+      <!-- ── Contenido principal ── -->
       <main class="admin__main">
 
-        <!-- ===== CREAR VUELO ===== -->
+        <!-- Topbar -->
+        <header style="margin-bottom:2rem">
+          <h2 style="font-size:1.4rem;color:var(--secondary-color);margin:0 0 .25rem;font-weight:600">
+            {#if activeSection === 'crear-vuelo'}Crear Nuevo Vuelo
+            {:else if activeSection === 'gestionar-rutas'}Gestionar Rutas
+            {:else if activeSection === 'gestionar-aviones'}Gestionar Aviones
+            {:else if activeSection === 'gestionar-tripulantes'}Gestionar Tripulantes
+            {:else if activeSection === 'gestionar-aeropuertos'}Gestionar Aeropuertos
+            {:else if activeSection === 'historial'}Historial de Vuelos
+            {:else if activeSection === 'usuarios'}Usuarios
+            {:else if activeSection === 'metricas'}Métricas y Analíticos
+            {/if}
+          </h2>
+          <p style="font-size:.8rem;color:var(--text-muted);margin:0">
+            Panel de Administración · Broom AirLine ·
+            {new Date().toLocaleDateString('es-GT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </header>
+
+        <!-- ── Módulos ── -->
         {#if activeSection === 'crear-vuelo'}
-          <section class="admin-section">
-            <h2 class="admin-section__title">Crear Nuevo Vuelo</h2>
-            <p class="admin-section__subtitle">Completa todos los datos del vuelo</p>
+          <AdminCrearVuelo
+            {API}
+            {aeropuertos}
+            {aviones}
+            {tripulantes}
+            {mostrarToast}
+            {mostrarConfirm}
+            on:vueloCreado={onVueloCreado}
+            on:irARutas={() => activeSection = 'gestionar-rutas'}
+          />
 
-            <form class="admin-form" on:submit|preventDefault={handleCrearVuelo}>
-
-              <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Informacion Basica</h3>
-                <div class="admin-form__row">
-                  <div class="admin-form__field">
-                    <label for="numeroVuelo" class="admin-form__label">Numero de Vuelo *</label>
-                    <input type="text" id="numeroVuelo" class="admin-form__input"
-                      bind:value={nuevoVuelo.numeroVuelo} placeholder="Ej: AA 1234" required />
-                  </div>
-                  <div class="admin-form__field">
-                    <label for="fecha" class="admin-form__label">Fecha del Vuelo *</label>
-                    <input type="date" id="fecha" class="admin-form__input"
-                      bind:value={nuevoVuelo.fecha} required />
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Ruta</h3>
-                <div class="admin-form__row">
-                  <div class="admin-form__field">
-                    <label class="admin-form__label">Aeropuerto de Origen *</label>
-                    {#if loadingAeropuertos}
-                      <p class="loading-text">Cargando aeropuertos...</p>
-                    {:else}
-                      <div class="searchable-select">
-                        <input type="text" class="admin-form__input" bind:value={busquedaOrigen}
-                          on:focus={() => mostrarDropdownOrigen = true}
-                          on:blur={() => setTimeout(() => mostrarDropdownOrigen = false, 200)}
-                          placeholder="Buscar aeropuerto..." autocomplete="off" />
-                        {#if mostrarDropdownOrigen && aeropuertosFiltradosOrigen.length > 0}
-                          <div class="searchable-select__dropdown">
-                            {#each aeropuertosFiltradosOrigen.slice(0,10) as a}
-                              <button type="button" class="searchable-select__option"
-                                on:click={() => seleccionarAeropuertoOrigen(a)}>
-                                <span class="searchable-select__option-code">{a.codigo}</span>
-                                <span class="searchable-select__option-name">{a.nombre}</span>
-                                <span class="searchable-select__option-city">{a.ciudad}</span>
-                              </button>
-                            {/each}
-                          </div>
-                        {/if}
-                        {#if aeropuertoOrigen}
-                          <p class="selected-item">✔ {aeropuertoOrigen.codigo} — {aeropuertoOrigen.nombre}</p>
-                        {/if}
-                      </div>
-                    {/if}
-                  </div>
-                  <div class="admin-form__field">
-                    <label class="admin-form__label">Aeropuerto de Destino *</label>
-                    {#if loadingAeropuertos}
-                      <p class="loading-text">Cargando aeropuertos...</p>
-                    {:else}
-                      <div class="searchable-select">
-                        <input type="text" class="admin-form__input" bind:value={busquedaDestino}
-                          on:focus={() => mostrarDropdownDestino = true}
-                          on:blur={() => setTimeout(() => mostrarDropdownDestino = false, 200)}
-                          placeholder="Buscar aeropuerto..." autocomplete="off" />
-                        {#if mostrarDropdownDestino && aeropuertosFiltradosDestino.length > 0}
-                          <div class="searchable-select__dropdown">
-                            {#each aeropuertosFiltradosDestino.slice(0,10) as a}
-                              <button type="button" class="searchable-select__option"
-                                on:click={() => seleccionarAeropuertoDestino(a)}>
-                                <span class="searchable-select__option-code">{a.codigo}</span>
-                                <span class="searchable-select__option-name">{a.nombre}</span>
-                                <span class="searchable-select__option-city">{a.ciudad}</span>
-                              </button>
-                            {/each}
-                          </div>
-                        {/if}
-                        {#if aeropuertoDestino}
-                          <p class="selected-item">✔ {aeropuertoDestino.codigo} — {aeropuertoDestino.nombre}</p>
-                        {/if}
-                      </div>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Horarios</h3>
-                <div class="admin-form__row">
-                  <div class="admin-form__field">
-                    <label for="horaSalida" class="admin-form__label">Hora de Salida *</label>
-                    <input type="time" id="horaSalida" class="admin-form__input"
-                      bind:value={nuevoVuelo.horaSalida} required />
-                    <small class="img-hint">Hora local en el aeropuerto de origen</small>
-                  </div>
-                  <div class="admin-form__field">
-                    <label class="admin-form__label">Hora de Llegada</label>
-                    {#if rutaExisteStatus === 'checking'}
-                      <div class="llegada-preview llegada-preview--loading">🔍 Verificando ruta...</div>
-                    {:else if rutaExisteStatus === 'missing'}
-                      <div class="llegada-preview llegada-preview--no-ruta">
-                        <span class="llegada-preview__no-ruta-icon">🚫</span>
-                        <span class="llegada-preview__no-ruta-title">No existe esta ruta</span>
-                        <small class="llegada-preview__no-ruta-msg">
-                          No hay una ruta creada entre estos dos aeropuertos.
-                          Debes crearla en <strong>Gestionar Rutas</strong> antes de poder crear el vuelo.
-                        </small>
-                        <button type="button" class="llegada-preview__no-ruta-btn"
-                          on:click={() => { activeSection = 'gestionar-rutas'; mostrarModalCrearRuta = true; }}>
-                          → Ir a crear la ruta
-                        </button>
-                      </div>
-                    {:else if loadingPreview}
-                      <div class="llegada-preview llegada-preview--loading">⏳ Calculando llegada...</div>
-                    {:else if previewLlegada}
-                      <div class="llegada-preview" class:llegada-preview--tz={previewLlegada.usoZonasHorarias}>
-                        <span class="llegada-preview__time">
-                          🛬 {previewLlegada.horaLlegada}
-                          {#if previewLlegada.fechaLlegada !== nuevoVuelo.fecha}
-                            <span class="llegada-preview__nextday">(+1 día)</span>
-                          {/if}
-                        </span>
-                        <span class="llegada-preview__meta">
-                          {previewLlegada.duracionMinutos} min ·
-                          {#if previewLlegada.usoZonasHorarias}
-                            <span class="tz-badge tz-badge--ok">✔ Con zona horaria</span>
-                          {:else}
-                            <span class="tz-badge tz-badge--missing">⚠ Sin zona horaria</span>
-                          {/if}
-                        </span>
-                        <small class="llegada-preview__nota">{previewLlegada.nota}</small>
-                      </div>
-                    {:else if nuevoVuelo.aeropuertoOrigenId && nuevoVuelo.aeropuertoDestinoId && nuevoVuelo.fecha && nuevoVuelo.horaSalida}
-                      <div class="llegada-preview llegada-preview--empty">Calculando llegada...</div>
-                    {:else}
-                      <div class="llegada-preview llegada-preview--empty">
-                        Se calcula automáticamente al completar origen, destino, fecha y hora de salida
-                      </div>
-                    {/if}
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Aeronave</h3>
-                <div class="admin-form__field admin-form__field--full">
-                  <label class="admin-form__label">Seleccionar Avion *</label>
-                  {#if nuevoVuelo.fecha && avionesOcupadosIds.size > 0}
-                    <small class="disponibilidad-hint disponibilidad-hint--warn">
-                      ⚠ {avionesOcupadosIds.size} avión(es) no disponibles para esta fecha — ya están asignados a otro vuelo
-                    </small>
-                  {:else if nuevoVuelo.fecha && !cargandoDisponibilidad}
-                    <small class="disponibilidad-hint disponibilidad-hint--ok">
-                      ✔ Mostrando aviones disponibles para {nuevoVuelo.fecha}
-                    </small>
-                  {/if}
-                  {#if loadingAviones}
-                    <p class="loading-text">Cargando aviones...</p>
-                  {:else}
-                    <div class="searchable-select">
-                      <input type="text" class="admin-form__input" bind:value={busquedaAvion}
-                        on:focus={() => mostrarDropdownAvion = true}
-                        on:blur={() => setTimeout(() => mostrarDropdownAvion = false, 200)}
-                        placeholder="Buscar avion..." autocomplete="off" />
-                      {#if mostrarDropdownAvion && avionesFiltrados.length > 0}
-                        <div class="searchable-select__dropdown">
-                          {#each avionesFiltrados.slice(0,10) as a}
-                            <button type="button" class="searchable-select__option"
-                              on:click={() => seleccionarAvion(a)}>
-                              {#if a.imagenBase64}
-                                <img src={a.imagenBase64} alt={a.nombreCompleto} class="dropdown-thumb" />
-                              {/if}
-                              <span class="searchable-select__option-name">{a.nombreCompleto}</span>
-                              <span class="searchable-select__option-detail">{a.capacidadPasajeros} pasajeros</span>
-                            </button>
-                          {/each}
-                        </div>
-                      {:else if mostrarDropdownAvion && avionesFiltrados.length === 0 && aviones.length > 0}
-                        <div class="searchable-select__dropdown">
-                          <p class="searchable-select__empty">
-                            🚫 Todos los aviones están ocupados para el {nuevoVuelo.fecha || 'día seleccionado'}
-                          </p>
-                        </div>
-                      {/if}
-                      {#if avionSeleccionado}
-                        <p class="selected-item">✔ {avionSeleccionado.nombreCompleto}</p>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-              </div>
-
-              <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Distribucion de Asientos y Precios</h3>
-
-                {#if avionSeleccionado}
-                  <div class="capacidad-bar">
-                    <div class="capacidad-bar__labels">
-                      <span>Capacidad total: <strong>{capacidadAvion} pax</strong></span>
-                      <span class="capacidad-bar__count"
-                        class:capacidad-bar__count--ok={totalBoletosAsignados === capacidadAvion && !excedeLimite}
-                        class:capacidad-bar__count--error={excedeLimite}>
-                        {totalBoletosAsignados} asignados
-                        {#if excedeLimite}&nbsp;⚠ Excede límite{:else if totalBoletosAsignados === capacidadAvion}&nbsp;✔ Completo{/if}
-                      </span>
-                    </div>
-                    <div class="capacidad-bar__track">
-                      <div class="capacidad-bar__fill"
-                        class:capacidad-bar__fill--error={excedeLimite}
-                        style="width:{porcentajeOcupado}%">
-                      </div>
-                    </div>
-                  </div>
-                {/if}
-
-                <div class="admin-form__row">
-                  <div class="admin-form__field">
-                    <label for="boletosTurista" class="admin-form__label">Boletos Clase Turista *</label>
-                    <input type="number" id="boletosTurista" class="admin-form__input" min="0"
-                      bind:value={nuevoVuelo.boletosTurista} placeholder="Ej: 180"
-                      max={capacidadAvion > 0 ? capacidadAvion : undefined} required />
-                  </div>
-                  <div class="admin-form__field">
-                    <label for="boletosEjecutivo" class="admin-form__label">Boletos Clase Ejecutiva *</label>
-                    <input type="number" id="boletosEjecutivo" class="admin-form__input" min="0"
-                      bind:value={nuevoVuelo.boletosEjecutivo} placeholder="Ej: 60"
-                      max={capacidadAvion > 0 ? capacidadAvion : undefined} required />
-                  </div>
-                </div>
-
-                <div class="admin-form__row" style="margin-top:1.5rem">
-                  <div class="admin-form__field">
-                    <label for="precioTurista" class="admin-form__label">Precio Turista (USD) *</label>
-                    <input type="number" id="precioTurista" class="admin-form__input" min="0" step="0.01"
-                      bind:value={nuevoVuelo.precioTurista} placeholder="Ej: 150.00" required />
-                  </div>
-                  <div class="admin-form__field">
-                    <label for="precioEjecutiva" class="admin-form__label">Precio Ejecutiva (USD) *</label>
-                    <input type="number" id="precioEjecutiva" class="admin-form__input" min="0" step="0.01"
-                      bind:value={nuevoVuelo.precioEjecutiva} placeholder="Ej: 300.00" required />
-                  </div>
-                </div>
-              </div>
-
-              <div class="admin-form__group">
-                <h3 class="admin-form__group-title">Tripulacion</h3>
-                <div class="admin-form__field admin-form__field--full">
-                  <label class="admin-form__label">Agregar Tripulantes</label>
-                  {#if nuevoVuelo.fecha && tripulantesOcupadosIds.size > 0}
-                    <small class="disponibilidad-hint disponibilidad-hint--warn">
-                      ⚠ {tripulantesOcupadosIds.size} tripulante(s) no disponibles — tienen vuelo ese día o finalizaron uno hace menos de 24h
-                    </small>
-                  {:else if nuevoVuelo.fecha && nuevoVuelo.horaSalida && !cargandoDisponibilidad}
-                    <small class="disponibilidad-hint disponibilidad-hint--ok">
-                      ✔ Mostrando tripulantes disponibles para {nuevoVuelo.fecha} a las {nuevoVuelo.horaSalida}
-                    </small>
-                  {/if}
-                  {#if loadingTripulantes}
-                    <p class="loading-text">Cargando tripulantes...</p>
-                  {:else}
-                    <div class="searchable-select">
-                      <input type="text" class="admin-form__input" bind:value={busquedaTripulante}
-                        on:focus={() => mostrarDropdownTripulante = true}
-                        on:blur={() => setTimeout(() => mostrarDropdownTripulante = false, 200)}
-                        placeholder="Buscar por nombre o rol..." autocomplete="off" />
-                      {#if mostrarDropdownTripulante && tripulantesFiltrados.length > 0}
-                        <div class="searchable-select__dropdown">
-                          {#each tripulantesFiltrados.slice(0,10) as t}
-                            <button type="button" class="searchable-select__option"
-                              on:click={() => agregarTripulante(t)}>
-                              {#if t.imagenBase64}
-                                <img src={t.imagenBase64} alt={t.nombreCompleto}
-                                  class="dropdown-thumb dropdown-thumb--circle" />
-                              {/if}
-                              <span class="searchable-select__option-name">{t.nombreCompleto}</span>
-                              <span class="searchable-select__option-role">{t.nombreRol}</span>
-                            </button>
-                          {/each}
-                        </div>
-                      {:else if mostrarDropdownTripulante && tripulantesFiltrados.length === 0 && tripulantes.length > 0}
-                        <div class="searchable-select__dropdown">
-                          <p class="searchable-select__empty">
-                            🚫 Ningún tripulante disponible para esta fecha/hora.<br>
-                            <small>Deben pasar 24h desde que finalice su vuelo anterior.</small>
-                          </p>
-                        </div>
-                      {/if}
-                    </div>
-                    {#if nuevoVuelo.tripulantesSeleccionados.length > 0}
-                      <div class="tripulantes-seleccionados">
-                        <p class="tripulantes-seleccionados__title">
-                          Tripulantes seleccionados ({nuevoVuelo.tripulantesSeleccionados.length})
-                        </p>
-                        <div class="tripulantes-seleccionados__list">
-                          {#each nuevoVuelo.tripulantesSeleccionados as t}
-                            <div class="tripulante-item">
-                              <div class="tripulante-item__info">
-                                <span class="tripulante-item__name">{t.nombreCompleto}</span>
-                                <span class="tripulante-item__rol">{t.nombreRol}</span>
-                              </div>
-                              <button type="button" class="tripulante-item__remove"
-                                on:click={() => quitarTripulante(t.id)}>×</button>
-                            </div>
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
-                  {/if}
-                </div>
-              </div>
-
-              <div class="admin-form__actions">
-                <button type="submit" class="admin-form__submit">Crear Vuelo</button>
-                <button type="button" class="admin-form__cancel" on:click={limpiarFormularioVuelo}>Limpiar</button>
-              </div>
-            </form>
-          </section>
-
-        <!-- ===== GESTIONAR RUTAS ===== -->
         {:else if activeSection === 'gestionar-rutas'}
-          <section class="admin-section">
-            <div class="section-header">
-              <div>
-                <h2 class="admin-section__title">Gestionar Rutas</h2>
-                <p class="admin-section__subtitle">Edita la duración estimada en minutos de cada ruta. La hora de llegada se calculará automáticamente usando las zonas horarias de cada aeropuerto.</p>
-              </div>
-              <div style="display:flex;gap:.75rem">
-                <button class="btn-add" on:click={() => mostrarModalCrearRuta = true}>
-                  + Nueva Ruta
-                </button>
-                <button class="btn-add" on:click={cargarRutas} style="background:#4b5563">
-                  ↻ Actualizar
-                </button>
-              </div>
-            </div>
+          <AdminRutas
+            {API}
+            {aeropuertos}
+            {mostrarToast}
+            on:rutaCreada={() => {}}
+          />
 
-            {#if loadingRutas}
-              <p class="loading-text">Cargando rutas...</p>
-            {:else if rutas.length === 0}
-              <div class="placeholder-card">
-                <p class="placeholder-card__text">No hay rutas registradas. Crea una ruta manualmente con el botón <strong>+ Nueva Ruta</strong>, o selecciona aeropuertos al crear un vuelo para generarla automáticamente.</p>
-              </div>
-            {:else}
-              <div class="rutas-tz-note">
-                <span>💡</span>
-                <span>Las rutas con <strong>✔ TZ</strong> en ambos aeropuertos calcularán la hora de llegada con conversión de zona horaria real. Si algún aeropuerto no tiene timezone, edítalo en <em>Gestionar Aeropuertos</em>.</span>
-              </div>
-              <table class="table">
-                <thead class="table__head">
-                  <tr>
-                    <th class="table__header">Origen</th>
-                    <th class="table__header">Destino</th>
-                    <th class="table__header">TZ Origen</th>
-                    <th class="table__header">TZ Destino</th>
-                    <th class="table__header">Duración (min)</th>
-                    <th class="table__header">Vuelos</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each rutas as ruta}
-                    <tr class="table__row">
-                      <td class="table__cell" data-label="Origen">
-                        <span class="ruta-code">{ruta.codigoOrigen}</span>
-                        <span class="ruta-name">{ruta.origen}</span>
-                      </td>
-                      <td class="table__cell" data-label="Destino">
-                        <span class="ruta-code">{ruta.codigoDestino}</span>
-                        <span class="ruta-name">{ruta.destino}</span>
-                      </td>
-                      <td class="table__cell" data-label="TZ Origen">
-                        {#if ruta.zonaHorariaOrigen}
-                          <span class="tz-badge tz-badge--ok">✔ {ruta.zonaHorariaOrigen}</span>
-                        {:else}
-                          <span class="tz-badge tz-badge--missing">⚠ Sin TZ</span>
-                        {/if}
-                      </td>
-                      <td class="table__cell" data-label="TZ Destino">
-                        {#if ruta.zonaHorariaDestino}
-                          <span class="tz-badge tz-badge--ok">✔ {ruta.zonaHorariaDestino}</span>
-                        {:else}
-                          <span class="tz-badge tz-badge--missing">⚠ Sin TZ</span>
-                        {/if}
-                      </td>
-                      <td class="table__cell" data-label="Duración">
-                        {#if editandoRutaId === ruta.id}
-                          <div class="duracion-edit">
-                            <input type="number" class="form-input duracion-input" min="1" max="10000"
-                              bind:value={rutaDuracionEdit} placeholder="min" />
-                            <button class="table__action-btn table__action-btn--view"
-                              disabled={guardandoDuracion}
-                              on:click={() => guardarDuracionRuta(ruta.id)}>
-                              {guardandoDuracion ? '...' : '✔'}
-                            </button>
-                            <button class="table__action-btn table__action-btn--cancel"
-                              on:click={() => { editandoRutaId = null; rutaDuracionEdit = ''; }}>✕</button>
-                          </div>
-                        {:else}
-                          <span class="duracion-display">
-                            <strong>{ruta.duracionEstimada}</strong> min
-                            ({Math.floor(ruta.duracionEstimada / 60)}h {ruta.duracionEstimada % 60}m)
-                          </span>
-                        {/if}
-                      </td>
-                      <td class="table__cell" data-label="Vuelos">{ruta.totalVuelos}</td>
-                      <td class="table__cell" data-label="Acciones">
-                        {#if editandoRutaId !== ruta.id}
-                          <button class="table__action-btn table__action-btn--view"
-                            on:click={() => { editandoRutaId = ruta.id; rutaDuracionEdit = String(ruta.duracionEstimada); }}>
-                            ✎ Editar duración
-                          </button>
-                        {/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            {/if}
-          </section>
-
-        <!-- ===== GESTIONAR AVIONES ===== -->
         {:else if activeSection === 'gestionar-aviones'}
-          <section class="admin-section">
-            <div class="section-header">
-              <div>
-                <h2 class="admin-section__title">Gestionar Aviones</h2>
-                <p class="admin-section__subtitle">Administra la flota de aviones</p>
-              </div>
-              <button class="btn-add" on:click={abrirFormularioNuevoAvion}>
-                <span class="btn-add__icon">+</span> Nuevo Avion
-              </button>
-            </div>
-            {#if loadingAviones}
-              <p class="loading-text">Cargando aviones...</p>
-            {:else if aviones.length === 0}
-              <div class="placeholder-card"><p class="placeholder-card__text">No hay aviones registrados.</p></div>
-            {:else}
-              <table class="table">
-                <thead class="table__head">
-                  <tr>
-                    <th class="table__header">Imagen</th>
-                    <th class="table__header">ID</th>
-                    <th class="table__header">Marca</th>
-                    <th class="table__header">Modelo</th>
-                    <th class="table__header">Capacidad</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each aviones as avion}
-                    <tr class="table__row">
-                      <td class="table__cell" data-label="Imagen">
-                        {#if avion.imagenBase64}
-                          <img src={avion.imagenBase64} alt={avion.nombreCompleto} class="entity-thumb" />
-                        {:else}<span style="color:#9ca3af">—</span>{/if}
-                      </td>
-                      <td class="table__cell" data-label="ID">{avion.id}</td>
-                      <td class="table__cell" data-label="Marca">{avion.marca}</td>
-                      <td class="table__cell" data-label="Modelo">{avion.modelo}</td>
-                      <td class="table__cell" data-label="Capacidad">{avion.capacidadPasajeros} pax</td>
-                      <td class="table__cell" data-label="Acciones">
-                        <div class="table__actions">
-                          <button class="table__action-btn table__action-btn--view"
-                            on:click={() => abrirFormularioEditarAvion(avion)}>Editar</button>
-                          {#if avion.imagenBase64}
-                            <button class="table__action-btn table__action-btn--cancel"
-                              on:click={() => handleEliminarImagenAvion(avion.id)}>Quitar img</button>
-                          {/if}
-                        </div>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            {/if}
-          </section>
+          <AdminAviones
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+            on:avionesActualizados={onAvionesActualizados}
+          />
 
-        <!-- ===== GESTIONAR TRIPULANTES ===== -->
         {:else if activeSection === 'gestionar-tripulantes'}
-          <section class="admin-section">
-            <div class="section-header">
-              <div>
-                <h2 class="admin-section__title">Gestionar Tripulantes</h2>
-                <p class="admin-section__subtitle">Administra los miembros de tripulacion</p>
-              </div>
-              <button class="btn-add" on:click={abrirFormularioNuevoTripulante}>
-                <span class="btn-add__icon">+</span> Nuevo Tripulante
-              </button>
-            </div>
-            {#if loadingTripulantes}
-              <p class="loading-text">Cargando tripulantes...</p>
-            {:else if tripulantes.length === 0}
-              <div class="placeholder-card"><p class="placeholder-card__text">No hay tripulantes registrados.</p></div>
-            {:else}
-              <table class="table">
-                <thead class="table__head">
-                  <tr>
-                    <th class="table__header">Foto</th>
-                    <th class="table__header">ID</th>
-                    <th class="table__header">Nombre</th>
-                    <th class="table__header">Apellido</th>
-                    <th class="table__header">Rol</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each tripulantes as t}
-                    <tr class="table__row">
-                      <td class="table__cell" data-label="Foto">
-                        {#if t.imagenBase64}
-                          <img src={t.imagenBase64} alt={t.nombreCompleto} class="entity-thumb entity-thumb--circle" />
-                        {:else}<span style="color:#9ca3af">—</span>{/if}
-                      </td>
-                      <td class="table__cell" data-label="ID">{t.id}</td>
-                      <td class="table__cell" data-label="Nombre">{t.nombre}</td>
-                      <td class="table__cell" data-label="Apellido">{t.apellido}</td>
-                      <td class="table__cell" data-label="Rol">
-                        <span class="rol-badge--tripulacion">{t.nombreRol}</span>
-                      </td>
-                      <td class="table__cell" data-label="Acciones">
-                        <div class="table__actions">
-                          <button class="table__action-btn table__action-btn--view"
-                            on:click={() => abrirFormularioEditarTripulante(t)}>Editar</button>
-                          {#if t.imagenBase64}
-                            <button class="table__action-btn table__action-btn--cancel"
-                              on:click={() => handleEliminarImagenTripulante(t.id)}>Quitar foto</button>
-                          {/if}
-                        </div>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            {/if}
-          </section>
+          <AdminTripulantes
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+            on:tripulantesActualizados={onTripulantesActualizados}
+          />
 
-        <!-- ===== GESTIONAR AEROPUERTOS ===== -->
         {:else if activeSection === 'gestionar-aeropuertos'}
-          <section class="admin-section">
-            <div class="section-header">
-              <div>
-                <h2 class="admin-section__title">Gestionar Aeropuertos</h2>
-                <p class="admin-section__subtitle">Administra los aeropuertos del sistema</p>
-              </div>
-              <button class="btn-add" on:click={abrirFormularioNuevoAeropuerto}>
-                <span class="btn-add__icon">+</span> Nuevo Aeropuerto
-              </button>
-            </div>
-            {#if loadingAeropuertos}
-              <p class="loading-text">Cargando aeropuertos...</p>
-            {:else if aeropuertos.length === 0}
-              <div class="placeholder-card"><p class="placeholder-card__text">No hay aeropuertos registrados.</p></div>
-            {:else}
-              <table class="table">
-                <thead class="table__head">
-                  <tr>
-                    <th class="table__header">Imagen</th>
-                    <th class="table__header">Codigo</th>
-                    <th class="table__header">Nombre</th>
-                    <th class="table__header">Ciudad</th>
-                    <th class="table__header">Pais</th>
-                    <th class="table__header">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each aeropuertos as a}
-                    <tr class="table__row">
-                      <td class="table__cell" data-label="Imagen">
-                        {#if a.imagenBase64}
-                          <img src={a.imagenBase64} alt={a.nombre} class="entity-thumb" />
-                        {:else}<span style="color:#9ca3af">—</span>{/if}
-                      </td>
-                      <td class="table__cell" data-label="Codigo"><strong>{a.codigo}</strong></td>
-                      <td class="table__cell" data-label="Nombre">{a.nombre}</td>
-                      <td class="table__cell" data-label="Ciudad">{a.ciudad}</td>
-                      <td class="table__cell" data-label="Pais">{a.pais}</td>
-                      <td class="table__cell" data-label="Acciones">
-                        <div class="table__actions">
-                          <button class="table__action-btn table__action-btn--view"
-                            on:click={() => abrirFormularioEditarAeropuerto(a)}>Editar</button>
-                          {#if a.imagenBase64}
-                            <button class="table__action-btn table__action-btn--cancel"
-                              on:click={() => handleEliminarImagenAeropuerto(a.id)}>Quitar img</button>
-                          {/if}
-                        </div>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            {/if}
-          </section>
+          <AdminAeropuertos
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+            on:aeropuertosActualizados={onAeropuertosActualizados}
+          />
 
-        <!-- ===== HISTORIAL ===== -->
         {:else if activeSection === 'historial'}
-          <section class="admin-section">
-            <h2 class="admin-section__title">Historial de Vuelos</h2>
-            <p class="admin-section__subtitle">Todos los vuelos del sistema</p>
-            {#if loadingHistorialVuelos}
-              <p class="loading-text">Cargando historial...</p>
-            {:else if historialVuelos.length === 0}
-              <div class="placeholder-card"><p class="placeholder-card__text">No hay vuelos registrados.</p></div>
-            {:else}
-              <div class="vuelos-table">
-                <table class="table">
-                  <thead class="table__head">
-                    <tr>
-                      <th class="table__header">No. Vuelo</th>
-                      <th class="table__header">Origen</th>
-                      <th class="table__header">Destino</th>
-                      <th class="table__header">Fecha Salida</th>
-                      <th class="table__header">Salida</th>
-                      <th class="table__header">Fecha Llegada</th>
-                      <th class="table__header">Llegada</th>
-                      <th class="table__header">Turista</th>
-                      <th class="table__header">Ejecutiva</th>
-                      <th class="table__header">P. Turista</th>
-                      <th class="table__header">P. Ejecutiva</th>
-                      <th class="table__header">Estado</th>
-                      <th class="table__header">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody class="table__body">
-                    {#each historialVuelos as vuelo}
-                      <tr class="table__row">
-                        <td class="table__cell" data-label="No. Vuelo">{vuelo.numeroVuelo}</td>
-                        <td class="table__cell" data-label="Origen">{vuelo.origen}</td>
-                        <td class="table__cell" data-label="Destino">{vuelo.destino}</td>
-                        <td class="table__cell" data-label="Fecha Salida">{vuelo.fecha}</td>
-                        <td class="table__cell" data-label="Salida">{vuelo.horaSalida}</td>
-                        <td class="table__cell" data-label="Fecha Llegada">
-                          {#if vuelo.fechaLlegada && vuelo.fechaLlegada !== vuelo.fecha}
-                            <span class="fecha-llegada-distinta">{vuelo.fechaLlegada} <span class="nextday-tag">+día</span></span>
-                          {:else}
-                            {vuelo.fechaLlegada ?? vuelo.fecha}
-                          {/if}
-                        </td>
-                        <td class="table__cell" data-label="Llegada">{vuelo.horaLlegada}</td>
-                        <td class="table__cell" data-label="Turista">{vuelo.boletosTurista} disp.</td>
-                        <td class="table__cell" data-label="Ejecutiva">{vuelo.boletosEjecutivo} disp.</td>
-                        <td class="table__cell" data-label="P. Turista">${vuelo.precioTurista}</td>
-                        <td class="table__cell" data-label="P. Ejecutiva">${vuelo.precioEjecutiva}</td>
-                        <td class="table__cell" data-label="Estado">
-                          {#if vuelo.estado === 'Activo'}
-                            <span class="status-badge status-badge--activo">{vuelo.estado}</span>
-                          {:else if vuelo.estado === 'Cancelado'}
-                            <span class="status-badge status-badge--cancelado">{vuelo.estado}</span>
-                          {:else if vuelo.estado === 'Finalizado'}
-                            <span class="status-badge status-badge--completado">{vuelo.estado}</span>
-                          {:else}
-                            <span class="status-badge status-badge--activo">{vuelo.estado}</span>
-                          {/if}
-                        </td>
-                        <td class="table__cell" data-label="Acciones">
-                          <div class="table__actions">
-                            {#if vuelo.estado === 'Activo' || vuelo.estado === 'En curso'}
-                              <button class="table__action-btn table__action-btn--cancel"
-                                on:click={() => handleCambiarEstadoVuelo(vuelo.id)}>Cancelar</button>
-                            {/if}
-                          </div>
-                        </td>
-                      </tr>
-                    {/each}
-                  </tbody>
-                </table>
-              </div>
-            {/if}
-          </section>
+          <AdminHistorial
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+            on:vueloCancelado={() => {}}
+          />
 
-        <!-- ===== USUARIOS ===== -->
         {:else if activeSection === 'usuarios'}
-          <section class="admin-section">
-            <h2 class="admin-section__title">Usuarios</h2>
-            <p class="admin-section__subtitle">Gestion de roles de usuarios</p>
-            {#if loadingUsuarios}
-              <p class="loading-text">Cargando usuarios...</p>
-            {:else if usuarios.length === 0}
-              <div class="placeholder-card"><p class="placeholder-card__text">No hay usuarios registrados.</p></div>
-            {:else}
-              <table class="table">
-                <thead class="table__head">
-                  <tr>
-                    <th class="table__header">ID</th>
-                    <th class="table__header">Nombre</th>
-                    <th class="table__header">Correo</th>
-                    <th class="table__header">Username</th>
-                    <th class="table__header">Rol</th>
-                  </tr>
-                </thead>
-                <tbody class="table__body">
-                  {#each usuarios as usuario}
-                    <tr class="table__row">
-                      <td class="table__cell" data-label="ID">{usuario.id}</td>
-                      <td class="table__cell" data-label="Nombre">{usuario.nombre}</td>
-                      <td class="table__cell" data-label="Correo">{usuario.correo}</td>
-                      <td class="table__cell" data-label="Username">{usuario.username}</td>
-                      <td class="table__cell" data-label="Rol">
-                        <select class="rol-select" value={usuario.rolId}
-                          on:change={(e) => handleCambiarRol(usuario.id, e.target.value)}>
-                          {#each rolesDisponibles as rol}
-                            <option value={rol.id}>{rol.nombre}</option>
-                          {/each}
-                        </select>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            {/if}
-          </section>
+          <AdminUsuarios
+            {API}
+            {mostrarToast}
+          />
 
         {:else if activeSection === 'metricas'}
-          <!-- ========= MÉTRICAS DASHBOARD ========= -->
-          <section class="admin-section met-section">
-            <div class="met-header">
-              <div>
-                <h2 class="admin-section__title">Analiticos y Reportes</h2>
-                <p class="admin-section__subtitle">Busquedas, ingresos y conversion del sistema</p>
-              </div>
-            </div>
+          <AdminMetricas
+            {API}
+            {mostrarToast}
+          />
 
-            <!-- ── Filtros ───────────────────────────────────────────── -->
-            <div class="met-filtros">
-              <div class="met-filtro-grupo">
-                <label class="met-label">Desde</label>
-                <input type="date" class="met-input" bind:value={metFechaDesde} />
-              </div>
-              <div class="met-filtro-grupo">
-                <label class="met-label">Hasta</label>
-                <input type="date" class="met-input" bind:value={metFechaHasta} />
-              </div>
-              <div class="met-filtro-grupo">
-                <label class="met-label">Canal</label>
-                <select class="met-input" bind:value={metTipo}>
-                  <option value="">Todos</option>
-                  <option value="Web">Web</option>
-                  <option value="REST">REST</option>
-                </select>
-              </div>
-              <div class="met-filtro-grupo">
-                <label class="met-label">Usuario</label>
-                <input type="text" class="met-input" placeholder="username..." bind:value={metUsuario} />
-              </div>
-              <button class="met-btn-aplicar" on:click={aplicarFiltrosMetricas} disabled={loadingMetricas}>
-                {loadingMetricas ? 'Cargando...' : 'Aplicar filtros'}
-              </button>
-            </div>
-
-            {#if loadingMetricas}
-              <div class="met-loading"><div class="met-spinner"></div><p>Cargando analiticos...</p></div>
-            {:else if metricasResumen}
-
-              <!-- ── Banner de ingresos totales ─────────────────────── -->
-              {#each [metricasResumen.ingresosKpi ?? {ingresosTotales:0,ingresosTurista:0,ingresosEjecutivo:0,totalBoletos:0,totalReservaciones:0,ticketPromedio:0}] as kpi}
-              <div class="met-ingresos-banner">
-                <div class="met-ing-main">
-                  <span class="met-ing-label">Ingresos Totales</span>
-                  <span class="met-ing-valor">
-                    ${kpi.ingresosTotales.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}
-                  </span>
-                  <span class="met-ing-sub">{kpi.totalBoletos} boletos · {kpi.totalReservaciones} reservaciones</span>
-                </div>
-                <div class="met-ing-stats">
-                  <div class="met-ing-stat">
-                    <span class="met-ing-stat__dot met-ing-stat__dot--turista"></span>
-                    <div>
-                      <span class="met-ing-stat__label">Turista</span>
-                      <span class="met-ing-stat__val">${kpi.ingresosTurista.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
-                    </div>
-                  </div>
-                  <div class="met-ing-stat">
-                    <span class="met-ing-stat__dot met-ing-stat__dot--ejecutivo"></span>
-                    <div>
-                      <span class="met-ing-stat__label">Ejecutivo</span>
-                      <span class="met-ing-stat__val">${kpi.ingresosEjecutivo.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
-                    </div>
-                  </div>
-                  <div class="met-ing-stat">
-                    <span class="met-ing-stat__dot met-ing-stat__dot--ticket"></span>
-                    <div>
-                      <span class="met-ing-stat__label">Ticket promedio</span>
-                      <span class="met-ing-stat__val">${kpi.ticketPromedio.toLocaleString('es-GT',{minimumFractionDigits:2})}</span>
-                    </div>
-                  </div>
-                  <div class="met-ing-stat">
-                    <span class="met-ing-stat__dot met-ing-stat__dot--busq"></span>
-                    <div>
-                      <span class="met-ing-stat__label">Búsquedas totales</span>
-                      <span class="met-ing-stat__val">{metricasResumen.totalBusquedas.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/each}
-
-              <!-- ── 3 Gráficas ─────────────────────────────────────── -->
-              <div class="met-graficas">
-
-                <!-- ══ GRÁFICA 1: Búsquedas por día ══ -->
-                <div class="met-grafica met-grafica--wide">
-                  <h3 class="met-grafica__titulo">Busquedas diarias</h3>
-                  <p class="met-grafica__subtitulo">Volumen de busquedas por dia en el periodo seleccionado</p>
-                  {#if metricasResumen.busquedasPorDia.length === 0}
-                    <div class="met-empty">Sin datos en el periodo seleccionado</div>
-                  {:else}
-                    {@const datos = metricasResumen.busquedasPorDia}
-                    {@const maxBusc = Math.max(...datos.map(d => d.total), 1)}
-                    {@const W = 700} {@const H = 220} {@const PAD = {l:44, r:20, t:20, b:30}}
-                    {@const gW = W - PAD.l - PAD.r}
-                    {@const gH = H - PAD.t - PAD.b}
-                    <div class="met-svg-wrap">
-                      <svg viewBox="0 0 {W} {H}" class="met-svg" preserveAspectRatio="xMidYMid meet">
-                        <defs>
-                          <linearGradient id="gradBusc" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.3"/>
-                            <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
-                          </linearGradient>
-                        </defs>
-                        {#each [0, 0.25, 0.5, 0.75, 1] as pct}
-                          {@const y = PAD.t + gH - pct * gH}
-                          <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="#EBE6E0" stroke-width="1"/>
-                          <text x={PAD.l - 4} y={y + 4} font-size="9" fill="#b8b0a5" text-anchor="end">
-                            {Math.round(maxBusc * pct)}
-                          </text>
-                        {/each}
-                        {#if datos.length > 1}
-                          {@const pts = datos.map((d,i) => {
-                            const x = PAD.l + (i/(datos.length-1)) * gW;
-                            const y = PAD.t + gH - (d.total / maxBusc) * gH;
-                            return `${x},${y}`;
-                          })}
-                          <polygon
-                            points={`${PAD.l},${PAD.t+gH} ${pts.join(' ')} ${W-PAD.r},${PAD.t+gH}`}
-                            fill="url(#gradBusc)"/>
-                          <polyline points={pts.join(' ')} fill="none"
-                            stroke="#D4AF37" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-                          {#each datos as d, i}
-                            {@const x = PAD.l + (i/(datos.length-1)) * gW}
-                            {@const y = PAD.t + gH - (d.total / maxBusc) * gH}
-                            <circle cx={x} cy={y} r="3.5" fill="#D4AF37" stroke="white" stroke-width="1.5">
-                              <title>{d.fecha}: {d.total} busquedas</title>
-                            </circle>
-                          {/each}
-                        {:else}
-                          <circle cx={PAD.l + gW/2} cy={PAD.t + gH/2} r="6" fill="#D4AF37"/>
-                        {/if}
-                        {#each datos as d, i}
-                          {#if i % Math.ceil(datos.length / 7) === 0 || i === datos.length - 1}
-                            {@const x = datos.length > 1 ? PAD.l + (i/(datos.length-1))*gW : PAD.l+gW/2}
-                            <text x={x} y={H - 6} font-size="8" fill="#b8b0a5" text-anchor="middle">{d.fecha.slice(5)}</text>
-                          {/if}
-                        {/each}
-                      </svg>
-                    </div>
-                    <div class="met-grafica__leyenda">
-                      <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Busquedas diarias</span>
-                    </div>
-                  {/if}
-                </div>
-
-                <!-- ══ GRÁFICA 2: Top rutas — búsquedas vs ingresos (grouped horizontal bar) ══ -->
-                <div class="met-grafica">
-                  <h3 class="met-grafica__titulo">Top rutas por demanda e ingresos</h3>
-                  <p class="met-grafica__subtitulo">Busquedas (dorado) vs Ingresos generados (verde) por ruta</p>
-                  {#if metricasResumen.rutasMasBuscadas.length === 0}
-                    <div class="met-empty">Sin datos en el periodo seleccionado</div>
-                  {:else}
-                    {@const maxBuscRuta = Math.max(...metricasResumen.rutasMasBuscadas.map(r => r.total), 1)}
-                    {@const maxIngRuta  = Math.max(...metricasResumen.rutasMasBuscadas.map(r => r.ingresos), 1)}
-                    <div class="met-barras-dobles">
-                      {#each metricasResumen.rutasMasBuscadas as ruta, i}
-                        <div class="met-barra-doble-row">
-                          <div class="met-barra-doble-label">
-                            <span class="met-barra-rank">#{i+1}</span>
-                            <span class="met-barra-ruta">{ruta.origenCodigo} → {ruta.destinoCodigo}</span>
-                          </div>
-                          <div class="met-barra-doble-tracks">
-                            <!-- Barra búsquedas -->
-                            <div class="met-barra-doble-track">
-                              <div class="met-barra-fill met-barra-fill--gold"
-                                style="width:{(ruta.total/maxBuscRuta)*100}%">
-                              </div>
-                              <span class="met-barra-val">{ruta.total}</span>
-                            </div>
-                            <!-- Barra ingresos -->
-                            <div class="met-barra-doble-track">
-                              <div class="met-barra-fill met-barra-fill--green"
-                                style="width:{(ruta.ingresos/maxIngRuta)*100}%">
-                              </div>
-                              <span class="met-barra-val">${(ruta.ingresos/1000).toFixed(1)}k</span>
-                            </div>
-                          </div>
-                        </div>
-                      {/each}
-                    </div>
-                    <div class="met-grafica__leyenda">
-                      <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Busquedas</span>
-                      <span><span class="met-leyenda-dot" style="background:#10b981"></span> Ingresos</span>
-                    </div>
-                  {/if}
-                </div>
-
-                <!-- ══ GRÁFICA 3: Distribución de ingresos por clase de asiento (donut) ══ -->
-                <div class="met-grafica met-grafica--donut">
-                  <h3 class="met-grafica__titulo">Ingresos por clase de asiento</h3>
-                  <p class="met-grafica__subtitulo">Contribucion de Turista vs Ejecutivo al revenue total</p>
-                  {#if !metricasResumen.distribucionClase || metricasResumen.distribucionClase.length === 0}
-                    <div class="met-empty">Sin boletos vendidos en el periodo</div>
-                  {:else}
-                    {@const donutData = metricasResumen.distribucionClase}
-                    {@const totalIngClase = donutData.reduce((s,c) => s + (c.ingresos ?? 0), 0) || 1}
-                    {@const colores = ['#D4AF37','#1C1A18','#10b981','#C9A961']}
-                    {@const segClase = (() => {
-                      let ang = -90;
-                      return donutData.map((c, i) => {
-                        const ing = c.ingresos ?? 0;
-                        const pct = ing / totalIngClase;
-                        const start = ang;
-                        ang += pct * 360;
-                        const angle = pct * 360;
-                        return { clase: c.clase ?? c.Clase ?? '', ingresos: ing,
-                                 boletos: c.boletos ?? c.Boletos ?? 0,
-                                 start, angle, color: colores[i % colores.length],
-                                 pct: (pct*100).toFixed(1) };
-                      });
-                    })()}
-                    <div class="met-donut-wrap">
-                      <svg viewBox="0 0 200 200" class="met-donut-svg">
-                        {#each segClase as seg}
-                          {#if seg.angle > 0.5}
-                            {@const cx=100} {@const cy=100} {@const R=80} {@const r=48}
-                            {@const s = seg.start * Math.PI/180}
-                            {@const e = (seg.start + seg.angle) * Math.PI/180}
-                            {@const large = seg.angle > 180 ? 1 : 0}
-                            {@const x1=cx+R*Math.cos(s)} {@const y1=cy+R*Math.sin(s)}
-                            {@const x2=cx+R*Math.cos(e)} {@const y2=cy+R*Math.sin(e)}
-                            {@const x3=cx+r*Math.cos(e)} {@const y3=cy+r*Math.sin(e)}
-                            {@const x4=cx+r*Math.cos(s)} {@const y4=cy+r*Math.sin(s)}
-                            <path d="M{x1},{y1} A{R},{R} 0 {large},1 {x2},{y2} L{x3},{y3} A{r},{r} 0 {large},0 {x4},{y4} Z"
-                              fill={seg.color} stroke="white" stroke-width="2">
-                              <title>{seg.clase}: ${seg.ingresos.toLocaleString('es-GT')} ({seg.pct}%)</title>
-                            </path>
-                          {/if}
-                        {/each}
-                        <!-- Centro -->
-                        <circle cx="100" cy="100" r="44" fill="white"/>
-                        <text x="100" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#1C1A18">
-                          ${(totalIngClase/1000).toFixed(1)}k
-                        </text>
-                        <text x="100" y="111" text-anchor="middle" font-size="8" fill="#b8b0a5">INGRESOS</text>
-                      </svg>
-                      <div class="met-donut-leyenda">
-                        {#each segClase as seg}
-                          <div class="met-ley-item">
-                            <span class="met-leyenda-dot" style="background:{seg.color}"></span>
-                            <div>
-                              <span class="met-ley-tipo">{seg.clase}</span>
-                              <span class="met-ley-num">${seg.ingresos.toLocaleString('es-GT')} <em>({seg.pct}%)</em></span>
-                              <span class="met-ley-sub">{seg.boletos} boletos</span>
-                            </div>
-                          </div>
-                        {/each}
-                      </div>
-                    </div>
-                  {/if}
-                </div>
-
-              </div>
-              <!-- /Gráficas -->
-
-              <!-- ── Canal Web vs REST (mini donut) ────────────────── -->
-              {#if metricasResumen.busquedasPorTipo.length > 0}
-                {@const totalTipo = metricasResumen.totalBusquedas || 1}
-                <div class="met-canal-wrap">
-                  <h3 class="met-canal__titulo">Canal de busqueda: Web vs REST</h3>
-                  <div class="met-canal-pills">
-                    {#each metricasResumen.busquedasPorTipo as tipo}
-                      {@const pct = ((tipo.total / totalTipo)*100).toFixed(1)}
-                      {@const color = tipo.tipo === 'Web' ? '#D4AF37' : '#1C1A18'}
-                      <div class="met-canal-pill">
-                        <div class="met-canal-bar" style="--pct:{pct}%;--color:{color}"></div>
-                        <span class="met-canal-tipo">{tipo.tipo}</span>
-                        <span class="met-canal-num">{tipo.total.toLocaleString()} <em>({pct}%)</em></span>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/if}
-
-            {/if}
-
-            <!-- ── Listado de búsquedas (tabla paginada) ──────────── -->
-            <div class="met-listado">
-              <div class="met-listado__header">
-                <h3 class="met-listado__titulo">Registro de busquedas</h3>
-                <button class="met-btn-exportar" on:click={() => mostrarModalExportar = true}>
-                  Exportar por correo
-                </button>
-              </div>
-
-              {#if loadingListado}
-                <div class="met-loading met-loading--sm"><div class="met-spinner"></div><p>Cargando listado...</p></div>
-              {:else if metricasListado}
-                <div class="met-tabla-wrap">
-                  <table class="table">
-                    <thead class="table__head">
-                      <tr>
-                        <th class="table__header">#</th>
-                        <th class="table__header">Ruta</th>
-                        <th class="table__header">Fecha Salida</th>
-                        <th class="table__header">Pasajeros</th>
-                        <th class="table__header">Usuario</th>
-                        <th class="table__header">Canal</th>
-                        <th class="table__header">Fecha Busqueda</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {#each metricasListado.registros as b}
-                        <tr class="table__row">
-                          <td class="table__cell">{b.id}</td>
-                          <td class="table__cell">
-                            <span class="met-ruta-tag">{b.origenCodigo}</span>
-                            <span style="color:var(--text-muted);padding:0 .3rem">→</span>
-                            <span class="met-ruta-tag">{b.destinoCodigo}</span>
-                          </td>
-                          <td class="table__cell">{b.fechaSalida}</td>
-                          <td class="table__cell">{b.cantidadPersonas}</td>
-                          <td class="table__cell">{b.usuario ?? '—'}</td>
-                          <td class="table__cell">
-                            <span class="met-tipo-badge met-tipo-badge--{b.tipo.toLowerCase()}">{b.tipo}</span>
-                          </td>
-                          <td class="table__cell" style="font-size:.8rem;color:var(--text-muted)">{b.fechaBusqueda}</td>
-                        </tr>
-                      {/each}
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Paginado -->
-                {#if metricasListado.totalPaginas > 1}
-                  <div class="met-paginado">
-                    <button class="met-pag-btn" disabled={metricasListado.paginaActual <= 1}
-                      on:click={() => cambiarPaginaMetricas(metricasListado.paginaActual - 1)}>← Anterior</button>
-                    <span class="met-pag-info">
-                      Pagina {metricasListado.paginaActual} de {metricasListado.totalPaginas}
-                      &nbsp;·&nbsp; {metricasListado.totalRegistros.toLocaleString()} registros
-                    </span>
-                    <button class="met-pag-btn" disabled={metricasListado.paginaActual >= metricasListado.totalPaginas}
-                      on:click={() => cambiarPaginaMetricas(metricasListado.paginaActual + 1)}>Siguiente →</button>
-                  </div>
-                {:else}
-                  <p class="met-pag-info" style="padding:.75rem 0">{metricasListado.totalRegistros.toLocaleString()} registros totales</p>
-                {/if}
-              {:else}
-                <div class="met-empty">Aplica filtros para ver el listado</div>
-              {/if}
-            </div>
-
-          </section>
-
-          <!-- Modal exportar por correo -->
-          {#if mostrarModalExportar}
-            <div class="modal-overlay" on:click={() => mostrarModalExportar = false}>
-              <div class="modal" on:click|stopPropagation style="max-width:420px">
-                <div class="modal__header">
-                  <h3 class="modal__title">Exportar listado</h3>
-                  <button class="modal__close" on:click={() => mostrarModalExportar = false}>×</button>
-                </div>
-                <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
-                  <p style="color:var(--text-muted);font-size:0.9rem">
-                    El listado filtrado actual se enviara como archivo adjunto al correo indicado.
-                  </p>
-                  <label class="met-label">Correo electronico</label>
-                  <input type="email" class="met-input" placeholder="correo@ejemplo.com"
-                    bind:value={correoExportar} />
-                  <div style="display:flex;gap:1rem;justify-content:flex-end;margin-top:0.5rem">
-                    <button class="btn-secondary" on:click={() => mostrarModalExportar = false}>Cancelar</button>
-                    <button class="btn-primary" disabled={enviandoCorreo || !correoExportar}
-                      on:click={async () => {
-                        enviandoCorreo = true;
-                        try {
-                          const r = await fetch(`${API}/api/metricas/exportar-correo`, {
-                            method: 'POST',
-                            credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              correo: correoExportar,
-                              fechaDesde: metFechaDesde,
-                              fechaHasta: metFechaHasta,
-                              tipo: metTipo || null,
-                              usuario: metUsuario || null
-                            })
-                          });
-                          if (r.ok) {
-                            mostrarToast('success', `Listado enviado a ${correoExportar}`);
-                            mostrarModalExportar = false;
-                            correoExportar = '';
-                          } else {
-                            mostrarToast('error', 'No se pudo enviar el correo');
-                          }
-                        } catch { mostrarToast('error', 'Error de conexion'); }
-                        finally { enviandoCorreo = false; }
-                      }}>
-                      {enviandoCorreo ? 'Enviando...' : 'Enviar'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {/if}
         {/if}
 
       </main>
     </div>
   </div>
 </div>
-
-<!-- ===== MODAL CREAR RUTA ===== -->
-{#if mostrarModalCrearRuta}
-  <div class="modal-overlay" on:click={() => mostrarModalCrearRuta = false}>
-    <div class="modal" on:click|stopPropagation style="max-width:480px">
-      <div class="modal__header">
-        <h3 class="modal__title">Crear Nueva Ruta</h3>
-        <button class="modal__close" on:click={() => mostrarModalCrearRuta = false}>×</button>
-      </div>
-      <form class="modal__form" on:submit|preventDefault={handleCrearRuta}>
-        <p style="font-size:.88rem;color:var(--text-muted);margin-bottom:1rem">
-          Una ruta define el trayecto entre dos aeropuertos y su duración estimada. Los vuelos solo pueden crearse si existe la ruta correspondiente.
-        </p>
-
-        <div class="form-field">
-          <label class="form-label">Aeropuerto de Origen *</label>
-          <select class="form-input" bind:value={nuevaRuta.origenId} required>
-            <option value="">Selecciona aeropuerto de origen...</option>
-            {#each aeropuertos as a}
-              <option value={a.id}>{a.codigo} — {a.nombre} ({a.ciudad}, {a.pais})</option>
-            {/each}
-          </select>
-        </div>
-
-        <div class="form-field">
-          <label class="form-label">Aeropuerto de Destino *</label>
-          <select class="form-input" bind:value={nuevaRuta.destinoId} required>
-            <option value="">Selecciona aeropuerto de destino...</option>
-            {#each aeropuertos.filter(a => a.id !== parseInt(nuevaRuta.origenId)) as a}
-              <option value={a.id}>{a.codigo} — {a.nombre} ({a.ciudad}, {a.pais})</option>
-            {/each}
-          </select>
-        </div>
-
-        <div class="form-field">
-          <label class="form-label">Duración Estimada (minutos) *</label>
-          <input type="number" class="form-input" bind:value={nuevaRuta.duracion}
-            min="1" max="10000" placeholder="Ej: 180 para 3 horas" required />
-          {#if nuevaRuta.duracion > 0}
-            <small class="img-hint">
-              ≈ {Math.floor(nuevaRuta.duracion / 60)}h {nuevaRuta.duracion % 60}m
-            </small>
-          {/if}
-        </div>
-
-        <div class="modal__actions">
-          <button type="button" class="btn-secondary"
-            on:click={() => mostrarModalCrearRuta = false}>
-            Cancelar
-          </button>
-          <button type="submit" class="btn-primary" disabled={creandoRuta}>
-            {creandoRuta ? 'Creando...' : 'Crear Ruta'}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-{/if}
-
-<!-- ===== MODAL AVIÓN ===== -->
-{#if mostrarFormularioAvion}
-  <div class="modal-overlay" on:click={cerrarFormularioAvion}>
-    <div class="modal" on:click|stopPropagation>
-      <div class="modal__header">
-        <h3 class="modal__title">{modoEdicion ? 'Editar' : 'Agregar'} Avion</h3>
-        <button class="modal__close" on:click={cerrarFormularioAvion}>×</button>
-      </div>
-      <form class="modal__form" on:submit|preventDefault={handleGuardarAvion}>
-        <div class="form-field">
-          <label for="avion-marca" class="form-label">Marca *</label>
-          <input type="text" id="avion-marca" class="form-input"
-            bind:value={avionForm.marca} placeholder="Ej: Boeing" required />
-        </div>
-        <div class="form-field">
-          <label for="avion-modelo" class="form-label">Modelo *</label>
-          <input type="text" id="avion-modelo" class="form-input"
-            bind:value={avionForm.modelo} placeholder="Ej: 787-9" required />
-        </div>
-        <div class="form-field">
-          <label for="avion-capacidad" class="form-label">Capacidad de Pasajeros *</label>
-          <input type="number" id="avion-capacidad" class="form-input"
-            bind:value={avionForm.capacidadPasajeros} placeholder="Ej: 240" min="1" required />
-        </div>
-        <div class="form-field">
-          <label class="form-label">Imagen del Avion</label>
-          {#if avionImagenPreview}
-            <img src={avionImagenPreview} alt="Preview" class="img-preview" />
-            <button type="button" class="table__action-btn table__action-btn--cancel"
-              on:click={() => { avionImagenPreview = null; avionImagenBase64 = null; }}>Quitar imagen</button>
-          {/if}
-          <input type="file" accept="image/*" class="form-input" on:change={onAvionImagenChange} />
-          <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>
-        </div>
-        <div class="modal__actions">
-          <button type="submit" class="btn-primary">{modoEdicion ? 'Actualizar' : 'Crear'} Avion</button>
-          <button type="button" class="btn-secondary" on:click={cerrarFormularioAvion}>Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-{/if}
-
-<!-- ===== MODAL TRIPULANTE ===== -->
-{#if mostrarFormularioTripulante}
-  <div class="modal-overlay" on:click={cerrarFormularioTripulante}>
-    <div class="modal" on:click|stopPropagation>
-      <div class="modal__header">
-        <h3 class="modal__title">{modoEdicion ? 'Editar' : 'Agregar'} Tripulante</h3>
-        <button class="modal__close" on:click={cerrarFormularioTripulante}>×</button>
-      </div>
-      <form class="modal__form" on:submit|preventDefault={handleGuardarTripulante}>
-        <div class="form-field">
-          <label for="trip-nombre" class="form-label">Nombre *</label>
-          <input type="text" id="trip-nombre" class="form-input"
-            bind:value={tripulanteForm.nombre} placeholder="Ej: Juan" required />
-        </div>
-        <div class="form-field">
-          <label for="trip-apellido" class="form-label">Apellido *</label>
-          <input type="text" id="trip-apellido" class="form-input"
-            bind:value={tripulanteForm.apellido} placeholder="Ej: Perez" required />
-        </div>
-        <div class="form-field">
-          <label for="trip-rol" class="form-label">Rol *</label>
-          <select id="trip-rol" class="form-input" bind:value={tripulanteForm.rolID} required>
-            <option value="">Selecciona un rol</option>
-            {#each rolesTripulacion as rol}
-              <option value={rol.id}>{rol.nombre}</option>
-            {/each}
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Foto del Tripulante</label>
-          {#if tripulanteImagenPreview}
-            <img src={tripulanteImagenPreview} alt="Preview" class="img-preview img-preview--circle" />
-            <button type="button" class="table__action-btn table__action-btn--cancel"
-              on:click={() => { tripulanteImagenPreview = null; tripulanteImagenBase64 = null; }}>Quitar foto</button>
-          {/if}
-          <input type="file" accept="image/*" class="form-input" on:change={onTripulanteImagenChange} />
-          <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>
-        </div>
-        <div class="modal__actions">
-          <button type="submit" class="btn-primary">{modoEdicion ? 'Actualizar' : 'Crear'} Tripulante</button>
-          <button type="button" class="btn-secondary" on:click={cerrarFormularioTripulante}>Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-{/if}
-
-<!-- ===== MODAL AEROPUERTO ===== -->
-{#if mostrarFormularioAeropuerto}
-  <div class="modal-overlay" on:click={cerrarFormularioAeropuerto}>
-    <div class="modal" on:click|stopPropagation>
-      <div class="modal__header">
-        <h3 class="modal__title">{modoEdicion ? 'Editar' : 'Agregar'} Aeropuerto</h3>
-        <button class="modal__close" on:click={cerrarFormularioAeropuerto}>×</button>
-      </div>
-      <form class="modal__form" on:submit|preventDefault={handleGuardarAeropuerto}>
-        <div class="form-field">
-          <label for="aero-codigo" class="form-label">Codigo IATA *</label>
-          <input type="text" id="aero-codigo" class="form-input"
-            bind:value={aeropuertoForm.codigo} placeholder="Ej: GUA" maxlength="3"
-            style="text-transform:uppercase" required />
-        </div>
-        <div class="form-field">
-          <label for="aero-nombre" class="form-label">Nombre del Aeropuerto *</label>
-          <input type="text" id="aero-nombre" class="form-input"
-            bind:value={aeropuertoForm.nombre} placeholder="Ej: La Aurora" required />
-        </div>
-        <div class="form-field">
-          <label for="aero-pais" class="form-label">Pais *</label>
-          <div class="autocomplete">
-            <input type="text" id="aero-pais" class="form-input"
-              bind:value={paisQueryAeropuerto} on:input={onPaisAeropuertoInput}
-              on:blur={validarPaisAeropuertoSeleccionado}
-              placeholder="Escribe el pais..." autocomplete="off" required />
-            {#if paisesSugeridosAeropuerto.length > 0}
-              <ul class="autocomplete__list">
-                {#each paisesSugeridosAeropuerto as p}
-                  <li class="autocomplete__item">
-                    <button type="button" class="autocomplete__btn"
-                      on:click={() => seleccionarPaisAeropuerto(p)}>{p.country}</button>
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </div>
-        </div>
-        <div class="form-field">
-          <label for="aero-ciudad" class="form-label">Ciudad *</label>
-          <div class="autocomplete">
-            <input type="text" id="aero-ciudad" class="form-input"
-              bind:value={ciudadQueryAeropuerto} on:input={onCiudadAeropuertoInput}
-              on:blur={validarCiudadAeropuertoSeleccionada}
-              placeholder={paisSeleccionadoAeropuerto ? 'Escribe la ciudad...' : 'Primero selecciona un pais'}
-              disabled={!paisSeleccionadoAeropuerto} autocomplete="off" required />
-            {#if ciudadesSugeridasAeropuerto.length > 0}
-              <ul class="autocomplete__list">
-                {#each ciudadesSugeridasAeropuerto as c}
-                  <li class="autocomplete__item">
-                    <button type="button" class="autocomplete__btn"
-                      on:click={() => seleccionarCiudadAeropuerto(c)}>{c}</button>
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </div>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Imagen del Aeropuerto</label>
-          {#if aeropuertoImagenPreview}
-            <img src={aeropuertoImagenPreview} alt="Preview" class="img-preview" />
-            <button type="button" class="table__action-btn table__action-btn--cancel"
-              on:click={() => { aeropuertoImagenPreview = null; aeropuertoImagenBase64 = null; }}>Quitar imagen</button>
-          {/if}
-          <input type="file" accept="image/*" class="form-input" on:change={onAeropuertoImagenChange} />
-          <small class="img-hint">JPG, PNG o WEBP. Max recomendado: 1 MB.</small>
-        </div>
-        <div class="form-field">
-          <label class="form-label">Zona Horaria</label>
-          <div style="display:flex;gap:.6rem;align-items:stretch">
-            <div class="tz-detected-display" class:tz-detected-display--empty={!aeropuertoForm.zonaHoraria} style="flex:1">
-              <span class="tz-detected-display__icon">{aeropuertoForm.zonaHoraria ? '🌐' : '—'}</span>
-              <span>{aeropuertoForm.zonaHoraria || 'Sin zona horaria detectada'}</span>
-            </div>
-            <button type="button" class="tz-detect-btn"
-              disabled={detectandoTimezone || !aeropuertoForm.ciudad || !aeropuertoForm.pais}
-              on:click={autoDetectarTimezone}>
-              {detectandoTimezone ? '⏳ Detectando...' : '🌐 Auto-detectar'}
-            </button>
-          </div>
-          <small class="img-hint">Haz clic en "Auto-detectar" para obtener la zona horaria de la ciudad seleccionada. Es necesaria para calcular correctamente la hora de llegada en vuelos internacionales.</small>
-        </div>
-        <div class="modal__actions">
-          <button type="submit" class="btn-primary">{modoEdicion ? 'Actualizar' : 'Crear'} Aeropuerto</button>
-          <button type="button" class="btn-secondary" on:click={cerrarFormularioAeropuerto}>Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-{/if}

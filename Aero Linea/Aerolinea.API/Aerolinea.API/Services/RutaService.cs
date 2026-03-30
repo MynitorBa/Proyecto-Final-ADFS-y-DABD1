@@ -12,15 +12,9 @@ namespace Aerolinea.API.Services
             _repository = repository;
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  LISTAR
-        // ─────────────────────────────────────────────────────────────────
         public async Task<List<RutaDTO>> ObtenerTodas()
             => await _repository.ObtenerTodas();
 
-        // ─────────────────────────────────────────────────────────────────
-        //  ACTUALIZAR DURACIÓN
-        // ─────────────────────────────────────────────────────────────────
         public async Task<bool> ActualizarDuracion(int id, int duracionMinutos)
         {
             if (duracionMinutos <= 0)
@@ -31,31 +25,28 @@ namespace Aerolinea.API.Services
             return await _repository.ActualizarDuracion(id, duracionMinutos);
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  CALCULAR HORA DE LLEGADA (con zonas horarias)
-        // ─────────────────────────────────────────────────────────────────
         public async Task<CalculoLlegadaResponseDTO> CalcularLlegada(CalculoLlegadaRequestDTO request)
         {
             if (request.AeropuertoOrigenId <= 0 || request.AeropuertoDestinoId <= 0)
                 throw new ArgumentException("IDs de aeropuerto inválidos");
 
-            if (!DateOnly.TryParse(request.FechaSalida, out var fechaSalidaDate))
-                throw new ArgumentException("Formato de fecha inválido (esperado: yyyy-MM-dd)");
+            // ── Fix: usar DateTime.TryParse en lugar de DateOnly.TryParse
+            // DateOnly puede fallar con ciertos locales en Windows
+            if (!DateTime.TryParse(request.FechaSalida, out var fechaSalidaDateTime))
+                throw new ArgumentException($"Formato de fecha inválido: '{request.FechaSalida}' (esperado: yyyy-MM-dd)");
 
             if (!TimeSpan.TryParse(request.HoraSalida, out var horaSalida))
-                throw new ArgumentException("Formato de hora inválido (esperado: HH:mm)");
+                throw new ArgumentException($"Formato de hora inválido: '{request.HoraSalida}' (esperado: HH:mm)");
 
             var (duracion, tzOrigenId, tzDestinoId) = await _repository.ObtenerInfoRuta(
-                request.AeropuertoOrigenId, request.AeropuertoDestinoId);  // nunca null — usa (120,null,null) como default
-
-            var fechaSalida = fechaSalidaDate.ToDateTime(TimeOnly.MinValue);
+                request.AeropuertoOrigenId, request.AeropuertoDestinoId);
 
             var (horaLlegada, fechaLlegada, usoZonas, nota) =
-                CalcularLlegadaConZonas(fechaSalida, horaSalida, duracion, tzOrigenId, tzDestinoId);
+                CalcularLlegadaConZonas(fechaSalidaDateTime, horaSalida, duracion, tzOrigenId, tzDestinoId);
 
             return new CalculoLlegadaResponseDTO
             {
-                HoraLlegada = horaLlegada.ToString(@"HH\:mm"),
+                HoraLlegada = horaLlegada.ToString(@"hh\:mm"),
                 FechaLlegada = fechaLlegada.ToString("yyyy-MM-dd"),
                 DuracionMinutos = duracion,
                 ZonaHorariaOrigen = tzOrigenId,
@@ -65,13 +56,6 @@ namespace Aerolinea.API.Services
             };
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        //  LÓGICA INTERNA DE CÁLCULO DE LLEGADA
-        // ─────────────────────────────────────────────────────────────────
-        /// <summary>
-        /// Calcula la hora y fecha de llegada local en el aeropuerto de destino.
-        /// Toma en cuenta las zonas horarias si están disponibles.
-        /// </summary>
         public static (TimeSpan horaLlegada, DateTime fechaLlegada, bool usoZonas, string nota)
             CalcularLlegadaConZonas(
                 DateTime fechaSalida,
@@ -85,19 +69,17 @@ namespace Aerolinea.API.Services
                 horaSalida.Hours, horaSalida.Minutes, horaSalida.Seconds,
                 DateTimeKind.Unspecified);
 
-            // Intentar conversión con zonas horarias IANA
             if (!string.IsNullOrWhiteSpace(tzOrigenId) && !string.IsNullOrWhiteSpace(tzDestinoId))
             {
                 try
                 {
-                    var tzOrigen = TimeZoneInfo.FindSystemTimeZoneById(tzOrigenId);
-                    var tzDestino = TimeZoneInfo.FindSystemTimeZoneById(tzDestinoId);
+                    // En Windows, .NET 6+ intenta resolver IDs IANA automáticamente.
+                    // Si falla, cae al fallback sin conversión.
+                    TimeZoneInfo tzOrigen = FindTimezone(tzOrigenId);
+                    TimeZoneInfo tzDestino = FindTimezone(tzDestinoId);
 
-                    // Salida en hora local origen → UTC
                     var departureUtc = TimeZoneInfo.ConvertTimeToUtc(departureDateTimeLocal, tzOrigen);
-                    // Agregar duración del vuelo
                     var arrivalUtc = departureUtc.AddMinutes(duracionMinutos);
-                    // Convertir llegada UTC → hora local destino
                     var arrivalLocal = TimeZoneInfo.ConvertTimeFromUtc(arrivalUtc, tzDestino);
 
                     var offsetOrigen = tzOrigen.GetUtcOffset(departureDateTimeLocal);
@@ -106,30 +88,45 @@ namespace Aerolinea.API.Services
 
                     string nota = diffHoras == 0
                         ? $"Misma zona horaria. Vuelo de {duracionMinutos} min."
-                        : $"Diferencia de zona horaria: {(diffHoras > 0 ? "+" : "")}{diffHoras:0.##}h respecto al origen. " +
-                          $"Vuelo de {duracionMinutos} min.";
+                        : $"Diferencia de zona horaria: {(diffHoras > 0 ? "+" : "")}{diffHoras:0.##}h. Vuelo de {duracionMinutos} min.";
 
                     return (arrivalLocal.TimeOfDay, arrivalLocal.Date, true, nota);
                 }
-                catch (TimeZoneNotFoundException ex)
+                catch (Exception ex)
                 {
-                    // Zona horaria no reconocida — fallback sin conversión
-                    var notaError = $"Zona horaria no reconocida ({ex.Message}). Se usó cálculo sin conversión.";
+                    // TimeZoneNotFoundException u otro error — fallback sin conversión
+                    var notaError = $"Zona horaria no reconocida ({ex.Message.Split('.')[0]}). Cálculo sin conversión.";
                     var fallback = departureDateTimeLocal.AddMinutes(duracionMinutos);
                     return (fallback.TimeOfDay, fallback.Date, false, notaError);
                 }
             }
 
-            // Sin zonas horarias: suma directa (hora local sin conversión)
+            // Sin zonas horarias configuradas
             var arrival = departureDateTimeLocal.AddMinutes(duracionMinutos);
-            string notaSinTz = "Zonas horarias no configuradas. El tiempo de llegada es hora local estimada sin conversión de zona.";
+            string notaSinTz = "Zonas horarias no configuradas. Hora de llegada estimada sin conversión.";
             return (arrival.TimeOfDay, arrival.Date, false, notaSinTz);
         }
-        // ── Verificar si existe ruta ──────────────────────────────────────
+
+        /// <summary>
+        /// Intenta resolver el timezone por ID IANA y, si falla,
+        /// convierte de IANA a Windows ID para compatibilidad.
+        /// </summary>
+        private static TimeZoneInfo FindTimezone(string tzId)
+        {
+            // Intento directo (funciona en Linux y en .NET 6+ con ICU en Windows)
+            try { return TimeZoneInfo.FindSystemTimeZoneById(tzId); }
+            catch { /* continúa con conversión */ }
+
+            // Conversión IANA → Windows ID (para Windows sin ICU)
+            if (TimeZoneInfo.TryConvertIanaIdToWindowsId(tzId, out var windowsId))
+                return TimeZoneInfo.FindSystemTimeZoneById(windowsId);
+
+            throw new TimeZoneNotFoundException($"No se pudo resolver la zona horaria: {tzId}");
+        }
+
         public async Task<bool> ExisteRuta(int origenId, int destinoId)
             => await _repository.ExisteRuta(origenId, destinoId);
 
-        // ── Crear ruta manualmente desde el panel admin ───────────────────
         public async Task<(bool creada, int rutaId, string mensaje)> CrearRuta(
             int origenId, int destinoId, int duracionEstimada)
         {
@@ -146,6 +143,5 @@ namespace Aerolinea.API.Services
             var rutaId = await _repository.CrearRuta(origenId, destinoId, duracionEstimada);
             return (true, rutaId, "Ruta creada correctamente.");
         }
-
     }
 }

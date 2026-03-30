@@ -354,3 +354,18 @@
 .broom-header__nav-link {
     text-align: left;
 }
+
+/* ── Panel Admin link ── */
+.broom-header__inline-link--admin {
+  color: #8B6B4A;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.broom-header__inline-link--admin::after {
+  background: #8B6B4A;
+}
+
+.broom-header__nav-link--admin {
+  color: #8B6B4A;
+  font-weight: 700;
+}
