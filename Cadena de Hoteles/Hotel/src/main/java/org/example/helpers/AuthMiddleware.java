@@ -20,12 +20,14 @@ public class AuthMiddleware {
             "/sesion",
             "/api/agencias/handshake",
             "/api/hoteles-agencia",
-            "/agencia/busqueda"
+            "/agencia/busqueda",
+            "/agencia/reservaciones"
     );
 
     public static void registrar(Javalin app) {
         app.before(ctx -> {
             if (esRutaPublica(ctx)) return;
+            if (ctx.path().startsWith("/agencia/")) return;
 
             String token = ctx.cookie("auth_token");
 

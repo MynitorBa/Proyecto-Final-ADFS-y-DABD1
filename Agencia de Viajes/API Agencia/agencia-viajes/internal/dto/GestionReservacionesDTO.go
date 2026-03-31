@@ -13,3 +13,15 @@ type CrearReservacionResponse struct {
 	FechaExpiracion string `json:"fecha_expiracion"`
 	FechaCreacion   string `json:"fecha_creacion"`
 }
+
+type ReservacionConDetalles struct {
+	ID       int
+	Detalles []DetalleProveedor
+}
+
+type DetalleProveedor struct {
+	IDReservaProveedor string
+	ProveedorID        int
+	URLAPI             string
+	TokenEntrada       string
+}

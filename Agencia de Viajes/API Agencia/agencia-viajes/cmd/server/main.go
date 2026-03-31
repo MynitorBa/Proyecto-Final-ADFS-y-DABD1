@@ -40,8 +40,9 @@ func main() {
 	handshakeHoteleraService := services.NewHandshakeHoteleraService(db, cfg)
 	catalogoService := services.NewCatalogoService(db, ubicacionService)
 	busquedaService := services.NewBusquedaService(db)
-	reservacionService := services.NewReservacionService(db)
 	expiracionService := services.NewExpiracionService(db)
+	reservacionService := services.NewReservacionService(db, expiracionService)
+	detalleReservacionService := services.NewDetalleReservacionService(db)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -53,6 +54,7 @@ func main() {
 	catalogoController := controllers.NewCatalogoController(catalogoService)
 	busquedaController := controllers.NewBusquedaController(busquedaService)
 	reservacionController := controllers.NewReservacionController(reservacionService)
+	detalleReservacionController := controllers.NewDetalleReservacionController(detalleReservacionService)
 
 	// Iniciar servicio de expiración
 	expiracionService.Iniciar()
@@ -76,6 +78,8 @@ func main() {
 
 			protegido.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
 			protegido.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
+
+			protegido.POST("/reservaciones/detalle/vuelo", detalleReservacionController.AgregarDetalleVuelo)
 
 			protegido.POST("/reservaciones", reservacionController.CrearReservacion)
 

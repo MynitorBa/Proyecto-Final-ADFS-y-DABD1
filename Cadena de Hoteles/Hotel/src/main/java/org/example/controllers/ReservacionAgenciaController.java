@@ -2,6 +2,7 @@ package org.example.controllers;
 
 import io.javalin.Javalin;
 import org.example.dtos.ReservacionRequestDTO;
+import org.example.helpers.AgenciaAuthMiddleware;
 import org.example.services.ReservacionAgenciaService;
 
 import java.util.Map;
@@ -12,19 +13,14 @@ public class ReservacionAgenciaController {
 
     public void registerRoutes(Javalin app) {
 
-        // POST /agencia/reservaciones — crear reservación con descuento
+        // POST /agencia/reservaciones
         app.post("/agencia/reservaciones", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
-            int rolId     = ctx.attribute("rolId");
-
-            if (rolId != 3) {
-                ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Webservice"));
-                return;
-            }
+            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+            int agenciaId = ctx.attribute("agenciaId");
 
             ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
             try {
-                ctx.status(201).json(reservacionAgenciaService.crearReservacion(request, usuarioId));
+                ctx.status(201).json(reservacionAgenciaService.crearReservacion(request, agenciaId));
             } catch (IllegalArgumentException e) {
                 ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             } catch (RuntimeException e) {
@@ -32,17 +28,26 @@ public class ReservacionAgenciaController {
             }
         });
 
-        // GET /agencia/reservaciones — todas las reservaciones de la agencia
+        // GET /agencia/reservaciones
         app.get("/agencia/reservaciones", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
-            int rolId     = ctx.attribute("rolId");
+            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+            int agenciaId = ctx.attribute("agenciaId");
 
-            if (rolId != 3) {
-                ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Webservice"));
-                return;
+            ctx.status(200).json(reservacionAgenciaService.obtenerReservaciones(agenciaId));
+        });
+
+        // POST /agencia/reservaciones/{id}/expirar
+        app.post("/agencia/reservaciones/{id}/expirar", ctx -> {
+            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+            int agenciaId = ctx.attribute("agenciaId");
+
+            try {
+                reservacionAgenciaService.expirarReservacion(reservacionId, agenciaId);
+                ctx.json(Map.of("mensaje", "Reservación expirada correctamente"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             }
-
-            ctx.status(200).json(reservacionAgenciaService.obtenerReservaciones(usuarioId));
         });
     }
 }

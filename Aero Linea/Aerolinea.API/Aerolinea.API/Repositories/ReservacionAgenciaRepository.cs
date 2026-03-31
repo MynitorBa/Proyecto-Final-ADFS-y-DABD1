@@ -21,7 +21,7 @@ namespace Aerolinea.API.Repositories
             _ciudadRepository = ciudadRepository;
         }
 
-        public async Task<ReservacionCreadaDTO> CrearReservacion(List<SeleccionVueloDTO> vuelos, decimal descuento)
+        public async Task<ReservacionCreadaDTO> CrearReservacion(List<SeleccionVueloDTO> vuelos, decimal descuento, int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
@@ -65,18 +65,27 @@ namespace Aerolinea.API.Repositories
                     total += precioConDescuento * vuelo.CantidadPasajeros;
                 }
 
+                int usuarioWebId;
+                string queryUsuario = "SELECT UsuarioWebID FROM Agencia WHERE ID = @agenciaId";
+                using (var cmd = new SqlCommand(queryUsuario, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@agenciaId", agenciaId);
+                    usuarioWebId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                }
+
                 string noReservacion = "RES" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(1000, 9999);
                 DateTime fechaExpiracion = DateTime.Now.AddMinutes(15);
                 int reservacionId;
 
                 string insertReservacion = @"
                     INSERT INTO Reservacion (NoReservacion, UsuarioID, FechaReservacion, FechaExpiracion, Total, EstadoReservaID)
-                    VALUES (@noReservacion, NULL, GETDATE(), @fechaExpiracion, @total, 1);
+                    VALUES (@noReservacion, @usuarioId, GETDATE(), @fechaExpiracion, @total, 1);
                     SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                 using (var cmd = new SqlCommand(insertReservacion, connection, transaction))
                 {
                     cmd.Parameters.AddWithValue("@noReservacion", noReservacion);
+                    cmd.Parameters.AddWithValue("@usuarioId", usuarioWebId);
                     cmd.Parameters.AddWithValue("@fechaExpiracion", fechaExpiracion);
                     cmd.Parameters.AddWithValue("@total", total);
                     reservacionId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
@@ -102,7 +111,7 @@ namespace Aerolinea.API.Repositories
                     {
                         cmd.Parameters.AddWithValue("@vueloId", vuelo.VueloId);
                         var result = await cmd.ExecuteScalarAsync();
-                        precioClase = Math.Round(Convert.ToDecimal(result) * (1 - descuento / 100), 2);
+                        precioClase = Math.Round(Convert.ToDecimal(result) * factor, 2);
                     }
 
                     var asientosOcupados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -218,6 +227,99 @@ namespace Aerolinea.API.Repositories
             }
 
             return "A" + new string(letras);
+        }
+
+        public async Task ExpirarReservacion(int reservacionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                string queryVerificar = "SELECT EstadoReservaID FROM Reservacion WHERE ID = @id";
+                int estado = 0;
+                using (var cmd = new SqlCommand(queryVerificar, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@id", reservacionId);
+                    var result = await cmd.ExecuteScalarAsync();
+                    if (result == null)
+                        throw new Exception("Reservación no encontrada.");
+                    estado = Convert.ToInt32(result);
+                }
+
+                if (estado != 1)
+                    throw new Exception("La reservación no está en estado pendiente.");
+
+                // Liberar boletos
+                string queryGrupos = @"
+            SELECT VueloID, ClaseID, COUNT(*) AS Cantidad
+            FROM Boleto
+            WHERE ReservacionID = @id AND EstadoBoletoID = 2
+            GROUP BY VueloID, ClaseID";
+
+                var grupos = new List<(int VueloId, int ClaseId, int Cantidad)>();
+                using (var cmd = new SqlCommand(queryGrupos, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@id", reservacionId);
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                        grupos.Add((reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
+                }
+
+                string cancelarBoletos = @"
+            UPDATE Boleto SET EstadoBoletoID = 4
+            WHERE ReservacionID = @id AND EstadoBoletoID = 2";
+                using (var cmd = new SqlCommand(cancelarBoletos, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@id", reservacionId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                foreach (var (vueloId, claseId, cantidad) in grupos)
+                {
+                    string campo = claseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
+                    string devolver = $"UPDATE Vuelo SET {campo} = {campo} + @cantidad WHERE ID = @vueloId";
+                    using var cmd = new SqlCommand(devolver, connection, transaction);
+                    cmd.Parameters.AddWithValue("@cantidad", cantidad);
+                    cmd.Parameters.AddWithValue("@vueloId", vueloId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                string expirar = "UPDATE Reservacion SET EstadoReservaID = 4 WHERE ID = @id";
+                using (var cmd = new SqlCommand(expirar, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@id", reservacionId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        public async Task<bool> PerteneceAAgenciaYEstaPendiente(int reservacionId, int agenciaId)
+        {
+                    using var connection = _connectionFactory.CreateConnection();
+                    await connection.OpenAsync();
+
+                    string sql = @"
+                SELECT COUNT(*) FROM Reservacion r
+                JOIN Agencia a ON r.UsuarioID = a.UsuarioWebID
+                WHERE r.ID = @reservacionId
+                AND a.ID = @agenciaId
+                AND r.EstadoReservaID = 1"; 
+
+            using var cmd = new SqlCommand(sql, connection);
+                    cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
+                    cmd.Parameters.AddWithValue("@agenciaId", agenciaId);
+
+                    int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                    return count > 0;
         }
     }
 }

@@ -7,17 +7,15 @@ namespace Aerolinea.API.Controllers
 {
     [ApiController]
     [Route("api/reservaciones-agencia")]
+    [ServiceFilter(typeof(AgenciaAuthMiddleware))]
     public class ReservacionAgenciaController : ControllerBase
     {
         private readonly ReservacionAgenciaService _service;
-        private readonly AgenciaAuthMiddleware _agenciaAuth;
 
         public ReservacionAgenciaController(
-            ReservacionAgenciaService service,
-            AgenciaAuthMiddleware agenciaAuth)
+            ReservacionAgenciaService service)
         {
             _service = service;
-            _agenciaAuth = agenciaAuth;
         }
 
         [HttpPost]
@@ -33,6 +31,25 @@ namespace Aerolinea.API.Controllers
             {
                 var reservacion = await _service.CrearReservacion(dto, agenciaId);
                 return Ok(reservacion);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/expirar")]
+        public async Task<IActionResult> ExpirarReservacion(int id)
+        {
+            var agencia = HttpContext.Items["agencia_id"];
+            if (agencia == null)
+                return Unauthorized(new { message = "Token de agencia requerido" });
+            int agenciaId = (int)agencia;  
+
+            try
+            {
+                await _service.ExpirarReservacion(id, agenciaId);
+                return Ok(new { message = "Reservación expirada correctamente." });
             }
             catch (Exception ex)
             {
