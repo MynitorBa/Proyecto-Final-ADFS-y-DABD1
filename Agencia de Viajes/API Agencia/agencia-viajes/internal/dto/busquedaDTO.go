@@ -22,10 +22,11 @@ type BusquedaHotelesRequest struct {
 //Proveedor del catálogo (aerolinea u hotelera)
 
 type ProveedorCatalogo struct {
-	ProveedorID  int
-	Nombre       string
-	URLApi       string
-	TokenEntrada string
+	ProveedorID        int
+	Nombre             string
+	URLApi             string
+	TokenEntrada       string
+	PorcentajeGanancia float64
 }
 
 //Respuesta final

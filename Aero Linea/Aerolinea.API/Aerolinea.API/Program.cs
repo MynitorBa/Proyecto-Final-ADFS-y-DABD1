@@ -36,6 +36,7 @@ builder.Services.AddScoped<AgenciaRepository>();
 builder.Services.AddScoped<RutaAgenciaRepository>();
 
 builder.Services.AddScoped<AgenciaAuthMiddleware>();
+builder.Services.AddScoped<ReservacionAgenciaRepository>();
 
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
@@ -60,6 +61,7 @@ builder.Services.AddScoped<HandshakeService>();
 builder.Services.AddScoped<AgenciaAuthMiddleware>();
 builder.Services.AddScoped<RutaAgenciaService>();
 builder.Services.AddScoped<VueloAgenciaService>();
+builder.Services.AddScoped<ReservacionAgenciaService>();
 
 
 

@@ -37,9 +37,11 @@ func main() {
 	loginService := services.NewLoginService(db)
 	proveedorService := services.NewProveedorService(db)
 	handshakeService := services.NewHandshakeService(db, cfg)
-	catalogoService := services.NewCatalogoService(db, ubicacionService)
 	handshakeHoteleraService := services.NewHandshakeHoteleraService(db, cfg)
+	catalogoService := services.NewCatalogoService(db, ubicacionService)
 	busquedaService := services.NewBusquedaService(db)
+	reservacionService := services.NewReservacionService(db)
+	expiracionService := services.NewExpiracionService(db)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -47,9 +49,14 @@ func main() {
 	sesionController := controllers.NewSesionController()
 	proveedorController := controllers.NewProveedorController(proveedorService)
 	handshakeController := controllers.NewHandshakeController(handshakeService)
-	catalogoController := controllers.NewCatalogoController(catalogoService)
 	handshakeHoteleraController := controllers.NewHandshakeHoteleraController(handshakeHoteleraService)
+	catalogoController := controllers.NewCatalogoController(catalogoService)
 	busquedaController := controllers.NewBusquedaController(busquedaService)
+	reservacionController := controllers.NewReservacionController(reservacionService)
+
+	// Iniciar servicio de expiración
+	expiracionService.Iniciar()
+	defer expiracionService.Detener()
 
 	api := router.Group("/api")
 	{
@@ -66,33 +73,17 @@ func main() {
 		protegido.Use(middlewares.AuthRequerido())
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
-		}
-		protegido.POST(
-			"/proveedores",
-			middlewares.RolRequerido(2), // solo administradores
-			proveedorController.CrearProveedor,
-		)
-		protegido.POST(
-			"/catalogo/actualizar",
-			middlewares.RolRequerido(2),
-			catalogoController.ActualizarCatalogo,
-		)
-		protegido.Use(middlewares.AuthRequerido())
-		{
+
 			protegido.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
 			protegido.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
-		}
 
-		protegido.POST(
-			"/proveedores/:id/handshake",
-			middlewares.RolRequerido(2),
-			handshakeController.IniciarHandshake,
-		)
-		protegido.POST(
-			"/proveedores/:id/handshake-hotelera",
-			middlewares.RolRequerido(2),
-			handshakeHoteleraController.IniciarHandshake,
-		)
+			protegido.POST("/reservaciones", reservacionController.CrearReservacion)
+
+			protegido.POST("/proveedores", middlewares.RolRequerido(2), proveedorController.CrearProveedor)
+			protegido.POST("/catalogo/actualizar", middlewares.RolRequerido(2), catalogoController.ActualizarCatalogo)
+			protegido.POST("/proveedores/:id/handshake", middlewares.RolRequerido(2), handshakeController.IniciarHandshake)
+			protegido.POST("/proveedores/:id/handshake-hotelera", middlewares.RolRequerido(2), handshakeHoteleraController.IniciarHandshake)
+		}
 	}
 
 	log.Println("Servidor corriendo en puerto " + cfg.ServerPort)

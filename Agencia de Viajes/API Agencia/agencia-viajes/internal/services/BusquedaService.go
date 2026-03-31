@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 )
 
@@ -89,6 +90,8 @@ func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.Busqueda
 	if err := json.NewDecoder(resp.Body).Decode(&datos); err != nil {
 		return nil, err
 	}
+
+	datos = aplicarGanancia(datos, p.PorcentajeGanancia)
 	return datos, nil
 }
 
@@ -153,5 +156,34 @@ func (s *BusquedaService) llamarHoteles(p dto.ProveedorCatalogo, req dto.Busqued
 	if err := json.NewDecoder(resp.Body).Decode(&datos); err != nil {
 		return nil, err
 	}
+
+	datos = aplicarGanancia(datos, p.PorcentajeGanancia)
 	return datos, nil
+}
+
+func aplicarGanancia(data interface{}, porcentaje float64) interface{} {
+	multiplicador := 1 + (porcentaje / 100)
+
+	switch v := data.(type) {
+	case map[string]interface{}:
+		for key, val := range v {
+			switch key {
+			case "precioTurista", "precioEjecutiva", "precioPorPersona", "precioPorNoche":
+				if precio, ok := val.(float64); ok {
+					v[key] = math.Round(precio*multiplicador*100) / 100
+				}
+			default:
+				v[key] = aplicarGanancia(val, porcentaje)
+			}
+		}
+		return v
+
+	case []interface{}:
+		for i, item := range v {
+			v[i] = aplicarGanancia(item, porcentaje)
+		}
+		return v
+	}
+
+	return data
 }
