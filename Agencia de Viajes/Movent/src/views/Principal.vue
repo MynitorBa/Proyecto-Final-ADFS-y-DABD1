@@ -10,29 +10,16 @@
           <h1 class="hero-title">Tu Próxima Aventura<br>Comienza <span>Aquí</span></h1>
           <p class="hero-subtitle">Vuelos, hospedajes y paquetes combinados de múltiples proveedores en un solo lugar</p>
           <div class="hero-stats">
-            <div class="hero-stat">
-              <strong>500+</strong>
-              <span>Aerolíneas</span>
-            </div>
-            <div class="hero-stat">
-              <strong>12K+</strong>
-              <span>Hoteles</span>
-            </div>
-            <div class="hero-stat">
-              <strong>180+</strong>
-              <span>Países</span>
-            </div>
-            <div class="hero-stat">
-              <strong>98%</strong>
-              <span>Satisfacción</span>
-            </div>
+            <div class="hero-stat"><strong>500+</strong><span>Aerolíneas</span></div>
+            <div class="hero-stat"><strong>12K+</strong><span>Hoteles</span></div>
+            <div class="hero-stat"><strong>180+</strong><span>Países</span></div>
+            <div class="hero-stat"><strong>98%</strong><span>Satisfacción</span></div>
           </div>
         </div>
 
         <div class="search-card">
           <h2 class="search-card-title">¿A dónde viajamos?</h2>
 
-          <!-- Tabs -->
           <div class="search-tabs">
             <button :class="{ active: searchType === 'flights' }" @click="searchType = 'flights'" type="button">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -48,10 +35,8 @@
             </button>
           </div>
 
-          <!-- ══ SELECTORES COMPARTIDOS: Origen + Destino ══ -->
           <div :class="['vuelos-cards', { 'vuelos-cards--solo': searchType === 'hotels' }]">
 
-            <!-- DESDE (vuelos y combo) -->
             <div class="vuelo-card" v-if="searchType !== 'hotels'">
               <div class="vuelo-card__label">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -85,7 +70,6 @@
               </div>
             </div>
 
-            <!-- HACIA / DESTINO (todos los tabs) -->
             <div :class="['vuelo-card', { 'vuelo-card--full': searchType === 'hotels' }]">
               <div class="vuelo-card__label">
                 <template v-if="searchType === 'hotels'">
@@ -128,17 +112,36 @@
             </div>
 
           </div>
-          <!-- ══ FIN SELECTORES COMPARTIDOS ══ -->
 
-          <!-- ── TAB VUELOS ── -->
+          <!-- TAB VUELOS -->
           <template v-if="searchType === 'flights'">
-            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr)">
+            <div class="trip-type-toggle">
+              <button :class="['trip-type-btn', { 'trip-type-btn--active': tipoVuelo === 'ida' }]"
+                @click="tipoVuelo = 'ida'" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+                Solo ida
+              </button>
+              <button :class="['trip-type-btn', { 'trip-type-btn--active': tipoVuelo === 'idaVuelta' }]"
+                @click="tipoVuelo = 'idaVuelta'" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Ida y vuelta
+              </button>
+            </div>
+
+            <div class="form-grid" :style="tipoVuelo === 'idaVuelta' ? 'grid-template-columns: repeat(3, 1fr)' : 'grid-template-columns: repeat(2, 1fr)'">
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Fecha
+                  Fecha de ida
                 </label>
-                <input class="form-input" type="date" v-model="flightData.fecha" />
+                <input class="form-input" type="date" v-model="flightData.fecha" :min="hoy" />
+              </div>
+              <div class="form-group" v-if="tipoVuelo === 'idaVuelta'">
+                <label class="form-label">
+                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Fecha de regreso
+                </label>
+                <input class="form-input" type="date" v-model="flightData.fechaRegreso" :min="minFechaRegreso" />
               </div>
               <div class="form-group">
                 <label class="form-label">
@@ -160,7 +163,7 @@
             </button>
           </template>
 
-          <!-- ── TAB HOTELES ── -->
+          <!-- TAB HOTELES -->
           <template v-if="searchType === 'hotels'">
             <div class="form-grid" style="grid-template-columns: repeat(3, 1fr)">
               <div class="form-group">
@@ -168,30 +171,24 @@
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-in
                 </label>
-                <input class="form-input" type="date" v-model="hotelData.checkIn" />
+                <input class="form-input" type="date" v-model="hotelData.checkIn" :min="hoy" />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-out
                 </label>
-                <input class="form-input" type="date" v-model="hotelData.checkOut" />
+                <input class="form-input" type="date" v-model="hotelData.checkOut" :min="minCheckOutHotel" />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                  Huéspedes
+                  Personas
                 </label>
-                <select class="form-input" v-model="hotelData.huespedes">
-                  <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'Huésped' : 'Huéspedes' }}</option>
+                <select class="form-input" v-model="hotelData.cantidadPersonas">
+                  <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'Persona' : 'Personas' }}</option>
                 </select>
               </div>
-            </div>
-            <div class="seat-class-row">
-              <span class="seat-label">Habitación:</span>
-              <button v-for="t in roomTypes" :key="t.val" type="button"
-                :class="['seat-btn', { active: hotelData.tipoHabitacion === t.val }]"
-                @click="hotelData.tipoHabitacion = t.val">{{ t.label }}</button>
             </div>
             <p v-if="searchError" class="search-error">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -203,33 +200,66 @@
             </button>
           </template>
 
-          <!-- ── TAB COMBO ── -->
+          <!-- TAB COMBO -->
           <template v-if="searchType === 'combo'">
             <div class="combo-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
               Vuelo
             </div>
-            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom: none;">
+            <!-- Toggle ida / ida y vuelta -->
+            <div class="trip-type-toggle" style="margin-top: 10px; margin-bottom: 10px;">
+              <button :class="['trip-type-btn', { 'trip-type-btn--active': comboTipoVuelo === 'ida' }]"
+                @click="comboTipoVuelo = 'ida'" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+                Solo ida
+              </button>
+              <button :class="['trip-type-btn', { 'trip-type-btn--active': comboTipoVuelo === 'idaVuelta' }]"
+                @click="comboTipoVuelo = 'idaVuelta'" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Ida y vuelta
+              </button>
+            </div>
+            <div class="form-grid" :style="comboTipoVuelo === 'idaVuelta' ? 'grid-template-columns: repeat(3, 1fr); margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom: none;' : 'grid-template-columns: repeat(2, 1fr); margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom: none;'">
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Fecha
+                  Fecha de ida
                 </label>
-                <input class="form-input" type="date" v-model="comboData.fecha" />
+                <input class="form-input" type="date" v-model="comboData.fecha" :min="hoy" />
+              </div>
+              <div class="form-group" v-if="comboTipoVuelo === 'idaVuelta'">
+                <label class="form-label">
+                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  Fecha de regreso
+                </label>
+                <input class="form-input" type="date" v-model="comboData.fechaRegreso" :min="minFechaRegresoCombo" />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                  Pasajeros
+                  Personas
                 </label>
-                <select class="form-input" v-model="comboData.cantidadPasajeros">
+                <select class="form-input" v-model="comboData.cantidadPersonas">
                   <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
                 </select>
               </div>
             </div>
+
+            <!-- Sección hotel — fechas siempre dentro del rango de vuelo -->
             <div class="combo-label" style="border-top: 1px solid #e2e8f0; margin-top:0; border-radius:0;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Hotel
+              <!-- Muestra el rango permitido dinámicamente para orientar al usuario -->
+              <span v-if="comboData.fecha" style="font-size:11px; font-weight:400; color:#9a9089; margin-left:6px;">
+                · Dentro del período del vuelo
+                <template v-if="comboTipoVuelo === 'idaVuelta' && comboData.fechaRegreso">
+                  ({{ formatFechaCorta(comboData.fecha) }} – {{ formatFechaCorta(comboData.fechaRegreso) }})
+                </template>
+                <template v-else-if="comboTipoVuelo === 'ida' && comboData.fecha">
+                  (desde {{ formatFechaCorta(comboData.fecha) }})
+                </template>
+              </span>
+              <span v-else style="font-size:11px; font-weight:400; color:#9a9089; margin-left:6px;">· Dentro del período del vuelo</span>
             </div>
             <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); border-top-left-radius:0; border-top-right-radius:0; border-top: none; margin-bottom: 1.25rem;">
               <div class="form-group">
@@ -237,21 +267,38 @@
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-in
                 </label>
-                <input class="form-input" type="date" v-model="comboData.checkIn" />
+                <!--
+                  min = fecha de vuelo de ida (no se puede llegar antes de volar)
+                  max = fecha de regreso - 1 día (para dejar al menos 1 noche)
+                       o, si es solo ida, sin límite superior
+                -->
+                <input
+                  class="form-input"
+                  type="date"
+                  v-model="comboData.checkIn"
+                  :min="comboData.fecha || hoy"
+                  :max="maxCheckInCombo || undefined"
+                  :disabled="!comboData.fecha"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-out
                 </label>
-                <input class="form-input" type="date" v-model="comboData.checkOut" />
+                <!--
+                  min = checkIn + 1 día
+                  max = fecha de regreso (para idaVuelta), sin límite para solo ida
+                -->
+                <input
+                  class="form-input"
+                  type="date"
+                  v-model="comboData.checkOut"
+                  :min="minCheckOutCombo"
+                  :max="comboTipoVuelo === 'idaVuelta' ? (comboData.fechaRegreso || undefined) : undefined"
+                  :disabled="!comboData.checkIn"
+                />
               </div>
-            </div>
-            <div class="seat-class-row">
-              <span class="seat-label">Habitación:</span>
-              <button v-for="t in roomTypes" :key="t.val" type="button"
-                :class="['seat-btn', { active: comboData.tipoHabitacion === t.val }]"
-                @click="comboData.tipoHabitacion = t.val">{{ t.label }}</button>
             </div>
             <p v-if="searchError" class="search-error">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -312,7 +359,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
@@ -323,314 +370,405 @@ const API         = 'http://localhost:8080'
 const buscando    = ref(false)
 const searchError = ref('')
 
-// ── Opciones ──────────────────────────────────────────────────
-const roomTypes = [
-  { val: 'doble',      label: 'Doble' },
-  { val: 'junior',     label: 'Junior Suite' },
-  { val: 'suite',      label: 'Suite' },
-  { val: 'gran_suite', label: 'Gran Suite' },
-]
-
-// ── UI ────────────────────────────────────────────────────────
 const searchType    = ref('flights')
 const showScrollTop = ref(false)
+const hoy           = new Date().toISOString().split('T')[0]
+const tipoVuelo     = ref('ida')
+const comboTipoVuelo = ref('ida')
 
-// ── Datos por tab ─────────────────────────────────────────────
-const flightData = ref({ fecha: '', cantidadPasajeros: 1 })
-const hotelData  = ref({ checkIn: '', checkOut: '', huespedes: 1, tipoHabitacion: 'doble' })
-const comboData  = ref({ fecha: '', cantidadPasajeros: 1, checkIn: '', checkOut: '', tipoHabitacion: 'doble' })
+const flightData = ref({ fecha: '', fechaRegreso: '', cantidadPasajeros: 1 })
+const hotelData  = ref({ checkIn: '', checkOut: '', cantidadPersonas: 1 })
+const comboData  = ref({ fecha: '', fechaRegreso: '', cantidadPersonas: 1, checkIn: '', checkOut: '' })
 
-// ══════════════════════════════════════════════════════════════
-// countriesnow.space — países y ciudades
-// ══════════════════════════════════════════════════════════════
+// ── Computed: fechas mínimas para vuelos ──────────────────────
+const minFechaRegreso = computed(() => {
+  if (!flightData.value.fecha) return hoy
+  const d = new Date(flightData.value.fecha); d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+})
+
+const minFechaRegresoCombo = computed(() => {
+  if (!comboData.value.fecha) return hoy
+  const d = new Date(comboData.value.fecha); d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+})
+
+const minCheckOutHotel = computed(() => {
+  if (!hotelData.value.checkIn) return hoy
+  const d = new Date(hotelData.value.checkIn); d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+})
+
+// ── Computed: límites del hotel DENTRO del rango de vuelo ─────
+
+/**
+ * El check-in del hotel no puede ser anterior a la fecha de vuelo de ida
+ * ni posterior al día antes del check-out (o del fechaRegreso si es ida y vuelta).
+ */
+const maxCheckInCombo = computed(() => {
+  // Siempre tiene que quedar al menos 1 noche: el límite superior del checkIn
+  // es el día anterior a la fecha de regreso (si idaVuelta) sin límite fijo para solo-ida.
+  if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
+    // El check-in puede ser como máximo el día anterior al check-out ya elegido,
+    // o el día anterior al regreso si no hay check-out aún.
+    const base = comboData.value.checkOut || comboData.value.fechaRegreso
+    const d = new Date(base)
+    d.setDate(d.getDate() - 1)
+    return d.toISOString().split('T')[0]
+  }
+  // Solo ida: no ponemos límite superior en checkIn
+  return undefined
+})
+
+/**
+ * El check-out mínimo es siempre checkIn + 1 día.
+ */
+const minCheckOutCombo = computed(() => {
+  if (!comboData.value.checkIn) return hoy
+  const d = new Date(comboData.value.checkIn); d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+})
+
+// ── Watchers de sincronización y limpieza ─────────────────────
+
+// Cuando cambia la fecha de ida del combo:
+// 1. Auto-rellenar checkIn con la fecha de vuelo
+// 2. Si el checkIn actual es anterior a la nueva fecha, resetearlo
+watch(() => comboData.value.fecha, (nuevaFecha) => {
+  if (!nuevaFecha) return
+
+  // Auto-fill checkIn con la fecha de vuelo si está vacío
+  if (!comboData.value.checkIn) {
+    comboData.value.checkIn = nuevaFecha
+  } else if (comboData.value.checkIn < nuevaFecha) {
+    // El checkIn quedó antes del vuelo → resetear ambos
+    comboData.value.checkIn  = nuevaFecha
+    comboData.value.checkOut = ''
+  }
+
+  // Si checkOut también quedó inválido (antes o igual al nuevo checkIn), limpiarlo
+  if (comboData.value.checkOut && comboData.value.checkOut <= comboData.value.checkIn) {
+    comboData.value.checkOut = ''
+  }
+})
+
+// Cuando cambia la fecha de regreso del combo:
+// 1. Auto-rellenar checkOut con la fecha de regreso
+// 2. Si el checkOut actual supera el regreso, resetearlo
+watch(() => comboData.value.fechaRegreso, (nuevaFechaRegreso) => {
+  if (!nuevaFechaRegreso) return
+
+  if (comboTipoVuelo.value === 'idaVuelta') {
+    // Auto-fill checkOut si está vacío
+    if (!comboData.value.checkOut) {
+      comboData.value.checkOut = nuevaFechaRegreso
+    } else if (comboData.value.checkOut > nuevaFechaRegreso) {
+      // El checkOut superó el regreso → ajustar al regreso
+      comboData.value.checkOut = nuevaFechaRegreso
+    }
+
+    // Si el checkIn también superó el regreso, resetearlo todo
+    if (comboData.value.checkIn && comboData.value.checkIn >= nuevaFechaRegreso) {
+      comboData.value.checkIn  = comboData.value.fecha || ''
+      comboData.value.checkOut = nuevaFechaRegreso
+    }
+  }
+})
+
+// Cuando cambia el tipo de vuelo del combo a solo-ida, limpiar regreso y
+// re-evaluar checkOut (ya no hay límite superior del regreso)
+watch(() => comboTipoVuelo.value, (tipo) => {
+  if (tipo === 'ida') {
+    comboData.value.fechaRegreso = ''
+    // No forzamos limpiar checkOut porque puede ser válido igualmente
+  }
+})
+
+// Cuando el usuario cambia checkIn manualmente: si checkOut ya existe y queda inválido, limpiarlo
+watch(() => comboData.value.checkIn, (nuevoCheckIn) => {
+  if (!nuevoCheckIn) return
+  if (comboData.value.checkOut && comboData.value.checkOut <= nuevoCheckIn) {
+    comboData.value.checkOut = ''
+  }
+})
+
+// ── Helper de formato de fecha corta para el hint ─────────────
+function formatFechaCorta(f) {
+  if (!f) return ''
+  try {
+    return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short' })
+  } catch { return f }
+}
+
+// ── Autocomplete países/ciudades ──────────────────────────────
 let paisesCache = null
 async function getPaises() {
   if (paisesCache) return paisesCache
-  try {
-    const r = await fetch('https://countriesnow.space/api/v0.1/countries')
-    const d = await r.json()
-    paisesCache = d.data || []
-  } catch { paisesCache = [] }
+  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] } catch { paisesCache = [] }
   return paisesCache
 }
 async function getCiudades(country) {
-  try {
-    const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ country })
-    })
-    const d = await r.json()
-    return d.data || []
-  } catch { return [] }
+  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] } catch { return [] }
 }
-
 function blur(fn) { setTimeout(fn, 200) }
 
-// ══════════════════════════════════════════════════════════════
-// ORIGEN — compartido (vuelos + combo)
-// ══════════════════════════════════════════════════════════════
-const oPaisQ         = ref('');  const oPaisSug        = ref([]);  const oPaisSel       = ref(null)
-const oCiudadQ       = ref('');  const oCiudadSug      = ref([]);  const oCiudadLoading = ref(false)
-const oCiudades      = ref([])
-const origen         = ref({ pais: '', ciudad: '' })
+// ── Origen ────────────────────────────────────────────────────
+const oPaisQ = ref(''); const oPaisSug = ref([]); const oPaisSel = ref(null)
+const oCiudadQ = ref(''); const oCiudadSug = ref([]); const oCiudadLoading = ref(false)
+const oCiudades = ref([])
+const origen = ref({ pais: '', ciudad: '' })
 
 async function onOPaisInput() {
-  oPaisSel.value = null; oCiudadQ.value = ''; oCiudades.value = []
-  origen.value = { pais: '', ciudad: '' }
-  const q = oPaisQ.value.trim()
-  if (q.length < 2) { oPaisSug.value = []; return }
-  const p = await getPaises()
-  oPaisSug.value = p.filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+  oPaisSel.value = null; oCiudadQ.value = ''; oCiudades.value = []; origen.value = { pais: '', ciudad: '' }
+  const q = oPaisQ.value.trim(); if (q.length < 2) { oPaisSug.value = []; return }
+  oPaisSug.value = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
 async function selOPais(p) {
-  oPaisSel.value = p; oPaisQ.value = p.country; oPaisSug.value = []
-  origen.value.pais = p.country
-  oCiudadLoading.value = true
-  oCiudades.value = await getCiudades(p.country)
-  oCiudadLoading.value = false
+  oPaisSel.value = p; oPaisQ.value = p.country; oPaisSug.value = []; origen.value.pais = p.country
+  oCiudadLoading.value = true; oCiudades.value = await getCiudades(p.country); oCiudadLoading.value = false
 }
 function onOCiudadInput() {
   const q = oCiudadQ.value.toLowerCase()
   oCiudadSug.value = q.length < 2 ? [] : oCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   origen.value.ciudad = ''
 }
-function selOCiudad(c) {
-  oCiudadQ.value = c; oCiudadSug.value = []
-  origen.value.ciudad = c
-  searchError.value = ''
-}
+function selOCiudad(c) { oCiudadQ.value = c; oCiudadSug.value = []; origen.value.ciudad = c; searchError.value = '' }
 
-// ══════════════════════════════════════════════════════════════
-// DESTINO — compartido (vuelos + hoteles + combo)
-// ══════════════════════════════════════════════════════════════
-const dPaisQ         = ref('');  const dPaisSug        = ref([]);  const dPaisSel       = ref(null)
-const dCiudadQ       = ref('');  const dCiudadSug      = ref([]);  const dCiudadLoading = ref(false)
-const dCiudades      = ref([])
-const destino        = ref({ pais: '', ciudad: '' })
+// ── Destino ───────────────────────────────────────────────────
+const dPaisQ = ref(''); const dPaisSug = ref([]); const dPaisSel = ref(null)
+const dCiudadQ = ref(''); const dCiudadSug = ref([]); const dCiudadLoading = ref(false)
+const dCiudades = ref([])
+const destino = ref({ pais: '', ciudad: '' })
 
 async function onDPaisInput() {
-  dPaisSel.value = null; dCiudadQ.value = ''; dCiudades.value = []
-  destino.value = { pais: '', ciudad: '' }
-  const q = dPaisQ.value.trim()
-  if (q.length < 2) { dPaisSug.value = []; return }
-  const p = await getPaises()
-  dPaisSug.value = p.filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+  dPaisSel.value = null; dCiudadQ.value = ''; dCiudades.value = []; destino.value = { pais: '', ciudad: '' }
+  const q = dPaisQ.value.trim(); if (q.length < 2) { dPaisSug.value = []; return }
+  dPaisSug.value = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
 async function selDPais(p) {
-  dPaisSel.value = p; dPaisQ.value = p.country; dPaisSug.value = []
-  destino.value.pais = p.country
-  dCiudadLoading.value = true
-  dCiudades.value = await getCiudades(p.country)
-  dCiudadLoading.value = false
+  dPaisSel.value = p; dPaisQ.value = p.country; dPaisSug.value = []; destino.value.pais = p.country
+  dCiudadLoading.value = true; dCiudades.value = await getCiudades(p.country); dCiudadLoading.value = false
 }
 function onDCiudadInput() {
   const q = dCiudadQ.value.toLowerCase()
   dCiudadSug.value = q.length < 2 ? [] : dCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   destino.value.ciudad = ''
 }
-function selDCiudad(c) {
-  dCiudadQ.value = c; dCiudadSug.value = []
-  destino.value.ciudad = c
-  searchError.value = ''
+function selDCiudad(c) { dCiudadQ.value = c; dCiudadSug.value = []; destino.value.ciudad = c; searchError.value = '' }
+
+// ── Helpers de validación de resultados ───────────────────────
+function tieneVuelos(respuesta) {
+  if (!Array.isArray(respuesta) || respuesta.length === 0) return false
+  return respuesta.some(b => b.datos && (
+    (b.datos.directos?.length  > 0) ||
+    (b.datos.conEscala?.length > 0)
+  ))
 }
 
-// ══════════════════════════════════════════════════════════════
-// BÚSQUEDAS
-// ══════════════════════════════════════════════════════════════
+function tieneHoteles(respuesta) {
+  if (!Array.isArray(respuesta) || respuesta.length === 0) return false
+  return respuesta.some(b => Array.isArray(b.datos) && b.datos.length > 0)
+}
 
-// ── Vuelos ────────────────────────────────────────────────────
+// ── Buscar Vuelos ─────────────────────────────────────────────
 const buscarVuelos = async () => {
   searchError.value = ''
-  if (!origen.value.pais || !origen.value.ciudad) {
-    searchError.value = 'Selecciona el país y ciudad de origen.'; return
-  }
-  if (!destino.value.pais || !destino.value.ciudad) {
-    searchError.value = 'Selecciona el país y ciudad de destino.'; return
-  }
-  if (!flightData.value.fecha) {
-    searchError.value = 'Selecciona una fecha de vuelo.'; return
+  if (!origen.value.pais || !origen.value.ciudad)   { searchError.value = 'Selecciona el país y ciudad de origen.'; return }
+  if (!destino.value.pais || !destino.value.ciudad)  { searchError.value = 'Selecciona el país y ciudad de destino.'; return }
+  if (!flightData.value.fecha)                       { searchError.value = 'Selecciona una fecha de ida.'; return }
+  if (flightData.value.fecha < hoy)                  { searchError.value = 'La fecha de ida no puede ser en el pasado.'; return }
+  if (tipoVuelo.value === 'idaVuelta') {
+    if (!flightData.value.fechaRegreso)              { searchError.value = 'Selecciona la fecha de regreso.'; return }
+    if (flightData.value.fechaRegreso <= flightData.value.fecha) { searchError.value = 'La fecha de regreso debe ser posterior a la de ida.'; return }
   }
 
   buscando.value = true
   try {
-    const res = await fetch(`${API}/api/busqueda/vuelos`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        origen:            origen.value.ciudad,
-        origenPais:        origen.value.pais,
-        destino:           destino.value.ciudad,
-        destinoPais:       destino.value.pais,
-        fecha:             flightData.value.fecha,
-        cantidadPasajeros: flightData.value.cantidadPasajeros,
-      })
-    })
-    if (!res.ok) throw new Error(`Error ${res.status}`)
-    const resultados = await res.json()
-    router.push({
-      path: '/resultados-vuelos',
-      state: {
-        resultados,
-        busqueda: {
-          origen:            origen.value.ciudad,
-          origenPais:        origen.value.pais,
-          destino:           destino.value.ciudad,
-          destinoPais:       destino.value.pais,
-          fecha:             flightData.value.fecha,
-          cantidadPasajeros: flightData.value.cantidadPasajeros,
-        }
+    const bodyIda = {
+      origen: origen.value.ciudad, origenPais: origen.value.pais,
+      destino: destino.value.ciudad, destinoPais: destino.value.pais,
+      fecha: flightData.value.fecha, cantidadPasajeros: flightData.value.cantidadPasajeros,
+    }
+
+    if (tipoVuelo.value === 'idaVuelta') {
+      const bodyRegreso = {
+        origen: destino.value.ciudad, origenPais: destino.value.pais,
+        destino: origen.value.ciudad, destinoPais: origen.value.pais,
+        fecha: flightData.value.fechaRegreso, cantidadPasajeros: flightData.value.cantidadPasajeros,
       }
-    })
+      const [resIda, resRegreso] = await Promise.all([
+        fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyIda) }),
+        fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyRegreso) }),
+      ])
+      if (!resIda.ok) throw new Error(`Error ${resIda.status}`)
+      const resultados        = await resIda.json()
+      const resultadosRegreso = resRegreso.ok ? await resRegreso.json() : []
+
+      if (!tieneVuelos(resultados)) {
+        searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${flightData.value.fecha}.`
+        return
+      }
+      if (!tieneVuelos(resultadosRegreso)) {
+        searchError.value = `No hay vuelos de regreso de ${destino.value.ciudad} a ${origen.value.ciudad} para el ${flightData.value.fechaRegreso}. Prueba otra fecha de regreso.`
+        return
+      }
+
+      router.push({
+        path: '/resultados-vuelos',
+        state: {
+          resultados, resultadosRegreso,
+          busqueda: {
+            origen: origen.value.ciudad, origenPais: origen.value.pais,
+            destino: destino.value.ciudad, destinoPais: destino.value.pais,
+            fecha: flightData.value.fecha, fechaRegreso: flightData.value.fechaRegreso,
+            cantidadPasajeros: flightData.value.cantidadPasajeros,
+            tipoVuelo: 'idaVuelta',
+          }
+        }
+      })
+    } else {
+      const res = await fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyIda) })
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      const resultados = await res.json()
+      router.push({
+        path: '/resultados-vuelos',
+        state: {
+          resultados,
+          busqueda: {
+            origen: origen.value.ciudad, origenPais: origen.value.pais,
+            destino: destino.value.ciudad, destinoPais: destino.value.pais,
+            fecha: flightData.value.fecha, cantidadPasajeros: flightData.value.cantidadPasajeros,
+            tipoVuelo: 'ida',
+          }
+        }
+      })
+    }
   } catch (err) {
     console.error('Error buscando vuelos:', err)
     searchError.value = 'No se pudieron obtener vuelos. Intenta de nuevo.'
-  } finally {
-    buscando.value = false
-  }
+  } finally { buscando.value = false }
 }
 
-// ── Hoteles ───────────────────────────────────────────────────
+// ── Buscar Hoteles ────────────────────────────────────────────
 const buscarHoteles = async () => {
   searchError.value = ''
-  if (!destino.value.pais || !destino.value.ciudad) {
-    searchError.value = 'Selecciona el país y ciudad de destino.'; return
-  }
+  if (!destino.value.pais || !destino.value.ciudad)          { searchError.value = 'Selecciona el país y ciudad de destino.'; return }
+  if (!hotelData.value.checkIn)                              { searchError.value = 'Selecciona la fecha de check-in.'; return }
+  if (hotelData.value.checkIn < hoy)                         { searchError.value = 'El check-in no puede ser una fecha pasada.'; return }
+  if (!hotelData.value.checkOut)                             { searchError.value = 'Selecciona la fecha de check-out.'; return }
+  if (hotelData.value.checkOut <= hotelData.value.checkIn)   { searchError.value = 'El check-out debe ser al menos un día después del check-in.'; return }
 
   buscando.value = true
   try {
     const res = await fetch(`${API}/api/busqueda/hoteles`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        destino:        destino.value.ciudad,
-        destinoPais:    destino.value.pais,
-        checkIn:        hotelData.value.checkIn  || null,
-        checkOut:       hotelData.value.checkOut || null,
-        huespedes:      hotelData.value.huespedes,
-        tipoHabitacion: hotelData.value.tipoHabitacion,
-      })
+      body: JSON.stringify({ ciudad: destino.value.ciudad, pais: destino.value.pais, fechaCheckIn: hotelData.value.checkIn, fechaCheckOut: hotelData.value.checkOut, cantidadPersonas: hotelData.value.cantidadPersonas })
     })
     if (!res.ok) throw new Error(`Error ${res.status}`)
     const resultados = await res.json()
-    router.push({
-      path: '/resultados-hoteles',
-      state: {
-        resultados,
-        busqueda: {
-          destino:        destino.value.ciudad,
-          destinoPais:    destino.value.pais,
-          checkIn:        hotelData.value.checkIn,
-          checkOut:       hotelData.value.checkOut,
-          huespedes:      hotelData.value.huespedes,
-          tipoHabitacion: hotelData.value.tipoHabitacion,
-        }
-      }
-    })
+    router.push({ path: '/resultados-hoteles', state: { resultados, busqueda: { ciudad: destino.value.ciudad, pais: destino.value.pais, checkIn: hotelData.value.checkIn, checkOut: hotelData.value.checkOut, cantidadPersonas: hotelData.value.cantidadPersonas } } })
   } catch (err) {
-    console.error('Error buscando hoteles:', err)
     searchError.value = 'No se pudieron obtener hoteles. Intenta de nuevo.'
-  } finally {
-    buscando.value = false
-  }
+  } finally { buscando.value = false }
 }
 
-// ── Paquetes ──────────────────────────────────────────────────
+// ── Buscar Paquetes ───────────────────────────────────────────
 const buscarPaquetes = async () => {
   searchError.value = ''
-  if (!origen.value.pais || !origen.value.ciudad) {
-    searchError.value = 'Selecciona el país y ciudad de origen.'; return
+
+  // ── Validaciones origen/destino ───
+  if (!origen.value.pais || !origen.value.ciudad)            { searchError.value = 'Selecciona el país y ciudad de origen.'; return }
+  if (!destino.value.pais || !destino.value.ciudad)          { searchError.value = 'Selecciona el país y ciudad de destino.'; return }
+
+  // ── Validaciones vuelo ────────────
+  if (!comboData.value.fecha)                                { searchError.value = 'Selecciona la fecha de vuelo.'; return }
+  if (comboData.value.fecha < hoy)                           { searchError.value = 'La fecha de vuelo no puede ser en el pasado.'; return }
+  if (comboTipoVuelo.value === 'idaVuelta') {
+    if (!comboData.value.fechaRegreso)                       { searchError.value = 'Selecciona la fecha de regreso del vuelo.'; return }
+    if (comboData.value.fechaRegreso <= comboData.value.fecha) { searchError.value = 'La fecha de regreso debe ser posterior a la de ida.'; return }
   }
-  if (!destino.value.pais || !destino.value.ciudad) {
-    searchError.value = 'Selecciona el país y ciudad de destino.'; return
+
+  // ── Validaciones hotel ────────────
+  if (!comboData.value.checkIn)                              { searchError.value = 'Selecciona la fecha de check-in del hotel.'; return }
+  if (comboData.value.checkIn < hoy)                         { searchError.value = 'El check-in no puede ser una fecha pasada.'; return }
+  if (!comboData.value.checkOut)                             { searchError.value = 'Selecciona la fecha de check-out del hotel.'; return }
+  if (comboData.value.checkOut <= comboData.value.checkIn)   { searchError.value = 'El check-out debe ser posterior al check-in.'; return }
+
+  // ── Validación de rango: hotel debe estar DENTRO del período del vuelo ──
+  // El check-in del hotel no puede ser antes de la fecha de salida del vuelo
+  if (comboData.value.checkIn < comboData.value.fecha) {
+    searchError.value = `El check-in del hotel no puede ser antes de la salida del vuelo (${formatFechaCorta(comboData.value.fecha)}).`
+    return
+  }
+  // Para ida y vuelta: el check-out no puede exceder la fecha de regreso
+  if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
+    if (comboData.value.checkOut > comboData.value.fechaRegreso) {
+      searchError.value = `El check-out del hotel no puede ser después del vuelo de regreso (${formatFechaCorta(comboData.value.fechaRegreso)}).`
+      return
+    }
   }
 
   buscando.value = true
   try {
-    const [resVuelos, resHoteles] = await Promise.all([
-      fetch(`${API}/api/busqueda/vuelos`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          origen:            origen.value.ciudad,
-          origenPais:        origen.value.pais,
-          destino:           destino.value.ciudad,
-          destinoPais:       destino.value.pais,
-          fecha:             comboData.value.fecha,
-          cantidadPasajeros: comboData.value.cantidadPasajeros,
-        })
-      }),
-      fetch(`${API}/api/busqueda/hoteles`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destino:        destino.value.ciudad,
-          destinoPais:    destino.value.pais,
-          checkIn:        comboData.value.checkIn  || null,
-          checkOut:       comboData.value.checkOut || null,
-          huespedes:      comboData.value.cantidadPasajeros,
-          tipoHabitacion: comboData.value.tipoHabitacion,
-        })
-      })
-    ])
+    const bodyIda   = { origen: origen.value.ciudad, origenPais: origen.value.pais, destino: destino.value.ciudad, destinoPais: destino.value.pais, fecha: comboData.value.fecha, cantidadPasajeros: comboData.value.cantidadPersonas }
+    const bodyHotel = { ciudad: destino.value.ciudad, pais: destino.value.pais, fechaCheckIn: comboData.value.checkIn, fechaCheckOut: comboData.value.checkOut, cantidadPersonas: comboData.value.cantidadPersonas }
 
-    const resultadosVuelos  = resVuelos.ok  ? await resVuelos.json()  : []
-    const resultadosHoteles = resHoteles.ok ? await resHoteles.json() : []
+    const fetchIda   = fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyIda) })
+    const fetchHotel = fetch(`${API}/api/busqueda/hoteles`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyHotel) })
+
+    let resultadosVuelos, resultadosRegreso, resultadosHoteles
+
+    if (comboTipoVuelo.value === 'idaVuelta') {
+      const bodyRegreso  = { origen: destino.value.ciudad, origenPais: destino.value.pais, destino: origen.value.ciudad, destinoPais: origen.value.pais, fecha: comboData.value.fechaRegreso, cantidadPasajeros: comboData.value.cantidadPersonas }
+      const fetchRegreso = fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyRegreso) })
+      const [resIda, resReg, resHotel] = await Promise.all([fetchIda, fetchRegreso, fetchHotel])
+      resultadosVuelos  = resIda.ok   ? await resIda.json()   : []
+      resultadosRegreso = resReg.ok   ? await resReg.json()   : []
+      resultadosHoteles = resHotel.ok ? await resHotel.json() : []
+
+      if (!tieneVuelos(resultadosVuelos))   { searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${comboData.value.fecha}.`; return }
+      if (!tieneVuelos(resultadosRegreso))  { searchError.value = `No hay vuelos de regreso de ${destino.value.ciudad} a ${origen.value.ciudad} para el ${comboData.value.fechaRegreso}.`; return }
+      if (!tieneHoteles(resultadosHoteles)) { searchError.value = `No hay hoteles en ${destino.value.ciudad} para esas fechas.`; return }
+    } else {
+      const [resIda, resHotel] = await Promise.all([fetchIda, fetchHotel])
+      resultadosVuelos  = resIda.ok   ? await resIda.json()   : []
+      resultadosHoteles = resHotel.ok ? await resHotel.json() : []
+      resultadosRegreso = []
+
+      if (!tieneVuelos(resultadosVuelos))   { searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${comboData.value.fecha}.`; return }
+      if (!tieneHoteles(resultadosHoteles)) { searchError.value = `No hay hoteles en ${destino.value.ciudad} para esas fechas.`; return }
+    }
 
     router.push({
       path: '/resultados-paquetes',
       state: {
-        resultadosVuelos,
-        resultadosHoteles,
+        resultadosVuelos, resultadosRegreso, resultadosHoteles,
         busqueda: {
-          origen:            origen.value.ciudad,
-          origenPais:        origen.value.pais,
-          destino:           destino.value.ciudad,
-          destinoPais:       destino.value.pais,
-          fecha:             comboData.value.fecha,
-          cantidadPasajeros: comboData.value.cantidadPasajeros,
-          checkIn:           comboData.value.checkIn,
-          checkOut:          comboData.value.checkOut,
-          tipoHabitacion:    comboData.value.tipoHabitacion,
+          origen: origen.value.ciudad, origenPais: origen.value.pais,
+          destino: destino.value.ciudad, destinoPais: destino.value.pais,
+          fecha: comboData.value.fecha, fechaRegreso: comboData.value.fechaRegreso,
+          cantidadPersonas: comboData.value.cantidadPersonas,
+          checkIn: comboData.value.checkIn, checkOut: comboData.value.checkOut,
+          tipoVuelo: comboTipoVuelo.value,
         }
       }
     })
   } catch (err) {
-    console.error('Error buscando paquetes:', err)
     searchError.value = 'No se pudieron obtener los paquetes. Intenta de nuevo.'
-  } finally {
-    buscando.value = false
-  }
+  } finally { buscando.value = false }
 }
 
 // ── Features ──────────────────────────────────────────────────
 const features = [
-  {
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>`,
-    title: 'Vuelos Globales',
-    description: 'Accede a vuelos de múltiples aerolíneas con las mejores tarifas garantizadas desde cualquier destino.'
-  },
-  {
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-    title: 'Hospedaje Premium',
-    description: 'Desde hoteles boutique hasta resorts de lujo, encuentra el alojamiento perfecto para tu viaje.'
-  },
-  {
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-    title: 'Atención Experta',
-    description: 'Nuestro equipo de asesores está disponible para ayudarte a planificar cada detalle de tu viaje.'
-  },
-  {
-    icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-    title: 'Mejor Precio',
-    description: 'Comparamos precios de múltiples proveedores para ofrecerte siempre la mejor tarifa disponible.'
-  }
+  { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>`, title: 'Vuelos Globales', description: 'Accede a vuelos de múltiples aerolíneas con las mejores tarifas garantizadas desde cualquier destino.' },
+  { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, title: 'Hospedaje Premium', description: 'Desde hoteles boutique hasta resorts de lujo, encuentra el alojamiento perfecto para tu viaje.' },
+  { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`, title: 'Atención Experta', description: 'Nuestro equipo de asesores está disponible para ayudarte a planificar cada detalle de tu viaje.' },
+  { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`, title: 'Mejor Precio', description: 'Comparamos precios de múltiples proveedores para ofrecerte siempre la mejor tarifa disponible.' },
 ]
 
-// ── Scroll ────────────────────────────────────────────────────
 const onScroll    = () => { showScrollTop.value = window.scrollY > 300 }
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
-
 onMounted(() => window.addEventListener('scroll', onScroll))
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 </script>

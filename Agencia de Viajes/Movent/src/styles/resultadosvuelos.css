@@ -20,7 +20,7 @@
 }
 
 /* ═══════════════════════════════
-   SIDEBAR — siempre visible
+   SIDEBAR
 ═══════════════════════════════ */
 .rv-sidebar {
   background: #fff;
@@ -55,7 +55,6 @@
   border-radius: 10px; padding: 1px 6px; line-height: 1.5;
 }
 
-/* Toggle visible solo en mobile */
 .rv-sidebar__toggle {
   display: none;
   background: none; border: none; cursor: pointer;
@@ -71,7 +70,6 @@
   transition: max-height .3s ease, opacity .3s ease, padding .3s ease;
 }
 
-/* Sidebar colapsado en mobile */
 .rv-sidebar--collapsed .rv-sidebar__body {
   max-height: 0;
   padding-top: 0; padding-bottom: 0;
@@ -79,7 +77,6 @@
   opacity: 0;
 }
 
-/* Grupos de filtro */
 .rv-filter-group {
   margin-bottom: 18px;
   padding-bottom: 18px;
@@ -92,7 +89,6 @@
   text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 10px;
 }
 
-/* Precio */
 .rv-price-inputs { display: flex; align-items: center; gap: 7px; }
 .rv-price-input {
   display: flex; align-items: center; gap: 4px;
@@ -108,7 +104,6 @@
 }
 .rv-price-sep { color: #9a9089; font-size: 13px; flex-shrink: 0; }
 
-/* Checkboxes */
 .rv-checkboxes { display: flex; flex-direction: column; gap: 9px; }
 .rv-checkbox { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
 .rv-checkbox input { display: none; }
@@ -126,7 +121,6 @@
 }
 .rv-checkbox__label { font-size: 13px; color: #3a3530; }
 
-/* Duración */
 .rv-dur-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .rv-dur-btn {
   padding: 7px; background: #F5F2EC;
@@ -137,7 +131,6 @@
 .rv-dur-btn--active { background: #FFCC00; border-color: #FFCC00; color: #1C1A18; }
 .rv-dur-btn:hover:not(.rv-dur-btn--active) { border-color: #FFCC00; }
 
-/* Horarios */
 .rv-horarios { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .rv-horario-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -152,51 +145,34 @@
 .rv-horario-btn--active > span:first-child { color: #1C1A18; }
 .rv-horario-btn--active small { color: #5a4e00; }
 
-.rv-sidebar__reset {
-  width: 100%; margin-top: 4px;
-  font-size: 12px; padding: 7px 12px;
-}
+.rv-sidebar__reset { width: 100%; margin-top: 4px; font-size: 12px; padding: 7px 12px; }
 
 /* ═══════════════════════════════
    MAIN
 ═══════════════════════════════ */
 .rv-main { min-width: 0; }
 
-/* ── SEARCH BAR con modificar inline ── */
+/* ── SEARCH BAR ── */
 .rv-search-bar {
   background: #1C1A18;
   border-radius: 12px;
   margin-bottom: 0;
   overflow: hidden;
   transition: border-radius .2s;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 0;
 }
-
-.rv-search-bar--open {
-  border-radius: 12px 12px 0 0;
-}
+.rv-search-bar--open { border-radius: 12px 12px 0 0; }
 
 .rv-search-bar__summary {
   display: flex; align-items: center;
-  padding: 14px 18px;
-  flex: 1; cursor: pointer;
+  padding: 14px 18px; flex: 1; cursor: pointer;
   gap: 12px; flex-wrap: wrap;
 }
 
-.rv-search-bar {
-  display: flex; align-items: center;
-  flex-wrap: wrap; gap: 0;
-}
-
-.rv-search-bar__ruta {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 4px;
-}
+.rv-search-bar__ruta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .rv-search-bar__ciudad { font-size: 17px; font-weight: 800; color: #FFCC00; letter-spacing: .02em; }
 .rv-search-bar__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rv-search-bar__meta-item {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 12px; color: #9a8e80;
-}
+.rv-search-bar__meta-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #9a8e80; }
 .rv-search-bar__meta-item svg { opacity: .7; flex-shrink: 0; }
 .rv-search-bar__dot { color: #3a3430; font-size: 12px; }
 
@@ -206,19 +182,16 @@
   background: transparent; border: none; border-left: 1px solid rgba(255,255,255,0.1);
   color: #FFCC00; font-size: 13px; font-weight: 700;
   cursor: pointer; font-family: inherit;
-  transition: background .15s; flex-shrink: 0;
-  white-space: nowrap;
+  transition: background .15s; flex-shrink: 0; white-space: nowrap;
 }
 .rv-search-bar__mod-btn:hover { background: rgba(255,204,0,0.1); }
 
 /* ── FORM MODIFICAR INLINE ── */
 .rv-modificar-inline {
   background: #fff;
-  border: 1px solid #e8e3dc;
-  border-top: none;
+  border: 1px solid #e8e3dc; border-top: none;
   border-radius: 0 0 12px 12px;
-  padding: 18px;
-  margin-bottom: 14px;
+  padding: 18px; margin-bottom: 14px;
 }
 
 .rv-modificar-grid {
@@ -227,24 +200,18 @@
   gap: 12px;
 }
 
-/* Secciones origen y destino ocupan una columna cada una */
 .rv-mod-section {
-  background: #F5F2EC;
-  border-radius: 10px;
-  padding: 12px 14px;
-  border: 1px solid #e8e3dc;
+  background: #F5F2EC; border-radius: 10px;
+  padding: 12px 14px; border: 1px solid #e8e3dc;
 }
 
-/* Sección de fecha+pasajeros+CTA ocupa las dos columnas */
 .rv-mod-section--row {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: auto 1fr 1fr auto;
   gap: 12px;
   align-items: end;
-  background: transparent;
-  border: none;
-  padding: 0;
+  background: transparent; border: none; padding: 0;
 }
 
 .rv-mod-section__label {
@@ -255,7 +222,6 @@
 .rv-mod-section__label svg { flex-shrink: 0; }
 
 .rv-mod-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
 .rv-mod-field { display: flex; flex-direction: column; gap: 4px; position: relative; }
 
 .rv-mod-label {
@@ -276,7 +242,9 @@
 select.rv-mod-input { cursor: pointer; }
 
 .rv-mod-field--cta { justify-content: flex-end; gap: 6px; }
+.rv-mod-field--full { grid-column: 1 / -1; }
 .rv-mod-error { font-size: 12px; font-weight: 600; color: #D40511; margin: 0; }
+
 .rv-mod-buscar {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 20px;
@@ -287,6 +255,20 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-mod-buscar:hover:not(:disabled) { background: #f0c000; transform: translateY(-1px); }
 .rv-mod-buscar:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── TRIP TYPE TOGGLE (en modificar) ── */
+.rv-trip-toggle {
+  display: flex; gap: 4px;
+  background: #f0ebe3; border-radius: 8px; padding: 3px;
+  width: fit-content;
+}
+.rv-trip-btn {
+  padding: 6px 16px; border-radius: 6px; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: inherit; color: #9a9089;
+  background: transparent; transition: all .15s;
+}
+.rv-trip-btn--active { background: #FFCC00; color: #1C1A18; }
 
 /* Autocomplete */
 .rv-ac-wrap { position: relative; }
@@ -306,20 +288,53 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-ac-list button:hover { background: rgba(255,204,0,.15); }
 
-/* Animación expand inline */
-.rv-expand-enter-active, .rv-expand-leave-active {
-  transition: all .25s ease;
-  overflow: hidden;
+.rv-expand-enter-active, .rv-expand-leave-active { transition: all .25s ease; overflow: hidden; }
+.rv-expand-enter-from, .rv-expand-leave-to { opacity: 0; max-height: 0; margin-bottom: 0; }
+.rv-expand-enter-to, .rv-expand-leave-from { opacity: 1; max-height: 600px; margin-bottom: 14px; }
+
+/* ═══════════════════════════════
+   INDICADOR DE PASOS (IDA Y VUELTA)
+═══════════════════════════════ */
+.rv-pasos {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border: 1px solid #e8e3dc;
+  border-radius: 12px; padding: 14px 18px;
+  margin-bottom: 14px; flex-wrap: wrap;
 }
-.rv-expand-enter-from, .rv-expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-  margin-bottom: 0;
+
+.rv-paso {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1; min-width: 180px;
 }
-.rv-expand-enter-to, .rv-expand-leave-from {
-  opacity: 1;
-  max-height: 600px;
-  margin-bottom: 14px;
+
+.rv-paso__num {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+  background: #e8e3dc; color: #9a9089;
+  transition: all .2s;
+}
+.rv-paso--activo .rv-paso__num { background: #FFCC00; color: #1C1A18; }
+.rv-paso--done .rv-paso__num { background: #1C1A18; color: #FFCC00; }
+
+.rv-paso__label { font-size: 13px; font-weight: 700; color: #1C1A18; display: block; }
+.rv-paso__sub { font-size: 11px; color: #9a9089; display: block; margin-top: 1px; }
+.rv-paso--pendiente .rv-paso__label { color: #b0a89e; }
+.rv-paso--pendiente .rv-paso__sub { color: #c8c0b8; }
+
+.rv-paso__sep {
+  color: #FFCC00; font-weight: 800; font-size: 20px;
+  flex-shrink: 0; line-height: 1;
+}
+
+.rv-paso__back { padding: 6px 14px; font-size: 12px; flex-shrink: 0; }
+
+/* Header de la sección de regreso */
+.rv-regreso-header {
+  display: flex; align-items: center; gap: 8px;
+  background: #1C1A18; color: #FFCC00;
+  padding: 10px 18px; font-size: 13px; font-weight: 700;
+  border-radius: 10px; margin-bottom: 10px;
 }
 
 /* ═══════════════════════════════
@@ -363,7 +378,6 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card:hover { border-color: #FFCC00; box-shadow: 0 4px 18px rgba(255,204,0,.14); transform: translateY(-1px); }
 .rv-card--sel { border-color: #FFCC00; box-shadow: 0 0 0 2px #FFCC00; }
 
-/* Head */
 .rv-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .rv-card__aerolinea { display: flex; align-items: center; gap: 10px; }
 .rv-card__logo {
@@ -378,7 +392,6 @@ select.rv-mod-input { cursor: pointer; }
 .rv-tag--escala   { background: #fef3c7; color: #92400e; }
 .rv-tag--urgente  { background: #fee2e2; color: #991b1b; }
 
-/* Ruta */
 .rv-card__ruta { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 .rv-card__punto { display: flex; flex-direction: column; align-items: flex-start; min-width: 70px; }
 .rv-card__punto--r { align-items: flex-end; }
@@ -399,16 +412,13 @@ select.rv-mod-input { cursor: pointer; }
   border-radius: 10px; padding: 2px 7px; font-weight: 600;
 }
 
-/* Meta row */
 .rv-card__meta {
   display: flex; flex-wrap: wrap; gap: 12px;
   padding: 8px 0; margin-bottom: 10px;
-  border-bottom: 1px solid #f0ebe3;
-  border-top: 1px solid #f0ebe3;
+  border-bottom: 1px solid #f0ebe3; border-top: 1px solid #f0ebe3;
 }
 .rv-card__meta-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #9a9089; }
 
-/* ══ SELECTOR CLASE ══ */
 .rv-card__precios { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
 .rv-precio-btn {
@@ -458,7 +468,6 @@ select.rv-mod-input { cursor: pointer; }
 .rv-slide-enter-from, .rv-slide-leave-to { opacity: 0; max-height: 0; }
 .rv-slide-enter-to, .rv-slide-leave-from { opacity: 1; max-height: 800px; }
 
-/* Tramos */
 .rv-tramo { display: flex; gap: 10px; }
 .rv-tramo--final { align-items: center; padding-top: 4px; }
 .rv-tramo__tl { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 3px; }
@@ -494,7 +503,6 @@ select.rv-mod-input { cursor: pointer; }
   font-size: 11px; font-weight: 600; color: #92400e; margin-top: 7px;
 }
 
-/* FOOTER CARD */
 .rv-card__foot {
   display: flex; align-items: center; justify-content: space-between;
   padding-top: 12px; border-top: 1px solid #f0ebe3;
@@ -546,58 +554,38 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card__cta { padding: 9px 18px; font-size: 13px; font-weight: 700; }
 
 /* ═══════════════════════════════
-   RESPONSIVE MOBILE
+   RESPONSIVE
 ═══════════════════════════════ */
 @media (max-width: 900px) {
-  .rv-layout {
-    grid-template-columns: 1fr;
-    /* Sidebar arriba, resultados abajo */
-  }
-
-  /* Sidebar pierde el sticky, fluye normal */
-  .rv-sidebar {
-    position: static;
-    max-height: none;
-    /* Por defecto colapsado en mobile para ahorrar espacio */
-  }
-
-  /* Mostrar toggle en mobile */
+  .rv-layout { grid-template-columns: 1fr; }
+  .rv-sidebar { position: static; max-height: none; }
   .rv-sidebar__toggle { display: flex; }
-
-  /* El head es clickeable en mobile para colapsar/expandir */
   .rv-sidebar__head { cursor: pointer; }
   .rv-sidebar__head:hover { background: #fafaf8; border-radius: 14px 14px 0 0; }
-
-  /* Cuando está colapsado, redondeamos todo */
   .rv-sidebar--collapsed { border-radius: 14px; }
-
-  /* Modificar form: una columna */
   .rv-modificar-grid { grid-template-columns: 1fr; }
-  .rv-mod-section--row {
-    grid-template-columns: 1fr 1fr;
-  }
+  .rv-mod-section--row { grid-template-columns: 1fr 1fr; }
   .rv-mod-field--cta { grid-column: 1 / -1; }
   .rv-mod-buscar { width: 100%; justify-content: center; }
+  .rv-pasos { gap: 8px; }
+  .rv-paso { min-width: 140px; }
 }
 
 @media (max-width: 600px) {
   .rv-layout { padding: 0 12px; }
   .rv-page { padding: 16px 0 40px; }
-
   .rv-search-bar__ciudad { font-size: 15px; }
-
   .rv-card { padding: 14px; }
   .rv-card__iata { font-size: 24px; }
   .rv-card__precios { grid-template-columns: 1fr; }
   .rv-card__foot { flex-direction: column; align-items: flex-start; }
   .rv-card__cta { width: 100%; justify-content: center; }
-
   .rv-mod-row { grid-template-columns: 1fr; }
   .rv-mod-section--row { grid-template-columns: 1fr; }
   .rv-mod-field--cta { grid-column: 1; }
-
   .rv-search-bar__mod-btn { border-left: none; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; justify-content: center; }
   .rv-search-bar__summary { padding-bottom: 10px; }
-
   .rv-tramo__info { flex-direction: column; align-items: flex-start; }
+  .rv-pasos { flex-direction: column; align-items: flex-start; }
+  .rv-paso__sep { transform: rotate(90deg); }
 }

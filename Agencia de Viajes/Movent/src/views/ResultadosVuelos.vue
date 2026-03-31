@@ -5,7 +5,7 @@
     <div class="rv-page">
       <div class="rv-layout">
 
-        <!-- ═══ SIDEBAR — siempre visible, colapsa en mobile ═══ -->
+        <!-- ═══ SIDEBAR ═══ -->
         <aside class="rv-sidebar" :class="{ 'rv-sidebar--collapsed': sidebarColapsado }">
           <div class="rv-sidebar__head">
             <h3 class="rv-sidebar__title">
@@ -16,7 +16,6 @@
               Filtros
               <span v-if="cantFiltrosActivos > 0" class="rv-sidebar__badge">{{ cantFiltrosActivos }}</span>
             </h3>
-            <!-- Toggle solo en mobile -->
             <button class="rv-sidebar__toggle" @click="sidebarColapsado = !sidebarColapsado" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"
                 :style="{ transform: sidebarColapsado ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform .2s' }">
@@ -26,23 +25,15 @@
           </div>
 
           <div class="rv-sidebar__body">
-            <!-- Precio -->
             <div class="rv-filter-group">
               <h4 class="rv-filter-group__title">Precio por persona</h4>
               <div class="rv-price-inputs">
-                <div class="rv-price-input">
-                  <span>$</span>
-                  <input type="number" v-model.number="filtros.precioMin" :min="0" placeholder="0" />
-                </div>
+                <div class="rv-price-input"><span>$</span><input type="number" v-model.number="filtros.precioMin" :min="0" placeholder="0" /></div>
                 <span class="rv-price-sep">—</span>
-                <div class="rv-price-input">
-                  <span>$</span>
-                  <input type="number" v-model.number="filtros.precioMax" placeholder="9999" />
-                </div>
+                <div class="rv-price-input"><span>$</span><input type="number" v-model.number="filtros.precioMax" placeholder="9999" /></div>
               </div>
             </div>
 
-            <!-- Clase -->
             <div class="rv-filter-group">
               <h4 class="rv-filter-group__title">Clase disponible</h4>
               <div class="rv-checkboxes">
@@ -54,7 +45,6 @@
               </div>
             </div>
 
-            <!-- Escalas -->
             <div class="rv-filter-group">
               <h4 class="rv-filter-group__title">Escalas</h4>
               <div class="rv-checkboxes">
@@ -66,7 +56,6 @@
               </div>
             </div>
 
-            <!-- Duración -->
             <div class="rv-filter-group">
               <h4 class="rv-filter-group__title">Duración máxima</h4>
               <div class="rv-dur-btns">
@@ -77,7 +66,6 @@
               </div>
             </div>
 
-            <!-- Aerolínea -->
             <div class="rv-filter-group" v-if="aerolineasDisponibles.length > 0">
               <h4 class="rv-filter-group__title">Aerolínea</h4>
               <div class="rv-checkboxes">
@@ -89,7 +77,6 @@
               </div>
             </div>
 
-            <!-- Horario -->
             <div class="rv-filter-group">
               <h4 class="rv-filter-group__title">Horario de salida</h4>
               <div class="rv-horarios">
@@ -103,8 +90,7 @@
               </div>
             </div>
 
-            <button v-if="hayFiltrosActivos"
-              class="rv-btn rv-btn--ghost rv-sidebar__reset" @click="resetFiltros" type="button">
+            <button v-if="hayFiltrosActivos" class="rv-btn rv-btn--ghost rv-sidebar__reset" @click="resetFiltros" type="button">
               Limpiar filtros
             </button>
           </div>
@@ -113,7 +99,7 @@
         <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
         <div class="rv-main">
 
-          <!-- Barra búsqueda con Modificar inline -->
+          <!-- Search bar -->
           <div class="rv-search-bar" :class="{ 'rv-search-bar--open': modificarAbierto }">
             <div class="rv-search-bar__summary" @click="toggleModificar">
               <div class="rv-search-bar__ruta">
@@ -125,18 +111,12 @@
               </div>
               <div class="rv-search-bar__meta">
                 <span class="rv-search-bar__meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   {{ formatFecha(busqueda.fecha) }}
                 </span>
                 <span class="rv-search-bar__dot">·</span>
                 <span class="rv-search-bar__meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   {{ busqueda.cantidadPasajeros }} pasajero{{ busqueda.cantidadPasajeros !== 1 ? 's' : '' }}
                 </span>
               </div>
@@ -150,17 +130,14 @@
             </button>
           </div>
 
-          <!-- ═══ FORM MODIFICAR INLINE ═══ -->
+          <!-- Form modificar inline -->
           <transition name="rv-expand">
             <div v-if="modificarAbierto" class="rv-modificar-inline">
               <div class="rv-modificar-grid">
 
-                <!-- Origen -->
                 <div class="rv-mod-section">
                   <p class="rv-mod-section__label">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-                      <path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
                     Origen
                   </p>
                   <div class="rv-mod-row">
@@ -176,10 +153,7 @@
                       </ul>
                     </div>
                     <div class="rv-mod-field rv-ac-wrap">
-                      <label class="rv-mod-label">
-                        Ciudad
-                        <span v-if="form.origenCiudadLoading" class="rv-mod-hint">cargando...</span>
-                      </label>
+                      <label class="rv-mod-label">Ciudad <span v-if="form.origenCiudadLoading" class="rv-mod-hint">cargando...</span></label>
                       <input class="rv-mod-input" type="text" v-model="form.origenCiudadQ"
                         @input="onFormOCiudadInput" @blur="blurClose(() => form.origenCiudadSug = [])"
                         :disabled="!form.origenPaisSel || form.origenCiudadLoading"
@@ -193,12 +167,9 @@
                   </div>
                 </div>
 
-                <!-- Destino -->
                 <div class="rv-mod-section">
                   <p class="rv-mod-section__label">
-                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
-                      <path d="M2.5 19h19v2h-19v-2m7.18-1.68L5.07 15.1l2.8-.75 3.53 3.03 6.03-1.61a1.5 1.5 0 0 1 .78 2.9L9.85 20.2a2 2 0 0 1-1.5-.13l-.67-.75m-1.9-5.88l1.42.88-2.09.55-.25-.97 2.56-1.23a2 2 0 0 1 1.5.13l5.74 3.55 2.09-.56-6.52-7.05L11.85 7l7.25 7.83-8.83 2.37a2 2 0 0 1-1.5-.13l-1.64-.88z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M2.5 19h19v2h-19v-2m7.18-1.68L5.07 15.1l2.8-.75 3.53 3.03 6.03-1.61a1.5 1.5 0 0 1 .78 2.9L9.85 20.2a2 2 0 0 1-1.5-.13l-.67-.75m-1.9-5.88l1.42.88-2.09.55-.25-.97 2.56-1.23a2 2 0 0 1 1.5.13l5.74 3.55 2.09-.56-6.52-7.05L11.85 7l7.25 7.83-8.83 2.37a2 2 0 0 1-1.5-.13l-1.64-.88z"/></svg>
                     Destino
                   </p>
                   <div class="rv-mod-row">
@@ -214,10 +185,7 @@
                       </ul>
                     </div>
                     <div class="rv-mod-field rv-ac-wrap">
-                      <label class="rv-mod-label">
-                        Ciudad
-                        <span v-if="form.destinoCiudadLoading" class="rv-mod-hint">cargando...</span>
-                      </label>
+                      <label class="rv-mod-label">Ciudad <span v-if="form.destinoCiudadLoading" class="rv-mod-hint">cargando...</span></label>
                       <input class="rv-mod-input" type="text" v-model="form.destinoCiudadQ"
                         @input="onFormDCiudadInput" @blur="blurClose(() => form.destinoCiudadSug = [])"
                         :disabled="!form.destinoPaisSel || form.destinoCiudadLoading"
@@ -231,24 +199,33 @@
                   </div>
                 </div>
 
-                <!-- Fecha + Pasajeros + CTA -->
                 <div class="rv-mod-section rv-mod-section--row">
-                  <div class="rv-mod-field">
-                    <label class="rv-mod-label">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      Fecha
-                    </label>
-                    <input class="rv-mod-input" type="date" v-model="form.fecha" :min="hoy" />
+                  <!-- Toggle ida / ida y vuelta -->
+                  <div class="rv-mod-field rv-mod-field--full">
+                    <div class="rv-trip-toggle">
+                      <button :class="['rv-trip-btn', { 'rv-trip-btn--active': form.tipoVuelo === 'ida' }]"
+                        @click="form.tipoVuelo = 'ida'" type="button">Solo ida</button>
+                      <button :class="['rv-trip-btn', { 'rv-trip-btn--active': form.tipoVuelo === 'idaVuelta' }]"
+                        @click="form.tipoVuelo = 'idaVuelta'" type="button">Ida y vuelta</button>
+                    </div>
                   </div>
                   <div class="rv-mod-field">
                     <label class="rv-mod-label">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                      </svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      Fecha de ida
+                    </label>
+                    <input class="rv-mod-input" type="date" v-model="form.fecha" :min="hoy" />
+                  </div>
+                  <div class="rv-mod-field" v-if="form.tipoVuelo === 'idaVuelta'">
+                    <label class="rv-mod-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      Fecha de regreso
+                    </label>
+                    <input class="rv-mod-input" type="date" v-model="form.fechaRegreso" :min="minFechaRegresoForm" />
+                  </div>
+                  <div class="rv-mod-field">
+                    <label class="rv-mod-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                       Pasajeros
                     </label>
                     <select class="rv-mod-input" v-model="form.cantidadPasajeros">
@@ -259,9 +236,7 @@
                     <p v-if="modError" class="rv-mod-error">⚠ {{ modError }}</p>
                     <button class="rv-mod-buscar" @click="rebuscar" :disabled="buscando" type="button">
                       <div v-if="buscando" class="rv-spinner rv-spinner--sm"></div>
-                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                      </svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                       {{ buscando ? 'Buscando...' : 'Buscar vuelos' }}
                     </button>
                   </div>
@@ -270,6 +245,28 @@
               </div>
             </div>
           </transition>
+
+          <!-- Indicador de pasos (solo ida y vuelta) -->
+          <div v-if="esIdaVuelta && !loading" class="rv-pasos">
+            <div :class="['rv-paso', { 'rv-paso--activo': paso === 1, 'rv-paso--done': paso === 2 }]">
+              <span class="rv-paso__num">{{ paso === 2 ? '✓' : '1' }}</span>
+              <div>
+                <span class="rv-paso__label">Vuelo de ida</span>
+                <span class="rv-paso__sub">{{ busqueda.origen }} → {{ busqueda.destino }} · {{ formatFecha(busqueda.fecha) }}</span>
+              </div>
+            </div>
+            <div class="rv-paso__sep">→</div>
+            <div :class="['rv-paso', { 'rv-paso--activo': paso === 2, 'rv-paso--pendiente': paso === 1 }]">
+              <span class="rv-paso__num">2</span>
+              <div>
+                <span class="rv-paso__label">Vuelo de regreso</span>
+                <span class="rv-paso__sub">{{ busqueda.destino }} → {{ busqueda.origen }} · {{ formatFecha(busqueda.fechaRegreso) }}</span>
+              </div>
+            </div>
+            <button v-if="paso === 2" class="rv-btn rv-btn--ghost rv-paso__back" @click="paso = 1; seleccionadoRegreso = null" type="button">
+              ← Cambiar ida
+            </button>
+          </div>
 
           <!-- Toolbar -->
           <div class="rv-toolbar">
@@ -289,31 +286,14 @@
             </div>
           </div>
 
-          <!-- Chips filtros activos -->
+          <!-- Chips -->
           <div v-if="hayFiltrosActivos" class="rv-chips-activos">
-            <button v-if="filtros.precioMin > 0 || filtros.precioMax < 9999"
-              class="rv-chip" @click="filtros.precioMin=0; filtros.precioMax=9999" type="button">
-              ${{ filtros.precioMin }}–${{ filtros.precioMax }} ✕
-            </button>
-            <button v-for="c in filtros.clases" :key="'c'+c"
-              class="rv-chip" @click="filtros.clases = filtros.clases.filter(x=>x!==c)" type="button">
-              {{ c === 'economica' ? 'Económica' : 'Ejecutiva' }} ✕
-            </button>
-            <button v-for="e in filtros.escalas" :key="'e'+e"
-              class="rv-chip" @click="filtros.escalas = filtros.escalas.filter(x=>x!==e)" type="button">
-              {{ e === 0 ? 'Directo' : e === 1 ? '1 escala' : '2+ escalas' }} ✕
-            </button>
-            <button v-if="filtros.duracionMax < 9999"
-              class="rv-chip" @click="filtros.duracionMax=9999" type="button">
-              Máx. {{ formatDuracion(filtros.duracionMax) }} ✕
-            </button>
-            <button v-for="a in filtros.aerolineas" :key="'a'+a"
-              class="rv-chip" @click="filtros.aerolineas = filtros.aerolineas.filter(x=>x!==a)" type="button">
-              {{ a }} ✕
-            </button>
-            <button v-if="filtros.horario" class="rv-chip" @click="filtros.horario=''" type="button">
-              {{ horariosOpts.find(h=>h.val===filtros.horario)?.label }} ✕
-            </button>
+            <button v-if="filtros.precioMin > 0 || filtros.precioMax < 9999" class="rv-chip" @click="filtros.precioMin=0; filtros.precioMax=9999" type="button">${{ filtros.precioMin }}–${{ filtros.precioMax }} ✕</button>
+            <button v-for="c in filtros.clases" :key="'c'+c" class="rv-chip" @click="filtros.clases = filtros.clases.filter(x=>x!==c)" type="button">{{ c === 'economica' ? 'Económica' : 'Ejecutiva' }} ✕</button>
+            <button v-for="e in filtros.escalas" :key="'e'+e" class="rv-chip" @click="filtros.escalas = filtros.escalas.filter(x=>x!==e)" type="button">{{ e === 0 ? 'Directo' : e === 1 ? '1 escala' : '2+ escalas' }} ✕</button>
+            <button v-if="filtros.duracionMax < 9999" class="rv-chip" @click="filtros.duracionMax=9999" type="button">Máx. {{ formatDuracion(filtros.duracionMax) }} ✕</button>
+            <button v-for="a in filtros.aerolineas" :key="'a'+a" class="rv-chip" @click="filtros.aerolineas = filtros.aerolineas.filter(x=>x!==a)" type="button">{{ a }} ✕</button>
+            <button v-if="filtros.horario" class="rv-chip" @click="filtros.horario=''" type="button">{{ horariosOpts.find(h=>h.val===filtros.horario)?.label }} ✕</button>
             <button class="rv-chip rv-chip--clear" @click="resetFiltros" type="button">Limpiar todo</button>
           </div>
 
@@ -325,29 +305,20 @@
 
           <!-- Error -->
           <div v-else-if="error && vuelos.length === 0" class="rv-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="40" height="40">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13.5"/><circle cx="12" cy="17" r="1" fill="#D40511" stroke="none"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="40" height="40"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13.5"/><circle cx="12" cy="17" r="1" fill="#D40511" stroke="none"/></svg>
             <p>{{ error }}</p>
             <button class="rv-btn rv-btn--yellow" @click="toggleModificar" type="button">Modificar búsqueda</button>
           </div>
 
           <!-- Proveedores parciales -->
           <div v-if="!loading && erroresProveedores.length > 0" class="rv-warn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13.5"/>
-              <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>
-            </svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13.5"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
             {{ erroresProveedores.length }} proveedor{{ erroresProveedores.length !== 1 ? 'es sin respuesta' : ' sin respuesta' }}. Resultados pueden estar incompletos.
           </div>
 
           <!-- Sin vuelos -->
           <div v-if="!loading && vuelos.length === 0 && !error" class="rv-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="48" height="48">
-              <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="48" height="48"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
             <p class="rv-empty__title">Sin vuelos disponibles</p>
             <p class="rv-empty__sub">No hay vuelos de <strong>{{ busqueda.origen }}</strong> a <strong>{{ busqueda.destino }}</strong> para el {{ formatFecha(busqueda.fecha) }}.</p>
             <button class="rv-btn rv-btn--yellow" @click="toggleModificar" type="button">Buscar otra ruta</button>
@@ -360,18 +331,19 @@
             <button class="rv-btn rv-btn--ghost" @click="resetFiltros" type="button">Quitar filtros</button>
           </div>
 
-          <!-- Lista -->
-          <div v-if="!loading && vuelosFiltrados.length > 0" class="rv-lista">
-            <article v-for="vuelo in vuelosFiltrados" :key="vuelo.id"
-              class="rv-card" :class="{ 'rv-card--sel': seleccionado === vuelo.id }">
+          <!-- Lista ida (paso 1) o regreso (paso 2) -->
+          <div v-if="!loading && (paso === 1 ? vuelosFiltrados.length > 0 : vuelosRegreso.length > 0)" class="rv-lista">
+            <div v-if="esIdaVuelta && paso === 2" class="rv-regreso-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="16" height="16"><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              Elige tu vuelo de regreso — {{ busqueda.destino }} → {{ busqueda.origen }} · {{ formatFecha(busqueda.fechaRegreso) }}
+            </div>
+            <article v-for="vuelo in (paso === 1 ? vuelosFiltrados : vuelosRegreso)" :key="vuelo.id"
+              class="rv-card" :class="{ 'rv-card--sel': (paso === 1 ? seleccionado : seleccionadoRegreso) === vuelo.id }">
 
-              <!-- HEAD -->
               <div class="rv-card__head">
                 <div class="rv-card__aerolinea">
                   <div class="rv-card__logo">
-                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="15" height="15">
-                      <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="15" height="15"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
                   </div>
                   <div>
                     <span class="rv-card__nombre">{{ vuelo.aerolinea }}</span>
@@ -385,7 +357,6 @@
                 </div>
               </div>
 
-              <!-- RUTA -->
               <div class="rv-card__ruta">
                 <div class="rv-card__punto">
                   <span class="rv-card__iata">{{ vuelo.origenCodigo }}</span>
@@ -397,16 +368,12 @@
                   <div class="rv-card__track">
                     <div class="rv-card__dot"></div>
                     <div class="rv-card__line"></div>
-                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="18" height="18" class="rv-card__avion">
-                      <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="18" height="18" class="rv-card__avion"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
                     <div class="rv-card__line"></div>
                     <div class="rv-card__dot"></div>
                   </div>
                   <div v-if="vuelo.paradas?.length" class="rv-card__paradas">
-                    <span v-for="p in vuelo.paradas" :key="p.codigo" class="rv-card__parada">
-                      {{ p.codigo }}<template v-if="p.ciudad"> · {{ p.ciudad }}</template>
-                    </span>
+                    <span v-for="p in vuelo.paradas" :key="p.codigo" class="rv-card__parada">{{ p.codigo }}<template v-if="p.ciudad"> · {{ p.ciudad }}</template></span>
                   </div>
                 </div>
                 <div class="rv-card__punto rv-card__punto--r">
@@ -416,33 +383,23 @@
                 </div>
               </div>
 
-              <!-- META -->
               <div class="rv-card__meta">
                 <span class="rv-card__meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                   {{ vuelo.avionMarca }} {{ vuelo.avionModelo }}
                 </span>
                 <span v-if="vuelo.tiempoEscalaMinutos" class="rv-card__meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                   {{ formatDuracion(vuelo.tiempoEscalaMinutos) }} en escalas
                 </span>
               </div>
 
-              <!-- SELECTOR CLASE -->
               <div class="rv-card__precios">
                 <button class="rv-precio-btn"
                   :class="{ 'rv-precio-btn--sel': vuelo.claseSeleccionada === 'economica', 'rv-precio-btn--out': vuelo.asientosTurista === 0 }"
-                  @click.stop="vuelo.claseSeleccionada = 'economica'"
-                  :disabled="vuelo.asientosTurista === 0" type="button">
+                  @click.stop="vuelo.claseSeleccionada = 'economica'" :disabled="vuelo.asientosTurista === 0" type="button">
                   <span class="rv-precio-btn__clase">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
-                      <path d="M20 9V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/>
-                      <path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M20 9V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/></svg>
                     Económica
                   </span>
                   <span class="rv-precio-btn__val">${{ Number(vuelo.precioTurista).toFixed(2) }}</span>
@@ -454,12 +411,9 @@
                 </button>
                 <button class="rv-precio-btn rv-precio-btn--ejec"
                   :class="{ 'rv-precio-btn--sel': vuelo.claseSeleccionada === 'ejecutiva', 'rv-precio-btn--out': vuelo.asientosEjecutiva === 0 }"
-                  @click.stop="vuelo.claseSeleccionada = 'ejecutiva'"
-                  :disabled="vuelo.asientosEjecutiva === 0" type="button">
+                  @click.stop="vuelo.claseSeleccionada = 'ejecutiva'" :disabled="vuelo.asientosEjecutiva === 0" type="button">
                   <span class="rv-precio-btn__clase">
-                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="11" height="11">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="11" height="11"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                     Ejecutiva
                   </span>
                   <span class="rv-precio-btn__val rv-precio-btn__val--ejec">${{ Number(vuelo.precioEjecutiva).toFixed(2) }}</span>
@@ -471,7 +425,6 @@
                 </button>
               </div>
 
-              <!-- ITINERARIO ESCALAS -->
               <div v-if="vuelo.escalas > 0 && vuelo.tramos?.length" class="rv-itinerario">
                 <button class="rv-itinerario__toggle" @click.stop="toggleTramos(vuelo.id)" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"
@@ -509,9 +462,7 @@
                           <span class="rv-tramo__hora rv-tramo__hora--l">{{ formatHora(tramo.horaLlegada) }}</span>
                         </div>
                         <div v-if="idx < vuelo.tramos.length - 1" class="rv-tramo__escala">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10">
-                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                          </svg>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                           Escala en {{ tramo.destinoCiudad }} · {{ tramo.destinoPais }}
                         </div>
                       </div>
@@ -528,7 +479,6 @@
                 </transition>
               </div>
 
-              <!-- FOOTER -->
               <div class="rv-card__foot">
                 <div class="rv-card__foot-info">
                   <span class="rv-card__foot-clase">
@@ -550,9 +500,7 @@
                   :disabled="vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva === 0 : vuelo.asientosTurista === 0"
                   type="button">
                   Seleccionar
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
-                    <polyline points="9 18 15 12 9 6"/>
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
               </div>
 
@@ -584,46 +532,48 @@ const busqueda = ref({
   destino:           state.busqueda?.destino           || '',
   destinoPais:       state.busqueda?.destinoPais       || '',
   fecha:             state.busqueda?.fecha             || '',
+  fechaRegreso:      state.busqueda?.fechaRegreso      || '',
   cantidadPasajeros: state.busqueda?.cantidadPasajeros || 1,
+  tipoVuelo:         state.busqueda?.tipoVuelo         || 'ida',
 })
 
-const resultadosRaw      = state.resultados || null
-const vuelos             = ref([])
-const loading            = ref(true)
-const buscando           = ref(false)
-const error              = ref('')
-const erroresProveedores = ref([])
-const seleccionado       = ref(null)
-const ordenar            = ref('precio-asc')
-const modificarAbierto   = ref(false)
-const modError           = ref('')
-const sidebarColapsado   = ref(false)
-const tramosAbiertos     = reactive({})
-const hoy                = new Date().toISOString().split('T')[0]
+const resultadosRaw        = state.resultados || null
+const resultadosRegresoRaw = state.resultadosRegreso || null
+const vuelos               = ref([])
+const vuelosRegreso        = ref([])
+const loading              = ref(true)
+const buscando             = ref(false)
+const error                = ref('')
+const erroresProveedores   = ref([])
+const seleccionado         = ref(null)
+const seleccionadoRegreso  = ref(null)
+const paso                 = ref(1) // 1 = elige ida, 2 = elige regreso (solo idaVuelta)
+const ordenar              = ref('precio-asc')
+const modificarAbierto     = ref(false)
+const modError             = ref('')
+const sidebarColapsado     = ref(false)
+const tramosAbiertos       = reactive({})
+const hoy                  = new Date().toISOString().split('T')[0]
+
+const esIdaVuelta = computed(() => busqueda.value.tipoVuelo === 'idaVuelta')
 
 function toggleTramos(id) { tramosAbiertos[id] = !tramosAbiertos[id] }
+
 function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
-    form.origenPaisQ    = busqueda.value.origenPais
-    form.origenPaisSel  = busqueda.value.origenPais ? { country: busqueda.value.origenPais } : null
-    form.origenCiudadQ  = busqueda.value.origen
-    form.origenPais     = busqueda.value.origenPais
-    form.origenCiudad   = busqueda.value.origen
-    form.destinoPaisQ   = busqueda.value.destinoPais
-    form.destinoPaisSel = busqueda.value.destinoPais ? { country: busqueda.value.destinoPais } : null
-    form.destinoCiudadQ = busqueda.value.destino
-    form.destinoPais    = busqueda.value.destinoPais
-    form.destinoCiudad  = busqueda.value.destino
-    form.fecha             = busqueda.value.fecha
-    form.cantidadPasajeros = busqueda.value.cantidadPasajeros
+    form.origenPaisQ = ''; form.origenPaisSug = []; form.origenPaisSel = null
+    form.origenCiudadQ = ''; form.origenCiudadSug = []; form.origenCiudades = []
+    form.origenPais = ''; form.origenCiudad = ''
+    form.destinoPaisQ = ''; form.destinoPaisSug = []; form.destinoPaisSel = null
+    form.destinoCiudadQ = ''; form.destinoCiudadSug = []; form.destinoCiudades = []
+    form.destinoPais = ''; form.destinoCiudad = ''
+    form.fecha = ''; form.cantidadPasajeros = 1
     modError.value = ''
   }
 }
 
-// ── Filtros ──
 const filtros = ref({ precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' })
-
 const clasesFilter = [{ val: 'economica', label: 'Económica' }, { val: 'ejecutiva', label: 'Ejecutiva' }]
 const escalasOpts  = [{ val: 0, label: 'Solo directos' }, { val: 1, label: '1 escala' }, { val: 2, label: '2+ escalas' }]
 const duracionOpts = [{ val: 180, label: '< 3h' }, { val: 360, label: '< 6h' }, { val: 720, label: '< 12h' }, { val: 1440, label: '< 24h' }]
@@ -637,8 +587,7 @@ const horariosOpts = [
 const hayFiltrosActivos = computed(() =>
   filtros.value.precioMin > 0 || filtros.value.precioMax < 9999 ||
   filtros.value.clases.length > 0 || filtros.value.escalas.length > 0 ||
-  filtros.value.duracionMax < 9999 || filtros.value.aerolineas.length > 0 ||
-  !!filtros.value.horario
+  filtros.value.duracionMax < 9999 || filtros.value.aerolineas.length > 0 || !!filtros.value.horario
 )
 const cantFiltrosActivos = computed(() => {
   let n = 0
@@ -652,7 +601,6 @@ function resetFiltros() {
   filtros.value = { precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' }
 }
 
-// ── Form modificar ──
 const form = reactive({
   origenPaisQ: '', origenPaisSug: [], origenPaisSel: null,
   origenCiudadQ: '', origenCiudadSug: [], origenCiudadLoading: false,
@@ -660,20 +608,24 @@ const form = reactive({
   destinoPaisQ: '', destinoPaisSug: [], destinoPaisSel: null,
   destinoCiudadQ: '', destinoCiudadSug: [], destinoCiudadLoading: false,
   destinoCiudades: [], destinoPais: '', destinoCiudad: '',
-  fecha: '', cantidadPasajeros: 1,
+  fecha: '', fechaRegreso: '', cantidadPasajeros: 1,
+  tipoVuelo: 'ida',
 })
 
-// ── countriesnow ──
+const minFechaRegresoForm = computed(() => {
+  if (!form.fecha) return hoy
+  const d = new Date(form.fecha); d.setDate(d.getDate() + 1)
+  return d.toISOString().split('T')[0]
+})
+
 let paisesCache = null
 async function getPaises() {
   if (paisesCache) return paisesCache
-  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] }
-  catch { paisesCache = [] }
+  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] } catch { paisesCache = [] }
   return paisesCache
 }
 async function getCiudades(country) {
-  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] }
-  catch { return [] }
+  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] } catch { return [] }
 }
 function blurClose(fn) { setTimeout(fn, 200) }
 
@@ -711,34 +663,75 @@ function onFormDCiudadInput() {
 }
 function selFormDCiudad(c) { form.destinoCiudadQ = c; form.destinoCiudadSug = []; form.destinoCiudad = c; modError.value = '' }
 
+// ── Helper: verifica que la respuesta tenga al menos 1 vuelo ──
+function tieneVuelos(respuesta) {
+  if (!Array.isArray(respuesta) || respuesta.length === 0) return false
+  return respuesta.some(b => b.datos && (
+    (b.datos.directos?.length  > 0) ||
+    (b.datos.conEscala?.length > 0)
+  ))
+}
+
 async function rebuscar() {
   modError.value = ''
   const o  = form.origenCiudad  || form.origenCiudadQ.trim()
   const op = form.origenPais    || form.origenPaisQ.trim()
   const d  = form.destinoCiudad || form.destinoCiudadQ.trim()
   const dp = form.destinoPais   || form.destinoPaisQ.trim()
-  if (!op || !o)  { modError.value = 'Selecciona origen.';  return }
-  if (!dp || !d)  { modError.value = 'Selecciona destino.'; return }
-  if (!form.fecha){ modError.value = 'Selecciona fecha.';   return }
+  if (!op || !o)        { modError.value = 'Selecciona origen.'; return }
+  if (!dp || !d)        { modError.value = 'Selecciona destino.'; return }
+  if (!form.fecha)      { modError.value = 'Selecciona la fecha de ida.'; return }
+  if (form.fecha < hoy) { modError.value = 'La fecha de ida no puede ser en el pasado.'; return }
+  if (form.tipoVuelo === 'idaVuelta') {
+    if (!form.fechaRegreso) { modError.value = 'Selecciona la fecha de regreso.'; return }
+    if (form.fechaRegreso <= form.fecha) { modError.value = 'La fecha de regreso debe ser posterior a la de ida.'; return }
+  }
+
   buscando.value = true
   try {
-    const res = await fetch(`${API}/api/busqueda/vuelos`, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros })
-    })
-    if (!res.ok) throw new Error()
-    busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros }
-    erroresProveedores.value = []
-    vuelos.value = mapearRespuesta(await res.json())
+    const bodyIda = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros }
+
+    if (form.tipoVuelo === 'idaVuelta') {
+      const bodyRegreso = { origen: d, origenPais: dp, destino: o, destinoPais: op, fecha: form.fechaRegreso, cantidadPasajeros: form.cantidadPasajeros }
+      const [resIda, resRegreso] = await Promise.all([
+        fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyIda) }),
+        fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyRegreso) }),
+      ])
+      if (!resIda.ok) throw new Error()
+      const rawIda     = await resIda.json()
+      const rawRegreso = resRegreso.ok ? await resRegreso.json() : []
+
+      if (!tieneVuelos(rawIda)) {
+        modError.value = `No hay vuelos de ${o} a ${d} para el ${form.fecha}.`
+        return
+      }
+      if (!tieneVuelos(rawRegreso)) {
+        modError.value = `No hay vuelos de regreso de ${d} a ${o} para el ${form.fechaRegreso}. Prueba otra fecha.`
+        return
+      }
+
+      busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, fechaRegreso: form.fechaRegreso, cantidadPasajeros: form.cantidadPasajeros, tipoVuelo: 'idaVuelta' }
+      erroresProveedores.value = []
+      vuelos.value        = mapearRespuesta(rawIda)
+      vuelosRegreso.value = mapearRespuesta(rawRegreso)
+    } else {
+      const res = await fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyIda) })
+      if (!res.ok) throw new Error()
+      busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros, tipoVuelo: 'ida' }
+      erroresProveedores.value = []
+      vuelos.value        = mapearRespuesta(await res.json())
+      vuelosRegreso.value = []
+    }
     error.value = ''
     resetFiltros()
-    modificarAbierto.value = false
+    seleccionado.value        = null
+    seleccionadoRegreso.value = null
+    paso.value                = 1
+    modificarAbierto.value    = false
   } catch { modError.value = 'No se pudieron obtener vuelos. Intenta de nuevo.' }
   finally { buscando.value = false }
 }
 
-// ── Helpers ──
 function formatHora(h) { return h ? String(h).substring(0, 5) : '--' }
 function formatFecha(f) {
   if (!f) return '--'
@@ -750,7 +743,6 @@ function formatDuracion(min) {
   return `${h}h${m > 0 ? ` ${m}m` : ''}`
 }
 
-// ── Mapeo ──
 function mapearRespuesta(respuesta) {
   const res = []
   for (const b of respuesta) {
@@ -772,8 +764,7 @@ function mapDirecto(v, b) {
     precioTurista: v.precioTurista ?? 0, precioEjecutiva: v.precioEjecutiva ?? 0,
     asientosTurista: typeof v.boletosDisponiblesTurista === 'number' ? v.boletosDisponiblesTurista : 99,
     asientosEjecutiva: typeof v.boletosDisponiblesEjecutiva === 'number' ? v.boletosDisponiblesEjecutiva : 99,
-    claseSeleccionada: 'economica',
-    avionMarca: v.avionMarca || '', avionModelo: v.avionModelo || '',
+    claseSeleccionada: 'economica', avionMarca: v.avionMarca || '', avionModelo: v.avionModelo || '',
     escalas: 0, paradas: [], tramos: [], tiempoEscalaMinutos: 0,
   }
 }
@@ -790,15 +781,13 @@ function mapEscala(v, b) {
     precioTurista: v.precioTuristaTotal ?? 0, precioEjecutiva: v.precioEjecutivaTotal ?? 0,
     asientosTurista: typeof v.boletosDisponiblesTurista === 'number' ? v.boletosDisponiblesTurista : 99,
     asientosEjecutiva: typeof v.boletosDisponiblesEjecutiva === 'number' ? v.boletosDisponiblesEjecutiva : 99,
-    claseSeleccionada: 'economica',
-    avionMarca: p.avionMarca || '', avionModelo: p.avionModelo || '',
+    claseSeleccionada: 'economica', avionMarca: p.avionMarca || '', avionModelo: p.avionModelo || '',
     escalas: v.numeroEscalas ?? (tramos.length > 1 ? tramos.length - 1 : 1),
     paradas: tramos.slice(0, -1).map(t => ({ codigo: t.destinoCodigo || '???', ciudad: t.destinaCiudad || t.destinoCiudad || '' })),
     tramos, tiempoEscalaMinutos: v.tiempoEscalaMinutos || 0,
   }
 }
 
-// ── Computed filtrados ──
 const aerolineasDisponibles = computed(() => [...new Set(vuelos.value.map(v => v.aerolinea).filter(Boolean))])
 
 const vuelosFiltrados = computed(() => {
@@ -834,18 +823,60 @@ const vuelosFiltrados = computed(() => {
 
 onMounted(() => {
   if (!busqueda.value.origen || !busqueda.value.destino) { error.value = 'Faltan datos de búsqueda.'; loading.value = false; return }
-  if (resultadosRaw && Array.isArray(resultadosRaw) && resultadosRaw.length > 0) { vuelos.value = mapearRespuesta(resultadosRaw); loading.value = false; return }
+  if (resultadosRaw && Array.isArray(resultadosRaw) && resultadosRaw.length > 0) {
+    vuelos.value = mapearRespuesta(resultadosRaw)
+    if (resultadosRegresoRaw && Array.isArray(resultadosRegresoRaw)) {
+      vuelosRegreso.value = mapearRespuesta(resultadosRegresoRaw)
+    }
+    loading.value = false; return
+  }
   error.value = 'No hay resultados. Modifica la búsqueda.'; loading.value = false
 })
 
 function seleccionarVuelo(vuelo) {
+  if (esIdaVuelta.value && paso.value === 1) {
+    // Paso 1: seleccionó vuelo de ida → avanzar a paso 2
+    seleccionado.value = vuelo.id
+    sessionStorage.setItem('_vuelo_ida_temp', JSON.stringify({
+      ...vuelo, clase: vuelo.claseSeleccionada,
+      precio: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva : vuelo.precioTurista,
+      asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
+    }))
+    paso.value = 2
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    return
+  }
+
+  if (esIdaVuelta.value && paso.value === 2) {
+    // Paso 2: seleccionó vuelo de regreso → guardar ambos y navegar
+    seleccionadoRegreso.value = vuelo.id
+    const vueloIda = JSON.parse(sessionStorage.getItem('_vuelo_ida_temp') || '{}')
+    sessionStorage.removeItem('_vuelo_ida_temp')
+    sessionStorage.removeItem('hotel_seleccionado')
+    sessionStorage.removeItem('paquete_seleccionado')
+    sessionStorage.setItem('vuelo_seleccionado', JSON.stringify({
+      tipoVuelo:  'idaVuelta',
+      ida: { ...vueloIda, busqueda: busqueda.value },
+      regreso: {
+        ...vuelo,
+        clase:    vuelo.claseSeleccionada,
+        precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva : vuelo.precioTurista,
+        asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
+      },
+      busqueda: busqueda.value,
+    }))
+    router.push('/reservar')
+    return
+  }
+
+  // Solo ida
   seleccionado.value = vuelo.id
   sessionStorage.removeItem('hotel_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
   sessionStorage.setItem('vuelo_seleccionado', JSON.stringify({
-    ...vuelo,
+    ...vuelo, tipoVuelo: 'ida',
     clase:    vuelo.claseSeleccionada,
-    precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva  : vuelo.precioTurista,
+    precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva : vuelo.precioTurista,
     asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
     busqueda: busqueda.value,
   }))
