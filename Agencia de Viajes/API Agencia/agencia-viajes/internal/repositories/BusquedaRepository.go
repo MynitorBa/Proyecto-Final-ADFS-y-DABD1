@@ -85,10 +85,9 @@ func (r *BusquedaRepository) ObtenerAerolineasPorRuta(
 		FROM Catalogo_Proveedor cp
 		JOIN Proveedor p ON cp.Proveedor_ID = p.ID
 		WHERE cp.Ciudad_Origen_ID  = ?
-		  AND cp.Ciudad_Destino_ID = ?
 		  AND cp.Tipo_Catalogo_ID  = 1
 		  AND p.EstadoID           = 1
-	`, ciudadOrigenID, ciudadDestinoID)
+	`, ciudadOrigenID)
 	if err != nil {
 		return nil, err
 	}

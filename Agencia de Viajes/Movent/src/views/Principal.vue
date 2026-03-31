@@ -7,8 +7,26 @@
       <div class="hero-overlay"></div>
       <div class="hero-content">
         <div class="hero-text">
-          <h1 class="hero-title">Tu Próxima Aventura Comienza Aquí</h1>
+          <h1 class="hero-title">Tu Próxima Aventura<br>Comienza <span>Aquí</span></h1>
           <p class="hero-subtitle">Vuelos, hospedajes y paquetes combinados de múltiples proveedores en un solo lugar</p>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <strong>500+</strong>
+              <span>Aerolíneas</span>
+            </div>
+            <div class="hero-stat">
+              <strong>12K+</strong>
+              <span>Hoteles</span>
+            </div>
+            <div class="hero-stat">
+              <strong>180+</strong>
+              <span>Países</span>
+            </div>
+            <div class="hero-stat">
+              <strong>98%</strong>
+              <span>Satisfacción</span>
+            </div>
+          </div>
         </div>
 
         <div class="search-card">
@@ -30,99 +48,121 @@
             </button>
           </div>
 
+          <!-- ══ SELECTORES COMPARTIDOS: Origen + Destino ══ -->
+          <div :class="['vuelos-cards', { 'vuelos-cards--solo': searchType === 'hotels' }]">
+
+            <!-- DESDE (vuelos y combo) -->
+            <div class="vuelo-card" v-if="searchType !== 'hotels'">
+              <div class="vuelo-card__label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+                Desde
+              </div>
+              <div class="campo autocomplete-wrap">
+                <label class="form-label">País</label>
+                <input class="form-input campo-input" type="text" v-model="oPaisQ"
+                  @input="onOPaisInput" @blur="blur(() => oPaisSug = [])"
+                  placeholder="Guatemala..." autocomplete="off" />
+                <ul v-if="oPaisSug.length" class="inline-autocomplete">
+                  <li v-for="p in oPaisSug" :key="p.country">
+                    <button type="button" @click="selOPais(p)">{{ p.country }}</button>
+                  </li>
+                </ul>
+              </div>
+              <div class="campo autocomplete-wrap">
+                <label class="form-label">
+                  Ciudad
+                  <span v-if="oCiudadLoading" class="form-label__hint"> cargando...</span>
+                </label>
+                <input class="form-input campo-input" type="text" v-model="oCiudadQ"
+                  @input="onOCiudadInput" @blur="blur(() => oCiudadSug = [])"
+                  :disabled="!oPaisSel || oCiudadLoading"
+                  placeholder="Guatemala City..." autocomplete="off" />
+                <ul v-if="oCiudadSug.length" class="inline-autocomplete">
+                  <li v-for="c in oCiudadSug" :key="c">
+                    <button type="button" @click="selOCiudad(c)">{{ c }}</button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- HACIA / DESTINO (todos los tabs) -->
+            <div :class="['vuelo-card', { 'vuelo-card--full': searchType === 'hotels' }]">
+              <div class="vuelo-card__label">
+                <template v-if="searchType === 'hotels'">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  Destino
+                </template>
+                <template v-else>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M2.5,19H21.5V21H2.5V19M9.68,13.27L14.03,14.43L20.8,16.26C21.56,16.45 22,16.17 22,15.62C22,15.26 21.78,14.88 21.37,14.68L16.5,12.22L12.03,3H9.7L12,12.28L7.45,11L5.92,7.5H4.04L5.42,12C5.7,13 6.68,13.53 7.62,13.27"/></svg>
+                  Hacia
+                </template>
+              </div>
+              <div :class="searchType === 'hotels' ? 'destino-fila' : ''">
+                <div class="campo autocomplete-wrap">
+                  <label class="form-label">País</label>
+                  <input class="form-input campo-input" type="text" v-model="dPaisQ"
+                    @input="onDPaisInput" @blur="blur(() => dPaisSug = [])"
+                    placeholder="Mexico..." autocomplete="off" />
+                  <ul v-if="dPaisSug.length" class="inline-autocomplete">
+                    <li v-for="p in dPaisSug" :key="p.country">
+                      <button type="button" @click="selDPais(p)">{{ p.country }}</button>
+                    </li>
+                  </ul>
+                </div>
+                <div class="campo autocomplete-wrap">
+                  <label class="form-label">
+                    Ciudad
+                    <span v-if="dCiudadLoading" class="form-label__hint"> cargando...</span>
+                  </label>
+                  <input class="form-input campo-input" type="text" v-model="dCiudadQ"
+                    @input="onDCiudadInput" @blur="blur(() => dCiudadSug = [])"
+                    :disabled="!dPaisSel || dCiudadLoading"
+                    placeholder="Mexico City..." autocomplete="off" />
+                  <ul v-if="dCiudadSug.length" class="inline-autocomplete">
+                    <li v-for="c in dCiudadSug" :key="c">
+                      <button type="button" @click="selDCiudad(c)">{{ c }}</button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <!-- ══ FIN SELECTORES COMPARTIDOS ══ -->
+
           <!-- ── TAB VUELOS ── -->
           <template v-if="searchType === 'flights'">
-            <div class="trip-type">
-              <button :class="{ active: tripType === 'roundtrip' }" @click="tripType = 'roundtrip'" type="button">Ida y Vuelta</button>
-              <button :class="{ active: tripType === 'oneway' }" @click="tripType = 'oneway'" type="button">Solo Ida</button>
-            </div>
-            <div class="form-grid" :style="{ gridTemplateColumns: tripType === 'oneway' ? 'repeat(4, 1fr)' : 'repeat(5, 1fr)' }">
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z"/></svg>
-                  Origen
-                </label>
-                <input class="form-input" type="text" placeholder="Ciudad de origen"
-                  v-model="origenQuery" @input="onOrigenInput" @blur="blurOrigen" autocomplete="off" />
-                <ul v-if="origenSugeridos.length" class="inline-autocomplete">
-                  <li v-for="c in origenSugeridos" :key="c"><button type="button" @click="seleccionarOrigen(c)">{{ c }}</button></li>
-                </ul>
-              </div>
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  Destino
-                </label>
-                <input class="form-input" type="text" placeholder="Ciudad de destino"
-                  v-model="destinoVueloQuery" @input="onDestinoVueloInput" @blur="blurDestinoVuelo" autocomplete="off" />
-                <ul v-if="destinoVueloSugeridos.length" class="inline-autocomplete">
-                  <li v-for="c in destinoVueloSugeridos" :key="c"><button type="button" @click="seleccionarDestinoVuelo(c)">{{ c }}</button></li>
-                </ul>
-              </div>
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr)">
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Salida
+                  Fecha
                 </label>
-                <input class="form-input" type="date" v-model="flightData.fechaIda" />
-              </div>
-              <div class="form-group" v-if="tripType === 'roundtrip'">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Regreso
-                </label>
-                <input class="form-input" type="date" v-model="flightData.fechaVuelta" />
+                <input class="form-input" type="date" v-model="flightData.fecha" />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                   Pasajeros
                 </label>
-                <select class="form-input" v-model="flightData.pasajeros">
+                <select class="form-input" v-model="flightData.cantidadPasajeros">
                   <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'Pasajero' : 'Pasajeros' }}</option>
                 </select>
               </div>
             </div>
-            <div class="seat-class-row">
-              <span class="seat-label">Clase:</span>
-              <button v-for="c in seatClasses" :key="c.val" type="button"
-                :class="['seat-btn', { active: flightData.clase === c.val }]"
-                @click="flightData.clase = c.val">{{ c.label }}</button>
-            </div>
-            <button class="search-btn" type="button" @click="buscarVuelos">
+            <p v-if="searchError" class="search-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {{ searchError }}
+            </p>
+            <button class="search-btn" type="button" @click="buscarVuelos" :disabled="buscando">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              Buscar Vuelos
+              {{ buscando ? 'Buscando...' : 'Buscar Vuelos' }}
             </button>
           </template>
 
           <!-- ── TAB HOTELES ── -->
           <template v-if="searchType === 'hotels'">
-            <div class="form-grid" style="grid-template-columns: repeat(4, 1fr)">
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z"/></svg>
-                  País
-                </label>
-                <input class="form-input" type="text" placeholder="Escribe el país"
-                  v-model="hotelPaisQuery" @input="onHotelPaisInput" @blur="blurHotelPais" autocomplete="off" />
-                <div v-if="hotelPaisLoading" class="inline-loading">Buscando...</div>
-                <ul v-else-if="hotelPaisesSugeridos.length" class="inline-autocomplete">
-                  <li v-for="p in hotelPaisesSugeridos" :key="p.country"><button type="button" @click="seleccionarHotelPais(p)">{{ p.country }}</button></li>
-                </ul>
-              </div>
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  Ciudad
-                  <span v-if="hotelCiudadLoading" style="font-weight:400;color:#94a3b8;font-size:0.65rem;"> cargando...</span>
-                </label>
-                <input class="form-input" type="text" placeholder="Escribe la ciudad"
-                  v-model="hotelCiudadQuery" @input="onHotelCiudadInput" @blur="blurHotelCiudad"
-                  :disabled="!hotelPaisSeleccionado || hotelCiudadLoading" autocomplete="off" />
-                <ul v-if="hotelCiudadesSugeridas.length" class="inline-autocomplete">
-                  <li v-for="c in hotelCiudadesSugeridas" :key="c"><button type="button" @click="seleccionarHotelCiudad(c)">{{ c }}</button></li>
-                </ul>
-              </div>
+            <div class="form-grid" style="grid-template-columns: repeat(3, 1fr)">
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -137,107 +177,61 @@
                 </label>
                 <input class="form-input" type="date" v-model="hotelData.checkOut" />
               </div>
+              <div class="form-group">
+                <label class="form-label">
+                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  Huéspedes
+                </label>
+                <select class="form-input" v-model="hotelData.huespedes">
+                  <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'Huésped' : 'Huéspedes' }}</option>
+                </select>
+              </div>
             </div>
             <div class="seat-class-row">
-              <span class="seat-label">Huéspedes:</span>
-              <select class="seat-select" v-model="hotelData.huespedes">
-                <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
-              </select>
-              <span class="seat-label" style="margin-left:1rem">Habitación:</span>
+              <span class="seat-label">Habitación:</span>
               <button v-for="t in roomTypes" :key="t.val" type="button"
                 :class="['seat-btn', { active: hotelData.tipoHabitacion === t.val }]"
                 @click="hotelData.tipoHabitacion = t.val">{{ t.label }}</button>
             </div>
-            <button class="search-btn" type="button" @click="buscarHoteles">
+            <p v-if="searchError" class="search-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {{ searchError }}
+            </p>
+            <button class="search-btn" type="button" @click="buscarHoteles" :disabled="buscando">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              Buscar Hoteles
+              {{ buscando ? 'Buscando...' : 'Buscar Hoteles' }}
             </button>
           </template>
 
-          <!-- ── TAB COMBINADO ── -->
+          <!-- ── TAB COMBO ── -->
           <template v-if="searchType === 'combo'">
             <div class="combo-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
               Vuelo
             </div>
-            <div class="form-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom: none;">
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z"/></svg>
-                  Origen
-                </label>
-                <input class="form-input" type="text" placeholder="Ciudad de origen"
-                  v-model="comboOrigenQuery" @input="onComboOrigenInput" @blur="blurComboOrigen" autocomplete="off" />
-                <ul v-if="comboOrigenSugeridos.length" class="inline-autocomplete">
-                  <li v-for="c in comboOrigenSugeridos" :key="c"><button type="button" @click="seleccionarComboOrigen(c)">{{ c }}</button></li>
-                </ul>
-              </div>
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  Destino Vuelo
-                </label>
-                <input class="form-input" type="text" placeholder="Ciudad destino"
-                  v-model="comboDestinoQuery" @input="onComboDestinoInput" @blur="blurComboDestino" autocomplete="off" />
-                <ul v-if="comboDestinoSugeridos.length" class="inline-autocomplete">
-                  <li v-for="c in comboDestinoSugeridos" :key="c"><button type="button" @click="seleccionarComboDestino(c)">{{ c }}</button></li>
-                </ul>
-              </div>
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom:0; border-bottom-left-radius:0; border-bottom-right-radius:0; border-bottom: none;">
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Ida
+                  Fecha
                 </label>
-                <input class="form-input" type="date" v-model="comboData.fechaIda" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  Vuelta
-                </label>
-                <input class="form-input" type="date" v-model="comboData.fechaVuelta" />
+                <input class="form-input" type="date" v-model="comboData.fecha" />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                   Pasajeros
                 </label>
-                <select class="form-input" v-model="comboData.pasajeros">
+                <select class="form-input" v-model="comboData.cantidadPasajeros">
                   <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
                 </select>
               </div>
             </div>
-
             <div class="combo-label" style="border-top: 1px solid #e2e8f0; margin-top:0; border-radius:0;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Hotel
             </div>
-            <div class="form-grid" style="grid-template-columns: repeat(4, 1fr); border-top-left-radius:0; border-top-right-radius:0; border-top: none; margin-bottom: 1.25rem;">
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z"/></svg>
-                  País Hotel
-                </label>
-                <input class="form-input" type="text" placeholder="País destino"
-                  v-model="comboPaisQuery" @input="onComboPaisInput" @blur="blurComboPais" autocomplete="off" />
-                <div v-if="comboPaisLoading" class="inline-loading">Buscando...</div>
-                <ul v-else-if="comboPaisesSugeridos.length" class="inline-autocomplete">
-                  <li v-for="p in comboPaisesSugeridos" :key="p.country"><button type="button" @click="seleccionarComboPais(p)">{{ p.country }}</button></li>
-                </ul>
-              </div>
-              <div class="form-group autocomplete-group">
-                <label class="form-label">
-                  <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  Ciudad Hotel
-                  <span v-if="comboCiudadLoading" style="font-weight:400;color:#94a3b8;font-size:0.65rem;"> cargando...</span>
-                </label>
-                <input class="form-input" type="text" placeholder="Ciudad hotel"
-                  v-model="comboCiudadQuery" @input="onComboCiudadInput" @blur="blurComboCiudad"
-                  :disabled="!comboPaisSeleccionado || comboCiudadLoading" autocomplete="off" />
-                <ul v-if="comboCiudadesSugeridas.length" class="inline-autocomplete">
-                  <li v-for="c in comboCiudadesSugeridas" :key="c"><button type="button" @click="seleccionarComboCiudad(c)">{{ c }}</button></li>
-                </ul>
-              </div>
+            <div class="form-grid" style="grid-template-columns: repeat(2, 1fr); border-top-left-radius:0; border-top-right-radius:0; border-top: none; margin-bottom: 1.25rem;">
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -253,20 +247,19 @@
                 <input class="form-input" type="date" v-model="comboData.checkOut" />
               </div>
             </div>
-
             <div class="seat-class-row">
-              <span class="seat-label">Clase vuelo:</span>
-              <button v-for="c in seatClasses" :key="c.val" type="button"
-                :class="['seat-btn', { active: comboData.clase === c.val }]"
-                @click="comboData.clase = c.val">{{ c.label }}</button>
-              <span class="seat-label" style="margin-left:1rem">Habitación:</span>
+              <span class="seat-label">Habitación:</span>
               <button v-for="t in roomTypes" :key="t.val" type="button"
                 :class="['seat-btn', { active: comboData.tipoHabitacion === t.val }]"
                 @click="comboData.tipoHabitacion = t.val">{{ t.label }}</button>
             </div>
-            <button class="search-btn" type="button" @click="buscarPaquetes">
+            <p v-if="searchError" class="search-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {{ searchError }}
+            </p>
+            <button class="search-btn" type="button" @click="buscarPaquetes" :disabled="buscando">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              Buscar Paquete Completo
+              {{ buscando ? 'Buscando...' : 'Buscar Paquete Completo' }}
             </button>
           </template>
 
@@ -325,14 +318,12 @@ import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/principal.css'
 
-const router = useRouter()
+const router      = useRouter()
+const API         = 'http://localhost:8080'
+const buscando    = ref(false)
+const searchError = ref('')
 
-// ── Opciones ──
-const seatClasses = [
-  { val: 'economica', label: 'Económica' },
-  { val: 'ejecutiva', label: 'Ejecutiva' },
-  { val: 'primera',   label: 'Primera Clase' },
-]
+// ── Opciones ──────────────────────────────────────────────────
 const roomTypes = [
   { val: 'doble',      label: 'Doble' },
   { val: 'junior',     label: 'Junior Suite' },
@@ -340,252 +331,279 @@ const roomTypes = [
   { val: 'gran_suite', label: 'Gran Suite' },
 ]
 
-// ── Tabs ──
+// ── UI ────────────────────────────────────────────────────────
 const searchType    = ref('flights')
-const tripType      = ref('roundtrip')
 const showScrollTop = ref(false)
 
-// ── Flight data ──
-const flightData = ref({ fechaIda: '', fechaVuelta: '', pasajeros: 1, clase: 'economica' })
+// ── Datos por tab ─────────────────────────────────────────────
+const flightData = ref({ fecha: '', cantidadPasajeros: 1 })
+const hotelData  = ref({ checkIn: '', checkOut: '', huespedes: 1, tipoHabitacion: 'doble' })
+const comboData  = ref({ fecha: '', cantidadPasajeros: 1, checkIn: '', checkOut: '', tipoHabitacion: 'doble' })
 
-// ── Hotel data ──
-const hotelData = ref({ checkIn: '', checkOut: '', huespedes: 1, tipoHabitacion: 'doble' })
-
-// ── Combo data ──
-const comboData = ref({ fechaIda: '', fechaVuelta: '', pasajeros: 1, clase: 'economica', checkIn: '', checkOut: '', tipoHabitacion: 'doble' })
-
-// ══════════════════════════════
-// FUNCIONES DE BÚSQUEDA — navegan a la ruta correcta con query params
-// ══════════════════════════════
-const buscarVuelos = () => {
-  const q = {}
-  if (origenQuery.value)        q.origen    = origenQuery.value
-  if (destinoVueloQuery.value)  q.destino   = destinoVueloQuery.value
-  if (flightData.value.fechaIda)    q.fechaIda  = flightData.value.fechaIda
-  if (flightData.value.fechaVuelta) q.fechaVuelta = flightData.value.fechaVuelta
-  q.pasajeros = flightData.value.pasajeros
-  q.clase     = flightData.value.clase
-  q.tipo      = tripType.value
-  router.push({ path: '/resultados-vuelos', query: q })
-}
-
-const buscarHoteles = () => {
-  const q = {}
-  if (hotelPaisQuery.value)    q.pais     = hotelPaisQuery.value
-  if (hotelCiudadQuery.value)  q.ciudad   = hotelCiudadQuery.value
-  if (hotelData.value.checkIn)  q.checkIn  = hotelData.value.checkIn
-  if (hotelData.value.checkOut) q.checkOut = hotelData.value.checkOut
-  q.huespedes      = hotelData.value.huespedes
-  q.tipoHabitacion = hotelData.value.tipoHabitacion
-  router.push({ path: '/resultados-hoteles', query: q })
-}
-
-const buscarPaquetes = () => {
-  const q = {}
-  if (comboOrigenQuery.value)   q.origen    = comboOrigenQuery.value
-  if (comboDestinoQuery.value)  q.destino   = comboDestinoQuery.value
-  if (comboData.value.fechaIda)    q.fechaIda  = comboData.value.fechaIda
-  if (comboData.value.fechaVuelta) q.fechaVuelta = comboData.value.fechaVuelta
-  if (comboPaisQuery.value)    q.pais     = comboPaisQuery.value
-  if (comboCiudadQuery.value)  q.ciudad   = comboCiudadQuery.value
-  if (comboData.value.checkIn)  q.checkIn  = comboData.value.checkIn
-  if (comboData.value.checkOut) q.checkOut = comboData.value.checkOut
-  q.pasajeros      = comboData.value.pasajeros
-  q.clase          = comboData.value.clase
-  q.tipoHabitacion = comboData.value.tipoHabitacion
-  router.push({ path: '/resultados-paquetes', query: q })
-}
-
-// ── Caché de países ──
+// ══════════════════════════════════════════════════════════════
+// countriesnow.space — países y ciudades
+// ══════════════════════════════════════════════════════════════
 let paisesCache = null
 async function getPaises() {
   if (paisesCache) return paisesCache
   try {
-    const res  = await fetch('https://countriesnow.space/api/v0.1/countries')
-    const data = await res.json()
-    paisesCache = data.data || []
+    const r = await fetch('https://countriesnow.space/api/v0.1/countries')
+    const d = await r.json()
+    paisesCache = d.data || []
   } catch { paisesCache = [] }
   return paisesCache
 }
-
 async function getCiudades(country) {
   try {
-    const res  = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+    const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ country })
     })
-    const data = await res.json()
-    return data.data || []
+    const d = await r.json()
+    return d.data || []
   } catch { return [] }
 }
 
-let todasCiudadesCache = null
-async function getTodasCiudades() {
-  if (todasCiudadesCache) return todasCiudadesCache
+function blur(fn) { setTimeout(fn, 200) }
+
+// ══════════════════════════════════════════════════════════════
+// ORIGEN — compartido (vuelos + combo)
+// ══════════════════════════════════════════════════════════════
+const oPaisQ         = ref('');  const oPaisSug        = ref([]);  const oPaisSel       = ref(null)
+const oCiudadQ       = ref('');  const oCiudadSug      = ref([]);  const oCiudadLoading = ref(false)
+const oCiudades      = ref([])
+const origen         = ref({ pais: '', ciudad: '' })
+
+async function onOPaisInput() {
+  oPaisSel.value = null; oCiudadQ.value = ''; oCiudades.value = []
+  origen.value = { pais: '', ciudad: '' }
+  const q = oPaisQ.value.trim()
+  if (q.length < 2) { oPaisSug.value = []; return }
+  const p = await getPaises()
+  oPaisSug.value = p.filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+}
+async function selOPais(p) {
+  oPaisSel.value = p; oPaisQ.value = p.country; oPaisSug.value = []
+  origen.value.pais = p.country
+  oCiudadLoading.value = true
+  oCiudades.value = await getCiudades(p.country)
+  oCiudadLoading.value = false
+}
+function onOCiudadInput() {
+  const q = oCiudadQ.value.toLowerCase()
+  oCiudadSug.value = q.length < 2 ? [] : oCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+  origen.value.ciudad = ''
+}
+function selOCiudad(c) {
+  oCiudadQ.value = c; oCiudadSug.value = []
+  origen.value.ciudad = c
+  searchError.value = ''
+}
+
+// ══════════════════════════════════════════════════════════════
+// DESTINO — compartido (vuelos + hoteles + combo)
+// ══════════════════════════════════════════════════════════════
+const dPaisQ         = ref('');  const dPaisSug        = ref([]);  const dPaisSel       = ref(null)
+const dCiudadQ       = ref('');  const dCiudadSug      = ref([]);  const dCiudadLoading = ref(false)
+const dCiudades      = ref([])
+const destino        = ref({ pais: '', ciudad: '' })
+
+async function onDPaisInput() {
+  dPaisSel.value = null; dCiudadQ.value = ''; dCiudades.value = []
+  destino.value = { pais: '', ciudad: '' }
+  const q = dPaisQ.value.trim()
+  if (q.length < 2) { dPaisSug.value = []; return }
+  const p = await getPaises()
+  dPaisSug.value = p.filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+}
+async function selDPais(p) {
+  dPaisSel.value = p; dPaisQ.value = p.country; dPaisSug.value = []
+  destino.value.pais = p.country
+  dCiudadLoading.value = true
+  dCiudades.value = await getCiudades(p.country)
+  dCiudadLoading.value = false
+}
+function onDCiudadInput() {
+  const q = dCiudadQ.value.toLowerCase()
+  dCiudadSug.value = q.length < 2 ? [] : dCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+  destino.value.ciudad = ''
+}
+function selDCiudad(c) {
+  dCiudadQ.value = c; dCiudadSug.value = []
+  destino.value.ciudad = c
+  searchError.value = ''
+}
+
+// ══════════════════════════════════════════════════════════════
+// BÚSQUEDAS
+// ══════════════════════════════════════════════════════════════
+
+// ── Vuelos ────────────────────────────────────────────────────
+const buscarVuelos = async () => {
+  searchError.value = ''
+  if (!origen.value.pais || !origen.value.ciudad) {
+    searchError.value = 'Selecciona el país y ciudad de origen.'; return
+  }
+  if (!destino.value.pais || !destino.value.ciudad) {
+    searchError.value = 'Selecciona el país y ciudad de destino.'; return
+  }
+  if (!flightData.value.fecha) {
+    searchError.value = 'Selecciona una fecha de vuelo.'; return
+  }
+
+  buscando.value = true
   try {
-    const paises = await getPaises()
-    todasCiudadesCache = paises.flatMap(p => (p.cities || []).slice(0, 30))
-  } catch { todasCiudadesCache = [] }
-  return todasCiudadesCache
+    const res = await fetch(`${API}/api/busqueda/vuelos`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        origen:            origen.value.ciudad,
+        origenPais:        origen.value.pais,
+        destino:           destino.value.ciudad,
+        destinoPais:       destino.value.pais,
+        fecha:             flightData.value.fecha,
+        cantidadPasajeros: flightData.value.cantidadPasajeros,
+      })
+    })
+    if (!res.ok) throw new Error(`Error ${res.status}`)
+    const resultados = await res.json()
+    router.push({
+      path: '/resultados-vuelos',
+      state: {
+        resultados,
+        busqueda: {
+          origen:            origen.value.ciudad,
+          origenPais:        origen.value.pais,
+          destino:           destino.value.ciudad,
+          destinoPais:       destino.value.pais,
+          fecha:             flightData.value.fecha,
+          cantidadPasajeros: flightData.value.cantidadPasajeros,
+        }
+      }
+    })
+  } catch (err) {
+    console.error('Error buscando vuelos:', err)
+    searchError.value = 'No se pudieron obtener vuelos. Intenta de nuevo.'
+  } finally {
+    buscando.value = false
+  }
 }
 
-// ── VUELOS: Origen ──
-const origenQuery       = ref('')
-const origenSugeridos   = ref([])
-let origenTimer = null
+// ── Hoteles ───────────────────────────────────────────────────
+const buscarHoteles = async () => {
+  searchError.value = ''
+  if (!destino.value.pais || !destino.value.ciudad) {
+    searchError.value = 'Selecciona el país y ciudad de destino.'; return
+  }
 
-function onOrigenInput() {
-  const q = origenQuery.value.trim()
-  if (q.length < 2) { origenSugeridos.value = []; return }
-  clearTimeout(origenTimer)
-  origenTimer = setTimeout(async () => {
-    const cities = await getTodasCiudades()
-    origenSugeridos.value = cities.filter(c => c.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
-  }, 300)
-}
-function seleccionarOrigen(c) { origenQuery.value = c; origenSugeridos.value = [] }
-function blurOrigen() { setTimeout(() => { origenSugeridos.value = [] }, 200) }
-
-// ── VUELOS: Destino ──
-const destinoVueloQuery     = ref('')
-const destinoVueloSugeridos = ref([])
-let destinoVueloTimer = null
-
-function onDestinoVueloInput() {
-  const q = destinoVueloQuery.value.trim()
-  if (q.length < 2) { destinoVueloSugeridos.value = []; return }
-  clearTimeout(destinoVueloTimer)
-  destinoVueloTimer = setTimeout(async () => {
-    const cities = await getTodasCiudades()
-    destinoVueloSugeridos.value = cities.filter(c => c.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
-  }, 300)
-}
-function seleccionarDestinoVuelo(c) { destinoVueloQuery.value = c; destinoVueloSugeridos.value = [] }
-function blurDestinoVuelo() { setTimeout(() => { destinoVueloSugeridos.value = [] }, 200) }
-
-// ── HOTELES: País / Ciudad ──
-const hotelPaisQuery        = ref('')
-const hotelPaisesSugeridos  = ref([])
-const hotelPaisSeleccionado = ref(null)
-const hotelPaisLoading      = ref(false)
-const hotelCiudadQuery      = ref('')
-const hotelCiudadesSugeridas = ref([])
-const hotelCiudadLoading    = ref(false)
-const hotelTodasCiudades    = ref([])
-let hotelPaisTimer = null
-
-function onHotelPaisInput() {
-  hotelPaisSeleccionado.value = null
-  hotelCiudadQuery.value = ''; hotelCiudadesSugeridas.value = []; hotelTodasCiudades.value = []
-  const q = hotelPaisQuery.value.trim()
-  if (q.length < 2) { hotelPaisesSugeridos.value = []; return }
-  clearTimeout(hotelPaisTimer)
-  hotelPaisTimer = setTimeout(async () => {
-    hotelPaisLoading.value = true
-    const paises = await getPaises()
-    hotelPaisesSugeridos.value = paises.filter(p => p.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
-    hotelPaisLoading.value = false
-  }, 300)
+  buscando.value = true
+  try {
+    const res = await fetch(`${API}/api/busqueda/hoteles`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        destino:        destino.value.ciudad,
+        destinoPais:    destino.value.pais,
+        checkIn:        hotelData.value.checkIn  || null,
+        checkOut:       hotelData.value.checkOut || null,
+        huespedes:      hotelData.value.huespedes,
+        tipoHabitacion: hotelData.value.tipoHabitacion,
+      })
+    })
+    if (!res.ok) throw new Error(`Error ${res.status}`)
+    const resultados = await res.json()
+    router.push({
+      path: '/resultados-hoteles',
+      state: {
+        resultados,
+        busqueda: {
+          destino:        destino.value.ciudad,
+          destinoPais:    destino.value.pais,
+          checkIn:        hotelData.value.checkIn,
+          checkOut:       hotelData.value.checkOut,
+          huespedes:      hotelData.value.huespedes,
+          tipoHabitacion: hotelData.value.tipoHabitacion,
+        }
+      }
+    })
+  } catch (err) {
+    console.error('Error buscando hoteles:', err)
+    searchError.value = 'No se pudieron obtener hoteles. Intenta de nuevo.'
+  } finally {
+    buscando.value = false
+  }
 }
 
-async function seleccionarHotelPais(p) {
-  hotelPaisSeleccionado.value = p; hotelPaisQuery.value = p.country; hotelPaisesSugeridos.value = []
-  hotelCiudadQuery.value = ''; hotelCiudadesSugeridas.value = []
-  hotelCiudadLoading.value = true
-  hotelTodasCiudades.value = await getCiudades(p.country)
-  hotelCiudadLoading.value = false
+// ── Paquetes ──────────────────────────────────────────────────
+const buscarPaquetes = async () => {
+  searchError.value = ''
+  if (!origen.value.pais || !origen.value.ciudad) {
+    searchError.value = 'Selecciona el país y ciudad de origen.'; return
+  }
+  if (!destino.value.pais || !destino.value.ciudad) {
+    searchError.value = 'Selecciona el país y ciudad de destino.'; return
+  }
+
+  buscando.value = true
+  try {
+    const [resVuelos, resHoteles] = await Promise.all([
+      fetch(`${API}/api/busqueda/vuelos`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origen:            origen.value.ciudad,
+          origenPais:        origen.value.pais,
+          destino:           destino.value.ciudad,
+          destinoPais:       destino.value.pais,
+          fecha:             comboData.value.fecha,
+          cantidadPasajeros: comboData.value.cantidadPasajeros,
+        })
+      }),
+      fetch(`${API}/api/busqueda/hoteles`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destino:        destino.value.ciudad,
+          destinoPais:    destino.value.pais,
+          checkIn:        comboData.value.checkIn  || null,
+          checkOut:       comboData.value.checkOut || null,
+          huespedes:      comboData.value.cantidadPasajeros,
+          tipoHabitacion: comboData.value.tipoHabitacion,
+        })
+      })
+    ])
+
+    const resultadosVuelos  = resVuelos.ok  ? await resVuelos.json()  : []
+    const resultadosHoteles = resHoteles.ok ? await resHoteles.json() : []
+
+    router.push({
+      path: '/resultados-paquetes',
+      state: {
+        resultadosVuelos,
+        resultadosHoteles,
+        busqueda: {
+          origen:            origen.value.ciudad,
+          origenPais:        origen.value.pais,
+          destino:           destino.value.ciudad,
+          destinoPais:       destino.value.pais,
+          fecha:             comboData.value.fecha,
+          cantidadPasajeros: comboData.value.cantidadPasajeros,
+          checkIn:           comboData.value.checkIn,
+          checkOut:          comboData.value.checkOut,
+          tipoHabitacion:    comboData.value.tipoHabitacion,
+        }
+      }
+    })
+  } catch (err) {
+    console.error('Error buscando paquetes:', err)
+    searchError.value = 'No se pudieron obtener los paquetes. Intenta de nuevo.'
+  } finally {
+    buscando.value = false
+  }
 }
 
-function blurHotelPais() { setTimeout(() => { hotelPaisesSugeridos.value = [] }, 200) }
-
-function onHotelCiudadInput() {
-  const q = hotelCiudadQuery.value.toLowerCase().trim()
-  hotelCiudadesSugeridas.value = q.length < 2
-    ? [] : hotelTodasCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
-}
-
-function seleccionarHotelCiudad(c) { hotelCiudadQuery.value = c; hotelCiudadesSugeridas.value = [] }
-function blurHotelCiudad() { setTimeout(() => { hotelCiudadesSugeridas.value = [] }, 200) }
-
-// ── COMBO: Origen/Destino vuelo ──
-const comboOrigenQuery     = ref('')
-const comboOrigenSugeridos = ref([])
-let comboOrigenTimer = null
-
-function onComboOrigenInput() {
-  const q = comboOrigenQuery.value.trim()
-  if (q.length < 2) { comboOrigenSugeridos.value = []; return }
-  clearTimeout(comboOrigenTimer)
-  comboOrigenTimer = setTimeout(async () => {
-    const cities = await getTodasCiudades()
-    comboOrigenSugeridos.value = cities.filter(c => c.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
-  }, 300)
-}
-function seleccionarComboOrigen(c) { comboOrigenQuery.value = c; comboOrigenSugeridos.value = [] }
-function blurComboOrigen() { setTimeout(() => { comboOrigenSugeridos.value = [] }, 200) }
-
-const comboDestinoQuery     = ref('')
-const comboDestinoSugeridos = ref([])
-let comboDestinoTimer = null
-
-function onComboDestinoInput() {
-  const q = comboDestinoQuery.value.trim()
-  if (q.length < 2) { comboDestinoSugeridos.value = []; return }
-  clearTimeout(comboDestinoTimer)
-  comboDestinoTimer = setTimeout(async () => {
-    const cities = await getTodasCiudades()
-    comboDestinoSugeridos.value = cities.filter(c => c.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
-  }, 300)
-}
-function seleccionarComboDestino(c) { comboDestinoQuery.value = c; comboDestinoSugeridos.value = [] }
-function blurComboDestino() { setTimeout(() => { comboDestinoSugeridos.value = [] }, 200) }
-
-// ── COMBO: País/Ciudad hotel ──
-const comboPaisQuery        = ref('')
-const comboPaisesSugeridos  = ref([])
-const comboPaisSeleccionado = ref(null)
-const comboPaisLoading      = ref(false)
-const comboCiudadQuery      = ref('')
-const comboCiudadesSugeridas = ref([])
-const comboCiudadLoading    = ref(false)
-const comboTodasCiudades    = ref([])
-let comboPaisTimer = null
-
-function onComboPaisInput() {
-  comboPaisSeleccionado.value = null
-  comboCiudadQuery.value = ''; comboCiudadesSugeridas.value = []; comboTodasCiudades.value = []
-  const q = comboPaisQuery.value.trim()
-  if (q.length < 2) { comboPaisesSugeridos.value = []; return }
-  clearTimeout(comboPaisTimer)
-  comboPaisTimer = setTimeout(async () => {
-    comboPaisLoading.value = true
-    const paises = await getPaises()
-    comboPaisesSugeridos.value = paises.filter(p => p.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
-    comboPaisLoading.value = false
-  }, 300)
-}
-
-async function seleccionarComboPais(p) {
-  comboPaisSeleccionado.value = p; comboPaisQuery.value = p.country; comboPaisesSugeridos.value = []
-  comboCiudadQuery.value = ''; comboCiudadesSugeridas.value = []
-  comboCiudadLoading.value = true
-  comboTodasCiudades.value = await getCiudades(p.country)
-  comboCiudadLoading.value = false
-}
-
-function blurComboPais() { setTimeout(() => { comboPaisesSugeridos.value = [] }, 200) }
-
-function onComboCiudadInput() {
-  const q = comboCiudadQuery.value.toLowerCase().trim()
-  comboCiudadesSugeridas.value = q.length < 2
-    ? [] : comboTodasCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
-}
-
-function seleccionarComboCiudad(c) { comboCiudadQuery.value = c; comboCiudadesSugeridas.value = [] }
-function blurComboCiudad() { setTimeout(() => { comboCiudadesSugeridas.value = [] }, 200) }
-
-// ── Features ──
+// ── Features ──────────────────────────────────────────────────
 const features = [
   {
     icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>`,
@@ -609,8 +627,8 @@ const features = [
   }
 ]
 
-// ── Scroll ──
-const onScroll   = () => { showScrollTop.value = window.scrollY > 300 }
+// ── Scroll ────────────────────────────────────────────────────
+const onScroll    = () => { showScrollTop.value = window.scrollY > 300 }
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
 onMounted(() => window.addEventListener('scroll', onScroll))
