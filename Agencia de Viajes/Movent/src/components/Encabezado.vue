@@ -30,7 +30,7 @@
 
       <div class="user-actions">
 
-        <!-- ── CARRITO ─────────────────────────── -->
+        <!-- ── CARRITO ── -->
         <button class="cart-btn" @click="$router.push('/checkout')" aria-label="Ir a pagar" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="#1C1A18" stroke-width="2" width="22" height="22">
             <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -38,12 +38,12 @@
           </svg>
         </button>
 
-        <!-- ── SESIÓN ──────────────────────────── -->
+        <!-- ── CON SESIÓN ── -->
         <template v-if="sesion">
-          <div v-if="showUserMenu" class="user-dropdown-overlay" @click="showUserMenu=false"></div>
+          <div v-if="showUserMenu" class="user-dropdown-overlay" @click="showUserMenu = false"></div>
           <div class="user-chip" @click.stop="toggleUserMenu">
             <div class="user-chip__avatar">{{ iniciales }}</div>
-            <span class="user-chip__nombre">{{ sesion.nombre }}</span>
+            <span class="user-chip__nombre">{{ nombreVisible }}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
 
@@ -51,35 +51,35 @@
             <div class="user-dropdown__head">
               <div class="user-dropdown__avatar">{{ iniciales }}</div>
               <div>
-                <p class="user-dropdown__nombre">{{ sesion.nombre }}</p>
-                <span class="user-dropdown__rol" :class="sesion.isAdmin ? 'user-dropdown__rol--admin' : ''">
-                  {{ sesion.rol }}
+                <p class="user-dropdown__nombre">{{ nombreVisible }}</p>
+                <span class="user-dropdown__rol" :class="{ 'user-dropdown__rol--admin': sesion.isAdmin }">
+                  {{ sesion.isAdmin ? 'Administrador' : 'Cliente' }}
                 </span>
               </div>
             </div>
             <div class="user-dropdown__divider"></div>
 
             <template v-if="sesion.isAdmin">
-              <router-link to="/admin/dashboard" class="user-dropdown__item user-dropdown__item--admin" @click="showUserMenu=false">
+              <router-link to="/admin/dashboard" class="user-dropdown__item user-dropdown__item--admin" @click="showUserMenu = false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 Panel Admin
               </router-link>
-              <router-link to="/admin/roles" class="user-dropdown__item" @click="showUserMenu=false">
+              <router-link to="/admin/roles" class="user-dropdown__item" @click="showUserMenu = false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Roles
               </router-link>
-              <router-link to="/admin/proveedores" class="user-dropdown__item" @click="showUserMenu=false">
+              <router-link to="/admin/proveedores" class="user-dropdown__item" @click="showUserMenu = false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
                 Proveedores
               </router-link>
-              <router-link to="/admin/paquetes" class="user-dropdown__item" @click="showUserMenu=false">
+              <router-link to="/admin/paquetes" class="user-dropdown__item" @click="showUserMenu = false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                 Paquetes
               </router-link>
               <div class="user-dropdown__divider"></div>
             </template>
 
-            <router-link to="/mis-reservaciones" class="user-dropdown__item" @click="showUserMenu=false">
+            <router-link to="/mis-reservaciones" class="user-dropdown__item" @click="showUserMenu = false">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Mis reservaciones
             </router-link>
@@ -91,7 +91,7 @@
           </div>
         </template>
 
-        <!-- Sin sesión -->
+        <!-- ── SIN SESIÓN ── -->
         <template v-else>
           <router-link to="/ingreso" class="btn-secondary">Iniciar Sesión</router-link>
           <router-link to="/registro" class="btn-primary">Registrarse</router-link>
@@ -104,6 +104,7 @@
       </div>
     </div>
 
+    <!-- ── MENÚ MÓVIL ── -->
     <nav v-if="showMobileMenu" class="mobile-nav">
       <form class="mobile-search" @submit.prevent="handleSearch">
         <div class="search-input-wrapper">
@@ -112,24 +113,28 @@
         </div>
       </form>
       <div class="mobile-nav-links">
-        <router-link to="/principal"        class="mobile-nav-link" @click="showMobileMenu=false">Inicio</router-link>
-        <router-link to="/informacion"       class="mobile-nav-link" @click="showMobileMenu=false">Información</router-link>
-        <router-link to="/mis-reservaciones" class="mobile-nav-link" @click="showMobileMenu=false">Mis Reservas</router-link>
-        <router-link to="/checkout"          class="mobile-nav-link" @click="showMobileMenu=false">Ir a pagar</router-link>
+        <router-link to="/principal"         class="mobile-nav-link" @click="showMobileMenu = false">Inicio</router-link>
+        <router-link to="/informacion"        class="mobile-nav-link" @click="showMobileMenu = false">Información</router-link>
+        <router-link to="/mis-reservaciones"  class="mobile-nav-link" @click="showMobileMenu = false">Mis Reservas</router-link>
+        <router-link to="/checkout"           class="mobile-nav-link" @click="showMobileMenu = false">Ir a pagar</router-link>
+
         <template v-if="sesion?.isAdmin">
           <div class="mobile-divider"></div>
-          <router-link to="/admin/dashboard"  class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Panel Admin</router-link>
-          <router-link to="/admin/roles"       class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Roles</router-link>
-          <router-link to="/admin/proveedores" class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Proveedores</router-link>
-          <router-link to="/admin/paquetes"    class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Paquetes</router-link>
+          <router-link to="/admin/dashboard"   class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu = false">Panel Admin</router-link>
+          <router-link to="/admin/roles"        class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu = false">Roles</router-link>
+          <router-link to="/admin/proveedores"  class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu = false">Proveedores</router-link>
+          <router-link to="/admin/paquetes"     class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu = false">Paquetes</router-link>
         </template>
+
         <div class="mobile-divider"></div>
         <template v-if="sesion">
-          <button class="mobile-nav-link" @click="cerrarSesion" type="button">Cerrar sesión ({{ sesion.nombre }})</button>
+          <button class="mobile-nav-link" @click="cerrarSesion" type="button">
+            Cerrar sesión ({{ nombreVisible }})
+          </button>
         </template>
         <template v-else>
-          <router-link to="/ingreso"  class="mobile-nav-link" @click="showMobileMenu=false">Iniciar Sesión</router-link>
-          <router-link to="/registro" class="mobile-nav-link primary" @click="showMobileMenu=false">Registrarse</router-link>
+          <router-link to="/ingreso"  class="mobile-nav-link" @click="showMobileMenu = false">Iniciar Sesión</router-link>
+          <router-link to="/registro" class="mobile-nav-link primary" @click="showMobileMenu = false">Registrarse</router-link>
         </template>
       </div>
     </nav>
@@ -147,28 +152,54 @@ const isScrolled     = ref(false)
 const showMobileMenu = ref(false)
 const showUserMenu   = ref(false)
 const searchQuery    = ref('')
+const sesion         = ref(null)
 
-// ── Sesión ──────────────────────────────────────
-const sesion = ref(null)
-
-const cargarSesion = () => {
+// ── Leer sesión desde sessionStorage ────────────────────────────────
+function cargarSesion() {
   try {
     const raw = sessionStorage.getItem('usuario_sesion')
     if (!raw) { sesion.value = null; return }
+
     const parsed = JSON.parse(raw)
-    parsed.isAdmin = parsed.isAdmin === true || parsed.rol === 'Administrador'
+
+    // isAdmin: soporta ambas formas que puede venir del backend
+    // rol_id === 2 → Administrador  |  rol === 'Administrador'  |  isAdmin guardado directo
+    parsed.isAdmin =
+      parsed.isAdmin === true ||
+      parsed.rol_id  === 2   ||
+      parsed.rol     === 'Administrador'
+
     sesion.value = parsed
-  } catch { sesion.value = null }
+  } catch {
+    sesion.value = null
+  }
 }
 
-watch(() => route.path, () => cargarSesion(), { immediate: true })
+// Recargar sesión cada vez que cambia de ruta
+watch(() => route.path, cargarSesion, { immediate: true })
 
-const iniciales = computed(() => {
-  if (!sesion.value?.nombre) return '?'
-  return sesion.value.nombre.slice(0, 2).toUpperCase()
+// También recargar si otra pestaña modifica sessionStorage
+function onStorage() { cargarSesion() }
+
+// ── Nombre visible con fallbacks ─────────────────────────────────────
+// El login puede guardar 'nombre', App.vue guarda 'usuario'
+// Soportamos ambos para no depender del orden de carga
+const nombreVisible = computed(() => {
+  if (!sesion.value) return ''
+  return sesion.value.nombre    ||   // login guarda esto
+         sesion.value.username  ||   // App.vue guarda esto como username
+         sesion.value.usuario   ||   // App.vue antiguo guardaba esto
+         'Usuario'
 })
 
-const cerrarSesion = () => {
+const iniciales = computed(() => {
+  const n = nombreVisible.value
+  if (!n || n === 'Usuario') return '?'
+  return n.slice(0, 2).toUpperCase()
+})
+
+// ── Cerrar sesión ────────────────────────────────────────────────────
+function cerrarSesion() {
   sessionStorage.removeItem('usuario_sesion')
   sesion.value         = null
   showUserMenu.value   = false
@@ -176,15 +207,11 @@ const cerrarSesion = () => {
   router.push('/principal')
 }
 
-// ── Menús ────────────────────────────────────────
+// ── Menús ────────────────────────────────────────────────────────────
 const handleScroll     = () => { isScrolled.value = window.scrollY > 10 }
 const toggleMobileMenu = () => { showMobileMenu.value = !showMobileMenu.value; showUserMenu.value = false }
 const toggleUserMenu   = () => { showUserMenu.value = !showUserMenu.value }
-
-const closeMenus = () => {
-  showMobileMenu.value = false
-  showUserMenu.value   = false
-}
+const closeMenus       = () => { showMobileMenu.value = false; showUserMenu.value = false }
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
@@ -194,18 +221,15 @@ const handleSearch = () => {
   }
 }
 
-const onStorageChange = () => cargarSesion()
-
 onMounted(() => {
   cargarSesion()
   window.addEventListener('scroll',  handleScroll)
   window.addEventListener('click',   closeMenus)
-  window.addEventListener('storage', onStorageChange)
+  window.addEventListener('storage', onStorage)
 })
-
 onUnmounted(() => {
   window.removeEventListener('scroll',  handleScroll)
   window.removeEventListener('click',   closeMenus)
-  window.removeEventListener('storage', onStorageChange)
+  window.removeEventListener('storage', onStorage)
 })
 </script>

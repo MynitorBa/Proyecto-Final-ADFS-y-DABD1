@@ -5,200 +5,410 @@
     <div class="rv-page">
       <div class="rv-layout">
 
-        <!-- ═══ SIDEBAR FILTROS ═══ -->
-        <aside class="rv-sidebar" :class="{ 'rv-sidebar--open': filtrosAbiertos }">
+        <!-- ═══ SIDEBAR — siempre visible, colapsa en mobile ═══ -->
+        <aside class="rv-sidebar" :class="{ 'rv-sidebar--collapsed': sidebarColapsado }">
           <div class="rv-sidebar__head">
-            <h3 class="rv-sidebar__title">Filtros</h3>
-            <button class="rv-sidebar__close" @click="filtrosAbiertos=false" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <h3 class="rv-sidebar__title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/>
+                <line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              Filtros
+              <span v-if="cantFiltrosActivos > 0" class="rv-sidebar__badge">{{ cantFiltrosActivos }}</span>
+            </h3>
+            <!-- Toggle solo en mobile -->
+            <button class="rv-sidebar__toggle" @click="sidebarColapsado = !sidebarColapsado" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"
+                :style="{ transform: sidebarColapsado ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform .2s' }">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
             </button>
           </div>
 
-          <!-- Precio -->
-          <div class="rv-filter-group">
-            <h4 class="rv-filter-group__title">Rango de precio</h4>
-            <div class="rv-price-inputs">
-              <div class="rv-price-input">
-                <span>$</span>
-                <input type="number" v-model.number="filtros.precioMin" :min="0" placeholder="0" />
+          <div class="rv-sidebar__body">
+            <!-- Precio -->
+            <div class="rv-filter-group">
+              <h4 class="rv-filter-group__title">Precio por persona</h4>
+              <div class="rv-price-inputs">
+                <div class="rv-price-input">
+                  <span>$</span>
+                  <input type="number" v-model.number="filtros.precioMin" :min="0" placeholder="0" />
+                </div>
+                <span class="rv-price-sep">—</span>
+                <div class="rv-price-input">
+                  <span>$</span>
+                  <input type="number" v-model.number="filtros.precioMax" placeholder="9999" />
+                </div>
               </div>
-              <span class="rv-price-sep">—</span>
-              <div class="rv-price-input">
-                <span>$</span>
-                <input type="number" v-model.number="filtros.precioMax" placeholder="9999" />
+            </div>
+
+            <!-- Clase -->
+            <div class="rv-filter-group">
+              <h4 class="rv-filter-group__title">Clase disponible</h4>
+              <div class="rv-checkboxes">
+                <label class="rv-checkbox" v-for="c in clasesFilter" :key="c.val">
+                  <input type="checkbox" v-model="filtros.clases" :value="c.val" />
+                  <span class="rv-checkbox__box"></span>
+                  <span class="rv-checkbox__label">{{ c.label }}</span>
+                </label>
               </div>
             </div>
-          </div>
 
-          <!-- Clase -->
-          <div class="rv-filter-group">
-            <h4 class="rv-filter-group__title">Clase</h4>
-            <div class="rv-checkboxes">
-              <label class="rv-checkbox" v-for="c in clases" :key="c.val">
-                <input type="checkbox" v-model="filtros.clases" :value="c.val" />
-                <span class="rv-checkbox__box"></span>
-                <span class="rv-checkbox__label">{{ c.label }}</span>
-              </label>
+            <!-- Escalas -->
+            <div class="rv-filter-group">
+              <h4 class="rv-filter-group__title">Escalas</h4>
+              <div class="rv-checkboxes">
+                <label class="rv-checkbox" v-for="e in escalasOpts" :key="e.val">
+                  <input type="checkbox" v-model="filtros.escalas" :value="e.val" />
+                  <span class="rv-checkbox__box"></span>
+                  <span class="rv-checkbox__label">{{ e.label }}</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <!-- Escalas -->
-          <div class="rv-filter-group">
-            <h4 class="rv-filter-group__title">Escalas</h4>
-            <div class="rv-checkboxes">
-              <label class="rv-checkbox" v-for="e in escalasOpts" :key="e.val">
-                <input type="checkbox" v-model="filtros.escalas" :value="e.val" />
-                <span class="rv-checkbox__box"></span>
-                <span class="rv-checkbox__label">{{ e.label }}</span>
-              </label>
+            <!-- Duración -->
+            <div class="rv-filter-group">
+              <h4 class="rv-filter-group__title">Duración máxima</h4>
+              <div class="rv-dur-btns">
+                <button v-for="d in duracionOpts" :key="d.val"
+                  :class="['rv-dur-btn', { 'rv-dur-btn--active': filtros.duracionMax === d.val }]"
+                  @click="filtros.duracionMax = filtros.duracionMax === d.val ? 9999 : d.val"
+                  type="button">{{ d.label }}</button>
+              </div>
             </div>
-          </div>
 
-          <!-- Aerolíneas -->
-          <div class="rv-filter-group" v-if="aerolineasDisponibles.length > 0">
-            <h4 class="rv-filter-group__title">Aerolínea</h4>
-            <div class="rv-checkboxes">
-              <label class="rv-checkbox" v-for="a in aerolineasDisponibles" :key="a">
-                <input type="checkbox" v-model="filtros.aerolineas" :value="a" />
-                <span class="rv-checkbox__box"></span>
-                <span class="rv-checkbox__label">{{ a }}</span>
-              </label>
+            <!-- Aerolínea -->
+            <div class="rv-filter-group" v-if="aerolineasDisponibles.length > 0">
+              <h4 class="rv-filter-group__title">Aerolínea</h4>
+              <div class="rv-checkboxes">
+                <label class="rv-checkbox" v-for="a in aerolineasDisponibles" :key="a">
+                  <input type="checkbox" v-model="filtros.aerolineas" :value="a" />
+                  <span class="rv-checkbox__box"></span>
+                  <span class="rv-checkbox__label">{{ a }}</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <!-- Horario -->
-          <div class="rv-filter-group">
-            <h4 class="rv-filter-group__title">Horario de salida</h4>
-            <div class="rv-horarios">
-              <button v-for="h in horariosOpts" :key="h.val"
-                :class="['rv-horario-btn', { 'rv-horario-btn--active': filtros.horario === h.val }]"
-                @click="filtros.horario = filtros.horario === h.val ? '' : h.val" type="button">
-                <span>{{ h.icon }}</span>
-                <span>{{ h.label }}</span>
-                <small>{{ h.rango }}</small>
-              </button>
+            <!-- Horario -->
+            <div class="rv-filter-group">
+              <h4 class="rv-filter-group__title">Horario de salida</h4>
+              <div class="rv-horarios">
+                <button v-for="h in horariosOpts" :key="h.val"
+                  :class="['rv-horario-btn', { 'rv-horario-btn--active': filtros.horario === h.val }]"
+                  @click="filtros.horario = filtros.horario === h.val ? '' : h.val" type="button">
+                  <span v-html="h.icon"></span>
+                  <span>{{ h.label }}</span>
+                  <small>{{ h.rango }}</small>
+                </button>
+              </div>
             </div>
-          </div>
 
-          <button class="rv-btn rv-btn--ghost rv-sidebar__reset" @click="resetFiltros" type="button">
-            Limpiar filtros
-          </button>
+            <button v-if="hayFiltrosActivos"
+              class="rv-btn rv-btn--ghost rv-sidebar__reset" @click="resetFiltros" type="button">
+              Limpiar filtros
+            </button>
+          </div>
         </aside>
-
-        <div v-if="filtrosAbiertos" class="rv-sidebar-overlay" @click="filtrosAbiertos=false"></div>
 
         <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
         <div class="rv-main">
 
-          <!-- Barra búsqueda resumida -->
-          <div class="rv-search-bar">
-            <div class="rv-search-bar__info">
+          <!-- Barra búsqueda con Modificar inline -->
+          <div class="rv-search-bar" :class="{ 'rv-search-bar--open': modificarAbierto }">
+            <div class="rv-search-bar__summary" @click="toggleModificar">
               <div class="rv-search-bar__ruta">
-                <span class="rv-search-bar__iata">{{ busqueda.origen || 'GUA' }}</span>
-                <svg viewBox="0 0 24 24" fill="#FFCC00" width="16" height="16"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
-                <span class="rv-search-bar__iata">{{ busqueda.destino || 'MIA' }}</span>
+                <span class="rv-search-bar__ciudad">{{ busqueda.origen }}</span>
+                <svg viewBox="0 0 24 24" fill="#FFCC00" width="14" height="14">
+                  <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
+                </svg>
+                <span class="rv-search-bar__ciudad">{{ busqueda.destino }}</span>
               </div>
-              <div class="rv-search-bar__detalles">
-                <span>{{ formatFecha(busqueda.fechaSalida) }}</span>
-                <span v-if="busqueda.fechaRetorno">· Regreso {{ formatFecha(busqueda.fechaRetorno) }}</span>
-                <span>· {{ busqueda.pasajeros || 1 }} pasajero{{ (busqueda.pasajeros||1)!==1?'s':'' }}</span>
-                <span>· {{ busqueda.clase || 'Económica' }}</span>
+              <div class="rv-search-bar__meta">
+                <span class="rv-search-bar__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {{ formatFecha(busqueda.fecha) }}
+                </span>
+                <span class="rv-search-bar__dot">·</span>
+                <span class="rv-search-bar__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  {{ busqueda.cantidadPasajeros }} pasajero{{ busqueda.cantidadPasajeros !== 1 ? 's' : '' }}
+                </span>
               </div>
             </div>
-            <div class="rv-search-bar__actions">
-              <button class="rv-btn rv-btn--outline" @click="$router.push('/principal')" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Modificar
-              </button>
-              <button class="rv-btn rv-btn--yellow rv-search-bar__filter-btn" @click="filtrosAbiertos=true" type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-                Filtros
-              </button>
-            </div>
+            <button class="rv-search-bar__mod-btn" @click="toggleModificar" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"
+                :style="{ transform: modificarAbierto ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              {{ modificarAbierto ? 'Cerrar' : 'Modificar' }}
+            </button>
           </div>
+
+          <!-- ═══ FORM MODIFICAR INLINE ═══ -->
+          <transition name="rv-expand">
+            <div v-if="modificarAbierto" class="rv-modificar-inline">
+              <div class="rv-modificar-grid">
+
+                <!-- Origen -->
+                <div class="rv-mod-section">
+                  <p class="rv-mod-section__label">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/>
+                    </svg>
+                    Origen
+                  </p>
+                  <div class="rv-mod-row">
+                    <div class="rv-mod-field rv-ac-wrap">
+                      <label class="rv-mod-label">País</label>
+                      <input class="rv-mod-input" type="text" v-model="form.origenPaisQ"
+                        @input="onFormOPaisInput" @blur="blurClose(() => form.origenPaisSug = [])"
+                        placeholder="Guatemala..." autocomplete="off" />
+                      <ul v-if="form.origenPaisSug.length" class="rv-ac-list">
+                        <li v-for="p in form.origenPaisSug" :key="p.country">
+                          <button type="button" @click="selFormOPais(p)">{{ p.country }}</button>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="rv-mod-field rv-ac-wrap">
+                      <label class="rv-mod-label">
+                        Ciudad
+                        <span v-if="form.origenCiudadLoading" class="rv-mod-hint">cargando...</span>
+                      </label>
+                      <input class="rv-mod-input" type="text" v-model="form.origenCiudadQ"
+                        @input="onFormOCiudadInput" @blur="blurClose(() => form.origenCiudadSug = [])"
+                        :disabled="!form.origenPaisSel || form.origenCiudadLoading"
+                        placeholder="Guatemala City..." autocomplete="off" />
+                      <ul v-if="form.origenCiudadSug.length" class="rv-ac-list">
+                        <li v-for="c in form.origenCiudadSug" :key="c">
+                          <button type="button" @click="selFormOCiudad(c)">{{ c }}</button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Destino -->
+                <div class="rv-mod-section">
+                  <p class="rv-mod-section__label">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+                      <path d="M2.5 19h19v2h-19v-2m7.18-1.68L5.07 15.1l2.8-.75 3.53 3.03 6.03-1.61a1.5 1.5 0 0 1 .78 2.9L9.85 20.2a2 2 0 0 1-1.5-.13l-.67-.75m-1.9-5.88l1.42.88-2.09.55-.25-.97 2.56-1.23a2 2 0 0 1 1.5.13l5.74 3.55 2.09-.56-6.52-7.05L11.85 7l7.25 7.83-8.83 2.37a2 2 0 0 1-1.5-.13l-1.64-.88z"/>
+                    </svg>
+                    Destino
+                  </p>
+                  <div class="rv-mod-row">
+                    <div class="rv-mod-field rv-ac-wrap">
+                      <label class="rv-mod-label">País</label>
+                      <input class="rv-mod-input" type="text" v-model="form.destinoPaisQ"
+                        @input="onFormDPaisInput" @blur="blurClose(() => form.destinoPaisSug = [])"
+                        placeholder="Mexico..." autocomplete="off" />
+                      <ul v-if="form.destinoPaisSug.length" class="rv-ac-list">
+                        <li v-for="p in form.destinoPaisSug" :key="p.country">
+                          <button type="button" @click="selFormDPais(p)">{{ p.country }}</button>
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="rv-mod-field rv-ac-wrap">
+                      <label class="rv-mod-label">
+                        Ciudad
+                        <span v-if="form.destinoCiudadLoading" class="rv-mod-hint">cargando...</span>
+                      </label>
+                      <input class="rv-mod-input" type="text" v-model="form.destinoCiudadQ"
+                        @input="onFormDCiudadInput" @blur="blurClose(() => form.destinoCiudadSug = [])"
+                        :disabled="!form.destinoPaisSel || form.destinoCiudadLoading"
+                        placeholder="Mexico City..." autocomplete="off" />
+                      <ul v-if="form.destinoCiudadSug.length" class="rv-ac-list">
+                        <li v-for="c in form.destinoCiudadSug" :key="c">
+                          <button type="button" @click="selFormDCiudad(c)">{{ c }}</button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Fecha + Pasajeros + CTA -->
+                <div class="rv-mod-section rv-mod-section--row">
+                  <div class="rv-mod-field">
+                    <label class="rv-mod-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Fecha
+                    </label>
+                    <input class="rv-mod-input" type="date" v-model="form.fecha" :min="hoy" />
+                  </div>
+                  <div class="rv-mod-field">
+                    <label class="rv-mod-label">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      Pasajeros
+                    </label>
+                    <select class="rv-mod-input" v-model="form.cantidadPasajeros">
+                      <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'Pasajero' : 'Pasajeros' }}</option>
+                    </select>
+                  </div>
+                  <div class="rv-mod-field rv-mod-field--cta">
+                    <p v-if="modError" class="rv-mod-error">⚠ {{ modError }}</p>
+                    <button class="rv-mod-buscar" @click="rebuscar" :disabled="buscando" type="button">
+                      <div v-if="buscando" class="rv-spinner rv-spinner--sm"></div>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                      </svg>
+                      {{ buscando ? 'Buscando...' : 'Buscar vuelos' }}
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </transition>
 
           <!-- Toolbar -->
           <div class="rv-toolbar">
             <p class="rv-toolbar__count">
-              <strong>{{ vuelosFiltrados.length }}</strong> vuelo{{ vuelosFiltrados.length!==1?'s':'' }} encontrado{{ vuelosFiltrados.length!==1?'s':'' }}
+              <strong>{{ vuelosFiltrados.length }}</strong>
+              vuelo{{ vuelosFiltrados.length !== 1 ? 's' : '' }}
+              <span v-if="hayFiltrosActivos" class="rv-toolbar__filtered"> · {{ vuelos.length }} total</span>
             </p>
             <div class="rv-sort">
-              <label class="rv-sort__label">Ordenar:</label>
               <select v-model="ordenar" class="rv-sort__select">
-                <option value="precio-asc">Precio: menor a mayor</option>
-                <option value="precio-desc">Precio: mayor a menor</option>
-                <option value="duracion">Duración</option>
-                <option value="salida">Hora de salida</option>
+                <option value="precio-asc">Precio ↑</option>
+                <option value="precio-desc">Precio ↓</option>
+                <option value="duracion">Menor duración</option>
+                <option value="salida">Hora salida</option>
+                <option value="escalas">Menos escalas</option>
               </select>
             </div>
+          </div>
+
+          <!-- Chips filtros activos -->
+          <div v-if="hayFiltrosActivos" class="rv-chips-activos">
+            <button v-if="filtros.precioMin > 0 || filtros.precioMax < 9999"
+              class="rv-chip" @click="filtros.precioMin=0; filtros.precioMax=9999" type="button">
+              ${{ filtros.precioMin }}–${{ filtros.precioMax }} ✕
+            </button>
+            <button v-for="c in filtros.clases" :key="'c'+c"
+              class="rv-chip" @click="filtros.clases = filtros.clases.filter(x=>x!==c)" type="button">
+              {{ c === 'economica' ? 'Económica' : 'Ejecutiva' }} ✕
+            </button>
+            <button v-for="e in filtros.escalas" :key="'e'+e"
+              class="rv-chip" @click="filtros.escalas = filtros.escalas.filter(x=>x!==e)" type="button">
+              {{ e === 0 ? 'Directo' : e === 1 ? '1 escala' : '2+ escalas' }} ✕
+            </button>
+            <button v-if="filtros.duracionMax < 9999"
+              class="rv-chip" @click="filtros.duracionMax=9999" type="button">
+              Máx. {{ formatDuracion(filtros.duracionMax) }} ✕
+            </button>
+            <button v-for="a in filtros.aerolineas" :key="'a'+a"
+              class="rv-chip" @click="filtros.aerolineas = filtros.aerolineas.filter(x=>x!==a)" type="button">
+              {{ a }} ✕
+            </button>
+            <button v-if="filtros.horario" class="rv-chip" @click="filtros.horario=''" type="button">
+              {{ horariosOpts.find(h=>h.val===filtros.horario)?.label }} ✕
+            </button>
+            <button class="rv-chip rv-chip--clear" @click="resetFiltros" type="button">Limpiar todo</button>
           </div>
 
           <!-- Loading -->
           <div v-if="loading" class="rv-empty">
             <div class="rv-spinner"></div>
-            <p>Buscando vuelos disponibles...</p>
+            <p>Consultando aerolíneas...</p>
           </div>
 
           <!-- Error -->
-          <div v-else-if="error" class="rv-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="44" height="44"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13.5" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="#D40511" stroke="none"/></svg>
+          <div v-else-if="error && vuelos.length === 0" class="rv-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="40" height="40">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13.5"/><circle cx="12" cy="17" r="1" fill="#D40511" stroke="none"/>
+            </svg>
             <p>{{ error }}</p>
-            <button class="rv-btn rv-btn--yellow" @click="cargarVuelos" type="button">Reintentar</button>
+            <button class="rv-btn rv-btn--yellow" @click="toggleModificar" type="button">Modificar búsqueda</button>
           </div>
 
-          <!-- Sin resultados -->
-          <div v-else-if="vuelosFiltrados.length === 0" class="rv-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="52" height="52"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+          <!-- Proveedores parciales -->
+          <div v-if="!loading && erroresProveedores.length > 0" class="rv-warn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13.5"/>
+              <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            {{ erroresProveedores.length }} proveedor{{ erroresProveedores.length !== 1 ? 'es sin respuesta' : ' sin respuesta' }}. Resultados pueden estar incompletos.
+          </div>
+
+          <!-- Sin vuelos -->
+          <div v-if="!loading && vuelos.length === 0 && !error" class="rv-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="48" height="48">
+              <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
+            </svg>
             <p class="rv-empty__title">Sin vuelos disponibles</p>
-            <p class="rv-empty__sub">Intenta ajustar los filtros o cambia las fechas</p>
-            <button class="rv-btn rv-btn--ghost" @click="resetFiltros" type="button">Limpiar filtros</button>
+            <p class="rv-empty__sub">No hay vuelos de <strong>{{ busqueda.origen }}</strong> a <strong>{{ busqueda.destino }}</strong> para el {{ formatFecha(busqueda.fecha) }}.</p>
+            <button class="rv-btn rv-btn--yellow" @click="toggleModificar" type="button">Buscar otra ruta</button>
+          </div>
+
+          <!-- Sin resultados por filtros -->
+          <div v-if="!loading && vuelos.length > 0 && vuelosFiltrados.length === 0" class="rv-empty">
+            <p class="rv-empty__title">Ningún vuelo coincide</p>
+            <p class="rv-empty__sub">{{ vuelos.length }} disponible{{ vuelos.length !== 1 ? 's' : '' }} sin filtros.</p>
+            <button class="rv-btn rv-btn--ghost" @click="resetFiltros" type="button">Quitar filtros</button>
           </div>
 
           <!-- Lista -->
-          <div v-else class="rv-lista">
+          <div v-if="!loading && vuelosFiltrados.length > 0" class="rv-lista">
             <article v-for="vuelo in vuelosFiltrados" :key="vuelo.id"
-              class="rv-card" :class="{ 'rv-card--seleccionado': seleccionado === vuelo.id }">
+              class="rv-card" :class="{ 'rv-card--sel': seleccionado === vuelo.id }">
 
+              <!-- HEAD -->
               <div class="rv-card__head">
                 <div class="rv-card__aerolinea">
                   <div class="rv-card__logo">
-                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="16" height="16"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="15" height="15">
+                      <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
+                    </svg>
                   </div>
                   <div>
-                    <span class="rv-card__aerolinea-nombre">{{ vuelo.aerolinea }}</span>
-                    <span class="rv-card__vuelo-num">{{ vuelo.numeroVuelo }}</span>
+                    <span class="rv-card__nombre">{{ vuelo.aerolinea }}</span>
+                    <span class="rv-card__num">Nro. {{ vuelo.numeroVuelo }}</span>
                   </div>
                 </div>
                 <div class="rv-card__tags">
-                  <span class="rv-tag rv-tag--clase">{{ vuelo.clase }}</span>
-                  <span v-if="vuelo.escalas === 0" class="rv-tag rv-tag--directo">Directo</span>
-                  <span v-else class="rv-tag rv-tag--escala">{{ vuelo.escalas }} escala{{ vuelo.escalas!==1?'s':'' }}</span>
+                  <span v-if="vuelo.escalas === 0" class="rv-tag rv-tag--directo">✓ Directo</span>
+                  <span v-else class="rv-tag rv-tag--escala">{{ vuelo.escalas }} escala{{ vuelo.escalas !== 1 ? 's' : '' }}</span>
+                  <span v-if="vuelo.asientosTurista > 0 && vuelo.asientosTurista <= 5" class="rv-tag rv-tag--urgente">¡Últimos!</span>
                 </div>
               </div>
 
+              <!-- RUTA -->
               <div class="rv-card__ruta">
                 <div class="rv-card__punto">
                   <span class="rv-card__iata">{{ vuelo.origenCodigo }}</span>
                   <span class="rv-card__ciudad">{{ vuelo.origenCiudad }}</span>
                   <span class="rv-card__hora">{{ vuelo.horaSalida }}</span>
                 </div>
-
                 <div class="rv-card__medio">
                   <span class="rv-card__dur">{{ formatDuracion(vuelo.duracionMinutos) }}</span>
                   <div class="rv-card__track">
-                    <div class="rv-card__track-dot"></div>
-                    <div class="rv-card__track-line"></div>
-                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="20" height="20" class="rv-card__track-avion"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
-                    <div class="rv-card__track-line"></div>
-                    <div class="rv-card__track-dot"></div>
+                    <div class="rv-card__dot"></div>
+                    <div class="rv-card__line"></div>
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="18" height="18" class="rv-card__avion">
+                      <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
+                    </svg>
+                    <div class="rv-card__line"></div>
+                    <div class="rv-card__dot"></div>
                   </div>
-                  <div v-if="vuelo.escalas > 0 && vuelo.paradas" class="rv-card__paradas">
+                  <div v-if="vuelo.paradas?.length" class="rv-card__paradas">
                     <span v-for="p in vuelo.paradas" :key="p.codigo" class="rv-card__parada">
-                      {{ p.codigo }} ({{ p.espera }})
+                      {{ p.codigo }}<template v-if="p.ciudad"> · {{ p.ciudad }}</template>
                     </span>
                   </div>
                 </div>
-
                 <div class="rv-card__punto rv-card__punto--r">
                   <span class="rv-card__iata">{{ vuelo.destinoCodigo }}</span>
                   <span class="rv-card__ciudad">{{ vuelo.destinoCiudad }}</span>
@@ -206,27 +416,144 @@
                 </div>
               </div>
 
-              <div class="rv-card__foot">
-                <div class="rv-card__foot-meta">
-                  <span class="rv-card__avion-txt">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#9a9089" stroke-width="2" width="12" height="12"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                    {{ vuelo.avionMarca }} {{ vuelo.avionModelo }}
+              <!-- META -->
+              <div class="rv-card__meta">
+                <span class="rv-card__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                  </svg>
+                  {{ vuelo.avionMarca }} {{ vuelo.avionModelo }}
+                </span>
+                <span v-if="vuelo.tiempoEscalaMinutos" class="rv-card__meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                  </svg>
+                  {{ formatDuracion(vuelo.tiempoEscalaMinutos) }} en escalas
+                </span>
+              </div>
+
+              <!-- SELECTOR CLASE -->
+              <div class="rv-card__precios">
+                <button class="rv-precio-btn"
+                  :class="{ 'rv-precio-btn--sel': vuelo.claseSeleccionada === 'economica', 'rv-precio-btn--out': vuelo.asientosTurista === 0 }"
+                  @click.stop="vuelo.claseSeleccionada = 'economica'"
+                  :disabled="vuelo.asientosTurista === 0" type="button">
+                  <span class="rv-precio-btn__clase">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11">
+                      <path d="M20 9V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/>
+                      <path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/>
+                    </svg>
+                    Económica
                   </span>
-                  <span class="rv-card__asientos" :class="{ 'rv-card__asientos--bajo': (vuelo.asientosDisponibles??99) <= 5 }">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    {{ (vuelo.asientosDisponibles??99) <= 5 ? `¡Solo ${vuelo.asientosDisponibles} lugares!` : `${vuelo.asientosDisponibles ?? '--'} asientos` }}
+                  <span class="rv-precio-btn__val">${{ Number(vuelo.precioTurista).toFixed(2) }}</span>
+                  <span class="rv-precio-btn__seats">
+                    <template v-if="vuelo.asientosTurista === 0">Agotado</template>
+                    <template v-else-if="vuelo.asientosTurista <= 5">¡Solo {{ vuelo.asientosTurista }}!</template>
+                    <template v-else>{{ vuelo.asientosTurista }} asientos</template>
                   </span>
-                </div>
-                <div class="rv-card__precio-wrap">
-                  <div class="rv-card__precio-bloque">
-                    <span class="rv-card__precio-lbl">por persona</span>
-                    <span class="rv-card__precio">${{ vuelo.precio?.toFixed(2) }}</span>
+                </button>
+                <button class="rv-precio-btn rv-precio-btn--ejec"
+                  :class="{ 'rv-precio-btn--sel': vuelo.claseSeleccionada === 'ejecutiva', 'rv-precio-btn--out': vuelo.asientosEjecutiva === 0 }"
+                  @click.stop="vuelo.claseSeleccionada = 'ejecutiva'"
+                  :disabled="vuelo.asientosEjecutiva === 0" type="button">
+                  <span class="rv-precio-btn__clase">
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="11" height="11">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    Ejecutiva
+                  </span>
+                  <span class="rv-precio-btn__val rv-precio-btn__val--ejec">${{ Number(vuelo.precioEjecutiva).toFixed(2) }}</span>
+                  <span class="rv-precio-btn__seats">
+                    <template v-if="vuelo.asientosEjecutiva === 0">Agotado</template>
+                    <template v-else-if="vuelo.asientosEjecutiva <= 5">¡Solo {{ vuelo.asientosEjecutiva }}!</template>
+                    <template v-else>{{ vuelo.asientosEjecutiva }} asientos</template>
+                  </span>
+                </button>
+              </div>
+
+              <!-- ITINERARIO ESCALAS -->
+              <div v-if="vuelo.escalas > 0 && vuelo.tramos?.length" class="rv-itinerario">
+                <button class="rv-itinerario__toggle" @click.stop="toggleTramos(vuelo.id)" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"
+                    :style="{ transform: tramosAbiertos[vuelo.id] ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                  {{ tramosAbiertos[vuelo.id] ? 'Ocultar itinerario' : `Itinerario (${vuelo.tramos.length} tramos)` }}
+                </button>
+                <transition name="rv-slide">
+                  <div v-if="tramosAbiertos[vuelo.id]" class="rv-itinerario__body">
+                    <div v-for="(tramo, idx) in vuelo.tramos" :key="tramo.id ?? idx" class="rv-tramo">
+                      <div class="rv-tramo__tl">
+                        <div class="rv-tramo__dot" :class="{ 'rv-tramo__dot--o': idx === 0 }"></div>
+                        <div v-if="idx < vuelo.tramos.length - 1" class="rv-tramo__line"></div>
+                        <div class="rv-tramo__dot rv-tramo__dot--d"></div>
+                      </div>
+                      <div class="rv-tramo__content">
+                        <div class="rv-tramo__airport">
+                          <span class="rv-tramo__iata">{{ tramo.origenCodigo }}</span>
+                          <div><span class="rv-tramo__nombre">{{ tramo.origenNombre || tramo.origenCiudad }}</span><span class="rv-tramo__pais">{{ tramo.origenPais }}</span></div>
+                          <span class="rv-tramo__hora rv-tramo__hora--s">{{ formatHora(tramo.horaSalida) }}</span>
+                        </div>
+                        <div class="rv-tramo__info">
+                          <span class="rv-tramo__badge">{{ tramo.numeroVuelo }}</span>
+                          <span class="rv-tramo__dur">{{ formatDuracion(tramo.duracionMinutos) }}</span>
+                          <span class="rv-tramo__avion">{{ tramo.avionMarca }} {{ tramo.avionModelo }}</span>
+                          <template v-if="tramo.tripulantes?.length">
+                            <span class="rv-tramo__sep">·</span>
+                            <span v-for="t in tramo.tripulantes" :key="t.id" class="rv-tramo__crew">{{ t.nombreCompleto }} <em>({{ t.nombreRol }})</em></span>
+                          </template>
+                        </div>
+                        <div class="rv-tramo__airport rv-tramo__airport--l">
+                          <span class="rv-tramo__iata">{{ tramo.destinoCodigo }}</span>
+                          <div><span class="rv-tramo__nombre">{{ tramo.destinoNombre || tramo.destinoCiudad }}</span><span class="rv-tramo__pais">{{ tramo.destinoPais }}</span></div>
+                          <span class="rv-tramo__hora rv-tramo__hora--l">{{ formatHora(tramo.horaLlegada) }}</span>
+                        </div>
+                        <div v-if="idx < vuelo.tramos.length - 1" class="rv-tramo__escala">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                          </svg>
+                          Escala en {{ tramo.destinoCiudad }} · {{ tramo.destinoPais }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="rv-tramo rv-tramo--final">
+                      <div class="rv-tramo__tl"><div class="rv-tramo__dot rv-tramo__dot--f"></div></div>
+                      <div class="rv-tramo__airport">
+                        <span class="rv-tramo__iata">{{ vuelo.tramos[vuelo.tramos.length-1].destinoCodigo }}</span>
+                        <div><span class="rv-tramo__nombre">{{ vuelo.tramos[vuelo.tramos.length-1].destinoNombre || vuelo.tramos[vuelo.tramos.length-1].destinoCiudad }}</span><span class="rv-tramo__pais">{{ vuelo.tramos[vuelo.tramos.length-1].destinoPais }}</span></div>
+                        <span class="rv-tramo__hora rv-tramo__hora--l">{{ formatHora(vuelo.tramos[vuelo.tramos.length-1].horaLlegada) }}</span>
+                      </div>
+                    </div>
                   </div>
-                  <button class="rv-btn rv-btn--yellow rv-card__cta" @click="seleccionarVuelo(vuelo)" type="button">
-                    Seleccionar
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
-                  </button>
+                </transition>
+              </div>
+
+              <!-- FOOTER -->
+              <div class="rv-card__foot">
+                <div class="rv-card__foot-info">
+                  <span class="rv-card__foot-clase">
+                    <template v-if="vuelo.claseSeleccionada === 'ejecutiva'">
+                      <svg viewBox="0 0 24 24" fill="#FFCC00" width="12" height="12"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      Ejecutiva
+                    </template>
+                    <template v-else>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M20 9V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/></svg>
+                      Económica
+                    </template>
+                  </span>
+                  <span class="rv-card__foot-precio">
+                    ${{ Number(vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva : vuelo.precioTurista).toFixed(2) }}
+                    <small>/ persona</small>
+                  </span>
                 </div>
+                <button class="rv-btn rv-btn--yellow rv-card__cta" @click="seleccionarVuelo(vuelo)"
+                  :disabled="vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva === 0 : vuelo.asientosTurista === 0"
+                  type="button">
+                  Seleccionar
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
               </div>
 
             </article>
@@ -241,234 +568,287 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/resultadosvuelos.css'
 
 const router = useRouter()
-const route  = useRoute()
-const API    = 'http://localhost:7000'
+const API    = 'http://localhost:8080'
 
-const vuelos          = ref([])
-const loading         = ref(true)
-const error           = ref('')
-const seleccionado    = ref(null)
-const filtrosAbiertos = ref(false)
-const ordenar         = ref('precio-asc')
-
+const state = history.state || {}
 const busqueda = ref({
-  origen:       route.query.origen       || '',
-  destino:      route.query.destino      || '',
-  fechaSalida:  route.query.fechaSalida  || '',
-  fechaRetorno: route.query.fechaRetorno || '',
-  pasajeros:    Number(route.query.pasajeros) || 1,
-  clase:        route.query.clase        || 'Económica',
-  tipo:         route.query.tipo         || 'directo',
+  origen:            state.busqueda?.origen            || '',
+  origenPais:        state.busqueda?.origenPais        || '',
+  destino:           state.busqueda?.destino           || '',
+  destinoPais:       state.busqueda?.destinoPais       || '',
+  fecha:             state.busqueda?.fecha             || '',
+  cantidadPasajeros: state.busqueda?.cantidadPasajeros || 1,
 })
 
-const filtros = ref({
-  precioMin:  0,
-  precioMax:  9999,
-  clases:     [],
-  escalas:    [],
-  aerolineas: [],
-  horario:    '',
-})
+const resultadosRaw      = state.resultados || null
+const vuelos             = ref([])
+const loading            = ref(true)
+const buscando           = ref(false)
+const error              = ref('')
+const erroresProveedores = ref([])
+const seleccionado       = ref(null)
+const ordenar            = ref('precio-asc')
+const modificarAbierto   = ref(false)
+const modError           = ref('')
+const sidebarColapsado   = ref(false)
+const tramosAbiertos     = reactive({})
+const hoy                = new Date().toISOString().split('T')[0]
 
-const clases = [
-  { val: 'Económica', label: 'Económica' },
-  { val: 'Ejecutiva', label: 'Ejecutiva' },
-]
+function toggleTramos(id) { tramosAbiertos[id] = !tramosAbiertos[id] }
+function toggleModificar() {
+  modificarAbierto.value = !modificarAbierto.value
+  if (modificarAbierto.value) {
+    form.origenPaisQ    = busqueda.value.origenPais
+    form.origenPaisSel  = busqueda.value.origenPais ? { country: busqueda.value.origenPais } : null
+    form.origenCiudadQ  = busqueda.value.origen
+    form.origenPais     = busqueda.value.origenPais
+    form.origenCiudad   = busqueda.value.origen
+    form.destinoPaisQ   = busqueda.value.destinoPais
+    form.destinoPaisSel = busqueda.value.destinoPais ? { country: busqueda.value.destinoPais } : null
+    form.destinoCiudadQ = busqueda.value.destino
+    form.destinoPais    = busqueda.value.destinoPais
+    form.destinoCiudad  = busqueda.value.destino
+    form.fecha             = busqueda.value.fecha
+    form.cantidadPasajeros = busqueda.value.cantidadPasajeros
+    modError.value = ''
+  }
+}
 
-const escalasOpts = [
-  { val: 0, label: 'Directo' },
-  { val: 1, label: '1 escala' },
-  { val: 2, label: '2+ escalas' },
-]
+// ── Filtros ──
+const filtros = ref({ precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' })
 
+const clasesFilter = [{ val: 'economica', label: 'Económica' }, { val: 'ejecutiva', label: 'Ejecutiva' }]
+const escalasOpts  = [{ val: 0, label: 'Solo directos' }, { val: 1, label: '1 escala' }, { val: 2, label: '2+ escalas' }]
+const duracionOpts = [{ val: 180, label: '< 3h' }, { val: 360, label: '< 6h' }, { val: 720, label: '< 12h' }, { val: 1440, label: '< 24h' }]
 const horariosOpts = [
-  { val: 'madrugada', icon: '🌙', label: 'Madrugada', rango: '00:00–05:59' },
-  { val: 'mañana',    icon: '🌅', label: 'Mañana',    rango: '06:00–11:59' },
-  { val: 'tarde',     icon: '☀️',  label: 'Tarde',     rango: '12:00–17:59' },
-  { val: 'noche',     icon: '🌆', label: 'Noche',     rango: '18:00–23:59' },
+  { val: 'madrugada', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`, label: 'Madrugada', rango: '00:00–05:59' },
+  { val: 'manana',    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><polyline points="8 6 12 2 16 6"/></svg>`, label: 'Mañana', rango: '06:00–11:59' },
+  { val: 'tarde',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`, label: 'Tarde', rango: '12:00–17:59' },
+  { val: 'noche',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/><path d="M19 3v4M21 5h-4"/></svg>`, label: 'Noche', rango: '18:00–23:59' },
 ]
 
-const VUELOS_DEMO = [
-  {
-    id: 1,
-    aerolinea: 'Avianca',
-    numeroVuelo: 'AV-341',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'MIA', destinoCiudad: 'Miami',
-    horaSalida: '07:30', horaLlegada: '10:45',
-    duracionMinutos: 195,
-    clase: 'Económica', escalas: 0,
-    precio: 320.00,
-    asientosDisponibles: 18,
-    avionMarca: 'Boeing', avionModelo: '737-800',
-  },
-  {
-    id: 2,
-    aerolinea: 'Copa Airlines',
-    numeroVuelo: 'CM-202',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'PTY', destinoCiudad: 'Ciudad de Panamá',
-    horaSalida: '14:00', horaLlegada: '15:50',
-    duracionMinutos: 110,
-    clase: 'Económica', escalas: 0,
-    precio: 210.00,
-    asientosDisponibles: 4,
-    avionMarca: 'Boeing', avionModelo: '737 MAX',
-  },
-  {
-    id: 3,
-    aerolinea: 'American Airlines',
-    numeroVuelo: 'AA-917',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'JFK', destinoCiudad: 'Nueva York',
-    horaSalida: '06:15', horaLlegada: '14:30',
-    duracionMinutos: 495,
-    clase: 'Económica', escalas: 1,
-    precio: 445.00,
-    asientosDisponibles: 22,
-    avionMarca: 'Airbus', avionModelo: 'A321',
-    paradas: [{ codigo: 'MIA', espera: '1h 45m' }],
-  },
-  {
-    id: 4,
-    aerolinea: 'United Airlines',
-    numeroVuelo: 'UA-538',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'LAX', destinoCiudad: 'Los Ángeles',
-    horaSalida: '09:45', horaLlegada: '21:10',
-    duracionMinutos: 565,
-    clase: 'Económica', escalas: 1,
-    precio: 512.00,
-    asientosDisponibles: 9,
-    avionMarca: 'Boeing', avionModelo: '787',
-    paradas: [{ codigo: 'IAH', espera: '2h 20m' }],
-  },
-  {
-    id: 5,
-    aerolinea: 'Avianca',
-    numeroVuelo: 'AV-782',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'MAD', destinoCiudad: 'Madrid',
-    horaSalida: '22:00', horaLlegada: '17:45',
-    duracionMinutos: 1065,
-    clase: 'Ejecutiva', escalas: 2,
-    precio: 1280.00,
-    asientosDisponibles: 6,
-    avionMarca: 'Airbus', avionModelo: 'A330',
-    paradas: [{ codigo: 'BOG', espera: '1h 30m' }, { codigo: 'LIS', espera: '1h 10m' }],
-  },
-  {
-    id: 6,
-    aerolinea: 'Copa Airlines',
-    numeroVuelo: 'CM-415',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'GRU', destinoCiudad: 'São Paulo',
-    horaSalida: '11:20', horaLlegada: '06:05',
-    duracionMinutos: 885,
-    clase: 'Económica', escalas: 1,
-    precio: 670.00,
-    asientosDisponibles: 14,
-    avionMarca: 'Boeing', avionModelo: '737-800',
-    paradas: [{ codigo: 'PTY', espera: '2h 00m' }],
-  },
-  {
-    id: 7,
-    aerolinea: 'Iberia',
-    numeroVuelo: 'IB-6403',
-    origenCodigo: 'GUA', origenCiudad: 'Ciudad de Guatemala',
-    destinoCodigo: 'BCN', destinoCiudad: 'Barcelona',
-    horaSalida: '18:30', horaLlegada: '21:15',
-    duracionMinutos: 1245,
-    clase: 'Ejecutiva', escalas: 2,
-    precio: 1890.00,
-    asientosDisponibles: 3,
-    avionMarca: 'Airbus', avionModelo: 'A350',
-    paradas: [{ codigo: 'MIA', espera: '2h 10m' }, { codigo: 'MAD', espera: '1h 25m' }],
-  },
-]
+const hayFiltrosActivos = computed(() =>
+  filtros.value.precioMin > 0 || filtros.value.precioMax < 9999 ||
+  filtros.value.clases.length > 0 || filtros.value.escalas.length > 0 ||
+  filtros.value.duracionMax < 9999 || filtros.value.aerolineas.length > 0 ||
+  !!filtros.value.horario
+)
+const cantFiltrosActivos = computed(() => {
+  let n = 0
+  if (filtros.value.precioMin > 0 || filtros.value.precioMax < 9999) n++
+  n += filtros.value.clases.length + filtros.value.escalas.length + filtros.value.aerolineas.length
+  if (filtros.value.duracionMax < 9999) n++
+  if (filtros.value.horario) n++
+  return n
+})
+function resetFiltros() {
+  filtros.value = { precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' }
+}
 
+// ── Form modificar ──
+const form = reactive({
+  origenPaisQ: '', origenPaisSug: [], origenPaisSel: null,
+  origenCiudadQ: '', origenCiudadSug: [], origenCiudadLoading: false,
+  origenCiudades: [], origenPais: '', origenCiudad: '',
+  destinoPaisQ: '', destinoPaisSug: [], destinoPaisSel: null,
+  destinoCiudadQ: '', destinoCiudadSug: [], destinoCiudadLoading: false,
+  destinoCiudades: [], destinoPais: '', destinoCiudad: '',
+  fecha: '', cantidadPasajeros: 1,
+})
+
+// ── countriesnow ──
+let paisesCache = null
+async function getPaises() {
+  if (paisesCache) return paisesCache
+  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] }
+  catch { paisesCache = [] }
+  return paisesCache
+}
+async function getCiudades(country) {
+  try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] }
+  catch { return [] }
+}
+function blurClose(fn) { setTimeout(fn, 200) }
+
+async function onFormOPaisInput() {
+  form.origenPaisSel = null; form.origenCiudadQ = ''; form.origenCiudades = []; form.origenPais = ''; form.origenCiudad = ''
+  const q = form.origenPaisQ.trim(); if (q.length < 2) { form.origenPaisSug = []; return }
+  form.origenPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+}
+async function selFormOPais(p) {
+  form.origenPaisSel = p; form.origenPaisQ = p.country; form.origenPaisSug = []
+  form.origenPais = p.country; form.origenCiudadLoading = true
+  form.origenCiudades = await getCiudades(p.country); form.origenCiudadLoading = false
+}
+function onFormOCiudadInput() {
+  const q = form.origenCiudadQ.toLowerCase()
+  form.origenCiudadSug = q.length < 2 ? [] : form.origenCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+  form.origenCiudad = ''
+}
+function selFormOCiudad(c) { form.origenCiudadQ = c; form.origenCiudadSug = []; form.origenCiudad = c; modError.value = '' }
+
+async function onFormDPaisInput() {
+  form.destinoPaisSel = null; form.destinoCiudadQ = ''; form.destinoCiudades = []; form.destinoPais = ''; form.destinoCiudad = ''
+  const q = form.destinoPaisQ.trim(); if (q.length < 2) { form.destinoPaisSug = []; return }
+  form.destinoPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+}
+async function selFormDPais(p) {
+  form.destinoPaisSel = p; form.destinoPaisQ = p.country; form.destinoPaisSug = []
+  form.destinoPais = p.country; form.destinoCiudadLoading = true
+  form.destinoCiudades = await getCiudades(p.country); form.destinoCiudadLoading = false
+}
+function onFormDCiudadInput() {
+  const q = form.destinoCiudadQ.toLowerCase()
+  form.destinoCiudadSug = q.length < 2 ? [] : form.destinoCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+  form.destinoCiudad = ''
+}
+function selFormDCiudad(c) { form.destinoCiudadQ = c; form.destinoCiudadSug = []; form.destinoCiudad = c; modError.value = '' }
+
+async function rebuscar() {
+  modError.value = ''
+  const o  = form.origenCiudad  || form.origenCiudadQ.trim()
+  const op = form.origenPais    || form.origenPaisQ.trim()
+  const d  = form.destinoCiudad || form.destinoCiudadQ.trim()
+  const dp = form.destinoPais   || form.destinoPaisQ.trim()
+  if (!op || !o)  { modError.value = 'Selecciona origen.';  return }
+  if (!dp || !d)  { modError.value = 'Selecciona destino.'; return }
+  if (!form.fecha){ modError.value = 'Selecciona fecha.';   return }
+  buscando.value = true
+  try {
+    const res = await fetch(`${API}/api/busqueda/vuelos`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros })
+    })
+    if (!res.ok) throw new Error()
+    busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros }
+    erroresProveedores.value = []
+    vuelos.value = mapearRespuesta(await res.json())
+    error.value = ''
+    resetFiltros()
+    modificarAbierto.value = false
+  } catch { modError.value = 'No se pudieron obtener vuelos. Intenta de nuevo.' }
+  finally { buscando.value = false }
+}
+
+// ── Helpers ──
+function formatHora(h) { return h ? String(h).substring(0, 5) : '--' }
+function formatFecha(f) {
+  if (!f) return '--'
+  try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
+}
+function formatDuracion(min) {
+  if (!min || min === 9999) return '--'
+  const h = Math.floor(min / 60), m = min % 60
+  return `${h}h${m > 0 ? ` ${m}m` : ''}`
+}
+
+// ── Mapeo ──
+function mapearRespuesta(respuesta) {
+  const res = []
+  for (const b of respuesta) {
+    if (b.error) { erroresProveedores.value.push(b); continue }
+    if (!b.datos) continue
+    for (const v of (b.datos.directos  || [])) res.push(mapDirecto(v, b))
+    for (const v of (b.datos.conEscala || [])) res.push(mapEscala(v, b))
+  }
+  return res
+}
+function mapDirecto(v, b) {
+  return {
+    id: `${b.proveedor_id}-d-${v.id ?? Math.random()}`,
+    aerolinea: b.proveedor, numeroVuelo: v.numeroVuelo || '--',
+    origenCodigo: v.origenCodigo || '', origenCiudad: v.origenCiudad || '',
+    destinoCodigo: v.destinoCodigo || '', destinoCiudad: v.destinoCiudad || '',
+    horaSalida: formatHora(v.horaSalida), horaLlegada: formatHora(v.horaLlegada),
+    duracionMinutos: v.duracionMinutos || 0,
+    precioTurista: v.precioTurista ?? 0, precioEjecutiva: v.precioEjecutiva ?? 0,
+    asientosTurista: typeof v.boletosDisponiblesTurista === 'number' ? v.boletosDisponiblesTurista : 99,
+    asientosEjecutiva: typeof v.boletosDisponiblesEjecutiva === 'number' ? v.boletosDisponiblesEjecutiva : 99,
+    claseSeleccionada: 'economica',
+    avionMarca: v.avionMarca || '', avionModelo: v.avionModelo || '',
+    escalas: 0, paradas: [], tramos: [], tiempoEscalaMinutos: 0,
+  }
+}
+function mapEscala(v, b) {
+  const tramos = Array.isArray(v.tramos) ? v.tramos : []
+  const p = tramos[0] || {}, u = tramos[tramos.length - 1] || {}
+  return {
+    id: `${b.proveedor_id}-e-${v.precioTuristaTotal ?? Math.random()}`,
+    aerolinea: b.proveedor, numeroVuelo: p.numeroVuelo || '--',
+    origenCodigo: p.origenCodigo || '', origenCiudad: p.origenCiudad || '',
+    destinoCodigo: u.destinoCodigo || '', destinoCiudad: u.destinaCiudad || u.destinoCiudad || '',
+    horaSalida: formatHora(p.horaSalida), horaLlegada: formatHora(u.horaLlegada),
+    duracionMinutos: v.duracionTotalMinutos || 0,
+    precioTurista: v.precioTuristaTotal ?? 0, precioEjecutiva: v.precioEjecutivaTotal ?? 0,
+    asientosTurista: typeof v.boletosDisponiblesTurista === 'number' ? v.boletosDisponiblesTurista : 99,
+    asientosEjecutiva: typeof v.boletosDisponiblesEjecutiva === 'number' ? v.boletosDisponiblesEjecutiva : 99,
+    claseSeleccionada: 'economica',
+    avionMarca: p.avionMarca || '', avionModelo: p.avionModelo || '',
+    escalas: v.numeroEscalas ?? (tramos.length > 1 ? tramos.length - 1 : 1),
+    paradas: tramos.slice(0, -1).map(t => ({ codigo: t.destinoCodigo || '???', ciudad: t.destinaCiudad || t.destinoCiudad || '' })),
+    tramos, tiempoEscalaMinutos: v.tiempoEscalaMinutos || 0,
+  }
+}
+
+// ── Computed filtrados ──
 const aerolineasDisponibles = computed(() => [...new Set(vuelos.value.map(v => v.aerolinea).filter(Boolean))])
 
 const vuelosFiltrados = computed(() => {
   let list = vuelos.value
-
-  if (filtros.value.precioMin > 0)
-    list = list.filter(v => v.precio >= filtros.value.precioMin)
-  if (filtros.value.precioMax < 9999)
-    list = list.filter(v => v.precio <= filtros.value.precioMax)
-  if (filtros.value.clases.length > 0)
-    list = list.filter(v => filtros.value.clases.includes(v.clase))
-  if (filtros.value.escalas.length > 0)
-    list = list.filter(v => {
-      const sel = filtros.value.escalas
-      if (sel.includes(2)) return sel.includes(v.escalas) || v.escalas >= 2
-      return sel.includes(v.escalas)
-    })
-  if (filtros.value.aerolineas.length > 0)
-    list = list.filter(v => filtros.value.aerolineas.includes(v.aerolinea))
-  if (filtros.value.horario) {
-    const rangos = { madrugada:[0,6], mañana:[6,12], tarde:[12,18], noche:[18,24] }
-    const [min, max] = rangos[filtros.value.horario]
-    list = list.filter(v => {
-      const h = parseInt(v.horaSalida?.split(':')[0] ?? 0)
-      return h >= min && h < max
-    })
+  if (filtros.value.precioMin > 0)    list = list.filter(v => v.precioTurista >= filtros.value.precioMin)
+  if (filtros.value.precioMax < 9999) list = list.filter(v => v.precioTurista <= filtros.value.precioMax)
+  if (filtros.value.clases.length > 0) {
+    const soloEjec = filtros.value.clases.includes('ejecutiva') && !filtros.value.clases.includes('economica')
+    if (soloEjec) list = list.filter(v => v.asientosEjecutiva > 0 && v.precioEjecutiva > 0)
   }
-
+  if (filtros.value.escalas.length > 0) list = list.filter(v => {
+    const sel = filtros.value.escalas
+    return sel.includes(2) ? (sel.includes(v.escalas) || v.escalas >= 2) : sel.includes(v.escalas)
+  })
+  if (filtros.value.duracionMax < 9999) list = list.filter(v => v.duracionMinutos <= filtros.value.duracionMax)
+  if (filtros.value.aerolineas.length > 0) list = list.filter(v => filtros.value.aerolineas.includes(v.aerolinea))
+  if (filtros.value.horario) {
+    const rangos = { madrugada:[0,6], manana:[6,12], tarde:[12,18], noche:[18,24] }
+    const [min, max] = rangos[filtros.value.horario] || [0,24]
+    list = list.filter(v => { const h = parseInt(v.horaSalida?.split(':')[0] ?? 0); return h >= min && h < max })
+  }
   return [...list].sort((a, b) => {
-    if (ordenar.value === 'precio-asc')  return a.precio - b.precio
-    if (ordenar.value === 'precio-desc') return b.precio - a.precio
-    if (ordenar.value === 'duracion')    return (a.duracionMinutos||0) - (b.duracionMinutos||0)
-    if (ordenar.value === 'salida')      return (a.horaSalida||'').localeCompare(b.horaSalida||'')
-    return 0
+    switch (ordenar.value) {
+      case 'precio-asc':  return a.precioTurista - b.precioTurista
+      case 'precio-desc': return b.precioTurista - a.precioTurista
+      case 'duracion':    return (a.duracionMinutos||0) - (b.duracionMinutos||0)
+      case 'salida':      return (a.horaSalida||'').localeCompare(b.horaSalida||'')
+      case 'escalas':     return a.escalas - b.escalas
+      default: return 0
+    }
   })
 })
 
-onMounted(() => cargarVuelos())
-
-async function cargarVuelos() {
-  loading.value = true; error.value = ''
-  try {
-    const params = new URLSearchParams()
-    Object.entries(busqueda.value).forEach(([k, v]) => { if (v) params.append(k, v) })
-    const r = await fetch(`${API}/api/vuelos/buscar?${params}`, { credentials: 'include' })
-    if (r.ok) {
-      const data = await r.json()
-      vuelos.value = data.length ? data : VUELOS_DEMO
-    } else {
-      vuelos.value = VUELOS_DEMO
-    }
-  } catch {
-    vuelos.value = VUELOS_DEMO
-  } finally { loading.value = false }
-}
+onMounted(() => {
+  if (!busqueda.value.origen || !busqueda.value.destino) { error.value = 'Faltan datos de búsqueda.'; loading.value = false; return }
+  if (resultadosRaw && Array.isArray(resultadosRaw) && resultadosRaw.length > 0) { vuelos.value = mapearRespuesta(resultadosRaw); loading.value = false; return }
+  error.value = 'No hay resultados. Modifica la búsqueda.'; loading.value = false
+})
 
 function seleccionarVuelo(vuelo) {
   seleccionado.value = vuelo.id
   sessionStorage.removeItem('hotel_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
-  sessionStorage.setItem('vuelo_seleccionado', JSON.stringify(vuelo))
+  sessionStorage.setItem('vuelo_seleccionado', JSON.stringify({
+    ...vuelo,
+    clase:    vuelo.claseSeleccionada,
+    precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva  : vuelo.precioTurista,
+    asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
+    busqueda: busqueda.value,
+  }))
   router.push('/reservar')
-}
-
-function resetFiltros() {
-  filtros.value = { precioMin:0, precioMax:9999, clases:[], escalas:[], aerolineas:[], horario:'' }
-}
-
-function formatFecha(f) {
-  if (!f) return '--'
-  return new Date(f).toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' })
-}
-
-function formatDuracion(min) {
-  if (!min) return '--'
-  return `${Math.floor(min/60)}h${min%60>0?' '+min%60+'m':''}`
 }
 </script>
