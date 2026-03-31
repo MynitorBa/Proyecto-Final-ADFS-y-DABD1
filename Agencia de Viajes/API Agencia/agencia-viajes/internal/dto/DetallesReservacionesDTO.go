@@ -12,6 +12,19 @@ type SeleccionVuelo struct {
 	CantidadPasajeros int `json:"cantidadPasajeros"`
 }
 
+type AgregarDetalleHotelRequest struct {
+	ReservacionID int                   `json:"reservacionId"`
+	ProveedorID   int                   `json:"proveedorId"`
+	Habitaciones  []SeleccionHabitacion `json:"habitaciones"`
+}
+
+type SeleccionHabitacion struct {
+	HabitacionID     int    `json:"habitacionId"`
+	FechaCheckIn     string `json:"fechaCheckIn"`
+	FechaCheckOut    string `json:"fechaCheckOut"`
+	CantidadPersonas int    `json:"cantidadPersonas"`
+}
+
 type ReservacionValidada struct {
 	ID            int
 	EstadoID      int

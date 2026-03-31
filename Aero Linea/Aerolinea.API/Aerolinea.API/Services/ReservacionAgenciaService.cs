@@ -31,5 +31,24 @@ namespace Aerolinea.API.Services
 
             await _repository.ExpirarReservacion(reservacionId);
         }
+
+
+
+
+
+
+
+        public async Task AgregarPasajeros(AgregarPasajerosDTO dto, int agenciaId)
+        {
+            foreach (var pasajero in dto.Pasajeros)
+            {
+                if (string.IsNullOrWhiteSpace(pasajero.Pasaporte))
+                    throw new Exception("El número de pasaporte es obligatorio.");
+                if (!pasajero.Pasaporte.All(char.IsDigit))
+                    throw new Exception($"El pasaporte de {pasajero.Nombre} {pasajero.Apellido} debe contener solo números.");
+            }
+
+            await _repository.AgregarPasajerosAReservacion(dto.ReservacionId, dto.Pasajeros, agenciaId);
+        }
     }
 }

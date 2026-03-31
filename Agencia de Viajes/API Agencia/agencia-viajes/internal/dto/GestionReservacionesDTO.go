@@ -24,4 +24,6 @@ type DetalleProveedor struct {
 	ProveedorID        int
 	URLAPI             string
 	TokenEntrada       string
+
+	TipoDetalleID int
 }

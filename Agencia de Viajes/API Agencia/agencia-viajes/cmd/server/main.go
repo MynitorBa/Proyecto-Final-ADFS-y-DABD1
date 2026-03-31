@@ -23,7 +23,7 @@ func main() {
 		c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		c.Header("Access-Control-Allow-Credentials", "true") // ← esta línea faltaba
+		c.Header("Access-Control-Allow-Credentials", "true")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
@@ -44,6 +44,7 @@ func main() {
 	expiracionService := services.NewExpiracionService(db)
 	reservacionService := services.NewReservacionService(db, expiracionService)
 	detalleReservacionService := services.NewDetalleReservacionService(db)
+	asientoVueloService := services.NewAsientoVueloService(db) // ← NUEVO
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -56,6 +57,7 @@ func main() {
 	busquedaController := controllers.NewBusquedaController(busquedaService)
 	reservacionController := controllers.NewReservacionController(reservacionService)
 	detalleReservacionController := controllers.NewDetalleReservacionController(detalleReservacionService)
+	asientoVueloController := controllers.NewAsientoVueloController(asientoVueloService) // ← NUEVO
 
 	// Iniciar servicio de expiración
 	expiracionService.Iniciar()
@@ -63,7 +65,7 @@ func main() {
 
 	api := router.Group("/api")
 	{
-		// Rutas públicas
+		// 1. RUTAS PÚBLICAS (Sin Login)
 		usuarios := api.Group("/usuarios")
 		{
 			usuarios.POST("/registro", usuarioController.Registrar)
@@ -71,23 +73,39 @@ func main() {
 			usuarios.POST("/logout", loginController.Logout)
 		}
 
-		// Rutas protegidas — requieren sesión activa
+		// Búsquedas públicas
+		api.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
+		api.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
+
+		// 2. RUTAS PROTEGIDAS (Requieren Login)
 		protegido := api.Group("/")
 		protegido.Use(middlewares.AuthRequerido())
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
 
-			protegido.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
-			protegido.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
-
-			protegido.POST("/reservaciones/detalle/vuelo", detalleReservacionController.AgregarDetalleVuelo)
-
+			// Gestión de Reservaciones
 			protegido.POST("/reservaciones", reservacionController.CrearReservacion)
 
-			protegido.POST("/proveedores", middlewares.RolRequerido(2), proveedorController.CrearProveedor)
-			protegido.POST("/catalogo/actualizar", middlewares.RolRequerido(2), catalogoController.ActualizarCatalogo)
-			protegido.POST("/proveedores/:id/handshake", middlewares.RolRequerido(2), handshakeController.IniciarHandshake)
-			protegido.POST("/proveedores/:id/handshake-hotelera", middlewares.RolRequerido(2), handshakeHoteleraController.IniciarHandshake)
+			// Detalles (Vuelos y Hoteles)
+			protegido.POST("/reservaciones/detalle/vuelo", detalleReservacionController.AgregarDetalleVuelo)
+			protegido.POST("/reservaciones/detalle/hotel", detalleReservacionController.AgregarDetalleHotel)
+
+			// Pasajeros de vuelo
+			protegido.POST("/reservaciones/detalle/pasajeros-vuelo", detalleReservacionController.AgregarPasajerosVuelo)
+
+			// Asientos de vuelo
+			protegido.GET("/reservaciones/asientos-vuelo", asientoVueloController.ObtenerAsientos)
+			protegido.PUT("/reservaciones/asientos-vuelo", asientoVueloController.CambiarAsiento)
+
+			// Rutas de Administrador (Rol 2)
+			admin := protegido.Group("/")
+			admin.Use(middlewares.RolRequerido(2))
+			{
+				admin.POST("/proveedores", proveedorController.CrearProveedor)
+				admin.POST("/catalogo/actualizar", catalogoController.ActualizarCatalogo)
+				admin.POST("/proveedores/:id/handshake", handshakeController.IniciarHandshake)
+				admin.POST("/proveedores/:id/handshake-hotelera", handshakeHoteleraController.IniciarHandshake)
+			}
 		}
 	}
 

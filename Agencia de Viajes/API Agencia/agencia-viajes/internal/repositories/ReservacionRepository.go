@@ -62,7 +62,6 @@ func (r *ReservacionRepository) ExpirarReservacionesPendientes() error {
 	return err
 }
 
-// Obtener reservaciones pendientes de un usuario con sus detalles de proveedor
 func (r *ReservacionRepository) ObtenerPendientesConDetalles(usuarioID int) ([]dto.ReservacionConDetalles, error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -102,7 +101,7 @@ func (r *ReservacionRepository) ObtenerPendientesConDetalles(usuarioID int) ([]d
 
 func (r *ReservacionRepository) obtenerDetallesProveedor(conn *sql.Conn, reservacionID int) ([]dto.DetalleProveedor, error) {
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT dr.ID_Reserva_Proveedor, p.ID, p.URL_API, p.Token_HASH_Entrada
+		SELECT dr.ID_Reserva_Proveedor, p.ID, p.URL_API, p.Token_HASH_Entrada, dr.Tipo_Detalle_ID
 		FROM Detalles_Reservacion dr
 		JOIN Proveedor p ON dr.Proveedor_ID = p.ID
 		WHERE dr.Reservacion_ID = ?
@@ -115,7 +114,7 @@ func (r *ReservacionRepository) obtenerDetallesProveedor(conn *sql.Conn, reserva
 	var detalles []dto.DetalleProveedor
 	for rows.Next() {
 		var d dto.DetalleProveedor
-		if err := rows.Scan(&d.IDReservaProveedor, &d.ProveedorID, &d.URLAPI, &d.TokenEntrada); err != nil {
+		if err := rows.Scan(&d.IDReservaProveedor, &d.ProveedorID, &d.URLAPI, &d.TokenEntrada, &d.TipoDetalleID); err != nil {
 			return nil, err
 		}
 		detalles = append(detalles, d)
@@ -134,8 +133,8 @@ func (r *ReservacionRepository) ExpirarReservacion(reservacionID int) error {
 	const estadoPendiente = 1
 
 	_, err = conn.ExecContext(context.Background(), `
-        UPDATE Reservacion SET EstadoID = ? 
-        WHERE ID = ? AND EstadoID = ?`,
+		UPDATE Reservacion SET EstadoID = ? 
+		WHERE ID = ? AND EstadoID = ?`,
 		estadoExpirada, reservacionID, estadoPendiente,
 	)
 	return err
@@ -191,7 +190,7 @@ func (r *ReservacionRepository) ObtenerDetallesDeReservacion(reservacionID int) 
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT dr.ID_Reserva_Proveedor, p.ID, p.URL_API, p.Token_HASH_Entrada
+		SELECT dr.ID_Reserva_Proveedor, p.ID, p.URL_API, p.Token_HASH_Entrada, dr.Tipo_Detalle_ID
 		FROM Detalles_Reservacion dr
 		JOIN Proveedor p ON dr.Proveedor_ID = p.ID
 		WHERE dr.Reservacion_ID = ?
@@ -204,7 +203,7 @@ func (r *ReservacionRepository) ObtenerDetallesDeReservacion(reservacionID int) 
 	var detalles []dto.DetalleProveedor
 	for rows.Next() {
 		var d dto.DetalleProveedor
-		if err := rows.Scan(&d.IDReservaProveedor, &d.ProveedorID, &d.URLAPI, &d.TokenEntrada); err != nil {
+		if err := rows.Scan(&d.IDReservaProveedor, &d.ProveedorID, &d.URLAPI, &d.TokenEntrada, &d.TipoDetalleID); err != nil {
 			return nil, err
 		}
 		detalles = append(detalles, d)

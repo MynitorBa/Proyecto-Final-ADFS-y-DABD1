@@ -53,7 +53,9 @@ func (s *ExpiracionService) ExpirarReservacionesDeUsuario(usuarioID int) error {
 		return err
 	}
 	for _, res := range pendientes {
-		s.expirarUna(res.ID, res.Detalles)
+		if err := s.expirarUna(res.ID, res.Detalles); err != nil {
+			log.Printf("[EXPIRACION] Error expirando reservacion %d del usuario %d: %v", res.ID, usuarioID, err)
+		}
 	}
 	return nil
 }
@@ -69,29 +71,44 @@ func (s *ExpiracionService) expirarPendientes() error {
 			log.Printf("[EXPIRACION] Error obteniendo detalles de reservacion %d: %v", id, err)
 			continue
 		}
-		s.expirarUna(id, detalles)
+		if err := s.expirarUna(id, detalles); err != nil {
+			log.Printf("[EXPIRACION] Error expirando reservacion %d: %v", id, err)
+		}
 	}
 	return nil
 }
 
-func (s *ExpiracionService) expirarUna(reservacionID int, detalles []dto.DetalleProveedor) {
+func (s *ExpiracionService) expirarUna(reservacionID int, detalles []dto.DetalleProveedor) error {
 	for _, d := range detalles {
-		if err := s.llamarExpirarProveedor(d.URLAPI, d.TokenEntrada, d.IDReservaProveedor); err != nil {
+		if err := s.llamarExpirarProveedor(d.URLAPI, d.TokenEntrada, d.IDReservaProveedor, d.TipoDetalleID); err != nil {
 			log.Printf("[EXPIRACION] Error expirando en proveedor %d reserva %s: %v", d.ProveedorID, d.IDReservaProveedor, err)
 		}
 	}
 
 	if err := s.repo.ExpirarDetalles(reservacionID); err != nil {
 		log.Printf("[EXPIRACION] Error expirando detalles de reservacion %d: %v", reservacionID, err)
+		return err
 	}
 
 	if err := s.repo.ExpirarReservacion(reservacionID); err != nil {
 		log.Printf("[EXPIRACION] Error expirando reservacion %d: %v", reservacionID, err)
+		return err
 	}
+
+	return nil
 }
 
-func (s *ExpiracionService) llamarExpirarProveedor(urlAPI, token, idReservaProveedor string) error {
-	url := fmt.Sprintf("%s/api/reservaciones-agencia/%s/expirar", urlAPI, idReservaProveedor)
+func (s *ExpiracionService) llamarExpirarProveedor(urlAPI, token, idReservaProveedor string, tipoDetalleID int) error {
+	var url string
+	switch tipoDetalleID {
+	case TipoDetalleVuelo:
+		url = fmt.Sprintf("%s/api/reservaciones-agencia/%s/expirar", urlAPI, idReservaProveedor)
+	case TipoDetalleHotel:
+		url = fmt.Sprintf("%s/agencia/reservaciones/%s/expirar", urlAPI, idReservaProveedor)
+	default:
+		return fmt.Errorf("tipo de detalle desconocido: %d", tipoDetalleID)
+	}
+
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(nil))
 	if err != nil {
 		return err

@@ -56,5 +56,30 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+
+
+
+
+
+        [HttpPost("pasajeros")]
+        public async Task<IActionResult> AgregarPasajeros([FromBody] AgregarPasajerosDTO dto)
+        {
+            var agencia = HttpContext.Items["agencia_id"];
+            if (agencia == null)
+                return Unauthorized(new { message = "Token de agencia requerido" });
+
+            int agenciaId = (int)agencia;
+
+            try
+            {
+                await _service.AgregarPasajeros(dto, agenciaId);
+                return Ok(new { message = "Datos de pasajeros guardados correctamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

@@ -321,5 +321,123 @@ namespace Aerolinea.API.Repositories
                     int count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                     return count > 0;
         }
+
+
+
+
+
+
+
+
+        public async Task AgregarPasajerosAReservacion(int reservacionId, List<DatosPasajeroDTO> pasajeros, int agenciaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Verificar que la reservación existe, pertenece a la agencia y está pendiente
+                string queryVerificar = @"
+            SELECT r.EstadoReservaID, r.FechaExpiracion
+            FROM Reservacion r
+            JOIN Agencia a ON r.UsuarioID = a.UsuarioWebID
+            WHERE r.ID = @reservacionId AND a.ID = @agenciaId";
+
+                int estadoReserva = 0;
+                DateTime? fechaExpiracion = null;
+
+                using (var cmd = new SqlCommand(queryVerificar, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
+                    cmd.Parameters.AddWithValue("@agenciaId", agenciaId);
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    if (!await reader.ReadAsync())
+                        throw new Exception("La reservación no existe o no pertenece a esta agencia.");
+                    estadoReserva = reader.GetInt32(0);
+                    if (!reader.IsDBNull(1)) fechaExpiracion = reader.GetDateTime(1);
+                }
+
+                if (estadoReserva != 1)
+                    throw new Exception("La reservación no está en estado pendiente.");
+                if (fechaExpiracion.HasValue && fechaExpiracion.Value < DateTime.Now)
+                    throw new Exception("La reservación ha expirado.");
+
+                foreach (var pasajero in pasajeros)
+                {
+                    string queryVerificarBoleto = "SELECT ReservacionID, DatosPasajeroID FROM Boleto WHERE ID = @boletoId";
+
+                    int? reservacionDelBoleto = null;
+                    int? pasajeroExistente = null;
+
+                    using (var cmd = new SqlCommand(queryVerificarBoleto, connection, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@boletoId", pasajero.BoletoId);
+                        using var reader = await cmd.ExecuteReaderAsync();
+                        if (!await reader.ReadAsync())
+                            throw new Exception($"El boleto {pasajero.BoletoId} no existe.");
+                        if (!reader.IsDBNull(0)) reservacionDelBoleto = reader.GetInt32(0);
+                        if (!reader.IsDBNull(1)) pasajeroExistente = reader.GetInt32(1);
+                    }
+
+                    if (reservacionDelBoleto != reservacionId)
+                        throw new Exception($"El boleto {pasajero.BoletoId} no pertenece a esta reservación.");
+
+                    int paisId = await _paisRepository.ObtenerOCrearId(pasajero.Pais, connection, transaction);
+                    int ciudadId = await _ciudadRepository.ObtenerOCrearId(pasajero.Ciudad, paisId, connection, transaction);
+
+                    int datosPasajeroId;
+
+                    if (pasajeroExistente.HasValue)
+                    {
+                        string updatePasajero = @"
+                    UPDATE DatosPasajero
+                    SET Nombre = @nombre, Apellido = @apellido, Pasaporte = @pasaporte,
+                        Telefono = @telefono, CiudadID = @ciudadId
+                    WHERE ID = @id";
+
+                        using var cmd = new SqlCommand(updatePasajero, connection, transaction);
+                        cmd.Parameters.AddWithValue("@id", pasajeroExistente.Value);
+                        cmd.Parameters.AddWithValue("@nombre", pasajero.Nombre);
+                        cmd.Parameters.AddWithValue("@apellido", pasajero.Apellido);
+                        cmd.Parameters.AddWithValue("@pasaporte", pasajero.Pasaporte);
+                        cmd.Parameters.AddWithValue("@telefono", pasajero.Telefono);
+                        cmd.Parameters.AddWithValue("@ciudadId", ciudadId);
+                        await cmd.ExecuteNonQueryAsync();
+                        datosPasajeroId = pasajeroExistente.Value;
+                    }
+                    else
+                    {
+                        string insertPasajero = @"
+                    INSERT INTO DatosPasajero (Nombre, Apellido, Pasaporte, Telefono, CiudadID)
+                    VALUES (@nombre, @apellido, @pasaporte, @telefono, @ciudadId);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                        using var cmd = new SqlCommand(insertPasajero, connection, transaction);
+                        cmd.Parameters.AddWithValue("@nombre", pasajero.Nombre);
+                        cmd.Parameters.AddWithValue("@apellido", pasajero.Apellido);
+                        cmd.Parameters.AddWithValue("@pasaporte", pasajero.Pasaporte);
+                        cmd.Parameters.AddWithValue("@telefono", pasajero.Telefono);
+                        cmd.Parameters.AddWithValue("@ciudadId", ciudadId);
+                        datosPasajeroId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                    }
+
+                    string updateBoleto = "UPDATE Boleto SET DatosPasajeroID = @datosPasajeroId WHERE ID = @boletoId";
+                    using (var cmd = new SqlCommand(updateBoleto, connection, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@datosPasajeroId", datosPasajeroId);
+                        cmd.Parameters.AddWithValue("@boletoId", pasajero.BoletoId);
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }

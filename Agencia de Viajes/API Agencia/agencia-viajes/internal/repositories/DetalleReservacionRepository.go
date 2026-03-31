@@ -109,7 +109,7 @@ func (r *DetalleReservacionRepository) ObtenerDatosProveedorPorTipo(
 	err = conn.QueryRowContext(context.Background(), `
         SELECT URL_API, Token_HASH_Entrada, Porcentaje_Ganancia
         FROM Proveedor 
-        WHERE ID = ? AND Tipo_Detalle_ID = ? 
+        WHERE ID = ? AND Tipo_Proveedor_ID = ? 
     `, proveedorID, tipoDetalleID).Scan(&urlAPI, &tokenEntrada, &porcentajeGanancia)
 
 	if err == sql.ErrNoRows {
@@ -138,4 +138,40 @@ func (r *DetalleReservacionRepository) RecalcularTotalReservacion(reservacionID 
 		reservacionID,
 	)
 	return err
+}
+
+// ObtenerDetalleAerolineaPorProveedor devuelve el ID de reserva en la aerolínea
+// para un detalle de tipo vuelo (Tipo_Detalle_ID = 1) que esté pendiente,
+// verificando que la reservación pertenezca al usuario.
+func (r *DetalleReservacionRepository) ObtenerDetalleAerolineaPorProveedor(
+	reservacionID, usuarioID, proveedorID int,
+) (idReservaProveedor string, urlAPI string, tokenEntrada string, err error) {
+
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return "", "", "", err
+	}
+	defer conn.Close()
+
+	err = conn.QueryRowContext(context.Background(), `
+        SELECT dr.ID_Reserva_Proveedor, p.URL_API, p.Token_HASH_Entrada
+        FROM Detalles_Reservacion dr
+        JOIN Reservacion r        ON dr.Reservacion_ID = r.ID
+        JOIN Proveedor   p        ON dr.Proveedor_ID   = p.ID
+        WHERE dr.Reservacion_ID   = ?
+          AND r.Usuario_ID        = ?
+          AND dr.Proveedor_ID     = ?
+          AND dr.Tipo_Detalle_ID  = 1
+          AND dr.Estado_Detalle_ID = 1
+          AND r.EstadoID          = 1
+    `, reservacionID, usuarioID, proveedorID).
+		Scan(&idReservaProveedor, &urlAPI, &tokenEntrada)
+
+	if err == sql.ErrNoRows {
+		return "", "", "", fmt.Errorf(
+			"no se encontró un detalle de vuelo pendiente para esa reservación y proveedor, " +
+				"o la reservación no pertenece al usuario",
+		)
+	}
+	return
 }
