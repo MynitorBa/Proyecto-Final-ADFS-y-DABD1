@@ -58,7 +58,7 @@ public class ReservacionAgenciaService {
         totalGeneral = Math.round(totalGeneral * 100.0) / 100.0;
 
         // 3. Crear reservación con el usuarioWebisId
-        String noReservacion  = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String noReservacion  = "MIKU-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
         Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(15));
 

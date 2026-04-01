@@ -87,7 +87,7 @@
               </div>
             </template>
 
-            <!-- ── FILTROS HOTEL (paso 2) ── -->
+            <!-- ── FILTROS HOTEL (paso 2+) ── -->
             <template v-else>
               <div class="rp-filter-group">
                 <h4 class="rp-filter-group__title">Precio por noche</h4>
@@ -174,7 +174,6 @@
             <div v-if="modificarAbierto" class="rp-modificar-inline">
               <div class="rp-modificar-grid">
 
-                <!-- Origen -->
                 <div class="rp-mod-section">
                   <p class="rp-mod-section__label">
                     <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -187,9 +186,7 @@
                         @input="onOPaisInput" @blur="blurClose(() => form.oPaisSug = [])"
                         placeholder="Guatemala..." autocomplete="off" />
                       <ul v-if="form.oPaisSug.length" class="rp-ac-list">
-                        <li v-for="p in form.oPaisSug" :key="p.country">
-                          <button type="button" @click="selOPais(p)">{{ p.country }}</button>
-                        </li>
+                        <li v-for="p in form.oPaisSug" :key="p.country"><button type="button" @click="selOPais(p)">{{ p.country }}</button></li>
                       </ul>
                     </div>
                     <div class="rp-mod-field rp-ac-wrap">
@@ -199,15 +196,12 @@
                         :disabled="!form.oPaisSel || form.oCiudadLoading"
                         placeholder="Guatemala City..." autocomplete="off" />
                       <ul v-if="form.oCiudadSug.length" class="rp-ac-list">
-                        <li v-for="c in form.oCiudadSug" :key="c">
-                          <button type="button" @click="selOCiudad(c)">{{ c }}</button>
-                        </li>
+                        <li v-for="c in form.oCiudadSug" :key="c"><button type="button" @click="selOCiudad(c)">{{ c }}</button></li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                <!-- Destino -->
                 <div class="rp-mod-section">
                   <p class="rp-mod-section__label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -220,9 +214,7 @@
                         @input="onDPaisInput" @blur="blurClose(() => form.dPaisSug = [])"
                         placeholder="Mexico..." autocomplete="off" />
                       <ul v-if="form.dPaisSug.length" class="rp-ac-list">
-                        <li v-for="p in form.dPaisSug" :key="p.country">
-                          <button type="button" @click="selDPais(p)">{{ p.country }}</button>
-                        </li>
+                        <li v-for="p in form.dPaisSug" :key="p.country"><button type="button" @click="selDPais(p)">{{ p.country }}</button></li>
                       </ul>
                     </div>
                     <div class="rp-mod-field rp-ac-wrap">
@@ -232,15 +224,12 @@
                         :disabled="!form.dPaisSel || form.dCiudadLoading"
                         placeholder="Mexico City..." autocomplete="off" />
                       <ul v-if="form.dCiudadSug.length" class="rp-ac-list">
-                        <li v-for="c in form.dCiudadSug" :key="c">
-                          <button type="button" @click="selDCiudad(c)">{{ c }}</button>
-                        </li>
+                        <li v-for="c in form.dCiudadSug" :key="c"><button type="button" @click="selDCiudad(c)">{{ c }}</button></li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                <!-- Fechas + Personas + CTA -->
                 <div class="rp-mod-section rp-mod-section--row">
                   <div class="rp-mod-field" style="grid-column:1/-1;">
                     <div class="rv-trip-toggle">
@@ -352,7 +341,7 @@
             Elige tu vuelo de regreso — {{ busqueda.destino }} → {{ busqueda.origen }} · {{ formatFecha(busqueda.fechaRegreso) }}
           </div>
 
-          <!-- ── RESUMEN FINAL (ambos + hotel seleccionados) ── -->
+          <!-- ── RESUMEN FINAL ── -->
           <div v-if="vueloSel && (!esIdaVuelta || vueloRegresoSel) && hotelSel" class="rp-resumen">
             <div class="rp-resumen__col">
               <span class="rp-resumen__lbl">✈ Ida</span>
@@ -422,7 +411,6 @@
                PASOS 1 Y 2: VUELOS
           ══════════════════════════ -->
           <template v-if="!loading && !error && paso < pasoHotel">
-            <!-- Lista vuelos ida (paso 1) -->
             <template v-if="paso === 1">
               <div v-if="vuelos.length === 0" class="rp-empty">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="48" height="48"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -546,13 +534,11 @@
             </div>
             <div v-else-if="gruposPorHotel.length === 0" class="rp-empty">
               <p class="rp-empty__title">Sin hospedajes para {{ busqueda.cantidadPersonas }} personas</p>
-              <p class="rp-empty__sub">Prueba con otra cantidad de personas o fechas.</p>
               <button class="rp-btn rp-btn--ghost" @click="resetFiltros" type="button">Quitar filtros</button>
             </div>
 
             <template v-else>
               <div v-for="grupo in gruposPorHotel" :key="`${grupo.proveedorId}-${grupo.hotelId}`" class="rh-grupo">
-
                 <div class="rh-grupo__head">
                   <div class="rh-grupo__hotel-info">
                     <div class="rh-grupo__hotel-icon">
@@ -602,8 +588,7 @@
                         <span v-for="am in grupo.amenidades.slice(0,5)" :key="am.amenidadId" class="rh-combo-amenidad-chip">{{ am.nombre }}</span>
                       </div>
                       <button class="rh-btn rh-btn--yellow rh-combo-panel__cta" @click="seleccionarHotelCombo(getHotelCombos(grupo).combo, grupo)" type="button">
-                        Agregar al paquete
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
+                        Agregar al paquete <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
                       </button>
                     </div>
                     <div v-if="getHotelCombos(grupo).aprox" class="rh-combo-panel rh-combo-panel--aprox">
@@ -612,7 +597,7 @@
                         <span class="rh-combo-tipo">Hab.{{ i+1 }} · <strong>{{ item.tipo }}</strong> <span class="rh-combo-cap">({{ item.cap }} pers.)</span></span>
                         <span class="rh-combo-precio">{{ fmt(item.precio) }}<small>/noche</small></span>
                       </div>
-                      <div class="rh-combo-total">Total: <strong>{{ fmt(getHotelCombos(grupo).aprox.total) }}/noche</strong> · {{ fmt(getHotelCombos(grupo).aprox.total * noches) }} por {{ noches }} noches</div>
+                      <div class="rh-combo-total">Total: <strong>{{ fmt(getHotelCombos(grupo).aprox.total) }}/noche</strong></div>
                       <button class="rh-btn rh-btn--yellow rh-combo-panel__cta" @click="seleccionarHotelCombo(getHotelCombos(grupo).aprox, grupo)" type="button">
                         Agregar al paquete <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
                       </button>
@@ -679,7 +664,6 @@
                     </div>
                   </article>
                 </div>
-
               </div>
             </template>
           </template>
@@ -720,8 +704,8 @@ const busqueda = ref({
   tipoVuelo:        state.busqueda?.tipoVuelo        || 'ida',
 })
 
-const esIdaVuelta  = computed(() => busqueda.value.tipoVuelo === 'idaVuelta')
-const pasoHotel    = computed(() => esIdaVuelta.value ? 3 : 2)
+const esIdaVuelta = computed(() => busqueda.value.tipoVuelo === 'idaVuelta')
+const pasoHotel   = computed(() => esIdaVuelta.value ? 3 : 2)
 
 // ── Datos ─────────────────────────────────────────────────────
 const vuelos               = ref([])
@@ -740,13 +724,11 @@ const sidebarColapsado     = ref(false)
 const ordenVuelos          = ref('precio-asc')
 const ordenHoteles         = ref('precio-asc')
 
-// ── Noches ────────────────────────────────────────────────────
 const noches = computed(() => {
   if (!busqueda.value.checkIn || !busqueda.value.checkOut) return 0
   return Math.max(0, Math.ceil((new Date(busqueda.value.checkOut) - new Date(busqueda.value.checkIn)) / 86400000))
 })
 
-// ── Precio total ──────────────────────────────────────────────
 const precioTotal = computed(() => {
   if (!vueloSel.value || !hotelSel.value) return 0
   if (esIdaVuelta.value && !vueloRegresoSel.value) return 0
@@ -756,9 +738,8 @@ const precioTotal = computed(() => {
   return pflight + pregreso + photel
 })
 
-// ── Filtros vuelo ─────────────────────────────────────────────
+// ── Filtros ───────────────────────────────────────────────────
 const fv = ref({ precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' })
-// ── Filtros hotel ─────────────────────────────────────────────
 const fh = ref({ precioMin: 0, precioMax: 9999, tipos: [], hoteles: [], amenidades: [] })
 
 const clasesFilter = [{ val: 'economica', label: 'Económica' }, { val: 'ejecutiva', label: 'Ejecutiva' }]
@@ -766,8 +747,8 @@ const escalasOpts  = [{ val: 0, label: 'Solo directos' }, { val: 1, label: '1 es
 const duracionOpts = [{ val: 180, label: '< 3h' }, { val: 360, label: '< 6h' }, { val: 720, label: '< 12h' }, { val: 1440, label: '< 24h' }]
 const horariosOpts = [
   { val: 'madrugada', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`, label: 'Madrugada', rango: '00:00–05:59' },
-  { val: 'manana',    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/></svg>`, label: 'Mañana', rango: '06:00–11:59' },
-  { val: 'tarde',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>`, label: 'Tarde', rango: '12:00–17:59' },
+  { val: 'manana',    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/></svg>`, label: 'Mañana', rango: '06:00–11:59' },
+  { val: 'tarde',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>`, label: 'Tarde', rango: '12:00–17:59' },
   { val: 'noche',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>`, label: 'Noche', rango: '18:00–23:59' },
 ]
 
@@ -778,12 +759,11 @@ const cantFiltrosActivos = computed(() => {
     n += fv.value.clases.length + fv.value.escalas.length + fv.value.aerolineas.length
     if (fv.value.duracionMax < 9999) n++; if (fv.value.horario) n++
     return n
-  } else {
-    let n = 0
-    if (fh.value.precioMin > 0 || fh.value.precioMax < 9999) n++
-    n += fh.value.tipos.length + fh.value.hoteles.length + fh.value.amenidades.length
-    return n
   }
+  let n = 0
+  if (fh.value.precioMin > 0 || fh.value.precioMax < 9999) n++
+  n += fh.value.tipos.length + fh.value.hoteles.length + fh.value.amenidades.length
+  return n
 })
 
 function resetFiltros() {
@@ -857,7 +837,6 @@ function toggleModificar() {
   }
 }
 
-// ── Helper: verifica que el response tenga vuelos ─────────────
 function tieneVuelos(res) {
   return Array.isArray(res) && res.some(b => b.datos && ((b.datos.directos?.length > 0) || (b.datos.conEscala?.length > 0)))
 }
@@ -865,7 +844,6 @@ function tieneHoteles(res) {
   return Array.isArray(res) && res.some(b => Array.isArray(b.datos) && b.datos.length > 0)
 }
 
-// ── Rebuscar ──────────────────────────────────────────────────
 async function rebuscar() {
   modError.value = ''
   const o  = form.oCiudad  || form.oCiudadQ.trim()
@@ -886,6 +864,9 @@ async function rebuscar() {
   if (form.checkOut <= form.checkIn) { modError.value = 'El check-out debe ser posterior al check-in.'; return }
 
   buscando.value = true
+  // Cancelar promesa previa al rebuscar
+  window.__reservaPromise = null
+
   try {
     const bodyIda   = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPersonas }
     const bodyHotel = { ciudad: d, pais: dp, fechaCheckIn: form.checkIn, fechaCheckOut: form.checkOut, cantidadPersonas: form.cantidadPersonas }
@@ -1050,7 +1031,7 @@ const vuelosFiltrados = computed(() => {
   })
 })
 
-// ── Computed hoteles filtradas ────────────────────────────────
+// ── Computed hoteles filtrados ────────────────────────────────
 const tiposHabitacionDisponibles = computed(() => [...new Set(todasLasHabitaciones.value.map(h => h.tipoHabitacion).filter(Boolean))])
 const hotelesDisponibles         = computed(() => [...new Set(todasLasHabitaciones.value.map(h => h.nombreHotel).filter(Boolean))])
 const amenidadesDisponibles      = computed(() => { const s = new Set(); todasLasHabitaciones.value.forEach(h => h.amenidades?.forEach(a => s.add(a.nombre))); return [...s] })
@@ -1122,7 +1103,7 @@ function _getComboAproximado(hotel, personas) {
   const todasHabs = []
   for (const [capStr, rooms] of Object.entries(porCap)) {
     const cap = Number(capStr)
-    for (const room of rooms) todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, precioPorPersona: room.precioPorPersona, cap, tipoCama: room.tipoCama, metrosCuadrados: room.metrosCuadrados || null, habitacionesDisponibles: room.habitacionesDisponibles || [], cantidadDisponible: (room.habitacionesDisponibles || []).length })
+    for (const room of rooms) todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, precioPorPersona: room.precioPorPersona, cap, tipoCama: room.tipoCama, habitacionesDisponibles: room.habitacionesDisponibles || [], cantidadDisponible: (room.habitacionesDisponibles || []).length })
   }
   todasHabs.sort((a, b) => b.cap - a.cap)
   let sumCap = 0; const selec = []
@@ -1136,7 +1117,7 @@ function _getPersonaExtraMin(hotel, personas) {
   const rooms = hotel.tiposHabitacionPorCapacidad?.[String(personas - 1)]
   if (!rooms?.length) return null
   const best = rooms.reduce((min, r) => (r.precioPorNoche + r.precioPorPersona) < (min.precioPorNoche + min.precioPorPersona) ? r : min, rooms[0])
-  return { tipo: best.tipoHabitacion, precioPorNoche: best.precioPorNoche, precioPorPersona: best.precioPorPersona, cap: personas - 1, total: best.precioPorNoche + best.precioPorPersona }
+  return { tipo: best.tipoHabitacion, precioPorNoche: best.precioPorNoche, precioPorPersona: best.precioPorPersona, cap: personas - 1, total: best.precioPorNoche + best.precioPorPersona, habitacionesDisponibles: best.habitacionesDisponibles || [] }
 }
 
 function getHotelCombos(grupo) {
@@ -1157,6 +1138,67 @@ function formatDuracion(min) {
   return `${h}h${m > 0 ? ` ${m}m` : ''}`
 }
 
+// ── Helpers para IDs de vuelos ────────────────────────────────
+function parseVueloId(compositeId) {
+  if (!compositeId) return null
+  const parts = String(compositeId).split('-')
+  const val   = parseFloat(parts[parts.length - 1])
+  return Number.isFinite(val) ? Math.round(val) : null
+}
+function parseProveedorId(compositeId) {
+  if (!compositeId) return null
+  return parseInt(String(compositeId).split('-')[0]) || null
+}
+function claseToId(clase) { return clase === 'ejecutiva' ? 2 : 1 }
+
+// ── PRE-CREACIÓN DE RESERVA EN BACKGROUND (paquetes) ─────────
+// Se dispara al confirmar vuelo(s), antes de elegir hotel.
+// Reserva.vue awaits window.__reservaPromise en onMounted.
+async function precrearReservacion(vueloData, vueloRegresoData) {
+  try {
+    // PASO 1: crear la reservación (tipo 3 = paquete)
+    const res1 = await fetch(`${API}/api/reservaciones`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo_reserva_id: 3 }),
+    })
+    if (!res1.ok) return null
+    const reserva = await res1.json()
+
+    // PASO 2: agregar detalle de vuelo(s)
+    const pax         = busqueda.value.cantidadPersonas || 1
+    const proveedorId = parseProveedorId(vueloData.id)
+    const vuelosArr   = [
+      { vueloId: parseVueloId(vueloData.id), claseId: claseToId(vueloData.clase), cantidadPasajeros: pax }
+    ]
+    if (vueloRegresoData) {
+      vuelosArr.push({ vueloId: parseVueloId(vueloRegresoData.id), claseId: claseToId(vueloRegresoData.clase), cantidadPasajeros: pax })
+    }
+
+    const res2 = await fetch(`${API}/api/reservaciones/detalle/vuelo`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reservacion_id: reserva.id, proveedor_id: proveedorId, vuelos: vuelosArr }),
+    })
+
+    let detalle = null
+    if (res2.ok) detalle = await res2.json()
+
+    // expiresAt viene SIEMPRE del backend, nunca calculado localmente.
+    // Preferencia: fechaExpiracion del detalle/vuelo > fecha_expiracion de la reserva
+    let expiresAt = 0
+    if (detalle?.detalle?.fechaExpiracion) {
+      expiresAt = new Date(detalle.detalle.fechaExpiracion).getTime()
+    } else if (reserva.fecha_expiracion) {
+      expiresAt = new Date(reserva.fecha_expiracion.replace(' ', 'T')).getTime()
+    }
+    if (!expiresAt || expiresAt <= Date.now()) expiresAt = Date.now() + 600_000
+    const segundos = Math.max(30, Math.floor((expiresAt - Date.now()) / 1000))
+
+    return { reserva, detalle, segundos, expiresAt }
+  } catch { return null }
+}
+
 // ── Selección vuelo ───────────────────────────────────────────
 function seleccionarVuelo(vuelo) {
   const data = {
@@ -1171,14 +1213,25 @@ function seleccionarVuelo(vuelo) {
   }
 
   if (paso.value === 1) {
-    // Selección de vuelo de ida
     vueloSel.value = data
-    paso.value = esIdaVuelta.value ? 2 : pasoHotel.value
+    if (esIdaVuelta.value) {
+      // Ida y vuelta: avanzar a paso 2, aún falta el regreso
+      paso.value = 2
+    } else {
+      // Solo ida: ya tenemos el vuelo → disparar pre-creación ahora
+      paso.value = pasoHotel.value
+      window.__reservaPromise = null
+      window.__reservaPromise = precrearReservacion(data, null)
+    }
+
   } else if (paso.value === 2 && esIdaVuelta.value) {
-    // Selección de vuelo de regreso
+    // Regreso confirmado → ahora sí tenemos ambos vuelos → disparar pre-creación
     vueloRegresoSel.value = data
     paso.value = pasoHotel.value
+    window.__reservaPromise = null
+    window.__reservaPromise = precrearReservacion(vueloSel.value, data)
   }
+
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -1189,6 +1242,7 @@ function seleccionarHotelHab(hab, grupo) {
     tipoHabitacion: hab.tipoHabitacion, tipoCama: hab.tipoCama,
     precioNoche: hab.precioPorNoche,
     totalEstancia: hab.precioPorNoche * noches.value,
+    habitacionesDisponibles: hab.habitacionesDisponibles || [],
     nombreHotel: grupo.nombreHotel, proveedorNombre: grupo.proveedorNombre,
     hotelId: grupo.hotelId, proveedorId: grupo.proveedorId,
     ciudad: grupo.ciudad, amenidades: grupo.amenidades,
@@ -1226,10 +1280,19 @@ function seleccionarHotelExtra(extraInfo, grupo) {
 function retroceder() {
   if (paso.value === pasoHotel.value) {
     hotelSel.value = null
-    paso.value = esIdaVuelta.value ? 2 : 1
-    if (!esIdaVuelta.value) vueloSel.value = null
+    // Cancelar la promesa: el usuario va a cambiar los vuelos
+    window.__reservaPromise = null
+    if (esIdaVuelta.value) {
+      // Vuelve a seleccionar regreso (no invalida la ida)
+      vueloRegresoSel.value = null
+      paso.value = 2
+    } else {
+      vueloSel.value = null
+      paso.value = 1
+    }
   } else if (paso.value === 2) {
     vueloRegresoSel.value = null
+    window.__reservaPromise = null
     paso.value = 1
   }
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -1239,6 +1302,7 @@ function retroceder() {
 function reservarPaquete() {
   if (!vueloSel.value || !hotelSel.value) return
   if (esIdaVuelta.value && !vueloRegresoSel.value) return
+
   sessionStorage.removeItem('vuelo_seleccionado')
   sessionStorage.removeItem('hotel_seleccionado')
   sessionStorage.setItem('paquete_seleccionado', JSON.stringify({
@@ -1253,14 +1317,17 @@ function reservarPaquete() {
     precioTotal:      precioTotal.value,
     busqueda:         busqueda.value,
   }))
+
+  // window.__reservaPromise ya fue disparada en seleccionarVuelo
+  // Reserva.vue la awaita en onMounted y la usa si está disponible
   router.push('/reservar')
 }
 
 // ── Init ──────────────────────────────────────────────────────
 onMounted(() => {
-  const rawV  = state.resultadosVuelos  || null
-  const rawR  = state.resultadosRegreso || null
-  const rawH  = state.resultadosHoteles || null
+  const rawV = state.resultadosVuelos  || null
+  const rawR = state.resultadosRegreso || null
+  const rawH = state.resultadosHoteles || null
 
   if (!busqueda.value.origen || !busqueda.value.destino) {
     error.value = 'Faltan datos de búsqueda.'; loading.value = false; return

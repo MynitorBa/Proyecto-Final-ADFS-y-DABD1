@@ -547,7 +547,7 @@ const error                = ref('')
 const erroresProveedores   = ref([])
 const seleccionado         = ref(null)
 const seleccionadoRegreso  = ref(null)
-const paso                 = ref(1) // 1 = elige ida, 2 = elige regreso (solo idaVuelta)
+const paso                 = ref(1)
 const ordenar              = ref('precio-asc')
 const modificarAbierto     = ref(false)
 const modError             = ref('')
@@ -663,7 +663,6 @@ function onFormDCiudadInput() {
 }
 function selFormDCiudad(c) { form.destinoCiudadQ = c; form.destinoCiudadSug = []; form.destinoCiudad = c; modError.value = '' }
 
-// ── Helper: verifica que la respuesta tenga al menos 1 vuelo ──
 function tieneVuelos(respuesta) {
   if (!Array.isArray(respuesta) || respuesta.length === 0) return false
   return respuesta.some(b => b.datos && (
@@ -701,14 +700,8 @@ async function rebuscar() {
       const rawIda     = await resIda.json()
       const rawRegreso = resRegreso.ok ? await resRegreso.json() : []
 
-      if (!tieneVuelos(rawIda)) {
-        modError.value = `No hay vuelos de ${o} a ${d} para el ${form.fecha}.`
-        return
-      }
-      if (!tieneVuelos(rawRegreso)) {
-        modError.value = `No hay vuelos de regreso de ${d} a ${o} para el ${form.fechaRegreso}. Prueba otra fecha.`
-        return
-      }
+      if (!tieneVuelos(rawIda)) { modError.value = `No hay vuelos de ${o} a ${d} para el ${form.fecha}.`; return }
+      if (!tieneVuelos(rawRegreso)) { modError.value = `No hay vuelos de regreso de ${d} a ${o} para el ${form.fechaRegreso}. Prueba otra fecha.`; return }
 
       busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, fechaRegreso: form.fechaRegreso, cantidadPasajeros: form.cantidadPasajeros, tipoVuelo: 'idaVuelta' }
       erroresProveedores.value = []
@@ -833,9 +826,89 @@ onMounted(() => {
   error.value = 'No hay resultados. Modifica la búsqueda.'; loading.value = false
 })
 
+// ── Helpers para construir el payload de la reservación ───────
+function parseVueloId(compositeId) {
+  if (!compositeId) return null
+  const parts = String(compositeId).split('-')
+  const val   = parseFloat(parts[parts.length - 1])
+  return Number.isFinite(val) ? Math.round(val) : null
+}
+function parseProveedorId(compositeId) {
+  if (!compositeId) return null
+  return parseInt(String(compositeId).split('-')[0]) || null
+}
+function claseToId(clase) {
+  return clase === 'ejecutiva' ? 2 : 1
+}
+
+// ── Pre-crear reservación en background ───────────────────────
+// Dispara ambas llamadas a la API (crear reserva + detalle vuelo)
+// ANTES de que el usuario llegue al formulario. El resultado se
+// comparte con Reserva.vue a través de window.__reservaPromise.
+async function precrearReservacion(itemData, tipoItem) {
+  try {
+    // PASO 1: crear la reservación
+    const res1 = await fetch(`${API}/api/reservaciones`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo_reserva_id: tipoItem === 'paquete' ? 3 : 1 }),
+    })
+    if (!res1.ok) return null
+    const reserva = await res1.json()
+
+    // PASO 2: construir payload de vuelos
+    let vuelosArr   = []
+    let proveedorId = null
+
+    if (tipoItem === 'vuelo') {
+      if (itemData.tipoVuelo === 'idaVuelta') {
+        const ida     = itemData.ida
+        const regreso = itemData.regreso
+        const pax     = itemData.busqueda?.cantidadPasajeros || 1
+        proveedorId   = parseProveedorId(ida.id)
+        vuelosArr     = [
+          { vueloId: parseVueloId(ida.id),     claseId: claseToId(ida.clase),     cantidadPasajeros: pax },
+          { vueloId: parseVueloId(regreso.id), claseId: claseToId(regreso.clase), cantidadPasajeros: pax },
+        ]
+      } else {
+        const pax   = itemData.busqueda?.cantidadPasajeros || 1
+        proveedorId = parseProveedorId(itemData.id)
+        vuelosArr   = [{ vueloId: parseVueloId(itemData.id), claseId: claseToId(itemData.clase), cantidadPasajeros: pax }]
+      }
+    }
+
+    // PASO 3: agregar detalle de vuelo
+    const res2 = await fetch(`${API}/api/reservaciones/detalle/vuelo`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reservacion_id: reserva.id, proveedor_id: proveedorId, vuelos: vuelosArr }),
+    })
+
+    let detalle = null
+    if (res2.ok) detalle = await res2.json()
+
+    // expiresAt viene SIEMPRE del backend, nunca calculado localmente.
+    // Preferencia: fechaExpiracion del detalle/vuelo > fecha_expiracion de la reserva
+    let expiresAt = 0
+    if (detalle?.detalle?.fechaExpiracion) {
+      expiresAt = new Date(detalle.detalle.fechaExpiracion).getTime()
+    } else if (reserva.fecha_expiracion) {
+      expiresAt = new Date(reserva.fecha_expiracion.replace(' ', 'T')).getTime()
+    }
+    if (!expiresAt || expiresAt <= Date.now()) expiresAt = Date.now() + 600_000
+    const segundos = Math.max(30, Math.floor((expiresAt - Date.now()) / 1000))
+
+    return { reserva, detalle, segundos, expiresAt }
+  } catch {
+    return null
+  }
+}
+
 function seleccionarVuelo(vuelo) {
   if (esIdaVuelta.value && paso.value === 1) {
-    // Paso 1: seleccionó vuelo de ida → avanzar a paso 2
+    // Paso 1: guardar vuelo de ida y avanzar al paso 2
     seleccionado.value = vuelo.id
     sessionStorage.setItem('_vuelo_ida_temp', JSON.stringify({
       ...vuelo, clase: vuelo.claseSeleccionada,
@@ -848,14 +921,15 @@ function seleccionarVuelo(vuelo) {
   }
 
   if (esIdaVuelta.value && paso.value === 2) {
-    // Paso 2: seleccionó vuelo de regreso → guardar ambos y navegar
+    // Paso 2: ya tenemos ambos vuelos → guardar y disparar pre-creación
     seleccionadoRegreso.value = vuelo.id
     const vueloIda = JSON.parse(sessionStorage.getItem('_vuelo_ida_temp') || '{}')
     sessionStorage.removeItem('_vuelo_ida_temp')
     sessionStorage.removeItem('hotel_seleccionado')
     sessionStorage.removeItem('paquete_seleccionado')
-    sessionStorage.setItem('vuelo_seleccionado', JSON.stringify({
-      tipoVuelo:  'idaVuelta',
+
+    const itemData = {
+      tipoVuelo: 'idaVuelta',
       ida: { ...vueloIda, busqueda: busqueda.value },
       regreso: {
         ...vuelo,
@@ -864,22 +938,33 @@ function seleccionarVuelo(vuelo) {
         asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
       },
       busqueda: busqueda.value,
-    }))
+    }
+    sessionStorage.setItem('vuelo_seleccionado', JSON.stringify(itemData))
+
+    // Disparar pre-creación en background y compartir la promesa
+    window.__reservaPromise = precrearReservacion(itemData, 'vuelo')
+
     router.push('/reservar')
     return
   }
 
-  // Solo ida
+  // Solo ida: guardar y disparar pre-creación
   seleccionado.value = vuelo.id
   sessionStorage.removeItem('hotel_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
-  sessionStorage.setItem('vuelo_seleccionado', JSON.stringify({
+
+  const itemData = {
     ...vuelo, tipoVuelo: 'ida',
     clase:    vuelo.claseSeleccionada,
     precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva : vuelo.precioTurista,
     asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
     busqueda: busqueda.value,
-  }))
+  }
+  sessionStorage.setItem('vuelo_seleccionado', JSON.stringify(itemData))
+
+  // Disparar pre-creación en background y compartir la promesa
+  window.__reservaPromise = precrearReservacion(itemData, 'vuelo')
+
   router.push('/reservar')
 }
 </script>
