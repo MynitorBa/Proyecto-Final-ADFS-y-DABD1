@@ -437,5 +437,20 @@ namespace Aerolinea.API.Repositories
 
             return null;
         }
+
+
+
+
+        //agencias
+        public async Task<int> ObtenerUsuarioWebIdDeAgencia(int agenciaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            string query = "SELECT UsuarioWebID FROM Agencia WHERE ID = @agenciaId";
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@agenciaId", agenciaId);
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        }
     }
 }
