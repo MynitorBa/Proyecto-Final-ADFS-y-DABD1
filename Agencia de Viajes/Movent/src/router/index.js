@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Principal from '../views/Principal.vue'
 import Reserva from '../views/Reserva.vue'
+import SeleccionAsientos from '../views/SeleccionAsientos.vue'
 import Checkout from '../views/Checkout.vue'
 import Confirmacion from '../views/Confirmacion.vue'
 import MisReservaciones from '../views/MisReservaciones.vue'
@@ -17,8 +18,6 @@ import Contacto from '../views/Contacto.vue'
 import ResultadosVuelos from '../views/ResultadosVuelos.vue'
 import ResultadosHoteles from '../views/ResultadosHoteles.vue'
 import ResultadosPaquetes from '../views/ResultadosPaquetes.vue'
-import DetalleVuelo from '../views/DetalleVuelo.vue'
-import DetalleHotel from '../views/DetalleHotel.vue'
 import Dashboard from '../views/admin/Dashboard.vue'
 import GestionRoles from '../views/admin/GestionRoles.vue'
 import GestionProveedores from '../views/admin/GestionProveedores.vue'
@@ -28,6 +27,7 @@ const routes = [
   { path: '/', redirect: '/principal' },
   { path: '/principal', component: Principal },
   { path: '/reservar', component: Reserva },
+  { path: '/seleccion-asientos', component: SeleccionAsientos },
   { path: '/checkout', component: Checkout },
   { path: '/confirmacion', component: Confirmacion },
   { path: '/mis-reservaciones', component: MisReservaciones },
@@ -44,8 +44,6 @@ const routes = [
   { path: '/resultados-vuelos', component: ResultadosVuelos },
   { path: '/resultados-hoteles', component: ResultadosHoteles },
   { path: '/resultados-paquetes', component: ResultadosPaquetes },
-  { path: '/detalle-vuelo/:id', component: DetalleVuelo },
-  { path: '/detalle-hotel/:id', component: DetalleHotel },
   { path: '/admin', redirect: '/admin/dashboard' },
   { path: '/admin/dashboard', component: Dashboard },
   { path: '/admin/roles', component: GestionRoles },

@@ -127,7 +127,6 @@
             <div v-if="modificarAbierto" class="rh-modificar-inline">
               <div class="rh-modificar-grid">
 
-                <!-- Destino -->
                 <div class="rh-mod-section">
                   <p class="rh-mod-section__label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
@@ -166,7 +165,6 @@
                   </div>
                 </div>
 
-                <!-- Fechas + Personas + CTA -->
                 <div class="rh-mod-section rh-mod-section--row">
                   <div class="rh-mod-field">
                     <label class="rh-mod-label">Check-in</label>
@@ -329,14 +327,11 @@
                 </div>
                 <div class="rh-grupo__head-right">
                   <span class="rh-grupo__proveedor">{{ grupo.proveedorNombre }}</span>
-
-                  <!-- DESDE: precio mínimo del grupo -->
                   <div class="rh-grupo__desde">
                     <span class="rh-grupo__desde-lbl">Desde</span>
                     <span class="rh-grupo__desde-precio">{{ fmt(Math.min(...grupo.habitaciones.map(h => h.precioPorNoche))) }}</span>
                     <span class="rh-grupo__desde-sub">/ noche</span>
                   </div>
-
                   <span class="rh-grupo__count">{{ grupo.habitaciones.length }} tipo{{ grupo.habitaciones.length !== 1 ? 's' : '' }}</span>
                 </div>
               </div>
@@ -352,7 +347,7 @@
               <template v-if="getHotelCombos(grupo)">
                 <div class="rh-hotel-combos">
 
-                  <!-- Combinación exacta (combinacionesNumericas) -->
+                  <!-- Combinación exacta -->
                   <div v-if="getHotelCombos(grupo).combo" class="rh-combo-panel rh-combo-panel--exact">
                     <div class="rh-combo-panel__label">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
@@ -490,7 +485,7 @@
                 </div>
               </template>
 
-              <!-- Solo mostrar tarjetas individuales de habitaciones que caben el grupo completo -->
+              <!-- Tarjetas individuales de habitaciones que caben el grupo completo -->
               <div class="rh-habitaciones"
                 v-if="grupo.habitaciones.filter(h => h.capacidadMaxima >= busqueda.cantidadPersonas).length > 0">
                 <article
@@ -696,12 +691,12 @@ function toggleModificar() {
 
 async function rebuscar() {
   modError.value = ''
-  if (!form.pais || !form.ciudad)  { modError.value = 'Selecciona país y ciudad de destino.'; return }
-  if (!form.checkIn)               { modError.value = 'Selecciona la fecha de check-in.'; return }
-  if (form.checkIn < hoy)          { modError.value = 'El check-in no puede ser una fecha pasada.'; return }
-  if (!form.checkOut)              { modError.value = 'Selecciona la fecha de check-out.'; return }
+  if (!form.pais || !form.ciudad)    { modError.value = 'Selecciona país y ciudad de destino.'; return }
+  if (!form.checkIn)                 { modError.value = 'Selecciona la fecha de check-in.'; return }
+  if (form.checkIn < hoy)            { modError.value = 'El check-in no puede ser una fecha pasada.'; return }
+  if (!form.checkOut)                { modError.value = 'Selecciona la fecha de check-out.'; return }
   if (form.checkOut <= form.checkIn) { modError.value = 'El check-out debe ser posterior al check-in.'; return }
-  if (form.cantidadPersonas < 1)   { modError.value = 'Debe haber al menos 1 persona.'; return }
+  if (form.cantidadPersonas < 1)     { modError.value = 'Debe haber al menos 1 persona.'; return }
 
   buscandoMod.value = true
   try {
@@ -790,11 +785,10 @@ const gruposPorHotel = computed(() => {
     map.get(key).habitaciones.push(hab)
   }
 
-  // Solo mostrar hoteles que pueden acomodar N personas por algún medio
   const personas = busqueda.value.cantidadPersonas
   return Array.from(map.values()).filter(g => {
-    if (g.tiposHabitacion?.some(r => r.capacidadMaxima >= personas))                     return true
-    if (Object.keys(g.tiposHabitacionPorCapacidad || {}).some(k => Number(k) >= personas)) return true
+    if (g.tiposHabitacion?.some(r => r.capacidadMaxima >= personas))                         return true
+    if (Object.keys(g.tiposHabitacionPorCapacidad || {}).some(k => Number(k) >= personas))   return true
     if (_getComboHabs(g))                  return true
     if (_getComboAproximado(g, personas))  return true
     if (_getPersonaExtraMin(g, personas))  return true
@@ -802,8 +796,7 @@ const gruposPorHotel = computed(() => {
   })
 })
 
-// ══ COMBO HELPERS (igual que Svelte) ═════════════════════════
-
+// ══ COMBO HELPERS ═════════════════════════════════════════════
 function fmt(p) {
   return new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(p)
 }
@@ -822,14 +815,11 @@ function _getComboHabs(hotel) {
     if (idx >= rooms.length) return null
     const r = rooms[idx]
     result.push({
-      tipo:                  r.tipoHabitacion,
-      precio:                r.precioPorNoche,
-      precioPorPersona:      r.precioPorPersona,
-      cap,
-      tipoCama:              r.tipoCama,
-      metrosCuadrados:       r.metrosCuadrados || null,
+      tipo: r.tipoHabitacion, precio: r.precioPorNoche,
+      precioPorPersona: r.precioPorPersona, cap,
+      tipoCama: r.tipoCama, metrosCuadrados: r.metrosCuadrados || null,
       habitacionesDisponibles: r.habitacionesDisponibles || [],
-      cantidadDisponible:    (r.habitacionesDisponibles || []).length,
+      cantidadDisponible: (r.habitacionesDisponibles || []).length,
     })
     usados[key] = idx + 1
   }
@@ -850,14 +840,11 @@ function _getComboAproximado(hotel, personas) {
     const cap = Number(capStr)
     for (const room of rooms) {
       todasHabs.push({
-        tipo:                  room.tipoHabitacion,
-        precio:                room.precioPorNoche,
-        precioPorPersona:      room.precioPorPersona,
-        cap,
-        tipoCama:              room.tipoCama,
-        metrosCuadrados:       room.metrosCuadrados || null,
+        tipo: room.tipoHabitacion, precio: room.precioPorNoche,
+        precioPorPersona: room.precioPorPersona, cap,
+        tipoCama: room.tipoCama, metrosCuadrados: room.metrosCuadrados || null,
         habitacionesDisponibles: room.habitacionesDisponibles || [],
-        cantidadDisponible:    (room.habitacionesDisponibles || []).length,
+        cantidadDisponible: (room.habitacionesDisponibles || []).length,
       })
     }
   }
@@ -887,26 +874,18 @@ function _getPersonaExtraMin(hotel, personas) {
     precioPorPersona: best.precioPorPersona,
     cap: personas - 1,
     total: best.precioPorNoche + best.precioPorPersona,
+    // ← incluir habitaciones para poder pre-crear la reserva
+    habitacionesDisponibles: best.habitacionesDisponibles || [],
   }
 }
 
-/**
- * Devuelve { combo, aprox, extra } para un grupo/hotel.
- * Retorna null si no hay ninguna opción de combo relevante.
- */
 function getHotelCombos(grupo) {
   const personas = busqueda.value.cantidadPersonas
   const combo    = _getComboHabs(grupo)
   const aprox    = _getComboAproximado(grupo, personas)
   const extra    = _getPersonaExtraMin(grupo, personas)
   if (!combo && !aprox && !extra) return null
-
-  // Tipos de habitación consumidos por el combo principal (para ocultarlos de la lista individual)
-  const tiposUsados = new Set()
-  if (combo)      combo.habs.forEach(h => tiposUsados.add(h.tipo))
-  else if (aprox) aprox.habs.forEach(h => tiposUsados.add(h.tipo))
-
-  return { combo, aprox, extra, tiposUsados }
+  return { combo, aprox, extra }
 }
 
 // ── Mapeo respuesta API ───────────────────────────────────────
@@ -922,7 +901,6 @@ function mapearRespuesta(respuesta) {
       if (!hotel) continue
 
       const roomsMap = new Map()
-
       if (Array.isArray(hotel.tiposHabitacion)) {
         for (const room of hotel.tiposHabitacion) roomsMap.set(room.tipoHabitacionId, room)
       }
@@ -954,7 +932,6 @@ function mapearRespuesta(respuesta) {
           capacidadMaxima: room.capacidadMaxima ?? 1,
           habitacionesDisponibles: habitacionesDisp,
           cantidadDisponible: habitacionesDisp.length,
-          // Guardamos datos crudos para combos
           _tiposHabitacion:             Array.isArray(hotel.tiposHabitacion) ? hotel.tiposHabitacion : [],
           _tiposHabitacionPorCapacidad: hotel.tiposHabitacionPorCapacidad || null,
           _combinacionesNumericas:      hotel.combinacionesNumericas || [],
@@ -978,60 +955,159 @@ function resetFiltros() {
   filtros.value = { precioMin: 0, precioMax: 9999, tipos: [], hoteles: [], proveedores: [], amenidades: [] }
 }
 
+// ── PRE-CREACIÓN DE RESERVA EN BACKGROUND ────────────────────
+// Construye el payload para POST /api/reservaciones/detalle/hotel
+function buildHotelPayload(reservaId, itemData) {
+  const b = itemData.busqueda
+  let habitaciones = []
+
+  if (itemData.esCombo) {
+    // Combo de múltiples habitaciones
+    habitaciones = (itemData.habs || [])
+      .filter(h => h.habitacionesDisponibles?.length > 0)
+      .map(h => ({
+        habitacionId:     h.habitacionesDisponibles[0].id,
+        fechaCheckIn:     b.checkIn,
+        fechaCheckOut:    b.checkOut,
+        cantidadPersonas: h.cap,
+      }))
+  } else {
+    // Habitación simple o extra — ambas guardan habitacionesDisponibles
+    const rooms = itemData.habitacionesDisponibles || []
+    if (!rooms.length) return null
+    habitaciones = [{
+      habitacionId:     rooms[0].id,
+      fechaCheckIn:     b.checkIn,
+      fechaCheckOut:    b.checkOut,
+      cantidadPersonas: b.cantidadPersonas,
+    }]
+  }
+
+  if (!habitaciones.length) return null
+
+  return {
+    reservacionId: reservaId,
+    proveedorId:   itemData.proveedorId,
+    habitaciones,
+  }
+}
+
+async function precrearReservacionHotel(itemData) {
+  try {
+    // PASO 1: crear la reservación (tipo 2 = hotel)
+    const res1 = await fetch(`${API}/api/reservaciones`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo_reserva_id: 2 }),
+    })
+    if (!res1.ok) return null
+    const reserva = await res1.json()
+
+    // PASO 2: construir y enviar detalle de hotel
+    const payload = buildHotelPayload(reserva.id, itemData)
+    let detalle   = null
+
+    if (payload) {
+      const res2 = await fetch(`${API}/api/reservaciones/detalle/hotel`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (res2.ok) detalle = await res2.json()
+    }
+
+    // expiresAt viene SIEMPRE del backend, nunca calculado localmente.
+    // Preferencia: fechaExpiracion del detalle/hotel > fecha_expiracion de la reserva
+    let expiresAt = 0
+    if (detalle?.detalle?.fechaExpiracion) {
+      expiresAt = new Date(detalle.detalle.fechaExpiracion).getTime()
+    } else if (reserva.fecha_expiracion) {
+      expiresAt = new Date(reserva.fecha_expiracion.replace(' ', 'T')).getTime()
+    }
+    if (!expiresAt || expiresAt <= Date.now()) expiresAt = Date.now() + 600_000
+    const segundos = Math.max(30, Math.floor((expiresAt - Date.now()) / 1000))
+
+    return { reserva, detalle, segundos, expiresAt }
+  } catch {
+    return null
+  }
+}
+
 // ── Selección → reservar ──────────────────────────────────────
 function seleccionarHabitacion(hab, grupo) {
   seleccionada.value = hab.uid
   sessionStorage.removeItem('vuelo_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
-  sessionStorage.setItem('hotel_seleccionado', JSON.stringify({
+
+  const itemData = {
     ...hab,
     noches: noches.value,
     totalEstancia: hab.precioPorNoche * noches.value,
     busqueda: busqueda.value,
-  }))
+  }
+  sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
+
+  // Disparar pre-creación en background
+  window.__reservaPromise = precrearReservacionHotel(itemData)
+
   router.push('/reservar')
 }
 
-// ── Reservar extra → reservar ─────────────────────────────────
 function reservarExtra(extraInfo, grupo) {
   sessionStorage.removeItem('vuelo_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
-  sessionStorage.setItem('hotel_seleccionado', JSON.stringify({
-    esExtra:        true,
-    tipo:           extraInfo.tipo,
-    precioPorNoche: extraInfo.precioPorNoche,
+
+  const itemData = {
+    esExtra:         true,
+    tipo:            extraInfo.tipo,
+    precioPorNoche:  extraInfo.precioPorNoche,
     precioPorPersona: extraInfo.precioPorPersona,
-    total:          extraInfo.total,
-    nombreHotel:    grupo.nombreHotel,
+    total:           extraInfo.total,
+    // ← habitaciones necesarias para la pre-creación
+    habitacionesDisponibles: extraInfo.habitacionesDisponibles || [],
+    nombreHotel:     grupo.nombreHotel,
     proveedorNombre: grupo.proveedorNombre,
-    proveedorId:    grupo.proveedorId,
-    hotelId:        grupo.hotelId,
-    noches:         noches.value,
-    totalEstancia:  extraInfo.total * noches.value,
-    busqueda:       busqueda.value,
-  }))
+    proveedorId:     grupo.proveedorId,
+    hotelId:         grupo.hotelId,
+    noches:          noches.value,
+    totalEstancia:   extraInfo.total * noches.value,
+    busqueda:        busqueda.value,
+  }
+  sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
+
+  // Disparar pre-creación en background
+  window.__reservaPromise = precrearReservacionHotel(itemData)
+
   router.push('/reservar')
 }
 
-// ── Reservar combo → reservar ─────────────────────────────────
 function reservarCombo(comboInfo, grupo) {
   sessionStorage.removeItem('vuelo_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
-  sessionStorage.setItem('hotel_seleccionado', JSON.stringify({
-    esCombo:        true,
-    habs:           comboInfo.habs,
-    nombreHotel:    grupo.nombreHotel,
+
+  const itemData = {
+    esCombo:         true,
+    habs:            comboInfo.habs,
+    nombreHotel:     grupo.nombreHotel,
     proveedorNombre: grupo.proveedorNombre,
-    proveedorId:    grupo.proveedorId,
-    hotelId:        grupo.hotelId,
-    direccion:      grupo.direccion,
-    total:          comboInfo.total,
-    noches:         noches.value,
-    totalEstancia:  comboInfo.total * noches.value,
-    busqueda:       busqueda.value,
-  }))
+    proveedorId:     grupo.proveedorId,
+    hotelId:         grupo.hotelId,
+    direccion:       grupo.direccion,
+    total:           comboInfo.total,
+    noches:          noches.value,
+    totalEstancia:   comboInfo.total * noches.value,
+    busqueda:        busqueda.value,
+  }
+  sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
+
+  // Disparar pre-creación en background
+  window.__reservaPromise = precrearReservacionHotel(itemData)
+
   router.push('/reservar')
 }
+
 onMounted(() => {
   if (!busqueda.value.ciudad) { error.value = 'Faltan datos de búsqueda.'; loading.value = false; return }
   if (resultadosRaw && Array.isArray(resultadosRaw) && resultadosRaw.length > 0) {

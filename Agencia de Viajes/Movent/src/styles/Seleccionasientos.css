@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════
+   seleccion-asientos.css  —  SeleccionAsientos.vue
+   Paleta MOVENT: #1C1A18 · #FFCC00 · #D40511 · #F5F2EC
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Variables (paleta MOVENT) ── */
+.asi-page {
+  --c-dark:   #1C1A18;
+  --c-yellow: #FFCC00;
+  --c-red:    #D40511;
+  --c-bg:     #F5F2EC;
+  --c-border: #e8e3dc;
+  --c-muted:  #9a9089;
+  --c-gold:   #c9a96e;
+
+  background: var(--c-bg);
+  min-height: calc(100vh - 64px);
+  padding: 28px 0 80px;
+}
+
+.asi-container {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Overlay ── */
+.asi-overlay {
+  position: fixed; inset: 0;
+  background: rgba(28,26,24,.78);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(4px);
+}
+.asi-overlay__card {
+  background: #fff; border-radius: 18px; padding: 44px 40px;
+  text-align: center; display: flex; flex-direction: column;
+  align-items: center; gap: 14px; max-width: 380px;
+  width: calc(100% - 32px); box-shadow: 0 24px 80px rgba(0,0,0,.35);
+}
+.asi-overlay__card--error { border-top: 4px solid #D40511; }
+.asi-overlay__titulo { font-size: 18px; font-weight: 800; color: #1C1A18; margin: 0; }
+.asi-overlay__msg    { font-size: 13px; color: #5a5047; line-height: 1.6; margin: 0; }
+
+/* ── Header ── */
+.asi-header {
+  display: flex; align-items: flex-start; gap: 16px;
+  margin-bottom: 20px; flex-wrap: wrap;
+}
+.asi-back {
+  background: transparent; border: 1px solid var(--c-border);
+  padding: 8px 16px; border-radius: 8px; color: var(--c-muted);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: inherit; white-space: nowrap;
+  transition: all .15s; flex-shrink: 0;
+}
+.asi-back:hover { border-color: #1C1A18; color: #1C1A18; }
+
+.asi-titulo { flex: 1; }
+.asi-titulo__main { font-size: 20px; font-weight: 800; color: #1C1A18; margin: 0 0 4px; }
+.asi-titulo__sub  { font-size: 12px; color: var(--c-muted); margin: 0; }
+
+/* Timer */
+.asi-timer {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #1C1A18; color: #FFCC00; border-radius: 20px;
+  padding: 6px 14px; font-size: 14px; font-weight: 900;
+  font-variant-numeric: tabular-nums; flex-shrink: 0;
+  transition: background .3s, color .3s;
+}
+.asi-timer--warn    { background: #78350f; color: #fbbf24; }
+.asi-timer--urgente { background: #7f1d1d; color: #ff6b6b; animation: asi-pulse .8s ease-in-out infinite; }
+@keyframes asi-pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+
+/* ── Progreso multi-vuelo ── */
+.asi-vuelos-prog {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 10px 20px 16px; flex-wrap: wrap; row-gap: 8px;
+}
+.asi-vuelos-prog__item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--c-muted); font-weight: 600;
+}
+.asi-vuelos-prog__item--activo  { color: #1C1A18; }
+.asi-vuelos-prog__item--completo{ color: #16a34a; }
+.asi-vuelos-prog__num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--c-border); display: flex; align-items: center;
+  justify-content: center; font-size: 11px; font-weight: 800;
+}
+.asi-vuelos-prog__item--activo .asi-vuelos-prog__num   { background: #FFCC00; color: #1C1A18; }
+.asi-vuelos-prog__item--completo .asi-vuelos-prog__num { background: #16a34a; color: #fff; }
+.asi-vuelos-prog__linea { width: 40px; height: 2px; background: var(--c-border); margin: 0 8px; }
+.asi-vuelos-prog__linea--completa { background: #16a34a; }
+
+/* ── Estado carga / error ── */
+.asi-estado {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 60px 20px; text-align: center;
+  color: var(--c-muted); font-size: 14px;
+  border: 1px dashed var(--c-border); border-radius: 12px;
+  background: #fff; margin-top: 8px;
+}
+.asi-estado--error {
+  border-color: #fecaca; border-style: solid;
+  color: #D40511; background: #fff5f5;
+}
+
+/* Spinners */
+.asi-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--c-border);
+  border-top-color: #FFCC00;
+  border-radius: 50%;
+  animation: asi-spin .8s linear infinite;
+}
+.asi-spinner-sm {
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid rgba(28,26,24,.25); border-top-color: #1C1A18;
+  border-radius: 50%; animation: asi-spin .7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes asi-spin { to { transform: rotate(360deg); } }
+
+/* ── Body: mapa + sidebar ── */
+.asi-body {
+  display: grid;
+  grid-template-columns: 1fr 290px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ══════════════════════════════════════════════════════════
+   AVIÓN
+══════════════════════════════════════════════════════════ */
+.asi-mapa-wrap {
+  display: flex; flex-direction: column; align-items: center;
+}
+.asi-avion-nariz,
+.asi-avion-cola  { width: 100%; max-width: 480px; }
+.asi-avion-nariz svg,
+.asi-avion-cola  svg { width: 100%; height: auto; display: block; }
+
+.asi-avion-cuerpo {
+  width: 100%; max-width: 480px;
+  background: #1C1A18;
+  border-left:  1.5px solid var(--c-gold);
+  border-right: 1.5px solid var(--c-gold);
+  padding: 6px 20px 12px;
+  display: flex; flex-direction: column; gap: 0;
+}
+
+/* Cabecera columnas */
+.asi-cols-header {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 0 4px; justify-content: center;
+}
+.asi-col-lbl {
+  width: 36px; text-align: center;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--c-gold); flex-shrink: 0;
+}
+
+/* Zona labels */
+.asi-zona-lbl {
+  display: flex; justify-content: center; padding: 6px 0 4px;
+}
+.asi-zona-lbl span {
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 2px; padding: 3px 12px; border-radius: 20px;
+}
+.asi-zona-lbl--eje span {
+  color: #c9a96e;
+  background: rgba(201,169,110,.12);
+  border: 1px solid rgba(201,169,110,.25);
+}
+.asi-zona-lbl--tur span {
+  color: #8fa8c8;
+  background: rgba(59,79,107,.15);
+  border: 1px solid rgba(59,79,107,.25);
+}
+
+/* Separador cabina */
+.asi-separador {
+  display: flex; align-items: center; gap: 8px; padding: 8px 0;
+}
+.asi-separador__linea { flex: 1; height: 1px; background: var(--c-gold); opacity: .25; }
+.asi-separador__lbl {
+  font-size: 8px; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--c-gold); opacity: .6; white-space: nowrap;
+}
+
+/* Filas */
+.asi-fila {
+  display: flex; align-items: center; gap: 4px;
+  padding: 2px 0; justify-content: center;
+}
+.asi-fila--eje { padding: 4px 0; }
+.asi-fila-num {
+  width: 20px; text-align: right; font-size: 9px;
+  color: var(--c-gold); opacity: .5; flex-shrink: 0;
+  margin-right: 4px; font-variant-numeric: tabular-nums;
+}
+.asi-pasillo { width: 20px; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════
+   ASIENTOS
+══════════════════════════════════════════════════════════ */
+.asi-seat {
+  width: 34px; height: 30px;
+  border-radius: 4px 4px 2px 2px;
+  border: none; cursor: pointer;
+  transition: all .15s ease;
+  flex-shrink: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+.asi-seat--eje { width: 40px; height: 36px; border-radius: 6px 6px 3px 3px; }
+
+/* Libre */
+.asi-seat--libre { background: #2c3a2c; border: 1px solid #3d5c3d; }
+.asi-seat--libre:hover:not(:disabled) {
+  background: #3d5c3d; border-color: #5c8c5c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(60,100,60,.4);
+}
+
+/* Seleccionado (propio) */
+.asi-seat--seleccionado {
+  background: #FFCC00 !important;
+  border: 1px solid #d4aa00 !important;
+  box-shadow: 0 0 0 2px rgba(255,204,0,.35);
+  transform: translateY(-2px);
+}
+.asi-seat--seleccionado:hover:not(:disabled) { background: #e6b800 !important; }
+
+.asi-seat__num { font-size: 9px; font-weight: 800; color: #1C1A18; line-height: 1; }
+
+/* Ocupado */
+.asi-seat--ocupado {
+  background: #2a1e1e; border: 1px solid #4a2c2c;
+  cursor: not-allowed; opacity: .7;
+}
+
+/* Bloqueado (otra clase) */
+.asi-seat--bloqueado {
+  background: #1e1c18; border: 1px solid #2c2a22;
+  cursor: not-allowed; opacity: .3;
+}
+
+/* Vacío */
+.asi-seat--vacio { visibility: hidden; }
+
+/* Muestra en leyenda */
+.asi-seat--muestra {
+  width: 22px !important; height: 18px !important;
+  border-radius: 3px 3px 1px 1px;
+  cursor: default; pointer-events: none; flex-shrink: 0;
+  transform: none !important; box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════════════ */
+.asi-sidebar {
+  position: sticky; top: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Progreso */
+.asi-progreso {
+  background: #fff; border-radius: 12px;
+  border: 1px solid var(--c-border);
+  border-top: 3px solid #FFCC00;
+  padding: 16px 18px;
+}
+.asi-progreso__header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 10px;
+}
+.asi-progreso__titulo {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--c-muted);
+}
+.asi-progreso__conteo { font-size: 16px; font-weight: 800; color: #1C1A18; }
+.asi-progreso__barra  {
+  height: 4px; background: var(--c-border);
+  border-radius: 2px; overflow: hidden;
+}
+.asi-progreso__fill {
+  height: 100%; background: #FFCC00;
+  border-radius: 2px; transition: width .3s ease;
+}
+.asi-progreso__guardando {
+  font-size: 11px; color: #1C1A18;
+  margin: 8px 0 0; display: flex; align-items: center; gap: 6px;
+}
+.asi-progreso__error { font-size: 11px; color: #D40511; margin: 8px 0 0; font-weight: 600; }
+
+/* Lista pasajeros */
+.asi-pax-lista {
+  background: #fff; border-radius: 12px;
+  border: 1px solid var(--c-border);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.asi-pax-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  border: 1.5px solid var(--c-border);
+  background: #fdfcfa; cursor: pointer; transition: all .15s;
+}
+.asi-pax-item:hover            { border-color: #d0c8bd; }
+.asi-pax-item--activo          { border-color: #FFCC00; background: rgba(255,204,0,.05); }
+.asi-pax-item--completo        { border-color: #16a34a; background: rgba(22,163,74,.04); }
+.asi-pax-item__num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--c-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #1C1A18;
+  flex-shrink: 0; transition: background .15s;
+}
+.asi-pax-item--activo  .asi-pax-item__num { background: #FFCC00; }
+.asi-pax-item--completo .asi-pax-item__num { background: #16a34a; color: #fff; }
+.asi-pax-item__info {
+  flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0;
+}
+.asi-pax-item__label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--c-muted);
+}
+.asi-pax-item__asiento { font-size: 13px; font-weight: 700; color: #1C1A18; }
+.asi-pax-item--completo .asi-pax-item__asiento { color: #16a34a; }
+.asi-pax-item__clase   { font-size: 10px; color: var(--c-muted); }
+
+/* Leyenda */
+.asi-leyenda {
+  background: #fff; border-radius: 12px;
+  border: 1px solid var(--c-border); padding: 14px 16px;
+}
+.asi-leyenda__titulo {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--c-muted); margin: 0 0 10px;
+}
+.asi-leyenda__items { display: flex; flex-direction: column; gap: 8px; }
+.asi-leyenda__item  { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #1C1A18; }
+
+/* Botón continuar */
+.asi-continuar {
+  width: 100%; padding: 14px 18px;
+  background: var(--c-border); color: var(--c-muted);
+  border: none; border-radius: 10px; font-family: inherit;
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 1.5px; cursor: not-allowed; transition: all .25s ease;
+}
+.asi-continuar--listo {
+  background: #1C1A18; color: #fff; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(28,26,24,.2);
+}
+.asi-continuar--listo:hover {
+  background: #FFCC00; color: #1C1A18;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255,204,0,.35);
+}
+
+/* Botones utilitarios */
+.asi-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px 20px; border-radius: 8px;
+  font-size: 14px; font-weight: 700; cursor: pointer; border: none;
+  transition: all .15s; font-family: inherit;
+}
+.asi-btn--yellow             { background: #FFCC00; color: #1C1A18; }
+.asi-btn--yellow:hover       { background: #e6b800; }
+.asi-btn--ghost              { background: transparent; border: 1px solid var(--c-border); color: #5a5047; }
+.asi-btn--ghost:hover        { background: var(--c-bg); }
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .asi-body    { grid-template-columns: 1fr; }
+  .asi-sidebar { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .asi-continuar { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .asi-sidebar       { grid-template-columns: 1fr; }
+  .asi-avion-cuerpo  { padding: 4px 8px 10px; }
+  .asi-seat          { width: 28px; height: 25px; }
+  .asi-seat--eje     { width: 34px; height: 30px; }
+  .asi-col-lbl       { width: 28px; }
+}
