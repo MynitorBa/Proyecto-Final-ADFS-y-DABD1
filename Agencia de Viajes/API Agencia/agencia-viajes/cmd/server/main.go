@@ -4,6 +4,7 @@ import (
 	"agencia-viajes/internal/config"
 	"agencia-viajes/internal/controllers"
 	"agencia-viajes/internal/middlewares"
+	"agencia-viajes/internal/repositories"
 	"agencia-viajes/internal/services"
 	"agencia-viajes/pkg/database"
 	"log"
@@ -44,7 +45,10 @@ func main() {
 	expiracionService := services.NewExpiracionService(db)
 	reservacionService := services.NewReservacionService(db, expiracionService)
 	detalleReservacionService := services.NewDetalleReservacionService(db)
-	asientoVueloService := services.NewAsientoVueloService(db) // ← NUEVO
+	asientoVueloService := services.NewAsientoVueloService(db)
+	pagoRepo := repositories.NewPagoRepository(db)
+	reservacionRepo := repositories.NewReservacionRepository(db)
+	pagoService := services.NewPagoService(pagoRepo, reservacionRepo)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -57,7 +61,8 @@ func main() {
 	busquedaController := controllers.NewBusquedaController(busquedaService)
 	reservacionController := controllers.NewReservacionController(reservacionService)
 	detalleReservacionController := controllers.NewDetalleReservacionController(detalleReservacionService)
-	asientoVueloController := controllers.NewAsientoVueloController(asientoVueloService) // ← NUEVO
+	asientoVueloController := controllers.NewAsientoVueloController(asientoVueloService)
+	pagoController := controllers.NewPagoController(pagoService)
 
 	// Iniciar servicio de expiración
 	expiracionService.Iniciar()
@@ -83,19 +88,22 @@ func main() {
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
 
-			// Gestión de Reservaciones
+			//Gestión de Reservaciones
 			protegido.POST("/reservaciones", reservacionController.CrearReservacion)
 
-			// Detalles (Vuelos y Hoteles)
+			//Detalles (Vuelos y Hoteles)
 			protegido.POST("/reservaciones/detalle/vuelo", detalleReservacionController.AgregarDetalleVuelo)
 			protegido.POST("/reservaciones/detalle/hotel", detalleReservacionController.AgregarDetalleHotel)
 
-			// Pasajeros de vuelo
+			//Pasajeros de vuelo
 			protegido.POST("/reservaciones/detalle/pasajeros-vuelo", detalleReservacionController.AgregarPasajerosVuelo)
 
-			// Asientos de vuelo
+			//Asientos de vuelo
 			protegido.GET("/reservaciones/asientos-vuelo", asientoVueloController.ObtenerAsientos)
 			protegido.PUT("/reservaciones/asientos-vuelo", asientoVueloController.CambiarAsiento)
+
+			//pagar reservacion
+			protegido.POST("/reservaciones/pagar", pagoController.Pagar)
 
 			// Rutas de Administrador (Rol 2)
 			admin := protegido.Group("/")

@@ -39,6 +39,9 @@ builder.Services.AddScoped<AgenciaAuthMiddleware>();
 builder.Services.AddScoped<ReservacionAgenciaRepository>();
 builder.Services.AddScoped<AsientoAgenciaRepository>();
 
+builder.Services.AddScoped<ConfirmarReservacionAgenciaRepository>();
+
+
 // Servicios
 builder.Services.AddScoped<NacionalidadService>();
 builder.Services.AddScoped<UsuarioService>();
@@ -65,6 +68,8 @@ builder.Services.AddScoped<VueloAgenciaService>();
 builder.Services.AddScoped<ReservacionAgenciaService>();
 
 builder.Services.AddScoped<AsientoAgenciaService>();
+
+builder.Services.AddScoped<ConfirmarReservacionAgenciaService>();
 
 
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));

@@ -48,5 +48,15 @@ namespace Aerolinea.API.Services
                 html
             );
         }
+
+
+
+
+
+        //agencias
+        public async Task<int> ObtenerUsuarioWebIdDeAgencia(int agenciaId)
+        {
+            return await _repository.ObtenerUsuarioWebIdDeAgencia(agenciaId);
+        }
     }
 }

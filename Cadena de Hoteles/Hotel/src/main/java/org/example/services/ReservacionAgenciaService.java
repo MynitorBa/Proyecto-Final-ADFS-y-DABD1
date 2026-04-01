@@ -116,4 +116,20 @@ public class ReservacionAgenciaService {
 
         repository.expirarReservacion(reservacionId);
     }
+
+
+    public List<ReservacionDetalleDTO> obtenerDetalleReservacion(int reservacionId, int agenciaId) {
+        List<ReservacionDetalleDTO> detalles = repository.obtenerDetalleReservacionAgencia(reservacionId, agenciaId);
+
+        if (detalles == null || detalles.isEmpty()) {
+            throw new IllegalArgumentException("Reservación no encontrada o no pertenece a esta agencia");
+        }
+
+        for (ReservacionDetalleDTO dto : detalles) {
+            dto.setImagenesHotelIds(repository.obtenerImagenesHotel(dto.getHotelId()));
+            dto.setImagenesHabitacionIds(repository.obtenerImagenesHabitacion(dto.getHabitacionId()));
+        }
+
+        return detalles;
+    }
 }
