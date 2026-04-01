@@ -40,4 +40,20 @@ public class CancelacionRepository {
                 "WHERE ID = ?";
         DatabaseManager.executeUpdate(sql, motivoCancelacion, reservacionId);
     }
+
+    public Object[] obtenerReservacionAgenciaParaCancelar(int reservacionId, int agenciaId) {
+        String sql = "SELECT r.ID, r.EstadoID, er.Estado " +
+                "FROM Reservacion r " +
+                "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
+                "JOIN Agencia a ON a.usuariowebis_id = r.Usuario_ID " +  // ← join por usuario web
+                "WHERE r.ID = ? AND a.ID = ?";
+
+        List<Object[]> result = DatabaseManager.executeQuery(sql, rs -> new Object[]{
+                rs.getInt("ID"),
+                rs.getInt("EstadoID"),
+                rs.getString("Estado")
+        }, reservacionId, agenciaId);
+
+        return result.isEmpty() ? null : result.get(0);
+    }
 }

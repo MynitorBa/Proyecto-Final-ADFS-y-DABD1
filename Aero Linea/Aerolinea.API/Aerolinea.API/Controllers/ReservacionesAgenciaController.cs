@@ -1,4 +1,5 @@
-﻿using Aerolinea.API.Helpers;
+﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -50,6 +51,43 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+
+
+
+
+        // POST api/reservaciones-agencia/gestion/{reservacionId}/cancelar
+        [HttpPost("{reservacionId}/cancelar")]
+        public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
+        {
+            try
+            {
+                int usuarioId = await ObtenerUsuarioWebId();
+                await _service.CancelarReservacion(reservacionId, usuarioId, dto?.Motivo);
+                return Ok(new { message = "Reservación cancelada exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+        [HttpGet("{reservacionId}/puede-cancelar")]
+        public async Task<IActionResult> PuedeCancelar(int reservacionId)
+        {
+            try
+            {
+                int usuarioId = await ObtenerUsuarioWebId();
+                var resultado = await _service.PuedeCancelar(reservacionId, usuarioId);
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+
+
 
         private async Task<int> ObtenerUsuarioWebId()
         {

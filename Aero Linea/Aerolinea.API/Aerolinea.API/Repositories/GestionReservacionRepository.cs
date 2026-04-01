@@ -452,5 +452,67 @@ namespace Aerolinea.API.Repositories
             cmd.Parameters.AddWithValue("@agenciaId", agenciaId);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
+        public async Task<PuedeCancelarDTO> PuedeCancelar(int reservacionId, int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // 1. Verificar que existe, pertenece al usuario y está en estado cancelable
+            string queryEstado = @"
+        SELECT EstadoReservaID FROM Reservacion
+        WHERE ID = @reservacionId AND UsuarioID = @usuarioId";
+
+            int? estado = null;
+            using (var cmd = new SqlCommand(queryEstado, connection))
+            {
+                cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
+                cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
+                var resultado = await cmd.ExecuteScalarAsync();
+                if (resultado == null || resultado == DBNull.Value)
+                    return new PuedeCancelarDTO { PuedeCancelar = false, Razon = "Reservación no encontrada o no tienes acceso." };
+                estado = (int)resultado;
+            }
+
+            if (estado != 1 && estado != 2)
+                return new PuedeCancelarDTO { PuedeCancelar = false, Razon = "Solo se pueden cancelar reservaciones pendientes o confirmadas." };
+
+            // 2. Si es pendiente, no hay vuelo confirmado aún — se puede cancelar directo
+            if (estado == 1)
+                return new PuedeCancelarDTO { PuedeCancelar = true, Razon = "Reservación pendiente, puede cancelarse." };
+
+            // 3. Si es confirmada, validar 24hrs mínimas antes del vuelo
+            string queryHoras = @"
+        SELECT MIN(DATEDIFF(HOUR, GETDATE(),
+            DATEADD(HOUR,   DATEPART(HOUR,   v.HoraSalida),
+            DATEADD(MINUTE, DATEPART(MINUTE, v.HoraSalida),
+            CAST(v.Fecha AS DATETIME)))))
+        FROM Boleto b
+        INNER JOIN Vuelo v ON v.ID = b.VueloID
+        WHERE b.ReservacionID  = @reservacionId
+          AND b.EstadoBoletoID IN (2, 3)";
+
+            using (var cmd = new SqlCommand(queryHoras, connection))
+            {
+                cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
+                var resultado = await cmd.ExecuteScalarAsync();
+
+                if (resultado == null || resultado == DBNull.Value)
+                    return new PuedeCancelarDTO { PuedeCancelar = false, Razon = "No se encontraron vuelos activos en esta reservación." };
+
+                int horas = Convert.ToInt32(resultado);
+                if (horas < 24)
+                    return new PuedeCancelarDTO
+                    {
+                        PuedeCancelar = false,
+                        Razon = $"No puedes cancelar. Faltan menos de 24 horas para tu vuelo (quedan {horas} horas)."
+                    };
+
+                return new PuedeCancelarDTO
+                {
+                    PuedeCancelar = true,
+                    Razon = $"Puedes cancelar. Faltan {horas} horas para tu vuelo."
+                };
+            }
+        }
     }
 }

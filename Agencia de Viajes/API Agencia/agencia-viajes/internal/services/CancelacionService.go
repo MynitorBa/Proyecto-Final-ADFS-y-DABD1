@@ -1,0 +1,191 @@
+package services
+
+import (
+	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/repositories"
+	"bytes"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+)
+
+type CancelacionService struct {
+	repo *repositories.CancelacionRepository
+}
+
+func NewCancelacionService(repo *repositories.CancelacionRepository) *CancelacionService {
+	return &CancelacionService{repo: repo}
+}
+
+//Paso 1: Verificar si se puede cancelar
+
+func (s *CancelacionService) VerificarCancelacion(reservacionID, usuarioID int) (*dto.VerificarCancelacionResponse, error) {
+	// 1. Verificar que existe y pertenece al usuario
+	estadoID, err := s.repo.ObtenerReservacionParaCancelar(reservacionID, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Verificar estado cancelable
+	if estadoID != 1 && estadoID != 2 {
+		return &dto.VerificarCancelacionResponse{
+			PuedeCancelar: false,
+			Detalles:      []dto.VerificarDetalleResponse{},
+		}, nil
+	}
+
+	// 3. Obtener detalles y consultar cada proveedor
+	detalles, err := s.repo.ObtenerDetallesParaCancelar(reservacionID)
+	if err != nil {
+		return nil, err
+	}
+
+	respuesta := &dto.VerificarCancelacionResponse{
+		PuedeCancelar: true,
+		Detalles:      []dto.VerificarDetalleResponse{},
+	}
+
+	for _, d := range detalles {
+		resultado, err := s.consultarPuedeCancelar(d)
+		detalle := dto.VerificarDetalleResponse{
+			TipoDetalleID:      d.TipoDetalleID,
+			IDReservaProveedor: d.IDReservaProveedor,
+		}
+
+		if err != nil {
+			detalle.PuedeCancelar = false
+			detalle.Razon = fmt.Sprintf("Error consultando proveedor: %s", err.Error())
+		} else {
+			detalle.PuedeCancelar = resultado.PuedeCancelar
+			detalle.Razon = resultado.Razon
+		}
+
+		// Si cualquier detalle no puede cancelarse, el global es false
+		if !detalle.PuedeCancelar {
+			respuesta.PuedeCancelar = false
+		}
+
+		respuesta.Detalles = append(respuesta.Detalles, detalle)
+	}
+
+	return respuesta, nil
+}
+
+//Paso 2: Cancelar cancela todas o no
+
+func (s *CancelacionService) CancelarReservacion(reservacionID, usuarioID int, motivo string) error {
+	// 1. Verificar que existe, pertenece al usuario y estado es cancelable
+	estadoID, err := s.repo.ObtenerReservacionParaCancelar(reservacionID, usuarioID)
+	if err != nil {
+		return err
+	}
+	if estadoID != 1 && estadoID != 2 {
+		return errors.New("la reservación no puede cancelarse en su estado actual")
+	}
+
+	// 2. Obtener detalles
+	detalles, err := s.repo.ObtenerDetallesParaCancelar(reservacionID)
+	if err != nil {
+		return err
+	}
+
+	// 3. Verificar TODOS antes de cancelar (rollback lógico)
+	for _, d := range detalles {
+		resultado, err := s.consultarPuedeCancelar(d)
+		if err != nil {
+			return fmt.Errorf("error verificando proveedor: %w", err)
+		}
+		if !resultado.PuedeCancelar {
+			return fmt.Errorf("no se puede cancelar: %s", resultado.Razon)
+		}
+	}
+
+	// 4. Cancelar en cada proveedor
+	for _, d := range detalles {
+		if err := s.cancelarEnProveedor(d, motivo); err != nil {
+			return fmt.Errorf("error cancelando en proveedor: %w", err)
+		}
+	}
+
+	// 5. Cancelar en BD local
+	return s.repo.CancelarReservacion(reservacionID, motivo)
+}
+
+func (s *CancelacionService) consultarPuedeCancelar(d dto.DetalleProveedor) (*dto.ProveedorPuedeCancelarResponse, error) {
+	var url string
+	switch d.TipoDetalleID {
+	case 1: // Aerolínea
+		url = fmt.Sprintf("%s/api/reservaciones-agencia/gestion/%s/puede-cancelar", d.URLAPI, d.IDReservaProveedor)
+	case 2: // Hotel
+		url = fmt.Sprintf("%s/agencia/reservaciones/%s/puede-cancelar", d.URLAPI, d.IDReservaProveedor)
+	default:
+		return nil, fmt.Errorf("tipo de detalle desconocido: %d", d.TipoDetalleID)
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("X-Agencia-Token", d.TokenEntrada)
+
+	resp, err := httpClient().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var resultado dto.ProveedorPuedeCancelarResponse
+	if err := json.Unmarshal(body, &resultado); err != nil {
+		return nil, err
+	}
+	return &resultado, nil
+}
+
+func (s *CancelacionService) cancelarEnProveedor(d dto.DetalleProveedor, motivo string) error {
+	var url, method string
+	var bodyBytes []byte
+
+	switch d.TipoDetalleID {
+	case 1: // Aerolínea — POST con {"motivo": "..."}
+		url = fmt.Sprintf("%s/api/reservaciones-agencia/gestion/%s/cancelar", d.URLAPI, d.IDReservaProveedor)
+		method = "POST"
+		bodyBytes, _ = json.Marshal(map[string]string{"motivo": motivo})
+	case 2: // Hotel — PATCH con {"motivoCancelacion": "..."}
+		url = fmt.Sprintf("%s/agencia/reservaciones/%s/cancelar", d.URLAPI, d.IDReservaProveedor)
+		method = "PATCH"
+		bodyBytes, _ = json.Marshal(map[string]string{"motivoCancelacion": motivo})
+	default:
+		return fmt.Errorf("tipo de detalle desconocido: %d", d.TipoDetalleID)
+	}
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("X-Agencia-Token", d.TokenEntrada)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpClient().Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("proveedor rechazó la cancelación: %s", string(body))
+	}
+	return nil
+}
+
+func httpClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+}

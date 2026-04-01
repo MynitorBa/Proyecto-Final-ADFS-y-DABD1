@@ -7,6 +7,8 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.List;
 
+import java.util.ArrayList;
+
 public class ReservacionAgenciaRepository {
 
     // Obtener usuarioWebisId y descuento de la agencia
@@ -184,6 +186,17 @@ public class ReservacionAgenciaRepository {
     }
 
     public List<ReservacionDetalleDTO> obtenerDetalleReservacionAgencia(int reservacionId, int agenciaId) {
+        // 1. Obtenemos el ID del usuario usando executeQuery (que ya existe en tu DatabaseManager)
+        String sqlUsuario = "SELECT USUARIOWEBIS_ID FROM Agencia WHERE ID = ?";
+        List<Integer> ids = DatabaseManager.executeQuery(sqlUsuario, rs -> rs.getInt("USUARIOWEBIS_ID"), agenciaId);
+
+        if (ids.isEmpty()) {
+            return new ArrayList<>(); // Si la agencia no existe, retornamos lista vacía
+        }
+
+        int usuarioWebServiceId = ids.get(0);
+
+        // 2. Ejecutamos la consulta principal filtrando por el ID del usuario obtenido
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
                 "r.Fecha_Creacion, r.Fecha_Expiracion, r.Fecha_Cancelacion, r.Motivo_Cancelacion, " +
                 "er.Estado, " +
@@ -203,7 +216,7 @@ public class ReservacionAgenciaRepository {
                 "JOIN Cama                c   ON t.TIPOCAMAID         = c.ID " +
                 "JOIN Hotel               hot ON h.HOTELID            = hot.ID " +
                 "WHERE r.ID = ? " +
-                "AND r.Agencia_ID = ? " +   // ← filtra por agencia
+                "AND r.Usuario_ID = ? " +
                 "ORDER BY dr.ID";
 
         return DatabaseManager.executeQuery(sql, rs -> {
@@ -218,8 +231,8 @@ public class ReservacionAgenciaRepository {
             dto.setMotivoCancelacion(rs.getString("Motivo_Cancelacion"));
             dto.setDetalleId(rs.getInt("DetalleID"));
             dto.setHabitacionId(rs.getInt("HabitacionID"));
-            dto.setFechaCheckIn(rs.getDate("FechaCheckIn").toString());
-            dto.setFechaCheckOut(rs.getDate("FechaCheckOut").toString());
+            dto.setFechaCheckIn(rs.getDate("FechaCheckIn") != null ? rs.getDate("FechaCheckIn").toString() : null);
+            dto.setFechaCheckOut(rs.getDate("FechaCheckOut") != null ? rs.getDate("FechaCheckOut").toString() : null);
             dto.setCantidadPersonas(rs.getInt("CantidadPersonas"));
             dto.setTotalDetalle(rs.getDouble("TotalDetalle"));
             dto.setDescripcionHabitacion(rs.getString("DescripcionHabitacion"));
@@ -229,7 +242,7 @@ public class ReservacionAgenciaRepository {
             dto.setHotelId(rs.getInt("HotelID"));
             dto.setNombreHotel(rs.getString("NombreHotel"));
             return dto;
-        }, reservacionId, agenciaId);
+        }, reservacionId, usuarioWebServiceId);
     }
 }
 
