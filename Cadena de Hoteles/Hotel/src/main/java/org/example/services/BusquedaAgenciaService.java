@@ -45,7 +45,6 @@ public class BusquedaAgenciaService {
             }
             hotel.setAmenidades(amenidades);
 
-            // Tipos que cumplen capacidad >= cantidadPersonas — con descuento aplicado
             List<TipoHabitacionResultadoDTO> tiposCumplen = repository
                     .buscarTiposHabitacionDisponibles(
                             hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut);
@@ -58,12 +57,12 @@ public class BusquedaAgenciaService {
             }
             hotel.setTiposHabitacion(tiposCumplen);
 
-            // Todos los tipos para combinaciones
             List<TipoHabitacionResultadoDTO> todosLosTipos = repository
                     .buscarTiposHabitacionDisponibles(
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
+                // SIN aplicarDescuento — combos/extras usan precio raw
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
@@ -98,7 +97,6 @@ public class BusquedaAgenciaService {
         tipo.setPrecioPorNoche(Math.round(tipo.getPrecioPorNoche() * factor * 100.0) / 100.0);
     }
 
-
     public List<HotelResultadoDTO> buscarPorToken(BusquedaRequestDTO request, String token) {
 
         Double porcentajeDescuento = repository.obtenerDescuentoAgenciaPorToken(token);
@@ -117,7 +115,6 @@ public class BusquedaAgenciaService {
         Date fechaCheckIn  = Date.valueOf(LocalDate.parse(request.getFechaCheckIn()));
         Date fechaCheckOut = Date.valueOf(LocalDate.parse(request.getFechaCheckOut()));
 
-        // Guardamos búsqueda sin usuarioId — pasamos NULL
         repository.guardarBusquedaSinUsuario(ciudadId, fechaCheckIn, fechaCheckOut,
                 request.getCantidadPersonas());
 
@@ -149,6 +146,7 @@ public class BusquedaAgenciaService {
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
+                // SIN aplicarDescuento — combos/extras usan precio raw
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }

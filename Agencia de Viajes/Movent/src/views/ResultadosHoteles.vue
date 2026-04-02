@@ -962,7 +962,6 @@ function buildHotelPayload(reservaId, itemData) {
   let habitaciones = []
 
   if (itemData.esCombo) {
-    // Combo de múltiples habitaciones
     habitaciones = (itemData.habs || [])
       .filter(h => h.habitacionesDisponibles?.length > 0)
       .map(h => ({
@@ -970,26 +969,24 @@ function buildHotelPayload(reservaId, itemData) {
         fechaCheckIn:     b.checkIn,
         fechaCheckOut:    b.checkOut,
         cantidadPersonas: h.cap,
+        precioPorNoche:   h.precio,  // precio exacto del search
       }))
   } else {
-    // Habitación simple o extra — ambas guardan habitacionesDisponibles
     const rooms = itemData.habitacionesDisponibles || []
     if (!rooms.length) return null
+    // Para extra: el precio visible es precioPorNoche + precioPorPersona (= total)
+    const precioVisible = itemData.esExtra ? itemData.total : itemData.precioPorNoche
     habitaciones = [{
       habitacionId:     rooms[0].id,
       fechaCheckIn:     b.checkIn,
       fechaCheckOut:    b.checkOut,
       cantidadPersonas: b.cantidadPersonas,
+      precioPorNoche:   precioVisible,  // precio exacto del search
     }]
   }
 
   if (!habitaciones.length) return null
-
-  return {
-    reservacionId: reservaId,
-    proveedorId:   itemData.proveedorId,
-    habitaciones,
-  }
+  return { reservacionId: reservaId, proveedorId: itemData.proveedorId, habitaciones }
 }
 
 async function precrearReservacionHotel(itemData) {

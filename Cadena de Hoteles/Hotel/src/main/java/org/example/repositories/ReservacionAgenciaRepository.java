@@ -23,15 +23,28 @@ public class ReservacionAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // Obtener precios de habitacion
+    // Obtener descuento exacto (con decimales) de la agencia
+    public double obtenerDescuentoAgencia(int agenciaId) {
+        String sql = "SELECT PorcentajeDescuento FROM Agencia " +
+                "WHERE ID = ? AND EstadoID = " +
+                "(SELECT ID FROM EstadoAgencia WHERE LOWER(Estado) = 'activa')";
+        List<Double> result = DatabaseManager.executeQuery(
+                sql, rs -> rs.getDouble("PorcentajeDescuento"), agenciaId
+        );
+        return result.isEmpty() ? 0.0 : result.get(0);
+    }
+
+    // Obtener precios Y capacidad de habitacion
+    // precios[0] = precioPorNoche, precios[1] = precioPorPersona, precios[2] = capacidadMaxima
     public double[] obtenerPrecios(int habitacionId) {
-        String sql = "SELECT t.PRECIONOCHE, t.PRECIOPERSONA " +
+        String sql = "SELECT t.PRECIONOCHE, t.PRECIOPERSONA, t.CAPACIDADMAXIMA " +
                 "FROM Habitacion h " +
                 "JOIN TipoHabitacion t ON h.TIPOHABITACIONID = t.ID " +
                 "WHERE h.ID = ?";
         List<double[]> result = DatabaseManager.executeQuery(sql, rs -> new double[]{
                 rs.getDouble("PRECIONOCHE"),
-                rs.getDouble("PRECIOPERSONA")
+                rs.getDouble("PRECIOPERSONA"),
+                rs.getDouble("CAPACIDADMAXIMA")
         }, habitacionId);
         if (result.isEmpty())
             throw new RuntimeException("Habitación no encontrada: " + habitacionId);
@@ -216,7 +229,11 @@ public class ReservacionAgenciaRepository {
                 "JOIN Cama                c   ON t.TIPOCAMAID         = c.ID " +
                 "JOIN Hotel               hot ON h.HOTELID            = hot.ID " +
                 "WHERE r.ID = ? " +
+<<<<<<< HEAD
+                "AND r.Agencia_ID = ? " +
+=======
                 "AND r.Usuario_ID = ? " +
+>>>>>>> 7e5ef00545698e9f5eb573b056dba2102ae68b07
                 "ORDER BY dr.ID";
 
         return DatabaseManager.executeQuery(sql, rs -> {
@@ -245,4 +262,3 @@ public class ReservacionAgenciaRepository {
         }, reservacionId, usuarioWebServiceId);
     }
 }
-
