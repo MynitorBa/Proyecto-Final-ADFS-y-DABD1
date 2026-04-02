@@ -17,22 +17,22 @@ func NewComentarioService(proveedorRepo *repositories.ProveedorRepository) *Come
 	return &ComentarioService{proveedorRepo: proveedorRepo}
 }
 
-// ObtenerComentariosVuelo — llama a la aerolínea con el proveedor tipo 1
-func (s *ComentarioService) ObtenerComentariosVuelo(rutaID int) (interface{}, error) {
-	proveedor, err := s.proveedorRepo.ObtenerProveedorPorTipo(1)
+// ObtenerComentariosVuelo — llama al proveedor específico por su ID
+func (s *ComentarioService) ObtenerComentariosVuelo(proveedorID, rutaID int) (interface{}, error) {
+	proveedor, err := s.proveedorRepo.ObtenerProveedorPorID(proveedorID)
 	if err != nil {
-		return nil, fmt.Errorf("error obteniendo proveedor de aerolínea: %w", err)
+		return nil, fmt.Errorf("proveedor no encontrado: %w", err)
 	}
 
 	url := fmt.Sprintf("%s/api/comentarios/agencia/ruta/%d", proveedor.URLAPI, rutaID)
 	return s.llamarProveedor(url, proveedor.TokenEntrada)
 }
 
-// ObtenerComentariosHotel — llama a la hotelera con el proveedor tipo 2
-func (s *ComentarioService) ObtenerComentariosHotel(hotelID int) (interface{}, error) {
-	proveedor, err := s.proveedorRepo.ObtenerProveedorPorTipo(2)
+// ObtenerComentariosHotel — llama al proveedor específico por su ID
+func (s *ComentarioService) ObtenerComentariosHotel(proveedorID, hotelID int) (interface{}, error) {
+	proveedor, err := s.proveedorRepo.ObtenerProveedorPorID(proveedorID)
 	if err != nil {
-		return nil, fmt.Errorf("error obteniendo proveedor de hotelera: %w", err)
+		return nil, fmt.Errorf("proveedor no encontrado: %w", err)
 	}
 
 	url := fmt.Sprintf("%s/agencia/comentarios/hotel/%d", proveedor.URLAPI, hotelID)

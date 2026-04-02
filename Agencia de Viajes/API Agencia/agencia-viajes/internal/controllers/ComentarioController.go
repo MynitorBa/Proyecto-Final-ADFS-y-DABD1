@@ -16,15 +16,21 @@ func NewComentarioController(s *services.ComentarioService) *ComentarioControlle
 	return &ComentarioController{service: s}
 }
 
-// GET /api/comentarios/vuelo/:rutaId
+// GET /api/comentarios/vuelo/:proveedorId/:rutaId
 func (ctrl *ComentarioController) ObtenerComentariosVuelo(c *gin.Context) {
+	proveedorID, err := strconv.Atoi(c.Param("proveedorId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de proveedor inválido"})
+		return
+	}
+
 	rutaID, err := strconv.Atoi(c.Param("rutaId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de ruta inválido"})
 		return
 	}
 
-	comentarios, err := ctrl.service.ObtenerComentariosVuelo(rutaID)
+	comentarios, err := ctrl.service.ObtenerComentariosVuelo(proveedorID, rutaID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -33,15 +39,21 @@ func (ctrl *ComentarioController) ObtenerComentariosVuelo(c *gin.Context) {
 	c.JSON(http.StatusOK, comentarios)
 }
 
-// GET /api/comentarios/hotel/:hotelId
+// GET /api/comentarios/hotel/:proveedorId/:hotelId
 func (ctrl *ComentarioController) ObtenerComentariosHotel(c *gin.Context) {
+	proveedorID, err := strconv.Atoi(c.Param("proveedorId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de proveedor inválido"})
+		return
+	}
+
 	hotelID, err := strconv.Atoi(c.Param("hotelId"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de hotel inválido"})
 		return
 	}
 
-	comentarios, err := ctrl.service.ObtenerComentariosHotel(hotelID)
+	comentarios, err := ctrl.service.ObtenerComentariosHotel(proveedorID, hotelID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

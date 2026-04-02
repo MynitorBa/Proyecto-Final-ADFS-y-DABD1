@@ -86,8 +86,8 @@ func main() {
 		api.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
 		api.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
 
-		api.GET("/comentarios/vuelo/:rutaId", comentarioController.ObtenerComentariosVuelo)
-		api.GET("/comentarios/hotel/:hotelId", comentarioController.ObtenerComentariosHotel)
+		api.GET("/comentarios/vuelo/:proveedorId/:rutaId", comentarioController.ObtenerComentariosVuelo)
+		api.GET("/comentarios/hotel/:proveedorId/:hotelId", comentarioController.ObtenerComentariosHotel)
 
 		protegido := api.Group("/")
 		protegido.Use(middlewares.AuthRequerido())

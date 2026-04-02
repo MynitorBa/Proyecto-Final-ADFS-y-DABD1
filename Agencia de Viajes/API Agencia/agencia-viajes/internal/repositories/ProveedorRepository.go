@@ -188,3 +188,23 @@ func (r *ProveedorRepository) ObtenerProveedorPorTipo(tipoProveedorID int) (*dto
 	}
 	return &p, nil
 }
+
+func (r *ProveedorRepository) ObtenerProveedorPorID(proveedorID int) (*dto.DetalleProveedor, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	var p dto.DetalleProveedor
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT URL_API, Token_HASH_Entrada
+		FROM Proveedor
+		WHERE ID = ? AND EstadoID = 1
+	`, proveedorID).Scan(&p.URLAPI, &p.TokenEntrada)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("proveedor %d no encontrado o inactivo", proveedorID)
+	}
+	return &p, err
+}
