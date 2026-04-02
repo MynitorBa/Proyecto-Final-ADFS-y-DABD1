@@ -68,8 +68,8 @@
 
         <div class="res-layout">
 
-          <!-- ═══ IZQUIERDA: FORMULARIO ═══ -->
-          <div class="res-form-col">
+          <!-- ═══ IZQUIERDA: FORMULARIO (solo vuelos/paquetes) ═══ -->
+          <div class="res-form-col" v-if="tipoItem !== 'hotel'">
 
             <!-- ─── PASAJERO 1 ─── -->
             <div class="res-form-card">
@@ -227,8 +227,8 @@
                     <div class="res-field">
                       <label class="res-field__label">Número de Pasaporte *</label>
                       <input class="res-field__input" type="text" v-model="pax.pasaporte"
-                        @input="pax.pasaporte = pax.pasaporte.replace(/\D/g, '')"
-                        placeholder="Solo números" autocomplete="off" />
+                        placeholder="Solo números" autocomplete="off"
+                        @input="pax.pasaporte = pax.pasaporte.replace(/\D/g, '')" />
                       <span v-if="erroresPasajeros[idx]?.pasaporte" class="res-field__error">
                         {{ erroresPasajeros[idx].pasaporte }}
                       </span>
@@ -306,6 +306,43 @@
             </template>
 
           </div><!-- /res-form-col -->
+
+          <!-- ═══ IZQUIERDA: HOTEL — sin datos de pasajero ═══ -->
+          <div class="res-form-col" v-else>
+            <div class="res-form-card">
+              <div class="res-form-card__head">
+                <div class="res-form-card__icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <div class="res-form-card__head-info">
+                  <h2 class="res-form-card__title">Habitación reservada</h2>
+                  <span class="res-form-card__boleto-meta">
+                    Revisa el resumen y confirma tu reserva
+                  </span>
+                </div>
+              </div>
+              <div class="res-form-card__body">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px 0;color:#5a5047;font-size:14px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" width="20" height="20">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
+                  Tu habitación está disponible y lista para confirmar.
+                  No se requieren datos de pasajero para reservas de hospedaje.
+                </div>
+                <div v-if="errors.general" class="res-error-general">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ errors.general }}
+                </div>
+              </div>
+            </div>
+          </div><!-- /res-form-col hotel -->
 
           <!-- ═══ DERECHA: RESUMEN ═══ -->
           <aside class="res-summary-col">
@@ -551,7 +588,7 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="#9a9089" stroke-width="2" width="12" height="12">
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ tipoItem !== 'hotel' ? 'Siguiente: elegir asientos en el avión' : 'Los datos deben coincidir con el pasaporte' }}
+                  {{ tipoItem !== 'hotel' ? 'Siguiente: elegir asientos en el avión' : 'Confirma para asegurar tu habitación' }}
                 </p>
               </div>
 
@@ -568,13 +605,31 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/reserva.css'
 
 const router = useRouter()
 const API    = 'http://localhost:8080'
+
+// ── Limpieza al salir del flujo de reserva ────────────────────
+const FLUJO_RESERVA = ['/reservar', '/seleccion-asientos', '/checkout', '/confirmacion']
+function limpiarSesionReserva() {
+  sessionStorage.removeItem('checkout_data')
+  sessionStorage.removeItem('_reserva_expires_at')
+  sessionStorage.removeItem('_reserva_id')
+  sessionStorage.removeItem('_reserva_no')
+  sessionStorage.removeItem('vuelo_seleccionado')
+  sessionStorage.removeItem('hotel_seleccionado')
+  sessionStorage.removeItem('paquete_seleccionado')
+}
+onBeforeRouteLeave((to) => {
+  if (!FLUJO_RESERVA.includes(to.path)) {
+    if (timerInterval.value) clearInterval(timerInterval.value)
+    limpiarSesionReserva()
+  }
+})
 
 // ── Estado ────────────────────────────────────────────────────
 const reservacionId  = ref(null)
@@ -803,22 +858,6 @@ function buildVuelosPayload() {
 }
 
 // ── Payload hotel ─────────────────────────────────────────────
-function buildHotelPayload(reservacionIdArg) {
-  const i = item.value, b = i.busqueda
-  let habitaciones = []
-  if (i.esCombo) {
-    habitaciones = (i.habs || [])
-      .filter(h => h.habitacionesDisponibles?.length > 0)
-      .map(h => ({ habitacionId: h.habitacionesDisponibles[0].id, fechaCheckIn: b.checkIn, fechaCheckOut: b.checkOut, cantidadPersonas: h.cap }))
-  } else {
-    const rooms = i.habitacionesDisponibles || []
-    if (!rooms.length) return null
-    habitaciones = [{ habitacionId: rooms[0].id, fechaCheckIn: b.checkIn, fechaCheckOut: b.checkOut, cantidadPersonas: b.cantidadPersonas }]
-  }
-  if (!habitaciones.length) return null
-  return { reservacionId: reservacionIdArg, proveedorId: i.proveedorId, habitaciones }
-}
-
 function buildPaqueteHotelPayload(reservacionIdArg) {
   const h = item.value?.hotel
   if (!h) return null
@@ -835,7 +874,8 @@ function buildPaqueteHotelPayload(reservacionIdArg) {
     if (!rooms.length) return null
     habitaciones = [{
       habitacionId: rooms[0].id,
-      fechaCheckIn: h.checkIn, fechaCheckOut: h.checkOut,
+      fechaCheckIn: h.checkIn,
+      fechaCheckOut: h.checkOut,
       cantidadPersonas: h.cantidadPersonas || item.value.cantidadPersonas || 1,
     }]
   }
@@ -1084,31 +1124,32 @@ function formatDuracion(min) {
 // ── Confirmar reserva ─────────────────────────────────────────
 async function handleReservar() {
   errors.value = {}
+  const f = form.value   // siempre disponible
 
-  const f = form.value
-  if (!f.nombre)    errors.value.nombre   = 'Campo requerido'
-  if (!f.apellido)  errors.value.apellido = 'Campo requerido'
-  if (!f.pasaporte) errors.value.pasaporte = 'Campo requerido'
-  if (f.pasaporte && !/^\d+$/.test(f.pasaporte)) errors.value.pasaporte = 'Solo números'
-  if (!f.pais)      errors.value.pais     = 'Selecciona un país de la lista'
-  if (!f.ciudad)    errors.value.ciudad   = 'Selecciona una ciudad de la lista'
-  if (dialCode.value && telefonoDigitos.value !== phoneDigits.value)
-    errors.value.telefono = `Se requieren ${phoneDigits.value} dígitos`
+  // Para hoteles no hay datos de pasajero
+  if (tipoItem.value !== 'hotel') {
+    if (!f.nombre)    errors.value.nombre   = 'Campo requerido'
+    if (!f.apellido)  errors.value.apellido = 'Campo requerido'
+    if (!f.pasaporte) errors.value.pasaporte = 'Campo requerido'
+    if (!f.pais)      errors.value.pais     = 'Selecciona un país de la lista'
+    if (!f.ciudad)    errors.value.ciudad   = 'Selecciona una ciudad de la lista'
+    if (dialCode.value && telefonoDigitos.value !== phoneDigits.value)
+      errors.value.telefono = `Se requieren ${phoneDigits.value} dígitos`
 
-  // Validar pasajeros adicionales
-  let adicionalOk = true
-  erroresPasajeros.value = pasajerosAdicionales.value.map(p => {
-    const e = {}
-    if (!p.nombre.trim())    { e.nombre    = 'Requerido'; adicionalOk = false }
-    if (!p.apellido.trim())  { e.apellido  = 'Requerido'; adicionalOk = false }
-    if (!p.pasaporte.trim()) { e.pasaporte = 'Requerido'; adicionalOk = false }
-    if (!p.telefono.trim())  { e.telefono  = 'Requerido'; adicionalOk = false }
-    if (!p.pais.trim())      { e.pais      = 'Requerido'; adicionalOk = false }
-    if (!p.ciudad.trim())    { e.ciudad    = 'Requerido'; adicionalOk = false }
-    return e
-  })
+    let adicionalOk = true
+    erroresPasajeros.value = pasajerosAdicionales.value.map(p => {
+      const e = {}
+      if (!p.nombre.trim())    { e.nombre    = 'Requerido'; adicionalOk = false }
+      if (!p.apellido.trim())  { e.apellido  = 'Requerido'; adicionalOk = false }
+      if (!p.pasaporte.trim()) { e.pasaporte = 'Requerido'; adicionalOk = false }
+      if (!p.telefono.trim())  { e.telefono  = 'Requerido'; adicionalOk = false }
+      if (!p.pais.trim())      { e.pais      = 'Requerido'; adicionalOk = false }
+      if (!p.ciudad.trim())    { e.ciudad    = 'Requerido'; adicionalOk = false }
+      return e
+    })
 
-  if (Object.keys(errors.value).length || !adicionalOk) return
+    if (Object.keys(errors.value).length || !adicionalOk) return
+  }
   if (tiempoRestante.value === 0) {
     errors.value.general = 'La reserva ha expirado. Realiza una nueva búsqueda.'
     return

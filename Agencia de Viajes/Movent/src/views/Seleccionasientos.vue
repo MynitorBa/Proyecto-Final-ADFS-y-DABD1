@@ -114,17 +114,17 @@
               <div class="asi-zona-lbl asi-zona-lbl--eje"><span>Ejecutiva</span></div>
               <div v-for="fila in filasEjeActuales" :key="'eje-'+fila" class="asi-fila asi-fila--eje">
                 <div class="asi-fila-num">{{ fila }}</div>
-                <template v-for="ci in 6" :key="ci">
-                  <div v-if="ci === 4" class="asi-pasillo"></div>
+                <template v-for="(colLetter, ci) in COLS_LABEL" :key="ci">
+                  <div v-if="ci === 3" class="asi-pasillo"></div>
                   <button
-                    :class="['asi-seat', 'asi-seat--eje', claseAsiento(asientos[idEje(fila, ci)])]"
-                    :disabled="guardando || esBloqueado(asientos[idEje(fila, ci)])"
-                    @click="seleccionarAsiento(asientos[idEje(fila, ci)])"
-                    :title="`E-${fila}${ci}`"
+                    :class="['asi-seat', 'asi-seat--eje', claseAsiento(asientos[idEje(fila, colLetter)])]"
+                    :disabled="guardando || esBloqueado(asientos[idEje(fila, colLetter)])"
+                    @click="seleccionarAsiento(asientos[idEje(fila, colLetter)])"
+                    :title="`E-${colLetter}${fila}`"
                     type="button"
                   >
-                    <span v-if="asientos[idEje(fila, ci)]?.estado === 'propio'" class="asi-seat__num">
-                      {{ indicePasajero(idEje(fila, ci)) + 1 }}
+                    <span v-if="asientos[idEje(fila, colLetter)]?.estado === 'propio'" class="asi-seat__num">
+                      {{ indicePasajero(idEje(fila, colLetter)) + 1 }}
                     </span>
                   </button>
                 </template>
@@ -141,17 +141,17 @@
               <div class="asi-zona-lbl asi-zona-lbl--tur"><span>Turista</span></div>
               <div v-for="fila in filasTActuales" :key="'tur-'+fila" class="asi-fila">
                 <div class="asi-fila-num">{{ fila }}</div>
-                <template v-for="ci in 6" :key="ci">
-                  <div v-if="ci === 4" class="asi-pasillo"></div>
+                <template v-for="(colLetter, ci) in COLS_LABEL" :key="ci">
+                  <div v-if="ci === 3" class="asi-pasillo"></div>
                   <button
-                    :class="['asi-seat', claseAsiento(asientos[idTur(fila, ci)])]"
-                    :disabled="guardando || esBloqueado(asientos[idTur(fila, ci)])"
-                    @click="seleccionarAsiento(asientos[idTur(fila, ci)])"
-                    :title="`${fila}${ci}`"
+                    :class="['asi-seat', claseAsiento(asientos[idTur(fila, colLetter)])]"
+                    :disabled="guardando || esBloqueado(asientos[idTur(fila, colLetter)])"
+                    @click="seleccionarAsiento(asientos[idTur(fila, colLetter)])"
+                    :title="`${colLetter}${fila}`"
                     type="button"
                   >
-                    <span v-if="asientos[idTur(fila, ci)]?.estado === 'propio'" class="asi-seat__num">
-                      {{ indicePasajero(idTur(fila, ci)) + 1 }}
+                    <span v-if="asientos[idTur(fila, colLetter)]?.estado === 'propio'" class="asi-seat__num">
+                      {{ indicePasajero(idTur(fila, colLetter)) + 1 }}
                     </span>
                   </button>
                 </template>
@@ -260,7 +260,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/Seleccionasientos.css'
@@ -319,15 +319,16 @@ const claseActual = computed(() => {
   return b?.claseId === 2 ? 'Ejecutiva' : 'Turista'
 })
 
+// Filas = números (1, 2, 3...), columnas = letras A-F
 const filasEjeActuales = computed(() => {
   const g = grupoActual.value
   if (!g) return []
-  return [...generarLetras(g.filasEjecutiva)]
+  return Array.from({ length: g.filasEjecutiva }, (_, i) => i + 1)
 })
 const filasTActuales = computed(() => {
   const g = grupoActual.value
   if (!g) return []
-  return [...generarLetras(g.totalFilas - g.filasEjecutiva)]
+  return Array.from({ length: g.totalFilas - g.filasEjecutiva }, (_, i) => i + 1)
 })
 
 const progreso = computed(() => {
@@ -351,17 +352,44 @@ function* generarLetras(cantidad) {
   }
 }
 
-// IDs backend
-function idEje(fila, col) { return `E-${fila}${col}` }
-function idTur(fila, col) { return `${fila}${col}`   }
+// IDs backend — columna(letra) + fila(número)
+function idEje(rowNum, colLetter) { return `E-${colLetter}${rowNum}` }
+function idTur(rowNum, colLetter) { return `${colLetter}${rowNum}`   }
+
+// ── Limpieza de sesión de reserva ────────────────────────────
+function limpiarSesionReserva() {
+  sessionStorage.removeItem('checkout_data')
+  sessionStorage.removeItem('_reserva_expires_at')
+  sessionStorage.removeItem('_reserva_id')
+  sessionStorage.removeItem('_reserva_no')
+  sessionStorage.removeItem('vuelo_seleccionado')
+  sessionStorage.removeItem('hotel_seleccionado')
+  sessionStorage.removeItem('paquete_seleccionado')
+}
+
+// ── Guard: limpiar al salir del flujo de reserva ──────────────
+const FLUJO_RESERVA = ['/reservar', '/seleccion-asientos', '/checkout', '/confirmacion']
+onBeforeRouteLeave((to) => {
+  if (!FLUJO_RESERVA.includes(to.path)) {
+    limpiarSesionReserva()
+  }
+})
 
 // ── onMounted ─────────────────────────────────────────────────
 onMounted(async () => {
-  // Recuperar IDs de reserva
   const raw = sessionStorage.getItem('checkout_data')
   if (!raw) { router.push('/principal'); return }
 
-  const cd = JSON.parse(raw)
+  let cd
+  try { cd = JSON.parse(raw) } catch { limpiarSesionReserva(); router.push('/principal'); return }
+
+  // Validar que tenemos los datos mínimos
+  if (!cd.reservacionId || !cd.proveedorId) {
+    limpiarSesionReserva()
+    router.push('/principal')
+    return
+  }
+
   reservacionId.value = cd.reservacionId
   proveedorId.value   = cd.proveedorId
 
@@ -370,6 +398,12 @@ onMounted(async () => {
   if (expAt) {
     const segs = Math.floor((Number(expAt) - Date.now()) / 1000)
     if (segs > 0) iniciarTimer(segs)
+    else {
+      // Timer expirado: limpiar y redirigir
+      limpiarSesionReserva()
+      router.push('/principal')
+      return
+    }
   }
 
   await cargarAsientos()
@@ -411,33 +445,34 @@ function construirMapa(idx) {
   const ocupados = new Set(grupo.asientosOcupados ?? [])
   const boletos  = grupo.boletosAgencia ?? []
 
-  // Inicializar seleccionados con los asientos ya asignados
-  seleccionados.value = boletos.map(b => b.asiento ?? null)
-  const primerLibre   = seleccionados.value.findIndex(s => !s)
+  seleccionados.value  = boletos.map(b => b.asiento ?? null)
+  const primerLibre    = seleccionados.value.findIndex(s => !s)
   pasajeroActual.value = primerLibre === -1 ? 0 : primerLibre
 
   const mapa = {}
+  const cols = ['A','B','C','D','E','F']
 
-  // Ejecutiva: E-A1..E-{filasEje}6
-  for (const fila of generarLetras(grupo.filasEjecutiva)) {
-    for (let col = 1; col <= 6; col++) {
-      const id = idEje(fila, col)
+  // Ejecutiva: filas 1..filasEjecutiva, columnas A-F → E-A1, E-B1...
+  for (let row = 1; row <= grupo.filasEjecutiva; row++) {
+    for (const col of cols) {
+      const id = idEje(row, col)
       mapa[id] = {
-        id, fila, col, clase: 'Ejecutiva',
-        estado: ocupados.has(id)          ? 'ocupado'
+        id, fila: row, col, clase: 'Ejecutiva',
+        estado: ocupados.has(id)               ? 'ocupado'
               : seleccionados.value.includes(id) ? 'propio'
               : 'libre',
       }
     }
   }
 
-  // Turista: A1..{filasT}6
-  for (const fila of generarLetras(grupo.totalFilas - grupo.filasEjecutiva)) {
-    for (let col = 1; col <= 6; col++) {
-      const id = idTur(fila, col)
+  // Turista: filas 1..(totalFilas-filasEje), columnas A-F → A1, B1...
+  const filasT = grupo.totalFilas - grupo.filasEjecutiva
+  for (let row = 1; row <= filasT; row++) {
+    for (const col of cols) {
+      const id = idTur(row, col)
       mapa[id] = {
-        id, fila, col, clase: 'Turista',
-        estado: ocupados.has(id)          ? 'ocupado'
+        id, fila: row, col, clase: 'Turista',
+        estado: ocupados.has(id)               ? 'ocupado'
               : seleccionados.value.includes(id) ? 'propio'
               : 'libre',
       }

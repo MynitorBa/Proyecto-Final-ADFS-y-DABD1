@@ -99,7 +99,7 @@ func main() {
 			protegido.POST("/reservaciones/detalle/pasajeros-vuelo", detalleReservacionController.AgregarPasajerosVuelo)
 
 			//Asientos de vuelo
-			protegido.GET("/reservaciones/asientos-vuelo", asientoVueloController.ObtenerAsientos)
+			protegido.POST("/reservaciones/asientos-vuelo", asientoVueloController.ObtenerAsientos)
 			protegido.PUT("/reservaciones/asientos-vuelo", asientoVueloController.CambiarAsiento)
 
 			//pagar reservacion

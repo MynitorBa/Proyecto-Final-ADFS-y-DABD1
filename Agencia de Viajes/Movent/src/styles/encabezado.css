@@ -133,7 +133,7 @@
 
 .btn-primary:hover { background: #a00410; border-color: #a00410; transform: translateY(-1px); }
 
-/* ── Overlay ─────────────────────────────────── */
+/* ── Overlay usuario ─────────────────────────── */
 .user-dropdown-overlay {
   position: fixed;
   inset: 0;
@@ -158,6 +158,7 @@
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  position: relative;
 }
 
 .cart-btn:hover {
@@ -168,6 +169,40 @@
   stroke: #FFCC00;
 }
 
+/* Estado activo: hay reserva pendiente */
+.cart-btn--active {
+  background: #1C1A18;
+  border-color: #1C1A18;
+  box-shadow: 0 0 0 3px rgba(28,26,24,0.15);
+  animation: cart-pulse 2.5s ease-in-out infinite;
+}
+
+.cart-btn--active:hover {
+  box-shadow: 0 0 0 4px rgba(28,26,24,0.25);
+}
+
+@keyframes cart-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(28,26,24,0.15); }
+  50%       { box-shadow: 0 0 0 6px rgba(28,26,24,0.07); }
+}
+
+/* Badge puntito indicador */
+.cart-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  background: #D40511;
+  border-radius: 50%;
+  border: 2px solid #FFCC00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+/* ── Dropdown carrito ────────────────────────── */
 .cart-dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -176,7 +211,7 @@
   border: 1px solid #e8e3dc;
   border-radius: 14px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.14);
-  min-width: 200px;
+  min-width: 230px;
   z-index: 500;
   overflow: hidden;
   animation: enc-drop-in 0.18s ease;
@@ -222,6 +257,21 @@
 }
 
 .cart-dropdown__item--cta:hover { background: #FFCC00; }
+
+.cart-dropdown__item--cancel {
+  color: #D40511;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-top: 1px solid #f0ebe3;
+}
+
+.cart-dropdown__item--cancel:hover { background: #fde8e8; }
+
+@keyframes enc-drop-in {
+  from { transform: translateY(-8px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
 
 /* ── User chip ───────────────────────────────── */
 .user-chip {
@@ -277,11 +327,6 @@
   z-index: 500;
   overflow: hidden;
   animation: enc-drop-in 0.18s ease;
-}
-
-@keyframes enc-drop-in {
-  from { transform: translateY(-8px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
 }
 
 .user-dropdown__head {
@@ -376,6 +421,7 @@
 .mobile-nav-link {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 0.875rem 1rem;
   color: #1C1A18;
   font-weight: 600;
@@ -403,6 +449,16 @@
 }
 
 .mobile-nav-link.primary:hover { background: #a00410; }
+
+/* Botón pagar en móvil con reserva activa */
+.mobile-nav-link--pagar {
+  background: #1C1A18 !important;
+  color: #FFCC00 !important;
+  font-weight: 700 !important;
+  margin-bottom: 2px;
+  border-radius: 8px;
+}
+.mobile-nav-link--pagar:hover { background: #000 !important; }
 
 .mobile-nav-link--admin {
   font-weight: 700 !important;

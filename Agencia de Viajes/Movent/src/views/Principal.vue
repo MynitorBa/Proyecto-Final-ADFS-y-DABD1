@@ -249,7 +249,6 @@
             <div class="combo-label" style="border-top: 1px solid #e2e8f0; margin-top:0; border-radius:0;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Hotel
-              <!-- Muestra el rango permitido dinámicamente para orientar al usuario -->
               <span v-if="comboData.fecha" style="font-size:11px; font-weight:400; color:#9a9089; margin-left:6px;">
                 · Dentro del período del vuelo
                 <template v-if="comboTipoVuelo === 'idaVuelta' && comboData.fechaRegreso">
@@ -267,11 +266,6 @@
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-in
                 </label>
-                <!--
-                  min = fecha de vuelo de ida (no se puede llegar antes de volar)
-                  max = fecha de regreso - 1 día (para dejar al menos 1 noche)
-                       o, si es solo ida, sin límite superior
-                -->
                 <input
                   class="form-input"
                   type="date"
@@ -286,10 +280,6 @@
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-out
                 </label>
-                <!--
-                  min = checkIn + 1 día
-                  max = fecha de regreso (para idaVuelta), sin límite para solo ida
-                -->
                 <input
                   class="form-input"
                   type="date"
@@ -370,10 +360,10 @@ const API         = 'http://localhost:8080'
 const buscando    = ref(false)
 const searchError = ref('')
 
-const searchType    = ref('flights')
-const showScrollTop = ref(false)
-const hoy           = new Date().toISOString().split('T')[0]
-const tipoVuelo     = ref('ida')
+const searchType     = ref('flights')
+const showScrollTop  = ref(false)
+const hoy            = new Date().toISOString().split('T')[0]
+const tipoVuelo      = ref('ida')
 const comboTipoVuelo = ref('ida')
 
 const flightData = ref({ fecha: '', fechaRegreso: '', cantidadPasajeros: 1 })
@@ -401,90 +391,62 @@ const minCheckOutHotel = computed(() => {
 
 // ── Computed: límites del hotel DENTRO del rango de vuelo ─────
 
-/**
- * El check-in del hotel no puede ser anterior a la fecha de vuelo de ida
- * ni posterior al día antes del check-out (o del fechaRegreso si es ida y vuelta).
- */
+// checkIn hotel: máximo = día anterior al checkOut elegido
+// o día anterior al regreso si no hay checkOut aún (solo idaVuelta)
 const maxCheckInCombo = computed(() => {
-  // Siempre tiene que quedar al menos 1 noche: el límite superior del checkIn
-  // es el día anterior a la fecha de regreso (si idaVuelta) sin límite fijo para solo-ida.
   if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
-    // El check-in puede ser como máximo el día anterior al check-out ya elegido,
-    // o el día anterior al regreso si no hay check-out aún.
     const base = comboData.value.checkOut || comboData.value.fechaRegreso
     const d = new Date(base)
     d.setDate(d.getDate() - 1)
     return d.toISOString().split('T')[0]
   }
-  // Solo ida: no ponemos límite superior en checkIn
   return undefined
 })
 
-/**
- * El check-out mínimo es siempre checkIn + 1 día.
- */
+// checkOut hotel: mínimo = checkIn + 1 día
 const minCheckOutCombo = computed(() => {
   if (!comboData.value.checkIn) return hoy
   const d = new Date(comboData.value.checkIn); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
-// ── Watchers de sincronización y limpieza ─────────────────────
+// ── Watchers combo: hotel siempre se sincroniza con vuelo ─────
 
-// Cuando cambia la fecha de ida del combo:
-// 1. Auto-rellenar checkIn con la fecha de vuelo
-// 2. Si el checkIn actual es anterior a la nueva fecha, resetearlo
+// Cuando cambia la fecha de IDA → checkIn = esa fecha (siempre)
 watch(() => comboData.value.fecha, (nuevaFecha) => {
   if (!nuevaFecha) return
 
-  // Auto-fill checkIn con la fecha de vuelo si está vacío
-  if (!comboData.value.checkIn) {
-    comboData.value.checkIn = nuevaFecha
-  } else if (comboData.value.checkIn < nuevaFecha) {
-    // El checkIn quedó antes del vuelo → resetear ambos
-    comboData.value.checkIn  = nuevaFecha
-    comboData.value.checkOut = ''
-  }
+  // Siempre fijar checkIn a la fecha del vuelo de ida
+  comboData.value.checkIn = nuevaFecha
 
-  // Si checkOut también quedó inválido (antes o igual al nuevo checkIn), limpiarlo
-  if (comboData.value.checkOut && comboData.value.checkOut <= comboData.value.checkIn) {
+  // Si checkOut quedó inválido (≤ nuevo checkIn), resetearlo
+  if (comboData.value.checkOut && comboData.value.checkOut <= nuevaFecha) {
     comboData.value.checkOut = ''
   }
 })
 
-// Cuando cambia la fecha de regreso del combo:
-// 1. Auto-rellenar checkOut con la fecha de regreso
-// 2. Si el checkOut actual supera el regreso, resetearlo
+// Cuando cambia la fecha de REGRESO → checkOut = esa fecha (siempre)
 watch(() => comboData.value.fechaRegreso, (nuevaFechaRegreso) => {
-  if (!nuevaFechaRegreso) return
+  if (!nuevaFechaRegreso || comboTipoVuelo.value !== 'idaVuelta') return
 
-  if (comboTipoVuelo.value === 'idaVuelta') {
-    // Auto-fill checkOut si está vacío
-    if (!comboData.value.checkOut) {
-      comboData.value.checkOut = nuevaFechaRegreso
-    } else if (comboData.value.checkOut > nuevaFechaRegreso) {
-      // El checkOut superó el regreso → ajustar al regreso
-      comboData.value.checkOut = nuevaFechaRegreso
-    }
+  // Siempre fijar checkOut a la fecha de regreso
+  comboData.value.checkOut = nuevaFechaRegreso
 
-    // Si el checkIn también superó el regreso, resetearlo todo
-    if (comboData.value.checkIn && comboData.value.checkIn >= nuevaFechaRegreso) {
-      comboData.value.checkIn  = comboData.value.fecha || ''
-      comboData.value.checkOut = nuevaFechaRegreso
-    }
+  // Si checkIn quedó igual o posterior al regreso, volver al día de ida
+  if (comboData.value.checkIn && comboData.value.checkIn >= nuevaFechaRegreso) {
+    comboData.value.checkIn = comboData.value.fecha || ''
   }
 })
 
-// Cuando cambia el tipo de vuelo del combo a solo-ida, limpiar regreso y
-// re-evaluar checkOut (ya no hay límite superior del regreso)
+// Cuando cambia el tipo a solo-ida: limpiar regreso y checkOut
 watch(() => comboTipoVuelo.value, (tipo) => {
   if (tipo === 'ida') {
     comboData.value.fechaRegreso = ''
-    // No forzamos limpiar checkOut porque puede ser válido igualmente
+    comboData.value.checkOut = ''
   }
 })
 
-// Cuando el usuario cambia checkIn manualmente: si checkOut ya existe y queda inválido, limpiarlo
+// Cuando el usuario ajusta checkIn manualmente: validar checkOut
 watch(() => comboData.value.checkIn, (nuevoCheckIn) => {
   if (!nuevoCheckIn) return
   if (comboData.value.checkOut && comboData.value.checkOut <= nuevoCheckIn) {
@@ -677,11 +639,9 @@ const buscarHoteles = async () => {
 const buscarPaquetes = async () => {
   searchError.value = ''
 
-  // ── Validaciones origen/destino ───
   if (!origen.value.pais || !origen.value.ciudad)            { searchError.value = 'Selecciona el país y ciudad de origen.'; return }
   if (!destino.value.pais || !destino.value.ciudad)          { searchError.value = 'Selecciona el país y ciudad de destino.'; return }
 
-  // ── Validaciones vuelo ────────────
   if (!comboData.value.fecha)                                { searchError.value = 'Selecciona la fecha de vuelo.'; return }
   if (comboData.value.fecha < hoy)                           { searchError.value = 'La fecha de vuelo no puede ser en el pasado.'; return }
   if (comboTipoVuelo.value === 'idaVuelta') {
@@ -689,19 +649,15 @@ const buscarPaquetes = async () => {
     if (comboData.value.fechaRegreso <= comboData.value.fecha) { searchError.value = 'La fecha de regreso debe ser posterior a la de ida.'; return }
   }
 
-  // ── Validaciones hotel ────────────
   if (!comboData.value.checkIn)                              { searchError.value = 'Selecciona la fecha de check-in del hotel.'; return }
   if (comboData.value.checkIn < hoy)                         { searchError.value = 'El check-in no puede ser una fecha pasada.'; return }
   if (!comboData.value.checkOut)                             { searchError.value = 'Selecciona la fecha de check-out del hotel.'; return }
   if (comboData.value.checkOut <= comboData.value.checkIn)   { searchError.value = 'El check-out debe ser posterior al check-in.'; return }
 
-  // ── Validación de rango: hotel debe estar DENTRO del período del vuelo ──
-  // El check-in del hotel no puede ser antes de la fecha de salida del vuelo
   if (comboData.value.checkIn < comboData.value.fecha) {
     searchError.value = `El check-in del hotel no puede ser antes de la salida del vuelo (${formatFechaCorta(comboData.value.fecha)}).`
     return
   }
-  // Para ida y vuelta: el check-out no puede exceder la fecha de regreso
   if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
     if (comboData.value.checkOut > comboData.value.fechaRegreso) {
       searchError.value = `El check-out del hotel no puede ser después del vuelo de regreso (${formatFechaCorta(comboData.value.fechaRegreso)}).`
