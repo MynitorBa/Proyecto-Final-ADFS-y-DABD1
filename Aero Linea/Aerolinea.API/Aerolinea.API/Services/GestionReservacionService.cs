@@ -58,5 +58,9 @@ namespace Aerolinea.API.Services
         {
             return await _repository.ObtenerUsuarioWebIdDeAgencia(agenciaId);
         }
+        public async Task<PuedeCancelarDTO> PuedeCancelar(int reservacionId, int usuarioId)
+        {
+            return await _repository.PuedeCancelar(reservacionId, usuarioId);
+        }
     }
 }

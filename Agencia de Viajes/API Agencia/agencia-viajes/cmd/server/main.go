@@ -49,6 +49,10 @@ func main() {
 	pagoRepo := repositories.NewPagoRepository(db)
 	reservacionRepo := repositories.NewReservacionRepository(db)
 	pagoService := services.NewPagoService(pagoRepo, reservacionRepo)
+	misReservacionesRepo := repositories.NewMisReservacionesRepository(db)
+	misReservacionesService := services.NewMisReservacionesService(misReservacionesRepo)
+	cancelacionRepo := repositories.NewCancelacionRepository(db)
+	cancelacionService := services.NewCancelacionService(cancelacionRepo)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -63,6 +67,8 @@ func main() {
 	detalleReservacionController := controllers.NewDetalleReservacionController(detalleReservacionService)
 	asientoVueloController := controllers.NewAsientoVueloController(asientoVueloService)
 	pagoController := controllers.NewPagoController(pagoService)
+	misReservacionesController := controllers.NewMisReservacionesController(misReservacionesService)
+	cancelacionController := controllers.NewCancelacionController(cancelacionService)
 
 	// Iniciar servicio de expiración
 	expiracionService.Iniciar()
@@ -104,6 +110,14 @@ func main() {
 
 			//pagar reservacion
 			protegido.POST("/reservaciones/pagar", pagoController.Pagar)
+
+			//mis reservaciones
+			protegido.GET("/reservaciones/mias", misReservacionesController.Listar)
+			protegido.GET("/reservaciones/mias/:id", misReservacionesController.Detalle)
+
+			//cancelar reservacion
+			protegido.GET("/reservaciones/:id/cancelar/verificar", cancelacionController.Verificar)
+			protegido.POST("/reservaciones/:id/cancelar", cancelacionController.Cancelar)
 
 			// Rutas de Administrador (Rol 2)
 			admin := protegido.Group("/")
