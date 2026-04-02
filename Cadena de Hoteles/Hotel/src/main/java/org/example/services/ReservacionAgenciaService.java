@@ -1,9 +1,10 @@
 package org.example.services;
 
+import org.example.dtos.HabitacionAgenciaResponseDTO;
 import org.example.dtos.HabitacionReservaRequestDTO;
+import org.example.dtos.ReservacionAgenciaResponseDTO;
 import org.example.dtos.ReservacionDetalleDTO;
 import org.example.dtos.ReservacionRequestDTO;
-import org.example.dtos.ReservacionResponseDTO;
 import org.example.repositories.ReservacionAgenciaRepository;
 
 import java.sql.Date;
@@ -11,6 +12,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,25 +20,23 @@ public class ReservacionAgenciaService {
 
     private final ReservacionAgenciaRepository repository = new ReservacionAgenciaRepository();
 
-    public ReservacionResponseDTO crearReservacion(ReservacionRequestDTO request, int agenciaId) {
+    public ReservacionAgenciaResponseDTO crearReservacion(ReservacionRequestDTO request, int agenciaId) {
 
-        // 1. Obtener usuarioWebisId y descuento de la agencia
         int[] datosAgencia = repository.obtenerDatosAgencia(agenciaId);
         if (datosAgencia == null)
             throw new IllegalArgumentException("La agencia no está activa");
 
         int    usuarioWebisId      = datosAgencia[0];
-        double porcentajeDescuento = repository.obtenerDescuentoAgencia(agenciaId); // con decimales exactos
+        double porcentajeDescuento = repository.obtenerDescuentoAgencia(agenciaId);
 
         if (request.getHabitaciones() == null || request.getHabitaciones().isEmpty())
             throw new IllegalArgumentException("Debe incluir al menos una habitación");
 
-        // Factor = 1.0: la búsqueda muestra precios sin descuento de agencia,
-        // solo con el markup de Go. La reserva debe usar la misma base.
-        double factor = 1.0;
+        double factor = 1.0 - (porcentajeDescuento / 100.0);
 
-        // 2. Verificar traslapes y calcular total
         double totalGeneral = 0;
+        List<HabitacionAgenciaResponseDTO> desglose = new ArrayList<>();
+
         for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
             LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
             LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
@@ -56,18 +56,29 @@ public class ReservacionAgenciaService {
 
             double[] precios = repository.obtenerPrecios(item.getHabitacionId());
 
-            // Redondear precio por noche igual que la búsqueda — para que coincida con lo mostrado
             double precioPorNoche   = Math.round(precios[0] * factor * 100.0) / 100.0;
             double precioPorPersona = Math.round(precios[1] * factor * 100.0) / 100.0;
             int    capacidadMaxima  = precios.length > 2 ? (int) precios[2] : Integer.MAX_VALUE;
             int    personasExtra    = Math.max(0, item.getCantidadPersonas() - capacidadMaxima);
 
-            totalGeneral += (dias * precioPorNoche) + (personasExtra * dias * precioPorPersona);
+            double totalHab = Math.round(
+                    ((dias * precioPorNoche) + (personasExtra * dias * precioPorPersona)) * 100.0
+            ) / 100.0;
+
+            totalGeneral += totalHab;
+
+            HabitacionAgenciaResponseDTO habDTO = new HabitacionAgenciaResponseDTO();
+            habDTO.setHabitacionId(item.getHabitacionId());
+            habDTO.setPrecioPorNoche(precioPorNoche);
+            habDTO.setPrecioPorPersona(precioPorPersona);
+            habDTO.setPersonasExtra(personasExtra);
+            habDTO.setNoches((int) dias);
+            habDTO.setTotal(totalHab);
+            desglose.add(habDTO);
         }
 
         totalGeneral = Math.round(totalGeneral * 100.0) / 100.0;
 
-        // 3. Crear reservación con el usuarioWebisId
         String noReservacion      = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
         Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(15));
@@ -76,43 +87,29 @@ public class ReservacionAgenciaService {
                 noReservacion, totalGeneral, usuarioWebisId, fechaCreacion, fechaExpiracion
         );
 
-        // 4. Insertar detalles
-        for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
-            LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
-            LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
-            long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
-
-            double[] precios = repository.obtenerPrecios(item.getHabitacionId());
-
-            // Mismo redondeo que en el loop anterior
-            double precioPorNoche   = Math.round(precios[0] * factor * 100.0) / 100.0;
-            double precioPorPersona = Math.round(precios[1] * factor * 100.0) / 100.0;
-            int    capacidadMaxima  = precios.length > 2 ? (int) precios[2] : Integer.MAX_VALUE;
-            int    personasExtra    = Math.max(0, item.getCantidadPersonas() - capacidadMaxima);
-
-            double totalHabitacion = Math.round(
-                    ((dias * precioPorNoche) + (personasExtra * dias * precioPorPersona)) * 100.0
-            ) / 100.0;
-
+        for (int i = 0; i < desglose.size(); i++) {
+            HabitacionAgenciaResponseDTO hab = desglose.get(i);
+            HabitacionReservaRequestDTO item = request.getHabitaciones().get(i);
             repository.crearDetalle(
                     reservacionId,
-                    item.getHabitacionId(),
-                    Date.valueOf(checkIn),
-                    Date.valueOf(checkOut),
+                    hab.getHabitacionId(),
+                    Date.valueOf(LocalDate.parse(item.getFechaCheckIn())),
+                    Date.valueOf(LocalDate.parse(item.getFechaCheckOut())),
                     item.getCantidadPersonas(),
-                    totalHabitacion
+                    hab.getTotal()
             );
         }
 
         Object[] datos = repository.obtenerReservacion(reservacionId);
 
-        ReservacionResponseDTO response = new ReservacionResponseDTO();
+        ReservacionAgenciaResponseDTO response = new ReservacionAgenciaResponseDTO();
         response.setId((int) datos[0]);
         response.setNoReservacion((String) datos[1]);
         response.setTotal((double) datos[2]);
         response.setFechaCreacion((String) datos[3]);
         response.setFechaExpiracion((String) datos[4]);
         response.setEstado((String) datos[5]);
+        response.setHabitaciones(desglose);
         return response;
     }
 

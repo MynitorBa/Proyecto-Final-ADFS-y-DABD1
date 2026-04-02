@@ -62,7 +62,7 @@ public class BusquedaAgenciaService {
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
-                // SIN aplicarDescuento — combos/extras usan precio raw
+                aplicarDescuento(tipo, porcentajeDescuento);
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
@@ -146,7 +146,7 @@ public class BusquedaAgenciaService {
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
-                // SIN aplicarDescuento — combos/extras usan precio raw
+                aplicarDescuento(tipo, porcentajeDescuento);
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }

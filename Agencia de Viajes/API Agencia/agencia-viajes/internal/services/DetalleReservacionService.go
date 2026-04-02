@@ -36,7 +36,6 @@ func NewDetalleReservacionService(db *sql.DB) *DetalleReservacionService {
 
 func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.AgregarDetalleVueloRequest) (interface{}, error) {
 
-	// 1. Validar reservacion
 	reservacion, err := s.repo.ObtenerReservacionParaDetalle(req.ReservacionID, usuarioID)
 	if err != nil {
 		return nil, err
@@ -51,22 +50,18 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 		return nil, errors.New("esta reservación es solo de tipo hotelera, no admite vuelos")
 	}
 
-	// 2. Obtener datos del proveedor validando tipo
 	urlAPI, tokenEntrada, porcentajeGanancia, err := s.repo.ObtenerDatosProveedorPorTipo(req.ProveedorID, TipoDetalleVuelo)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Llamar a la aerolínea
 	respAerolinea, err := s.llamarReservacionAerolinea(urlAPI, tokenEntrada, req.Vuelos)
 	if err != nil {
 		return nil, fmt.Errorf("error al reservar en aerolínea: %w", err)
 	}
 
-	// 4. Calcular total con ganancia — aplicar markup por boleto (igual que la búsqueda)
 	totalBase := respAerolinea["total"].(float64)
 
-	// Contar pasajeros totales del request para aplicar markup por boleto
 	var totalPasajeros int
 	for _, v := range req.Vuelos {
 		if v.CantidadPasajeros > 0 {
@@ -76,17 +71,13 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 
 	var totalConGanancia float64
 	if totalPasajeros > 0 {
-		// Precio base por boleto → aplicar markup redondeado → multiplicar por pasajeros
-		// Garantiza que coincida con lo que muestra la búsqueda
 		precioBaseBoleto := totalBase / float64(totalPasajeros)
 		precioBoletoConGanancia := math.Round(precioBaseBoleto*(1+porcentajeGanancia/100)*100) / 100
 		totalConGanancia = math.Round(precioBoletoConGanancia*float64(totalPasajeros)*100) / 100
 	} else {
-		// Fallback si no hay pasajeros en el request
 		totalConGanancia = math.Round(totalBase*(1+porcentajeGanancia/100)*100) / 100
 	}
 
-	// 5. Guardar detalle
 	idReservaProveedor := fmt.Sprintf("%v", respAerolinea["reservacionId"])
 	err = s.repo.InsertarDetalle(
 		req.ReservacionID,
@@ -100,7 +91,6 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 		return nil, errors.New("error guardando detalle de reservación")
 	}
 
-	// 6. Recalcular total de la reservación principal
 	err = s.repo.RecalcularTotalReservacion(req.ReservacionID)
 	if err != nil {
 		return nil, errors.New("error recalculando total de reservación")
@@ -117,7 +107,6 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 
 func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.AgregarDetalleHotelRequest) (interface{}, error) {
 
-	// 1. Validar reservacion
 	reservacion, err := s.repo.ObtenerReservacionParaDetalle(req.ReservacionID, usuarioID)
 	if err != nil {
 		return nil, err
@@ -132,47 +121,55 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.A
 		return nil, errors.New("esta reservación es solo de tipo aérea, no admite hoteles")
 	}
 
-	// 2. Obtener datos del proveedor validando tipo
 	urlAPI, tokenEntrada, porcentajeGanancia, err := s.repo.ObtenerDatosProveedorPorTipo(req.ProveedorID, TipoDetalleHotel)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Llamar a la hotelera
 	respHotel, err := s.llamarReservacionHotel(urlAPI, tokenEntrada, req.Habitaciones)
 	if err != nil {
 		return nil, fmt.Errorf("error al reservar en hotelera: %w", err)
 	}
 
-	// 4. Calcular total con ganancia — aplicar markup por noche (igual que la búsqueda)
 	totalBase := respHotel["total"].(float64)
+	var totalConGanancia float64
 
-	// Contar noches totales del request para aplicar markup por noche
-	var totalNoches int
-	for _, hab := range req.Habitaciones {
-		checkIn, errCI := time.Parse("2006-01-02", hab.FechaCheckIn)
-		checkOut, errCO := time.Parse("2006-01-02", hab.FechaCheckOut)
-		if errCI == nil && errCO == nil {
-			n := int(checkOut.Sub(checkIn).Hours() / 24)
-			if n > 0 {
-				totalNoches += n
+	if habitaciones, ok := respHotel["habitaciones"].([]interface{}); ok && len(habitaciones) > 0 {
+		for _, h := range habitaciones {
+			if hab, ok := h.(map[string]interface{}); ok {
+				precio, okP := hab["precioPorNoche"].(float64)
+				noches, okN := hab["noches"].(float64)
+				precioPorPersona, _ := hab["precioPorPersona"].(float64)
+				personasExtra, _ := hab["personasExtra"].(float64)
+				if okP && okN && noches > 0 {
+					precioNocheMarkup := math.Round(precio*(1+porcentajeGanancia/100)*100) / 100
+					precioPersonaMarkup := math.Round(precioPorPersona*(1+porcentajeGanancia/100)*100) / 100
+					totalConGanancia += (precioNocheMarkup + personasExtra*precioPersonaMarkup) * noches
+				}
 			}
+		}
+		totalConGanancia = math.Round(totalConGanancia*100) / 100
+	} else {
+		var totalNoches int
+		for _, hab := range req.Habitaciones {
+			checkIn, errCI := time.Parse("2006-01-02", hab.FechaCheckIn)
+			checkOut, errCO := time.Parse("2006-01-02", hab.FechaCheckOut)
+			if errCI == nil && errCO == nil {
+				n := int(checkOut.Sub(checkIn).Hours() / 24)
+				if n > 0 {
+					totalNoches += n
+				}
+			}
+		}
+		if totalNoches > 0 {
+			precioBaseNoche := totalBase / float64(totalNoches)
+			precioNocheConGanancia := math.Round(precioBaseNoche*(1+porcentajeGanancia/100)*100) / 100
+			totalConGanancia = math.Round(precioNocheConGanancia*float64(totalNoches)*100) / 100
+		} else {
+			totalConGanancia = math.Round(totalBase*(1+porcentajeGanancia/100)*100) / 100
 		}
 	}
 
-	var totalConGanancia float64
-	if totalNoches > 0 {
-		// Precio base por noche → aplicar markup redondeado → multiplicar por noches
-		// Garantiza que coincida con lo que muestra la búsqueda ($83.07 × 10 = $830.70)
-		precioBaseNoche := totalBase / float64(totalNoches)
-		precioNocheConGanancia := math.Round(precioBaseNoche*(1+porcentajeGanancia/100)*100) / 100
-		totalConGanancia = math.Round(precioNocheConGanancia*float64(totalNoches)*100) / 100
-	} else {
-		// Fallback si no se pueden parsear las fechas
-		totalConGanancia = math.Round(totalBase*(1+porcentajeGanancia/100)*100) / 100
-	}
-
-	// 5. Guardar detalle
 	idReservaProveedor := fmt.Sprintf("%v", respHotel["id"])
 	err = s.repo.InsertarDetalle(
 		req.ReservacionID,
@@ -186,7 +183,6 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.A
 		return nil, errors.New("error guardando detalle de reservación")
 	}
 
-	// 6. Recalcular total de la reservación principal
 	err = s.repo.RecalcularTotalReservacion(req.ReservacionID)
 	if err != nil {
 		return nil, errors.New("error recalculando total de reservación")
@@ -272,7 +268,6 @@ func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 	req dto.AgregarPasajerosVueloRequest,
 ) error {
 
-	// 1. Validar pasaportes
 	for _, p := range req.Pasajeros {
 		if strings.TrimSpace(p.Pasaporte) == "" {
 			return errors.New("el número de pasaporte es obligatorio")
@@ -287,7 +282,6 @@ func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 		}
 	}
 
-	// 2. Obtener datos del detalle
 	idReservaAerolinea, urlAPI, token, err := s.repo.ObtenerDetalleAerolineaPorProveedor(
 		req.ReservacionID, usuarioID, req.ProveedorID,
 	)
@@ -295,13 +289,11 @@ func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 		return err
 	}
 
-	// 3. Convertir ID string → int
 	reservacionAerolineaID, err := strconv.Atoi(idReservaAerolinea)
 	if err != nil {
 		return fmt.Errorf("id de reservación de aerolínea inválido: %w", err)
 	}
 
-	// 4. Llamar a la aerolínea
 	return s.llamarPasajerosAerolinea(urlAPI, token, reservacionAerolineaID, req.Pasajeros)
 }
 

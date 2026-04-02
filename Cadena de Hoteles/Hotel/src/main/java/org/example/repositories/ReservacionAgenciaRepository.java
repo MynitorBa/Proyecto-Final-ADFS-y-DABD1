@@ -229,11 +229,7 @@ public class ReservacionAgenciaRepository {
                 "JOIN Cama                c   ON t.TIPOCAMAID         = c.ID " +
                 "JOIN Hotel               hot ON h.HOTELID            = hot.ID " +
                 "WHERE r.ID = ? " +
-<<<<<<< HEAD
-                "AND r.Agencia_ID = ? " +
-=======
                 "AND r.Usuario_ID = ? " +
->>>>>>> 7e5ef00545698e9f5eb573b056dba2102ae68b07
                 "ORDER BY dr.ID";
 
         return DatabaseManager.executeQuery(sql, rs -> {
