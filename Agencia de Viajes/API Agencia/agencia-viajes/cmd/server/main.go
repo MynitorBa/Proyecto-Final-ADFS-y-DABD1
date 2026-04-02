@@ -19,7 +19,6 @@ func main() {
 
 	router := gin.Default()
 
-	// ── CORS ──────────────────────────────────────────────────
 	router.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -31,7 +30,6 @@ func main() {
 		}
 		c.Next()
 	})
-	// ──────────────────────────────────────────────────────────
 
 	// Servicios
 	ubicacionService := services.NewUbicacionService(db)
@@ -53,6 +51,7 @@ func main() {
 	misReservacionesService := services.NewMisReservacionesService(misReservacionesRepo)
 	cancelacionRepo := repositories.NewCancelacionRepository(db)
 	cancelacionService := services.NewCancelacionService(cancelacionRepo)
+	proveedorRepo := repositories.NewProveedorRepository(db)
 	comentarioService := services.NewComentarioService(proveedorRepo)
 
 	// Controllers
@@ -72,13 +71,11 @@ func main() {
 	cancelacionController := controllers.NewCancelacionController(cancelacionService)
 	comentarioController := controllers.NewComentarioController(comentarioService)
 
-	// Iniciar servicio de expiración
 	expiracionService.Iniciar()
 	defer expiracionService.Detener()
 
 	api := router.Group("/api")
 	{
-		// 1. RUTAS PÚBLICAS (Sin Login)
 		usuarios := api.Group("/usuarios")
 		{
 			usuarios.POST("/registro", usuarioController.Registrar)
@@ -86,42 +83,35 @@ func main() {
 			usuarios.POST("/logout", loginController.Logout)
 		}
 
-		// Búsquedas públicas
 		api.POST("/busqueda/vuelos", busquedaController.BuscarVuelos)
 		api.POST("/busqueda/hoteles", busquedaController.BuscarHoteles)
 
-		// 2. RUTAS PROTEGIDAS (Requieren Login)
+		api.GET("/comentarios/vuelo/:rutaId", comentarioController.ObtenerComentariosVuelo)
+		api.GET("/comentarios/hotel/:hotelId", comentarioController.ObtenerComentariosHotel)
+
 		protegido := api.Group("/")
 		protegido.Use(middlewares.AuthRequerido())
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
 
-			//Gestión de Reservaciones
 			protegido.POST("/reservaciones", reservacionController.CrearReservacion)
 
-			//Detalles (Vuelos y Hoteles)
 			protegido.POST("/reservaciones/detalle/vuelo", detalleReservacionController.AgregarDetalleVuelo)
 			protegido.POST("/reservaciones/detalle/hotel", detalleReservacionController.AgregarDetalleHotel)
 
-			//Pasajeros de vuelo
 			protegido.POST("/reservaciones/detalle/pasajeros-vuelo", detalleReservacionController.AgregarPasajerosVuelo)
 
-			//Asientos de vuelo
 			protegido.POST("/reservaciones/asientos-vuelo", asientoVueloController.ObtenerAsientos)
 			protegido.PUT("/reservaciones/asientos-vuelo", asientoVueloController.CambiarAsiento)
 
-			//pagar reservacion
 			protegido.POST("/reservaciones/pagar", pagoController.Pagar)
 
-			//mis reservaciones
 			protegido.GET("/reservaciones/mias", misReservacionesController.Listar)
 			protegido.GET("/reservaciones/mias/:id", misReservacionesController.Detalle)
 
-			//cancelar reservacion
 			protegido.GET("/reservaciones/:id/cancelar/verificar", cancelacionController.Verificar)
 			protegido.POST("/reservaciones/:id/cancelar", cancelacionController.Cancelar)
 
-			// Rutas de Administrador (Rol 2)
 			admin := protegido.Group("/")
 			admin.Use(middlewares.RolRequerido(2))
 			{
