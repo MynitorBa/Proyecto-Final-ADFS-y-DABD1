@@ -53,6 +53,7 @@ func main() {
 	misReservacionesService := services.NewMisReservacionesService(misReservacionesRepo)
 	cancelacionRepo := repositories.NewCancelacionRepository(db)
 	cancelacionService := services.NewCancelacionService(cancelacionRepo)
+	comentarioService := services.NewComentarioService(proveedorRepo)
 
 	// Controllers
 	usuarioController := controllers.NewUsuarioController(usuarioService)
@@ -69,6 +70,7 @@ func main() {
 	pagoController := controllers.NewPagoController(pagoService)
 	misReservacionesController := controllers.NewMisReservacionesController(misReservacionesService)
 	cancelacionController := controllers.NewCancelacionController(cancelacionService)
+	comentarioController := controllers.NewComentarioController(comentarioService)
 
 	// Iniciar servicio de expiración
 	expiracionService.Iniciar()

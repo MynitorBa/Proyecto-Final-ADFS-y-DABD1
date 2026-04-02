@@ -117,6 +117,21 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        // GET api/comentarios/agencia/ruta/{rutaId}
+        [HttpGet("agencia/ruta/{rutaId}")]
+        [ServiceFilter(typeof(AgenciaAuthMiddleware))]
+        public async Task<IActionResult> ObtenerComentariosRutaAgencia(int rutaId)
+        {
+            try
+            {
+                var comentarios = await _service.ObtenerComentariosPorRuta(rutaId);
+                return Ok(comentarios);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
         private int ObtenerUsuarioId()
         {

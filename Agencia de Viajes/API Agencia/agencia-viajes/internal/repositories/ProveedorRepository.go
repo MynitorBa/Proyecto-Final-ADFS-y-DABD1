@@ -4,6 +4,7 @@ import (
 	"agencia-viajes/internal/dto"
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 type ProveedorRepository struct {
@@ -156,6 +157,31 @@ func (r *ProveedorRepository) ObtenerProveedorPorToken(token string) (*dto.Prove
 
 	if err == sql.ErrNoRows {
 		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// ObtenerProveedorPorTipo — trae URL_API y Token_HASH_Entrada del proveedor activo por tipo
+func (r *ProveedorRepository) ObtenerProveedorPorTipo(tipoProveedorID int) (*dto.DetalleProveedor, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	var p dto.DetalleProveedor
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT URL_API, Token_HASH_Entrada
+		FROM Proveedor
+		WHERE Tipo_Proveedor_ID = ? AND EstadoID = 1
+		LIMIT 1
+	`, tipoProveedorID).Scan(&p.URLAPI, &p.TokenEntrada)
+
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("no hay proveedor activo de tipo %d", tipoProveedorID)
 	}
 	if err != nil {
 		return nil, err

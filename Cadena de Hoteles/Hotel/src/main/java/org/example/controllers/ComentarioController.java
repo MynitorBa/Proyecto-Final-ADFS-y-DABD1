@@ -3,6 +3,7 @@ package org.example.controllers;
 import io.javalin.Javalin;
 import org.example.dtos.ComentarioRequestDTO;
 import org.example.services.ComentarioService;
+import org.example.helpers.AgenciaAuthMiddleware;
 
 import java.util.Map;
 
@@ -33,6 +34,16 @@ public class ComentarioController {
         app.get("/comentarios/hotel/{hotelId}", ctx -> {
             int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));
             ctx.status(200).json(comentarioService.obtenerComentariosPorHotel(hotelId));
+        });
+
+        app.get("/agencia/comentarios/hotel/{hotelId}", ctx -> {
+            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+            int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));
+            try {
+                ctx.status(200).json(comentarioService.obtenerComentariosPorHotel(hotelId));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
         });
     }
 }
