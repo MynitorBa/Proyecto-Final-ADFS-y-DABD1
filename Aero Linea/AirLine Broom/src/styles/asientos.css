@@ -525,6 +525,49 @@
     text-align: center;
 }
 
+/* ══════════════════════════════════════════════════════════
+   PROGRESO MULTI-VUELO
+   ══════════════════════════════════════════════════════════ */
+.vuelos-progreso {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    background: #f5f3ef;
+    border-bottom: 1px solid #e8e0d4;
+}
+.vuelos-progreso__item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    color: #b0a89a;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+.vuelos-progreso__item--activo     { color: #c9a96e; }
+.vuelos-progreso__item--completado { color: #7a9e7e; }
+.vuelos-progreso__numero {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #e8e0d4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+.vuelos-progreso__item--activo .vuelos-progreso__numero     { background: #c9a96e; color: #fff; }
+.vuelos-progreso__item--completado .vuelos-progreso__numero { background: #7a9e7e; color: #fff; }
+.vuelos-progreso__linea {
+    width: 3rem;
+    height: 2px;
+    background: #e8e0d4;
+    margin: 0 0.5rem;
+}
+.vuelos-progreso__linea--completada { background: #7a9e7e; }
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
     .asientos-page__body {

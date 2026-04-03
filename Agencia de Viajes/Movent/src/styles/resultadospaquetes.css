@@ -1,8 +1,17 @@
 /* ═══════════════════════════════════════════════
    RESULTADOS PAQUETES — Movent
    Paleta: #1C1A18 · #FFCC00 · #D40511 · #F5F2EC
+
+   Este archivo cubre SOLO los estilos exclusivos
+   del flujo de paquetes. Los estilos rv-* y rh-*
+   (tarjetas de vuelos, hoteles y sus reseñas)
+   vienen de resultadosvuelos.css y resultadoshoteles.css,
+   que también se importan en este componente.
    ═══════════════════════════════════════════════ */
 
+/* ═══════════════════════════════
+   PAGE & LAYOUT
+═══════════════════════════════ */
 .rp-page {
   background: #F5F2EC;
   min-height: calc(100vh - 64px);
@@ -39,6 +48,7 @@
   padding: 16px 18px 14px;
   border-bottom: 2px solid #FFCC00;
   flex-shrink: 0; cursor: pointer;
+  transition: background .15s;
 }
 .rp-sidebar__head:hover { background: #fafaf8; border-radius: 14px 14px 0 0; }
 
@@ -76,12 +86,12 @@
 /* Grupos de filtro */
 .rp-filter-group { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #f0ebe3; }
 .rp-filter-group:last-of-type { border-bottom: none; margin-bottom: 0; }
-
 .rp-filter-group__title {
   font-size: 10px; font-weight: 700; color: #9a9089;
   text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 10px;
 }
 
+/* Precio */
 .rp-price-inputs { display: flex; align-items: center; gap: 7px; }
 .rp-price-input {
   display: flex; align-items: center; gap: 4px;
@@ -93,10 +103,14 @@
 .rp-price-input input { border: none; background: none; outline: none; width: 100%; font-size: 13px; color: #1C1A18; font-family: inherit; }
 .rp-price-sep { color: #9a9089; font-size: 13px; flex-shrink: 0; }
 
+/* Checkboxes */
 .rp-checkboxes { display: flex; flex-direction: column; gap: 9px; }
 .rp-checkbox { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
 .rp-checkbox input { display: none; }
-.rp-checkbox__box { width: 16px; height: 16px; border: 2px solid #d0c9be; border-radius: 4px; flex-shrink: 0; transition: all .15s; position: relative; }
+.rp-checkbox__box {
+  width: 16px; height: 16px; border: 2px solid #d0c9be; border-radius: 4px;
+  flex-shrink: 0; transition: all .15s; position: relative;
+}
 .rp-checkbox input:checked ~ .rp-checkbox__box { background: #FFCC00; border-color: #FFCC00; }
 .rp-checkbox input:checked ~ .rp-checkbox__box::after {
   content: ''; position: absolute; top: 1px; left: 4px;
@@ -104,13 +118,24 @@
 }
 .rp-checkbox__label { font-size: 13px; color: #3a3530; }
 
+/* Duración */
 .rp-dur-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.rp-dur-btn { padding: 7px; background: #F5F2EC; border: 1px solid #e0d9cf; border-radius: 7px; font-size: 12px; font-weight: 600; color: #5a5047; cursor: pointer; transition: all .15s; font-family: inherit; }
+.rp-dur-btn {
+  padding: 7px; background: #F5F2EC; border: 1px solid #e0d9cf;
+  border-radius: 7px; font-size: 12px; font-weight: 600; color: #5a5047;
+  cursor: pointer; transition: all .15s; font-family: inherit;
+}
 .rp-dur-btn--active { background: #FFCC00; border-color: #FFCC00; color: #1C1A18; }
 .rp-dur-btn:hover:not(.rp-dur-btn--active) { border-color: #FFCC00; }
 
+/* Horarios */
 .rp-horarios { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.rp-horario-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 5px; background: #F5F2EC; border: 1px solid #e0d9cf; border-radius: 8px; cursor: pointer; font-size: 11px; color: #3a3530; transition: all .15s; line-height: 1.3; font-family: inherit; }
+.rp-horario-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 9px 5px; background: #F5F2EC; border: 1px solid #e0d9cf;
+  border-radius: 8px; cursor: pointer; font-size: 11px; color: #3a3530;
+  transition: all .15s; line-height: 1.3; font-family: inherit;
+}
 .rp-horario-btn > span:first-child { display: flex; align-items: center; justify-content: center; color: #8B6B4A; }
 .rp-horario-btn small { font-size: 9px; color: #9a9089; }
 .rp-horario-btn--active { background: #FFCC00; border-color: #FFCC00; color: #1C1A18; font-weight: 700; }
@@ -159,10 +184,13 @@
 
 .rp-modificar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-.rp-mod-section { background: #F5F2EC; border-radius: 10px; padding: 12px 14px; border: 1px solid #e8e3dc; }
+.rp-mod-section {
+  background: #F5F2EC; border-radius: 10px; padding: 12px 14px; border: 1px solid #e8e3dc;
+}
 
 .rp-mod-section--row {
-  grid-column: 1 / -1; display: grid;
+  grid-column: 1 / -1;
+  display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr auto;
   gap: 12px; align-items: end;
   background: transparent; border: none; padding: 0;
@@ -173,10 +201,15 @@
   letter-spacing: .08em; color: #8B6B4A; margin: 0 0 10px;
   display: flex; align-items: center; gap: 6px;
 }
+
 .rp-mod-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rp-mod-field { display: flex; flex-direction: column; gap: 4px; position: relative; }
 
-.rp-mod-label { font-size: 10px; font-weight: 700; color: #5a5047; text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 4px; }
+.rp-mod-label {
+  font-size: 10px; font-weight: 700; color: #5a5047;
+  text-transform: uppercase; letter-spacing: .06em;
+  display: flex; align-items: center; gap: 4px;
+}
 .rp-mod-hint { font-weight: 400; color: #9a9089; font-size: 10px; text-transform: none; }
 
 .rp-mod-input {
@@ -194,7 +227,8 @@ select.rp-mod-input { cursor: pointer; }
 .rp-mod-buscar {
   display: inline-flex; align-items: center; gap: 7px; padding: 10px 20px;
   background: #FFCC00; color: #1C1A18; border: 2px solid #1C1A18; border-radius: 10px;
-  font-size: 14px; font-weight: 800; cursor: pointer; transition: all .15s; font-family: inherit; white-space: nowrap;
+  font-size: 14px; font-weight: 800; cursor: pointer; transition: all .15s;
+  font-family: inherit; white-space: nowrap;
 }
 .rp-mod-buscar:hover:not(:disabled) { background: #f0c000; transform: translateY(-1px); }
 .rp-mod-buscar:disabled { opacity: .6; cursor: not-allowed; }
@@ -209,7 +243,11 @@ select.rp-mod-input { cursor: pointer; }
   box-shadow: 0 8px 20px rgba(0,0,0,0.13);
 }
 .rp-ac-list li { margin: 0; padding: 0; }
-.rp-ac-list button { width: 100%; text-align: left; background: none; border: none; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; color: #1C1A18; font-family: inherit; transition: background .12s; }
+.rp-ac-list button {
+  width: 100%; text-align: left; background: none; border: none;
+  padding: 7px 10px; border-radius: 7px; cursor: pointer;
+  font-size: 13px; color: #1C1A18; font-family: inherit; transition: background .12s;
+}
 .rp-ac-list button:hover { background: rgba(255,204,0,.15); }
 
 /* Expand transition */
@@ -224,7 +262,7 @@ select.rp-mod-input { cursor: pointer; }
   display: flex; align-items: center; gap: 12px;
   background: #fff; border: 1px solid #e8e3dc;
   border-radius: 12px; padding: 14px 18px;
-  margin-bottom: 14px; flex-wrap: wrap;
+  margin-bottom: 14px; flex-wrap: wrap; margin-top: 14px;
 }
 
 .rp-paso {
@@ -250,7 +288,7 @@ select.rp-mod-input { cursor: pointer; }
 .rp-paso__back { padding: 6px 14px; font-size: 12px; flex-shrink: 0; }
 
 /* ═══════════════════════════════
-   VUELO SELECCIONADO (banda en paso 2)
+   VUELO SELECCIONADO (banda superior)
 ═══════════════════════════════ */
 .rp-vuelo-sel {
   display: flex; align-items: center; gap: 12px;
@@ -265,12 +303,14 @@ select.rp-mod-input { cursor: pointer; }
 .rp-vuelo-sel__meta { font-size: 11px; color: #9a8e80; display: block; margin-top: 2px; }
 
 .rp-vuelo-sel__precio { text-align: right; flex-shrink: 0; }
-.rp-vuelo-sel__lbl  { font-size: 10px; color: #9a8e80; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; display: block; }
+.rp-vuelo-sel__lbl  {
+  font-size: 10px; color: #9a8e80; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; display: block;
+}
 .rp-vuelo-sel__val  { font-size: 18px; font-weight: 800; color: #FFCC00; display: block; line-height: 1.1; }
-.rp-vuelo-sel__precio small { font-size: 10px; color: #7a6e60; }
 
 /* ═══════════════════════════════
-   RESUMEN FINAL (ambos seleccionados)
+   RESUMEN FINAL DEL PAQUETE
 ═══════════════════════════════ */
 .rp-resumen {
   display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
@@ -285,15 +325,11 @@ select.rp-mod-input { cursor: pointer; }
 
 .rp-resumen__sep { font-size: 20px; font-weight: 800; color: #FFCC00; }
 
-.rp-resumen__col--total { }
 .rp-resumen__total { font-size: 24px; font-weight: 900; color: #FFCC00; line-height: 1; }
 
-.rp-resumen__cta {
-  margin-left: auto; padding: 12px 24px;
-  font-size: 14px; font-weight: 800;
-}
+.rp-resumen__cta { margin-left: auto; padding: 12px 24px; font-size: 14px; font-weight: 800; }
 
-/* Header banda vuelo regreso */
+/* Banda vuelo regreso */
 .rp-regreso-header {
   display: flex; align-items: center; gap: 8px;
   background: #1C1A18; color: #FFCC00;
@@ -310,7 +346,35 @@ select.rp-mod-input { cursor: pointer; }
 }
 .rp-toolbar__count { font-size: 13px; color: #5a5047; margin: 0; }
 .rp-toolbar__count strong { color: #1C1A18; }
-.rp-sort__select { border: 1px solid #e0d9cf; border-radius: 8px; padding: 6px 10px; font-size: 13px; background: #fff; color: #1C1A18; cursor: pointer; font-family: inherit; outline: none; }
+.rp-sort { display: flex; align-items: center; gap: 8px; }
+.rp-sort__select {
+  border: 1px solid #e0d9cf; border-radius: 8px; padding: 6px 10px;
+  font-size: 13px; background: #fff; color: #1C1A18;
+  cursor: pointer; font-family: inherit; outline: none;
+}
+
+/* ═══════════════════════════════
+   OVERRIDE rv-card-wrap en contexto paquetes
+   — el último hijo es .rv-resenas (sin border-radius
+     inferior), pero si no hay reseñas, la tarjeta
+     queda sola y necesita cerrarse con border-radius.
+═══════════════════════════════ */
+.rv-lista .rv-card-wrap > .rv-card:only-child {
+  border-radius: 14px;
+}
+.rv-lista .rv-card-wrap > .rv-card:not(:only-child) {
+  border-radius: 14px 14px 0 0;
+}
+
+/* ═══════════════════════════════
+   OVERRIDE rh-grupo en contexto paquetes
+   — rh-resenas es el último hijo → cierra con
+     border-radius. Si no hay reseñas, rh-habitaciones
+     (o rh-hotel-combos) lo cierra.
+═══════════════════════════════ */
+.rp-main .rh-habitaciones:last-child {
+  border-radius: 0 0 14px 14px;
+}
 
 /* ═══════════════════════════════
    BOTONES
@@ -370,5 +434,10 @@ select.rp-mod-input { cursor: pointer; }
   .rp-vuelo-sel__precio { text-align: left; }
   .rp-mod-row { grid-template-columns: 1fr; }
   .rp-mod-section--row { grid-template-columns: 1fr; }
-  .rp-search-bar__mod-btn { border-left: none; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; justify-content: center; }
+  .rp-mod-field--cta { grid-column: 1; }
+  .rp-search-bar__mod-btn {
+    border-left: none; border-top: 1px solid rgba(255,255,255,0.1);
+    width: 100%; justify-content: center;
+  }
+  .rp-search-bar__summary { padding-bottom: 10px; }
 }

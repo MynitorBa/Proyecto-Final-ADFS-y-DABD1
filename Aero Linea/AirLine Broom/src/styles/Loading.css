@@ -1,0 +1,114 @@
+/* ══════════════════════════════════════════════════════════
+   Loading.css  —  Loading overlay con animación de avión
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Overlay ── */
+.broom-loader__overlay {
+    position: fixed;
+    inset: 0;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    pointer-events: all;
+    cursor: wait;
+}
+
+/* ── Contenido central ── */
+.broom-loader__content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+/* ── Avión ── */
+.broom-loader__plane-container {
+    width: 140px;
+    position: relative;
+    margin-bottom: 2rem;
+    animation: broom-fly 2.5s ease-in-out infinite;
+}
+
+.broom-loader__plane-container--small { width: 90px;  }
+.broom-loader__plane-container--large { width: 200px; }
+
+.broom-loader__plane-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.05));
+}
+
+/* ── Sombra dinámica ── */
+.broom-loader__plane-shadow {
+    width: 60%;
+    height: 6px;
+    background: rgba(107, 87, 68, 0.15);
+    border-radius: 50%;
+    margin: 15px auto 0;
+    filter: blur(4px);
+    animation: broom-shadow 2.5s ease-in-out infinite;
+}
+
+/* ── Texto ── */
+.broom-loader__info {
+    text-align: center;
+}
+
+.broom-loader__message {
+    color: #6b5744;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+}
+
+/* ── Barra de progreso ── */
+.broom-loader__track {
+    width: 180px;
+    height: 2px;
+    background-color: #f0f0f0;
+    position: relative;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.broom-loader__progress {
+    position: absolute;
+    height: 100%;
+    width: 60px;
+    background-color: #6b5744;
+    animation: broom-progress 1.5s infinite linear;
+}
+
+/* ── Nubes decorativas ── */
+.broom-loader__cloud {
+    position: absolute;
+    background-color: #4d2e2e;
+    filter: blur(30px);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.broom-loader__cloud--1 { width: 300px; height: 100px; top: 15%;    left: -10%; opacity: 0.5; }
+.broom-loader__cloud--2 { width: 400px; height: 150px; bottom: 10%; right: -5%; opacity: 0.3; }
+
+/* ── Animaciones ── */
+@keyframes broom-fly {
+    0%, 100% { transform: translateY(0)    rotate(-1deg); }
+    50%       { transform: translateY(-25px) rotate(3deg); }
+}
+
+@keyframes broom-shadow {
+    0%, 100% { transform: scale(1);   opacity: 1;   }
+    50%       { transform: scale(0.7); opacity: 0.4; }
+}
+
+@keyframes broom-progress {
+    from { left: -100%; }
+    to   { left:  150%; }
+}

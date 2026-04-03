@@ -152,12 +152,13 @@
                 </div>
                 <div class="pago-form__row">
                   <div class="pago-form__field">
-                    <label class="pago-form__label">NIT</label>
+                    <label class="pago-form__label">NIT <span class="pago-form__hint">(solo números)</span></label>
                     <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='nit' }">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16" class="pago-form__ico"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
                       <input class="pago-form__input" v-model="pago.nit"
+                        @input="pago.nit = pago.nit.replace(/\D/g, '')"
                         @focus="focusField='nit'" @blur="focusField=''"
-                        placeholder="12345678 o CF" type="text" autocomplete="off"/>
+                        placeholder="12345678" type="text" inputmode="numeric" autocomplete="off"/>
                     </div>
                   </div>
                   <div class="pago-form__field">
@@ -373,9 +374,6 @@ function formatVencimiento(e) {
 }
 
 // ── onMounted ─────────────────────────────────────────────────
-// NOTA: NO se limpia sessionStorage al salir de esta vista.
-// La limpieza ocurre únicamente en Confirmacion.vue después del pago exitoso,
-// o manualmente desde el botón "Descartar reserva" en el Encabezado.
 onMounted(() => {
   const raw = sessionStorage.getItem('checkout_data')
   if (!raw) { router.push('/principal'); return }
@@ -419,6 +417,11 @@ async function confirmarPago() {
     return
   }
 
+  if (!pago.value.nit.trim()) {
+    formError.value = 'El NIT es requerido.'
+    return
+  }
+
   pagando.value = true
   try {
     const res = await fetch(`${API}/api/reservaciones/pagar`, {
@@ -439,7 +442,14 @@ async function confirmarPago() {
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || data.mensaje || `Error ${res.status}`)
 
-    // Pago exitoso → ir a confirmación (Confirmacion.vue limpia el sessionStorage)
+    // Correo automático post-pago (fire-and-forget)
+    fetch(`${API}/api/reservaciones/${cd.value.reservacionId}/correo`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    }).catch(() => {})
+
+    // Pago exitoso → ir a confirmación
     router.push({
       path:  '/confirmacion',
       query: { noReservacion: cd.value.noReservacion },

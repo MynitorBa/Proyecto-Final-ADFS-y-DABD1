@@ -10,10 +10,22 @@
           <h1 class="hero-title">Tu Próxima Aventura<br>Comienza <span>Aquí</span></h1>
           <p class="hero-subtitle">Vuelos, hospedajes y paquetes combinados de múltiples proveedores en un solo lugar</p>
           <div class="hero-stats">
-            <div class="hero-stat"><strong>500+</strong><span>Aerolíneas</span></div>
-            <div class="hero-stat"><strong>12K+</strong><span>Hoteles</span></div>
-            <div class="hero-stat"><strong>180+</strong><span>Países</span></div>
-            <div class="hero-stat"><strong>98%</strong><span>Satisfacción</span></div>
+            <div class="hero-stat">
+              <strong>{{ stats.aerolineas }}</strong>
+              <span>Aerolínea{{ stats.aerolineas !== 1 ? 's' : '' }}</span>
+            </div>
+            <div class="hero-stat">
+              <strong>{{ stats.hoteles }}</strong>
+              <span>Hotel{{ stats.hoteles !== 1 ? 'es' : '' }}</span>
+            </div>
+            <div class="hero-stat">
+              <strong>{{ stats.reservaciones }}</strong>
+              <span>Reservacion{{ stats.reservaciones !== 1 ? 'es' : '' }}</span>
+            </div>
+            <div class="hero-stat">
+              <strong>{{ stats.usuarios }}</strong>
+              <span>Usuario{{ stats.usuarios !== 1 ? 's' : '' }}</span>
+            </div>
           </div>
         </div>
 
@@ -206,7 +218,6 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
               Vuelo
             </div>
-            <!-- Toggle ida / ida y vuelta -->
             <div class="trip-type-toggle" style="margin-top: 10px; margin-bottom: 10px;">
               <button :class="['trip-type-btn', { 'trip-type-btn--active': comboTipoVuelo === 'ida' }]"
                 @click="comboTipoVuelo = 'ida'" type="button">
@@ -245,7 +256,6 @@
               </div>
             </div>
 
-            <!-- Sección hotel — fechas siempre dentro del rango de vuelo -->
             <div class="combo-label" style="border-top: 1px solid #e2e8f0; margin-top:0; border-radius:0;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Hotel
@@ -266,28 +276,18 @@
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-in
                 </label>
-                <input
-                  class="form-input"
-                  type="date"
-                  v-model="comboData.checkIn"
-                  :min="comboData.fecha || hoy"
-                  :max="maxCheckInCombo || undefined"
-                  :disabled="!comboData.fecha"
-                />
+                <input class="form-input" type="date" v-model="comboData.checkIn"
+                  :min="comboData.fecha || hoy" :max="maxCheckInCombo || undefined" :disabled="!comboData.fecha" />
               </div>
               <div class="form-group">
                 <label class="form-label">
                   <svg class="label-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   Check-out
                 </label>
-                <input
-                  class="form-input"
-                  type="date"
-                  v-model="comboData.checkOut"
+                <input class="form-input" type="date" v-model="comboData.checkOut"
                   :min="minCheckOutCombo"
                   :max="comboTipoVuelo === 'idaVuelta' ? (comboData.fechaRegreso || undefined) : undefined"
-                  :disabled="!comboData.checkIn"
-                />
+                  :disabled="!comboData.checkIn" />
               </div>
             </div>
             <p v-if="searchError" class="search-error">
@@ -370,6 +370,9 @@ const flightData = ref({ fecha: '', fechaRegreso: '', cantidadPasajeros: 1 })
 const hotelData  = ref({ checkIn: '', checkOut: '', cantidadPersonas: 1 })
 const comboData  = ref({ fecha: '', fechaRegreso: '', cantidadPersonas: 1, checkIn: '', checkOut: '' })
 
+// ── Stats reales del backend ───────────────────────────────────
+const stats = ref({ aerolineas: 0, hoteles: 0, reservaciones: 0, usuarios: 0 })
+
 // ── Computed: fechas mínimas para vuelos ──────────────────────
 const minFechaRegreso = computed(() => {
   if (!flightData.value.fecha) return hoy
@@ -389,10 +392,6 @@ const minCheckOutHotel = computed(() => {
   return d.toISOString().split('T')[0]
 })
 
-// ── Computed: límites del hotel DENTRO del rango de vuelo ─────
-
-// checkIn hotel: máximo = día anterior al checkOut elegido
-// o día anterior al regreso si no hay checkOut aún (solo idaVuelta)
 const maxCheckInCombo = computed(() => {
   if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
     const base = comboData.value.checkOut || comboData.value.fechaRegreso
@@ -403,63 +402,42 @@ const maxCheckInCombo = computed(() => {
   return undefined
 })
 
-// checkOut hotel: mínimo = checkIn + 1 día
 const minCheckOutCombo = computed(() => {
   if (!comboData.value.checkIn) return hoy
   const d = new Date(comboData.value.checkIn); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
-// ── Watchers combo: hotel siempre se sincroniza con vuelo ─────
-
-// Cuando cambia la fecha de IDA → checkIn = esa fecha (siempre)
+// ── Watchers combo ────────────────────────────────────────────
 watch(() => comboData.value.fecha, (nuevaFecha) => {
   if (!nuevaFecha) return
-
-  // Siempre fijar checkIn a la fecha del vuelo de ida
   comboData.value.checkIn = nuevaFecha
-
-  // Si checkOut quedó inválido (≤ nuevo checkIn), resetearlo
-  if (comboData.value.checkOut && comboData.value.checkOut <= nuevaFecha) {
+  if (comboData.value.checkOut && comboData.value.checkOut <= nuevaFecha)
     comboData.value.checkOut = ''
-  }
 })
 
-// Cuando cambia la fecha de REGRESO → checkOut = esa fecha (siempre)
 watch(() => comboData.value.fechaRegreso, (nuevaFechaRegreso) => {
   if (!nuevaFechaRegreso || comboTipoVuelo.value !== 'idaVuelta') return
-
-  // Siempre fijar checkOut a la fecha de regreso
   comboData.value.checkOut = nuevaFechaRegreso
-
-  // Si checkIn quedó igual o posterior al regreso, volver al día de ida
-  if (comboData.value.checkIn && comboData.value.checkIn >= nuevaFechaRegreso) {
+  if (comboData.value.checkIn && comboData.value.checkIn >= nuevaFechaRegreso)
     comboData.value.checkIn = comboData.value.fecha || ''
-  }
 })
 
-// Cuando cambia el tipo a solo-ida: limpiar regreso y checkOut
 watch(() => comboTipoVuelo.value, (tipo) => {
-  if (tipo === 'ida') {
-    comboData.value.fechaRegreso = ''
-    comboData.value.checkOut = ''
-  }
+  if (tipo === 'ida') { comboData.value.fechaRegreso = ''; comboData.value.checkOut = '' }
 })
 
-// Cuando el usuario ajusta checkIn manualmente: validar checkOut
 watch(() => comboData.value.checkIn, (nuevoCheckIn) => {
   if (!nuevoCheckIn) return
-  if (comboData.value.checkOut && comboData.value.checkOut <= nuevoCheckIn) {
+  if (comboData.value.checkOut && comboData.value.checkOut <= nuevoCheckIn)
     comboData.value.checkOut = ''
-  }
 })
 
-// ── Helper de formato de fecha corta para el hint ─────────────
+// ── Helper fecha corta ────────────────────────────────────────
 function formatFechaCorta(f) {
   if (!f) return ''
-  try {
-    return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short' })
-  } catch { return f }
+  try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short' }) }
+  catch { return f }
 }
 
 // ── Autocomplete países/ciudades ──────────────────────────────
@@ -518,7 +496,7 @@ function onDCiudadInput() {
 }
 function selDCiudad(c) { dCiudadQ.value = c; dCiudadSug.value = []; destino.value.ciudad = c; searchError.value = '' }
 
-// ── Helpers de validación de resultados ───────────────────────
+// ── Validación de resultados ──────────────────────────────────
 function tieneVuelos(respuesta) {
   if (!Array.isArray(respuesta) || respuesta.length === 0) return false
   return respuesta.some(b => b.datos && (
@@ -566,14 +544,8 @@ const buscarVuelos = async () => {
       const resultados        = await resIda.json()
       const resultadosRegreso = resRegreso.ok ? await resRegreso.json() : []
 
-      if (!tieneVuelos(resultados)) {
-        searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${flightData.value.fecha}.`
-        return
-      }
-      if (!tieneVuelos(resultadosRegreso)) {
-        searchError.value = `No hay vuelos de regreso de ${destino.value.ciudad} a ${origen.value.ciudad} para el ${flightData.value.fechaRegreso}. Prueba otra fecha de regreso.`
-        return
-      }
+      if (!tieneVuelos(resultados)) { searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${flightData.value.fecha}.`; return }
+      if (!tieneVuelos(resultadosRegreso)) { searchError.value = `No hay vuelos de regreso de ${destino.value.ciudad} a ${origen.value.ciudad} para el ${flightData.value.fechaRegreso}. Prueba otra fecha de regreso.`; return }
 
       router.push({
         path: '/resultados-vuelos',
@@ -630,7 +602,7 @@ const buscarHoteles = async () => {
     if (!res.ok) throw new Error(`Error ${res.status}`)
     const resultados = await res.json()
     router.push({ path: '/resultados-hoteles', state: { resultados, busqueda: { ciudad: destino.value.ciudad, pais: destino.value.pais, checkIn: hotelData.value.checkIn, checkOut: hotelData.value.checkOut, cantidadPersonas: hotelData.value.cantidadPersonas } } })
-  } catch (err) {
+  } catch {
     searchError.value = 'No se pudieron obtener hoteles. Intenta de nuevo.'
   } finally { buscando.value = false }
 }
@@ -638,31 +610,21 @@ const buscarHoteles = async () => {
 // ── Buscar Paquetes ───────────────────────────────────────────
 const buscarPaquetes = async () => {
   searchError.value = ''
-
   if (!origen.value.pais || !origen.value.ciudad)            { searchError.value = 'Selecciona el país y ciudad de origen.'; return }
   if (!destino.value.pais || !destino.value.ciudad)          { searchError.value = 'Selecciona el país y ciudad de destino.'; return }
-
   if (!comboData.value.fecha)                                { searchError.value = 'Selecciona la fecha de vuelo.'; return }
   if (comboData.value.fecha < hoy)                           { searchError.value = 'La fecha de vuelo no puede ser en el pasado.'; return }
   if (comboTipoVuelo.value === 'idaVuelta') {
     if (!comboData.value.fechaRegreso)                       { searchError.value = 'Selecciona la fecha de regreso del vuelo.'; return }
     if (comboData.value.fechaRegreso <= comboData.value.fecha) { searchError.value = 'La fecha de regreso debe ser posterior a la de ida.'; return }
   }
-
   if (!comboData.value.checkIn)                              { searchError.value = 'Selecciona la fecha de check-in del hotel.'; return }
   if (comboData.value.checkIn < hoy)                         { searchError.value = 'El check-in no puede ser una fecha pasada.'; return }
   if (!comboData.value.checkOut)                             { searchError.value = 'Selecciona la fecha de check-out del hotel.'; return }
   if (comboData.value.checkOut <= comboData.value.checkIn)   { searchError.value = 'El check-out debe ser posterior al check-in.'; return }
-
-  if (comboData.value.checkIn < comboData.value.fecha) {
-    searchError.value = `El check-in del hotel no puede ser antes de la salida del vuelo (${formatFechaCorta(comboData.value.fecha)}).`
-    return
-  }
+  if (comboData.value.checkIn < comboData.value.fecha) { searchError.value = `El check-in del hotel no puede ser antes de la salida del vuelo (${formatFechaCorta(comboData.value.fecha)}).`; return }
   if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
-    if (comboData.value.checkOut > comboData.value.fechaRegreso) {
-      searchError.value = `El check-out del hotel no puede ser después del vuelo de regreso (${formatFechaCorta(comboData.value.fechaRegreso)}).`
-      return
-    }
+    if (comboData.value.checkOut > comboData.value.fechaRegreso) { searchError.value = `El check-out del hotel no puede ser después del vuelo de regreso (${formatFechaCorta(comboData.value.fechaRegreso)}).`; return }
   }
 
   buscando.value = true
@@ -682,7 +644,6 @@ const buscarPaquetes = async () => {
       resultadosVuelos  = resIda.ok   ? await resIda.json()   : []
       resultadosRegreso = resReg.ok   ? await resReg.json()   : []
       resultadosHoteles = resHotel.ok ? await resHotel.json() : []
-
       if (!tieneVuelos(resultadosVuelos))   { searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${comboData.value.fecha}.`; return }
       if (!tieneVuelos(resultadosRegreso))  { searchError.value = `No hay vuelos de regreso de ${destino.value.ciudad} a ${origen.value.ciudad} para el ${comboData.value.fechaRegreso}.`; return }
       if (!tieneHoteles(resultadosHoteles)) { searchError.value = `No hay hoteles en ${destino.value.ciudad} para esas fechas.`; return }
@@ -691,7 +652,6 @@ const buscarPaquetes = async () => {
       resultadosVuelos  = resIda.ok   ? await resIda.json()   : []
       resultadosHoteles = resHotel.ok ? await resHotel.json() : []
       resultadosRegreso = []
-
       if (!tieneVuelos(resultadosVuelos))   { searchError.value = `No hay vuelos de ${origen.value.ciudad} a ${destino.value.ciudad} para el ${comboData.value.fecha}.`; return }
       if (!tieneHoteles(resultadosHoteles)) { searchError.value = `No hay hoteles en ${destino.value.ciudad} para esas fechas.`; return }
     }
@@ -710,7 +670,7 @@ const buscarPaquetes = async () => {
         }
       }
     })
-  } catch (err) {
+  } catch {
     searchError.value = 'No se pudieron obtener los paquetes. Intenta de nuevo.'
   } finally { buscando.value = false }
 }
@@ -723,8 +683,20 @@ const features = [
   { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`, title: 'Mejor Precio', description: 'Comparamos precios de múltiples proveedores para ofrecerte siempre la mejor tarifa disponible.' },
 ]
 
+// ── Scroll ────────────────────────────────────────────────────
 const onScroll    = () => { showScrollTop.value = window.scrollY > 300 }
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
-onMounted(() => window.addEventListener('scroll', onScroll))
+
+// ── onMounted ─────────────────────────────────────────────────
+onMounted(async () => {
+  window.addEventListener('scroll', onScroll)
+
+  // Cargar stats reales del backend
+  try {
+    const res = await fetch(`${API}/api/stats`)
+    if (res.ok) stats.value = await res.json()
+  } catch {}
+})
+
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 </script>

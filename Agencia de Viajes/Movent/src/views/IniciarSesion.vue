@@ -52,7 +52,7 @@
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <h3>¡Bienvenido de vuelta!</h3>
-            <p>{{ esAdmin ? 'Redirigiendo al panel admin...' : 'Iniciando sesión...' }}</p>
+            <p>{{ destino === '/admin/dashboard' ? 'Redirigiendo al panel admin...' : destino === '/admin/webservice' ? 'Redirigiendo al panel WebService...' : 'Iniciando sesión...' }}</p>
             <div class="loading-dots"><span></span><span></span><span></span></div>
           </div>
 
@@ -134,7 +134,7 @@ const errors       = ref({})
 const isSubmitting = ref(false)
 const loginSuccess = ref(false)
 const serverError  = ref('')
-const esAdmin      = ref(false)
+const destino      = ref('/principal')
 const captchaToken = ref('')
 
 // ── CAPTCHA ──────────────────────────────────────────────────────────
@@ -157,9 +157,9 @@ const loadRecaptcha = () => {
 const renderCaptcha = () => {
   if (!window.grecaptcha || !document.getElementById('recaptcha-login')) return
   recaptchaWidgetId = window.grecaptcha.render('recaptcha-login', {
-    sitekey:           RECAPTCHA_SITE_KEY,
-    theme:             'light',
-    callback:          (token) => { captchaToken.value = token; errors.value.captcha = '' },
+    sitekey:            RECAPTCHA_SITE_KEY,
+    theme:              'light',
+    callback:           (token) => { captchaToken.value = token; errors.value.captcha = '' },
     'expired-callback': () => { captchaToken.value = '' },
   })
 }
@@ -182,10 +182,18 @@ const onFieldChange = () => {
 
 const validateForm = () => {
   errors.value = {}
-  if (!formData.value.login.trim())    errors.value.login    = 'El usuario o email es requerido'
-  if (!formData.value.password)        errors.value.password = 'La contraseña es requerida'
-  if (!captchaToken.value)             errors.value.captcha  = 'Completa el CAPTCHA para continuar'
+  if (!formData.value.login.trim()) errors.value.login    = 'El usuario o email es requerido'
+  if (!formData.value.password)     errors.value.password = 'La contraseña es requerida'
+  if (!captchaToken.value)          errors.value.captcha  = 'Completa el CAPTCHA para continuar'
   return Object.keys(errors.value).length === 0
+}
+
+// ── Destino por rol ───────────────────────────────────────────────────
+// rol_id: 1=Registrado  2=Administrador  3=WebService
+const calcularDestino = (rolId) => {
+  if (rolId === 2) return '/admin/dashboard'
+  if (rolId === 3) return '/admin/webservice'
+  return '/principal'
 }
 
 // ── Login ─────────────────────────────────────────────────────────────
@@ -195,12 +203,10 @@ const handleLogin = async () => {
   serverError.value  = ''
 
   try {
-    // El backend recibe: { login, contrasena }
-    // login acepta tanto username como correo
     const res = await fetch(`${API_BASE}/api/usuarios/login`, {
-      method:  'POST',
+      method:      'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      headers:     { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         login:      formData.value.login.trim(),
         contrasena: formData.value.password,
@@ -212,32 +218,28 @@ const handleLogin = async () => {
     try { data = JSON.parse(text) } catch { /* no-JSON */ }
 
     if (!res.ok) {
-      // El backend devuelve: { "error": "Usuario o contraseña incorrectos" }
       serverError.value = data?.error || `Error ${res.status}`
       resetCaptcha()
       return
     }
 
-    // El backend devuelve:
-    // { id, nombre, apellido, correo, username, rol_id }
-    // rol_id: 1 = Registrado, 2 = Administrador
-    const adminFlag = data.rol_id === 2
-
+    // Guardar sesión
     sessionStorage.setItem('usuario_sesion', JSON.stringify({
-      id:      data.id,
-      nombre:  data.nombre,
+      id:       data.id,
+      nombre:   data.nombre,
       apellido: data.apellido,
-      usuario: data.username,
-      correo:  data.correo,
-      rol:     adminFlag ? 'Administrador' : 'Registrado',
-      isAdmin: adminFlag,
+      usuario:  data.username,
+      correo:   data.correo,
+      rol:      data.rol_id === 2 ? 'Administrador' : data.rol_id === 3 ? 'WebService' : 'Registrado',
+      isAdmin:  data.rol_id === 2,
+      isWS:     data.rol_id === 3,
     }))
 
-    esAdmin.value      = adminFlag
+    destino.value      = calcularDestino(data.rol_id)
     loginSuccess.value = true
-    setTimeout(() => router.push(adminFlag ? '/admin/dashboard' : '/principal'), 1400)
+    setTimeout(() => router.push(destino.value), 1400)
 
-  } catch (err) {
+  } catch {
     serverError.value = 'Error de conexión. Verifica que el servidor esté activo.'
     resetCaptcha()
   } finally {

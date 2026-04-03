@@ -829,9 +829,39 @@ function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
     Object.assign(form, {
-      oPaisQ:'', oPaisSug:[], oPaisSel:null, oCiudadQ:'', oCiudadSug:[], oCiudades:[], oPais:'', oCiudad:'',
-      dPaisQ:'', dPaisSug:[], dPaisSel:null, dCiudadQ:'', dCiudadSug:[], dCiudades:[], dPais:'', dCiudad:'',
-      fecha:'', checkIn:'', checkOut:'', cantidadPersonas: busqueda.value.cantidadPersonas
+      // Origen — pre-llenar con búsqueda actual
+      oPaisQ:         busqueda.value.origenPais    || '',
+      oPais:          busqueda.value.origenPais    || '',
+      oCiudadQ:       busqueda.value.origen        || '',
+      oCiudad:        busqueda.value.origen        || '',
+      oPaisSug:       [],
+      oPaisSel:       busqueda.value.origenPais ? { country: busqueda.value.origenPais } : null,
+      oCiudadSug:     [],
+      oCiudadLoading: false,
+      oCiudades:      [],
+
+      // Destino — pre-llenar con búsqueda actual
+      dPaisQ:         busqueda.value.destinoPais   || '',
+      dPais:          busqueda.value.destinoPais   || '',
+      dCiudadQ:       busqueda.value.destino       || '',
+      dCiudad:        busqueda.value.destino       || '',
+      dPaisSug:       [],
+      dPaisSel:       busqueda.value.destinoPais ? { country: busqueda.value.destinoPais } : null,
+      dCiudadSug:     [],
+      dCiudadLoading: false,
+      dCiudades:      [],
+
+      // Fechas vuelo
+      fecha:            busqueda.value.fecha            || '',
+      fechaRegreso:     busqueda.value.fechaRegreso     || '',
+
+      // Fechas hotel
+      checkIn:          busqueda.value.checkIn          || '',
+      checkOut:         busqueda.value.checkOut         || '',
+
+      // Personas y tipo
+      cantidadPersonas: busqueda.value.cantidadPersonas || 1,
+      tipoVuelo:        busqueda.value.tipoVuelo        || 'ida',
     })
     modError.value = ''
   }

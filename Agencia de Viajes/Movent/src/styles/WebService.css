@@ -1,0 +1,444 @@
+/* ═══════════════════════════════════════════════
+   WEBSERVICE PAGE — Movent Admin
+   ═══════════════════════════════════════════════ */
+
+/* Status badge en topbar */
+.ws-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 6px 16px;
+}
+
+.ws-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: ws-pulse 2s infinite;
+}
+
+@keyframes ws-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ── Endpoint card ─────────────────────────────── */
+.ws-endpoint-card {
+  background: #1C1A18;
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ws-endpoint-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ws-endpoint-card__desc {
+  font-size: 13px;
+  color: #9a8e80;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.ws-endpoint-card__desc code {
+  background: rgba(255,204,0,0.15);
+  color: #FFCC00;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── Method badge ──────────────────────────────── */
+.ws-method {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+}
+
+.ws-method--post { background: #FFCC00; color: #1C1A18; }
+.ws-method--get  { background: #22c55e; color: #fff; }
+
+/* ── URL display ───────────────────────────────── */
+.ws-endpoint-url {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFCC00;
+  font-family: 'Courier New', monospace;
+  flex: 1;
+}
+
+/* ── Auth info ─────────────────────────────────── */
+.ws-auth-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ws-auth-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.ws-auth-key {
+  font-weight: 700;
+  color: #9a9089;
+  min-width: 80px;
+  flex-shrink: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 1px;
+}
+
+.ws-auth-val {
+  color: #3a3530;
+  flex: 1;
+}
+
+.ws-auth-val code {
+  background: #f0ebe3;
+  color: #1C1A18;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── Code blocks ───────────────────────────────── */
+.ws-code-block {
+  border: 1px solid #e8e3dc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ws-code-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #f5f2ec;
+  border-bottom: 1px solid #e8e3dc;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9a9089;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ws-code-block__body {
+  background: #1C1A18;
+  color: #FFCC00;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 14px 16px;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.ws-code-inline {
+  background: #f0ebe3;
+  color: #1C1A18;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+/* ── JSON block ────────────────────────────────── */
+.ws-json-block {
+  background: #1C1A18;
+  color: #FFCC00;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 18px 20px;
+  border-radius: 10px;
+  margin: 0;
+  overflow-x: auto;
+}
+
+/* ── Tags ──────────────────────────────────────── */
+.ws-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ws-tag--required { background: #fee2e2; color: #991b1b; }
+.ws-tag--optional { background: #f5f2ec; color: #9a9089; }
+.ws-tag--json     { background: #ccfbf1; color: #0f766e; }
+
+/* ── Fields ────────────────────────────────────── */
+.ws-fields { display: flex; flex-direction: column; gap: 14px; }
+
+.ws-field {
+  padding: 12px 14px;
+  background: #faf8f5;
+  border: 1px solid #e8e3dc;
+  border-radius: 10px;
+}
+
+.ws-field__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.ws-field__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1C1A18;
+  font-family: 'Courier New', monospace;
+}
+
+.ws-field__type {
+  font-size: 11px;
+  color: #3b82f6;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.ws-field__desc {
+  font-size: 12px;
+  color: #6a6058;
+  margin: 0 0 4px;
+  line-height: 1.5;
+}
+
+.ws-field__values {
+  font-size: 11px;
+  color: #9a9089;
+  margin: 0;
+  font-family: 'Courier New', monospace;
+}
+
+/* ── Responses ─────────────────────────────────── */
+.ws-responses { display: flex; flex-direction: column; gap: 10px; }
+
+.ws-response {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #faf8f5;
+  border: 1px solid #e8e3dc;
+}
+
+.ws-response__code {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.ws-response__code--ok   { background: #dcfce7; color: #166534; }
+.ws-response__code--warn { background: #fef3c7; color: #92400e; }
+.ws-response__code--err  { background: #fee2e2; color: #991b1b; }
+
+.ws-response__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1C1A18;
+  margin: 0 0 2px;
+}
+
+.ws-response__desc {
+  font-size: 12px;
+  color: #6a6058;
+  margin: 0;
+}
+
+/* ── Token row ─────────────────────────────────── */
+.ws-token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-token {
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  color: #6a6058;
+  background: #f5f2ec;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+}
+
+.ws-url-text {
+  font-size: 12px;
+  color: #9a9089;
+  font-family: 'Courier New', monospace;
+}
+
+.ws-copy-btn {
+  font-size: 11px;
+  font-weight: 600;
+  background: none;
+  border: 1px solid #e0d9cf;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  color: #6a6058;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.ws-copy-btn:hover { background: #f5f2ec; color: #1C1A18; }
+
+/* ── Estados grid ──────────────────────────────── */
+.ws-estados-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.ws-estado-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #faf8f5;
+  border: 1px solid #e8e3dc;
+  border-radius: 12px;
+}
+
+.ws-estado-card__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.ws-estado-card__valor {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1C1A18;
+  font-family: 'Courier New', monospace;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ws-estado-card__desc {
+  font-size: 12px;
+  color: #6a6058;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ws-estado-card .adm-badge { margin-left: auto; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .ws-estados-grid { grid-template-columns: 1fr; }
+  .ws-endpoint-url { font-size: 12px; }
+}
+
+/* ── Estilos extra para Encabezado ─────────────────────────── */
+
+/* Badge rol WebService en el dropdown */
+.user-dropdown__rol--ws {
+  background: #ccfbf1;
+  color: #0f766e;
+}
+
+/* Item WebService en el dropdown */
+.user-dropdown__item--ws {
+  color: #0f766e;
+  font-weight: 700;
+}
+.user-dropdown__item--ws:hover {
+  background: #ccfbf1;
+}
+
+/* Link WebService en menú móvil */
+.mobile-nav-link--ws {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700 !important;
+  color: #0f766e !important;
+  border-left: 3px solid #3b82f6;
+  padding-left: 14px !important;
+}
+.mobile-nav-link--ws:hover {
+  background: #ccfbf1 !important;
+}
+
+/* ── Botones nav Panel Admin / Panel WS ────────────────────── */
+.nav-link--panel {
+  background: #1C1A18 !important;
+  color: #FFCC00 !important;
+  font-weight: 700 !important;
+}
+.nav-link--panel:hover {
+  background: #000 !important;
+  color: #FFCC00 !important;
+}
+
+.nav-link--ws {
+  background: #0f766e !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+.nav-link--ws:hover {
+  background: #0d6460 !important;
+  color: #fff !important;
+}
+
+/* ── Sidebar WebService (variante teal) ────────── */
+.adm-sidebar--ws {
+  background: #134e4a;
+}
+
+.adm-sidebar--ws .adm-sidebar__head {
+  border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.adm-sidebar__logo--ws {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.adm-sidebar--ws .adm-sidebar__titulo { color: #fff; }
+.adm-sidebar--ws .adm-sidebar__rol    { color: #99f6e4; }
+
+.adm-sidebar--ws .adm-nav__item       { color: #99f6e4; }
+.adm-sidebar--ws .adm-nav__item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+.adm-sidebar--ws .adm-nav__item.router-link-active,
+.adm-sidebar--ws .adm-nav__item.router-link-exact-active {
+  background: #0f766e;
+  color: #fff;
+}
+
+.adm-sidebar--ws .adm-nav__item.router-link-active svg,
+.adm-sidebar--ws .adm-nav__item.router-link-exact-active svg {
+  stroke: #fff;
+}

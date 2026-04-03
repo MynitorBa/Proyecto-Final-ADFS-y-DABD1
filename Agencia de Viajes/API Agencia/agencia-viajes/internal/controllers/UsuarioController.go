@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/services"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +37,24 @@ func (ctrl *UsuarioController) Registrar(c *gin.Context) {
 		c.JSON(http.StatusConflict, validacion)
 		return
 	}
+
+	// ── Correo de bienvenida (fire-and-forget) ────────────────────────────
+	// Se envía en background para no bloquear la respuesta al cliente.
+	go func() {
+		if err := helpers.EnviarBienvenida(
+			req.Correo,
+			req.Nombre,
+			req.Apellido,
+			req.Username,
+			req.Telefono,
+			req.FechaNacimiento,
+			req.Ciudad,
+			req.Pais,
+			req.Nacionalidades,
+		); err != nil {
+			log.Printf("[BIENVENIDA] Error enviando correo a %s: %v", req.Correo, err)
+		}
+	}()
 
 	c.JSON(http.StatusCreated, gin.H{"mensaje": "Usuario registrado exitosamente"})
 }

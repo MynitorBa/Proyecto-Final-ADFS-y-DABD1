@@ -296,7 +296,12 @@
 
           <!-- Lista agrupada por hotel -->
           <template v-if="!loading && gruposPorHotel.length > 0">
-            <div v-for="grupo in gruposPorHotel" :key="`${grupo.proveedorId}-${grupo.hotelId}`" class="rh-grupo">
+            <div
+              v-for="grupo in gruposPorHotel"
+              :key="`${grupo.proveedorId}-${grupo.hotelId}`"
+              class="rh-grupo"
+              :data-hotel-key="getHotelKey(grupo)"
+            >
 
               <!-- Header hotel -->
               <div class="rh-grupo__head">
@@ -309,7 +314,15 @@
                   <div>
                     <div class="rh-grupo__header-row">
                       <h3 class="rh-grupo__nombre">{{ grupo.nombreHotel }}</h3>
-                      <div v-if="grupo.rating" class="rh-grupo__rating">
+                      <!-- Rating dinámico desde comentarios reales -->
+                      <div v-if="getPromedioHotel(grupo) > 0" class="rh-grupo__rating">
+                        <svg viewBox="0 0 24 24" fill="#FFCC00" width="13" height="13">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        {{ getPromedioHotel(grupo).toFixed(1) }}
+                        <span class="rh-grupo__rating-count">({{ getResenasRaiz(grupo).length }})</span>
+                      </div>
+                      <div v-else-if="grupo.rating" class="rh-grupo__rating">
                         <svg viewBox="0 0 24 24" fill="#FFCC00" width="13" height="13">
                           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                         </svg>
@@ -582,6 +595,64 @@
                 </article>
               </div>
 
+              <!-- ═══ RESEÑAS DEL HOTEL ═══ -->
+              <div v-if="comentariosLoadingSet.has(getHotelKey(grupo)) || yaObservado.has(getHotelKey(grupo))" class="rh-resenas">
+
+                <!-- Cargando -->
+                <div v-if="comentariosLoadingSet.has(getHotelKey(grupo))" class="rh-resenas__loading">
+                  <div class="rh-spinner rh-spinner--sm"></div>
+                  <span>Cargando reseñas...</span>
+                </div>
+
+                <!-- Con comentarios -->
+                <template v-else-if="getComentariosRaiz(grupo).length > 0">
+                  <div class="rh-resenas__head">
+                    <div class="rh-resenas__rating-wrap">
+                      <span class="rh-resenas__avg">{{ getPromedioHotel(grupo).toFixed(1) }}</span>
+                      <div class="rh-resenas__stars-row">
+                        <svg v-for="n in 5" :key="n" viewBox="0 0 24 24"
+                          :fill="n <= Math.round(getPromedioHotel(grupo)) ? '#FFCC00' : 'none'"
+                          :stroke="n <= Math.round(getPromedioHotel(grupo)) ? '#FFCC00' : '#d0c9be'"
+                          stroke-width="2" width="15" height="15">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                      </div>
+                      <span class="rh-resenas__count">
+                        {{ getResenasRaiz(grupo).length }} reseña{{ getResenasRaiz(grupo).length !== 1 ? 's' : '' }}
+                      </span>
+                    </div>
+                    <h4 class="rh-resenas__title">Opiniones de huéspedes</h4>
+                  </div>
+
+                  <div class="rh-resenas__lista">
+                    <ComentarioNodo
+                      v-for="c in getComentariosRaiz(grupo)"
+                      :key="c.id"
+                      :comentario="c"
+                      :getHijos="(id) => getHijos(grupo, id)"
+                      :estadoNodos="estadoNodos"
+                      :haySession="false"
+                      :formatFecha="formatFechaCorta"
+                      @votar="() => {}"
+                      @toggleForm="() => {}"
+                      @toggleExpandido="toggleExpandido"
+                      @enviarRespuesta="() => {}"
+                      @textoChange="() => {}"
+                    />
+                  </div>
+                </template>
+
+                <!-- Sin reseñas (ya cargó) -->
+                <div v-else-if="yaObservado.has(getHotelKey(grupo))" class="rh-resenas__empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  Aún no hay reseñas para este hotel.
+                </div>
+
+              </div>
+              <!-- ══ FIN RESEÑAS ══ -->
+
             </div>
           </template>
 
@@ -594,14 +665,29 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/resultadoshoteles.css'
+import ComentarioNodo from '../components/Comentarionodo.vue'
 
 const router = useRouter()
 const API    = 'http://localhost:8080'
+
+// ── Auth fetch ────────────────────────────────────────────────
+function authHeaders() {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  }
+}
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, { headers: authHeaders(), credentials: 'include', ...opts })
+  if (!res.ok) throw new Error(`Error ${res.status}`)
+  return res.json()
+}
 
 // ── Estado inicial desde history.state ───────────────────────
 const state         = history.state || {}
@@ -684,7 +770,25 @@ function selFormDCiudad(c) { form.dCiudadQ = c; form.dCiudadSug = []; form.ciuda
 function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
-    Object.assign(form, { dPaisQ:'', dPaisSug:[], dPaisSel:null, dCiudadQ:'', dCiudadSug:[], dCiudades:[], pais:'', ciudad:'', checkIn:'', checkOut:'', cantidadPersonas:1 })
+    Object.assign(form, {
+      // Destino — pre-llenar con búsqueda actual
+      dPaisQ:         busqueda.value.pais    || '',
+      pais:           busqueda.value.pais    || '',
+      dCiudadQ:       busqueda.value.ciudad  || '',
+      ciudad:         busqueda.value.ciudad  || '',
+      dPaisSug:       [],
+      dPaisSel:       busqueda.value.pais ? { country: busqueda.value.pais } : null,
+      dCiudadSug:     [],
+      dCiudadLoading: false,
+      dCiudades:      [],
+
+      // Fechas
+      checkIn:          busqueda.value.checkIn          || '',
+      checkOut:         busqueda.value.checkOut         || '',
+
+      // Personas
+      cantidadPersonas: busqueda.value.cantidadPersonas || 1,
+    })
     modError.value = ''
   }
 }
@@ -708,6 +812,10 @@ async function rebuscar() {
     if (!res.ok) throw new Error()
     busqueda.value = { ciudad: form.ciudad, pais: form.pais, checkIn: form.checkIn, checkOut: form.checkOut, cantidadPersonas: form.cantidadPersonas }
     erroresProveedores.value = []
+    // Limpiar comentarios de búsqueda anterior
+    comentariosHoteles.value = {}
+    comentariosLoadingSet.value = new Set()
+    yaObservado.value = new Set()
     todasLasHabitaciones.value = mapearRespuesta(await res.json())
     error.value = todasLasHabitaciones.value.length === 0 ? 'Sin habitaciones disponibles.' : ''
     resetFiltros()
@@ -874,7 +982,6 @@ function _getPersonaExtraMin(hotel, personas) {
     precioPorPersona: best.precioPorPersona,
     cap: personas - 1,
     total: best.precioPorNoche + best.precioPorPersona,
-    // ← incluir habitaciones para poder pre-crear la reserva
     habitacionesDisponibles: best.habitacionesDisponibles || [],
   }
 }
@@ -887,6 +994,102 @@ function getHotelCombos(grupo) {
   if (!combo && !aprox && !extra) return null
   return { combo, aprox, extra }
 }
+
+// ══ COMENTARIOS / RESEÑAS HOTELES ═════════════════════════════
+// comentariosHoteles: objeto plano { [key]: Comment[] }
+// key = `${proveedorId}::${hotelId}`
+const comentariosHoteles    = ref({})
+const comentariosLoadingSet = ref(new Set())
+const yaObservado           = ref(new Set())
+let hotelObserver           = null
+
+// Estado de cada nodo de comentario (expandido, form, voto, etc.)
+const estadoNodos = ref({})
+
+function getHotelKey(grupo) {
+  return `${grupo.proveedorId}::${grupo.hotelId}`
+}
+
+function getComentariosHotel(grupo) {
+  return comentariosHoteles.value[getHotelKey(grupo)] ?? []
+}
+
+// Todos los comentarios raíz (sin padre) — para ComentarioNodo
+function getComentariosRaiz(grupo) {
+  return getComentariosHotel(grupo).filter(c => c.comentarioPadreId === null)
+}
+
+// Solo los que tienen puntuación — para el promedio del header
+function getResenasRaiz(grupo) {
+  return getComentariosHotel(grupo).filter(c => c.comentarioPadreId === null && c.resena !== null)
+}
+
+// Hijos de un comentario — lo usa ComentarioNodo internamente
+function getHijos(grupo, parentId) {
+  return getComentariosHotel(grupo).filter(c => c.comentarioPadreId === parentId)
+}
+
+// Promedio de estrellas del hotel
+function getPromedioHotel(grupo) {
+  const resenas = getResenasRaiz(grupo)
+  if (!resenas.length) return 0
+  return resenas.reduce((s, r) => s + (r.resena ?? 0), 0) / resenas.length
+}
+
+// ── Estado por nodo (solo expandido — modo lectura) ──────────────
+function toggleExpandido(id) {
+  estadoNodos.value = {
+    ...estadoNodos.value,
+    [id]: { ...(estadoNodos.value[id] ?? { expandido: false, mostrandoForm: false, textoRespuesta: '', enviando: false, votoActual: null }), expandido: !estadoNodos.value[id]?.expandido }
+  }
+}
+
+async function cargarComentariosHotel(proveedorId, hotelId, key) {
+  if (yaObservado.value.has(key)) return
+
+  // Marcar como observado y en carga
+  yaObservado.value = new Set([...yaObservado.value, key])
+  comentariosLoadingSet.value = new Set([...comentariosLoadingSet.value, key])
+
+  try {
+    const data = await apiFetch(`${API}/api/comentarios/hotel/${proveedorId}/${hotelId}`)
+    comentariosHoteles.value = { ...comentariosHoteles.value, [key]: data ?? [] }
+  } catch {
+    comentariosHoteles.value = { ...comentariosHoteles.value, [key]: [] }
+  } finally {
+    const s = new Set(comentariosLoadingSet.value)
+    s.delete(key)
+    comentariosLoadingSet.value = s
+  }
+}
+
+function initHotelObserver() {
+  if (hotelObserver) hotelObserver.disconnect()
+  hotelObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      const key = entry.target.dataset.hotelKey
+      if (!key || yaObservado.value.has(key)) continue
+      const [pid, hid] = key.split('::')
+      cargarComentariosHotel(Number(pid), Number(hid), key)
+      hotelObserver.unobserve(entry.target)
+    }
+  }, { rootMargin: '200px 0px' })
+}
+
+async function observarGrupos() {
+  await nextTick()
+  if (!hotelObserver) return
+  document.querySelectorAll('[data-hotel-key]').forEach(el => {
+    const key = el.dataset.hotelKey
+    if (key && !yaObservado.value.has(key)) {
+      hotelObserver.observe(el)
+    }
+  })
+}
+
+// Re-observar cuando cambian los grupos (rebuscar / filtros)
+watch(gruposPorHotel, () => observarGrupos(), { flush: 'post' })
 
 // ── Mapeo respuesta API ───────────────────────────────────────
 function mapearRespuesta(respuesta) {
@@ -947,6 +1150,10 @@ function formatFecha(f) {
   if (!f) return '--'
   try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
 }
+function formatFechaCorta(f) {
+  if (!f) return ''
+  try { return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
+}
 function calcNoches(ci, co) {
   if (!ci || !co) return 0
   return Math.max(0, Math.ceil((new Date(co) - new Date(ci)) / 86400000))
@@ -956,7 +1163,6 @@ function resetFiltros() {
 }
 
 // ── PRE-CREACIÓN DE RESERVA EN BACKGROUND ────────────────────
-// Construye el payload para POST /api/reservaciones/detalle/hotel
 function buildHotelPayload(reservaId, itemData) {
   const b = itemData.busqueda
   let habitaciones = []
@@ -969,19 +1175,18 @@ function buildHotelPayload(reservaId, itemData) {
         fechaCheckIn:     b.checkIn,
         fechaCheckOut:    b.checkOut,
         cantidadPersonas: h.cap,
-        precioPorNoche:   h.precio,  // precio exacto del search
+        precioPorNoche:   h.precio,
       }))
   } else {
     const rooms = itemData.habitacionesDisponibles || []
     if (!rooms.length) return null
-    // Para extra: el precio visible es precioPorNoche + precioPorPersona (= total)
     const precioVisible = itemData.esExtra ? itemData.total : itemData.precioPorNoche
     habitaciones = [{
       habitacionId:     rooms[0].id,
       fechaCheckIn:     b.checkIn,
       fechaCheckOut:    b.checkOut,
       cantidadPersonas: b.cantidadPersonas,
-      precioPorNoche:   precioVisible,  // precio exacto del search
+      precioPorNoche:   precioVisible,
     }]
   }
 
@@ -991,32 +1196,26 @@ function buildHotelPayload(reservaId, itemData) {
 
 async function precrearReservacionHotel(itemData) {
   try {
-    // PASO 1: crear la reservación (tipo 2 = hotel)
     const res1 = await fetch(`${API}/api/reservaciones`, {
-      method: 'POST',
-      credentials: 'include',
+      method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo_reserva_id: 2 }),
     })
     if (!res1.ok) return null
     const reserva = await res1.json()
 
-    // PASO 2: construir y enviar detalle de hotel
     const payload = buildHotelPayload(reserva.id, itemData)
     let detalle   = null
 
     if (payload) {
       const res2 = await fetch(`${API}/api/reservaciones/detalle/hotel`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       if (res2.ok) detalle = await res2.json()
     }
 
-    // expiresAt viene SIEMPRE del backend, nunca calculado localmente.
-    // Preferencia: fechaExpiracion del detalle/hotel > fecha_expiracion de la reserva
     let expiresAt = 0
     if (detalle?.detalle?.fechaExpiracion) {
       expiresAt = new Date(detalle.detalle.fechaExpiracion).getTime()
@@ -1045,10 +1244,7 @@ function seleccionarHabitacion(hab, grupo) {
     busqueda: busqueda.value,
   }
   sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
-
-  // Disparar pre-creación en background
   window.__reservaPromise = precrearReservacionHotel(itemData)
-
   router.push('/reservar')
 }
 
@@ -1062,7 +1258,6 @@ function reservarExtra(extraInfo, grupo) {
     precioPorNoche:  extraInfo.precioPorNoche,
     precioPorPersona: extraInfo.precioPorPersona,
     total:           extraInfo.total,
-    // ← habitaciones necesarias para la pre-creación
     habitacionesDisponibles: extraInfo.habitacionesDisponibles || [],
     nombreHotel:     grupo.nombreHotel,
     proveedorNombre: grupo.proveedorNombre,
@@ -1073,10 +1268,7 @@ function reservarExtra(extraInfo, grupo) {
     busqueda:        busqueda.value,
   }
   sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
-
-  // Disparar pre-creación en background
   window.__reservaPromise = precrearReservacionHotel(itemData)
-
   router.push('/reservar')
 }
 
@@ -1098,10 +1290,7 @@ function reservarCombo(comboInfo, grupo) {
     busqueda:        busqueda.value,
   }
   sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
-
-  // Disparar pre-creación en background
   window.__reservaPromise = precrearReservacionHotel(itemData)
-
   router.push('/reservar')
 }
 
@@ -1114,5 +1303,9 @@ onMounted(() => {
     error.value = 'No hay resultados. Modifica la búsqueda.'
   }
   loading.value = false
+
+  // Inicializar observer y comenzar a observar grupos visibles
+  initHotelObserver()
+  observarGrupos()
 })
 </script>

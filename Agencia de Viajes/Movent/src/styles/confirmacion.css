@@ -262,3 +262,68 @@
   .conf-ruta__iata  { font-size: 22px; }
   .conf-actions     { flex-direction: column; }
 }
+
+/* ── Recomendaciones: estados loading / vacío ── */
+.conf-recom-loading {
+  display: flex; align-items: center; gap: 14px;
+  padding: 48px 0; justify-content: center;
+  color: #9a9089; font-size: 14px;
+}
+.conf-recom-spinner {
+  width: 24px; height: 24px;
+  border: 3px solid #e8e3dc; border-top-color: #FFCC00;
+  border-radius: 50%; animation: conf-spin-recom .8s linear infinite; flex-shrink: 0;
+}
+@keyframes conf-spin-recom { to { transform: rotate(360deg); } }
+.conf-recom-empty {
+  text-align: center; padding: 40px;
+  color: #9a9089; font-size: 14px;
+  background: #faf8f5; border-radius: 12px; border: 1px dashed #e0d9cf;
+}
+
+/* ── Card empty state ────────────────────────────── */
+.conf-card__empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 0;
+}
+.conf-card__empty-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1C1A18;
+  margin: 0 0 4px;
+}
+.conf-card__empty-sub {
+  font-size: 13px;
+  color: #6a6058;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Sidebar mejorado ────────────────────────────── */
+.conf-resumen__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conf-resumen__check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.conf-resumen__check-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.conf-resumen__code {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .04em;
+}

@@ -5,7 +5,7 @@
     <div class="adm-page">
       <div class="adm-layout">
 
-        <!-- ═══ SIDEBAR ADMIN ═══ -->
+        <!-- SIDEBAR -->
         <aside class="adm-sidebar">
           <div class="adm-sidebar__head">
             <div class="adm-sidebar__logo">
@@ -29,14 +29,14 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
               Paquetes
             </router-link>
-            <router-link to="/admin/roles" class="adm-nav__item adm-nav__item--active">
+            <router-link to="/admin/roles" class="adm-nav__item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Roles
             </router-link>
           </nav>
         </aside>
 
-        <!-- ═══ CONTENIDO ═══ -->
+        <!-- CONTENIDO -->
         <div class="adm-main">
 
           <div class="adm-topbar">
@@ -89,7 +89,7 @@
                   <th>Usuario</th>
                   <th>Correo</th>
                   <th>Rol actual</th>
-                  <th>Registro</th>
+                  <th>Nacimiento</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -100,13 +100,13 @@
                       <div class="adm-tabla__avatar">{{ iniciales(u) }}</div>
                       <div>
                         <p class="adm-tabla__nombre">{{ u.nombre }} {{ u.apellido }}</p>
-                        <p class="adm-tabla__pais">{{ u.pais }}</p>
+                        <p class="adm-tabla__pais">{{ u.correo }}</p>
                       </div>
                     </div>
                   </td>
                   <td class="adm-tabla__correo">{{ u.correo }}</td>
                   <td>
-                    <span class="adm-badge" :class="`adm-badge--rol-${u.rol}`">{{ u.rol }}</span>
+                    <span class="adm-badge" :class="`adm-badge--rol-${u.rolId}`">{{ u.rol }}</span>
                   </td>
                   <td>{{ formatFecha(u.fechaRegistro) }}</td>
                   <td>
@@ -125,7 +125,7 @@
       </div>
     </div>
 
-    <!-- ═══ MODAL CAMBIO DE ROL ═══ -->
+    <!-- MODAL CAMBIO DE ROL -->
     <div v-if="modalUsuario" class="adm-modal-overlay" @click.self="cerrarModal">
       <div class="adm-modal">
         <div class="adm-modal__head">
@@ -145,7 +145,7 @@
 
         <div class="adm-modal__body">
           <p class="adm-modal__lbl">Rol actual</p>
-          <span class="adm-badge" :class="`adm-badge--rol-${modalUsuario.rol}`">{{ modalUsuario.rol }}</span>
+          <span class="adm-badge" :class="`adm-badge--rol-${modalUsuario.rolId}`">{{ modalUsuario.rol }}</span>
 
           <p class="adm-modal__lbl" style="margin-top:16px">Nuevo rol</p>
           <div class="adm-roles-grid">
@@ -193,7 +193,7 @@ import Encabezado from '../../components/Encabezado.vue'
 import Piepagina from '../../components/Piepagina.vue'
 import '../../styles/admin.css'
 
-const API = 'http://localhost:7000'
+const API = 'http://localhost:8080'
 
 const usuarios     = ref([])
 const loading      = ref(true)
@@ -206,6 +206,13 @@ const guardando    = ref(false)
 const modalError   = ref('')
 const toast        = ref(null)
 
+// Mapeo nombre → rolId
+const ROL_ID = {
+  'Administrador':      2,
+  'Registrado': 1,
+  'WebService':         3,
+}
+
 const rolesOpts = [
   { val: 'todos',              label: 'Todos' },
   { val: 'Administrador',      label: 'Administrador' },
@@ -214,27 +221,9 @@ const rolesOpts = [
 ]
 
 const rolesDisponibles = [
-  {
-    val:   'Administrador',
-    label: 'Administrador',
-    desc:  'Acceso total al sistema',
-    color: '#1C1A18',
-    icon:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
-  },
-  {
-    val:   'Cliente Registrado',
-    label: 'Cliente Registrado',
-    desc:  'Puede buscar y reservar',
-    color: '#FFCC00',
-    icon:  '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-  },
-  {
-    val:   'WebService',
-    label: 'WebService',
-    desc:  'Acceso solo a la API',
-    color: '#3b82f6',
-    icon:  '<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>',
-  },
+  { val:'Administrador',      label:'Administrador',      desc:'Acceso total al sistema',    color:'#1C1A18', icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' },
+  { val:'Registrado',         label:'Registrado',         desc:'Puede buscar y reservar',    color:'#8B6B4A', icon:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>' },
+  { val:'WebService',         label:'WebService',         desc:'Acceso solo a la API',       color:'#3b82f6', icon:'<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>' },
 ]
 
 const usuariosFiltrados = computed(() => {
@@ -258,19 +247,15 @@ onMounted(() => cargarUsuarios())
 
 async function cargarUsuarios() {
   loading.value = true; error.value = ''
-  await new Promise(r => setTimeout(r, 400))
-  usuarios.value = [
-    { id:1, nombre:'Carlos',  apellido:'Méndez',    correo:'carlos.mendez@gmail.com',   pais:'Guatemala', rol:'Administrador',      fechaRegistro:'2025-01-15T10:30:00Z' },
-    { id:2, nombre:'María',   apellido:'López',     correo:'maria.lopez@hotmail.com',   pais:'Guatemala', rol:'Cliente Registrado',  fechaRegistro:'2025-02-03T14:20:00Z' },
-    { id:3, nombre:'Pedro',   apellido:'Ruiz',      correo:'pedro.ruiz@yahoo.com',      pais:'México',    rol:'Cliente Registrado',  fechaRegistro:'2025-02-18T09:15:00Z' },
-    { id:4, nombre:'Ana',     apellido:'García',    correo:'ana.garcia@gmail.com',      pais:'Guatemala', rol:'Cliente Registrado',  fechaRegistro:'2025-03-01T16:45:00Z' },
-    { id:5, nombre:'Luis',    apellido:'Castillo',  correo:'luis.castillo@empresa.com', pais:'Costa Rica',rol:'WebService',          fechaRegistro:'2025-03-10T11:00:00Z' },
-    { id:6, nombre:'Sofía',   apellido:'Reyes',     correo:'sofia.reyes@gmail.com',     pais:'Guatemala', rol:'Cliente Registrado',  fechaRegistro:'2025-04-05T08:30:00Z' },
-    { id:7, nombre:'Diego',   apellido:'Hernández', correo:'diego.h@outlook.com',       pais:'El Salvador',rol:'Cliente Registrado', fechaRegistro:'2025-04-22T13:10:00Z' },
-    { id:8, nombre:'Valeria', apellido:'Morales',   correo:'valeria.m@gmail.com',       pais:'Guatemala', rol:'Cliente Registrado',  fechaRegistro:'2025-05-14T17:25:00Z' },
-    { id:9, nombre:'API',     apellido:'Bot',       correo:'api@movent.gt',             pais:'Guatemala', rol:'WebService',          fechaRegistro:'2025-01-01T00:00:00Z' },
-  ]
-  loading.value = false
+  try {
+    const res = await fetch(`${API}/api/usuarios`, { credentials: 'include' })
+    if (!res.ok) throw new Error(`Error ${res.status}`)
+    usuarios.value = await res.json()
+  } catch (e) {
+    error.value = 'No se pudieron cargar los usuarios. Verifica que el servidor esté activo.'
+  } finally {
+    loading.value = false
+  }
 }
 
 function abrirModal(u) {
@@ -287,14 +272,32 @@ function cerrarModal() {
 
 async function guardarRol() {
   if (!nuevoRol.value || nuevoRol.value === modalUsuario.value.rol) return
+  const rolId = ROL_ID[nuevoRol.value]
+  if (!rolId) { modalError.value = 'Rol inválido'; return }
+
   guardando.value = true; modalError.value = ''
-  await new Promise(r => setTimeout(r, 600))
-  // Actualizar localmente (demo)
-  const idx = usuarios.value.findIndex(u => u.id === modalUsuario.value.id)
-  if (idx !== -1) usuarios.value[idx].rol = nuevoRol.value
-  mostrarToast('ok', `Rol actualizado a "${nuevoRol.value}"`)
-  guardando.value = false
-  cerrarModal()
+  try {
+    const res = await fetch(`${API}/api/usuarios/${modalUsuario.value.id}/rol`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rolId }),
+    })
+    if (!res.ok) throw new Error(`Error ${res.status}`)
+
+    // Actualizar localmente
+    const idx = usuarios.value.findIndex(u => u.id === modalUsuario.value.id)
+    if (idx !== -1) {
+      usuarios.value[idx].rol   = nuevoRol.value
+      usuarios.value[idx].rolId = rolId
+    }
+    mostrarToast('ok', `Rol actualizado a "${nuevoRol.value}"`)
+    cerrarModal()
+  } catch {
+    modalError.value = 'Error al actualizar el rol. Intenta de nuevo.'
+  } finally {
+    guardando.value = false
+  }
 }
 
 function mostrarToast(tipo, msg) {
@@ -309,6 +312,7 @@ function iniciales(u) {
 
 function formatFecha(f) {
   if (!f) return '--'
-  return new Date(f).toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' })
+  try { return new Date(f).toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' }) }
+  catch { return f }
 }
 </script>

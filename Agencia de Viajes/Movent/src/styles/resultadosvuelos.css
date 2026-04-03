@@ -256,7 +256,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-mod-buscar:hover:not(:disabled) { background: #f0c000; transform: translateY(-1px); }
 .rv-mod-buscar:disabled { opacity: .6; cursor: not-allowed; }
 
-/* ── TRIP TYPE TOGGLE (en modificar) ── */
+/* ── TRIP TYPE TOGGLE ── */
 .rv-trip-toggle {
   display: flex; gap: 4px;
   background: #f0ebe3; border-radius: 8px; padding: 3px;
@@ -293,7 +293,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-expand-enter-to, .rv-expand-leave-from { opacity: 1; max-height: 600px; margin-bottom: 14px; }
 
 /* ═══════════════════════════════
-   INDICADOR DE PASOS (IDA Y VUELTA)
+   INDICADOR DE PASOS
 ═══════════════════════════════ */
 .rv-pasos {
   display: flex; align-items: center; gap: 12px;
@@ -329,7 +329,6 @@ select.rv-mod-input { cursor: pointer; }
 
 .rv-paso__back { padding: 6px 14px; font-size: 12px; flex-shrink: 0; }
 
-/* Header de la sección de regreso */
 .rv-regreso-header {
   display: flex; align-items: center; gap: 8px;
   background: #1C1A18; color: #FFCC00;
@@ -367,14 +366,26 @@ select.rv-mod-input { cursor: pointer; }
 .rv-chip--clear:hover { background: #D40511; color: #fff; }
 
 /* ═══════════════════════════════
-   CARDS
+   CARD WRAP (card + comentarios)
 ═══════════════════════════════ */
 .rv-lista { display: flex; flex-direction: column; gap: 12px; }
+
+.rv-card-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════
+   CARDS
+═══════════════════════════════ */
 .rv-card {
   background: #fff; border-radius: 14px;
   border: 1px solid #e8e3dc; padding: 18px;
   transition: all .2s;
 }
+.rv-card-wrap > .rv-card { border-radius: 14px 14px 0 0; }
+.rv-card-wrap > .rv-card:only-child { border-radius: 14px; }
+
 .rv-card:hover { border-color: #FFCC00; box-shadow: 0 4px 18px rgba(255,204,0,.14); transform: translateY(-1px); }
 .rv-card--sel { border-color: #FFCC00; box-shadow: 0 0 0 2px #FFCC00; }
 
@@ -391,6 +402,11 @@ select.rv-mod-input { cursor: pointer; }
 .rv-tag--directo  { background: #dcfce7; color: #166534; }
 .rv-tag--escala   { background: #fef3c7; color: #92400e; }
 .rv-tag--urgente  { background: #fee2e2; color: #991b1b; }
+.rv-tag--rating   {
+  background: rgba(255,204,0,0.15); color: #5a4e00;
+  border: 1px solid rgba(255,204,0,0.4); font-size: 11px;
+}
+.rv-tag--rating small { font-weight: 400; color: #9a8060; margin-left: 2px; }
 
 .rv-card__ruta { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 .rv-card__punto { display: flex; flex-direction: column; align-items: flex-start; min-width: 70px; }
@@ -519,6 +535,94 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card__foot-precio small { font-size: 11px; font-weight: 400; color: #9a9089; }
 
 /* ═══════════════════════════════
+   RESEÑAS / COMENTARIOS DEL VUELO
+═══════════════════════════════ */
+.rv-resenas {
+  background: #fff;
+  border: 1px solid #e8e3dc;
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+}
+
+.rv-resenas__loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  font-size: 12px;
+  color: #9a9089;
+}
+
+.rv-resenas__empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  font-size: 12px;
+  color: #b0a89e;
+  font-style: italic;
+}
+
+.rv-resenas__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 18px 10px;
+  border-bottom: 1px solid #f0ebe3;
+  background: #faf8f4;
+}
+
+.rv-resenas__rating-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rv-resenas__avg {
+  font-size: 20px;
+  font-weight: 900;
+  color: #1C1A18;
+  line-height: 1;
+}
+
+.rv-resenas__stars-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rv-resenas__count {
+  font-size: 12px;
+  color: #9a9089;
+}
+
+.rv-resenas__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5a5047;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin: 0;
+}
+
+.rv-resenas__lista {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 14px 4px;
+}
+
+.rv-resenas__lista > .cn-nodo {
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f2ec;
+}
+.rv-resenas__lista > .cn-nodo:last-child {
+  border-bottom: none;
+}
+
+/* ═══════════════════════════════
    AVISOS Y ESTADOS
 ═══════════════════════════════ */
 .rv-warn {
@@ -588,4 +692,5 @@ select.rv-mod-input { cursor: pointer; }
   .rv-tramo__info { flex-direction: column; align-items: flex-start; }
   .rv-pasos { flex-direction: column; align-items: flex-start; }
   .rv-paso__sep { transform: rotate(90deg); }
+  .rv-resenas__head { flex-direction: column; align-items: flex-start; }
 }

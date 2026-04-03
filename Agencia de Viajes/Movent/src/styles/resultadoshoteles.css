@@ -339,6 +339,10 @@ select.rh-mod-input { cursor: pointer; }
   font-size: 12px; font-weight: 700; color: #FFCC00; flex-shrink: 0;
 }
 
+.rh-grupo__rating-count {
+  font-size: 11px; font-weight: 400; color: rgba(255,204,0,0.6);
+}
+
 .rh-grupo__ubicacion {
   display: flex; align-items: center; gap: 4px;
   font-size: 12px; color: #9a8e80; margin: 0 0 4px;
@@ -394,11 +398,17 @@ select.rh-mod-input { cursor: pointer; }
 
 /* ═══════════════════════════════
    HABITACIONES
+   (sin border-radius inferior — lo tiene .rh-resenas)
 ═══════════════════════════════ */
 .rh-habitaciones {
   display: flex; flex-direction: column;
   border: 1px solid #e8e3dc; border-top: none;
-  border-radius: 0 0 14px 14px; overflow: hidden;
+  border-radius: 0;
+  overflow: hidden;
+}
+/* Si .rh-resenas no se renderiza, .rh-habitaciones cierra el grupo */
+.rh-habitaciones:last-child {
+  border-radius: 0 0 14px 14px;
 }
 
 .rh-card {
@@ -571,6 +581,104 @@ select.rh-mod-input { cursor: pointer; }
 .rh-card__cta:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ═══════════════════════════════
+   RESEÑAS DEL HOTEL
+   Siempre último elemento del grupo
+   → lleva border-radius inferior
+   Los estilos de .cn-* están en ComentarioNodo.css
+═══════════════════════════════ */
+.rh-resenas {
+  background: #fff;
+  border: 1px solid #e8e3dc;
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+}
+
+/* Loading reseñas */
+.rh-resenas__loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  font-size: 12px;
+  color: #9a9089;
+}
+
+/* Sin reseñas */
+.rh-resenas__empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 12px;
+  color: #b0a89e;
+  font-style: italic;
+}
+
+/* Cabecera con promedio */
+.rh-resenas__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid #f0ebe3;
+  background: #faf8f4;
+}
+
+.rh-resenas__rating-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rh-resenas__avg {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1C1A18;
+  line-height: 1;
+}
+
+.rh-resenas__stars-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rh-resenas__count {
+  font-size: 12px;
+  color: #9a9089;
+  font-weight: 500;
+}
+
+.rh-resenas__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5a5047;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin: 0;
+}
+
+/* Lista — cada item es un ComentarioNodo */
+.rh-resenas__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px 16px 4px;
+}
+
+/* Separador entre comentarios raíz */
+.rh-resenas__lista > .cn-nodo {
+  padding: 10px 0;
+  border-bottom: 1px solid #f5f2ec;
+}
+.rh-resenas__lista > .cn-nodo:last-child {
+  border-bottom: none;
+}
+
+/* ═══════════════════════════════
    EMPTY / LOADING
 ═══════════════════════════════ */
 .rh-empty {
@@ -580,10 +688,14 @@ select.rh-mod-input { cursor: pointer; }
 .rh-empty__title { font-size: 17px; font-weight: 700; color: #1C1A18; margin: 0; }
 .rh-empty__sub { font-size: 14px; color: #9a9089; margin: 0; line-height: 1.5; }
 
+/* Spinners */
 .rh-spinner {
   width: 36px; height: 36px; border: 3px solid #e8e3dc;
   border-top-color: #FFCC00; border-radius: 50%;
   animation: rh-spin .7s linear infinite;
+}
+.rh-spinner--sm {
+  width: 16px; height: 16px; border-width: 2px;
 }
 @keyframes rh-spin { to { transform: rotate(360deg); } }
 
@@ -633,6 +745,7 @@ select.rh-mod-input { cursor: pointer; }
     width: 100%; justify-content: center;
   }
   .rh-search-bar__actions { width: 100%; padding: 0 10px 10px; }
+  .rh-resenas__head { flex-direction: column; align-items: flex-start; }
 }
 
 @media (max-width: 640px) {
@@ -644,4 +757,5 @@ select.rh-mod-input { cursor: pointer; }
   .rh-grupo__head-right { flex-direction: row; align-items: center; flex-wrap: wrap; }
   .rh-mod-row { grid-template-columns: 1fr; }
   .rh-mod-section--row { grid-template-columns: 1fr; }
+
 }

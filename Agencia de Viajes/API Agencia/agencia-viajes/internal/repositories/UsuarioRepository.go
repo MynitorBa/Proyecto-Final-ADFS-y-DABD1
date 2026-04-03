@@ -115,3 +115,29 @@ func (r *UsuarioRepository) AsignarNacionalidades(usuarioID int, nacionalidadIDs
 
 	return nil
 }
+
+// ObtenerNombreYEmail devuelve nombre completo y correo del usuario por ID.
+// Escanea Nombre y Apellido por separado para evitar problemas de concatenación en Oracle.
+func (r *UsuarioRepository) ObtenerNombreYEmail(usuarioID int) (nombre, email string, err error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	var apellido string
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT Nombre, Apellido, Correo
+		FROM Usuario
+		WHERE ID = ?
+	`, usuarioID).Scan(&nombre, &apellido, &email)
+	if err != nil {
+		return
+	}
+
+	// Concatenar en Go, no en SQL
+	if apellido != "" {
+		nombre = nombre + " " + apellido
+	}
+	return
+}

@@ -9,20 +9,18 @@
   const API = 'https://localhost:7107';
 
   // ── Nomenclatura del backend ─────────────────────────────────────────────
-  // Ejecutiva: E-A1..E-A6, E-B1..E-B6, E-C1..E-C6, E-D1..E-D6  (4 filas fijas)
-  // Turista:   A1..A6, B1..B6, C1..C6, ...                       (empieza en A, crece según capacidad)
-  // Son dos espacios de nombres totalmente independientes.
+  // Las FILAS son NÚMEROS (1, 2, 3...) y las COLUMNAS son LETRAS (A-F).
   //
-  // Visualmente mostramos:
-  //   Ejecutiva → filas A, B, C, D  (con label fijo, 4 filas)
-  //   Turista   → filas A, B, C...  (dinámico según totalFilas - 4)
+  // Ejecutiva: E-A1..E-F1, E-A2..E-F2, ... (fila numérica, col letra)
+  //   → ID = "E-{colLetra}{numFila}"   ej: E-A1, E-B1, E-C2
+  // Turista:   A1..F1, A2..F2, ...
+  //   → ID = "{colLetra}{numFila}"     ej: A1, B1, C2
+  //
+  // Visualmente: número de fila en el margen izquierdo, letras A-F arriba.
 
-  const NUM_COLUMNAS      = 6;
-  const FILAS_EJECUTIVA   = 4;
-  const COLS_LABEL        = ['A','B','C','D','E','F']; // solo para cabecera visual
-
-  // Letras de fila para ejecutiva: siempre A,B,C,D
-  const FILAS_EJE_LETRAS = ['A','B','C','D'];
+  const NUM_COLUMNAS    = 6;
+  const FILAS_EJECUTIVA = 4;
+  const COLS_LABEL      = ['A','B','C','D','E','F'];
 
   // ── Grupos de vuelo ──────────────────────────────────────────────────────
   let grupoActualIdx = 0;
@@ -43,26 +41,25 @@
   let guardando    = false;
   let errorGuardar = null;
 
-  let totalFilas       = 0;   // total de filas (ejecutiva + turista)
+  let totalFilas       = 0;
   let asientosOcupados = new Set();
   let boletosUsuario   = [];
-  let asientos         = {};  // clave = id backend exacto
+  let asientos         = {};   // clave = id backend exacto
   let seleccionados    = [];
   let pasajeroActual   = 0;
 
-  // ── Generador letras: A,B,...,Z,AA,AB,... ───────────────────────────────
-  function* generarLetras(cantidad) {
-    const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    for (let i = 0; i < cantidad; i++) {
-      let s = '', n = i;
-      do { s = abc[n % 26] + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
-      yield s;
-    }
-  }
+  // ── IDs backend ──────────────────────────────────────────────────────────
+  // fila  = número (1,2,3...)   col = letra ('A','B',...)
+  function idEjecutiva(fila, col) { return `E-${col}${fila}`; }
+  function idTurista(fila, col)   { return `${col}${fila}`;   }
 
-  // ID backend: ejecutiva → "E-A1", turista → "A1"
-  function idEjecutiva(fila, col) { return `E-${fila}${col}`; }
-  function idTurista(fila, col)   { return `${fila}${col}`;   }
+  // ── Filas reactivas ──────────────────────────────────────────────────────
+  // Ejecutiva: siempre 4 filas numéricas [1,2,3,4]
+  $: filasEje = Array.from({ length: FILAS_EJECUTIVA }, (_, i) => i + 1);
+  // Turista: filas dinámicas según totalFilas
+  $: filasT = totalFilas > FILAS_EJECUTIVA
+      ? Array.from({ length: totalFilas - FILAS_EJECUTIVA }, (_, i) => i + 1)
+      : [];
 
   // ── onMount ──────────────────────────────────────────────────────────────
   onMount(async () => {
@@ -101,16 +98,20 @@
     }
   }
 
+  // ── Construir mapa de asientos ───────────────────────────────────────────
+  // Filas = números (1..N), Columnas = letras (A-F)
+  // ID ejecutiva: E-{colLetra}{numFila}  →  E-A1, E-B1, E-A2...
+  // ID turista:   {colLetra}{numFila}    →  A1, B1, A2...
   function construirMapa(totalF) {
     const mapa = {};
-    const filasT = totalF - FILAS_EJECUTIVA; // filas de turista
+    const filasT = totalF - FILAS_EJECUTIVA;
 
-    // ── Ejecutiva: siempre 4 filas, IDs E-A1..E-D6 ──────────────────────
-    for (const fila of FILAS_EJE_LETRAS) {
-      for (let col = 1; col <= NUM_COLUMNAS; col++) {
-        const id = idEjecutiva(fila, col);
+    // ── Ejecutiva: filas 1..FILAS_EJECUTIVA, columnas A-F ────────────────
+    for (let row = 1; row <= FILAS_EJECUTIVA; row++) {
+      for (const col of COLS_LABEL) {
+        const id = idEjecutiva(row, col);
         mapa[id] = {
-          id, fila, col,
+          id, fila: row, col,
           clase: 'Ejecutiva',
           estado: asientosOcupados.has(id) ? 'ocupado'
                 : seleccionados.includes(id) ? 'propio'
@@ -119,12 +120,12 @@
       }
     }
 
-    // ── Turista: filas dinámicas A,B,C,... independientes de ejecutiva ───
-    for (const fila of generarLetras(filasT)) {
-      for (let col = 1; col <= NUM_COLUMNAS; col++) {
-        const id = idTurista(fila, col);
+    // ── Turista: filas 1..filasT, columnas A-F ────────────────────────────
+    for (let row = 1; row <= filasT; row++) {
+      for (const col of COLS_LABEL) {
+        const id = idTurista(row, col);
         mapa[id] = {
-          id, fila, col,
+          id, fila: row, col,
           clase: 'Turista',
           estado: asientosOcupados.has(id) ? 'ocupado'
                 : seleccionados.includes(id) ? 'propio'
@@ -136,11 +137,6 @@
     asientos = mapa;
   }
 
-  // ── Filas para el template ───────────────────────────────────────────────
-  $: filasT = totalFilas > FILAS_EJECUTIVA
-      ? [...generarLetras(totalFilas - FILAS_EJECUTIVA)]
-      : [];
-
   // ── Selección ────────────────────────────────────────────────────────────
   function puedeSeleccionar(a) {
     if (!a) return false;
@@ -150,11 +146,10 @@
     return true;
   }
 
-  // disabled solo si ocupado o clase incorrecta (nunca para 'propio')
   function esBloqueado(a) {
     if (!a) return true;
     if (a.estado === 'ocupado') return true;
-    if (a.estado === 'propio')  return false; // siempre clickeable
+    if (a.estado === 'propio')  return false; // siempre clickeable para cambiar foco
     if (claseActual === 'Ejecutiva' && a.clase !== 'Ejecutiva') return true;
     if (claseActual === 'Turista'   && a.clase !== 'Turista')   return true;
     return false;
@@ -188,7 +183,7 @@
       });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message ?? 'Error al cambiar asiento.'); }
 
-      // Actualizar mapa local
+      // Actualizar mapa local sin recargar
       if (asientoAnterior && asientos[asientoAnterior])
         asientos[asientoAnterior] = { ...asientos[asientoAnterior], estado: 'libre' };
       asientos[a.id] = { ...asientos[a.id], estado: 'propio' };
@@ -197,7 +192,7 @@
       seleccionados = [...seleccionados];
       asientos      = { ...asientos };
 
-      // Avanzar al siguiente sin asiento
+      // Avanzar al siguiente pasajero sin asiento
       const sig = seleccionados.findIndex((s, i) => i > pasajeroActual && !s);
       if (sig !== -1) pasajeroActual = sig;
 
@@ -285,28 +280,29 @@
 
           <div class="avion-cuerpo">
 
-            <!-- Cabecera columnas -->
+            <!-- Cabecera columnas: letras A-F -->
             <div class="avion-cols-header">
               <div class="avion-col-label"></div>
-              {#each COLS_LABEL as label, ci}
+              {#each COLS_LABEL as lbl, ci}
                 {#if ci === 3}<div class="avion-pasillo"></div>{/if}
-                <div class="avion-col-label">{label}</div>
+                <div class="avion-col-label">{lbl}</div>
               {/each}
             </div>
 
-            <!-- ── Ejecutiva: filas A,B,C,D con IDs E-A1..E-D6 ── -->
+            <!-- ── Ejecutiva: filas numéricas 1..FILAS_EJECUTIVA, cols A-F ── -->
+            <!-- IDs: E-A1, E-B1, E-C1... / E-A2, E-B2, E-C2... -->
             <div class="zona-label zona-label--ejecutiva"><span>Ejecutiva</span></div>
-            {#each FILAS_EJE_LETRAS as fila}
+            {#each filasEje as fila}
               <div class="avion-fila avion-fila--ejecutiva">
                 <div class="avion-fila__num">{fila}</div>
-                {#each {length: NUM_COLUMNAS} as _, ci}
+                {#each COLS_LABEL as col, ci}
                   {#if ci === 3}<div class="avion-pasillo"></div>{/if}
-                  {@const a = asientos[idEjecutiva(fila, ci + 1)]}
+                  {@const a = asientos[idEjecutiva(fila, col)]}
                   <button
                     class="asiento asiento--ejecutiva {claseAsiento(a)}"
                     disabled={guardando || esBloqueado(a)}
                     on:click={() => seleccionarAsiento(a)}
-                    title="E-{fila}{ci + 1}"
+                    title="E-{col}{fila}"
                   >
                     {#if a?.estado === 'propio'}
                       <span class="asiento__num">{indicePasajero(a.id) + 1}</span>
@@ -322,19 +318,20 @@
               <div class="zona-separador__line"></div>
             </div>
 
-            <!-- ── Turista: filas A,B,C,... con IDs A1..Z6,AA1... ── -->
+            <!-- ── Turista: filas numéricas 1..filasT, cols A-F ── -->
+            <!-- IDs: A1, B1, C1... / A2, B2, C2... -->
             <div class="zona-label zona-label--turista"><span>Turista</span></div>
             {#each filasT as fila}
               <div class="avion-fila">
                 <div class="avion-fila__num">{fila}</div>
-                {#each {length: NUM_COLUMNAS} as _, ci}
+                {#each COLS_LABEL as col, ci}
                   {#if ci === 3}<div class="avion-pasillo"></div>{/if}
-                  {@const a = asientos[idTurista(fila, ci + 1)]}
+                  {@const a = asientos[idTurista(fila, col)]}
                   <button
                     class="asiento {claseAsiento(a)}"
                     disabled={guardando || esBloqueado(a)}
                     on:click={() => seleccionarAsiento(a)}
-                    title="{fila}{ci + 1}"
+                    title="{col}{fila}"
                   >
                     {#if a?.estado === 'propio'}
                       <span class="asiento__num">{indicePasajero(a.id) + 1}</span>
@@ -434,25 +431,3 @@
 
   </div>
 </div>
-
-<style>
-  .vuelos-progreso {
-    display: flex; align-items: center; justify-content: center;
-    padding: 0.75rem 2rem; background: #f5f3ef; border-bottom: 1px solid #e8e0d4;
-  }
-  .vuelos-progreso__item {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.78rem; color: #b0a89a; font-weight: 500; letter-spacing: 0.5px;
-  }
-  .vuelos-progreso__item--activo     { color: #c9a96e; }
-  .vuelos-progreso__item--completado { color: #7a9e7e; }
-  .vuelos-progreso__numero {
-    width: 22px; height: 22px; border-radius: 50%; background: #e8e0d4;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.7rem; font-weight: 700;
-  }
-  .vuelos-progreso__item--activo .vuelos-progreso__numero     { background: #c9a96e; color: #fff; }
-  .vuelos-progreso__item--completado .vuelos-progreso__numero { background: #7a9e7e; color: #fff; }
-  .vuelos-progreso__linea { width: 3rem; height: 2px; background: #e8e0d4; margin: 0 0.5rem; }
-  .vuelos-progreso__linea--completada { background: #7a9e7e; }
-</style>
