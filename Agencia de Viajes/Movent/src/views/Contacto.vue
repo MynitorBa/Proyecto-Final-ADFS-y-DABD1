@@ -13,7 +13,7 @@
       </div>
     </section>
     <div class="info-wrap">
-      <button class="info-back" @click="$router.push('/informacion')">
+      <button class="info-back" @click="$router.back()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver a Información
       </button>
@@ -124,6 +124,8 @@ import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/informacion.css'
 
+const API = 'http://localhost:8080'
+
 const form = reactive({ nombre: '', correo: '', asunto: '', mensaje: '' })
 const errors = ref({})
 const status = ref('')
@@ -144,7 +146,7 @@ async function enviar() {
   if (!validar()) return
   status.value = 'sending'
   try {
-    const res = await fetch('http://localhost:7000/contacto', {
+    const res = await fetch(`${API}/api/contacto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

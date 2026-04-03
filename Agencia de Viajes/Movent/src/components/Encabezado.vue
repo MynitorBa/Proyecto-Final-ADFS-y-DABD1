@@ -228,6 +228,9 @@
             <router-link to="/mis-reservaciones" class="user-dropdown__item" @click="showUserMenu=false">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mis reservaciones
             </router-link>
+            <router-link to="/perfil" class="user-dropdown__item" @click="showUserMenu=false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mi perfil
+            </router-link>
             <div class="user-dropdown__divider"></div>
             <button class="user-dropdown__item user-dropdown__item--logout" @click="cerrarSesion" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Cerrar sesión
@@ -324,6 +327,8 @@
 
         <div class="mobile-divider"></div>
         <template v-if="sesion">
+          <router-link to="/mis-reservaciones" class="mobile-nav-link" @click="showMobileMenu=false">Mis Reservaciones</router-link>
+          <router-link to="/perfil" class="mobile-nav-link" @click="showMobileMenu=false">Mi Perfil</router-link>
           <button class="mobile-nav-link" @click="cerrarSesion" type="button">Cerrar sesión ({{ nombreVisible }})</button>
         </template>
         <template v-else>
@@ -389,9 +394,8 @@ function cargarSesion() {
 
 watch(() => route.path, (path) => {
   cargarSesion()
-  // En confirmación el pago ya se completó — liberar carrito de inmediato
   if (path === '/confirmacion') {
-    limpiarSesionReserva()
+    // Solo limpiar la UI del carrito — checkout_data lo lee y borra Confirmacion.vue
     limpiarEstadoCarrito()
   } else {
     verificarReservaActiva()

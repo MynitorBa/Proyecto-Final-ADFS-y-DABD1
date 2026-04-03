@@ -58,10 +58,12 @@ func main() {
 	proveedorRepo     := repositories.NewProveedorRepository(db)
 	comentarioService := services.NewComentarioService(proveedorRepo)
 
-	// ── NUEVO: PDF y correo ───────────────────────────────────────────────────
+	// ── PDF y correo ───────────────────────────────────────────────────────────
 	usuarioRepo  := repositories.NewUsuarioRepository(db)
 	pdfService   := services.NewPdfReservacionService(misReservacionesService, usuarioRepo)
 	emailService := services.NewEmailReservacionService(misReservacionesService, pdfService, usuarioRepo)
+
+	perfilService := services.NewPerfilService(db)
 
 	// ── Controllers ────────────────────────────────────────────────────────────
 	usuarioController            := controllers.NewUsuarioController(usuarioService)
@@ -81,6 +83,7 @@ func main() {
 	comentarioController         := controllers.NewComentarioController(comentarioService)
 	statsController              := controllers.NewStatsController(db)
 	adminController              := controllers.NewAdminController(db)
+	perfilController             := controllers.NewPerfilController(perfilService)
 
 	expiracionService.Iniciar()
 	defer expiracionService.Detener()
@@ -102,10 +105,18 @@ func main() {
 		api.GET("/comentarios/hotel/:proveedorId/:hotelId", comentarioController.ObtenerComentariosHotel)
 		api.GET("/stats", statsController.ObtenerStats)
 
+		// Formulario de contacto — público, sin auth
+		api.POST("/contacto", controllers.EnviarContacto)
+
 		protegido := api.Group("/")
 		protegido.Use(middlewares.AuthRequerido())
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
+
+			// Perfil de usuario
+			protegido.GET("/perfil",              perfilController.ObtenerPerfil)
+			protegido.PUT("/perfil/telefono",     perfilController.ActualizarTelefono)
+			protegido.PUT("/perfil/contrasena",   perfilController.CambiarContrasena)
 
 			protegido.POST("/reservaciones",                         reservacionController.CrearReservacion)
 			protegido.POST("/reservaciones/detalle/vuelo",           detalleReservacionController.AgregarDetalleVuelo)
@@ -126,17 +137,17 @@ func main() {
 			admin := protegido.Group("/")
 			admin.Use(middlewares.RolRequerido(2))
 			{
-				admin.GET("/usuarios",                            adminController.ListarUsuarios)
-				admin.PUT("/usuarios/:id/rol",                    adminController.ActualizarRol)
+				admin.GET("/usuarios",                             adminController.ListarUsuarios)
+				admin.PUT("/usuarios/:id/rol",                     adminController.ActualizarRol)
 				admin.GET("/proveedores",                          adminController.ListarProveedores)
 				admin.PATCH("/proveedores/:id/estado",             adminController.ToggleEstadoProveedor)
 				admin.PUT("/proveedores/:id",                      adminController.EditarProveedor)
-				admin.GET("/admin/reservaciones/recientes",         adminController.ReservacionesRecientes)
-				admin.GET("/admin/metricas",                        adminController.ObtenerMetricas)
-				admin.POST("/proveedores",                        proveedorController.CrearProveedor)
-				admin.POST("/catalogo/actualizar",                catalogoController.ActualizarCatalogo)
-				admin.POST("/proveedores/:id/handshake",          handshakeController.IniciarHandshake)
-				admin.POST("/proveedores/:id/handshake-hotelera", handshakeHoteleraController.IniciarHandshake)
+				admin.GET("/admin/reservaciones/recientes",        adminController.ReservacionesRecientes)
+				admin.GET("/admin/metricas",                       adminController.ObtenerMetricas)
+				admin.POST("/proveedores",                         proveedorController.CrearProveedor)
+				admin.POST("/catalogo/actualizar",                 catalogoController.ActualizarCatalogo)
+				admin.POST("/proveedores/:id/handshake",           handshakeController.IniciarHandshake)
+				admin.POST("/proveedores/:id/handshake-hotelera",  handshakeHoteleraController.IniciarHandshake)
 			}
 		}
 	}

@@ -1,5 +1,6 @@
 <template>
   <div class="register-page">
+
     <div class="register-container">
       <div class="register-card">
 
@@ -58,7 +59,9 @@
               </div>
               <div class="form-field">
                 <label>Número de Pasaporte <span class="req">*</span></label>
-                <input type="text" v-model="formData.pasaporte" placeholder="AB123456"
+                <input type="text" v-model="formData.pasaporte"
+                  @input="formData.pasaporte = formData.pasaporte.toUpperCase()"
+                  placeholder="AB123456"
                   :class="{ error: errors.pasaporte }" autocomplete="off" />
                 <span v-if="errors.pasaporte" class="error-text">{{ errors.pasaporte }}</span>
               </div>
@@ -118,7 +121,7 @@
               <span v-if="errors.city" class="error-text">{{ errors.city }}</span>
             </div>
 
-            <!-- Nacionalidades (múltiples, desde API) -->
+            <!-- Nacionalidades -->
             <div class="form-field">
               <label>Nacionalidad(es) <span class="req">*</span></label>
               <div v-for="(nac, i) in nacionalidades" :key="i" class="nac-row">
@@ -280,24 +283,20 @@ const knownDigits = {
   '+994':9,'+995':9,'+996':9,'+998':9,
 }
 
-// ── Datos de API (cargados en onMounted) ────────────────────────────
-const todosLosPaises     = ref([])  // [{ country, cities[] }] — countriesnow
-const dialCodesMap       = ref({})  // { 'guatemala': { code: '+502', digits: 8 } }
-const todosNacionalidades= ref([])  // [{ pais: 'Guatemala', demonym: 'Guatemalan' }]
+const todosLosPaises      = ref([])
+const dialCodesMap        = ref({})
+const todosNacionalidades = ref([])
 
 onMounted(async () => {
-  // Países + ciudades
   try {
     const res  = await fetch('https://countriesnow.space/api/v0.1/countries')
     const data = await res.json()
     todosLosPaises.value = data.data || []
   } catch { console.error('Error cargando países') }
 
-  // Dial codes + demónimos de nacionalidad (misma llamada, igual que el Svelte)
   try {
     const res  = await fetch('https://restcountries.com/v3.1/all?fields=name,demonyms,idd')
     const data = await res.json()
-
     data.forEach(p => {
       if (p.idd?.root) {
         const suffixes = p.idd.suffixes ?? ['']
@@ -305,19 +304,16 @@ onMounted(async () => {
         const digits   = knownDigits[code] ?? 9
         const key      = p.name.common.toLowerCase()
         dialCodesMap.value[key] = { code, digits }
-        if (p.name.official)
-          dialCodesMap.value[p.name.official.toLowerCase()] = { code, digits }
+        if (p.name.official) dialCodesMap.value[p.name.official.toLowerCase()] = { code, digits }
       }
     })
-
     todosNacionalidades.value = data
       .filter(p => p.demonyms?.eng?.m)
       .map(p => ({ pais: p.name.common, demonym: p.demonyms.eng.m }))
       .sort((a, b) => a.pais.localeCompare(b.pais))
-  } catch { console.error('Error cargando nationalidades / dial codes') }
+  } catch { console.error('Error cargando nacionalidades / dial codes') }
 })
 
-// ── Form state ──────────────────────────────────────────────────────
 const formData = ref({
   firstName: '', lastName: '', birthDate: '', pasaporte: '',
   phone: '', username: '', email: '', password: '', confirmPassword: ''
@@ -331,27 +327,21 @@ const errors              = ref({})
 const isSubmitting        = ref(false)
 const registrationSuccess = ref(false)
 
-// ── País ────────────────────────────────────────────────────────────
 const paisQuery        = ref('')
 const paisesSugeridos  = ref([])
 const paisSeleccionado = ref(null)
 
-// ── Ciudad ──────────────────────────────────────────────────────────
 const ciudadQuery        = ref('')
 const ciudadesSugeridas  = ref([])
 const ciudadSeleccionada = ref(false)
 const ciudadLoading      = ref(false)
 const todasLasCiudades   = ref([])
 
-// ── Teléfono ────────────────────────────────────────────────────────
 const dialCode        = ref('')
 const phoneDigitCount = ref(9)
 
-// ── Nacionalidades — array de objetos igual que el Svelte ───────────
-// Cada elemento: { query: '', seleccionada: false, sugerencias: [] }
 const nacionalidades = ref([{ query: '', seleccionada: false, sugerencias: [] }])
 
-// ── Computed ────────────────────────────────────────────────────────
 const userAge = computed(() => {
   if (!formData.value.birthDate) return 0
   const today = new Date(), birth = new Date(formData.value.birthDate)
@@ -378,7 +368,6 @@ const passwordStrength = computed(() => {
   return              { text: 'Excelente', color: '#10b981', width: '100%' }
 })
 
-// ── Teléfono helpers ─────────────────────────────────────────────────
 function formatLocalPhone(digits, total) {
   if (total <= 7)   return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim()
   if (total === 8)  return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim()
@@ -392,13 +381,11 @@ function onPhoneInput(e) {
   formData.value.phone = formatLocalPhone(raw, phoneDigitCount.value)
 }
 
-// ── Username ─────────────────────────────────────────────────────────
 function onUsernameInput() {
   formData.value.username = formData.value.username.replace(/[^a-zA-Z0-9_.]/g, '')
   if (errors.value.username) errors.value.username = ''
 }
 
-// ── País ─────────────────────────────────────────────────────────────
 function onPaisInput() {
   paisSeleccionado.value = null
   ciudadQuery.value = ''; ciudadSeleccionada.value = false
@@ -406,24 +393,15 @@ function onPaisInput() {
   dialCode.value = ''
   const q = paisQuery.value.trim().toLowerCase()
   paisesSugeridos.value = q.length < 2 ? [] :
-    todosLosPaises.value
-      .filter(p => p.country.toLowerCase().includes(q))
-      .slice(0, 6)
+    todosLosPaises.value.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6)
 }
 
 function seleccionarPais(p) {
-  paisSeleccionado.value = p
-  paisQuery.value = p.country
-  paisesSugeridos.value = []
+  paisSeleccionado.value = p; paisQuery.value = p.country; paisesSugeridos.value = []
   errors.value.country = ''
-  ciudadQuery.value = ''; ciudadSeleccionada.value = false
-  ciudadesSugeridas.value = []
+  ciudadQuery.value = ''; ciudadSeleccionada.value = false; ciudadesSugeridas.value = []
   formData.value.phone = ''
-
-  // Ciudades ya vienen con el objeto de countriesnow
   todasLasCiudades.value = p.cities || []
-
-  // Dial code desde el map cargado en onMounted
   const info = dialCodesMap.value[p.country.toLowerCase()]
   dialCode.value        = info?.code   ?? ''
   phoneDigitCount.value = info?.digits ?? 9
@@ -438,7 +416,6 @@ function blurPais() {
   }, 200)
 }
 
-// ── Ciudad ───────────────────────────────────────────────────────────
 function onCiudadInput() {
   ciudadSeleccionada.value = false
   const q = ciudadQuery.value.toLowerCase().trim()
@@ -447,8 +424,7 @@ function onCiudadInput() {
 }
 function seleccionarCiudad(c) {
   ciudadQuery.value = c; ciudadSeleccionada.value = true
-  ciudadesSugeridas.value = []
-  errors.value.city = ''
+  ciudadesSugeridas.value = []; errors.value.city = ''
 }
 function blurCiudad() {
   setTimeout(() => {
@@ -459,46 +435,29 @@ function blurCiudad() {
   }, 200)
 }
 
-// ── Nacionalidades (igual que Svelte) ─────────────────────────────────
 function onNacInput(i) {
   const q = nacionalidades.value[i].query.toLowerCase().trim()
   nacionalidades.value[i].seleccionada = false
   if (q.length < 2) { nacionalidades.value[i].sugerencias = []; return }
   nacionalidades.value[i].sugerencias = todosNacionalidades.value
-    .filter(n =>
-      n.pais.toLowerCase().includes(q) ||
-      n.demonym.toLowerCase().includes(q)
-    )
+    .filter(n => n.pais.toLowerCase().includes(q) || n.demonym.toLowerCase().includes(q))
     .slice(0, 6)
 }
-
 function seleccionarNac(i, s) {
-  nacionalidades.value[i].query       = s.demonym
-  nacionalidades.value[i].seleccionada= true
-  nacionalidades.value[i].sugerencias = []
-  errors.value.nacionalidades = ''
+  nacionalidades.value[i].query = s.demonym; nacionalidades.value[i].seleccionada = true
+  nacionalidades.value[i].sugerencias = []; errors.value.nacionalidades = ''
 }
-
 function blurNac(i) {
   setTimeout(() => {
     if (nacionalidades.value[i].query && !nacionalidades.value[i].seleccionada) {
       errors.value.nacionalidades = 'Selecciona una nacionalidad de la lista'
-      nacionalidades.value[i].query = ''
-      nacionalidades.value[i].sugerencias = []
-    } else {
-      nacionalidades.value[i].sugerencias = []
-    }
+      nacionalidades.value[i].query = ''; nacionalidades.value[i].sugerencias = []
+    } else { nacionalidades.value[i].sugerencias = [] }
   }, 200)
 }
+function agregarNac() { nacionalidades.value.push({ query: '', seleccionada: false, sugerencias: [] }) }
+function quitarNac(i) { nacionalidades.value.splice(i, 1) }
 
-function agregarNac() {
-  nacionalidades.value.push({ query: '', seleccionada: false, sugerencias: [] })
-}
-function quitarNac(i) {
-  nacionalidades.value.splice(i, 1)
-}
-
-// ── Validación ────────────────────────────────────────────────────────
 function validateForm() {
   errors.value = {}
   if (!formData.value.firstName.trim() || formData.value.firstName.trim().length < 2)
@@ -509,22 +468,18 @@ function validateForm() {
   else if (userAge.value < 18)    errors.value.birthDate = 'Debes tener al menos 18 años'
   if (!formData.value.pasaporte.trim() || formData.value.pasaporte.trim().length < 5)
     errors.value.pasaporte = !formData.value.pasaporte.trim() ? 'Pasaporte requerido' : 'Número de pasaporte inválido'
-  if (!paisSeleccionado.value)    errors.value.country = 'Selecciona un país de la lista'
-  if (!ciudadSeleccionada.value)  errors.value.city    = 'Selecciona una ciudad de la lista'
+  if (!paisSeleccionado.value)   errors.value.country = 'Selecciona un país de la lista'
+  if (!ciudadSeleccionada.value) errors.value.city    = 'Selecciona una ciudad de la lista'
   if (!formData.value.phone.trim()) {
     errors.value.phone = 'Teléfono requerido'
   } else if (phoneDigits.value !== phoneDigitCount.value) {
     errors.value.phone = `Número incompleto: se requieren ${phoneDigitCount.value} dígitos (ingresaste ${phoneDigits.value})`
   }
-
-  // Nacionalidades válidas
   const nacsValidas = nacionalidades.value.filter(n => n.query.trim() && n.seleccionada)
-  if (nacsValidas.length === 0)   errors.value.nacionalidades = 'Selecciona al menos una nacionalidad'
-
+  if (nacsValidas.length === 0) errors.value.nacionalidades = 'Selecciona al menos una nacionalidad'
   if (!formData.value.username.trim()) errors.value.username = 'Usuario requerido'
   else if (formData.value.username.length < 3) errors.value.username = 'Mínimo 3 caracteres'
   else if (!/^[a-zA-Z0-9_.]+$/.test(formData.value.username)) errors.value.username = 'Solo letras, números, puntos y guion bajo'
-
   if (!formData.value.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email))
     errors.value.email = 'Email inválido'
   if (!formData.value.password) errors.value.password = 'Contraseña requerida'
@@ -537,14 +492,13 @@ function validateForm() {
   return Object.keys(errors.value).length === 0
 }
 
-// ── Submit ────────────────────────────────────────────────────────────
+
 async function handleRegister() {
   if (!validateForm()) {
     document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     return
   }
   isSubmitting.value = true
-
   try {
     const nacsValidas = nacionalidades.value
       .filter(n => n.query.trim() && n.seleccionada)
@@ -563,21 +517,18 @@ async function handleRegister() {
       fecha_nacimiento: formData.value.birthDate,
       ciudad:           ciudadQuery.value,
       pais:             paisQuery.value,
-      nacionalidades:   nacsValidas,           // ["Guatemalan", "Polish"]
+      nacionalidades:   nacsValidas,
     }
 
-    const res = await fetch(`${API_BASE}/api/usuarios/registro`, {
-      method:  'POST',
-      credentials: 'include',
+    const res  = await fetch(`${API_BASE}/api/usuarios/registro`, {
+      method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
+      body: JSON.stringify(payload),
     })
-
     const text = await res.text()
     let data = null
-    try { data = JSON.parse(text) } catch { /* no-JSON */ }
+    try { data = JSON.parse(text) } catch { /**/ }
 
-    // 409 — { correo: true, pasaporte: true, username: true }
     if (res.status === 409 && data) {
       if (data.correo)    errors.value.email     = 'Este correo ya está registrado.'
       if (data.pasaporte) errors.value.pasaporte = 'Este pasaporte ya está registrado.'
@@ -585,17 +536,16 @@ async function handleRegister() {
       document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
-
     if (!res.ok) {
       errors.value.submit = data?.error || data?.mensaje || `Error del servidor (${res.status})`
       return
     }
 
-    // Éxito — { "mensaje": "Usuario registrado exitosamente" }
+    // Éxito
     registrationSuccess.value = true
     setTimeout(() => router.push('/ingreso'), 2000)
 
-  } catch (err) {
+  } catch {
     errors.value.submit = 'Error de conexión. Verifica que el servidor esté activo.'
   } finally {
     isSubmitting.value = false
