@@ -1,3 +1,9 @@
+// # Package helpers
+//
+// Provee funciones auxiliares reutilizables para tareas comunes de la
+// aplicacion Movent: generacion de tokens, hashing de contrasenas,
+// manejo de sesiones JWT, envio de correos electronicos y generacion
+// de documentos PDF.
 package helpers
 
 import (
@@ -8,6 +14,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Claims
+//
+// Estructura de los claims personalizados incluidos en el JWT de sesion.
+// Extiende jwt.RegisteredClaims con los datos de identidad del usuario
+// necesarios para autorizacion en los middlewares y controladores.
 type Claims struct {
 	UsuarioID int    `json:"usuario_id"`
 	Username  string `json:"username"`
@@ -15,6 +26,20 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// GenerarToken
+//
+// Crea y firma un JWT HS256 con los datos del usuario autenticado.
+// El token tiene una vigencia de 24 horas a partir del momento
+// de su emision y se firma con la clave JWT_SECRET del entorno.
+//
+// Parametros:
+//   - usuarioID: identificador unico del usuario en la base de datos
+//   - username: nombre de usuario para incluir en los claims
+//   - rolID: identificador del rol del usuario para control de acceso
+//
+// Retorna:
+//   - string: token JWT firmado listo para enviar al cliente
+//   - error: error si la firma del token falla
 func GenerarToken(usuarioID int, username string, rolID int) (string, error) {
 	claims := Claims{
 		UsuarioID: usuarioID,
@@ -30,6 +55,19 @@ func GenerarToken(usuarioID int, username string, rolID int) (string, error) {
 	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
+// VerificarToken
+//
+// Parsea y valida un JWT firmado con HS256. Verifica que el metodo
+// de firma sea HMAC, que la firma sea correcta y que el token no
+// haya expirado, retornando los claims si todo es valido.
+//
+// Parametros:
+//   - tokenStr: cadena JWT recibida desde el cliente
+//
+// Retorna:
+//   - *Claims: puntero a los claims extraidos del token valido
+//   - error: error si el metodo de firma es invalido, la firma no
+//     coincide, el token esta expirado o los claims no son validos
 func VerificarToken(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {

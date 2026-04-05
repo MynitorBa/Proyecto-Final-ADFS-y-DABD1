@@ -5,21 +5,26 @@ import org.example.services.AdminBusquedaService;
 
 import java.util.Map;
 
+/**
+ * Controller para el modulo de reportes de busquedas del panel de administracion.
+ * Expone endpoints para listar busquedas con filtros, obtener un resumen estadistico
+ * y exportar el reporte por correo. Solo accesible para usuarios con rol de administrador.
+ */
 public class AdminBusquedaController {
 
     private final AdminBusquedaService service = new AdminBusquedaService();
 
+    /**
+     * Registra las rutas del modulo de reportes de busquedas en la aplicacion Javalin.
+     *
+     * @param app instancia de Javalin donde se registran las rutas.
+     */
     public void registerRoutes(Javalin app) {
 
-        // ──────────────────────────────────────────────────────────────────
-        //  GET /admin/reportes/busquedas
-        //  Devuelve { busquedas: [...], total: N }
-        //
-        //  Query params opcionales:
-        //    destino, usuarioAgencia, tipo (web|rest|todos),
-        //    fechaDesde (YYYY-MM-DD), fechaHasta (YYYY-MM-DD),
-        //    pagina (default 1), porPagina (default 25)
-        // ──────────────────────────────────────────────────────────────────
+        // GET /admin/reportes/busquedas
+        // Devuelve { busquedas: [...], total: N }
+        // Query params opcionales: destino, usuarioAgencia, tipo (web|rest|todos),
+        // fechaDesde (YYYY-MM-DD), fechaHasta (YYYY-MM-DD), pagina (default 1), porPagina (default 25)
         app.get("/admin/reportes/busquedas", ctx -> {
 
             // Solo admins (rolId=2) pueden acceder
@@ -37,17 +42,17 @@ public class AdminBusquedaController {
 
             int pagina    = ctx.queryParamAsClass("pagina",    Integer.class).getOrDefault(1);
             int porPagina = ctx.queryParamAsClass("porPagina", Integer.class).getOrDefault(25);
-            if (pagina < 1)    pagina    = 1;
-            if (porPagina < 1) porPagina = 25;
+
+            // Sanitizar limites de paginacion
+            if (pagina < 1)      pagina    = 1;
+            if (porPagina < 1)   porPagina = 25;
             if (porPagina > 100) porPagina = 100;
 
             ctx.json(service.listar(destino, usuarioAgencia, tipo, fechaDesde, fechaHasta, pagina, porPagina));
         });
 
-        // ──────────────────────────────────────────────────────────────────
-        //  GET /admin/reportes/busquedas/resumen
-        //  Devuelve { totalWeb, totalRest, porDia: [...], topDestinos: [...] }
-        // ──────────────────────────────────────────────────────────────────
+        // GET /admin/reportes/busquedas/resumen
+        // Devuelve { totalWeb, totalRest, porDia: [...], topDestinos: [...] }
         app.get("/admin/reportes/busquedas/resumen", ctx -> {
 
             int rolId = ctx.attribute("rolId");
@@ -59,11 +64,9 @@ public class AdminBusquedaController {
             ctx.json(service.resumen());
         });
 
-        // ──────────────────────────────────────────────────────────────────
-        //  POST /admin/reportes/busquedas/exportar
-        //  Body: { email: "...", filtros: { destino, usuarioAgencia, tipo, fechaDesde, fechaHasta } }
-        //  Envía reporte HTML por correo al email indicado
-        // ──────────────────────────────────────────────────────────────────
+        // POST /admin/reportes/busquedas/exportar
+        // Body: { email: "...", filtros: { destino, usuarioAgencia, tipo, fechaDesde, fechaHasta } }
+        // Envia el reporte HTML por correo al email indicado
         app.post("/admin/reportes/busquedas/exportar", ctx -> {
 
             int rolId = ctx.attribute("rolId");
@@ -77,11 +80,11 @@ public class AdminBusquedaController {
 
             String email = body.get("email") != null ? body.get("email").toString().trim() : "";
             if (email.isBlank() || !email.contains("@")) {
-                ctx.status(400).json(Map.of("mensaje", "Correo electrónico inválido"));
+                ctx.status(400).json(Map.of("mensaje", "Correo electronico invalido"));
                 return;
             }
 
-            // Extraer filtros del body
+            // Extraer filtros del body, usando un mapa vacio si no vienen
             @SuppressWarnings("unchecked")
             Map<String, Object> filtros = body.get("filtros") instanceof Map
                     ? (Map<String, Object>) body.get("filtros")

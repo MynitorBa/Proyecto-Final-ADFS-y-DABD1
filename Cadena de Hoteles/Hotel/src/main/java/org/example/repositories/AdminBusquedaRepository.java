@@ -8,21 +8,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Repository para consultas del modulo de reportes de busquedas en el panel de administracion.
+ * Soporta filtros por destino, usuario o agencia, tipo de busqueda y rango de fechas.
+ */
 public class AdminBusquedaRepository {
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  LISTAR BÚSQUEDAS CON FILTROS + PAGINACIÓN
-    //
-    //  Parámetros de filtro opcionales:
-    //    destino        — nombre de ciudad (LIKE)
-    //    usuarioAgencia — username del usuario O nombre de la agencia (LIKE)
-    //    tipoBusquedaId — 1 (Web/Usuario) | 2 (REST/Agencia) | null (todos)
-    //    fechaDesde     — filtrar Busqueda.Fecha >= ?
-    //    fechaHasta     — filtrar Busqueda.Fecha <= ?
-    //    offset         — para paginación OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-    //    porPagina      — filas por página
-    // ════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Retorna una pagina de busquedas aplicando los filtros indicados.
+     * Todos los parametros de filtro son opcionales; si son null o vacios se ignoran.
+     * @param destino        nombre de ciudad a filtrar con LIKE, o null para no filtrar.
+     * @param usuarioAgencia username del usuario o nombre de la agencia a filtrar, o null.
+     * @param tipoBusquedaId 1 para busquedas web, 2 para busquedas REST, null para todas.
+     * @param fechaDesde     fecha minima de la busqueda, o null para no filtrar.
+     * @param fechaHasta     fecha maxima de la busqueda, o null para no filtrar.
+     * @param offset         numero de filas a saltar para la paginacion.
+     * @param porPagina      cantidad de filas a retornar por pagina.
+     * @return lista de mapas con los datos de cada busqueda encontrada.
+     */
     public List<Map<String, Object>> listar(
             String destino, String usuarioAgencia, Integer tipoBusquedaId,
             Date fechaDesde, Date fechaHasta,
@@ -96,10 +99,16 @@ public class AdminBusquedaRepository {
         }, params.toArray());
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  CONTAR BÚSQUEDAS (para calcular total de páginas)
-    // ════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Cuenta el total de busquedas que coinciden con los filtros indicados.
+     * Se usa para calcular el total de paginas en la paginacion.
+     * @param destino        nombre de ciudad a filtrar con LIKE, o null para no filtrar.
+     * @param usuarioAgencia username del usuario o nombre de la agencia a filtrar, o null.
+     * @param tipoBusquedaId 1 para busquedas web, 2 para busquedas REST, null para todas.
+     * @param fechaDesde     fecha minima de la busqueda, o null para no filtrar.
+     * @param fechaHasta     fecha maxima de la busqueda, o null para no filtrar.
+     * @return total de busquedas que coinciden con los filtros.
+     */
     public int contar(String destino, String usuarioAgencia, Integer tipoBusquedaId,
                       Date fechaDesde, Date fechaHasta) {
 
@@ -143,14 +152,12 @@ public class AdminBusquedaRepository {
         return result.isEmpty() ? 0 : result.get(0);
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  RESUMEN PARA EL DASHBOARD
-    //    - totalWeb  (TipoBusquedaID = 1)
-    //    - totalRest (TipoBusquedaID = 2)
-    //    - porDia    (últimos 30 días, agrupado por fecha)
-    //    - topDestinos (top 10 ciudades más buscadas)
-    // ════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Cuenta el total de busquedas filtradas por tipo.
+     * Si tipoBusquedaId es null retorna el total sin filtro de tipo.
+     * @param tipoBusquedaId 1 para web, 2 para REST, null para todas.
+     * @return total de busquedas del tipo indicado.
+     */
     public int contarPorTipo(Integer tipoBusquedaId) {
         String sql = tipoBusquedaId == null
                 ? "SELECT COUNT(*) AS TOTAL FROM Busqueda"
@@ -162,7 +169,11 @@ public class AdminBusquedaRepository {
         return result.isEmpty() ? 0 : result.get(0);
     }
 
-    /** Retorna lista de {dia: "YYYY-MM-DD", total: N} para los últimos 30 días */
+    /**
+     * Retorna el conteo de busquedas agrupado por dia para los ultimos 30 dias.
+     * Cada elemento del resultado contiene la fecha y el total de busquedas de ese dia.
+     * @return lista de mapas con los campos "dia" (YYYY-MM-DD) y "total".
+     */
     public List<Map<String, Object>> busquedasPorDia() {
         String sql =
                 "SELECT TO_CHAR(b.Fecha, 'YYYY-MM-DD') AS DIA, COUNT(*) AS TOTAL " +
@@ -179,7 +190,11 @@ public class AdminBusquedaRepository {
         });
     }
 
-    /** Retorna los 10 destinos (ciudades) más buscados: {nombre, total} */
+    /**
+     * Retorna los 10 destinos mas buscados ordenados por frecuencia descendente.
+     * Cada elemento contiene el nombre de la ciudad y el total de busquedas.
+     * @return lista de mapas con los campos "nombre" y "total".
+     */
     public List<Map<String, Object>> topDestinos() {
         String sql =
                 "SELECT c.Nombre AS Ciudad, COUNT(*) AS TOTAL " +
@@ -197,10 +212,16 @@ public class AdminBusquedaRepository {
         });
     }
 
-    // ════════════════════════════════════════════════════════════════════════
-    //  EXPORTAR: todas las búsquedas que coincidan con los filtros (sin paginación)
-    // ════════════════════════════════════════════════════════════════════════
-
+    /**
+     * Retorna todas las busquedas que coinciden con los filtros sin paginacion.
+     * Se usa para generar el reporte completo a exportar por correo.
+     * @param destino        nombre de ciudad a filtrar con LIKE, o null para no filtrar.
+     * @param usuarioAgencia username del usuario o nombre de la agencia a filtrar, o null.
+     * @param tipoBusquedaId 1 para busquedas web, 2 para busquedas REST, null para todas.
+     * @param fechaDesde     fecha minima de la busqueda, o null para no filtrar.
+     * @param fechaHasta     fecha maxima de la busqueda, o null para no filtrar.
+     * @return lista de mapas con los datos de cada busqueda encontrada.
+     */
     public List<Map<String, Object>> exportar(
             String destino, String usuarioAgencia, Integer tipoBusquedaId,
             Date fechaDesde, Date fechaHasta) {

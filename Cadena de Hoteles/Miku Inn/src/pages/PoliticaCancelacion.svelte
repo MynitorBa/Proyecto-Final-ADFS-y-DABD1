@@ -1,10 +1,20 @@
 <script>
+  /**
+   * @file PoliticaCancelacion.svelte
+   * @description Pagina informativa que explica las politicas de cancelacion
+   * de Miku Inn, tanto para cancelaciones iniciadas por el cliente como por
+   * el hotel, incluyendo plazos y el proceso paso a paso.
+   */
+
   // @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
 </script>
 
 <div class="info-page">
+  <!-- Hero de la pagina con icono y titulo principal -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">❌</div>
@@ -15,11 +25,13 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton para regresar al inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       Volver al inicio
     </button>
 
+    <!-- Bloque: cancelacion iniciada por el cliente -->
     <div class="info-card">
       <span class="info-badge">📋 Política vigente 2026</span>
       <h2 class="info-section-title">Cancelación por parte del cliente</h2>
@@ -36,6 +48,7 @@
       </div>
     </div>
 
+    <!-- Bloque: cancelacion iniciada por el hotel -->
     <div class="info-card">
       <h2 class="info-section-title">Cancelación por parte del hotel</h2>
       <p class="info-prose">En casos excepcionales, el hotel puede cancelar una reservación. En ese caso:</p>
@@ -47,6 +60,7 @@
       </ul>
     </div>
 
+    <!-- Bloque: proceso paso a paso para cancelar desde la plataforma -->
     <div class="info-card">
       <h2 class="info-section-title">Proceso de cancelación paso a paso</h2>
       <ul class="info-list">

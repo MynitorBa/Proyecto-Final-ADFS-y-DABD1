@@ -1,9 +1,26 @@
 <script>
+  /**
+   * @file Register.svelte
+   * @description Formulario de registro de nuevos usuarios de Miku Inn. Recoge
+   * informacion personal (nombre, apellidos, fecha de nacimiento, pasaporte,
+   * pais, ciudad, telefono, nacionalidades), credenciales de acceso (username,
+   * correo y contrasena) y verifica la aceptacion de terminos con un captcha
+   * simulado antes de enviar el registro al backend.
+   */
+
   import logo from '../assets/mikuinn-logo.png';
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
   import '../styles/register.css';
   import { onMount } from 'svelte';
 
+  /**
+   * Objeto con todos los campos del formulario de registro.
+   * @type {{ firstName: string, lastName: string, birthDate: string, phone: string,
+   *          pasaporte: string, country: string, city: string, username: string,
+   *          email: string, password: string, confirmPassword: string }}
+   */
   let formData = {
     firstName: '',
     lastName: '',
@@ -18,43 +35,82 @@
     confirmPassword: ''
   };
 
+  /** Alterna la visibilidad del campo de contrasena. @type {boolean} */
   let showPassword = false;
+
+  /** Alterna la visibilidad del campo de confirmacion de contrasena. @type {boolean} */
   let showConfirmPassword = false;
+
+  /** Indica si el usuario acepto los terminos y condiciones. @type {boolean} */
   let acceptTerms = false;
+
+  /** Indica si el usuario acepto la politica de privacidad. @type {boolean} */
   let acceptPrivacy = false;
-  let acceptMarketing = false;
+
+  /** Mapa de errores de validacion por campo. @type {Object.<string, string>} */
   let errors = {};
+
+  /** Indica si la peticion de registro esta en vuelo. @type {boolean} */
   let isSubmitting = false;
+
+  /** Indica si el registro fue completado con exito. @type {boolean} */
   let registrationSuccess = false;
 
-  // Captcha
+  /** Indica si el captcha fue verificado. @type {boolean} */
   let captchaVerified = false;
+
+  /** Indica si la verificacion del captcha esta en proceso. @type {boolean} */
   let captchaLoading = false;
+
+  /** Indica si hubo un error en la verificacion del captcha. @type {boolean} */
   let captchaError = false;
 
-  // País
+  /** Lista completa de paises cargada desde countriesnow. @type {any[]} */
   let todosLosPaises = [];
+
+  /** Texto escrito en el campo de busqueda de pais. @type {string} */
   let paisQuery = '';
+
+  /** Sugerencias filtradas para el autocomplete de pais. @type {any[]} */
   let paisesSugeridos = [];
+
+  /** Objeto del pais seleccionado del autocomplete. @type {any} */
   let paisSeleccionado = null;
 
-  // Ciudad
+  /** Texto escrito en el campo de busqueda de ciudad. @type {string} */
   let ciudadQuery = '';
+
+  /** Sugerencias filtradas para el autocomplete de ciudad. @type {string[]} */
   let ciudadesSugeridas = [];
+
+  /** Indica si una ciudad fue seleccionada formalmente del autocomplete. @type {boolean} */
   let ciudadSeleccionada = false;
 
-  // Nacionalidades
+  /** Array de nacionalidades que el usuario esta ingresando (minimo una). @type {string[]} */
   let nacionalidades = [''];
+
+  /** Sugerencias por indice para cada campo de nacionalidad. @type {any[][]} */
   let sugerenciasNac = [[]];
+
+  /** Lista de demonimos y paises cargada desde restcountries. @type {any[]} */
   let todosNacionalidades = [];
+
+  /** Indica si cada entrada de nacionalidad fue seleccionada del autocomplete. @type {boolean[]} */
   let nacionalidadesSeleccionadas = [false];
 
-  // Teléfono — código de marcado por país
+  /** Codigo de marcado internacional del pais seleccionado (ej. "+502"). @type {string} */
   let dialCode = '';
+
+  /** Mapa de codigo de marcado y digitos por nombre de pais. @type {Object.<string, {code: string, digits: number}>} */
   let dialCodesMap = {};
+
+  /** Cantidad de digitos locales requeridos para el numero de telefono. @type {number} */
   let phoneDigitCount = 8;
 
-  // Dígitos locales reales por código de país (fuente: estándares ITU)
+  /**
+   * Tabla de digitos locales por codigo de marcado (fuente: estandares ITU).
+   * @type {Object.<string, number>}
+   */
   const knownDigits = {
     '+1':    10, '+7':    10, '+20':   10, '+27':   9,  '+30':   10,
     '+31':   9,  '+32':   9,  '+33':   9,  '+34':   9,  '+36':   9,
@@ -99,6 +155,12 @@
     '+994':  9,  '+995':  9,  '+996':  9,  '+998':  9,
   };
 
+  /**
+   * Da formato visual al numero de telefono local segun los digitos del pais.
+   * @param {string} digits - Digitos sin formato.
+   * @param {number} total - Total de digitos esperados.
+   * @returns {string}
+   */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
     if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
@@ -107,23 +169,40 @@
     return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
   }
 
+  /**
+   * Maneja la entrada en el campo de telefono, extrae digitos, los limita
+   * al maximo del pais y aplica formato visual.
+   * @param {Event} e - Evento de input.
+   */
   function onPhoneInput(e) {
     const raw = e.target.value.replace(/\D/g, '');
     const capped = raw.slice(0, phoneDigitCount);
     formData.phone = formatLocalPhone(capped, phoneDigitCount);
   }
 
+  /**
+   * Genera el placeholder de ejemplo para el campo de telefono.
+   * @param {number} digits - Total de digitos del pais.
+   * @returns {string}
+   */
   function getPhonePlaceholder(digits) {
     const sample = '5'.repeat(digits);
     return formatLocalPhone(sample, digits);
   }
 
-  // Username: solo letras, números, guion bajo y punto
+  /**
+   * Limpia caracteres no permitidos del campo de nombre de usuario
+   * (solo letras, numeros, punto y guion bajo).
+   * @param {Event} e - Evento de input.
+   */
   function onUsernameInput(e) {
     formData.username = e.target.value.replace(/[^a-zA-Z0-9_.]/g, '');
     if (errors.username) errors.username = '';
   }
 
+  /**
+   * Carga la lista de paises y los codigos de marcado y demonimos al montar.
+   */
   onMount(async () => {
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
@@ -155,13 +234,21 @@
     } catch { console.error('Error cargando nacionalidades / dial codes'); }
   });
 
-  // País
+  /**
+   * Filtra sugerencias de pais mientras el usuario escribe.
+   * Resetea ciudad y telefono si no hay pais confirmado.
+   */
   function onPaisInput() {
     const q = paisQuery.toLowerCase();
     paisesSugeridos = q.length < 2 ? [] : todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
     if (!paisSeleccionado) { formData.country = ''; errors.country = ''; }
   }
 
+  /**
+   * Confirma la seleccion de un pais, carga sus ciudades y actualiza el
+   * codigo de marcado del telefono.
+   * @param {any} p - Objeto del pais seleccionado.
+   */
   function seleccionarPais(p) {
     paisSeleccionado = p;
     paisQuery = p.country;
@@ -176,11 +263,16 @@
     formData.phone = '';
   }
 
+  /**
+   * Valida al perder el foco que el usuario haya seleccionado un pais de la lista.
+   */
   function validarPaisSeleccionado() {
     if (paisQuery && !paisSeleccionado) { errors.country = 'Selecciona un país de la lista'; paisQuery = ''; }
   }
 
-  // Ciudad
+  /**
+   * Filtra las ciudades disponibles del pais seleccionado segun lo escrito.
+   */
   function onCiudadInput() {
     if (!paisSeleccionado) return;
     const q = ciudadQuery.toLowerCase();
@@ -188,17 +280,27 @@
     if (!ciudadSeleccionada) { formData.city = ''; errors.city = ''; }
   }
 
+  /**
+   * Confirma la seleccion de una ciudad del autocomplete.
+   * @param {string} c - Nombre de la ciudad seleccionada.
+   */
   function seleccionarCiudad(c) {
     ciudadQuery = c; formData.city = c;
     ciudadesSugeridas = []; ciudadSeleccionada = true;
     errors.city = '';
   }
 
+  /**
+   * Valida al perder el foco que el usuario haya seleccionado una ciudad de la lista.
+   */
   function validarCiudadSeleccionada() {
     if (ciudadQuery && !ciudadSeleccionada) { errors.city = 'Selecciona una ciudad de la lista'; ciudadQuery = ''; }
   }
 
-  // Nacionalidades
+  /**
+   * Filtra las sugerencias de nacionalidades para el indice dado.
+   * @param {number} i - Indice del campo de nacionalidad.
+   */
   function onNacInput(i) {
     const q = nacionalidades[i].toLowerCase();
     sugerenciasNac[i] = q.length < 2 ? [] : todosNacionalidades
@@ -206,6 +308,11 @@
     sugerenciasNac = [...sugerenciasNac];
   }
 
+  /**
+   * Confirma la seleccion de una nacionalidad en el indice indicado.
+   * @param {number} i - Indice del campo de nacionalidad.
+   * @param {string} demonym - Demonimo seleccionado.
+   */
   function seleccionarNac(i, demonym) {
     nacionalidades[i] = demonym; nacionalidades = [...nacionalidades];
     nacionalidadesSeleccionadas[i] = true; nacionalidadesSeleccionadas = [...nacionalidadesSeleccionadas];
@@ -213,6 +320,10 @@
     errors.nacionalidades = '';
   }
 
+  /**
+   * Valida al salir del campo que la nacionalidad fue seleccionada de la lista.
+   * @param {number} i - Indice del campo de nacionalidad.
+   */
   function validarNacionalidadSeleccionada(i) {
     if (nacionalidades[i] && !nacionalidadesSeleccionadas[i]) {
       errors.nacionalidades = 'Selecciona una nacionalidad de la lista';
@@ -220,19 +331,30 @@
     }
   }
 
+  /**
+   * Agrega un campo adicional para ingresar otra nacionalidad.
+   */
   function agregarNac() {
     nacionalidades = [...nacionalidades, ''];
     sugerenciasNac = [...sugerenciasNac, []];
     nacionalidadesSeleccionadas = [...nacionalidadesSeleccionadas, false];
   }
 
+  /**
+   * Elimina el campo de nacionalidad en el indice indicado.
+   * @param {number} i - Indice del campo a eliminar.
+   */
   function quitarNac(i) {
     nacionalidades = nacionalidades.filter((_, idx) => idx !== i);
     sugerenciasNac = sugerenciasNac.filter((_, idx) => idx !== i);
     nacionalidadesSeleccionadas = nacionalidadesSeleccionadas.filter((_, idx) => idx !== i);
   }
 
-  // Password
+  /**
+   * Evalua si la contrasena cumple los requisitos minimos de seguridad.
+   * @param {string} p - Contrasena a validar.
+   * @returns {{ minLength: boolean, hasUpperCase: boolean, hasLowerCase: boolean, hasNumber: boolean, hasSpecial: boolean }}
+   */
   function validatePassword(p) {
     return {
       minLength:    p.length >= 8,
@@ -243,6 +365,12 @@
     };
   }
 
+  /**
+   * Calcula el nivel de seguridad de la contrasena en funcion de cuantos
+   * requisitos cumple.
+   * @param {string} p - Contrasena a evaluar.
+   * @returns {{ text: string, color: string, width: string }}
+   */
   function getPasswordStrength(p) {
     const n = Object.values(validatePassword(p)).filter(Boolean).length;
     if (n <= 2) return { text: 'Muy débil', color: '#ef4444', width: '25%' };
@@ -251,6 +379,11 @@
     return              { text: 'Excelente', color: '#10b981', width: '100%' };
   }
 
+  /**
+   * Calcula la edad del usuario a partir de su fecha de nacimiento.
+   * @param {string} birthDate - Fecha en formato ISO (YYYY-MM-DD).
+   * @returns {number} Edad en anos cumplidos.
+   */
   function calculateAge(birthDate) {
     if (!birthDate) return 0;
     const today = new Date(), birth = new Date(birthDate);
@@ -260,11 +393,19 @@
     return age;
   }
 
+  // Edad calculada de forma reactiva cuando cambia la fecha de nacimiento.
   $: userAge            = calculateAge(formData.birthDate);
+
+  // Nivel de seguridad de la contrasena, reactivo al campo.
   $: passwordStrength   = formData.password ? getPasswordStrength(formData.password) : null;
+
+  // Resultado de validacion de cada requisito de la contrasena.
   $: passwordValidation = validatePassword(formData.password);
 
-  // Captcha
+  /**
+   * Simula la verificacion del captcha con un pequeno retraso y un 5% de
+   * probabilidad de fallo para imitar el comportamiento de reCAPTCHA.
+   */
   function handleCaptchaClick() {
     if (captchaVerified) return;
     captchaLoading = true; captchaError = false;
@@ -275,9 +416,15 @@
     }, 1500);
   }
 
+  /**
+   * Reinicia el estado del captcha para que el usuario pueda intentarlo de nuevo.
+   */
   function resetCaptcha() { captchaVerified = false; captchaLoading = false; captchaError = false; }
 
-  // Validación
+  /**
+   * Valida todos los campos del formulario y llena el objeto `errors`.
+   * @returns {boolean} `true` si no hay errores, `false` en caso contrario.
+   */
   function validateForm() {
     errors = {};
     if (!formData.firstName.trim() || formData.firstName.trim().length < 2)
@@ -301,7 +448,6 @@
     if (!paisSeleccionado || !formData.country) errors.country = 'Selecciona un país de la lista';
     if (!ciudadSeleccionada || !formData.city)  errors.city    = 'Selecciona una ciudad de la lista';
 
-    // Username validación
     if (!formData.username.trim()) {
       errors.username = 'Nombre de usuario requerido';
     } else if (formData.username.trim().length < 3) {
@@ -329,7 +475,13 @@
     return Object.keys(errors).length === 0;
   }
 
-  // Submit → POST /usuarios/registrar
+  /**
+   * Maneja el envio del formulario de registro. Valida, construye el payload
+   * y hace POST a /usuarios/registrar. Redirige al login tras el exito.
+   * @async
+   * @param {Event} e - Evento de submit del formulario.
+   * @returns {Promise<void>}
+   */
   async function handleRegister(e) {
     e.preventDefault();
     if (!validateForm()) {
@@ -365,6 +517,7 @@
       let data = null;
       try { data = JSON.parse(text); } catch { /* no JSON */ }
 
+      // Manejo de conflictos: correo, pasaporte o username ya registrados
       if (res.status === 409 && data?.campos) {
         if (data.campos.correoExiste)    errors.email     = 'Este correo ya está registrado.';
         if (data.campos.pasaporteExiste) errors.pasaporte = 'Este pasaporte ya está registrado.';
@@ -395,6 +548,7 @@
   <div class="register-container">
     <div class="register-card">
 
+      <!-- Boton de regreso al inicio -->
       <button class="register__back-link" on:click={() => navigateTo('home')}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -402,6 +556,7 @@
         Volver al inicio
       </button>
 
+      <!-- Encabezado con logo y titulo -->
       <div class="register__header">
         <div class="register__logo-section">
           <img src="{logo}" alt="Miku Inn Logo" class="register__logo-image" />
@@ -411,6 +566,7 @@
       </div>
 
       {#if registrationSuccess}
+        <!-- Pantalla de exito con redireccion automatica al login -->
         <div class="register__success-message">
           <div class="register__success-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -428,7 +584,7 @@
       {:else}
         <form on:submit={handleRegister} class="register-form">
 
-          <!-- ── Información Personal ── -->
+          <!-- Seccion de informacion personal -->
           <div class="form-section">
             <h3 class="register__section-title">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -438,6 +594,7 @@
               Información Personal
             </h3>
 
+            <!-- Nombre y apellidos -->
             <div class="register__form-grid">
               <div class="register__form-field">
                 <label for="firstName">Nombre <span class="required">*</span></label>
@@ -453,7 +610,7 @@
               </div>
             </div>
 
-            <!-- Fila: Fecha de nacimiento + Pasaporte -->
+            <!-- Fecha de nacimiento y numero de pasaporte -->
             <div class="register__form-grid">
               <div class="register__form-field">
                 <label for="birthDate">Fecha de Nacimiento <span class="required">*</span></label>
@@ -469,13 +626,15 @@
               </div>
               <div class="register__form-field">
                 <label for="pasaporte">Número de Pasaporte <span class="required">*</span></label>
-                <input type="text" id="pasaporte" bind:value={formData.pasaporte}
-                  placeholder="AB123456" class:error={errors.pasaporte} autocomplete="off" />
+                  <input type="text" id="pasaporte" bind:value={formData.pasaporte}
+                      on:input={() => formData.pasaporte = formData.pasaporte.toUpperCase()}
+                      placeholder="AB123456" class:error={errors.pasaporte} autocomplete="off"
+                      style="text-transform:uppercase" />
                 {#if errors.pasaporte}<span class="register__error-text">{errors.pasaporte}</span>{/if}
               </div>
             </div>
 
-            <!-- Fila: País + Teléfono -->
+            <!-- Pais con autocomplete y campo de telefono con codigo de marcado -->
             <div class="register__form-grid">
               <div class="register__form-field">
                 <label for="paisInput">País <span class="required">*</span></label>
@@ -515,6 +674,7 @@
                     disabled={!dialCode}
                     autocomplete="tel" />
                 </div>
+                <!-- Indicador de digitos completados -->
                 {#if formData.phone && !errors.phone}
                   {@const d = formData.phone.replace(/\D/g, '').length}
                   {#if d === phoneDigitCount}
@@ -527,7 +687,7 @@
               </div>
             </div>
 
-            <!-- Ciudad -->
+            <!-- Ciudad con autocomplete (dependiente del pais) -->
             <div class="register__form-field">
               <label for="ciudadInput">Ciudad <span class="required">*</span></label>
               <div class="autocomplete-wrap">
@@ -548,7 +708,7 @@
               {#if errors.city}<span class="register__error-text">{errors.city}</span>{/if}
             </div>
 
-            <!-- Nacionalidades -->
+            <!-- Campo(s) de nacionalidad con autocomplete dinamico -->
             <div class="register__form-field">
               <label for="nac-0">Nacionalidad(es) <span class="required">*</span></label>
               {#each nacionalidades as _nac, i}
@@ -581,7 +741,7 @@
             </div>
           </div>
 
-          <!-- ── Credenciales ── -->
+          <!-- Seccion de credenciales de acceso -->
           <div class="form-section">
             <h3 class="register__section-title">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -591,7 +751,7 @@
               Credenciales de Acceso
             </h3>
 
-            <!-- Username -->
+            <!-- Campo de nombre de usuario -->
             <div class="register__form-field">
               <label for="username">Nombre de Usuario <span class="required">*</span></label>
               <div class="register__input-with-icon">
@@ -609,7 +769,7 @@
               {#if errors.username}<span class="register__error-text">{errors.username}</span>{/if}
             </div>
 
-            <!-- Email -->
+            <!-- Campo de correo electronico -->
             <div class="register__form-field">
               <label for="email">Correo Electrónico <span class="required">*</span></label>
               <div class="register__input-with-icon">
@@ -623,6 +783,7 @@
               {#if errors.email}<span class="register__error-text">{errors.email}</span>{/if}
             </div>
 
+            <!-- Campo de contrasena con indicador de fortaleza y requisitos -->
             <div class="register__form-field">
               <label for="password">Contraseña <span class="required">*</span></label>
               <div class="register__password-field">
@@ -642,6 +803,7 @@
                   {/if}
                 </button>
               </div>
+              <!-- Barra de fortaleza de la contrasena -->
               {#if formData.password && passwordStrength}
                 <div class="strength-indicator">
                   <div class="strength-bar">
@@ -650,6 +812,7 @@
                   <span class="strength-text" style="color:{passwordStrength.color}">{passwordStrength.text}</span>
                 </div>
               {/if}
+              <!-- Lista de requisitos con estado visual -->
               <div class="requirements">
                 <div class="req" class:met={passwordValidation.minLength}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -671,6 +834,7 @@
               {#if errors.password}<span class="register__error-text">{errors.password}</span>{/if}
             </div>
 
+            <!-- Campo de confirmacion de contrasena -->
             <div class="register__form-field">
               <label for="confirmPassword">Confirmar Contraseña <span class="required">*</span></label>
               <div class="register__password-field">
@@ -699,7 +863,7 @@
             </div>
           </div>
 
-          <!-- ── Captcha ── -->
+          <!-- Captcha simulado estilo reCAPTCHA -->
           <div class="captcha-container">
             <div class="captcha-box" class:verified={captchaVerified} class:error={captchaError}>
               <button type="button" class="captcha-label" on:click={handleCaptchaClick}
@@ -743,7 +907,7 @@
             {/if}
           </div>
 
-          <!-- ── Términos ── -->
+          <!-- Checkboxes de terminos, privacidad y marketing -->
           <div class="terms-section">
             <label class="register__checkbox-label" class:error={errors.terms}>
               <input type="checkbox" bind:checked={acceptTerms} />
@@ -762,18 +926,13 @@
               </span>
             </label>
             {#if errors.privacy}<span class="register__error-text">{errors.privacy}</span>{/if}
-
-            <label class="register__checkbox-label">
-              <input type="checkbox" bind:checked={acceptMarketing} />
-              <span class="register__checkbox-custom"></span>
-              <span class="register__checkbox-text">Deseo recibir ofertas y promociones por email (opcional)</span>
-            </label>
           </div>
 
           {#if errors.submit}
             <div class="captcha-error-message">{errors.submit}</div>
           {/if}
 
+          <!-- Boton de envio del formulario -->
           <button type="submit" class="register__submit-btn" disabled={isSubmitting}>
             {#if isSubmitting}
               <svg class="register__spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -790,6 +949,7 @@
             {/if}
           </button>
 
+          <!-- Enlace al login para usuarios con cuenta existente -->
           <div class="register__footer-text">
             ¿Ya tienes una cuenta?
             <button type="button" class="register__link-btn" on:click={() => navigateTo('login')}>

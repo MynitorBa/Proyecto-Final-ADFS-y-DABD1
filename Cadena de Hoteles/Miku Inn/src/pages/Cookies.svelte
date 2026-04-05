@@ -1,10 +1,22 @@
 <script>
+  /**
+   * @file Cookies.svelte
+   * @description Pagina estatica de Politica de Cookies de Miku Inn. Explica que son
+   * las cookies, los tipos que se utilizan en la plataforma (sesion, funcionales y
+   * analiticas) y como el usuario puede gestionarlas desde su navegador.
+   */
+
   // @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Funcion de navegacion inyectada por el router. @type {Function} */
   export let navigateTo;
 </script>
 
+<!-- Pagina informativa de politica de cookies -->
 <div class="info-page">
+
+  <!-- Hero con icono de cookie y titulo de la politica -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">🍪</div>
@@ -20,25 +32,30 @@
       Volver al inicio
     </button>
 
+    <!-- Seccion: definicion de cookies -->
     <div class="info-card">
       <span class="info-badge">🍪 Vigente desde febrero 2026</span>
       <h2 class="info-section-title">¿Qué son las cookies?</h2>
       <p class="info-prose">Las cookies son pequeños archivos de texto que se almacenan en tu dispositivo cuando visitas nuestra plataforma. Nos ayudan a recordar tus preferencias y a mantener tu sesión activa de forma segura.</p>
     </div>
 
+    <!-- Seccion: tipos de cookies utilizadas -->
     <div class="info-card">
       <h2 class="info-section-title">Tipos de cookies que usamos</h2>
       <div class="info-cards-grid">
+        <!-- Cookie de sesion -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">🔐</span>
           <h3 class="info-card__title">Sesión</h3>
           <p class="info-card__text">Mantienen tu sesión iniciada mientras navegas. Se eliminan al cerrar el navegador.</p>
         </div>
+        <!-- Cookie funcional -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">⚙️</span>
           <h3 class="info-card__title">Funcionales</h3>
           <p class="info-card__text">Recuerdan tus preferencias de idioma, país y configuración de búsqueda.</p>
         </div>
+        <!-- Cookie analitica -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">📊</span>
           <h3 class="info-card__title">Analíticas</h3>
@@ -47,6 +64,7 @@
       </div>
     </div>
 
+    <!-- Seccion: como gestionar o deshabilitar las cookies -->
     <div class="info-card">
       <h2 class="info-section-title">Control de cookies</h2>
       <p class="info-prose">Puedes controlar y/o eliminar las cookies desde la configuración de tu navegador. Ten en cuenta que deshabilitar cookies esenciales puede afectar el funcionamiento de la plataforma, especialmente el inicio de sesión y el proceso de reservación.</p>

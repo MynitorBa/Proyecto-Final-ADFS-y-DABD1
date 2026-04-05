@@ -6,18 +6,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Repository para la gestion de reservaciones desde el panel de administracion.
+ * Maneja la consulta de todas las reservaciones y la logica de cancelacion a nivel de base de datos.
+ */
 public class AdminReservacionRepository {
 
-    // ════════════════════════════════════════════════════
-    //  LISTAR TODAS LAS RESERVACIONES (admin)
-    //
-    //  Una fila garantizada por reservación.
-    //  El hotel, fechas y cantidad de habitaciones se
-    //  obtienen con subqueries escalares para evitar que
-    //  el GROUP BY duplique filas cuando una reservación
-    //  tiene habitaciones de distintos hoteles.
-    // ════════════════════════════════════════════════════
-
+    /**
+     * Retorna todas las reservaciones registradas en el sistema con sus datos completos.
+     * Usa subqueries escalares para garantizar una sola fila por reservacion, evitando
+     * duplicados cuando una reservacion tiene habitaciones en distintos hoteles.
+     * @return lista de mapas con los datos de cada reservacion, ordenadas por fecha de creacion descendente.
+     */
     public List<Map<String, Object>> listarTodas() {
         String sql =
                 "SELECT " +
@@ -54,6 +54,7 @@ public class AdminReservacionRepository {
                         "JOIN Usuario       u  ON r.Usuario_ID = u.ID " +
                         "ORDER BY r.Fecha_Creacion DESC";
 
+        // Mapea cada fila del ResultSet a un LinkedHashMap preservando el orden de las columnas
         return DatabaseManager.executeQuery(sql, rs -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id",                   rs.getInt("ID"));
@@ -61,6 +62,7 @@ public class AdminReservacionRepository {
             row.put("total",                rs.getDouble("Total"));
             row.put("estadoId",             rs.getInt("EstadoID"));
             row.put("estado",               rs.getString("Estado").toLowerCase());
+            // Convierte timestamps a String, o null si no tiene valor
             row.put("fechaCreacion",         rs.getTimestamp("Fecha_Creacion") != null
                     ? rs.getTimestamp("Fecha_Creacion").toString() : null);
             row.put("fechaExpiracion",       rs.getTimestamp("Fecha_Expiracion") != null
@@ -73,6 +75,7 @@ public class AdminReservacionRepository {
             row.put("nombreCompleto",        rs.getString("UsuarioNombre") + " " + rs.getString("UsuarioApellido"));
             row.put("correo",               rs.getString("Correo"));
             row.put("hotel",                rs.getString("HotelNombre"));
+            // Convierte fechas de check-in y check-out a String, o null si no aplica
             row.put("checkIn",              rs.getDate("CheckIn")  != null ? rs.getDate("CheckIn").toString()  : null);
             row.put("checkOut",             rs.getDate("CheckOut") != null ? rs.getDate("CheckOut").toString() : null);
             row.put("cantidadHabitaciones",  rs.getInt("CantidadHabitaciones"));
@@ -80,11 +83,11 @@ public class AdminReservacionRepository {
         });
     }
 
-    // ════════════════════════════════════════════════════
-    //  CANCELAR RESERVACIÓN (admin)
-    // ════════════════════════════════════════════════════
-
-    /** Devuelve {id, estadoId, estado} o null si no existe */
+    /**
+     * Busca una reservacion por su ID y retorna sus datos basicos de estado.
+     * @param reservacionId ID de la reservacion a buscar.
+     * @return arreglo con {ID, EstadoID, Estado} o null si no existe.
+     */
     public Object[] obtenerReservacion(int reservacionId) {
         List<Object[]> res = DatabaseManager.executeQuery(
                 "SELECT r.ID, r.EstadoID, er.Estado " +
@@ -101,7 +104,12 @@ public class AdminReservacionRepository {
         return res.isEmpty() ? null : res.get(0);
     }
 
-    /** Pone EstadoID = 4 (Cancelada) y guarda el motivo */
+    /**
+     * Actualiza el estado de una reservacion a Cancelada (EstadoID = 4) y registra el motivo.
+     * Si el motivo es nulo o vacio, se guarda un texto por defecto.
+     * @param reservacionId ID de la reservacion a cancelar.
+     * @param motivo        razon de la cancelacion ingresada por el administrador.
+     */
     public void cancelarReservacion(int reservacionId, String motivo) {
         DatabaseManager.executeUpdate(
                 "UPDATE Reservacion " +

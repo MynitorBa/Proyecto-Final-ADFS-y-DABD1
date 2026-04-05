@@ -1,6 +1,8 @@
 <template>
   <div class="page">
     <Encabezado />
+
+    <!-- Hero con imagen de fondo referente a agentes de viaje -->
     <section class="info-hero" style="background-image: url('/agentes.png')">
       <div class="info-hero-overlay"></div>
       <div class="info-hero-content">
@@ -12,12 +14,17 @@
         <p class="info-hero-subtitle">Lee con atención los términos que rigen el uso de nuestra plataforma.</p>
       </div>
     </section>
+
     <div class="info-wrap">
+      <!-- Botón para volver a la sección de información general -->
       <button class="info-back" @click="$router.push('/informacion')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver a Información
       </button>
+
       <div class="info-section-body">
+
+        <!-- Condiciones de uso de la plataforma -->
         <div class="info-card">
           <span class="info-badge">Vigente desde febrero 2026</span>
           <h2 class="info-section-title">Uso de la plataforma</h2>
@@ -29,6 +36,8 @@
             <li>Cada usuario puede tener una sola cuenta activa</li>
           </ul>
         </div>
+
+        <!-- Condiciones específicas sobre el proceso de reservación -->
         <div class="info-card">
           <h2 class="info-section-title">Reservaciones</h2>
           <ul class="info-list">
@@ -39,6 +48,8 @@
             <li>Las reservaciones grupales comparten el mismo código de reservación de Movent</li>
           </ul>
         </div>
+
+        <!-- Condiciones de pago y nota de cierre -->
         <div class="info-card">
           <h2 class="info-section-title">Pagos</h2>
           <ul class="info-list">
@@ -52,14 +63,21 @@
             Al aceptar estos términos, reconoces haber leído y comprendido todas las condiciones. Para dudas escríbenos a <strong>info@movent.com</strong>
           </div>
         </div>
+
       </div>
     </div>
+
     <Piepagina />
   </div>
-  
+
 </template>
 
 <script setup>
+/**
+ * @file Terminos.vue
+ * @description Vista estática que muestra los términos y condiciones de uso de la
+ * plataforma Movent: reglas de cuenta, reservaciones y política de pagos.
+ */
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/informacion.css'

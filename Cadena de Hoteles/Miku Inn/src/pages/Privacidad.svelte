@@ -1,10 +1,20 @@
 <script>
+  /**
+   * @file Privacidad.svelte
+   * @description Pagina de Politica de Privacidad de Miku Inn. Detalla que datos
+   * personales se recopilan, como se usan, las medidas de seguridad aplicadas y
+   * los derechos que tiene el usuario sobre su informacion.
+   */
+
   // @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
 </script>
 
 <div class="info-page">
+  <!-- Hero de la pagina con titulo e icono de privacidad -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">🔒</div>
@@ -15,11 +25,13 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton para regresar al inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       Volver al inicio
     </button>
 
+    <!-- Bloque: tipos de datos que recopilamos -->
     <div class="info-card">
       <span class="info-badge">🔒 Vigente desde febrero 2026</span>
       <h2 class="info-section-title">Datos que recopilamos</h2>
@@ -33,6 +45,7 @@
       </ul>
     </div>
 
+    <!-- Bloque: usos que le damos a la informacion del usuario -->
     <div class="info-card">
       <h2 class="info-section-title">Cómo usamos tu información</h2>
       <ul class="info-list">
@@ -44,6 +57,7 @@
       </ul>
     </div>
 
+    <!-- Bloque: medidas de seguridad implementadas -->
     <div class="info-card">
       <h2 class="info-section-title">Seguridad de tus datos</h2>
       <p class="info-prose">Implementamos medidas técnicas y organizativas para proteger tu información:</p>
@@ -58,6 +72,7 @@
       </div>
     </div>
 
+    <!-- Bloque: derechos del usuario sobre sus datos personales -->
     <div class="info-card">
       <h2 class="info-section-title">Tus derechos</h2>
       <ul class="info-list">

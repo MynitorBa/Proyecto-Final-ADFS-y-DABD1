@@ -1,8 +1,4 @@
-/* ═══════════════════════════════════════════════
-   WEBSERVICE PAGE — Movent Admin
-   ═══════════════════════════════════════════════ */
-
-/* Status badge en topbar */
+/* Badge de estado del servicio con punto de pulso animado */
 .ws-status-badge {
   display: flex;
   align-items: center;
@@ -16,6 +12,7 @@
   padding: 6px 16px;
 }
 
+/* Punto verde animado que indica servicio activo */
 .ws-status-dot {
   width: 8px;
   height: 8px;
@@ -29,7 +26,7 @@
   50%       { opacity: 0.5; transform: scale(0.85); }
 }
 
-/* ── Endpoint card ─────────────────────────────── */
+/* Tarjeta de endpoint con fondo oscuro y contenido estructurado */
 .ws-endpoint-card {
   background: #1C1A18;
   border-radius: 14px;
@@ -53,6 +50,7 @@
   line-height: 1.6;
 }
 
+/* Fragmentos de código inline en la descripción del endpoint */
 .ws-endpoint-card__desc code {
   background: rgba(255,204,0,0.15);
   color: #FFCC00;
@@ -61,7 +59,7 @@
   font-size: 12px;
 }
 
-/* ── Method badge ──────────────────────────────── */
+/* Badge de método HTTP: POST en amarillo, GET en verde */
 .ws-method {
   font-size: 11px;
   font-weight: 800;
@@ -73,7 +71,7 @@
 .ws-method--post { background: #FFCC00; color: #1C1A18; }
 .ws-method--get  { background: #22c55e; color: #fff; }
 
-/* ── URL display ───────────────────────────────── */
+/* URL del endpoint en monospace y amarillo */
 .ws-endpoint-url {
   font-size: 15px;
   font-weight: 700;
@@ -82,7 +80,7 @@
   flex: 1;
 }
 
-/* ── Auth info ─────────────────────────────────── */
+/* Información de autenticación con filas clave-valor */
 .ws-auth-info {
   display: flex;
   flex-direction: column;
@@ -97,6 +95,7 @@
   font-size: 13px;
 }
 
+/* Etiqueta de la clave de autenticación en gris mayúsculas */
 .ws-auth-key {
   font-weight: 700;
   color: #9a9089;
@@ -113,6 +112,7 @@
   flex: 1;
 }
 
+/* Código inline en los valores de auth */
 .ws-auth-val code {
   background: #f0ebe3;
   color: #1C1A18;
@@ -121,7 +121,7 @@
   font-size: 12px;
 }
 
-/* ── Code blocks ───────────────────────────────── */
+/* Bloque de código con cabecera y cuerpo monospace */
 .ws-code-block {
   border: 1px solid #e8e3dc;
   border-radius: 10px;
@@ -142,6 +142,7 @@
   letter-spacing: 0.05em;
 }
 
+/* Cuerpo del bloque de código en oscuro con texto amarillo */
 .ws-code-block__body {
   background: #1C1A18;
   color: #FFCC00;
@@ -152,6 +153,7 @@
   overflow-x: auto;
 }
 
+/* Fragmento de código inline en beige */
 .ws-code-inline {
   background: #f0ebe3;
   color: #1C1A18;
@@ -161,7 +163,7 @@
   font-family: 'Courier New', monospace;
 }
 
-/* ── JSON block ────────────────────────────────── */
+/* Bloque JSON completo con formato monospace */
 .ws-json-block {
   background: #1C1A18;
   color: #FFCC00;
@@ -174,7 +176,7 @@
   overflow-x: auto;
 }
 
-/* ── Tags ──────────────────────────────────────── */
+/* Tags de tipo de campo: requerido, opcional y JSON */
 .ws-tag {
   font-size: 10px;
   font-weight: 700;
@@ -188,7 +190,7 @@
 .ws-tag--optional { background: #f5f2ec; color: #9a9089; }
 .ws-tag--json     { background: #ccfbf1; color: #0f766e; }
 
-/* ── Fields ────────────────────────────────────── */
+/* Lista de campos del endpoint con descripción y valores */
 .ws-fields { display: flex; flex-direction: column; gap: 14px; }
 
 .ws-field {
@@ -206,6 +208,7 @@
   flex-wrap: wrap;
 }
 
+/* Nombre del campo en monospace */
 .ws-field__name {
   font-size: 13px;
   font-weight: 700;
@@ -213,6 +216,7 @@
   font-family: 'Courier New', monospace;
 }
 
+/* Tipo de dato del campo en azul */
 .ws-field__type {
   font-size: 11px;
   color: #3b82f6;
@@ -234,7 +238,7 @@
   font-family: 'Courier New', monospace;
 }
 
-/* ── Responses ─────────────────────────────────── */
+/* Lista de respuestas posibles con código de estado coloreado */
 .ws-responses { display: flex; flex-direction: column; gap: 10px; }
 
 .ws-response {
@@ -247,6 +251,7 @@
   border: 1px solid #e8e3dc;
 }
 
+/* Badge del código HTTP con color según tipo de respuesta */
 .ws-response__code {
   font-size: 12px;
   font-weight: 800;
@@ -273,7 +278,7 @@
   margin: 0;
 }
 
-/* ── Token row ─────────────────────────────────── */
+/* Fila de token con texto monospace y botón de copiar */
 .ws-token-row {
   display: flex;
   align-items: center;
@@ -290,12 +295,14 @@
   letter-spacing: 0.03em;
 }
 
+/* URL de ejemplo en monospace gris */
 .ws-url-text {
   font-size: 12px;
   color: #9a9089;
   font-family: 'Courier New', monospace;
 }
 
+/* Botón de copiar al portapapeles */
 .ws-copy-btn {
   font-size: 11px;
   font-weight: 600;
@@ -312,13 +319,14 @@
 
 .ws-copy-btn:hover { background: #f5f2ec; color: #1C1A18; }
 
-/* ── Estados grid ──────────────────────────────── */
+/* Grid de estados del webservice en dos columnas */
 .ws-estados-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
+/* Tarjeta de estado con punto de color y descripción */
 .ws-estado-card {
   display: flex;
   align-items: flex-start;
@@ -337,6 +345,7 @@
   margin-top: 4px;
 }
 
+/* Valor del estado en monospace */
 .ws-estado-card__valor {
   font-size: 13px;
   font-weight: 700;
@@ -355,20 +364,19 @@
 
 .ws-estado-card .adm-badge { margin-left: auto; flex-shrink: 0; }
 
+/* Responsive: estados en columna única en móvil */
 @media (max-width: 640px) {
   .ws-estados-grid { grid-template-columns: 1fr; }
   .ws-endpoint-url { font-size: 12px; }
 }
 
-/* ── Estilos extra para Encabezado ─────────────────────────── */
-
-/* Badge rol WebService en el dropdown */
+/* Badge de rol WebService en el dropdown del encabezado */
 .user-dropdown__rol--ws {
   background: #ccfbf1;
   color: #0f766e;
 }
 
-/* Item WebService en el dropdown */
+/* Item de navegación WebService en el dropdown */
 .user-dropdown__item--ws {
   color: #0f766e;
   font-weight: 700;
@@ -377,7 +385,7 @@
   background: #ccfbf1;
 }
 
-/* Link WebService en menú móvil */
+/* Link de WebService en el menú móvil con borde lateral azul */
 .mobile-nav-link--ws {
   display: flex;
   align-items: center;
@@ -391,7 +399,7 @@
   background: #ccfbf1 !important;
 }
 
-/* ── Botones nav Panel Admin / Panel WS ────────────────────── */
+/* Botones de navegación hacia el panel de admin y de webservice */
 .nav-link--panel {
   background: #1C1A18 !important;
   color: #FFCC00 !important;
@@ -412,7 +420,7 @@
   color: #fff !important;
 }
 
-/* ── Sidebar WebService (variante teal) ────────── */
+/* Variante teal del sidebar para el rol WebService */
 .adm-sidebar--ws {
   background: #134e4a;
 }
@@ -426,12 +434,14 @@
   border-color: rgba(255,255,255,0.2);
 }
 
+/* Textos del sidebar WebService en blanco y verde menta */
 .adm-sidebar--ws .adm-sidebar__titulo { color: #fff; }
 .adm-sidebar--ws .adm-sidebar__rol    { color: #99f6e4; }
 
 .adm-sidebar--ws .adm-nav__item       { color: #99f6e4; }
 .adm-sidebar--ws .adm-nav__item:hover { background: rgba(255,255,255,0.08); color: #fff; }
 
+/* Item activo del nav en teal oscuro */
 .adm-sidebar--ws .adm-nav__item.router-link-active,
 .adm-sidebar--ws .adm-nav__item.router-link-exact-active {
   background: #0f766e;

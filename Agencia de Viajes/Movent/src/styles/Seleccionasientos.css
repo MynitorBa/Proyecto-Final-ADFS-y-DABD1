@@ -1,9 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
-   seleccion-asientos.css  —  SeleccionAsientos.vue
-   Paleta MOVENT: #1C1A18 · #FFCC00 · #D40511 · #F5F2EC
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── Variables (paleta MOVENT) ── */
+/* Variables de la paleta Movent definidas en el elemento raíz de la página */
 .asi-page {
   --c-dark:   #1C1A18;
   --c-yellow: #FFCC00;
@@ -24,7 +19,7 @@
   padding: 0 20px;
 }
 
-/* ── Overlay ── */
+/* Overlay de carga con blur de fondo */
 .asi-overlay {
   position: fixed; inset: 0;
   background: rgba(28,26,24,.78);
@@ -41,7 +36,7 @@
 .asi-overlay__titulo { font-size: 18px; font-weight: 800; color: #1C1A18; margin: 0; }
 .asi-overlay__msg    { font-size: 13px; color: #5a5047; line-height: 1.6; margin: 0; }
 
-/* ── Header ── */
+/* Encabezado con botón de volver, título y timer */
 .asi-header {
   display: flex; align-items: flex-start; gap: 16px;
   margin-bottom: 20px; flex-wrap: wrap;
@@ -59,7 +54,7 @@
 .asi-titulo__main { font-size: 20px; font-weight: 800; color: #1C1A18; margin: 0 0 4px; }
 .asi-titulo__sub  { font-size: 12px; color: var(--c-muted); margin: 0; }
 
-/* Timer */
+/* Timer de reserva con estados de advertencia y urgencia */
 .asi-timer {
   display: inline-flex; align-items: center; gap: 6px;
   background: #1C1A18; color: #FFCC00; border-radius: 20px;
@@ -71,7 +66,7 @@
 .asi-timer--urgente { background: #7f1d1d; color: #ff6b6b; animation: asi-pulse .8s ease-in-out infinite; }
 @keyframes asi-pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
 
-/* ── Progreso multi-vuelo ── */
+/* Progreso de selección para vuelos múltiples */
 .asi-vuelos-prog {
   display: flex; align-items: center; justify-content: center;
   gap: 0; padding: 10px 20px 16px; flex-wrap: wrap; row-gap: 8px;
@@ -92,7 +87,7 @@
 .asi-vuelos-prog__linea { width: 40px; height: 2px; background: var(--c-border); margin: 0 8px; }
 .asi-vuelos-prog__linea--completa { background: #16a34a; }
 
-/* ── Estado carga / error ── */
+/* Estado de carga o error del mapa de asientos */
 .asi-estado {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
   padding: 60px 20px; text-align: center;
@@ -105,7 +100,7 @@
   color: #D40511; background: #fff5f5;
 }
 
-/* Spinners */
+/* Spinners de carga: grande para la página y pequeño inline */
 .asi-spinner {
   width: 40px; height: 40px;
   border: 3px solid var(--c-border);
@@ -121,7 +116,7 @@
 }
 @keyframes asi-spin { to { transform: rotate(360deg); } }
 
-/* ── Body: mapa + sidebar ── */
+/* Layout del cuerpo: mapa del avión + sidebar de pasajeros */
 .asi-body {
   display: grid;
   grid-template-columns: 1fr 290px;
@@ -129,9 +124,7 @@
   align-items: start;
 }
 
-/* ══════════════════════════════════════════════════════════
-   AVIÓN
-══════════════════════════════════════════════════════════ */
+/* Mapa del avión: nariz, cuerpo y cola SVG */
 .asi-mapa-wrap {
   display: flex; flex-direction: column; align-items: center;
 }
@@ -140,6 +133,7 @@
 .asi-avion-nariz svg,
 .asi-avion-cola  svg { width: 100%; height: auto; display: block; }
 
+/* Cuerpo del avión con bordes dorados y columnas de asientos */
 .asi-avion-cuerpo {
   width: 100%; max-width: 480px;
   background: #1C1A18;
@@ -149,7 +143,7 @@
   display: flex; flex-direction: column; gap: 0;
 }
 
-/* Cabecera columnas */
+/* Cabecera con letras de columna (A, B, C, D...) */
 .asi-cols-header {
   display: flex; align-items: center; gap: 4px;
   padding: 6px 0 4px; justify-content: center;
@@ -160,7 +154,7 @@
   color: var(--c-gold); flex-shrink: 0;
 }
 
-/* Zona labels */
+/* Etiqueta de zona (ejecutiva / turista) */
 .asi-zona-lbl {
   display: flex; justify-content: center; padding: 6px 0 4px;
 }
@@ -168,18 +162,20 @@
   font-size: 9px; font-weight: 800; text-transform: uppercase;
   letter-spacing: 2px; padding: 3px 12px; border-radius: 20px;
 }
+/* Zona ejecutiva con color dorado */
 .asi-zona-lbl--eje span {
   color: #c9a96e;
   background: rgba(201,169,110,.12);
   border: 1px solid rgba(201,169,110,.25);
 }
+/* Zona turista con color azul grisáceo */
 .asi-zona-lbl--tur span {
   color: #8fa8c8;
   background: rgba(59,79,107,.15);
   border: 1px solid rgba(59,79,107,.25);
 }
 
-/* Separador cabina */
+/* Separador entre cabinas ejecutiva y turista */
 .asi-separador {
   display: flex; align-items: center; gap: 8px; padding: 8px 0;
 }
@@ -189,7 +185,7 @@
   color: var(--c-gold); opacity: .6; white-space: nowrap;
 }
 
-/* Filas */
+/* Filas del mapa de asientos */
 .asi-fila {
   display: flex; align-items: center; gap: 4px;
   padding: 2px 0; justify-content: center;
@@ -200,11 +196,10 @@
   color: var(--c-gold); opacity: .5; flex-shrink: 0;
   margin-right: 4px; font-variant-numeric: tabular-nums;
 }
+/* Espacio del pasillo central entre columnas */
 .asi-pasillo { width: 20px; flex-shrink: 0; }
 
-/* ══════════════════════════════════════════════════════════
-   ASIENTOS
-══════════════════════════════════════════════════════════ */
+/* Asiento base con tamaño y transición */
 .asi-seat {
   width: 34px; height: 30px;
   border-radius: 4px 4px 2px 2px;
@@ -214,9 +209,10 @@
   display: flex; align-items: center; justify-content: center;
   font-family: inherit;
 }
+/* Asiento de clase ejecutiva más grande */
 .asi-seat--eje { width: 40px; height: 36px; border-radius: 6px 6px 3px 3px; }
 
-/* Libre */
+/* Estado libre: fondo verde oscuro */
 .asi-seat--libre { background: #2c3a2c; border: 1px solid #3d5c3d; }
 .asi-seat--libre:hover:not(:disabled) {
   background: #3d5c3d; border-color: #5c8c5c;
@@ -224,7 +220,7 @@
   box-shadow: 0 4px 10px rgba(60,100,60,.4);
 }
 
-/* Seleccionado (propio) */
+/* Estado seleccionado: amarillo con borde y elevación */
 .asi-seat--seleccionado {
   background: #FFCC00 !important;
   border: 1px solid #d4aa00 !important;
@@ -233,24 +229,25 @@
 }
 .asi-seat--seleccionado:hover:not(:disabled) { background: #e6b800 !important; }
 
+/* Número del asiento visible en seleccionado */
 .asi-seat__num { font-size: 9px; font-weight: 800; color: #1C1A18; line-height: 1; }
 
-/* Ocupado */
+/* Estado ocupado: rojo muy oscuro, no clickeable */
 .asi-seat--ocupado {
   background: #2a1e1e; border: 1px solid #4a2c2c;
   cursor: not-allowed; opacity: .7;
 }
 
-/* Bloqueado (otra clase) */
+/* Estado bloqueado: clase diferente, casi invisible */
 .asi-seat--bloqueado {
   background: #1e1c18; border: 1px solid #2c2a22;
   cursor: not-allowed; opacity: .3;
 }
 
-/* Vacío */
+/* Asiento vacío (espacio sin asiento) */
 .asi-seat--vacio { visibility: hidden; }
 
-/* Muestra en leyenda */
+/* Variante pequeña para usar en la leyenda */
 .asi-seat--muestra {
   width: 22px !important; height: 18px !important;
   border-radius: 3px 3px 1px 1px;
@@ -258,15 +255,13 @@
   transform: none !important; box-shadow: none !important;
 }
 
-/* ══════════════════════════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════════════════════════ */
+/* Sidebar sticky con progreso, lista de pasajeros, leyenda y botón */
 .asi-sidebar {
   position: sticky; top: 24px;
   display: flex; flex-direction: column; gap: 16px;
 }
 
-/* Progreso */
+/* Tarjeta de progreso con barra de completado */
 .asi-progreso {
   background: #fff; border-radius: 12px;
   border: 1px solid var(--c-border);
@@ -296,7 +291,7 @@
 }
 .asi-progreso__error { font-size: 11px; color: #D40511; margin: 8px 0 0; font-weight: 600; }
 
-/* Lista pasajeros */
+/* Lista de pasajeros con estado activo/completado */
 .asi-pax-lista {
   background: #fff; border-radius: 12px;
   border: 1px solid var(--c-border);
@@ -311,6 +306,7 @@
 .asi-pax-item:hover            { border-color: #d0c8bd; }
 .asi-pax-item--activo          { border-color: #FFCC00; background: rgba(255,204,0,.05); }
 .asi-pax-item--completo        { border-color: #16a34a; background: rgba(22,163,74,.04); }
+/* Número del pasajero con estado de color */
 .asi-pax-item__num {
   width: 26px; height: 26px; border-radius: 50%;
   background: var(--c-border);
@@ -331,7 +327,7 @@
 .asi-pax-item--completo .asi-pax-item__asiento { color: #16a34a; }
 .asi-pax-item__clase   { font-size: 10px; color: var(--c-muted); }
 
-/* Leyenda */
+/* Leyenda de estados del mapa con muestras de asientos */
 .asi-leyenda {
   background: #fff; border-radius: 12px;
   border: 1px solid var(--c-border); padding: 14px 16px;
@@ -343,7 +339,7 @@
 .asi-leyenda__items { display: flex; flex-direction: column; gap: 8px; }
 .asi-leyenda__item  { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #1C1A18; }
 
-/* Botón continuar */
+/* Botón continuar: deshabilitado hasta completar todos los asientos */
 .asi-continuar {
   width: 100%; padding: 14px 18px;
   background: var(--c-border); color: var(--c-muted);
@@ -351,6 +347,7 @@
   font-size: 12px; font-weight: 800; text-transform: uppercase;
   letter-spacing: 1.5px; cursor: not-allowed; transition: all .25s ease;
 }
+/* Estado listo con hover amarillo */
 .asi-continuar--listo {
   background: #1C1A18; color: #fff; cursor: pointer;
   box-shadow: 0 8px 24px rgba(28,26,24,.2);
@@ -361,7 +358,7 @@
   box-shadow: 0 12px 32px rgba(255,204,0,.35);
 }
 
-/* Botones utilitarios */
+/* Botones utilitarios del módulo */
 .asi-btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 6px; padding: 10px 20px; border-radius: 8px;
@@ -373,12 +370,13 @@
 .asi-btn--ghost              { background: transparent; border: 1px solid var(--c-border); color: #5a5047; }
 .asi-btn--ghost:hover        { background: var(--c-bg); }
 
-/* ── Responsive ── */
+/* Responsive: sidebar en grid de dos columnas en tablet */
 @media (max-width: 960px) {
   .asi-body    { grid-template-columns: 1fr; }
   .asi-sidebar { position: static; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .asi-continuar { grid-column: 1 / -1; }
 }
+/* Responsive: asientos más pequeños en móvil */
 @media (max-width: 600px) {
   .asi-sidebar       { grid-template-columns: 1fr; }
   .asi-avion-cuerpo  { padding: 4px 8px 10px; }

@@ -1,17 +1,14 @@
-/* ═══════════════════════════════════════════════
-   ADMIN PANEL — Movent
-   Paleta: #1C1A18 | #FFCC00 | #D40511 | #F5F2EC
-   ═══════════════════════════════════════════════ */
-
+/* Página base del panel de administración */
 .adm-page { background: #F5F2EC; }
 
+/* Layout principal con sidebar fijo y área de contenido */
 .adm-layout {
   display: grid;
   grid-template-columns: 220px 1fr;
   align-items: stretch;
 }
 
-/* ══ SIDEBAR ══════════════════════════════════ */
+/* Sidebar de navegación lateral pegajosa */
 .adm-sidebar {
   background: #1C1A18;
   padding: 24px 16px;
@@ -25,6 +22,7 @@
   align-self: stretch;
 }
 
+/* Encabezado del sidebar con logo y nombre del rol */
 .adm-sidebar__head {
   display: flex;
   align-items: center;
@@ -34,6 +32,7 @@
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
+/* Ícono con fondo amarillo translúcido para el logo */
 .adm-sidebar__logo {
   width: 38px; height: 38px;
   background: rgba(255,204,0,0.12);
@@ -46,8 +45,10 @@
 .adm-sidebar__titulo { font-size: 13px; font-weight: 700; color: #fff; margin: 0 0 2px; }
 .adm-sidebar__rol    { font-size: 11px; color: #9a8e80; margin: 0; }
 
+/* Lista de ítems de navegación del sidebar */
 .adm-nav { display: flex; flex-direction: column; gap: 4px; }
 
+/* Ítem de navegación con hover y estado activo amarillo */
 .adm-nav__item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 10px;
@@ -63,7 +64,7 @@
 .adm-nav__item.router-link-active svg,
 .adm-nav__item.router-link-exact-active svg { stroke: #1C1A18; }
 
-/* ══ MAIN ═════════════════════════════════════ */
+/* Área principal de contenido con padding generoso */
 .adm-main {
   padding: 28px 28px 60px;
   min-width: 0;
@@ -72,6 +73,7 @@
   gap: 20px;
 }
 
+/* Barra superior con título, subtítulo y acciones */
 .adm-topbar {
   display: flex; align-items: flex-start;
   justify-content: space-between; gap: 16px; flex-wrap: wrap;
@@ -81,6 +83,7 @@
 .adm-topbar__sub    { font-size: 13px; color: #9a9089; margin: 0; }
 .adm-topbar__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+/* Chip de fecha con borde suave en la topbar */
 .adm-topbar__fecha {
   display: flex; align-items: center; gap: 6px;
   font-size: 13px; color: #6a6058;
@@ -88,7 +91,7 @@
   border-radius: 8px; padding: 7px 14px; white-space: nowrap;
 }
 
-/* ══ SEARCH ═══════════════════════════════════ */
+/* Buscador con icono integrado */
 .adm-search {
   display: flex; align-items: center; gap: 8px;
   background: #fff; border: 1px solid #e0d9cf;
@@ -101,7 +104,7 @@
   font-family: inherit; width: 200px; background: transparent;
 }
 
-/* ══ KPIs ═════════════════════════════════════ */
+/* Grid de KPIs en 3 columnas con variante oscura */
 .adm-kpis {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -118,6 +121,7 @@
 .adm-kpi--dark .adm-kpi__lbl { color: #9a8e80; }
 .adm-kpi--dark .adm-kpi__val { color: #fff; }
 
+/* Ícono del KPI con variantes de color */
 .adm-kpi__icon {
   width: 44px; height: 44px; border-radius: 10px;
   background: #f5f2ec;
@@ -133,7 +137,7 @@
 .adm-kpi__lbl { font-size: 12px; color: #9a9089; margin: 0 0 4px; display: block; }
 .adm-kpi__val { font-size: 24px; font-weight: 800; color: #1C1A18; margin: 0; display: block; line-height: 1; }
 
-/* ══ ESTADOS ══════════════════════════════════ */
+/* Grid de estados de reservas con barra de progreso */
 .adm-estados {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -156,10 +160,10 @@
 .adm-estado__bar { height: 5px; background: #f0ebe3; border-radius: 10px; overflow: hidden; }
 .adm-estado__bar-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
 
-/* ══ ROW2 ═════════════════════════════════════ */
+/* Fila de dos columnas para secciones del dashboard */
 .adm-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-/* ══ CARDS ════════════════════════════════════ */
+/* Tarjeta base con borde y sombra mínima */
 .adm-card {
   background: #fff; border: 1px solid #e8e3dc;
   border-radius: 14px; padding: 20px;
@@ -189,7 +193,7 @@
 .adm-card__link:hover { color: #D40511; }
 .adm-card__empty { font-size: 13px; color: #9a9089; text-align: center; padding: 24px 0; }
 
-/* ══ PROVEEDORES (dashboard) ══════════════════ */
+/* Lista de proveedores en el dashboard */
 .adm-proveedores { display: flex; flex-direction: column; gap: 10px; }
 
 .adm-proveedor {
@@ -201,6 +205,7 @@
 .adm-proveedor:last-child { border-bottom: none; }
 .adm-proveedor__info { display: flex; align-items: center; gap: 10px; }
 
+/* Ícono del tipo de proveedor (aerolínea u hotel) */
 .adm-proveedor__tipo-icon {
   width: 28px; height: 28px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -212,7 +217,7 @@
 .adm-proveedor__nombre { font-size: 13px; font-weight: 600; color: #1C1A18; display: block; }
 .adm-proveedor__url    { font-size: 11px; color: #9a9089; display: block; }
 
-/* ══ TABLA ════════════════════════════════════ */
+/* Tabla de datos con encabezado en gris claro y hover por fila */
 .adm-tabla-wrap { overflow-x: auto; }
 
 .adm-tabla { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -233,6 +238,7 @@
 .adm-tabla tbody tr:last-child td { border-bottom: none; }
 .adm-tabla tbody tr:hover td { background: #fdfcfa; }
 
+/* Badge de código de reserva en formato oscuro/amarillo */
 .adm-tabla__codigo {
   font-size: 12px; font-weight: 700;
   background: #1C1A18; color: #FFCC00;
@@ -241,6 +247,7 @@
 
 .adm-tabla__user { display: flex; align-items: center; gap: 10px; }
 
+/* Avatar circular con inicial del usuario */
 .adm-tabla__avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: #FFCC00; color: #1C1A18;
@@ -252,6 +259,7 @@
 .adm-tabla__pais   { font-size: 11px; color: #9a9089; display: block; }
 .adm-tabla__correo { color: #6a6058; }
 
+/* Badge de tipo de reserva con colores por categoría */
 .adm-tabla__tipo {
   font-size: 11px; font-weight: 700;
   padding: 3px 10px; border-radius: 20px; text-transform: capitalize;
@@ -261,7 +269,7 @@
 .adm-tabla__tipo--hotel   { background: #f5f2ec; color: #3a3530; }
 .adm-tabla__tipo--paquete { background: #D40511; color: #fff; }
 
-/* ══ FILTROS TABS ═════════════════════════════ */
+/* Filtros en forma de tabs/pills por rol */
 .adm-filtros-rol { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .adm-filtro-rol {
@@ -284,7 +292,7 @@
 .adm-filtro-rol--active .adm-filtro-rol__n { background: rgba(255,255,255,0.2); }
 .adm-filtro-rol:not(.adm-filtro-rol--active) .adm-filtro-rol__n { background: #f0ebe3; color: #1C1A18; }
 
-/* ══ BADGES ════════════════════════════════════ */
+/* Badges de estado con colores semánticos */
 .adm-badge {
   font-size: 11px; font-weight: 700;
   padding: 4px 12px; border-radius: 20px; white-space: nowrap;
@@ -304,13 +312,14 @@
 .adm-badge--rol-2 { background: #1C1A18; color: #FFCC00; }
 .adm-badge--rol-3 { background: #dbeafe; color: #1e40af; }
 
-/* ══ PROVEEDORES GRID ═════════════════════════ */
+/* Grid de tarjetas de proveedores con layout adaptable */
 .adm-proveedores-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
 
+/* Tarjeta de proveedor con hover elevado */
 .adm-prov-card {
   background: #fff; border: 1px solid #e8e3dc;
   border-radius: 14px; padding: 20px;
@@ -345,18 +354,20 @@
 .adm-prov-card__url    { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .adm-prov-card__apikey { font-family: monospace; color: #9a9089; }
 
+/* Pie de la tarjeta de proveedor con separador */
 .adm-prov-card__foot {
   display: flex; gap: 8px; flex-wrap: wrap;
   padding-top: 10px; border-top: 1px solid #f0ebe3;
 }
 
-/* ══ PAQUETES GRID ════════════════════════════ */
+/* Grid de tarjetas de paquetes turísticos */
 .adm-paquetes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 16px;
 }
 
+/* Tarjeta de paquete con franja oscura de encabezado */
 .adm-paq-card {
   background: #fff; border: 1px solid #e8e3dc;
   border-radius: 14px; overflow: hidden;
@@ -373,6 +384,7 @@
 
 .adm-paq-card__nombre { font-size: 14px; font-weight: 700; color: #fff; }
 
+/* Sección de vuelo u hotel dentro de la tarjeta */
 .adm-paq-card__seccion {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 18px; border-bottom: 1px solid #f0ebe3;
@@ -391,6 +403,7 @@
 .adm-paq-card__seccion-val  { font-size: 13px; font-weight: 700; color: #1C1A18; }
 .adm-paq-card__seccion-meta { font-size: 11px; color: #9a9089; }
 
+/* Bloque de precios con tachado y precio especial */
 .adm-paq-card__precios {
   padding: 14px 18px; display: flex; flex-direction: column; gap: 6px;
   border-bottom: 1px solid #f0ebe3;
@@ -427,7 +440,7 @@
   border-radius: 8px; padding: 10px 14px; margin-top: 8px;
 }
 
-/* ══ MODAL ════════════════════════════════════ */
+/* Modal con overlay oscuro y animación de entrada */
 .adm-modal-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.45); z-index: 200;
@@ -456,6 +469,7 @@
 
 .adm-modal__title { font-size: 16px; font-weight: 700; color: #1C1A18; margin: 0; }
 
+/* Botón de cierre del modal */
 .adm-modal__close {
   background: none; border: none; cursor: pointer;
   color: #9a9089; padding: 4px; border-radius: 6px;
@@ -464,6 +478,7 @@
 
 .adm-modal__close:hover { background: #f5f2ec; color: #1C1A18; }
 
+/* Bloque de usuario dentro del modal con fondo suave */
 .adm-modal__user {
   display: flex; align-items: center; gap: 12px;
   background: #f5f2ec; border-radius: 10px;
@@ -482,11 +497,13 @@
 .adm-modal__body   { padding: 20px 24px; }
 .adm-modal__lbl    { font-size: 12px; font-weight: 700; color: #9a9089; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; }
 
+/* Pie del modal con botones alineados a la derecha */
 .adm-modal__foot {
   display: flex; align-items: center; justify-content: flex-end;
   gap: 10px; padding: 16px 24px; border-top: 1px solid #f0ebe3;
 }
 
+/* Grid de tarjetas para seleccionar rol */
 .adm-roles-grid { display: flex; flex-direction: column; gap: 10px; }
 
 .adm-rol-card {
@@ -511,7 +528,7 @@
 .adm-rol-card__nombre { font-size: 13px; font-weight: 700; color: #1C1A18; margin: 0 0 2px; display: block; }
 .adm-rol-card__desc   { font-size: 11px; color: #9a9089; margin: 0; display: block; }
 
-/* ══ FORMULARIOS ══════════════════════════════ */
+/* Formularios en dos columnas con campos adaptables */
 .adm-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 .adm-field { display: flex; flex-direction: column; gap: 5px; }
@@ -522,6 +539,7 @@
   text-transform: uppercase; letter-spacing: 0.05em;
 }
 
+/* Input base del formulario admin con foco amarillo */
 .adm-field__input {
   border: 1px solid #e0d9cf; border-radius: 8px; padding: 9px 12px;
   font-size: 13px; color: #1C1A18; background: #fff;
@@ -532,6 +550,7 @@
 .adm-field__input:focus { border-color: #FFCC00; box-shadow: 0 0 0 2px rgba(255,204,0,0.15); }
 .adm-field__textarea { resize: vertical; min-height: 80px; }
 
+/* Input de contraseña con botón toggle visible */
 .adm-field__pass { position: relative; display: flex; align-items: center; }
 .adm-field__pass .adm-field__input { padding-right: 40px; }
 
@@ -542,6 +561,7 @@
 }
 .adm-field__pass-toggle:hover { color: #1C1A18; }
 
+/* Input con prefijo de moneda u otro símbolo */
 .adm-field__prefix { display: flex; align-items: center; border: 1px solid #e0d9cf; border-radius: 8px; overflow: hidden; }
 .adm-field__prefix span {
   padding: 9px 10px; background: #f5f2ec; font-size: 13px; font-weight: 600;
@@ -550,12 +570,13 @@
 .adm-field__prefix .adm-field__input { border: none; border-radius: 0; flex: 1; }
 .adm-field__prefix .adm-field__input:focus { box-shadow: none; }
 
+/* Mensaje de error en formularios */
 .adm-form-error {
   font-size: 12px; color: #D40511; background: #fde8e8;
   border-radius: 8px; padding: 8px 12px; margin-top: 8px;
 }
 
-/* ══ BOTONES ══════════════════════════════════ */
+/* Botones del sistema admin con variantes de color */
 .adm-btn {
   display: inline-flex; align-items: center; justify-content: center;
   gap: 6px; padding: 9px 18px; border-radius: 8px;
@@ -584,7 +605,7 @@
 .adm-btn--danger-ghost:hover { background: #fde8e8; }
 .adm-btn--danger-ghost:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* ══ TOAST ════════════════════════════════════ */
+/* Toast de notificación fijo en esquina inferior derecha */
 .adm-toast {
   position: fixed; bottom: 28px; right: 28px;
   display: flex; align-items: center; gap: 10px;
@@ -602,13 +623,14 @@
 .adm-toast--ok  { background: #1C1A18; }
 .adm-toast--err { background: #D40511; }
 
-/* ══ EMPTY / LOADING ══════════════════════════ */
+/* Estado vacío centrado con icono y texto descriptivo */
 .adm-empty {
   display: flex; flex-direction: column; align-items: center;
   gap: 14px; padding: 60px 20px; text-align: center; color: #9a9089;
   background: #fff; border-radius: 14px; border: 1px solid #e8e3dc;
 }
 
+/* Spinner de carga animado */
 .adm-spinner {
   width: 36px; height: 36px;
   border: 3px solid #e8e3dc;
@@ -621,11 +643,7 @@
 
 @keyframes adm-spin { to { transform: rotate(360deg); } }
 
-/* ══════════════════════════════════════════════
-   DISTRIBUCIÓN / CHARTS (Dashboard)
-   ══════════════════════════════════════════════ */
-
-/* Gráfica de barras horizontales */
+/* Gráfica de barras horizontales de distribución */
 .adm-distrib { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
 
 .adm-distrib__item { display: flex; flex-direction: column; gap: 6px; }
@@ -651,13 +669,14 @@
   height: 8px; background: #f0ebe3; border-radius: 4px; overflow: hidden;
 }
 
+/* Barra de progreso con animación suave */
 .adm-distrib__bar {
   height: 100%; border-radius: 4px;
   transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 2px;
 }
 
-/* Mini métricas debajo del chart */
+/* Mini métricas resumen debajo del gráfico */
 .adm-mini-metrics {
   display: flex; gap: 0;
   border: 1px solid #e8e3dc; border-radius: 10px; overflow: hidden;
@@ -681,7 +700,7 @@
   text-transform: uppercase; letter-spacing: 0.06em;
 }
 
-/* ══ RESPONSIVE ═══════════════════════════════ */
+/* Responsive para pantallas medianas y pequeñas */
 @media (max-width: 1200px) {
   .adm-kpis    { grid-template-columns: repeat(3, 1fr); }
   .adm-estados { grid-template-columns: repeat(3, 1fr); }
@@ -720,9 +739,7 @@
   .adm-topbar { flex-direction: column; align-items: flex-start; }
 }
 
-/* ══════════════════════════════════════════════
-   DONUT CHART (SVG)
-   ══════════════════════════════════════════════ */
+/* Gráfico donut SVG con leyenda lateral */
 .adm-chart-wrap { display: flex; justify-content: center; }
 
 .adm-donut {
@@ -768,9 +785,7 @@
   text-align: right;
 }
 
-/* ══════════════════════════════════════════════
-   BARRAS VERTICALES
-   ══════════════════════════════════════════════ */
+/* Gráfico de barras verticales por mes */
 .adm-vchart {
   display: flex;
   flex-direction: column;
@@ -831,11 +846,7 @@
   text-align: center;
 }
 
-/* ══════════════════════════════════════════════
-   FINANZAS / MÉTRICAS
-   ══════════════════════════════════════════════ */
-
-/* Bloque de 3 tipos (vuelos / hoteles / paquetes) */
+/* Bloque de finanzas dividido por tipo de reserva */
 .adm-fin-tipos {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -848,6 +859,7 @@
   border: 1px solid #e8e3dc;
 }
 
+/* Encabezado de tipo con color por categoría */
 .adm-fin-tipo__head {
   display: flex;
   align-items: center;
@@ -894,6 +906,7 @@
   color: #1C1A18;
 }
 
+/* Valor de ganancia resaltado en verde */
 .adm-fin-tipo__val--gain {
   color: #166534;
   background: #dcfce7;
@@ -902,7 +915,7 @@
   font-size: 13px;
 }
 
-/* Ganancia inline en tabla */
+/* Badge de ganancia inline en la tabla de finanzas */
 .adm-fin-gain {
   font-size: 12px;
   font-weight: 700;
@@ -918,7 +931,7 @@
   font-size: 12px;
 }
 
-/* Fila expandible de detalle */
+/* Fila expandible de detalle financiero con borde amarillo */
 .adm-fin-detalle-row td {
   padding: 0 !important;
   border-bottom: 2px solid #FFCC00 !important;
@@ -977,6 +990,7 @@
   margin-top: 2px;
 }
 
+/* Responsive para finanzas en pantalla angosta */
 @media (max-width: 900px) {
   .adm-fin-tipos { grid-template-columns: 1fr; }
 }

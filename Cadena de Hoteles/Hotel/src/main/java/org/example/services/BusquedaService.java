@@ -11,17 +11,31 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service de busqueda de hoteles para usuarios web.
+ * Localiza hoteles por ciudad, guarda el registro de busqueda
+ * y calcula combinaciones de habitaciones para grupos grandes.
+ */
 public class BusquedaService {
 
     private final BusquedaRepository busquedaRepository = new BusquedaRepository();
 
+    /**
+     * Busca hoteles disponibles segun los criterios del request.
+     * Valida que la ciudad exista, guarda la busqueda y enriquece
+     * cada hotel con imagenes, amenidades, tipos de habitacion y combinaciones.
+     * @param request   criterios: ciudad, pais, fechas y cantidad de personas.
+     * @param usuarioId ID del usuario que realiza la busqueda, puede ser null si no hay sesion.
+     * @return lista de hoteles con toda la informacion necesaria para mostrar resultados.
+     * @throws IllegalArgumentException si la ciudad no existe en la base de datos.
+     */
     public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, Integer usuarioId) {
 
         Integer ciudadId = busquedaRepository.buscarCiudadId(request.getCiudad(), request.getPais());
         if (ciudadId == null) {
             throw new IllegalArgumentException(
-                    "No se encontró la ciudad '" + request.getCiudad() +
-                            "' en el país '" + request.getPais() + "'"
+                    "No se encontro la ciudad '" + request.getCiudad() +
+                            "' en el pais '" + request.getPais() + "'"
             );
         }
 
@@ -56,7 +70,7 @@ public class BusquedaService {
             }
             hotel.setTiposHabitacion(tiposCumplen);
 
-            // Todos los tipos disponibles (capacidad >= 1) para combinaciones
+            // Todos los tipos disponibles (capacidad >= 1) para calcular combinaciones
             List<TipoHabitacionResultadoDTO> todosLosTipos = busquedaRepository
                     .buscarTiposHabitacionDisponibles(
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
@@ -66,7 +80,7 @@ public class BusquedaService {
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
 
-            // Stock por capacidad: cuántas habitaciones físicas hay de cada tipo
+            // Stock por capacidad: cuantas habitaciones fisicas hay de cada tipo
             Map<Integer, Integer> stockPorCapacidad = new HashMap<>();
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
                 if (tipo.getCapacidadMaxima() < request.getCantidadPersonas()) {
@@ -78,14 +92,14 @@ public class BusquedaService {
                 }
             }
 
-            // Tipos agrupados por capacidad (solo los que no cumplen solos)
+            // Tipos agrupados por capacidad (solo los que no cumplen solos la cantidad pedida)
             Map<Integer, List<TipoHabitacionResultadoDTO>> tiposPorCapacidad = todosLosTipos.stream()
                     .filter(t -> t.getCapacidadMaxima() < request.getCantidadPersonas())
                     .collect(Collectors.groupingBy(TipoHabitacionResultadoDTO::getCapacidadMaxima));
 
             hotel.setTiposHabitacionPorCapacidad(tiposPorCapacidad);
 
-            // Combinaciones (misma lógica, ahora con stock real de habitaciones físicas)
+            // Combinaciones posibles usando el stock real de habitaciones fisicas
             List<List<Integer>> combinaciones = CombinacionHelper.calcular(
                     request.getCantidadPersonas(), stockPorCapacidad);
             hotel.setCombinacionesNumericas(combinaciones);

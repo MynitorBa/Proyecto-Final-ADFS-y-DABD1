@@ -1,27 +1,31 @@
+/* Footer con gradiente oscuro que se pega al fondo del layout */
 .footer {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   color: #e2e8f0;
   margin-top: auto;
 }
 
+/* Sección principal del footer con padding y separador inferior */
 .footer-main {
   padding: 3rem 0 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Contenedor con ancho máximo y padding lateral */
 .footer-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
+/* Grid de 4 columnas: empresa, links, servicios y contacto */
 .footer-main .footer-container {
   display: grid;
   grid-template-columns: 1.4fr 0.8fr 1fr 1.5fr;
   gap: 2.5rem;
 }
 
-/* Company */
+/* Logo invertido a blanco para el fondo oscuro */
 .footer-logo {
   height: 160px;
   width: auto;
@@ -31,6 +35,7 @@
   display: block;
 }
 
+/* Descripción de la empresa */
 .company-description {
   color: #cbd5e1;
   line-height: 1.6;
@@ -38,8 +43,10 @@
   margin-bottom: 1.5rem;
 }
 
+/* Íconos de redes sociales en fila */
 .social-links { display: flex; gap: 0.6rem; }
 
+/* Ícono de red social con fondo semitransparente y hover con gradiente */
 .social-link {
   width: 36px;
   height: 36px;
@@ -59,9 +66,10 @@
 
 .social-link svg { width: 18px; height: 18px; }
 
-/* Sections */
+/* Sección de columna del footer */
 .footer-section { display: flex; flex-direction: column; }
 
+/* Título de cada columna del footer */
 .footer-title {
   color: #f8fafc;
   font-size: 1rem;
@@ -70,6 +78,7 @@
   letter-spacing: 0.02em;
 }
 
+/* Lista de enlaces de navegación del footer */
 .footer-links {
   list-style: none;
   padding: 0;
@@ -79,6 +88,7 @@
   gap: 0.6rem;
 }
 
+/* Enlace del footer con efecto de sangría en hover */
 .footer-link {
   display: flex;
   align-items: center;
@@ -91,9 +101,10 @@
 
 .footer-link:hover { color: #667eea; padding-left: 4px; }
 
-/* Contact */
+/* Sección de contacto con padding izquierdo extra */
 .contact-section { padding-left: 1rem; }
 
+/* Lista de ítems de contacto */
 .contact-items {
   display: flex;
   flex-direction: column;
@@ -103,6 +114,7 @@
 
 .contact-item { display: flex; align-items: flex-start; gap: 0.75rem; }
 
+/* Ícono de contacto con fondo azul tenue */
 .contact-icon {
   width: 36px;
   height: 36px;
@@ -124,7 +136,7 @@
 
 .contact-details p { color: #94a3b8; font-size: 0.85rem; margin: 0; }
 
-/* Newsletter */
+/* Formulario de suscripción al newsletter */
 .newsletter-title {
   color: #f1f5f9;
   font-size: 0.9rem;
@@ -132,6 +144,7 @@
   margin-bottom: 0.75rem;
 }
 
+/* Input y botón del newsletter en fila */
 .newsletter-form { display: flex; gap: 0.5rem; }
 
 .newsletter-input {
@@ -154,6 +167,7 @@
   box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
 }
 
+/* Botón de envío del newsletter */
 .newsletter-button {
   padding: 0.65rem 0.9rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -169,7 +183,7 @@
 
 .newsletter-button:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(102,126,234,0.4); }
 
-/* Bottom */
+/* Barra inferior del footer con copyright y links legales */
 .footer-bottom { padding: 1.5rem 0; background: rgba(0,0,0,0.2); }
 
 .footer-bottom-content {
@@ -183,19 +197,21 @@
 .copyright { color: #64748b; font-size: 0.875rem; margin: 0; }
 .copyright strong { color: #cbd5e1; }
 
+/* Links de política y términos en la barra inferior */
 .footer-legal { display: flex; align-items: center; gap: 0.75rem; }
 
 .legal-link { color: #64748b; text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
 .legal-link:hover { color: #667eea; }
 .separator { color: rgba(100,116,139,0.5); }
 
-/* Responsive */
+/* Responsive para tablets: 2 columnas */
 @media (max-width: 1100px) {
   .footer-main .footer-container { grid-template-columns: repeat(2, 1fr); }
   .company-section { grid-column: span 2; }
   .contact-section { padding-left: 0; }
 }
 
+/* Responsive para móviles: una columna */
 @media (max-width: 640px) {
   .footer-main .footer-container { grid-template-columns: 1fr; gap: 2rem; }
   .company-section { grid-column: span 1; }

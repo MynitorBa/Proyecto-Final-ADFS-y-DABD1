@@ -1,4 +1,4 @@
-/* ── Variables ─────────────────────────────────────────────── */
+/* Variables de color, sombras, radios y transición del checkout */
 :root {
   --co-primary:   #667eea;
   --co-secondary: #764ba2;
@@ -20,7 +20,7 @@
   --co-t:         all 0.2s ease;
 }
 
-/* ── Base ──────────────────────────────────────────────────── */
+/* Página principal del checkout con fondo claro */
 .checkout {
   width: 100%;
   min-height: 100vh;
@@ -29,7 +29,7 @@
 }
 .checkout__container { max-width: 1160px; margin: 0 auto; }
 
-/* ── Header ────────────────────────────────────────────────── */
+/* Cabecera del checkout con botón de volver y título */
 .checkout__header { margin-bottom: 2.5rem; }
 
 .checkout__back {
@@ -53,14 +53,14 @@
   margin: 0; letter-spacing: -.02em;
 }
 
-/* ── Layout ────────────────────────────────────────────────── */
+/* Layout en dos columnas: formularios a la izquierda, sidebar a la derecha */
 .checkout__content {
   display: grid;
   grid-template-columns: 1fr 380px;
   gap: 2rem; align-items: start;
 }
 
-/* ── Secciones ─────────────────────────────────────────────── */
+/* Tarjeta de sección del formulario de checkout */
 .checkout-section {
   background: var(--co-white);
   border: 1px solid var(--co-border);
@@ -80,11 +80,12 @@
   font-size: .875rem; color: var(--co-light); margin: 0 0 1.5rem;
 }
 
-/* ── Lista reservaciones pendientes ────────────────────────── */
+/* Lista de reservaciones pendientes seleccionables */
 .reservations-list {
   display: flex; flex-direction: column; gap: .875rem;
 }
 
+/* Ítem de reservación con checkbox y datos */
 .reservation-item {
   display: flex; align-items: flex-start; gap: 1rem;
   padding: 1.25rem; border: 2px solid var(--co-border);
@@ -102,6 +103,7 @@
 
 .reservation-item__body { flex: 1; }
 
+/* Fila superior del ítem con código y total */
 .reservation-item__top {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: .5rem;
@@ -116,7 +118,7 @@
   font-size: .82rem; color: var(--co-light);
 }
 
-/* ── Formulario tarjeta ────────────────────────────────────── */
+/* Formularios de datos de facturación y tarjeta de crédito */
 .billing-form, .card-form {
   display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
 }
@@ -141,7 +143,7 @@
 }
 .form-field__input::placeholder { color: #94a3b8; }
 
-/* ── Error ─────────────────────────────────────────────────── */
+/* Mensaje de error general del formulario */
 .checkout-error {
   padding: .875rem 1.25rem; background: #fef2f2;
   border: 1.5px solid #fecaca; border-radius: var(--co-r);
@@ -149,7 +151,7 @@
   margin-top: 1.25rem;
 }
 
-/* ── Loading ───────────────────────────────────────────────── */
+/* Estado de carga del checkout con spinner */
 .checkout-loading {
   display: flex; flex-direction: column; align-items: center;
   gap: 1.25rem; padding: 4rem 2rem; text-align: center; color: var(--co-light);
@@ -162,7 +164,7 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Empty ─────────────────────────────────────────────────── */
+/* Estado vacío cuando no hay reservaciones pendientes */
 .checkout-empty {
   display: flex; flex-direction: column; align-items: center;
   gap: 1rem; padding: 4rem 2rem; text-align: center;
@@ -173,9 +175,10 @@
 .checkout-empty h2 { font-size: 1.4rem; color: var(--co-dark); margin: 0; }
 .checkout-empty p  { color: var(--co-light); margin: 0; }
 
-/* ── Sidebar ───────────────────────────────────────────────── */
+/* Sidebar sticky con el resumen del pedido */
 .checkout__sidebar { position: sticky; top: 100px; }
 
+/* Tarjeta del resumen del pedido */
 .order-summary {
   background: var(--co-white);
   border: 1px solid var(--co-border);
@@ -191,6 +194,7 @@
 
 .order-empty-note { color: var(--co-light); font-size: .9rem; text-align: center; padding: 1rem 0; }
 
+/* Filas de líneas de pedido en el resumen */
 .order-rows { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.25rem; }
 
 .order-row {
@@ -204,6 +208,7 @@
 
 .order-summary__divider { height: 1.5px; background: var(--co-border); margin: 1.25rem 0; }
 
+/* Total final del pedido con monto en gradiente */
 .order-summary__total {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem;
 }
@@ -214,6 +219,7 @@
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
+/* Botón de pagar a ancho completo */
 .order-summary__btn-pay {
   width: 100%; padding: 1rem; background: var(--co-grad);
   color: white; border: none; border-radius: var(--co-rl);
@@ -226,6 +232,7 @@
 }
 .order-summary__btn-pay:disabled { opacity: .45; cursor: not-allowed; }
 
+/* Spinner dentro del botón de pago */
 .btn-spinner {
   display: inline-block; width: 18px; height: 18px;
   border: 2.5px solid rgba(255,255,255,.4);
@@ -233,6 +240,7 @@
   animation: spin .7s linear infinite;
 }
 
+/* Nota de seguridad bajo el botón de pago */
 .order-summary__security { text-align: center; }
 .security-badge {
   font-size: .8rem; font-weight: 700; color: var(--co-success);
@@ -240,7 +248,7 @@
 }
 .security-note { font-size: .75rem; color: var(--co-light); margin: 0; line-height: 1.5; }
 
-/* ── Factura card (done step) ──────────────────────────────── */
+/* Tarjeta de factura del paso de confirmación */
 .factura-card {
   background: var(--co-bg); border: 1.5px solid var(--co-border);
   border-radius: var(--co-rl); padding: 1.5rem; margin-bottom: 1.25rem;
@@ -257,7 +265,7 @@
   border-radius: 20px;
 }
 
-/* ── Confirmación done ─────────────────────────────────────── */
+/* Pantalla de confirmación exitosa al completar el pago */
 .checkout-confirm {
   max-width: 640px; margin: 3rem auto;
   background: var(--co-white); border: 1px solid var(--co-border);
@@ -265,6 +273,7 @@
   box-shadow: var(--co-shadow-lg); text-align: center;
 }
 
+/* Ícono circular de confirmación con gradiente */
 .confirm-icon {
   width: 72px; height: 72px; border-radius: 50%;
   background: var(--co-grad); color: white;
@@ -275,6 +284,7 @@
 .confirm-title { font-size: 1.75rem; font-weight: 700; color: var(--co-dark); margin: 0 0 .25rem; }
 .confirm-subtitle { color: var(--co-light); font-size: .95rem; margin: 0 0 2rem; }
 
+/* Grid de detalles de la confirmación */
 .confirm-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: .75rem; text-align: left; margin-bottom: 1rem;
@@ -296,6 +306,7 @@
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
+/* Botones de acciones post-pago */
 .confirm-actions {
   display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; margin-top: 2rem;
 }
@@ -321,12 +332,14 @@
 }
 .confirm-btn--outline:hover { border-color: var(--co-primary); color: var(--co-primary); transform: none; box-shadow: none; }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* Responsive: una columna en pantallas medianas */
 @media (max-width: 1000px) {
   .checkout__content { grid-template-columns: 1fr; }
   .checkout__sidebar { position: static; }
   .order-summary { max-width: 520px; }
 }
+
+/* Responsive para móviles */
 @media (max-width: 640px) {
   .billing-form, .card-form { grid-template-columns: 1fr; }
   .form-field--full { grid-column: span 1; }

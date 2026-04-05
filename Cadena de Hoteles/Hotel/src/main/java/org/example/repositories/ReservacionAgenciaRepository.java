@@ -9,9 +9,18 @@ import java.util.List;
 
 import java.util.ArrayList;
 
+/**
+ * Repository para la gestion de reservaciones realizadas por agencias de viaje.
+ * Cubre la creacion, consulta, validacion de disponibilidad y expiracion de reservaciones,
+ * asi como la obtencion de datos de agencia y precios de habitaciones.
+ */
 public class ReservacionAgenciaRepository {
 
-    // Obtener usuarioWebisId y descuento de la agencia
+    /**
+     * Retorna el ID del usuario webservice y el porcentaje de descuento de una agencia activa.
+     * @param agenciaId ID de la agencia a consultar.
+     * @return arreglo con {UsuarioWEBIs_ID, PorcentajeDescuento (entero)} o null si la agencia no existe o no esta activa.
+     */
     public int[] obtenerDatosAgencia(int agenciaId) {
         String sql = "SELECT UsuarioWEBIs_ID, PorcentajeDescuento FROM Agencia " +
                 "WHERE ID = ? AND EstadoID = " +
@@ -23,7 +32,11 @@ public class ReservacionAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // Obtener descuento exacto (con decimales) de la agencia
+    /**
+     * Retorna el porcentaje de descuento exacto con decimales de una agencia activa.
+     * @param agenciaId ID de la agencia a consultar.
+     * @return porcentaje de descuento como double, o 0.0 si la agencia no existe o no esta activa.
+     */
     public double obtenerDescuentoAgencia(int agenciaId) {
         String sql = "SELECT PorcentajeDescuento FROM Agencia " +
                 "WHERE ID = ? AND EstadoID = " +
@@ -34,8 +47,14 @@ public class ReservacionAgenciaRepository {
         return result.isEmpty() ? 0.0 : result.get(0);
     }
 
-    // Obtener precios Y capacidad de habitacion
-    // precios[0] = precioPorNoche, precios[1] = precioPorPersona, precios[2] = capacidadMaxima
+    /**
+     * Retorna el precio por noche, precio por persona y capacidad maxima de una habitacion.
+     * Los valores se retornan en ese orden: precios[0] = precioPorNoche, precios[1] = precioPorPersona,
+     * precios[2] = capacidadMaxima.
+     * @param habitacionId ID de la habitacion a consultar.
+     * @return arreglo de doubles con los tres valores de precio y capacidad.
+     * @throws RuntimeException si la habitacion no existe en la base de datos.
+     */
     public double[] obtenerPrecios(int habitacionId) {
         String sql = "SELECT t.PRECIONOCHE, t.PRECIOPERSONA, t.CAPACIDADMAXIMA " +
                 "FROM Habitacion h " +
@@ -47,11 +66,18 @@ public class ReservacionAgenciaRepository {
                 rs.getDouble("CAPACIDADMAXIMA")
         }, habitacionId);
         if (result.isEmpty())
-            throw new RuntimeException("Habitación no encontrada: " + habitacionId);
+            throw new RuntimeException("Habitacion no encontrada: " + habitacionId);
         return result.get(0);
     }
 
-    // Verificar traslape
+    /**
+     * Verifica si una habitacion tiene reservaciones activas que se traslapen con el rango de fechas indicado.
+     * Solo considera reservaciones en estado Pendiente o Confirmada.
+     * @param habitacionId  ID de la habitacion a verificar.
+     * @param fechaCheckIn  fecha de entrada solicitada.
+     * @param fechaCheckOut fecha de salida solicitada.
+     * @return true si existe al menos un traslape, false si la habitacion esta disponible.
+     */
     public boolean existeTraslape(int habitacionId, Date fechaCheckIn, Date fechaCheckOut) {
         String sql = "SELECT COUNT(*) AS total " +
                 "FROM DetallesReservacion dr " +
@@ -68,7 +94,15 @@ public class ReservacionAgenciaRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
-    // Crear reservacion
+    /**
+     * Crea una nueva reservacion en estado Pendiente (EstadoID = 1) y retorna el ID generado.
+     * @param noReservacion   codigo unico de la reservacion.
+     * @param total           monto total de la reservacion.
+     * @param usuarioWebisId  ID del usuario webservice asociado a la agencia.
+     * @param fechaCreacion   fecha y hora de creacion de la reservacion.
+     * @param fechaExpiracion fecha y hora limite para completar el pago.
+     * @return ID de la reservacion recien insertada.
+     */
     public int crearReservacion(String noReservacion, double total, int usuarioWebisId,
                                 Timestamp fechaCreacion, Timestamp fechaExpiracion) {
         String sql = "INSERT INTO Reservacion " +
@@ -80,7 +114,12 @@ public class ReservacionAgenciaRepository {
         );
     }
 
-    // Verificar que la reservación pertenece a la agencia y está pendiente
+    /**
+     * Verifica si una reservacion pertenece a una agencia especifica y se encuentra en estado Pendiente.
+     * @param reservacionId ID de la reservacion a verificar.
+     * @param agenciaId     ID de la agencia a validar como propietaria.
+     * @return true si la reservacion pertenece a la agencia y esta pendiente, false en caso contrario.
+     */
     public boolean perteneceAAgenciaYEstaPendiente(int reservacionId, int agenciaId) {
         String sql = "SELECT COUNT(*) AS total " +
                 "FROM Reservacion r " +
@@ -96,7 +135,10 @@ public class ReservacionAgenciaRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
-    // Expirar una reservacion especifica
+    /**
+     * Marca una reservacion como Expirada si actualmente se encuentra en estado Pendiente.
+     * @param reservacionId ID de la reservacion a expirar.
+     */
     public void expirarReservacion(int reservacionId) {
         String sql = "UPDATE Reservacion " +
                 "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada'), " +
@@ -106,7 +148,15 @@ public class ReservacionAgenciaRepository {
         DatabaseManager.executeUpdate(sql, reservacionId);
     }
 
-    // Insertar detalle
+    /**
+     * Inserta un detalle de reservacion con los datos de una habitacion y el rango de fechas solicitado.
+     * @param reservacionId    ID de la reservacion a la que pertenece el detalle.
+     * @param habitacionId     ID de la habitacion reservada.
+     * @param fechaCheckIn     fecha de entrada.
+     * @param fechaCheckOut    fecha de salida.
+     * @param cantidadPersonas numero de personas para este detalle.
+     * @param total            costo total de este detalle.
+     */
     public void crearDetalle(int reservacionId, int habitacionId,
                              Date fechaCheckIn, Date fechaCheckOut,
                              int cantidadPersonas, double total) {
@@ -118,7 +168,12 @@ public class ReservacionAgenciaRepository {
         );
     }
 
-    // Obtener reservacion para respuesta
+    /**
+     * Retorna los datos resumidos de una reservacion para construir la respuesta al cliente.
+     * @param reservacionId ID de la reservacion a consultar.
+     * @return arreglo con {ID, No_Reservacion, Total, Fecha_Creacion, Fecha_Expiracion, Estado}
+     *         o null si no existe.
+     */
     public Object[] obtenerReservacion(int reservacionId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, r.Fecha_Creacion, r.Fecha_Expiracion, " +
                 "e.Estado " +
@@ -136,7 +191,11 @@ public class ReservacionAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // Obtener reservaciones de una agencia
+    /**
+     * Retorna todas las reservaciones asociadas a una agencia con el detalle completo de habitaciones y hotel.
+     * @param agenciaId ID de la agencia de la que se quieren obtener las reservaciones.
+     * @return lista de ReservacionDetalleDTO con una entrada por cada habitacion reservada.
+     */
     public List<ReservacionDetalleDTO> obtenerReservacionesDeAgencia(int agenciaId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
                 "r.Fecha_Creacion, r.Fecha_Expiracion, r.Fecha_Cancelacion, r.Motivo_Cancelacion, " +
@@ -163,6 +222,7 @@ public class ReservacionAgenciaRepository {
             dto.setNoReservacion(rs.getString("No_Reservacion"));
             dto.setTotal(rs.getDouble("Total"));
             dto.setEstado(rs.getString("Estado"));
+            // Convierte timestamps y fechas a String, o null si no tienen valor
             dto.setFechaCreacion(rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null);
             dto.setFechaExpiracion(rs.getTimestamp("Fecha_Expiracion") != null ? rs.getTimestamp("Fecha_Expiracion").toString() : null);
             dto.setFechaCancelacion(rs.getDate("Fecha_Cancelacion") != null ? rs.getDate("Fecha_Cancelacion").toString() : null);
@@ -183,7 +243,11 @@ public class ReservacionAgenciaRepository {
         }, agenciaId);
     }
 
-    // IDs de imagenes
+    /**
+     * Retorna los IDs de las imagenes asociadas a un hotel.
+     * @param hotelId ID del hotel del que se quieren obtener las imagenes.
+     * @return lista de IDs de imagenes del hotel.
+     */
     public List<Integer> obtenerImagenesHotel(int hotelId) {
         return DatabaseManager.executeQuery(
                 "SELECT ID FROM ImagenHotel WHERE HotelID = ?",
@@ -191,6 +255,11 @@ public class ReservacionAgenciaRepository {
         );
     }
 
+    /**
+     * Retorna los IDs de las imagenes asociadas a una habitacion.
+     * @param habitacionId ID de la habitacion de la que se quieren obtener las imagenes.
+     * @return lista de IDs de imagenes de la habitacion.
+     */
     public List<Integer> obtenerImagenesHabitacion(int habitacionId) {
         return DatabaseManager.executeQuery(
                 "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?",
@@ -198,18 +267,26 @@ public class ReservacionAgenciaRepository {
         );
     }
 
+    /**
+     * Retorna el detalle completo de una reservacion especifica verificando que pertenezca a la agencia indicada.
+     * Primero obtiene el ID del usuario webservice de la agencia y luego filtra la reservacion por ese usuario.
+     * @param reservacionId ID de la reservacion a consultar.
+     * @param agenciaId     ID de la agencia propietaria de la reservacion.
+     * @return lista de ReservacionDetalleDTO con una entrada por cada habitacion, o lista vacia si la agencia no existe
+     *         o la reservacion no le pertenece.
+     */
     public List<ReservacionDetalleDTO> obtenerDetalleReservacionAgencia(int reservacionId, int agenciaId) {
-        // 1. Obtenemos el ID del usuario usando executeQuery (que ya existe en tu DatabaseManager)
+        // Obtiene el ID del usuario webservice vinculado a la agencia
         String sqlUsuario = "SELECT USUARIOWEBIS_ID FROM Agencia WHERE ID = ?";
         List<Integer> ids = DatabaseManager.executeQuery(sqlUsuario, rs -> rs.getInt("USUARIOWEBIS_ID"), agenciaId);
 
         if (ids.isEmpty()) {
-            return new ArrayList<>(); // Si la agencia no existe, retornamos lista vacía
+            return new ArrayList<>();
         }
 
         int usuarioWebServiceId = ids.get(0);
 
-        // 2. Ejecutamos la consulta principal filtrando por el ID del usuario obtenido
+        // Consulta el detalle de la reservacion filtrando por el usuario webservice de la agencia
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
                 "r.Fecha_Creacion, r.Fecha_Expiracion, r.Fecha_Cancelacion, r.Motivo_Cancelacion, " +
                 "er.Estado, " +
@@ -238,6 +315,7 @@ public class ReservacionAgenciaRepository {
             dto.setNoReservacion(rs.getString("No_Reservacion"));
             dto.setTotal(rs.getDouble("Total"));
             dto.setEstado(rs.getString("Estado"));
+            // Convierte timestamps y fechas a String, o null si no tienen valor
             dto.setFechaCreacion(rs.getTimestamp("Fecha_Creacion") != null ? rs.getTimestamp("Fecha_Creacion").toString() : null);
             dto.setFechaExpiracion(rs.getTimestamp("Fecha_Expiracion") != null ? rs.getTimestamp("Fecha_Expiracion").toString() : null);
             dto.setFechaCancelacion(rs.getDate("Fecha_Cancelacion") != null ? rs.getDate("Fecha_Cancelacion").toString() : null);

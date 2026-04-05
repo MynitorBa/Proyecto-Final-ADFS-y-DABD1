@@ -1,3 +1,9 @@
+// # Package helpers
+//
+// Provee funciones auxiliares reutilizables para tareas comunes de la
+// aplicacion Movent: generacion de tokens, hashing de contrasenas,
+// manejo de sesiones JWT, envio de correos electronicos y generacion
+// de documentos PDF.
 package helpers
 
 import (
@@ -16,6 +22,10 @@ import (
 
 // ── Config SMTP ────────────────────────────────────────────────────────────
 
+// SMTPConfig
+//
+// Contiene los parametros de conexion al servidor de correo SMTP.
+// Se pobla desde variables de entorno mediante GetSMTPConfig.
 type SMTPConfig struct {
 	Host     string
 	Port     string
@@ -24,6 +34,14 @@ type SMTPConfig struct {
 	From     string
 }
 
+// GetSMTPConfig
+//
+// Lee las variables de entorno SMTP y retorna un SMTPConfig listo
+// para usar. Si alguna variable no esta definida se usa el valor
+// por defecto indicado (host: smtp.gmail.com, puerto: 587).
+//
+// Retorna:
+//   - SMTPConfig: struct con los datos de conexion SMTP
 func GetSMTPConfig() SMTPConfig {
 	return SMTPConfig{
 		Host:     getEnv("SMTP_HOST", "smtp.gmail.com"),
@@ -36,6 +54,21 @@ func GetSMTPConfig() SMTPConfig {
 
 // ── Envío con PDF adjunto ──────────────────────────────────────────────────
 
+// EnviarEmailConPDF
+//
+// Construye y envia un correo electronico multipart con cuerpo HTML
+// y un archivo PDF adjunto. Ambas partes se codifican en base64.
+// La conexion SMTP se establece con STARTTLS y autenticacion PLAIN.
+//
+// Parametros:
+//   - destinatario: direccion de correo del receptor
+//   - asunto: linea de asunto del mensaje
+//   - htmlBody: contenido HTML del cuerpo del correo
+//   - pdfBytes: bytes del archivo PDF a adjuntar
+//   - nombreArchivo: nombre con el que se adjunta el PDF
+//
+// Retorna:
+//   - error: error si la configuracion SMTP es incompleta o el envio falla
 func EnviarEmailConPDF(destinatario, asunto, htmlBody string, pdfBytes []byte, nombreArchivo string) error {
 	cfg := GetSMTPConfig()
 	if cfg.User == "" {
@@ -108,6 +141,19 @@ func EnviarEmailConPDF(destinatario, asunto, htmlBody string, pdfBytes []byte, n
 
 // ── Envío solo HTML (sin adjunto) ─────────────────────────────────────────
 
+// EnviarEmailHTML
+//
+// Construye y envia un correo electronico con cuerpo HTML puro,
+// sin archivos adjuntos. El cuerpo se codifica en base64 antes
+// del envio. Se usa para notificaciones simples como la bienvenida.
+//
+// Parametros:
+//   - destinatario: direccion de correo del receptor
+//   - asunto: linea de asunto del mensaje
+//   - htmlBody: contenido HTML del cuerpo del correo
+//
+// Retorna:
+//   - error: error si la configuracion SMTP es incompleta o el envio falla
 func EnviarEmailHTML(destinatario, asunto, htmlBody string) error {
 	cfg := GetSMTPConfig()
 	if cfg.User == "" {
@@ -143,6 +189,19 @@ func EnviarEmailHTML(destinatario, asunto, htmlBody string) error {
 
 // ── SMTP compartido ────────────────────────────────────────────────────────
 
+// enviarSMTP
+//
+// Logica interna compartida de envio SMTP. Abre una conexion TCP al
+// servidor, inicia TLS con STARTTLS, autentica con PLAIN y transmite
+// el mensaje ya construido. Es usado por EnviarEmailConPDF y EnviarEmailHTML.
+//
+// Parametros:
+//   - cfg: configuracion SMTP con host, puerto, usuario y contrasena
+//   - destinatario: direccion de correo del receptor
+//   - msg: mensaje completo en formato RFC 5322 listo para enviar
+//
+// Retorna:
+//   - error: error en cualquier etapa de la comunicacion SMTP
 func enviarSMTP(cfg SMTPConfig, destinatario string, msg []byte) error {
 	addr := net.JoinHostPort(cfg.Host, cfg.Port)
 
@@ -187,6 +246,17 @@ func enviarSMTP(cfg SMTPConfig, destinatario string, msg []byte) error {
 
 // ── HTML correo de reservación ─────────────────────────────────────────────
 
+// BuildHTMLEmail
+//
+// Genera el HTML completo del correo de confirmacion de reservacion.
+// Incluye tarjetas para boletos de vuelo y habitaciones de hotel
+// con todos los detalles de la reservacion en formato de tabla.
+//
+// Parametros:
+//   - data: struct ReservacionPDFData con todos los datos de la reservacion
+//
+// Retorna:
+//   - string: documento HTML completo listo para enviar como cuerpo de correo
 func BuildHTMLEmail(data ReservacionPDFData) string {
 
 	var boletoCards strings.Builder
@@ -445,7 +515,25 @@ func BuildHTMLEmail(data ReservacionPDFData) string {
 
 // ── HTML correo de bienvenida ──────────────────────────────────────────────
 
-// BuildHTMLBienvenida construye el HTML del correo de bienvenida post-registro.
+// BuildHTMLBienvenida
+//
+// Genera el HTML completo del correo de bienvenida que se envia al
+// usuario tras completar el registro. Incluye una tabla con los
+// datos de la cuenta recien creada.
+//
+// Parametros:
+//   - nombre: nombre del usuario registrado
+//   - apellido: apellido del usuario registrado
+//   - username: nombre de usuario elegido
+//   - correo: direccion de correo electronico registrada
+//   - telefono: numero de telefono del usuario
+//   - fechaNacimiento: fecha de nacimiento en formato string
+//   - ciudad: nombre de la ciudad del usuario
+//   - pais: nombre del pais del usuario
+//   - nacionalidades: slice con los nombres de las nacionalidades del usuario
+//
+// Retorna:
+//   - string: documento HTML completo listo para enviar como cuerpo de correo
 func BuildHTMLBienvenida(nombre, apellido, username, correo, telefono, fechaNacimiento, ciudad, pais string, nacionalidades []string) string {
 	nacStr := strings.Join(nacionalidades, ", ")
 	if nacStr == "" {
@@ -582,7 +670,24 @@ func BuildHTMLBienvenida(nombre, apellido, username, correo, telefono, fechaNaci
 	)
 }
 
-// EnviarBienvenida envía el correo de bienvenida post-registro.
+// EnviarBienvenida
+//
+// Construye el correo HTML de bienvenida con los datos del usuario
+// recien registrado y lo envia a su direccion de correo electronico.
+//
+// Parametros:
+//   - correo: direccion de correo del nuevo usuario
+//   - nombre: nombre del usuario
+//   - apellido: apellido del usuario
+//   - username: nombre de usuario elegido
+//   - telefono: numero de telefono del usuario
+//   - fechaNacimiento: fecha de nacimiento en formato string
+//   - ciudad: nombre de la ciudad del usuario
+//   - pais: nombre del pais del usuario
+//   - nacionalidades: slice con los nombres de las nacionalidades del usuario
+//
+// Retorna:
+//   - error: error si la construccion del HTML o el envio SMTP falla
 func EnviarBienvenida(correo, nombre, apellido, username, telefono, fechaNacimiento, ciudad, pais string, nacionalidades []string) error {
 	html  := BuildHTMLBienvenida(nombre, apellido, username, correo, telefono, fechaNacimiento, ciudad, pais, nacionalidades)
 	asunto := "Bienvenido a MOVENT, " + nombre
@@ -591,6 +696,7 @@ func EnviarBienvenida(correo, nombre, apellido, username, telefono, fechaNacimie
 
 // ── Utilidades ─────────────────────────────────────────────────────────────
 
+// getEnv retorna el valor de la variable de entorno key o fallback si no existe.
 func getEnv(key, fallback string) string {
 	if val := os.Getenv(key); val != "" {
 		return val
@@ -598,6 +704,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// ifEmpty retorna fallback si la cadena s esta vacia o solo tiene espacios.
 func ifEmpty(s, fallback string) string {
 	if strings.TrimSpace(s) == "" {
 		return fallback
@@ -605,6 +712,8 @@ func ifEmpty(s, fallback string) string {
 	return s
 }
 
+// tipoLabel convierte el identificador numerico de tipo de reservacion
+// en su etiqueta textual: 1=Vuelo, 2=Hospedaje, 3=Paquete.
 func tipoLabel(t int) string {
 	switch t {
 	case 1:
@@ -618,6 +727,8 @@ func tipoLabel(t int) string {
 	}
 }
 
+// formatFecha convierte una cadena de fecha en formato "2006-01-02"
+// a una representacion legible como "02 ene 2006".
 func formatFecha(f string) string {
 	if len(f) < 10 {
 		return "-"
@@ -630,6 +741,8 @@ func formatFecha(f string) string {
 	return fmt.Sprintf("%02d %s %d", t.Day(), meses[t.Month()], t.Year())
 }
 
+// formatHora retorna los primeros 5 caracteres de una cadena de hora
+// en formato "HH:MM" o "-" si la cadena es demasiado corta.
 func formatHora(h string) string {
 	if len(h) >= 5 {
 		return h[:5]
@@ -637,6 +750,9 @@ func formatHora(h string) string {
 	return "-"
 }
 
+// calcNoches calcula la diferencia en noches entre dos fechas
+// en formato "2006-01-02". Retorna 0 si alguna fecha es invalida
+// o si la diferencia es negativa.
 func calcNoches(ci, co string) int {
 	if len(ci) < 10 || len(co) < 10 {
 		return 0

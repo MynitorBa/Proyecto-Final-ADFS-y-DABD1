@@ -1,8 +1,4 @@
-/* ═══════════════════════════════════════════════
-   RESERVA — Movent
-   Paleta: #1C1A18 · #FFCC00 · #D40511 · #F5F2EC
-   ═══════════════════════════════════════════════ */
-
+/* Página de reserva con fondo crema */
 .res-page {
   background: #F5F2EC;
   min-height: calc(100vh - 64px);
@@ -15,9 +11,7 @@
   padding: 0 20px;
 }
 
-/* ═══════════════════════════════
-   OVERLAYS
-═══════════════════════════════ */
+/* Overlay de carga con blur y tarjeta centrada */
 .res-overlay {
   position: fixed;
   inset: 0;
@@ -43,13 +37,14 @@
   box-shadow: 0 24px 80px rgba(0,0,0,.35);
 }
 
+/* Variante de error con borde rojo superior */
 .res-overlay__card--error { border-top: 4px solid #D40511; }
 .res-overlay__txt    { font-size: 17px; font-weight: 700; color: #1C1A18; margin: 0; }
 .res-overlay__sub    { font-size: 13px; color: #9a9089; }
 .res-overlay__titulo { font-size: 18px; font-weight: 800; color: #1C1A18; margin: 0; }
 .res-overlay__msg    { font-size: 13px; color: #5a5047; line-height: 1.6; margin: 0; }
 
-/* Spinners */
+/* Spinners de carga: grande y pequeño */
 .res-spinner-xl {
   width: 52px; height: 52px;
   border: 4px solid #e8e3dc;
@@ -68,9 +63,7 @@
 }
 @keyframes res-spin { to { transform: rotate(360deg); } }
 
-/* ═══════════════════════════════
-   HEADER
-═══════════════════════════════ */
+/* Encabezado de la página con título, subtítulo y badge */
 .res-header {
   display: flex;
   align-items: flex-start;
@@ -97,9 +90,7 @@
   flex-shrink: 0;
 }
 
-/* ═══════════════════════════════
-   LAYOUT
-═══════════════════════════════ */
+/* Layout de dos columnas: formulario y sidebar de resumen */
 .res-layout {
   display: grid;
   grid-template-columns: 1fr 340px;
@@ -112,13 +103,11 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;          /* más espacio entre cards de pasajero */
+  gap: 20px;
 }
 .res-summary-col { min-width: 0; }
 
-/* ═══════════════════════════════
-   TARJETAS DE FORMULARIO
-═══════════════════════════════ */
+/* Tarjetas de formulario por pasajero */
 .res-form-card {
   background: #fff;
   border-radius: 12px;
@@ -138,6 +127,7 @@
   border-radius: 12px 12px 0 0;
 }
 
+/* Ícono de la cabecera de tarjeta en negro con amarillo */
 .res-form-card__icon {
   width: 36px; height: 36px;
   background: #1C1A18;
@@ -171,6 +161,7 @@
   min-width: 0;
 }
 
+/* Número de boleto en monospace debajo del nombre del pasajero */
 .res-form-card__boleto-meta {
   display: block;
   font-size: 11px;
@@ -182,7 +173,7 @@
   text-overflow: ellipsis;
 }
 
-/* ─── Separador visual entre pasajeros ─── */
+/* Separador visual entre pasajeros con degradado */
 .res-pax-divider {
   display: flex;
   align-items: center;
@@ -203,10 +194,9 @@
   white-space: nowrap;
 }
 
-/* Tarjeta pasajero adicional */
+/* Tarjeta de pasajero adicional con borde amarillo superior */
 .res-form-card--adicional {
   border-top: 3px solid #FFCC00;
-  /* Asegurar que nunca se recorte */
   overflow: visible;
 }
 
@@ -217,13 +207,14 @@
   gap: 16px;
 }
 
+/* Grid de dos columnas para campos del formulario */
 .res-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
-/* ── Campos ── */
+/* Campos del formulario con label en gris pequeño */
 .res-field       { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .res-field--full { grid-column: 1 / -1; }
 
@@ -237,6 +228,7 @@
 .res-field__hint     { font-weight: 400; color: #b0a898; text-transform: none; }
 .res-field__optional { font-weight: 400; color: #b0a898; text-transform: none; }
 
+/* Input con fondo crema y foco amarillo */
 .res-field__input {
   background: #F5F2EC;
   border: 1px solid #e0d9cf;
@@ -253,6 +245,7 @@
 .res-field__input:focus    { border-color: #FFCC00; background: #fff; }
 .res-field__input:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Textarea con resize vertical */
 .res-field__textarea {
   background: #F5F2EC;
   border: 1px solid #e0d9cf;
@@ -269,10 +262,11 @@
 }
 .res-field__textarea:focus { border-color: #FFCC00; background: #fff; }
 
+/* Mensajes de validación de campo */
 .res-field__error { font-size: 11px; color: #D40511; font-weight: 600; }
 .res-field__ok    { font-size: 11px; color: #16a34a; font-weight: 600; }
 
-/* ── Error general ── */
+/* Alerta de error general en el formulario */
 .res-error-general {
   display: flex;
   align-items: center;
@@ -287,7 +281,7 @@
   color: #D40511;
 }
 
-/* ── Autocomplete ── */
+/* Autocomplete con dropdown flotante sobre otros elementos */
 .res-autocomplete { position: relative; }
 
 .res-autocomplete__list {
@@ -298,7 +292,7 @@
   border: 1px solid #e0d9cf;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,.12);
-  z-index: 200;          /* z-index elevado para que salga sobre otros elementos */
+  z-index: 200;
   max-height: 200px;
   overflow-y: auto;
   list-style: none;
@@ -316,7 +310,7 @@
 }
 .res-autocomplete__item:hover { background: #F5F2EC; }
 
-/* ── Teléfono ── */
+/* Campo de teléfono con prefijo de código de país */
 .res-phone {
   display: flex;
   align-items: center;
@@ -329,6 +323,7 @@
 .res-phone:focus-within { border-color: #FFCC00; background: #fff; }
 .res-phone--error       { border-color: #D40511; }
 
+/* Prefijo del teléfono con fondo amarillo semitransparente */
 .res-phone__prefix {
   padding: 10px 10px 10px 12px;
   font-size: 13px;
@@ -342,16 +337,13 @@
 .res-phone .res-field__input       { background: transparent; border: none; border-radius: 0; }
 .res-phone .res-field__input:focus { background: transparent; }
 
-/* ═══════════════════════════════
-   RESUMEN (sidebar)
-═══════════════════════════════ */
+/* Sidebar de resumen sticky con cabecera oscura */
 .res-summary {
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e8e3dc;
   position: sticky;
   top: 24px;
-  /* Sin overflow:hidden para que nada se recorte */
 }
 
 .res-summary__head {
@@ -381,9 +373,7 @@
   border-radius: 6px;
 }
 
-/* ═══════════════════════════════
-   TIMER
-═══════════════════════════════ */
+/* Timer de reserva con barra de progreso y estados warn/urgente */
 .res-timer {
   display: grid;
   grid-template-columns: 32px 1fr;
@@ -427,6 +417,7 @@
   transition: color .3s;
 }
 
+/* Barra de progreso del timer */
 .res-timer__barra {
   grid-column: 1 / -1;
   width: 100%;
@@ -442,6 +433,7 @@
   transition: width 1s linear, background .3s;
 }
 
+/* Estados del timer: advertencia y urgente con pulso */
 .res-timer--warn .res-timer__tiempo        { color: #fbbf24; }
 .res-timer--warn .res-timer__icon          { background: rgba(251,191,36,.15); color: #fbbf24; }
 .res-timer--warn .res-timer__barra-fill    { background: #fbbf24; }
@@ -458,7 +450,7 @@
   50%       { opacity: .6; }
 }
 
-/* ── Cuerpo resumen ── */
+/* Estado vacío del resumen cuando no hay selección */
 .res-summary__empty {
   padding: 40px 20px;
   display: flex;
@@ -470,7 +462,7 @@
   font-size: 13px;
 }
 
-/* Tags */
+/* Tags de tipo de reserva (vuelo/hotel/paquete) */
 .res-summary__tag {
   display: inline-flex;
   align-items: center;
@@ -487,7 +479,7 @@
 .res-summary__tag--hotel   { background: rgba(28,26,24,.06);  color: #5a5047; }
 .res-summary__tag--paquete { background: rgba(255,204,0,.15); color: #8a6800; }
 
-/* Aerolínea */
+/* Nombre y número de vuelo de la aerolínea */
 .res-summary__aerolinea {
   display: flex;
   align-items: baseline;
@@ -497,7 +489,7 @@
 .res-summary__aerolinea strong { font-size: 15px; color: #1C1A18; }
 .res-summary__num-vuelo        { font-size: 12px; color: #9a9089; }
 
-/* Ruta vuelo */
+/* Ruta de vuelo con origen, destino y línea de conexión */
 .res-summary__ruta {
   display: flex;
   align-items: center;
@@ -517,7 +509,7 @@
   background: linear-gradient(90deg, #e0d9cf, #FFCC00);
 }
 
-/* Details */
+/* Detalles del vuelo en filas separadas */
 .res-summary__details {
   margin: 0 20px;
   border-top: 1px solid #f0ebe3;
@@ -534,7 +526,7 @@
 .res-summary__detail-row span:first-child { color: #9a9089; }
 .res-summary__detail-row span:last-child  { color: #1C1A18; font-weight: 600; }
 
-/* Hotel */
+/* Nombre y ubicación del hotel en el resumen */
 .res-summary__hotel-nombre {
   font-size: 16px; font-weight: 700; color: #1C1A18;
   margin: 10px 20px 4px;
@@ -545,7 +537,7 @@
   margin: 0 20px 12px;
 }
 
-/* Precio total */
+/* Precio total con label y monto grande */
 .res-summary__precio-wrap {
   display: flex;
   align-items: flex-end;
@@ -557,7 +549,7 @@
 .res-summary__precio-lbl { font-size: 11px; color: #9a9089; display: block; }
 .res-summary__precio     { font-size: 24px; font-weight: 800; color: #1C1A18; line-height: 1; }
 
-/* Desglose paquete */
+/* Desglose de precio para paquetes */
 .res-summary__precio-wrap--desglose {
   flex-direction: column;
   align-items: stretch;
@@ -589,7 +581,7 @@
   margin-top: 4px;
 }
 
-/* Footer */
+/* Footer del resumen con aviso legal */
 .res-summary__footer {
   padding: 16px 20px;
   border-top: 1px solid #f0ebe3;
@@ -603,9 +595,7 @@
   margin: 0; justify-content: center;
 }
 
-/* ═══════════════════════════════
-   BOLETOS CONFIRMADOS
-═══════════════════════════════ */
+/* Lista de boletos confirmados con números en monospace */
 .res-boletos {
   margin: 0 20px 4px;
   border-top: 1px solid #f0ebe3;
@@ -636,9 +626,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* ═══════════════════════════════
-   SUB-VUELO
-═══════════════════════════════ */
+/* Sub-vuelo (tramo de regreso) con separador punteado */
 .res-sub-vuelo {
   border-top: 1px solid #f0ebe3;
   margin-top: 8px;
@@ -662,9 +650,7 @@
   font-size: 12px; color: #9a9089; font-weight: 500;
 }
 
-/* ═══════════════════════════════
-   PAQUETE — hotel
-═══════════════════════════════ */
+/* Bloque de hotel del paquete en el resumen */
 .res-paquete-hotel {
   display: flex; flex-direction: column; gap: 3px;
   padding: 12px 20px;
@@ -674,9 +660,7 @@
 .res-paquete-hotel__nombre { font-size: 14px; font-weight: 700; color: #1C1A18; }
 .res-paquete-hotel__meta   { font-size: 12px; color: #9a9089; }
 
-/* ═══════════════════════════════
-   BOTONES
-═══════════════════════════════ */
+/* Botones de acción: amarillo, ghost y ancho completo */
 .res-btn {
   display: inline-flex;
   align-items: center;
@@ -697,9 +681,7 @@
 .res-btn--ghost:hover                 { background: #f5f2ec; }
 .res-btn--full                        { width: 100%; }
 
-/* ═══════════════════════════════
-   RESPONSIVE
-═══════════════════════════════ */
+/* Responsive: sidebar debajo del formulario en pantallas medianas */
 @media (max-width: 900px) {
   .res-layout      { grid-template-columns: 1fr; }
   .res-summary     { position: static; }

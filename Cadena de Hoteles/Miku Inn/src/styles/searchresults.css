@@ -1,3 +1,4 @@
+/* Variables globales de color, sombra y radio */
 :root {
   --primary:   #667eea;
   --secondary: #764ba2;
@@ -18,9 +19,11 @@
   --t:  all 0.2s ease;
 }
 
+/* Página y contenedor principal de resultados */
 .sr-page      { min-height: 100vh; background: var(--bg); }
 .sr-container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
 
+/* Barra pegajosa de modificación de búsqueda */
 .sr-modify-bar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
@@ -37,6 +40,7 @@
   padding: 0 2rem;
 }
 
+/* Formulario inline para modificar la búsqueda */
 .sr-modify-form {
   display: flex;
   align-items: flex-end;
@@ -44,6 +48,7 @@
   flex-wrap: wrap;
 }
 
+/* Campos del formulario de búsqueda */
 .sr-form-fields {
   display: flex;
   gap: 0.75rem;
@@ -51,6 +56,7 @@
   flex: 1;
 }
 
+/* Grupo de campo con label y control */
 .sr-field-group {
   display: flex;
   flex-direction: column;
@@ -66,6 +72,7 @@
   letter-spacing: 0.5px;
 }
 
+/* Inputs y selects del formulario de búsqueda */
 .sr-field-group input,
 .sr-field-group select {
   padding: 0.5rem 0.75rem;
@@ -85,6 +92,7 @@
   box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
 }
 
+/* Mensaje de error de validación del formulario */
 .sr-error {
   color: var(--danger);
   font-size: 0.85rem;
@@ -93,6 +101,7 @@
   margin: 0;
 }
 
+/* Botón de búsqueda/modificar */
 .btn-modify {
   display: flex;
   align-items: center;
@@ -116,6 +125,7 @@
 
 .btn-modify:disabled { opacity: 0.7; cursor: not-allowed; }
 
+/* Encabezado de la página de resultados */
 .sr-header {
   display: flex;
   justify-content: space-between;
@@ -135,6 +145,7 @@
 
 .sr-actions { display: flex; align-items: center; gap: 1rem; }
 
+/* Toggle de vista lista/cuadrícula */
 .view-toggle {
   display: flex;
   background: var(--white);
@@ -143,6 +154,7 @@
   overflow: hidden;
 }
 
+/* Botones del toggle de vista */
 .vbtn {
   padding: 0.5rem 0.75rem;
   background: var(--white);
@@ -158,6 +170,7 @@
 .vbtn:not(:last-child) { border-right: 1px solid var(--border); }
 .vbtn.active, .vbtn:hover { background: var(--primary); color: white; }
 
+/* Layout principal con filtros a la izquierda y resultados a la derecha */
 .sr-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -166,6 +179,7 @@
   margin-bottom: 3rem;
 }
 
+/* Panel lateral de filtros pegajoso */
 .sr-filters {
   background: var(--white);
   border-radius: var(--rm);
@@ -177,6 +191,7 @@
   overflow-y: auto;
 }
 
+/* Encabezado del panel de filtros con botón de reset */
 .sr-filters-hdr {
   display: flex;
   justify-content: space-between;
@@ -188,6 +203,7 @@
 
 .sr-filters-hdr h2 { color: var(--dark); font-size: 1.1rem; margin: 0; }
 
+/* Botón de reiniciar filtros */
 .btn-reset {
   background: none;
   border: none;
@@ -202,6 +218,7 @@
 
 .btn-reset:hover { background: rgba(102,126,234,0.1); }
 
+/* Grupo de filtros individuales */
 .filter-group {
   margin-bottom: 1.25rem;
   padding-bottom: 1.25rem;
@@ -213,6 +230,7 @@
 
 .filter-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 
+/* Título de cada grupo de filtros */
 .filter-title {
   color: var(--dark);
   font-size: 0.875rem;
@@ -220,6 +238,7 @@
   margin: 0 0 0.5rem;
 }
 
+/* Checkbox de filtro con label */
 .chk-label {
   display: flex;
   align-items: center;
@@ -232,6 +251,7 @@
 
 .chk-label input { accent-color: var(--primary); width: 15px; height: 15px; }
 
+/* Fila de filtro de precio con inputs mínimo y máximo */
 .price-row {
   display: flex;
   align-items: center;
@@ -248,6 +268,7 @@
   gap: 0.25rem;
 }
 
+/* Input de precio con símbolo de moneda */
 .price-inp-wrap { position: relative; }
 
 .price-inp-wrap span {
@@ -272,6 +293,7 @@
 
 .price-inp-wrap input:focus { outline: none; border-color: var(--primary); }
 
+/* Display del rango de precio seleccionado */
 .price-display {
   font-size: 0.8rem;
   color: var(--medium);
@@ -282,8 +304,10 @@
   border-radius: var(--r);
 }
 
+/* Columna principal con resultados */
 .sr-main { display: flex; flex-direction: column; gap: 1.5rem; }
 
+/* Barra de ordenamiento de resultados */
 .sort-bar {
   background: var(--white);
   border-radius: var(--rm);
@@ -297,6 +321,7 @@
 
 .sort-lbl { color: var(--medium); font-weight: 600; font-size: 0.9rem; }
 
+/* Botones de criterio de ordenamiento */
 .sort-btn {
   padding: 0.5rem 1rem;
   background: var(--bg);
@@ -313,9 +338,11 @@
 .sort-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 .sort-btn:not(.active):hover { border-color: var(--border); color: var(--primary); }
 
+/* Contenedor de tarjetas en vista lista o cuadrícula */
 .hotels-grid { display: flex; flex-direction: column; gap: 1.5rem; }
 .hotels-grid.grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
 
+/* Tarjeta individual de hotel en los resultados */
 .hotel-card {
   background: var(--white);
   border-radius: var(--rl);
@@ -336,6 +363,7 @@
   border-color: var(--primary);
 }
 
+/* Galería de imagen de la tarjeta */
 .hotel-gallery {
   position: relative;
   flex-shrink: 0;
@@ -345,6 +373,7 @@
 .list-view .hotel-gallery { width: 280px; height: 240px; }
 .grid-view .hotel-gallery, .hotel-gallery { width: 100%; height: 200px; }
 
+/* Placeholder cuando el hotel no tiene imagen */
 .hotel-img-placeholder {
   width: 100%;
   height: 100%;
@@ -363,6 +392,7 @@
   margin: 0;
 }
 
+/* Imagen real del hotel */
 .hotel-img-real {
   width: 100%;
   height: 100%;
@@ -370,6 +400,7 @@
   display: block;
 }
 
+/* Badge de estado del hotel sobre la imagen */
 .hotel-estado-badge {
   position: absolute;
   top: 0.75rem;
@@ -388,6 +419,7 @@
   border: 1px solid rgba(16,185,129,0.3);
 }
 
+/* Badge de disponibilidad aproximada */
 .hotel-estado-badge--aprox {
   background: rgba(245,158,11,0.15);
   color: #92400e;
@@ -396,6 +428,7 @@
   font-size: 0.68rem;
 }
 
+/* Cuerpo de la tarjeta con nombre, descripción y amenidades */
 .hotel-content {
   padding: 1.25rem;
   display: flex;
@@ -404,6 +437,7 @@
   flex: 1;
 }
 
+/* Encabezado de la tarjeta con nombre y calificación */
 .hotel-hdr { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
 
 .hotel-title-wrap { flex: 1; }
@@ -424,6 +458,7 @@
   font-size: 0.825rem;
 }
 
+/* Caja de calificación numérica con gradiente */
 .rating-box {
   flex-shrink: 0;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -436,6 +471,7 @@
 .rating-score { color: white; font-size: 1.5rem; font-weight: 700; line-height: 1; }
 .rating-text  { color: white; font-size: 0.65rem; font-weight: 600; margin-top: 0.2rem; }
 
+/* Descripción breve del hotel con truncado */
 .hotel-desc {
   color: var(--medium);
   font-size: 0.875rem;
@@ -448,6 +484,7 @@
   overflow: hidden;
 }
 
+/* Fila de amenidades tipo pill */
 .amenities-row { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 
 .amenity-pill {
@@ -462,6 +499,7 @@
   font-weight: 600;
 }
 
+/* Pill de "más amenidades" */
 .amenity-more {
   padding: 0.25rem 0.625rem;
   background: var(--bg);
@@ -471,6 +509,7 @@
   font-weight: 600;
 }
 
+/* Vista previa de habitaciones disponibles */
 .habitaciones-preview { background: var(--bg); border-radius: var(--r); padding: 0.75rem; }
 
 .habitaciones-label {
@@ -483,6 +522,7 @@
   margin: 0 0 0.5rem;
 }
 
+/* Chips de habitaciones disponibles */
 .hab-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
 
 .hab-chip {
@@ -499,8 +539,11 @@
 }
 
 .hab-chip-price { color: var(--primary); font-weight: 700; }
+
+/* Chip de "más habitaciones" en estilo punteado */
 .hab-chip--more { color: var(--light); border-style: dashed; }
 
+/* Pie de la tarjeta con precio y botón de ver */
 .hotel-footer {
   display: flex;
   justify-content: flex-end;
@@ -511,6 +554,7 @@
   border-top: 1px solid var(--border);
 }
 
+/* Contenedor de precios */
 .pricing {
   display: flex;
   align-items: flex-end;
@@ -520,6 +564,7 @@
   flex-wrap: wrap;
 }
 
+/* Badge de precio "desde" */
 .desde-badge {
   display: flex;
   flex-direction: column;
@@ -547,6 +592,7 @@
   color: var(--medium);
 }
 
+/* Cajas de precios individuales por tipo de habitación */
 .price-boxes {
   display: flex;
   align-items: flex-start;
@@ -555,6 +601,7 @@
   justify-content: flex-end;
 }
 
+/* Caja de precio individual */
 .price-box {
   background: var(--bg);
   border: 1.5px solid var(--border);
@@ -564,12 +611,14 @@
   min-width: 140px;
 }
 
+/* Variante de caja para combos */
 .price-box--combo {
   border-color: rgba(102,126,234,0.35);
   background: rgba(102,126,234,0.04);
   text-align: left;
 }
 
+/* Variante de caja para precios aproximados */
 .price-box--aprox {
   border-color: rgba(245,158,11,0.4);
   background: rgba(245,158,11,0.04);
@@ -584,6 +633,7 @@
   color: #d97706;
 }
 
+/* Etiqueta del tipo de precio */
 .price-box-label {
   font-size: 0.7rem;
   font-weight: 700;
@@ -593,6 +643,7 @@
   margin-bottom: 0.3rem;
 }
 
+/* Separador entre cajas de precio */
 .price-box-divider {
   align-self: center;
   font-size: 0.8rem;
@@ -612,6 +663,7 @@
 .price-box .price-lbl    { color: var(--light); font-size: 0.78rem; }
 .price-box .per-night    { color: var(--medium); font-size: 0.72rem; margin-top: 0.1rem; text-align: right; }
 
+/* Fila de habitación dentro de un combo */
 .combo-hab-row {
   display: flex;
   justify-content: space-between;
@@ -630,6 +682,7 @@
   white-space: nowrap;
 }
 
+/* Total del combo con separador punteado */
 .combo-total {
   margin-top: 0.4rem;
   padding-top: 0.4rem;
@@ -640,6 +693,7 @@
 
 .combo-total strong { color: var(--dark); font-size: 0.8rem; }
 
+/* Precio detallado individual */
 .price-detail { text-align: right; }
 .price-from   { color: var(--light); font-size: 0.75rem; font-weight: 600; margin-bottom: 0.125rem; }
 .curr-price   { display: flex; align-items: baseline; gap: 0.25rem; justify-content: flex-end; }
@@ -647,6 +701,7 @@
 .price-lbl    { color: var(--light); font-size: 0.8rem; }
 .per-night    { color: var(--medium); font-size: 0.75rem; margin-top: 0.125rem; }
 
+/* Botón de ver detalle del hotel */
 .btn-view {
   display: flex;
   align-items: center;
@@ -667,6 +722,7 @@
 
 .btn-view:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102,126,234,0.4); }
 
+/* Skeleton de carga de tarjeta */
 .hotel-card.skeleton { pointer-events: none; }
 .sk-img {
   width: 280px;
@@ -676,6 +732,8 @@
   animation: shimmer 1.5s infinite;
 }
 .sk-body { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+
+/* Línea skeleton con animación de brillo */
 .sk-line {
   height: 18px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -687,6 +745,7 @@
 .sk-line.medium { width: 80%; }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
+/* Estado vacío cuando no hay resultados */
 .no-results {
   background: var(--white);
   padding: 4rem 2rem;
@@ -698,6 +757,7 @@
 .no-results h2   { color: var(--dark); margin: 0 0 0.5rem; }
 .no-results p    { color: var(--medium); margin: 0 0 2rem; }
 
+/* Botón principal genérico */
 .btn-primary {
   padding: 0.875rem 2rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
@@ -711,6 +771,7 @@
 }
 .btn-primary:hover { transform: translateY(-2px); }
 
+/* Responsive para tablets */
 @media (max-width: 1024px) {
   .sr-layout { grid-template-columns: 1fr; }
   .sr-filters { position: static; max-height: none; }
@@ -719,6 +780,7 @@
   .sk-img { width: 100%; }
 }
 
+/* Responsive para móviles */
 @media (max-width: 768px) {
   .sr-container      { padding: 0 1rem; }
   .sr-modify-content { padding: 0 1rem; }
@@ -738,8 +800,7 @@
   .btn-view          { width: 100%; justify-content: center; }
 }
 
-/* ── Autocomplete (agregado) ── */
-
+/* Contenedor del campo de búsqueda con autocompletado */
 .sr-field-group--ac {
   position: relative;
 }
@@ -748,6 +809,7 @@
   position: relative;
 }
 
+/* Lista desplegable del autocompletado */
 .sr-ac-list {
   position: absolute;
   top: calc(100% + 4px);
@@ -765,6 +827,7 @@
   box-shadow: 0 12px 32px rgba(0,0,0,.15);
 }
 
+/* Opción del autocompletado */
 .sr-ac-btn {
   width: 100%;
   text-align: left;
@@ -783,6 +846,7 @@
   color: var(--primary);
 }
 
+/* Indicador de carga del autocompletado */
 .sr-ac-loading {
   position: absolute;
   top: calc(100% + 4px);
@@ -798,6 +862,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,.1);
 }
 
+/* Texto de ayuda del campo de autocompletado */
 .sr-ac-hint {
   font-weight: 400;
   font-size: 0.65rem;

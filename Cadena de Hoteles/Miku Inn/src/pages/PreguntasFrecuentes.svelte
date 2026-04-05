@@ -1,8 +1,20 @@
 <script>
+  /**
+   * @file PreguntasFrecuentes.svelte
+   * @description Pagina de preguntas frecuentes de Miku Inn. Muestra un acordeon
+   * con las dudas mas comunes sobre reservaciones, pagos y politicas del hotel.
+   */
+
   // @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
 
+  /**
+   * Lista de preguntas y respuestas que conforman el acordeon de FAQs.
+   * @type {{ q: string, a: string }[]}
+   */
   const faqs = [
     {
       q: '¿Cómo realizo una reservación?',
@@ -38,8 +50,17 @@
     },
   ];
 
+  /**
+   * Array paralelo a `faqs` que indica cuales preguntas estan abiertas.
+   * @type {boolean[]}
+   */
   let open = faqs.map(() => false);
 
+  /**
+   * Alterna el estado abierto/cerrado de un item del acordeon.
+   * Fuerza la reactividad reasignando el array.
+   * @param {number} i - Indice del item a alternar.
+   */
   function toggle(i) {
     open[i] = !open[i];
     open = [...open];
@@ -47,6 +68,7 @@
 </script>
 
 <div class="info-page">
+  <!-- Hero de la pagina -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">❓</div>
@@ -57,11 +79,13 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton para regresar al inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       Volver al inicio
     </button>
 
+    <!-- Acordeon de preguntas frecuentes -->
     {#each faqs as faq, i}
       <div class="info-faq">
         <button class="info-faq__q" class:open={open[i]} on:click={() => toggle(i)}>
@@ -74,6 +98,7 @@
       </div>
     {/each}
 
+    <!-- Aviso de contacto si el usuario no encontro su respuesta -->
     <div class="info-card" style="margin-top:2rem">
       <p class="info-prose" style="margin:0">¿No encontraste tu respuesta? Escríbenos a <strong>info@mikuinn.com</strong> o llámanos al <strong>+502 4276-8687</strong></p>
     </div>

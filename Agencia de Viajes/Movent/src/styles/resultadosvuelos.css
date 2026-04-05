@@ -1,14 +1,11 @@
-/* ═══════════════════════════════════════════════
-   RESULTADOS VUELOS — Movent
-   Paleta: #1C1A18 · #FFCC00 · #D40511 · #F5F2EC
-   ═══════════════════════════════════════════════ */
-
+/* Página de resultados de vuelos con fondo crema */
 .rv-page {
   background: #F5F2EC;
   min-height: calc(100vh - 64px);
   padding: 24px 0 60px;
 }
 
+/* Layout de dos columnas: sidebar y contenido */
 .rv-layout {
   max-width: 1200px;
   margin: 0 auto;
@@ -19,9 +16,7 @@
   align-items: start;
 }
 
-/* ═══════════════════════════════
-   SIDEBAR
-═══════════════════════════════ */
+/* Sidebar de filtros sticky con scroll interno */
 .rv-sidebar {
   background: #fff;
   border-radius: 14px;
@@ -34,6 +29,7 @@
   flex-direction: column;
 }
 
+/* Cabecera del sidebar con título y badge de filtros activos */
 .rv-sidebar__head {
   display: flex;
   align-items: center;
@@ -55,6 +51,7 @@
   border-radius: 10px; padding: 1px 6px; line-height: 1.5;
 }
 
+/* Botón toggle para colapsar en pantallas medianas */
 .rv-sidebar__toggle {
   display: none;
   background: none; border: none; cursor: pointer;
@@ -63,6 +60,7 @@
 }
 .rv-sidebar__toggle:hover { background: #f5f2ec; }
 
+/* Cuerpo del sidebar con scroll y transición al colapsar */
 .rv-sidebar__body {
   overflow-y: auto; padding: 16px 18px 18px;
   scrollbar-width: thin; scrollbar-color: #e0d9cf transparent;
@@ -70,6 +68,7 @@
   transition: max-height .3s ease, opacity .3s ease, padding .3s ease;
 }
 
+/* Estado colapsado: oculta el cuerpo */
 .rv-sidebar--collapsed .rv-sidebar__body {
   max-height: 0;
   padding-top: 0; padding-bottom: 0;
@@ -77,6 +76,7 @@
   opacity: 0;
 }
 
+/* Grupos de filtro con separador inferior */
 .rv-filter-group {
   margin-bottom: 18px;
   padding-bottom: 18px;
@@ -89,6 +89,7 @@
   text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 10px;
 }
 
+/* Inputs de rango de precio */
 .rv-price-inputs { display: flex; align-items: center; gap: 7px; }
 .rv-price-input {
   display: flex; align-items: center; gap: 4px;
@@ -104,6 +105,7 @@
 }
 .rv-price-sep { color: #9a9089; font-size: 13px; flex-shrink: 0; }
 
+/* Checkboxes personalizados con marca amarilla */
 .rv-checkboxes { display: flex; flex-direction: column; gap: 9px; }
 .rv-checkbox { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
 .rv-checkbox input { display: none; }
@@ -121,6 +123,7 @@
 }
 .rv-checkbox__label { font-size: 13px; color: #3a3530; }
 
+/* Botones de duración en grid de dos columnas */
 .rv-dur-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .rv-dur-btn {
   padding: 7px; background: #F5F2EC;
@@ -131,6 +134,7 @@
 .rv-dur-btn--active { background: #FFCC00; border-color: #FFCC00; color: #1C1A18; }
 .rv-dur-btn:hover:not(.rv-dur-btn--active) { border-color: #FFCC00; }
 
+/* Botones de horario con ícono y descripción de la franja */
 .rv-horarios { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .rv-horario-btn {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -147,12 +151,10 @@
 
 .rv-sidebar__reset { width: 100%; margin-top: 4px; font-size: 12px; padding: 7px 12px; }
 
-/* ═══════════════════════════════
-   MAIN
-═══════════════════════════════ */
+/* Área de contenido principal */
 .rv-main { min-width: 0; }
 
-/* ── SEARCH BAR ── */
+/* Barra de búsqueda oscura con resumen de parámetros actuales */
 .rv-search-bar {
   background: #1C1A18;
   border-radius: 12px;
@@ -176,6 +178,7 @@
 .rv-search-bar__meta-item svg { opacity: .7; flex-shrink: 0; }
 .rv-search-bar__dot { color: #3a3430; font-size: 12px; }
 
+/* Botón de modificar la búsqueda actual */
 .rv-search-bar__mod-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 14px 18px;
@@ -186,7 +189,7 @@
 }
 .rv-search-bar__mod-btn:hover { background: rgba(255,204,0,0.1); }
 
-/* ── FORM MODIFICAR INLINE ── */
+/* Formulario de modificación desplegable debajo de la barra */
 .rv-modificar-inline {
   background: #fff;
   border: 1px solid #e8e3dc; border-top: none;
@@ -205,6 +208,7 @@
   padding: 12px 14px; border: 1px solid #e8e3dc;
 }
 
+/* Fila completa del formulario con layout adaptado al tipo de vuelo */
 .rv-mod-section--row {
   grid-column: 1 / -1;
   display: grid;
@@ -231,6 +235,7 @@
 }
 .rv-mod-hint { font-weight: 400; color: #9a9089; font-size: 10px; text-transform: none; }
 
+/* Input del formulario de modificación */
 .rv-mod-input {
   border: 1.5px solid #e0d9cf; border-radius: 8px;
   padding: 8px 11px; font-size: 13px; color: #1C1A18;
@@ -245,6 +250,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-mod-field--full { grid-column: 1 / -1; }
 .rv-mod-error { font-size: 12px; font-weight: 600; color: #D40511; margin: 0; }
 
+/* Botón de buscar del formulario de modificación */
 .rv-mod-buscar {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 20px;
@@ -256,7 +262,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-mod-buscar:hover:not(:disabled) { background: #f0c000; transform: translateY(-1px); }
 .rv-mod-buscar:disabled { opacity: .6; cursor: not-allowed; }
 
-/* ── TRIP TYPE TOGGLE ── */
+/* Toggle de tipo de viaje: ida/ida y vuelta */
 .rv-trip-toggle {
   display: flex; gap: 4px;
   background: #f0ebe3; border-radius: 8px; padding: 3px;
@@ -270,7 +276,7 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-trip-btn--active { background: #FFCC00; color: #1C1A18; }
 
-/* Autocomplete */
+/* Autocomplete del campo de destino */
 .rv-ac-wrap { position: relative; }
 .rv-ac-list {
   position: absolute; top: calc(100% + 3px); left: 0; right: 0;
@@ -288,13 +294,12 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-ac-list button:hover { background: rgba(255,204,0,.15); }
 
+/* Transición de expansión del formulario inline */
 .rv-expand-enter-active, .rv-expand-leave-active { transition: all .25s ease; overflow: hidden; }
 .rv-expand-enter-from, .rv-expand-leave-to { opacity: 0; max-height: 0; margin-bottom: 0; }
 .rv-expand-enter-to, .rv-expand-leave-from { opacity: 1; max-height: 600px; margin-bottom: 14px; }
 
-/* ═══════════════════════════════
-   INDICADOR DE PASOS
-═══════════════════════════════ */
+/* Indicador de pasos para vuelos de ida y vuelta */
 .rv-pasos {
   display: flex; align-items: center; gap: 12px;
   background: #fff; border: 1px solid #e8e3dc;
@@ -307,6 +312,7 @@ select.rv-mod-input { cursor: pointer; }
   flex: 1; min-width: 180px;
 }
 
+/* Número del paso con estado activo/completado/pendiente */
 .rv-paso__num {
   width: 30px; height: 30px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -329,6 +335,7 @@ select.rv-mod-input { cursor: pointer; }
 
 .rv-paso__back { padding: 6px 14px; font-size: 12px; flex-shrink: 0; }
 
+/* Cabecera de la sección de vuelo de regreso */
 .rv-regreso-header {
   display: flex; align-items: center; gap: 8px;
   background: #1C1A18; color: #FFCC00;
@@ -336,9 +343,7 @@ select.rv-mod-input { cursor: pointer; }
   border-radius: 10px; margin-bottom: 10px;
 }
 
-/* ═══════════════════════════════
-   TOOLBAR
-═══════════════════════════════ */
+/* Toolbar con conteo y selector de orden */
 .rv-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 10px; flex-wrap: wrap; gap: 8px; margin-top: 14px;
@@ -352,7 +357,7 @@ select.rv-mod-input { cursor: pointer; }
   cursor: pointer; font-family: inherit; outline: none;
 }
 
-/* Chips */
+/* Chips de filtros activos */
 .rv-chips-activos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .rv-chip {
   display: inline-flex; align-items: center; gap: 4px;
@@ -365,9 +370,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-chip--clear { border-color: #D40511; color: #D40511; background: #fff5f5; }
 .rv-chip--clear:hover { background: #D40511; color: #fff; }
 
-/* ═══════════════════════════════
-   CARD WRAP (card + comentarios)
-═══════════════════════════════ */
+/* Contenedor de tarjeta + reseñas del vuelo */
 .rv-lista { display: flex; flex-direction: column; gap: 12px; }
 
 .rv-card-wrap {
@@ -375,9 +378,7 @@ select.rv-mod-input { cursor: pointer; }
   flex-direction: column;
 }
 
-/* ═══════════════════════════════
-   CARDS
-═══════════════════════════════ */
+/* Tarjeta de vuelo con hover amarillo y estado seleccionado */
 .rv-card {
   background: #fff; border-radius: 14px;
   border: 1px solid #e8e3dc; padding: 18px;
@@ -389,6 +390,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card:hover { border-color: #FFCC00; box-shadow: 0 4px 18px rgba(255,204,0,.14); transform: translateY(-1px); }
 .rv-card--sel { border-color: #FFCC00; box-shadow: 0 0 0 2px #FFCC00; }
 
+/* Cabecera de la tarjeta con aerolínea y tags */
 .rv-card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .rv-card__aerolinea { display: flex; align-items: center; gap: 10px; }
 .rv-card__logo {
@@ -398,6 +400,8 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card__nombre { font-size: 13px; font-weight: 700; color: #1C1A18; display: block; }
 .rv-card__num { font-size: 11px; color: #9a9089; display: block; }
 .rv-card__tags { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+
+/* Tags de estado del vuelo: directo, escala, urgente y rating */
 .rv-tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
 .rv-tag--directo  { background: #dcfce7; color: #166534; }
 .rv-tag--escala   { background: #fef3c7; color: #92400e; }
@@ -408,6 +412,7 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-tag--rating small { font-weight: 400; color: #9a8060; margin-left: 2px; }
 
+/* Ruta del vuelo con origen, destino y línea de trayecto */
 .rv-card__ruta { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 .rv-card__punto { display: flex; flex-direction: column; align-items: flex-start; min-width: 70px; }
 .rv-card__punto--r { align-items: flex-end; }
@@ -415,6 +420,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card__ciudad { font-size: 11px; color: #9a9089; margin-top: 2px; max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rv-card__hora { font-size: 15px; font-weight: 700; color: #1C1A18; margin-top: 5px; }
 
+/* Track visual de la ruta con duración y puntos intermedios */
 .rv-card__medio { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 5px; min-width: 0; }
 .rv-card__dur { font-size: 11px; color: #9a9089; font-weight: 600; }
 .rv-card__track { width: 100%; display: flex; align-items: center; }
@@ -428,6 +434,7 @@ select.rv-mod-input { cursor: pointer; }
   border-radius: 10px; padding: 2px 7px; font-weight: 600;
 }
 
+/* Meta del vuelo: equipaje, clase, asientos disponibles */
 .rv-card__meta {
   display: flex; flex-wrap: wrap; gap: 12px;
   padding: 8px 0; margin-bottom: 10px;
@@ -435,6 +442,7 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-card__meta-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #9a9089; }
 
+/* Botones de precio por clase con barra de acento amarilla al seleccionar */
 .rv-card__precios { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 
 .rv-precio-btn {
@@ -444,6 +452,7 @@ select.rv-mod-input { cursor: pointer; }
   cursor: pointer; font-family: inherit; transition: all .15s;
   text-align: left; position: relative; overflow: hidden;
 }
+/* Barra de acento superior al seleccionar */
 .rv-precio-btn::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0;
   height: 3px; background: transparent; transition: background .15s;
@@ -451,6 +460,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-precio-btn:hover:not(:disabled) { border-color: #FFCC00; background: #fffef5; }
 .rv-precio-btn--sel { border-color: #1C1A18; background: #fffef0; box-shadow: 0 0 0 1px #1C1A18; }
 .rv-precio-btn--sel::before { background: #FFCC00; }
+/* Checkmark de confirmación al seleccionar */
 .rv-precio-btn--sel::after {
   content: '✓'; position: absolute; top: 7px; right: 10px;
   font-size: 12px; font-weight: 800; color: #1C1A18;
@@ -467,7 +477,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-precio-btn__seats { font-size: 10px; color: #9a9089; }
 .rv-precio-btn--sel .rv-precio-btn__seats { color: #7a6e00; }
 
-/* ══ ITINERARIO ══ */
+/* Detalle del itinerario colapsable por tramo */
 .rv-itinerario { margin-bottom: 10px; padding-top: 8px; border-top: 1px dashed #e0d9cf; }
 .rv-itinerario__toggle {
   display: inline-flex; align-items: center; gap: 5px;
@@ -480,13 +490,18 @@ select.rv-mod-input { cursor: pointer; }
   margin-top: 12px; background: #fafaf8;
   border: 1px solid #e8e3dc; border-radius: 10px; padding: 14px;
 }
+
+/* Transición deslizante para el itinerario */
 .rv-slide-enter-active, .rv-slide-leave-active { transition: all .25s ease; overflow: hidden; }
 .rv-slide-enter-from, .rv-slide-leave-to { opacity: 0; max-height: 0; }
 .rv-slide-enter-to, .rv-slide-leave-from { opacity: 1; max-height: 800px; }
 
+/* Tramos del itinerario con línea temporal vertical */
 .rv-tramo { display: flex; gap: 10px; }
 .rv-tramo--final { align-items: center; padding-top: 4px; }
 .rv-tramo__tl { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 3px; }
+
+/* Puntos de la línea de tiempo: origen, destino y final */
 .rv-tramo__dot { width: 9px; height: 9px; border-radius: 50%; background: #d0c9be; border: 2px solid #d0c9be; flex-shrink: 0; }
 .rv-tramo__dot--o { background: #FFCC00; border-color: #1C1A18; }
 .rv-tramo__dot--d { background: #e8e3dc; }
@@ -501,6 +516,8 @@ select.rv-mod-input { cursor: pointer; }
 .rv-tramo__hora { font-size: 12px; font-weight: 700; white-space: nowrap; margin-left: auto; }
 .rv-tramo__hora--s { color: #1C1A18; }
 .rv-tramo__hora--l { color: #5a5047; }
+
+/* Detalles del tramo: duración, aeronave, tripulación */
 .rv-tramo__info {
   display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
   padding: 6px 9px; background: #fff;
@@ -512,6 +529,8 @@ select.rv-mod-input { cursor: pointer; }
 .rv-tramo__sep { color: #d0c9be; }
 .rv-tramo__crew { font-size: 11px; color: #7a6e60; }
 .rv-tramo__crew em { font-style: normal; color: #9a9089; }
+
+/* Badge de escala entre tramos */
 .rv-tramo__escala {
   display: inline-flex; align-items: center; gap: 5px;
   background: #fffbeb; border: 1px solid #fde68a;
@@ -519,6 +538,7 @@ select.rv-mod-input { cursor: pointer; }
   font-size: 11px; font-weight: 600; color: #92400e; margin-top: 7px;
 }
 
+/* Pie de la tarjeta con clase seleccionada y precio total */
 .rv-card__foot {
   display: flex; align-items: center; justify-content: space-between;
   padding-top: 12px; border-top: 1px solid #f0ebe3;
@@ -534,9 +554,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-card__foot-precio { font-size: 18px; font-weight: 800; color: #1C1A18; }
 .rv-card__foot-precio small { font-size: 11px; font-weight: 400; color: #9a9089; }
 
-/* ═══════════════════════════════
-   RESEÑAS / COMENTARIOS DEL VUELO
-═══════════════════════════════ */
+/* Sección de reseñas del vuelo pegada debajo de la tarjeta */
 .rv-resenas {
   background: #fff;
   border: 1px solid #e8e3dc;
@@ -545,6 +563,7 @@ select.rv-mod-input { cursor: pointer; }
   overflow: hidden;
 }
 
+/* Estado de carga de reseñas */
 .rv-resenas__loading {
   display: flex;
   align-items: center;
@@ -554,6 +573,7 @@ select.rv-mod-input { cursor: pointer; }
   color: #9a9089;
 }
 
+/* Estado vacío sin reseñas */
 .rv-resenas__empty {
   display: flex;
   align-items: center;
@@ -564,6 +584,7 @@ select.rv-mod-input { cursor: pointer; }
   font-style: italic;
 }
 
+/* Cabecera de reseñas con rating promedio */
 .rv-resenas__head {
   display: flex;
   align-items: center;
@@ -608,12 +629,14 @@ select.rv-mod-input { cursor: pointer; }
   margin: 0;
 }
 
+/* Lista de comentarios del vuelo */
 .rv-resenas__lista {
   display: flex;
   flex-direction: column;
   padding: 6px 14px 4px;
 }
 
+/* Separador entre comentarios raíz */
 .rv-resenas__lista > .cn-nodo {
   padding: 10px 0;
   border-bottom: 1px solid #f5f2ec;
@@ -622,9 +645,7 @@ select.rv-mod-input { cursor: pointer; }
   border-bottom: none;
 }
 
-/* ═══════════════════════════════
-   AVISOS Y ESTADOS
-═══════════════════════════════ */
+/* Avisos y estados vacíos/de carga */
 .rv-warn {
   display: flex; align-items: flex-start; gap: 8px;
   background: #fffbeb; border: 1px solid #fde68a;
@@ -637,13 +658,13 @@ select.rv-mod-input { cursor: pointer; }
 }
 .rv-empty__title { font-size: 16px; font-weight: 700; color: #1C1A18; margin: 0; }
 .rv-empty__sub { font-size: 13px; color: #9a9089; margin: 0; line-height: 1.5; }
+
+/* Spinners de carga */
 .rv-spinner { width: 34px; height: 34px; border: 3px solid #e8e3dc; border-top-color: #FFCC00; border-radius: 50%; animation: rv-spin .7s linear infinite; }
 .rv-spinner--sm { width: 14px; height: 14px; border-width: 2px; }
 @keyframes rv-spin { to { transform: rotate(360deg); } }
 
-/* ═══════════════════════════════
-   BOTONES
-═══════════════════════════════ */
+/* Botones del módulo: amarillo, ghost y CTA de tarjeta */
 .rv-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 8px;
@@ -657,9 +678,7 @@ select.rv-mod-input { cursor: pointer; }
 .rv-btn--ghost:hover { background: #f5f2ec; }
 .rv-card__cta { padding: 9px 18px; font-size: 13px; font-weight: 700; }
 
-/* ═══════════════════════════════
-   RESPONSIVE
-═══════════════════════════════ */
+/* Responsive: sidebar colapsable en tablet, formulario apilado */
 @media (max-width: 900px) {
   .rv-layout { grid-template-columns: 1fr; }
   .rv-sidebar { position: static; max-height: none; }
@@ -675,6 +694,7 @@ select.rv-mod-input { cursor: pointer; }
   .rv-paso { min-width: 140px; }
 }
 
+/* Responsive: columna única en móvil */
 @media (max-width: 600px) {
   .rv-layout { padding: 0 12px; }
   .rv-page { padding: 16px 0 40px; }

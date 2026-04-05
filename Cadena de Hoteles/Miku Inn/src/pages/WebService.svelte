@@ -1,36 +1,65 @@
 <script>
+  /**
+   * @file WebService.svelte
+   * @description Portal de Webservice para agencias de viaje integradas con
+   * Miku Inn. Permite al usuario registrado como agencia ver, registrar y
+   * cambiar el estado (Activo / Cerrado) de su agencia dentro de la plataforma.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   const API_BASE = 'http://localhost:7000';
 
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo = (page, data = null) => {};
 
-  // ── Session ───────────────────────────────────────────────────────────────
+  /** Nombre de usuario de la sesion activa. @type {string} */
   let username    = '';
+
+  /** ID del usuario de la sesion activa. @type {number|null} */
   let usuarioId   = null;
 
-  // ── Navegación ────────────────────────────────────────────────────────────
+  /** Seccion activa del sidebar (actualmente solo 'agencias'). @type {string} */
   let activeSection = 'agencias';
 
-  // ── Agencias ──────────────────────────────────────────────────────────────
+  /** Lista de agencias del usuario cargadas desde la API. @type {any[]} */
   let agencias          = [];
+
+  /** Indica si la lista de agencias esta siendo cargada. @type {boolean} */
   let cargandoAgencias  = false;
+
+  /** Mensaje de error si la carga de agencias falla. @type {string|null} */
   let errorAgencias     = null;
-  // Modal crear
+
+  /** Controla la visibilidad del modal de creacion de agencia. @type {boolean} */
   let showModalCrear  = false;
+
+  /** Indica si la peticion de creacion esta en vuelo. @type {boolean} */
   let creando         = false;
+
+  /** Mensaje de feedback dentro del modal de creacion. @type {{ tipo: string, texto: string }|null} */
   let mensajeCrear    = null;
+
+  /** Datos del formulario para registrar una nueva agencia. @type {{ nombre: string, correo: string }} */
   let nuevaAgencia    = { nombre: '', correo: '' };
 
-  // Feedback inline
+  /** Mensaje de feedback inline en la tabla/tarjeta de agencias. @type {{ tipo: string, texto: string }|null} */
   let mensajeTabla = null;
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  /**
+   * Carga la sesion del usuario y las agencias al montar el componente.
+   */
   onMount(async () => {
     await cargarSesion();
     await cargarAgencias();
   });
 
+  /**
+   * Obtiene los datos de la sesion activa (username e ID de usuario).
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarSesion() {
     try {
       const res = await fetch(`${API_BASE}/sesion`, { credentials: 'include' });
@@ -42,10 +71,11 @@
     } catch (_) {}
   }
 
-  // ════════════════════════════════════════════════════
-  //  AGENCIAS
-  // ════════════════════════════════════════════════════
-
+  /**
+   * Carga la lista de agencias asociadas al usuario desde el backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarAgencias() {
     cargandoAgencias = true;
     errorAgencias    = null;
@@ -60,16 +90,28 @@
     }
   }
 
+  /**
+   * Abre el modal de creacion de agencia y reinicia sus campos.
+   */
   function abrirModalCrear() {
     nuevaAgencia = { nombre: '', correo: '' };
     mensajeCrear = null;
     showModalCrear = true;
   }
 
+  /**
+   * Cierra el modal de creacion de agencia.
+   */
   function cerrarModalCrear() {
     showModalCrear = false;
   }
 
+  /**
+   * Valida los campos y envia la peticion de creacion de nueva agencia.
+   * Actualiza la lista localmente al recibir la respuesta exitosa.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function crearAgencia() {
     if (!nuevaAgencia.nombre.trim()) {
       mensajeCrear = { tipo: 'error', texto: 'El nombre es obligatorio.' };
@@ -105,6 +147,13 @@
     }
   }
 
+  /**
+   * Alterna el estado de una agencia entre Activo (1) y Cerrado (2)
+   * y actualiza la lista local al confirmar el cambio en el servidor.
+   * @async
+   * @param {any} ag - Objeto agencia a modificar.
+   * @returns {Promise<void>}
+   */
   async function toggleEstado(ag) {
     const nuevoEstado = ag.estadoId === 1 ? 2 : 1;
     const texto       = nuevoEstado === 1 ? 'Activo' : 'Cerrado';
@@ -128,15 +177,30 @@
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  /**
+   * Cierra el overlay/modal con la tecla Escape si el foco esta en el.
+   * @param {KeyboardEvent} e - Evento de teclado.
+   * @param {Function} fn - Funcion de cierre a invocar.
+   */
   function handleKeyOverlay(e, fn) {
     if (e.key === 'Escape') fn();
   }
 
+  /**
+   * Devuelve la clase CSS del badge de estado segun el estadoId de la agencia.
+   * @param {number} estadoId - 1 = Activo, cualquier otro = Cerrado.
+   * @returns {string}
+   */
   function badgeClass(estadoId) {
     return estadoId === 1 ? 'ws__badge--activo' : 'ws__badge--cerrado';
   }
 
+  /**
+   * Cierra la sesion del usuario llamando al endpoint de logout y
+   * redirige al inicio.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function salir() {
     try {
       await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
@@ -147,10 +211,10 @@
 
 <div class="ws">
 
-  <!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+  <!-- Sidebar de navegacion con usuario y boton de salida -->
   <aside class="ws__sidebar">
 
-    <!-- Logo -->
+    <!-- Logo y titulo del portal -->
     <div class="ws__sidebar-header">
       <div class="ws__sidebar-logo">
         <div class="ws__sidebar-logo-icon">
@@ -167,7 +231,7 @@
       </div>
     </div>
 
-    <!-- Nav -->
+    <!-- Navegacion lateral (seccion activa resaltada) -->
     <nav class="ws__sidebar-nav">
       <button
         class="ws__nav-btn {activeSection === 'agencias' ? 'ws__nav-btn--active' : ''}"
@@ -181,7 +245,7 @@
       </button>
     </nav>
 
-    <!-- Footer: usuario + salir -->
+    <!-- Pie del sidebar: badge de usuario y boton de salida -->
     <div class="ws__sidebar-footer">
       <div class="ws__user-badge">
         <div class="ws__user-avatar">{username.charAt(0).toUpperCase()}</div>
@@ -201,12 +265,12 @@
     </div>
   </aside>
 
-  <!-- ═══════════════════════ MAIN ═══════════════════════ -->
+  <!-- Contenido principal del portal -->
   <main class="ws__main">
 
     {#if activeSection === 'agencias'}
 
-      <!-- ══ Cargando ══ -->
+      <!-- Estado de carga de la lista de agencias -->
       {#if cargandoAgencias}
         <div class="ws__loading-full">
           <svg class="ws__spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -215,7 +279,7 @@
           <p>Cargando…</p>
         </div>
 
-      <!-- ══ Error ══ -->
+      <!-- Estado de error con boton de reintento -->
       {:else if errorAgencias}
         <div class="ws__error-full">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="1.5">
@@ -225,12 +289,12 @@
           <button class="ws__btn ws__btn--ghost" on:click={cargarAgencias}>Reintentar</button>
         </div>
 
-      <!-- ══ SIN AGENCIA → pantalla de registro ══ -->
+      <!-- Pantalla de onboarding cuando el usuario no tiene agencia registrada -->
       {:else if agencias.length === 0}
         <div class="ws__onboarding">
           <div class="ws__onboarding-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+              <path d="M19 21V5a2 2 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
           </div>
           <h2 class="ws__onboarding-title">Aún no tienes agencia</h2>
@@ -243,13 +307,13 @@
           </button>
         </div>
 
-      <!-- ══ CON AGENCIA → tarjeta de detalle ══ -->
+      <!-- Vista de detalle cuando el usuario ya tiene agencia registrada -->
       {:else}
         {@const ag = agencias[0]}
 
         <div class="ws__agency-view">
 
-          <!-- Header de sección -->
+          <!-- Encabezado de la seccion con boton de recarga -->
           <div class="ws__page-header" style="margin-bottom:1.5rem">
             <div>
               <h1 class="ws__page-title">Mi Agencia</h1>
@@ -264,6 +328,7 @@
             </button>
           </div>
 
+          <!-- Mensaje de feedback tras acciones (crear, cambiar estado) -->
           {#if mensajeTabla}
             <div class="ws__feedback ws__feedback--{mensajeTabla.tipo}" style="margin-bottom:1.25rem">
               {#if mensajeTabla.tipo === 'ok'}
@@ -275,14 +340,14 @@
             </div>
           {/if}
 
-          <!-- Tarjeta principal -->
+          <!-- Tarjeta principal con datos de la agencia -->
           <div class="ws__agency-card">
 
-            <!-- Banner superior con nombre y estado -->
+            <!-- Banner con nombre, ID y badge de estado -->
             <div class="ws__agency-banner">
               <div class="ws__agency-banner-icon">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="2">
-                  <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                  <path d="M19 21V5a2 2 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                 </svg>
               </div>
               <div class="ws__agency-banner-info">
@@ -295,7 +360,7 @@
               </span>
             </div>
 
-            <!-- Grid de datos -->
+            <!-- Grid de datos: correo, descuento y estado -->
             <div class="ws__agency-grid">
 
               <div class="ws__agency-stat">
@@ -311,6 +376,7 @@
                 </div>
               </div>
 
+              <!-- Porcentaje de descuento asignado por el administrador -->
               <div class="ws__agency-stat">
                 <div class="ws__agency-stat-icon ws__agency-stat-icon--amber">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -340,7 +406,7 @@
 
             </div>
 
-            <!-- Acción: cambiar estado -->
+            <!-- Acciones: cerrar o reactivar la agencia segun su estado actual -->
             <div class="ws__agency-actions">
               {#if ag.estadoId === 1}
                 <button class="ws__btn ws__btn--warning" on:click={() => toggleEstado(ag)}>
@@ -360,18 +426,18 @@
               {/if}
             </div>
 
-          </div><!-- /ws__agency-card -->
+          </div>
 
-        </div><!-- /ws__agency-view -->
+        </div>
 
       {/if}
 
-    {/if}<!-- /agencias -->
+    {/if}
 
   </main>
 </div>
 
-<!-- ═══ MODAL: CREAR AGENCIA ═══ -->
+<!-- Modal para registrar una nueva agencia -->
 {#if showModalCrear}
   <div
     class="ws__overlay"
@@ -393,6 +459,7 @@
 
     <div class="ws__modal-body">
 
+      <!-- Campo de nombre de la agencia -->
       <div class="ws__form-group">
         <label class="ws__form-label" for="ag-nombre">Nombre de la agencia *</label>
         <input
@@ -404,6 +471,7 @@
         />
       </div>
 
+      <!-- Campo de correo electronico de la agencia -->
       <div class="ws__form-group">
         <label class="ws__form-label" for="ag-correo">Correo electrónico *</label>
         <input
@@ -415,6 +483,7 @@
         />
       </div>
 
+      <!-- Aviso: el descuento inicia en 0% y solo el admin puede cambiarlo -->
       <div class="ws__form-group" style="background:rgba(45,212,191,0.06);border:1px solid rgba(45,212,191,0.15);border-radius:8px;padding:0.6rem 0.875rem">
         <p style="margin:0;font-size:0.78rem;color:var(--ws-muted)">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
@@ -422,6 +491,7 @@
         </p>
       </div>
 
+      <!-- Feedback de validacion o error del formulario del modal -->
       {#if mensajeCrear}
         <div class="ws__feedback ws__feedback--{mensajeCrear.tipo}">
           {#if mensajeCrear.tipo === 'ok'}
@@ -435,6 +505,7 @@
 
     </div>
 
+    <!-- Botones de accion del modal -->
     <div class="ws__modal-footer">
       <button class="ws__btn ws__btn--ghost" on:click={cerrarModalCrear} disabled={creando}>Cancelar</button>
       <button class="ws__btn ws__btn--primary" on:click={crearAgencia} disabled={creando}>

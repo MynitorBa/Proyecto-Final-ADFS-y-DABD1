@@ -1,11 +1,6 @@
-/* ═══════════════════════════════════════════════════
-   MIS RESERVACIONES — Movent Agencia de Viajes
-   Negro #1C1A18 · Amarillo #FFCC00 · Rojo #D40511
-   Fondo #F5F2EC
-═══════════════════════════════════════════════════ */
-
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Página principal con fondo crema */
 .mv-page {
   min-height: 100vh;
   background: #F5F2EC;
@@ -20,7 +15,7 @@
   padding: 2rem 1.5rem;
 }
 
-/* ════════════════ HEADER ════════════════ */
+/* Encabezado con título y acciones alineadas */
 .mv-header {
   display: flex;
   align-items: flex-start;
@@ -44,7 +39,7 @@
   margin-top: 0.3rem;
 }
 
-/* ════════════════ BOTONES ════════════════ */
+/* Botones con variantes: primary, secondary, outline, ghost, danger */
 .mv-btn {
   display: inline-flex;
   align-items: center;
@@ -89,6 +84,7 @@
 
 .mv-btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 
+/* Spinner pequeño dentro de botones */
 .mv-btn__spin {
   width: 13px; height: 13px;
   border: 2px solid rgba(255,255,255,0.3);
@@ -100,7 +96,7 @@
 .mv-btn__spin--dark  { border-color: rgba(0,0,0,0.1); border-top-color: #1C1A18; }
 .mv-btn__spin--light { border-color: rgba(255,255,255,0.3); border-top-color: #fff; }
 
-/* ════════════════ RESUMEN ════════════════ */
+/* Bloque de resumen con hero financiero y grids de estado */
 .mv-resumen {
   display: flex;
   flex-direction: column;
@@ -108,7 +104,7 @@
   margin-bottom: 2rem;
 }
 
-/* Hero financiero — fondo negro con amarillo */
+/* Hero financiero negro con monto total en amarillo */
 .mv-resumen__hero {
   background: #1C1A18;
   border-radius: 16px;
@@ -158,13 +154,14 @@
   opacity: 0.35;
 }
 
-/* Estados — 6 tarjetas */
+/* Grid de 6 tarjetas de estado de reservas */
 .mv-resumen__estados {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 0.75rem;
 }
 
+/* Tarjeta de estado individual con franja de color superior */
 .mv-estado {
   background: #fff;
   border: 1px solid #e5e1db;
@@ -208,13 +205,14 @@
   letter-spacing: 0.5px;
 }
 
-/* Categorías */
+/* Grid de 3 categorías: vuelos, hoteles y paquetes */
 .mv-resumen__cats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 
+/* Tarjeta de categoría con barra de color superior al hover */
 .mv-cat {
   background: #fff;
   border: 1px solid #e5e1db;
@@ -258,7 +256,7 @@
 .mv-cat__label { font-size: 0.85rem; font-weight: 700; color: #1C1A18; }
 .mv-cat__sub   { font-size: 0.72rem; color: #7a7067; }
 
-/* ════════════════ CONTROLES ════════════════ */
+/* Barra de controles: filtros de estado y buscador */
 .mv-controles {
   display: flex;
   align-items: center;
@@ -274,6 +272,7 @@
   gap: 0.4rem;
 }
 
+/* Filtros tipo pill con estado activo en amarillo */
 .mv-filtro {
   display: inline-flex;
   align-items: center;
@@ -302,6 +301,7 @@
 }
 .mv-filtro--active .mv-filtro__n { background: rgba(0,0,0,0.12); }
 
+/* Caja de búsqueda por texto */
 .mv-buscar {
   display: flex;
   align-items: center;
@@ -320,7 +320,7 @@
   font-size: 0.84rem; color: #1C1A18; font-family: inherit; width: 100%;
 }
 
-/* ════════════════ TABS CATEGORÍA ════════════════ */
+/* Tabs de categoría con indicador amarillo en el tab activo */
 .mv-tabs {
   display: flex;
   gap: 0.4rem;
@@ -360,7 +360,7 @@
 }
 .mv-tab--active .mv-tab__n { background: #FFCC00; color: #000; }
 
-/* ════════════════ EMPTY STATE ════════════════ */
+/* Estado vacío cuando no hay reservas */
 .mv-empty {
   display: flex;
   flex-direction: column;
@@ -373,7 +373,7 @@
 .mv-empty__title { font-size: 1.1rem; font-weight: 700; color: #1C1A18; }
 .mv-empty__sub   { font-size: 0.88rem; color: #7a7067; }
 
-/* Spinner */
+/* Spinner de carga en varias escalas */
 .mv-spinner {
   width: 32px; height: 32px;
   border: 3px solid #e5e1db;
@@ -386,13 +386,14 @@
 
 @keyframes mv-spin { to { transform: rotate(360deg); } }
 
-/* ════════════════ LISTA / CARDS ════════════════ */
+/* Grid de cards de reserva */
 .mv-lista {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
   gap: 1rem;
 }
 
+/* Tarjeta de reserva con hover de elevación y borde amarillo */
 .mv-card {
   background: #fff;
   border: 1px solid #e5e1db;
@@ -410,7 +411,7 @@
   border-color: #FFCC00;
 }
 
-/* Franja de categoría */
+/* Franja de color según categoría de la reserva */
 .mv-card__franja {
   display: flex;
   align-items: center;
@@ -435,6 +436,7 @@
   gap: 0.5rem;
 }
 
+/* Código de reserva en fuente monospace */
 .mv-card__codigo {
   font-size: 0.7rem;
   color: #9a9089;
@@ -446,7 +448,7 @@
   max-width: 200px;
 }
 
-/* Ruta vuelo */
+/* Visualización de ruta de vuelo con flecha y código IATA */
 .mv-card__ruta {
   display: flex;
   align-items: center;
@@ -474,6 +476,7 @@
   white-space: nowrap;
 }
 
+/* Flecha de ruta con línea degradada y avión centrado */
 .mv-card__flecha {
   flex: 1;
   display: flex;
@@ -499,7 +502,7 @@
   padding: 2px;
 }
 
-/* Hotel */
+/* Info de hotel en card */
 .mv-card__hotel {
   display: flex;
   align-items: flex-start;
@@ -509,7 +512,7 @@
 .mv-card__hotel-nombre { font-size: 0.95rem; font-weight: 700; color: #1C1A18; }
 .mv-card__hotel-hab    { font-size: 0.75rem; color: #7a7067; }
 
-/* Meta */
+/* Metadatos de la reserva en fila */
 .mv-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -524,7 +527,7 @@
 }
 .mv-card__meta svg { flex-shrink: 0; }
 
-/* Bottom */
+/* Pie de la tarjeta con precio y flecha de ver detalle */
 .mv-card__bottom {
   display: flex;
   align-items: center;
@@ -540,6 +543,7 @@
   color: #1C1A18;
 }
 
+/* Indicador "ver detalle" que aparece solo al hover */
 .mv-card__ver {
   display: flex;
   align-items: center;
@@ -552,7 +556,7 @@
 }
 .mv-card:hover .mv-card__ver { opacity: 1; }
 
-/* ════════════════ BADGES ════════════════ */
+/* Badges de estado de reserva */
 .mv-badge {
   display: inline-flex;
   align-items: center;
@@ -574,7 +578,7 @@
 .mv-badge--cancelada  { background: #fee2e2; color: #b91c1c; }
 .mv-badge--expirada   { background: #ede9fe; color: #6d28d9; }
 
-/* ════════════════ OVERLAY / PANEL ════════════════ */
+/* Overlay semi-transparente que bloquea la pantalla al abrir el panel */
 .mv-overlay {
   position: fixed;
   inset: 0;
@@ -586,6 +590,7 @@
   justify-content: flex-end;
 }
 
+/* Panel lateral derecho que desliza desde la derecha */
 .mv-panel {
   background: #fff;
   width: 100%;
@@ -602,13 +607,13 @@
   to   { transform: translateX(0);    opacity: 1; }
 }
 
-/* Transición Vue */
+/* Transición Vue del overlay del panel */
 .mv-panel-enter-active, .mv-panel-leave-active { transition: opacity 0.25s; }
 .mv-panel-enter-from, .mv-panel-leave-to { opacity: 0; }
 .mv-panel-enter-active .mv-panel, .mv-panel-leave-active .mv-panel { transition: transform 0.3s ease; }
 .mv-panel-enter-from .mv-panel, .mv-panel-leave-to .mv-panel { transform: translateX(100%); }
 
-/* Panel header */
+/* Cabecera del panel con badge de tipo y botón de cerrar */
 .mv-panel__head {
   display: flex;
   align-items: center;
@@ -621,6 +626,7 @@
 
 .mv-panel__head-left { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 
+/* Badge de tipo de reserva dentro de la cabecera del panel */
 .mv-panel__tipo-badge {
   display: inline-flex;
   align-items: center;
@@ -636,6 +642,7 @@
 .mv-panel__tipo-badge--hotel   { background: #1C1A18; color: #fff; }
 .mv-panel__tipo-badge--paquete { background: #D40511; color: #fff; }
 
+/* Botón circular de cerrar el panel */
 .mv-panel__close {
   background: #f5f2ec;
   border: none;
@@ -649,7 +656,7 @@
 }
 .mv-panel__close:hover { background: #FFCC00; }
 
-/* Panel hero */
+/* Hero interior del panel con código y precio */
 .mv-panel__hero {
   display: flex;
   align-items: flex-start;
@@ -689,7 +696,7 @@
   margin: 0;
 }
 
-/* Panel body */
+/* Cuerpo del panel con scroll y scrollbar personalizada */
 .mv-panel__body {
   flex: 1;
   overflow-y: auto;
@@ -703,6 +710,7 @@
 .mv-panel__body::-webkit-scrollbar-thumb { background: #e5e1db; border-radius: 3px; }
 .mv-panel__body::-webkit-scrollbar-thumb:hover { background: #FFCC00; }
 
+/* Contenido centrado mientras carga */
 .mv-panel__center {
   display: flex;
   flex-direction: column;
@@ -722,7 +730,7 @@
   font-size: 0.85rem;
 }
 
-/* Panel secciones */
+/* Secciones del panel con separador inferior */
 .mv-panel__section {
   padding: 1.25rem 1.4rem;
   border-bottom: 1px solid #f0ede7;
@@ -741,7 +749,7 @@
   margin: 0;
 }
 
-/* Info grid */
+/* Grid de información en 2 columnas dentro del panel */
 .mv-panel__igrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -762,7 +770,7 @@
 .mv-panel__ival--warn   { color: #d97706; }
 .mv-panel__ival--danger { color: #D40511; }
 
-/* ════════════════ BOLETO PANEL ════════════════ */
+/* Boleto de vuelo con ruta, datos del pasajero y grid de info */
 .mv-boleto {
   background: #f9f6f0;
   border: 1px solid #e5e1db;
@@ -804,6 +812,7 @@
 .mv-boleto__avion-svg { margin-top: -1px; }
 .mv-boleto__dur { font-size: 0.64rem; color: #9a9089; font-weight: 500; }
 
+/* Grid con datos del boleto: clase, asiento, duración y precio */
 .mv-boleto__grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -814,6 +823,7 @@
 .mv-boleto__cval  { font-size: 0.82rem; font-weight: 600; color: #1C1A18; }
 .mv-boleto__cval--price { color: #1C1A18; font-weight: 800; }
 
+/* Pasajero individual dentro del boleto */
 .mv-boleto__pasajero {
   display: flex;
   align-items: flex-start;
@@ -826,7 +836,7 @@
 .mv-boleto__pas-name { font-size: 0.85rem; font-weight: 700; color: #1C1A18; display: block; }
 .mv-boleto__pas-info { font-size: 0.7rem; color: #7a7067; display: block; }
 
-/* ════════════════ HABITACIÓN PANEL ════════════════ */
+/* Tarjeta de habitación con tipo, precio y desglose */
 .mv-hab {
   background: #f9f6f0;
   border: 1px solid #e5e1db;
@@ -851,7 +861,7 @@
 .mv-hab__meta  { display: flex; flex-wrap: wrap; gap: 0.6rem; }
 .mv-hab__meta span { display: inline-flex; align-items: center; gap: 0.22rem; font-size: 0.74rem; color: #4a4035; font-weight: 500; }
 
-/* Desglose */
+/* Desglose de costos de habitación */
 .mv-desglose {
   background: #fff;
   border: 1px solid #e5e1db;
@@ -877,7 +887,7 @@
 }
 .mv-desglose__total strong { color: #1C1A18; font-weight: 900; }
 
-/* ════════════════ CALIFICAR / RESEÑA ════════════════ */
+/* Sección para calificar la reserva con estrellas y textarea */
 .mv-ya-califico {
   background: #f9f6f0;
   border: 1px solid #e5e1db;
@@ -902,6 +912,7 @@
   align-self: flex-start;
 }
 
+/* Formulario de nueva calificación con estrellas interactivas */
 .mv-calificar {
   display: flex;
   flex-direction: column;
@@ -919,6 +930,7 @@
 
 .mv-calificar__lbl { font-size: 0.8rem; color: #7a7067; margin-left: 0.35rem; font-weight: 500; }
 
+/* Textarea del comentario de calificación */
 .mv-calificar__textarea {
   width: 100%;
   padding: 0.65rem 0.85rem;
@@ -935,7 +947,7 @@
 }
 .mv-calificar__textarea:focus { border-color: #FFCC00; box-shadow: 0 0 0 3px rgba(255,204,0,0.15); }
 
-/* ════════════════ CANCELAR ════════════════ */
+/* Formulario de cancelación de reserva con fondo rojo claro */
 .mv-cancelar {
   background: #fff8f8;
   border: 1.5px solid #fca5a5;
@@ -966,7 +978,7 @@
 .mv-cancelar__textarea:focus { border-color: #D40511; }
 .mv-cancelar__actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
 
-/* ════════════════ FOOTER PANEL ════════════════ */
+/* Footer del panel con botones de acción */
 .mv-panel__footer {
   display: flex;
   align-items: center;
@@ -979,11 +991,11 @@
   margin-top: auto;
 }
 
-/* ════════════════ FORM MESSAGES ════════════════ */
+/* Mensajes de validación del formulario */
 .mv-form-error { font-size: 0.8rem; color: #D40511; font-weight: 500; }
 .mv-form-ok    { font-size: 0.8rem; color: #15803d; font-weight: 500; }
 
-/* ════════════════ TOASTS ════════════════ */
+/* Stack de toasts en esquina inferior derecha */
 .mv-toast-stack {
   position: fixed;
   bottom: 1.5rem;
@@ -995,6 +1007,7 @@
   pointer-events: none;
 }
 
+/* Toast con animación de entrada desde la derecha */
 .mv-toast {
   display: flex;
   align-items: center;
@@ -1018,7 +1031,7 @@
 
 @keyframes mv-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* ════════════════ RESPONSIVE ════════════════ */
+/* Responsive: ajustes de grids y panel a pantalla completa */
 @media (max-width: 960px) {
   .mv-resumen__estados { grid-template-columns: repeat(3, 1fr); }
 }

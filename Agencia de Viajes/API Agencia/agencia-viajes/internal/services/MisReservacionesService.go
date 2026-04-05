@@ -1,3 +1,8 @@
+// # Package services
+//
+// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
+// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
+// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -11,16 +16,42 @@ import (
 	"net/http"
 )
 
+// MisReservacionesService
+//
+// Servicio encargado de consultar y presentar las reservaciones de un usuario.
+// Ofrece dos modos de consulta: un listado resumido con datos locales unicamente,
+// y un detalle completo que enriquece cada reservacion consultando en tiempo real
+// a los proveedores externos involucrados (aerolineas y hoteleras).
 type MisReservacionesService struct {
 	repo *repositories.MisReservacionesRepository
 }
 
+// NewMisReservacionesService
+//
+// Crea e inicializa una nueva instancia de MisReservacionesService con el
+// repositorio de reservaciones proporcionado.
+//
+// Parametros:
+//   - repo: repositorio de mis reservaciones ya inicializado
+//
+// Retorna:
+//   - *MisReservacionesService: instancia lista para usar
 func NewMisReservacionesService(repo *repositories.MisReservacionesRepository) *MisReservacionesService {
 	return &MisReservacionesService{repo: repo}
 }
 
-// ─── Ruta 1: Listar todas las reservaciones (solo datos locales) ──────────────
-
+// ListarReservaciones
+//
+// Retorna el listado resumido de todas las reservaciones del usuario con sus
+// detalles basicos. Agrupa las filas retornadas por la BD en reservaciones,
+// organizando los detalles de cada una en orden de insercion.
+//
+// Parametros:
+//   - usuarioID: identificador del usuario cuyas reservaciones se desean listar
+//
+// Retorna:
+//   - []dto.ReservacionResumenResponse: lista de reservaciones con detalles resumidos
+//   - error: si falla la consulta de reservaciones en BD
 func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.ReservacionResumenResponse, error) {
 	filas, err := s.repo.ObtenerReservacionesDeUsuario(usuarioID)
 	if err != nil {
@@ -67,8 +98,20 @@ func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.Rese
 	return resultado, nil
 }
 
-// ─── Ruta 2: Detalle completo llamando a proveedores ─────────────────────────
-
+// ObtenerDetalle
+//
+// Retorna el detalle completo de una reservacion especifica del usuario,
+// enriqueciendo cada detalle con la informacion en tiempo real obtenida
+// del proveedor externo correspondiente. Si la consulta a un proveedor falla,
+// el campo DataProveedor incluye el mensaje de error en lugar de los datos.
+//
+// Parametros:
+//   - reservacionID: identificador de la reservacion a consultar
+//   - usuarioID: identificador del usuario dueno de la reservacion
+//
+// Retorna:
+//   - *dto.ReservacionDetalladaResponse: reservacion con detalles completos y datos de proveedores
+//   - error: si la reservacion no existe o no pertenece al usuario
 func (s *MisReservacionesService) ObtenerDetalle(reservacionID, usuarioID int) (*dto.ReservacionDetalladaResponse, error) {
 	filas, err := s.repo.ObtenerReservacionPorID(reservacionID, usuarioID)
 	if err != nil {
@@ -113,7 +156,21 @@ func (s *MisReservacionesService) ObtenerDetalle(reservacionID, usuarioID int) (
 	return resp, nil
 }
 
-// consultarProveedor — llama al endpoint correcto según tipo
+// consultarProveedor
+//
+// Llama al endpoint de detalle del proveedor externo correspondiente segun
+// el tipo de detalle (aerolinea o hotelera) para obtener la informacion
+// actualizada de la reservacion en el sistema del proveedor.
+//
+// Parametros:
+//   - tipoDetalleID: tipo de proveedor (1=aerolinea, 2=hotelera)
+//   - idReservaProveedor: identificador de la reservacion en el sistema del proveedor
+//   - urlAPI: URL base del API del proveedor
+//   - token: token de autenticacion de agencia (X-Agencia-Token)
+//
+// Retorna:
+//   - interface{}: datos de la reservacion retornados por el proveedor
+//   - error: si el tipo es desconocido, falla la peticion o el proveedor retorna error HTTP
 func (s *MisReservacionesService) consultarProveedor(tipoDetalleID int, idReservaProveedor, urlAPI, token string) (interface{}, error) {
 	var url string
 	switch tipoDetalleID {

@@ -1,26 +1,55 @@
 <script>
+  /**
+   * @file AdminReservas.svelte
+   * @description Modulo de administracion de reservaciones. Permite visualizar, filtrar
+   * y cancelar reservas del sistema con un modal de confirmacion que incluye motivo opcional.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   export let API_BASE;
+
+  /**
+   * Funcion que retorna la clase CSS del badge segun el estado de la reserva.
+   * @type {function(string): string}
+   */
   export let badge;
+
+  /** Contador total de reservas, expuesto al componente padre. @type {number} */
   export let count = 0;
 
+  /** Lista completa de reservas cargadas desde el servidor. @type {Array<Object>} */
   let reservas = [];
+
+  /** Indica si la peticion de carga esta en progreso. @type {boolean} */
   let cargandoReservas = false;
+
+  /** Mensaje de error si la carga falla. @type {string|null} */
   let errorReservas = null;
 
-  // Filtros (frontend)
+  /** Texto del buscador para filtrar reservas por multiples campos. @type {string} */
   let busquedaReserva = '';
+
+  /** Estado seleccionado en el selector de filtro; 'todos' para no filtrar. @type {string} */
   let filtroEstadoReserva = 'todos';
 
-  // Modal cancelar
+  /** Controla la visibilidad del modal de cancelacion. @type {boolean} */
   let showModalCancelarReserva = false;
+
+  /** Reserva sobre la que se esta procesando la cancelacion. @type {Object|null} */
   let reservaCancelando = null;
+
+  /** Texto del motivo de cancelacion ingresado por el admin. @type {string} */
   let motivoCancelacion = '';
+
+  /** Indica si la peticion de cancelacion esta en curso. @type {boolean} */
   let cancelando = false;
+
+  /** Mensaje de error que se muestra dentro del modal de cancelacion. @type {string|null} */
   let mensajeCancelar = null;
 
-  // Conteos siempre sobre TODAS las reservas (sin filtro)
+  // Conteos por estado calculados sobre la lista completa, sin aplicar filtros.
   $: conteoReservas = {
     confirmada: reservas.filter(r => r.estado === 'confirmada').length,
     pendiente:  reservas.filter(r => r.estado === 'pendiente').length,
@@ -28,9 +57,10 @@
     total:      reservas.length
   };
 
+  // Mantiene el contador exportado sincronizado con el total de reservas.
   $: count = conteoReservas.total;
 
-  // Filtrado reactivo en frontend
+  // Lista de reservas filtradas reactivamente segun busqueda y estado seleccionado.
   $: reservasFiltradas = reservas.filter(r => {
     const q = busquedaReserva.toLowerCase().trim();
     const matchEstado = filtroEstadoReserva === 'todos' || r.estado === filtroEstadoReserva;
@@ -45,6 +75,11 @@
 
   onMount(() => { cargarReservas(); });
 
+  /**
+   * Obtiene todas las reservaciones del sistema desde el backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservas() {
     cargandoReservas = true;
     errorReservas = null;
@@ -59,11 +94,18 @@
     }
   }
 
+  /**
+   * Actualiza el filtro de estado activo. Se usa al hacer clic en las tarjetas de conteo.
+   * @param {string} estado - Estado a filtrar o 'todos' para quitar el filtro.
+   */
   function filtrarPorEstado(estado) {
     filtroEstadoReserva = estado;
   }
 
-  // ── Modal cancelar ──
+  /**
+   * Abre el modal de cancelacion precargando los datos de la reserva seleccionada.
+   * @param {Object} r - Objeto de la reserva a cancelar.
+   */
   function abrirModalCancelar(r) {
     reservaCancelando = r;
     motivoCancelacion = '';
@@ -71,6 +113,9 @@
     showModalCancelarReserva = true;
   }
 
+  /**
+   * Cierra el modal de cancelacion y limpia todo el estado relacionado.
+   */
   function cerrarModalCancelar() {
     showModalCancelarReserva = false;
     reservaCancelando = null;
@@ -79,6 +124,11 @@
     cancelando = false;
   }
 
+  /**
+   * Envia la solicitud de cancelacion al backend y recarga la lista si tiene exito.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function confirmarCancelacion() {
     if (!reservaCancelando) return;
     cancelando = true;
@@ -101,7 +151,7 @@
   }
 </script>
 
-<!-- Tarjetas rápidas -->
+<!-- Tarjetas de conteo clicables para filtrar por estado -->
 <div class="adm__stats-grid" style="margin-bottom:1.25rem">
   <div class="adm__stat-card adm__stat-card--green" style="cursor:pointer" on:click={() => filtrarPorEstado('confirmada')} on:keydown={() => {}} role="button" tabindex="0">
     <div class="adm__stat-top"><div class="adm__stat-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div></div>
@@ -125,7 +175,7 @@
   </div>
 </div>
 
-<!-- Tabla -->
+<!-- Tabla de reservaciones con buscador y selector de estado -->
 <div class="adm__card adm__card--no-pad">
   <div class="adm__card-header adm__card-header--pad">
     <h3 class="adm__card-title">
@@ -142,7 +192,7 @@
     </button>
   </div>
 
-  <!-- Filtros -->
+  <!-- Controles de busqueda y filtro por estado -->
   <div class="adm__filters-bar" style="padding:.75rem 1.25rem; border-bottom:1px solid var(--adm-border)">
     <div class="adm__search-wrap">
       <svg class="adm__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -198,6 +248,7 @@
               <td style="font-size:.75rem; color:var(--adm-text-muted)">{r.fechaCreacion ? r.fechaCreacion.substring(0,16) : '—'}</td>
               <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
               <td>
+                <!-- Solo se puede cancelar si la reserva esta confirmada o pendiente -->
                 {#if r.estado === 'confirmada' || r.estado === 'pendiente'}
                   <button class="adm__icon-btn adm__icon-btn--delete" title="Cancelar reservación" on:click={() => abrirModalCancelar(r)}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -229,7 +280,7 @@
   {/if}
 </div>
 
-<!-- Modal cancelar reservación -->
+<!-- Modal de confirmacion para cancelar una reservacion -->
 {#if showModalCancelarReserva && reservaCancelando}
   <div class="adm__overlay" on:click={cerrarModalCancelar} on:keydown={e => e.key === 'Escape' && cerrarModalCancelar()} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__rol-modal" style="max-width:480px; border-radius:16px; overflow:hidden">
@@ -247,6 +298,7 @@
       </button>
     </div>
 
+    <!-- Resumen de la reserva que se va a cancelar -->
     <div class="adm__cancel-modal__body">
       <div class="adm__cancel-info-box">
         <div class="adm__cancel-info-row">
@@ -285,6 +337,7 @@
         </div>
       {/if}
 
+      <!-- Advertencia de que la accion es irreversible -->
       <div class="adm__cancel-warning">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:.1rem">
           <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>

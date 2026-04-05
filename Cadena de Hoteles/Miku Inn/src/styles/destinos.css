@@ -1,13 +1,10 @@
-/* ═══════════════════════════════════════════════════════════
-   DESTINOS PAGE — Habitaciones Disponibles
-   ═══════════════════════════════════════════════════════════ */
-
+/* Página base de destinos con fondo gris claro */
 .destinos-page {
   min-height: 100vh;
   background: var(--bg-primary, #f5f5f5);
 }
 
-/* ── Hero ──────────────────────────────────────────────── */
+/* Hero oscuro con gradiente y espacio para el formulario de búsqueda */
 .destinos-hero {
   position: relative;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -16,6 +13,7 @@
   overflow: hidden;
 }
 
+/* Overlay radial sutil que da profundidad al fondo del hero */
 .destinos-hero__overlay {
   position: absolute; inset: 0;
   background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.05) 0%, transparent 60%);
@@ -26,6 +24,7 @@
   position: relative; z-index: 1; max-width: 700px; margin: 0 auto;
 }
 
+/* Título y subtítulo del hero */
 .destinos-hero__title {
   font-size: 2.2rem; font-weight: 700; color: #fff; margin: 0 0 10px; letter-spacing: -0.5px;
 }
@@ -34,11 +33,12 @@
   font-size: 1rem; color: rgba(255,255,255,0.65); margin: 0 0 28px; font-weight: 400;
 }
 
-/* ── Search Form ───────────────────────────────────────── */
+/* Formulario de búsqueda de habitaciones con campos inline */
 .destinos-search-form {
   display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
 }
 
+/* Campo de búsqueda con fondo semitransparente sobre el hero */
 .destinos-search-field {
   display: flex; align-items: center; gap: 10px;
   background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.25);
@@ -51,6 +51,7 @@
 
 .destinos-search-field svg { color: rgba(255,255,255,0.6); flex-shrink: 0; }
 
+/* Input numérico sin flechas nativas */
 .destinos-search-input {
   background: transparent; border: none; outline: none; color: #fff;
   font-size: 1.2rem; font-weight: 700; width: 56px; text-align: center;
@@ -61,6 +62,7 @@
 
 .destinos-search-label { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 500; white-space: nowrap; }
 
+/* Botón de búsqueda blanco sobre el fondo oscuro del hero */
 .destinos-search-btn {
   display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px;
   background: #fff; color: #1a1a2e; border: none; border-radius: 12px;
@@ -70,19 +72,20 @@
 .destinos-search-btn:hover:not(:disabled) { background: #f0f0f0; transform: translateY(-1px); }
 .destinos-search-btn:disabled { opacity: 0.7; cursor: wait; }
 
+/* Spinner dentro del botón de búsqueda */
 .destinos-search-spinner {
   width: 16px; height: 16px; border: 2px solid #ccc; border-top-color: #1a1a2e;
   border-radius: 50%; animation: destinos-spin 0.7s linear infinite;
 }
 
-/* ── Container ─────────────────────────────────────────── */
+/* Contenedor central de resultados */
 .destinos-container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
 
 .destinos-results-header { margin-bottom: 24px; }
 .destinos-results-info { font-size: 0.95rem; color: #555; margin: 0; }
 .destinos-results-info strong { color: #1a1a2e; }
 
-/* ── Loading ───────────────────────────────────────────── */
+/* Estado de carga con spinner centrado */
 .destinos-loading {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 80px 20px; gap: 16px; color: #666;
@@ -96,7 +99,7 @@
 
 @keyframes destinos-spin { to { transform: rotate(360deg); } }
 
-/* ── Empty / Error ─────────────────────────────────────── */
+/* Estado vacío o de error sin resultados */
 .destinos-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 80px 20px; text-align: center; gap: 12px;
@@ -104,6 +107,7 @@
 .destinos-empty h2 { font-size: 1.3rem; font-weight: 600; color: #333; margin: 0; }
 .destinos-empty p  { font-size: 0.95rem; color: #777; margin: 0; }
 
+/* Botón de acción en estado vacío */
 .destinos-btn {
   margin-top: 12px; padding: 10px 28px; background: var(--primary-color, #2c5f8a);
   color: #fff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 500;
@@ -111,12 +115,10 @@
 }
 .destinos-btn:hover { background: var(--primary-hover, #1e4a6e); transform: translateY(-1px); }
 
-/* ═══════════════════════════════════════════════════════════
-   ROOMS LIST
-   ═══════════════════════════════════════════════════════════ */
-
+/* Lista de habitaciones disponibles */
 .dh-rooms-list { display: flex; flex-direction: column; gap: 20px; }
 
+/* Tarjeta de habitación con imagen, información y precios */
 .dh-room {
   display: flex; background: #fff; border-radius: 12px; overflow: hidden;
   box-shadow: 0 1px 8px rgba(0,0,0,0.06); border: 1px solid #eee;
@@ -129,7 +131,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Image ─────────────────────────────────────────────── */
+/* Imagen de la habitación con badges superpuestos */
 .dh-room__image {
   position: relative; width: 160px; min-height: 180px; flex-shrink: 0;
   background: linear-gradient(135deg, #e2e8f0, #cbd5e1); overflow: hidden;
@@ -139,12 +141,14 @@
   display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #94a3b8;
 }
 
+/* Badge de capacidad de personas en la esquina inferior */
 .dh-room__capacity-badge {
   position: absolute; bottom: 8px; left: 8px; display: flex; align-items: center; gap: 4px;
   background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 6px;
   font-size: 0.72rem; font-weight: 600;
 }
 
+/* Badge de habitación combo/paquete en la esquina superior */
 .dh-room__combo-badge {
   position: absolute; top: 8px; right: 8px;
   background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff;
@@ -152,15 +156,17 @@
   letter-spacing: 0.3px;
 }
 
+/* Variante del badge para precios aproximados */
 .dh-room__combo-badge--aprox {
   background: linear-gradient(135deg, #d97706, #b45309);
 }
 
-/* ── Info central ──────────────────────────────────────── */
+/* Información central de la habitación */
 .dh-room__info {
   flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
 }
 
+/* Tag del hotel con nombre y calificación de estrellas */
 .dh-room__hotel-tag {
   display: flex; align-items: center; gap: 5px; font-size: 0.78rem;
   color: #6b7280; font-weight: 500; flex-wrap: wrap;
@@ -169,17 +175,19 @@
 
 .dh-room__name { font-size: 1.15rem; font-weight: 700; color: #1a1a2e; margin: 2px 0 0; line-height: 1.3; }
 
+/* Descripción truncada a 2 líneas */
 .dh-room__desc {
   font-size: 0.85rem; color: #6b7280; margin: 0; line-height: 1.45;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
+/* Especificaciones de la habitación: camas, baño, etc. */
 .dh-room__specs { display: flex; gap: 16px; margin-top: auto; padding-top: 6px; }
 .dh-room__spec {
   display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #64748b; font-weight: 500;
 }
 
-/* Combo detail chips */
+/* Chips de detalle de combo con hotel y precio incluido */
 .dh-room__combo-detail {
   display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px;
 }
@@ -193,12 +201,13 @@
 .dh-room__combo-chip-cap { color: #6b7280; font-weight: 400; }
 .dh-room__combo-chip-price { color: #1a1a2e; font-weight: 700; margin-left: 4px; }
 
-/* ── Pricing ───────────────────────────────────────────── */
+/* Panel de precios alineado a la derecha */
 .dh-room__pricing {
   display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
   padding: 20px 24px; min-width: 180px; border-left: 1px solid #f1f5f9; gap: 2px;
 }
 
+/* Precio principal con monto y unidad */
 .dh-room__price-main { display: flex; align-items: baseline; gap: 4px; }
 .dh-room__price-amount { font-size: 1.5rem; font-weight: 800; color: #1a1a2e; }
 .dh-room__price-unit { font-size: 0.82rem; color: #888; font-weight: 400; }
@@ -206,6 +215,7 @@
 .dh-room__price-total { font-size: 0.85rem; font-weight: 700; color: #dc2626; margin-top: 2px; }
 .dh-room__price-detail { font-size: 0.72rem; color: #9ca3af; }
 
+/* Botón de reservar la habitación */
 .dh-room__btn {
   display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
   padding: 9px 22px; background: var(--primary-color, #2c5f8a); color: #fff;
@@ -214,7 +224,7 @@
 }
 .dh-room__btn:hover { background: var(--primary-hover, #1e4a6e); transform: translateY(-1px); }
 
-/* ── Responsive ────────────────────────────────────────── */
+/* Responsive para tablets */
 @media (max-width: 900px) {
   .dh-room__image { width: 130px; min-height: 160px; }
   .dh-room__info  { padding: 16px 18px; }
@@ -222,6 +232,7 @@
   .dh-room__price-amount { font-size: 1.3rem; }
 }
 
+/* Responsive para móviles: tarjeta en columna */
 @media (max-width: 700px) {
   .destinos-hero { padding: 50px 16px 36px; }
   .destinos-hero__title { font-size: 1.6rem; }
@@ -240,6 +251,7 @@
   .dh-room__btn { order: 5; margin-top: 4px; }
 }
 
+/* Responsive para pantallas muy pequeñas */
 @media (max-width: 480px) {
   .destinos-hero { padding: 40px 14px 28px; }
   .destinos-hero__title { font-size: 1.4rem; }

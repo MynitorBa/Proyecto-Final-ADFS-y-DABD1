@@ -1,31 +1,68 @@
 <script>
+  /**
+   * @file AdminAgencias.svelte
+   * @description Panel de administracion para gestionar las agencias de viaje registradas en el sistema.
+   * Permite buscar, filtrar y editar la informacion de cada agencia mediante un modal dedicado.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   export let API_BASE;
+
+  /**
+   * Funcion que devuelve la clase CSS correspondiente al estado de un registro.
+   * @type {function(string): string}
+   */
   export let badge;
+
+  /** Contador reactivo que refleja el total de agencias cargadas. @type {number} */
   export let count = 0;
 
+  /** Lista completa de agencias recibidas del servidor. @type {Array<Object>} */
   let agencias = [];
+
+  /** Indica si se esta realizando la peticion para cargar agencias. @type {boolean} */
   let cargandoAgencias = false;
+
+  /** Mensaje de error en caso de que falle la carga de agencias. @type {string|null} */
   let errorAgencias = null;
+
+  /** Texto ingresado en el buscador para filtrar agencias por nombre, correo o ID. @type {string} */
   let busquedaAgencia = '';
 
+  /** Controla la visibilidad del modal de edicion de agencia. @type {boolean} */
   let showModalEditarAgencia = false;
+
+  /** Agencia que esta siendo editada en el modal. @type {Object|null} */
   let agenciaEditando = null;
+
+  /** Copia mutable de los campos de la agencia en edicion. @type {Object} */
   let editAgencia = { nombre: '', correo: '', porcentajeDescuento: 0, estadoId: 1 };
+
+  /** Indica si se esta enviando la peticion para guardar cambios de la agencia. @type {boolean} */
   let guardandoAgencia = false;
+
+  /** Mensaje de retroalimentacion tras guardar o si ocurre un error. @type {{tipo: string, texto: string}|null} */
   let mensajeAgencia = null;
 
+  // Lista filtrada de agencias segun el texto ingresado en la busqueda.
   $: agenciasFiltradas = agencias.filter(a =>
     a.nombre?.toLowerCase().includes(busquedaAgencia.toLowerCase()) ||
     a.correo?.toLowerCase().includes(busquedaAgencia.toLowerCase()) ||
     String(a.id).includes(busquedaAgencia)
   );
 
+  // Mantiene el contador exportado sincronizado con el total de agencias.
   $: count = agencias.length;
 
   onMount(() => { cargarAgencias(); });
 
+  /**
+   * Obtiene la lista completa de agencias desde el endpoint del administrador.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarAgencias() {
     cargandoAgencias = true;
     errorAgencias = null;
@@ -40,6 +77,10 @@
     }
   }
 
+  /**
+   * Abre el modal de edicion precargando los datos de la agencia seleccionada.
+   * @param {Object} ag - Objeto de agencia con sus campos actuales.
+   */
   function abrirEditarAgencia(ag) {
     agenciaEditando = ag;
     editAgencia = {
@@ -52,12 +93,20 @@
     showModalEditarAgencia = true;
   }
 
+  /**
+   * Cierra el modal de edicion y limpia el estado relacionado.
+   */
   function cerrarModalAgencia() {
     showModalEditarAgencia = false;
     agenciaEditando = null;
     mensajeAgencia = null;
   }
 
+  /**
+   * Envia los cambios de la agencia al servidor mediante PATCH y actualiza la lista local.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function guardarAgencia() {
     if (!editAgencia.nombre.trim()) {
       mensajeAgencia = { tipo: 'error', texto: 'El nombre es obligatorio.' };
@@ -96,6 +145,7 @@
   }
 </script>
 
+<!-- Barra de busqueda y boton de recarga -->
 <div class="adm__filters-bar">
   <div class="adm__search-wrap">
     <svg class="adm__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -107,6 +157,7 @@
   </button>
 </div>
 
+<!-- Mensaje de error si la carga de agencias falla -->
 {#if errorAgencias}
   <div class="adm__feedback adm__feedback--error" style="margin-bottom:1rem">
     {errorAgencias}
@@ -114,6 +165,7 @@
   </div>
 {/if}
 
+<!-- Tabla principal de agencias -->
 <div class="adm__card adm__card--no-pad">
   {#if cargandoAgencias}
     <div class="adm__loading-state" style="padding:3rem 0">
@@ -130,6 +182,7 @@
           {#if agenciasFiltradas.length === 0}
             <tr><td colspan="7" class="adm__empty-cell">{busquedaAgencia ? 'Sin resultados para esa búsqueda.' : 'No hay agencias registradas.'}</td></tr>
           {:else}
+            <!-- Fila por cada agencia filtrada -->
             {#each agenciasFiltradas as ag (ag.id)}
               <tr>
                 <td class="adm__table-mono" style="color:var(--adm-text-muted);font-size:.8rem">#{ag.id}</td>
@@ -152,7 +205,7 @@
   {/if}
 </div>
 
-<!-- Modal editar agencia -->
+<!-- Modal para editar los datos de una agencia -->
 {#if showModalEditarAgencia && agenciaEditando}
   <div class="adm__overlay" on:click={cerrarModalAgencia} on:keydown={e => e.key === 'Escape' && cerrarModalAgencia()} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__rol-modal" style="max-width:520px">
@@ -169,6 +222,7 @@
       </button>
     </div>
 
+    <!-- Formulario de edicion de campos de la agencia -->
     <div class="adm__rol-modal__body">
       <div style="display:flex;flex-direction:column;gap:1.1rem">
         <div class="adm__field">
@@ -193,6 +247,7 @@
         </div>
       </div>
 
+      <!-- Feedback de exito o error al guardar -->
       {#if mensajeAgencia}
         <div class="adm__feedback adm__feedback--{mensajeAgencia.tipo}" style="margin-top:1rem">
           {mensajeAgencia.texto}

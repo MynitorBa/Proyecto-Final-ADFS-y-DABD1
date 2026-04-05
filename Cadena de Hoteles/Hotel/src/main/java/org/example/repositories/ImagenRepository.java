@@ -4,8 +4,17 @@ import org.example.data.DatabaseManager;
 
 import java.util.List;
 
+/**
+ * Repository para la recuperacion de imagenes almacenadas en la base de datos.
+ * Cubre imagenes de hoteles, habitaciones y amenidades.
+ */
 public class ImagenRepository {
 
+    /**
+     * Retorna los bytes de una imagen de hotel por su ID.
+     * @param id ID de la imagen a recuperar.
+     * @return arreglo de bytes con la imagen, o null si no existe.
+     */
     public byte[] obtenerImagenHotel(int id) {
         String sql = "SELECT Imagen FROM ImagenHotel WHERE ID = ?";
         List<byte[]> result = DatabaseManager.executeQuery(
@@ -14,6 +23,11 @@ public class ImagenRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
+    /**
+     * Retorna los bytes de una imagen de habitacion por su ID.
+     * @param id ID de la imagen a recuperar.
+     * @return arreglo de bytes con la imagen, o null si no existe.
+     */
     public byte[] obtenerImagenHabitacion(int id) {
         String sql = "SELECT Imagen FROM ImagenHabitacion WHERE ID = ?";
         List<byte[]> result = DatabaseManager.executeQuery(
@@ -22,6 +36,11 @@ public class ImagenRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
+    /**
+     * Retorna los bytes de una imagen de amenidad de hotel por su ID.
+     * @param id ID de la imagen a recuperar.
+     * @return arreglo de bytes con la imagen, o null si no existe.
+     */
     public byte[] obtenerImagenAmenidad(int id) {
         String sql = "SELECT Imagen FROM ImagenHotelAmenidad WHERE ID = ?";
         List<byte[]> result = DatabaseManager.executeQuery(

@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-split">
 
-      <!-- Panel izquierdo — branding -->
+      <!-- Panel izquierdo: branding con logo, título y features -->
       <div class="login-brand">
         <div class="login-brand__content">
           <img src="/movent.png" alt="Movent" class="login-brand__logo" />
@@ -32,10 +32,11 @@
         <div class="login-brand__overlay"></div>
       </div>
 
-      <!-- Panel derecho — formulario -->
+      <!-- Panel derecho: formulario de login -->
       <div class="login-form-panel">
         <div class="login-form-wrapper">
 
+          <!-- Botón para regresar al inicio -->
           <button class="back-link" @click="$router.push('/principal')" type="button">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Volver al inicio
@@ -46,7 +47,7 @@
             <p>Accede a tu cuenta y gestiona tus reservas</p>
           </div>
 
-          <!-- Success -->
+          <!-- Pantalla de éxito tras login exitoso -->
           <div v-if="loginSuccess" class="success-box">
             <div class="success-icon">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -56,13 +57,16 @@
             <div class="loading-dots"><span></span><span></span><span></span></div>
           </div>
 
+          <!-- Formulario principal de login -->
           <form v-else @submit.prevent="handleLogin" class="login-form">
 
+            <!-- Mensaje de error del servidor -->
             <div v-if="serverError" class="alert-error">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               {{ serverError }}
             </div>
 
+            <!-- Campo: usuario o correo -->
             <div class="form-field">
               <label for="login">Usuario o Correo Electrónico</label>
               <div class="input-icon-wrap">
@@ -73,6 +77,7 @@
               <span v-if="errors.login" class="error-text">{{ errors.login }}</span>
             </div>
 
+            <!-- Campo: contraseña con toggle de visibilidad -->
             <div class="form-field">
               <label for="password">Contraseña</label>
               <div class="password-wrap">
@@ -87,18 +92,20 @@
               <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
             </div>
 
+            <!-- Checkbox recordarme -->
             <label class="checkbox-label">
               <input type="checkbox" v-model="rememberMe" />
               <span class="checkbox-custom"></span>
               <span>Recordarme</span>
             </label>
 
-            <!-- reCAPTCHA v2 -->
+            <!-- Widget de reCAPTCHA v2 -->
             <div class="captcha-wrap">
               <div id="recaptcha-login"></div>
               <span v-if="errors.captcha" class="error-text">{{ errors.captcha }}</span>
             </div>
 
+            <!-- Botón de submit -->
             <button type="submit" class="submit-btn" :disabled="isSubmitting">
               <svg v-if="isSubmitting" class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
               <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
@@ -119,28 +126,60 @@
 </template>
 
 <script setup>
+/**
+ * @file IniciarSesion.vue
+ * @description Vista de autenticación de Movent. Maneja login con
+ * usuario/correo + contraseña + reCAPTCHA v2. Redirige según el rol
+ * del usuario autenticado (registrado, administrador o webservice).
+ */
+
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '../styles/iniciarsesion.css'
 
+/** URL base del backend Go/Gin. @type {string} */
 const API_BASE = 'http://localhost:8080'
 
+/** Instancia del router para navegación programática. */
 const router = useRouter()
 
-const formData     = ref({ login: '', password: '' })
+/** Datos del formulario: usuario/email y contraseña. @type {{ login: string, password: string }} */
+const formData = ref({ login: '', password: '' })
+
+/** Controla si la contraseña se muestra en texto plano. @type {boolean} */
 const showPassword = ref(false)
-const rememberMe   = ref(false)
-const errors       = ref({})
+
+/** Estado del checkbox "Recordarme". @type {boolean} */
+const rememberMe = ref(false)
+
+/** Errores de validación por campo. @type {Object} */
+const errors = ref({})
+
+/** Indica si hay una petición de login en curso para deshabilitar el botón. @type {boolean} */
 const isSubmitting = ref(false)
+
+/** Activa la pantalla de bienvenida una vez que el login fue exitoso. @type {boolean} */
 const loginSuccess = ref(false)
-const serverError  = ref('')
-const destino      = ref('/principal')
+
+/** Mensaje de error proveniente del servidor (credenciales incorrectas, etc.). @type {string} */
+const serverError = ref('')
+
+/** Ruta de destino calculada según el rol del usuario. @type {string} */
+const destino = ref('/principal')
+
+/** Token generado por el widget de reCAPTCHA v2 al ser resuelto por el usuario. @type {string} */
 const captchaToken = ref('')
 
-// ── CAPTCHA ──────────────────────────────────────────────────────────
+/** Clave pública del sitio para reCAPTCHA v2 de Google. @type {string} */
 const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
+
+/** ID del widget renderizado, necesario para poder resetearlo en intentos fallidos. @type {number|null} */
 let recaptchaWidgetId = null
 
+/**
+ * Carga el script de reCAPTCHA de Google si todavía no está inyectado en el DOM.
+ * Si grecaptcha ya está disponible en window, llama directamente a renderCaptcha.
+ */
 const loadRecaptcha = () => {
   if (window.grecaptcha) { renderCaptcha(); return }
   if (!document.getElementById('recaptcha-script')) {
@@ -154,6 +193,10 @@ const loadRecaptcha = () => {
   window.onRecaptchaLoad = renderCaptcha
 }
 
+/**
+ * Renderiza el widget de reCAPTCHA en el contenedor #recaptcha-login.
+ * Al completarse guarda el token en captchaToken; al expirar lo limpia.
+ */
 const renderCaptcha = () => {
   if (!window.grecaptcha || !document.getElementById('recaptcha-login')) return
   recaptchaWidgetId = window.grecaptcha.render('recaptcha-login', {
@@ -164,6 +207,10 @@ const renderCaptcha = () => {
   })
 }
 
+/**
+ * Resetea el widget de reCAPTCHA y limpia el token almacenado.
+ * Se invoca después de un intento de login fallido para forzar una nueva resolución.
+ */
 const resetCaptcha = () => {
   if (window.grecaptcha && recaptchaWidgetId !== null) {
     window.grecaptcha.reset(recaptchaWidgetId)
@@ -174,12 +221,21 @@ const resetCaptcha = () => {
 onMounted(() => loadRecaptcha())
 onUnmounted(() => { delete window.onRecaptchaLoad })
 
-// ── Helpers ───────────────────────────────────────────────────────────
+/**
+ * Limpia todos los errores de validación y el error del servidor
+ * cada vez que el usuario modifica cualquier campo del formulario.
+ */
 const onFieldChange = () => {
   serverError.value = ''
   errors.value = {}
 }
 
+/**
+ * Valida los campos del formulario antes de hacer la petición al backend.
+ * Comprueba que login, contraseña y token de captcha estén presentes.
+ *
+ * @returns {boolean} true si todos los campos son válidos, false si hay errores.
+ */
 const validateForm = () => {
   errors.value = {}
   if (!formData.value.login.trim()) errors.value.login    = 'El usuario o email es requerido'
@@ -188,15 +244,29 @@ const validateForm = () => {
   return Object.keys(errors.value).length === 0
 }
 
-// ── Destino por rol ───────────────────────────────────────────────────
-// rol_id: 1=Registrado  2=Administrador  3=WebService
+/**
+ * Determina la ruta de redirección según el rol del usuario.
+ * rol_id 1 = Registrado → /principal
+ * rol_id 2 = Administrador → /admin/dashboard
+ * rol_id 3 = WebService → /admin/webservice
+ *
+ * @param {number} rolId - ID del rol devuelto por el backend.
+ * @returns {string} Ruta de redirección correspondiente.
+ */
 const calcularDestino = (rolId) => {
   if (rolId === 2) return '/admin/dashboard'
   if (rolId === 3) return '/admin/webservice'
   return '/principal'
 }
 
-// ── Login ─────────────────────────────────────────────────────────────
+/**
+ * Maneja el submit del formulario de login.
+ * Valida los datos, llama al endpoint /api/usuarios/login,
+ * persiste la sesión en sessionStorage y redirige según el rol recibido.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 const handleLogin = async () => {
   if (!validateForm()) return
   isSubmitting.value = true
@@ -215,7 +285,7 @@ const handleLogin = async () => {
 
     let data = null
     const text = await res.text()
-    try { data = JSON.parse(text) } catch { /* no-JSON */ }
+    try { data = JSON.parse(text) } catch { /* respuesta no JSON */ }
 
     if (!res.ok) {
       serverError.value = data?.error || `Error ${res.status}`
@@ -223,7 +293,7 @@ const handleLogin = async () => {
       return
     }
 
-    // Guardar sesión
+    // Guardar sesión en sessionStorage
     sessionStorage.setItem('usuario_sesion', JSON.stringify({
       id:       data.id,
       nombre:   data.nombre,

@@ -1,3 +1,8 @@
+// # Package services
+//
+// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
+// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
+// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -11,16 +16,45 @@ import (
 	"net/http"
 )
 
+// BusquedaService
+//
+// Servicio encargado de realizar busquedas de vuelos y hoteles consultando
+// los proveedores externos registrados en el catalogo. Aplica el margen de
+// ganancia configurado por proveedor sobre los precios retornados.
 type BusquedaService struct {
 	repo *repositories.BusquedaRepository
 }
 
+// NewBusquedaService
+//
+// Crea e inicializa una nueva instancia de BusquedaService con su repositorio
+// de busqueda.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos SQL
+//
+// Retorna:
+//   - *BusquedaService: instancia lista para usar
 func NewBusquedaService(db *sql.DB) *BusquedaService {
 	return &BusquedaService{
 		repo: repositories.NewBusquedaRepository(db),
 	}
 }
 
+// BuscarVuelos
+//
+// Busca vuelos disponibles entre dos ciudades consultando todos los proveedores
+// aerolineas registrados para esa ruta en el catalogo. Resuelve los IDs de
+// ciudad para origen y destino, obtiene la lista de proveedores activos y
+// llama a cada uno de forma individual. Si un proveedor falla, se incluye
+// su error en la respuesta sin interrumpir las demas consultas.
+//
+// Parametros:
+//   - req: datos de busqueda incluyendo ciudad/pais de origen, destino y demas filtros
+//
+// Retorna:
+//   - []dto.BusquedaVuelosResponse: lista de respuestas por proveedor, con datos o error
+//   - error: si falla la resolucion de ciudades o la consulta de proveedores en BD
 func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.BusquedaVuelosResponse, error) {
 	origenID, err := s.repo.BuscarCiudadID(req.Origen, req.OrigenPais)
 	if err != nil {
@@ -66,6 +100,19 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.Bus
 	return resultados, nil
 }
 
+// llamarVuelos
+//
+// Realiza la llamada HTTP POST al endpoint de busqueda de vuelos de un proveedor
+// aerolinea especifico y aplica el porcentaje de ganancia configurado sobre
+// los precios retornados.
+//
+// Parametros:
+//   - p: datos del proveedor incluyendo URL, token y porcentaje de ganancia
+//   - req: parametros de busqueda a enviar al proveedor
+//
+// Retorna:
+//   - interface{}: datos de vuelos con precios ajustados por margen de ganancia
+//   - error: si la peticion HTTP falla o el proveedor retorna un estado no exitoso
 func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.BusquedaVuelosRequest) (interface{}, error) {
 	body, _ := json.Marshal(req)
 
@@ -95,6 +142,20 @@ func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.Busqueda
 	return datos, nil
 }
 
+// BuscarHoteles
+//
+// Busca hoteles disponibles en una ciudad consultando todos los proveedores
+// hoteleras registrados para esa ubicacion en el catalogo. Resuelve el ID
+// de ciudad, obtiene la lista de proveedores de tipo hotelera y llama a
+// cada uno de forma individual. Si un proveedor falla, se incluye su error
+// en la respuesta sin interrumpir las demas consultas.
+//
+// Parametros:
+//   - req: datos de busqueda incluyendo ciudad, pais y demas filtros de hospedaje
+//
+// Retorna:
+//   - []dto.BusquedaHotelesResponse: lista de respuestas por proveedor, con datos o error
+//   - error: si falla la resolucion de ciudad o la consulta de proveedores en BD
 func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.BusquedaHotelesResponse, error) {
 	ciudadID, err := s.repo.BuscarCiudadID(req.Ciudad, req.Pais)
 	if err != nil {
@@ -132,6 +193,19 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.B
 	return resultados, nil
 }
 
+// llamarHoteles
+//
+// Realiza la llamada HTTP POST al endpoint de busqueda de hoteles de un proveedor
+// hotelera especifico y aplica el porcentaje de ganancia configurado sobre
+// los precios retornados.
+//
+// Parametros:
+//   - p: datos del proveedor incluyendo URL, token y porcentaje de ganancia
+//   - req: parametros de busqueda a enviar al proveedor
+//
+// Retorna:
+//   - interface{}: datos de hoteles con precios ajustados por margen de ganancia
+//   - error: si la peticion HTTP falla o el proveedor retorna un estado no exitoso
 func (s *BusquedaService) llamarHoteles(p dto.ProveedorCatalogo, req dto.BusquedaHotelesRequest) (interface{}, error) {
 	body, _ := json.Marshal(req)
 
@@ -161,6 +235,19 @@ func (s *BusquedaService) llamarHoteles(p dto.ProveedorCatalogo, req dto.Busqued
 	return datos, nil
 }
 
+// aplicarGanancia
+//
+// Recorre recursivamente una estructura de datos JSON (mapas y slices) y
+// multiplica los campos de precio conocidos por el factor de ganancia calculado
+// a partir del porcentaje indicado. Los campos afectados son: precioTurista,
+// precioEjecutiva, precioPorPersona y precioPorNoche.
+//
+// Parametros:
+//   - data: estructura de datos generica (map[string]interface{} o []interface{})
+//   - porcentaje: porcentaje de ganancia a aplicar (ej: 15 para 15%)
+//
+// Retorna:
+//   - interface{}: la misma estructura con los precios ajustados, redondeados a 2 decimales
 func aplicarGanancia(data interface{}, porcentaje float64) interface{} {
 	multiplicador := 1 + (porcentaje / 100)
 

@@ -1,3 +1,8 @@
+// # Package repositories
+//
+// Repositorios de acceso a datos para la agencia de viajes.
+// Este paquete centraliza todas las consultas a la base de datos
+// utilizadas por los servicios de la aplicacion.
 package repositories
 
 import (
@@ -5,38 +10,91 @@ import (
 	"database/sql"
 )
 
+// PagoRepository
+//
+// Repositorio encargado de las operaciones relacionadas con el proceso de pago,
+// incluyendo la validacion de la reserva, el conteo de detalles por tipo y
+// la confirmacion atomica de la reserva junto con la creacion de la factura.
 type PagoRepository struct {
 	db *sql.DB
 }
 
+// NewPagoRepository
+//
+// Crea e inicializa una nueva instancia de PagoRepository.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos
+//
+// Retorna:
+//   - *PagoRepository: instancia lista para usar
 func NewPagoRepository(db *sql.DB) *PagoRepository {
 	return &PagoRepository{db: db}
 }
 
-// ObtenerDetallesParaPago verifica que la reserva sea del usuario y esté pendiente
+// ObtenerReservaParaPago
+//
+// Verifica que la reserva pertenezca al usuario indicado y se encuentre
+// en estado pendiente (EstadoID = 1), retornando el tipo de reserva y el total.
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion a consultar
+//   - usuarioID: ID del usuario propietario de la reservacion
+//
+// Retorna:
+//   - tipoReserva: ID del tipo de reserva (vuelo, hotel, paquete, etc.)
+//   - total: monto total acumulado de la reservacion
+//   - error: error si la reserva no existe, no pertenece al usuario o no esta pendiente
 func (r *PagoRepository) ObtenerReservaParaPago(reservacionID, usuarioID int) (tipoReserva int, total float64, err error) {
 	err = r.db.QueryRow(`
-		SELECT Tipo_Reserva_ID, Total 
-		FROM Reservacion 
+		SELECT Tipo_Reserva_ID, Total
+		FROM Reservacion
 		WHERE ID = ? AND Usuario_ID = ? AND EstadoID = 1`,
 		reservacionID, usuarioID).Scan(&tipoReserva, &total)
 	return
 }
 
-// ContarDetallesPorTipo cuenta cuántos detalles de cada tipo tiene la reserva
+// ContarDetallesPorTipo
+//
+// Cuenta cuantos detalles de tipo vuelo (1) y tipo hotel (2) tiene una reservacion,
+// considerando unicamente los detalles en estado pendiente (Estado_Detalle_ID = 1).
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion a evaluar
+//
+// Retorna:
+//   - vuelos: cantidad de detalles de tipo vuelo pendientes
+//   - hoteles: cantidad de detalles de tipo hotel pendientes
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *PagoRepository) ContarDetallesPorTipo(reservacionID int) (vuelos int, hoteles int, err error) {
 	query := `
-		SELECT 
+		SELECT
 			SUM(CASE WHEN Tipo_Detalle_ID = 1 THEN 1 ELSE 0 END) as vuelos,
 			SUM(CASE WHEN Tipo_Detalle_ID = 2 THEN 1 ELSE 0 END) as hoteles
-		FROM Detalles_Reservacion 
+		FROM Detalles_Reservacion
 		WHERE Reservacion_ID = ? AND Estado_Detalle_ID = 1`
 
 	err = r.db.QueryRow(query, reservacionID).Scan(&vuelos, &hoteles)
 	return
 }
 
-// ConfirmarReservaYFacturar realiza el cambio de estado y crea la factura en una transacción
+// ConfirmarReservaYFacturar
+//
+// Ejecuta dentro de una transaccion atomica los tres pasos del proceso de confirmacion:
+// cambia el estado de la reservacion a confirmada (2), cambia el estado de todos sus
+// detalles a confirmados (2) y crea el registro de factura asociado.
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion a confirmar
+//   - total: monto total a registrar en la factura
+//   - nit: numero de identificacion tributaria del cliente para la factura
+//   - codigoPostal: codigo postal del cliente para la factura
+//
+// Retorna:
+//   - error: error si alguna operacion de la transaccion falla, nil si fue exitosa
+//
+// Notas:
+//   - Si cualquier paso falla, se realiza rollback automatico de toda la transaccion
 func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total float64, nit string, codigoPostal string) error {
 
 	tx, err := r.db.BeginTx(context.Background(), nil)
@@ -60,7 +118,7 @@ func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total floa
 
 	// 3. Crear Factura (Ajusta los nombres de columnas según tu tabla Factura)
 	_, err = tx.Exec(`
-		INSERT INTO Factura (Reservacion_ID, NIT, Total, Codigo_Postal) 
+		INSERT INTO Factura (Reservacion_ID, NIT, Total, Codigo_Postal)
 		VALUES (?, ?, ?, ?)`,
 		reservacionID, nit, total, codigoPostal)
 	if err != nil {

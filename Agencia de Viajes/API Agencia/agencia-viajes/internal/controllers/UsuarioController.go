@@ -1,3 +1,7 @@
+// # Package controllers
+//
+// Controladores HTTP de la API de Movent. Cada controlador agrupa los handlers
+// relacionados a un recurso o dominio especifico de la aplicacion.
 package controllers
 
 import (
@@ -10,14 +14,47 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UsuarioController
+//
+// Controlador que maneja los endpoints de gestion de usuarios,
+// incluyendo el registro de nuevas cuentas en la plataforma.
 type UsuarioController struct {
 	service *services.UsuarioService
 }
 
+// NewUsuarioController
+//
+// Constructor que retorna una nueva instancia de UsuarioController
+// con el servicio de usuario inyectado.
+//
+// Parametros:
+//   - service: puntero al servicio de usuario
+//
+// Retorna:
+//   - *UsuarioController: puntero a la nueva instancia
 func NewUsuarioController(service *services.UsuarioService) *UsuarioController {
 	return &UsuarioController{service: service}
 }
 
+// Registrar
+//
+// Registra un nuevo usuario en el sistema a partir de los datos enviados en el
+// body de la solicitud. Verifica duplicados de correo, pasaporte y username.
+// Si el registro es exitoso, envia un correo de bienvenida en segundo plano
+// sin bloquear la respuesta al cliente.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 201 Created: JSON con mensaje de exito si el usuario fue registrado
+//   - HTTP 400 Bad Request: si el body no puede ser parseado o tiene datos invalidos
+//   - HTTP 409 Conflict: JSON con campos duplicados (correo, pasaporte, username)
+//   - HTTP 500 Internal Server Error: si ocurre un error interno al registrar
+//
+// Notas:
+//   - El correo de bienvenida se envia de forma asincrona (goroutine fire-and-forget)
+//   - Los errores del envio de correo se registran en el log del servidor
 func (ctrl *UsuarioController) Registrar(c *gin.Context) {
 	var req dto.RegistroUsuarioRequest
 

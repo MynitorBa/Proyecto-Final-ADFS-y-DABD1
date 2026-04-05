@@ -2,7 +2,7 @@
   <div class="page">
     <Encabezado />
 
-    <!-- ═══ OVERLAY: Creando reserva ═══ -->
+    <!-- Overlay: procesando la creación de la reserva en el servidor -->
     <div v-if="creandoReserva" class="res-overlay">
       <div class="res-overlay__card">
         <div class="res-spinner-xl"></div>
@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <!-- ═══ OVERLAY: Error crítico ═══ -->
+    <!-- Overlay: error crítico al intentar crear la reserva -->
     <div v-else-if="errorCreacion && !reservacionId" class="res-overlay">
       <div class="res-overlay__card res-overlay__card--error">
         <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="52" height="52">
@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    <!-- ═══ OVERLAY: Reserva expirada ═══ -->
+    <!-- Overlay: el temporizador llegó a cero y la reserva expiró -->
     <div v-else-if="tiempoRestante === 0 && reservacionId" class="res-overlay">
       <div class="res-overlay__card res-overlay__card--error">
         <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="52" height="52">
@@ -42,11 +42,11 @@
       </div>
     </div>
 
-    <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+    <!-- Contenido principal: visible cuando la reserva está activa y en tiempo -->
     <div v-else class="res-page">
       <div class="res-container">
 
-        <!-- Header -->
+        <!-- Encabezado con título, número de reserva y badge de referencia -->
         <div class="res-header">
           <div class="res-header__text">
             <h1 class="res-header__title">Completar Reserva</h1>
@@ -68,10 +68,10 @@
 
         <div class="res-layout">
 
-          <!-- ═══ IZQUIERDA: FORMULARIO (solo vuelos/paquetes) ═══ -->
+          <!-- Columna izquierda: formulario de pasajeros (solo para vuelos y paquetes) -->
           <div class="res-form-col" v-if="tipoItem !== 'hotel'">
 
-            <!-- ─── PASAJERO 1 ─── -->
+            <!-- Formulario del pasajero principal (boleto 1) -->
             <div class="res-form-card">
               <div class="res-form-card__head">
                 <div class="res-form-card__icon">
@@ -90,6 +90,7 @@
               </div>
 
               <div class="res-form-card__body">
+                <!-- Nombre y apellidos del pasajero principal -->
                 <div class="res-form-row">
                   <div class="res-field">
                     <label class="res-field__label">Nombre(s) *</label>
@@ -105,6 +106,7 @@
                   </div>
                 </div>
 
+                <!-- Pasaporte (solo números) y país con autocompletado -->
                 <div class="res-form-row">
                   <div class="res-field">
                     <label class="res-field__label">Número de Pasaporte *</label>
@@ -129,6 +131,7 @@
                   </div>
                 </div>
 
+                <!-- Teléfono con prefijo dinámico y ciudad con autocompletado -->
                 <div class="res-form-row">
                   <div class="res-field">
                     <label class="res-field__label">
@@ -164,6 +167,7 @@
                   </div>
                 </div>
 
+                <!-- Error general del formulario del pasajero principal -->
                 <div v-if="errors.general" class="res-error-general">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <circle cx="12" cy="12" r="10"/>
@@ -175,10 +179,10 @@
               </div>
             </div>
 
-            <!-- ═══ PASAJEROS ADICIONALES (boletos 2, 3...) ═══ -->
+            <!-- Formularios para pasajeros adicionales (boletos 2, 3...) -->
             <template v-for="(pax, idx) in pasajerosAdicionales" :key="idx">
 
-              <!-- Separador visual -->
+              <!-- Separador visual entre pasajeros -->
               <div class="res-pax-divider">
                 <div class="res-pax-divider__line"></div>
                 <span class="res-pax-divider__label">Pasajero {{ idx + 2 }}</span>
@@ -202,7 +206,7 @@
                 </div>
 
                 <div class="res-form-card__body">
-                  <!-- Nombre + Apellido -->
+                  <!-- Nombre y apellidos del pasajero adicional -->
                   <div class="res-form-row">
                     <div class="res-field">
                       <label class="res-field__label">Nombre(s) *</label>
@@ -222,7 +226,7 @@
                     </div>
                   </div>
 
-                  <!-- Pasaporte + País -->
+                  <!-- Pasaporte y país del pasajero adicional -->
                   <div class="res-form-row">
                     <div class="res-field">
                       <label class="res-field__label">Número de Pasaporte *</label>
@@ -253,7 +257,7 @@
                     </div>
                   </div>
 
-                  <!-- Teléfono + Ciudad -->
+                  <!-- Teléfono y ciudad del pasajero adicional -->
                   <div class="res-form-row">
                     <div class="res-field">
                       <label class="res-field__label">
@@ -305,9 +309,9 @@
               </div>
             </template>
 
-          </div><!-- /res-form-col -->
+          </div><!-- /res-form-col vuelos y paquetes -->
 
-          <!-- ═══ IZQUIERDA: HOTEL — sin datos de pasajero ═══ -->
+          <!-- Columna izquierda: mensaje informativo para reservas de hotel (sin datos de pasajero) -->
           <div class="res-form-col" v-else>
             <div class="res-form-card">
               <div class="res-form-card__head">
@@ -344,7 +348,7 @@
             </div>
           </div><!-- /res-form-col hotel -->
 
-          <!-- ═══ DERECHA: RESUMEN ═══ -->
+          <!-- Columna derecha: resumen del item seleccionado con temporizador y precio -->
           <aside class="res-summary-col">
             <div class="res-summary">
 
@@ -353,6 +357,7 @@
                   <h2 class="res-summary__title">Resumen</h2>
                   <span v-if="noReservacion" class="res-summary__num">{{ noReservacion }}</span>
                 </div>
+                <!-- Temporizador de cuenta regresiva con estados visual de urgencia -->
                 <div v-if="reservacionId" class="res-timer"
                   :class="{
                     'res-timer--warn':    tiempoRestante <= 180 && tiempoRestante > 60,
@@ -374,7 +379,7 @@
                 </div>
               </div>
 
-              <!-- Sin item -->
+              <!-- Estado vacío: ningún item cargado desde sessionStorage -->
               <div v-if="!item" class="res-summary__empty">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#9a9089" stroke-width="1.5" width="40" height="40">
                   <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
@@ -385,7 +390,7 @@
                 </button>
               </div>
 
-              <!-- ══ VUELO SOLO IDA ══ -->
+              <!-- Resumen: vuelo de solo ida -->
               <template v-else-if="tipoItem === 'vuelo' && item.tipoVuelo === 'ida'">
                 <div class="res-summary__tag res-summary__tag--vuelo">
                   <svg viewBox="0 0 24 24" fill="#FFCC00" width="13" height="13"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -419,6 +424,7 @@
                   <div class="res-summary__detail-row"><span>Escalas</span><span>{{ item.escalas === 0 ? 'Directo' : item.escalas + ' escala(s)' }}</span></div>
                   <div class="res-summary__detail-row"><span>Pasajeros</span><span>{{ item.busqueda?.cantidadPasajeros || 1 }}</span></div>
                 </div>
+                <!-- Boletos asignados por el servidor para este vuelo -->
                 <div v-if="detalleVuelo?.detalle?.boletos?.length" class="res-boletos">
                   <p class="res-boletos__titulo">Boletos confirmados</p>
                   <div v-for="b in detalleVuelo.detalle.boletos" :key="b.boletoId" class="res-boleto">
@@ -434,12 +440,13 @@
                 </div>
               </template>
 
-              <!-- ══ VUELO IDA Y VUELTA ══ -->
+              <!-- Resumen: vuelo de ida y vuelta con ambas etapas -->
               <template v-else-if="tipoItem === 'vuelo' && item.tipoVuelo === 'idaVuelta'">
                 <div class="res-summary__tag res-summary__tag--vuelo">
                   <svg viewBox="0 0 24 24" fill="#FFCC00" width="13" height="13"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
                   Vuelo · Ida y vuelta
                 </div>
+                <!-- Sub-sección: vuelo de ida -->
                 <div class="res-sub-vuelo">
                   <div class="res-sub-vuelo__badge">Ida</div>
                   <div class="res-summary__aerolinea" style="padding:8px 20px 0">
@@ -453,6 +460,7 @@
                   </div>
                   <div class="res-sub-vuelo__meta"><span style="text-transform:capitalize">{{ item.ida?.clase }}</span><span>·</span><span>{{ formatDuracion(item.ida?.duracionMinutos) }}</span><span>·</span><span>${{ ((item.ida?.precio || 0) * (item.busqueda?.cantidadPasajeros || 1)).toFixed(2) }}</span></div>
                 </div>
+                <!-- Sub-sección: vuelo de regreso -->
                 <div class="res-sub-vuelo res-sub-vuelo--regreso">
                   <div class="res-sub-vuelo__badge res-sub-vuelo__badge--regreso">Regreso</div>
                   <div class="res-summary__aerolinea" style="padding:8px 20px 0">
@@ -478,7 +486,7 @@
                 </div>
               </template>
 
-              <!-- ══ HOTEL ══ -->
+              <!-- Resumen: hotel con fechas de check-in/out y total por noches -->
               <template v-else-if="tipoItem === 'hotel'">
                 <div class="res-summary__tag res-summary__tag--hotel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="13" height="13">
@@ -509,7 +517,7 @@
                 </div>
               </template>
 
-              <!-- ══ PAQUETE ══ -->
+              <!-- Resumen: paquete completo (vuelo + hotel) con desglose de precios -->
               <template v-else-if="tipoItem === 'paquete'">
                 <div class="res-summary__tag res-summary__tag--paquete">
                   <svg viewBox="0 0 24 24" fill="#FFCC00" width="13" height="13"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -531,6 +539,7 @@
                     <div class="res-summary__punto res-summary__punto--r"><span class="res-summary__iata">{{ item.vueloRegreso?.destinoCodigo }}</span><span class="res-summary__ciudad" style="text-transform:capitalize">{{ item.vueloRegreso?.clase }}</span></div>
                   </div>
                 </div>
+                <!-- Hotel incluido en el paquete -->
                 <div class="res-paquete-hotel">
                   <div class="res-sub-vuelo__badge" style="margin:0 0 8px">Hotel</div>
                   <span class="res-paquete-hotel__nombre">{{ item.hotel?.nombreHotel }}</span>
@@ -542,6 +551,7 @@
                     <div class="res-boleto__left"><span class="res-boleto__no">{{ b.noBoleto }}</span><span class="res-boleto__asiento">Asiento {{ b.noAsiento }} · {{ b.clase }}</span></div>
                   </div>
                 </div>
+                <!-- Desglose de precio del paquete: vuelo + hotel por separado -->
                 <div class="res-summary__precio-wrap res-summary__precio-wrap--desglose">
                   <div class="res-desglose">
                     <div class="res-desglose__row">
@@ -560,13 +570,13 @@
                 </div>
               </template>
 
-              <!-- Botón continuar -->
+              <!-- Botón de acción principal: seleccionar asientos (vuelo/paquete) o confirmar (hotel) -->
               <div v-if="item" class="res-summary__footer">
                 <button class="res-btn res-btn--yellow res-btn--full"
                   @click="handleReservar" type="button"
                   :disabled="submitting || tiempoRestante === 0">
                   <div v-if="submitting" class="res-spinner-sm"></div>
-                  <!-- Vuelo / Paquete → selección de asientos -->
+                  <!-- Vuelo / Paquete: continúa a selección de asientos -->
                   <template v-else-if="tipoItem !== 'hotel'">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
                       <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -574,7 +584,7 @@
                     </svg>
                     {{ submitting ? 'Procesando...' : 'Seleccionar Asientos' }}
                   </template>
-                  <!-- Hotel → confirmar directo -->
+                  <!-- Hotel: confirma la reserva directamente -->
                   <template v-else>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
                       <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/>
@@ -604,17 +614,35 @@
 </template>
 
 <script setup>
+/**
+ * @file Reserva.vue
+ * @description Vista para completar una reserva de vuelo, hotel o paquete.
+ * Crea la reservación en el backend al montar, muestra un temporizador de
+ * cuenta regresiva y recopila los datos de los pasajeros antes de avanzar
+ * a la selección de asientos (vuelos/paquetes) o al checkout (hoteles).
+ */
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/reserva.css'
 
+/** Instancia del router para navegar entre pasos del flujo de reserva. */
 const router = useRouter()
+
+/** URL base del backend. @type {string} */
 const API    = 'http://localhost:8080'
 
-// ── Limpieza al salir del flujo de reserva ────────────────────
+/**
+ * Rutas que forman parte del flujo de reserva.
+ * Al salir hacia cualquier otra ruta se limpia la sesión de reserva.
+ * @type {string[]}
+ */
 const FLUJO_RESERVA = ['/reservar', '/seleccion-asientos', '/checkout', '/confirmacion']
+
+/**
+ * Elimina todas las claves de sessionStorage relacionadas con el flujo de reserva activo.
+ */
 function limpiarSesionReserva() {
   sessionStorage.removeItem('checkout_data')
   sessionStorage.removeItem('_reserva_expires_at')
@@ -624,6 +652,8 @@ function limpiarSesionReserva() {
   sessionStorage.removeItem('hotel_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
 }
+
+/** Limpia la sesión si el usuario navega fuera del flujo de reserva. */
 onBeforeRouteLeave((to) => {
   if (!FLUJO_RESERVA.includes(to.path)) {
     if (timerInterval.value) clearInterval(timerInterval.value)
@@ -631,28 +661,61 @@ onBeforeRouteLeave((to) => {
   }
 })
 
-// ── Estado ────────────────────────────────────────────────────
+/** ID numérico de la reservación creada en el servidor. @type {import('vue').Ref<string|null>} */
 const reservacionId  = ref(null)
+
+/** Número legible de la reservación (ej. 'MOV-0001'). @type {import('vue').Ref<string>} */
 const noReservacion  = ref('')
+
+/** Respuesta del servidor para el detalle de vuelo, incluye boletos y precio con ganancia. @type {import('vue').Ref<object|null>} */
 const detalleVuelo   = ref(null)
+
+/** Respuesta del servidor para el detalle de hotel, incluye precio con ganancia. @type {import('vue').Ref<object|null>} */
 const detalleHotel   = ref(null)
+
+/** Segundos restantes en el temporizador de la reserva. @type {import('vue').Ref<number>} */
 const tiempoRestante = ref(600)
+
+/** Segundos totales con los que se inició el temporizador (para calcular la barra de progreso). @type {import('vue').Ref<number>} */
 const tiempoTotal    = ref(600)
+
+/** Indica si el overlay de "creando reserva" está visible. @type {import('vue').Ref<boolean>} */
 const creandoReserva = ref(true)
+
+/** Mensaje de error cuando falla la creación de la reserva. @type {import('vue').Ref<string>} */
 const errorCreacion  = ref('')
+
+/** Referencia al intervalo del temporizador para poder limpiarlo. @type {import('vue').Ref<number|null>} */
 const timerInterval  = ref(null)
 
+/** Item seleccionado (vuelo, hotel o paquete) leído desde sessionStorage. @type {import('vue').Ref<object|null>} */
 const item     = ref(null)
+
+/** Tipo del item activo: 'vuelo' | 'hotel' | 'paquete'. @type {import('vue').Ref<string>} */
 const tipoItem = ref('')
 
-// ── Boletos confirmados ───────────────────────────────────────
+/** Boletos asignados por el servidor, tomados del detalle de vuelo. @type {import('vue').ComputedRef<Array>} */
 const boletos              = computed(() => detalleVuelo.value?.detalle?.boletos || [])
+
+/** Cantidad total de boletos (al menos 1). @type {import('vue').ComputedRef<number>} */
 const totalBoletos         = computed(() => boletos.value.length || 1)
+
+/** Array de objetos con los datos de los pasajeros adicionales (boletos 2, 3...). @type {import('vue').Ref<Array>} */
 const pasajerosAdicionales = ref([])
+
+/** Errores de validación por pasajero adicional, indexados igual que `pasajerosAdicionales`. @type {import('vue').Ref<Array>} */
 const erroresPasajeros     = ref([])
+
+/**
+ * Estado de los autocompletados de país/ciudad/teléfono para cada pasajero adicional.
+ * @type {import('vue').Ref<Array>}
+ */
 const paxAcState           = ref([])
 
-// Inicializar formularios adicionales cuando llegan los boletos
+/**
+ * Inicializa los formularios de pasajeros adicionales cada vez que llegan los boletos del servidor.
+ * Se ejecuta de forma inmediata y reactiva cuando cambia `detalleVuelo`.
+ */
 watch(detalleVuelo, (val) => {
   const bols = val?.detalle?.boletos || []
   if (bols.length > 1) {
@@ -674,21 +737,26 @@ watch(detalleVuelo, (val) => {
   }
 }, { immediate: true })
 
-// ── Helpers países/ciudades ───────────────────────────────────
-// Devuelve el array de países cargados en memoria
+/**
+ * Devuelve el array de países cargados en memoria.
+ * @returns {Array}
+ */
 function getPaises() {
   return todosLosPaises.value
 }
 
-// Obtiene las ciudades: primero del array local, luego API
+/**
+ * Obtiene las ciudades de un país: primero busca en el array local
+ * y si no tiene datos, hace un fetch a countriesnow como fallback.
+ * @param {string} country - Nombre del país en inglés
+ * @returns {Promise<string[]>}
+ */
 async function getCiudades(country) {
-  // Buscar en el array local (countriesnow ya trae cities)
   const found = todosLosPaises.value.find(
     p => p.country.toLowerCase() === country.toLowerCase()
   )
   if (found?.cities?.length) return found.cities
 
-  // Fallback: fetch a la API
   try {
     const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
       method: 'POST',
@@ -702,7 +770,10 @@ async function getCiudades(country) {
   }
 }
 
-// ── Autocomplete pasajeros adicionales ───────────────────────
+/**
+ * Filtra países para el autocompletado de un pasajero adicional y resetea ciudad/teléfono.
+ * @param {number} idx - Índice del pasajero adicional
+ */
 async function onPaxPaisInput(idx) {
   const st = paxAcState.value[idx]
   if (!st) return
@@ -718,6 +789,11 @@ async function onPaxPaisInput(idx) {
     .slice(0, 6)
 }
 
+/**
+ * Fija el país elegido para un pasajero adicional y carga sus ciudades y código telefónico.
+ * @param {number} idx - Índice del pasajero
+ * @param {object} p   - Objeto de país seleccionado
+ */
 async function seleccionarPaxPais(idx, p) {
   const st = paxAcState.value[idx]
   if (!st) return
@@ -737,6 +813,10 @@ async function seleccionarPaxPais(idx, p) {
   pasajerosAdicionales.value[idx].telefono = ''
 }
 
+/**
+ * Filtra las ciudades disponibles para el pasajero adicional según lo escrito.
+ * @param {number} idx
+ */
 function onPaxCiudadInput(idx) {
   const st = paxAcState.value[idx]
   if (!st) return
@@ -747,6 +827,11 @@ function onPaxCiudadInput(idx) {
   pasajerosAdicionales.value[idx].ciudad = ''
 }
 
+/**
+ * Confirma la ciudad seleccionada para el pasajero adicional.
+ * @param {number} idx
+ * @param {string} c - Ciudad elegida
+ */
 function seleccionarPaxCiudad(idx, c) {
   const st = paxAcState.value[idx]
   if (!st) return
@@ -755,7 +840,11 @@ function seleccionarPaxCiudad(idx, c) {
   pasajerosAdicionales.value[idx].ciudad = c
 }
 
-// ── Formateo teléfono pasajeros adicionales ───────────────────
+/**
+ * Formatea el número de teléfono del pasajero adicional según los dígitos requeridos por su país.
+ * @param {number} idx - Índice del pasajero
+ * @param {Event}  e
+ */
 function onPaxPhoneInput(idx, e) {
   const st = paxAcState.value[idx]
   if (!st) return
@@ -770,22 +859,47 @@ function onPaxPhoneInput(idx, e) {
   if (erroresPasajeros.value[idx]) erroresPasajeros.value[idx].telefono = ''
 }
 
-// ── Form pasajero 1 ───────────────────────────────────────────
+/** Datos del pasajero principal (boleto 1). @type {import('vue').Ref<object>} */
 const form = ref({ nombre:'', apellido:'', pasaporte:'', pais:'', ciudad:'', telefono:'' })
+
+/** Errores de validación del formulario del pasajero principal. @type {import('vue').Ref<object>} */
 const errors     = ref({})
+
+/** Previene doble click mientras se procesa la confirmación. @type {import('vue').Ref<boolean>} */
 const submitting = ref(false)
 
+/** Lista de países cargada desde countriesnow. @type {import('vue').Ref<Array>} */
 const todosLosPaises    = ref([])
+
+/** Texto escrito en el buscador de país del pasajero principal. @type {import('vue').Ref<string>} */
 const paisQuery         = ref('')
+
+/** Países filtrados para el dropdown del pasajero principal. @type {import('vue').Ref<Array>} */
 const paisesSugeridos   = ref([])
+
+/** País seleccionado por el pasajero principal (objeto con cities). @type {import('vue').Ref<object|null>} */
 const paisSeleccionado  = ref(null)
+
+/** Texto escrito en el buscador de ciudad del pasajero principal. @type {import('vue').Ref<string>} */
 const ciudadQuery       = ref('')
+
+/** Ciudades filtradas para el dropdown del pasajero principal. @type {import('vue').Ref<Array>} */
 const ciudadesSugeridas = ref([])
 
+/** Código de marcación del país del pasajero principal (ej. '+502'). @type {import('vue').Ref<string>} */
 const dialCode     = ref('')
+
+/** Dígitos locales requeridos para el teléfono del pasajero principal. @type {import('vue').Ref<number>} */
 const phoneDigits  = ref(8)
+
+/** Mapa de país → { code, digits } construido desde restcountries. @type {import('vue').Ref<Record<string, object>>} */
 const dialCodesMap = ref({})
 
+/**
+ * Dígitos requeridos por código de marcación, usados como fallback cuando
+ * la API de restcountries no retorna sufijos únicos.
+ * @type {Record<string, number>}
+ */
 const knownDigits = {
   '+1':10,'+502':8,'+503':8,'+504':8,'+505':8,'+506':8,'+507':8,
   '+52':10,'+53':8,'+54':10,'+55':11,'+56':9,'+57':10,'+58':10,
@@ -793,16 +907,36 @@ const knownDigits = {
   '+91':10,'+7':10,'+20':10,'+27':9,'+82':10,'+84':9,
 }
 
-// ── ID helpers (vuelos) ───────────────────────────────────────
+/**
+ * Extrae el ID numérico del vuelo desde un identificador compuesto (ej. '1-100').
+ * @param {string|number} id
+ * @returns {number|null}
+ */
 function parseVueloId(id) {
   if (!id) return null
   const parts = String(id).split('-'), val = parseFloat(parts[parts.length - 1])
   return Number.isFinite(val) ? Math.round(val) : null
 }
+
+/**
+ * Extrae el ID de proveedor desde el identificador compuesto del vuelo.
+ * @param {string|number} id
+ * @returns {number|null}
+ */
 function parseProveedorId(id) { return id ? parseInt(String(id).split('-')[0]) || null : null }
+
+/**
+ * Convierte el nombre de clase a su ID numérico del backend.
+ * @param {string} clase - 'ejecutiva' o cualquier otro valor (económica)
+ * @returns {number}
+ */
 function claseToId(clase) { return clase === 'ejecutiva' ? 2 : 1 }
 
-// ── Total paquete ─────────────────────────────────────────────
+/**
+ * Suma el total del paquete usando los precios con ganancia del servidor.
+ * Si aún no llegaron del servidor, usa el precio calculado del item.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const totalPaquete = computed(() => {
   const tv = detalleVuelo.value?.total_con_ganancia ?? 0
   const th = detalleHotel.value?.total_con_ganancia ?? 0
@@ -810,10 +944,21 @@ const totalPaquete = computed(() => {
   return item.value?.precioTotal ?? 0
 })
 
-// ── Timer ─────────────────────────────────────────────────────
+/**
+ * Convierte segundos a formato mm:ss para mostrar en el temporizador.
+ * @param {number} s
+ * @returns {string}
+ */
 function formatTiempo(s) {
   return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`
 }
+
+/**
+ * Inicia el temporizador de cuenta regresiva.
+ * Si se provee una fecha de expiración absoluta, calcula los segundos reales restantes.
+ * @param {number}      seg       - Segundos de duración
+ * @param {number|null} expiresAt - Timestamp absoluto de expiración (ms)
+ */
 function startTimer(seg, expiresAt) {
   const segReales = expiresAt
     ? Math.max(30, Math.floor((expiresAt - Date.now()) / 1000))
@@ -827,9 +972,15 @@ function startTimer(seg, expiresAt) {
     if (tiempoRestante.value === 0) clearInterval(timerInterval.value)
   }, 1000)
 }
+
+/** Limpia el intervalo al desmontar el componente para evitar memory leaks. */
 onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value) })
 
-// ── Payload vuelos ────────────────────────────────────────────
+/**
+ * Construye el array de vuelos y el proveedorId para la petición de detalle de vuelo.
+ * Funciona para vuelos de ida, ida y vuelta, y el vuelo incluido en un paquete.
+ * @returns {{ proveedorId: number|null, vuelosArr: Array }}
+ */
 function buildVuelosPayload() {
   let vuelosArr = [], proveedorId = null
   if (tipoItem.value === 'vuelo') {
@@ -857,7 +1008,12 @@ function buildVuelosPayload() {
   return { proveedorId, vuelosArr }
 }
 
-// ── Payload hotel ─────────────────────────────────────────────
+/**
+ * Construye el payload para el detalle de hotel dentro de un paquete.
+ * Soporta habitaciones combinadas (combo) y habitaciones simples.
+ * @param {number} reservacionIdArg - ID de la reservación ya creada
+ * @returns {object|null}
+ */
 function buildPaqueteHotelPayload(reservacionIdArg) {
   const h = item.value?.hotel
   if (!h) return null
@@ -883,7 +1039,10 @@ function buildPaqueteHotelPayload(reservacionIdArg) {
   return { reservacionId: reservacionIdArg, proveedorId: h.proveedorId, habitaciones }
 }
 
-// ── Crear reservación ─────────────────────────────────────────
+/**
+ * Crea la reservación en el backend y luego registra el detalle de vuelo o hotel según el tipo.
+ * En caso de error, muestra el overlay de error con opción de reintentar.
+ */
 async function crearReservacion() {
   creandoReserva.value = true
   errorCreacion.value  = ''
@@ -966,16 +1125,19 @@ async function crearReservacion() {
   }
 }
 
-// ── onMounted ─────────────────────────────────────────────────
+/**
+ * Al montar: carga países y dial codes, lee el item de sessionStorage y
+ * recupera una reservación previa si aún está vigente, evitando crear una nueva.
+ */
 onMounted(async () => {
-  // Cargar países
+  // Cargar países desde countriesnow
   try {
     const r = await fetch('https://countriesnow.space/api/v0.1/countries')
     const d = await r.json()
     todosLosPaises.value = d.data || []
   } catch { /**/ }
 
-  // Cargar dial codes
+  // Cargar prefijos telefónicos desde restcountries
   try {
     const r = await fetch('https://restcountries.com/v3.1/all?fields=name,idd')
     const d = await r.json()
@@ -991,7 +1153,7 @@ onMounted(async () => {
     })
   } catch { /**/ }
 
-  // Cargar item desde sessionStorage
+  // Determinar qué tipo de item viene desde la búsqueda anterior
   const vuelo   = sessionStorage.getItem('vuelo_seleccionado')
   const hotel   = sessionStorage.getItem('hotel_seleccionado')
   const paquete = sessionStorage.getItem('paquete_seleccionado')
@@ -1002,7 +1164,7 @@ onMounted(async () => {
 
   if (!item.value) { creandoReserva.value = false; return }
 
-  // Recuperar reserva existente (recarga)
+  // Recuperar reserva existente si la página se recargó y el tiempo no expiró
   const savedExpiresAt    = sessionStorage.getItem('_reserva_expires_at')
   const savedReservacionId = sessionStorage.getItem('_reserva_id')
   const savedNoReservacion = sessionStorage.getItem('_reserva_no')
@@ -1021,7 +1183,7 @@ onMounted(async () => {
     sessionStorage.removeItem('_reserva_no')
   }
 
-  // Usar promesa pre-disparada
+  // Usar promesa pre-disparada desde la página anterior para acelerar el proceso
   if (window.__reservaPromise) {
     try {
       const resultado = await window.__reservaPromise
@@ -1064,7 +1226,10 @@ onMounted(async () => {
   await crearReservacion()
 })
 
-// ── Autocomplete pasajero 1 ───────────────────────────────────
+/**
+ * Filtra la lista de países para el autocompletado del pasajero principal.
+ * Resetea el país y ciudad si el texto cambia.
+ */
 function onPaisInput() {
   const q = paisQuery.value.toLowerCase()
   paisesSugeridos.value = q.length < 2
@@ -1072,6 +1237,11 @@ function onPaisInput() {
     : todosLosPaises.value.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6)
   if (!paisSeleccionado.value) form.value.pais = ''
 }
+
+/**
+ * Confirma el país del pasajero principal y actualiza el prefijo telefónico y ciudades disponibles.
+ * @param {object} pais - País seleccionado de la lista
+ */
 function seleccionarPais(pais) {
   paisSeleccionado.value = pais
   paisQuery.value        = pais.country
@@ -1085,7 +1255,11 @@ function seleccionarPais(pais) {
   phoneDigits.value = info?.digits ?? 9
   form.value.telefono = ''
 }
+
+/** Limpia el campo de país si se escribe texto pero no se selecciona ninguno. */
 function validarPais()   { if (paisQuery.value  && !paisSeleccionado.value) { paisQuery.value  = ''; paisesSugeridos.value   = [] } }
+
+/** Filtra ciudades del país seleccionado según lo escrito en el campo. */
 function onCiudadInput() {
   if (!paisSeleccionado.value) return
   const q = ciudadQuery.value.toLowerCase()
@@ -1093,11 +1267,20 @@ function onCiudadInput() {
     ? []
     : (paisSeleccionado.value.cities || []).filter(c => c.toLowerCase().includes(q)).slice(0, 6)
 }
+
+/**
+ * Confirma la ciudad seleccionada del pasajero principal.
+ * @param {string} c - Ciudad elegida
+ */
 function seleccionarCiudad(c) { ciudadQuery.value = c; form.value.ciudad = c; ciudadesSugeridas.value = [] }
+
+/** Limpia el campo de ciudad si se escribe texto pero no se selecciona ninguna. */
 function validarCiudad()      { if (ciudadQuery.value && !form.value.ciudad) { ciudadQuery.value = ''; ciudadesSugeridas.value = [] } }
 
-// ── Teléfono pasajero 1 ───────────────────────────────────────
+/** Cantidad de dígitos numéricos ingresados en el teléfono del pasajero principal. @type {import('vue').ComputedRef<number>} */
 const telefonoDigitos  = computed(() => form.value.telefono.replace(/\D/g, '').length)
+
+/** Placeholder del campo de teléfono generado según los dígitos del país. @type {import('vue').ComputedRef<string>} */
 const phonePlaceholder = computed(() => {
   const n = phoneDigits.value, s = '5'.repeat(n)
   if (n <= 7)  return s.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim()
@@ -1105,6 +1288,11 @@ const phonePlaceholder = computed(() => {
   if (n === 9) return s.replace(/^(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')
   return s.replace(/^(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')
 })
+
+/**
+ * Limpia no numéricos, recorta y aplica formato visual al teléfono del pasajero principal.
+ * @param {Event} e
+ */
 function onPhoneInput(e) {
   const raw = e.target.value.replace(/\D/g, '').slice(0, phoneDigits.value)
   const n = phoneDigits.value
@@ -1117,16 +1305,26 @@ function onPhoneInput(e) {
   errors.value.telefono = ''
 }
 
+/**
+ * Formatea minutos de duración de vuelo a texto legible (ej. '2h 30m').
+ * @param {number} min
+ * @returns {string}
+ */
 function formatDuracion(min) {
   return min ? `${Math.floor(min/60)}h${min%60>0?' '+min%60+'m':''}` : '--'
 }
 
-// ── Confirmar reserva ─────────────────────────────────────────
+/**
+ * Valida los formularios de todos los pasajeros y, si son correctos,
+ * guarda los datos de pasajeros en el backend y navega al siguiente paso:
+ * - Vuelo/Paquete: selección de asientos
+ * - Hotel: checkout directo
+ */
 async function handleReservar() {
   errors.value = {}
-  const f = form.value   // siempre disponible
+  const f = form.value
 
-  // Para hoteles no hay datos de pasajero
+  // Hoteles no requieren datos de pasajero, solo validar tiempo
   if (tipoItem.value !== 'hotel') {
     if (!f.nombre)    errors.value.nombre   = 'Campo requerido'
     if (!f.apellido)  errors.value.apellido = 'Campo requerido'
@@ -1165,7 +1363,7 @@ async function handleReservar() {
       ? buildVuelosPayload()
       : { proveedorId: item.value?.proveedorId, vuelosArr: [] }
 
-    // ── POST pasajeros por boleto ──────────────────────────────
+    // Guardar datos de cada pasajero asociado a su boleto
     if ((tipoItem.value === 'vuelo' || tipoItem.value === 'paquete') && boletos.value.length > 0) {
       const pasajerosPayload = boletos.value.map((boleto, idx) => {
         if (idx === 0) {
@@ -1211,7 +1409,7 @@ async function handleReservar() {
       }
     }
 
-    // ── Guardar datos comunes ──────────────────────────────────
+    // Persistir todos los datos relevantes en sessionStorage para los siguientes pasos
     sessionStorage.setItem('checkout_data', JSON.stringify({
       reservacionId:             reservacionId.value,
       noReservacion:             noReservacion.value,
@@ -1228,10 +1426,10 @@ async function handleReservar() {
     if (timerInterval.value) clearInterval(timerInterval.value)
 
     if (tipoItem.value === 'vuelo' || tipoItem.value === 'paquete') {
-      // Mantener timer en sessionStorage para SeleccionAsientos
+      // El timer sigue vigente en sessionStorage para la vista de selección de asientos
       router.push('/seleccion-asientos')
     } else {
-      // Hotel: ir directo al checkout
+      // Hotel: ir directo al checkout limpiando la sesión de reserva
       sessionStorage.removeItem('_reserva_expires_at')
       sessionStorage.removeItem('_reserva_id')
       sessionStorage.removeItem('_reserva_no')

@@ -7,8 +7,18 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.List;
 
+/**
+ * Repository para el acceso a datos relacionados con reservaciones.
+ * Maneja consultas y actualizaciones sobre reservaciones, detalles e imagenes.
+ */
 public class ReservacionRepository {
 
+    /**
+     * Retorna los precios y la capacidad maxima de una habitacion segun su tipo.
+     * @param habitacionId ID de la habitacion a consultar.
+     * @return arreglo con precio por noche, precio por persona y capacidad maxima.
+     * @throws RuntimeException si la habitacion no existe en la base de datos.
+     */
     public double[] obtenerPrecios(int habitacionId) {
         String sql = "SELECT t.PRECIONOCHE, t.PRECIOPERSONA, t.CAPACIDADMAXIMA " +
                 "FROM Habitacion h " +
@@ -24,6 +34,14 @@ public class ReservacionRepository {
         return result.get(0);
     }
 
+    /**
+     * Verifica si existe un traslape de fechas para una habitacion con reservaciones activas.
+     * Solo considera reservaciones en estado pendiente o confirmada.
+     * @param habitacionId  ID de la habitacion a verificar.
+     * @param fechaCheckIn  fecha de entrada de la nueva reservacion.
+     * @param fechaCheckOut fecha de salida de la nueva reservacion.
+     * @return true si existe al menos un traslape, false en caso contrario.
+     */
     public boolean existeTraslape(int habitacionId, Date fechaCheckIn, Date fechaCheckOut) {
         String sql = "SELECT COUNT(*) AS total " +
                 "FROM DetallesReservacion dr " +
@@ -41,6 +59,12 @@ public class ReservacionRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
+    /**
+     * Marca como expiradas todas las reservaciones pendientes de un usuario,
+     * exceptuando la reservacion que se acaba de crear o actualizar.
+     * @param usuarioId          ID del usuario dueno de las reservaciones.
+     * @param reservacionIdExcluir ID de la reservacion que no debe expirar.
+     */
     public void expirarPendientesDeUsuario(int usuarioId, int reservacionIdExcluir) {
         String sql = "UPDATE Reservacion " +
                 "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada'), " +
@@ -51,6 +75,15 @@ public class ReservacionRepository {
         DatabaseManager.executeUpdate(sql, usuarioId, reservacionIdExcluir);
     }
 
+    /**
+     * Inserta una nueva reservacion en la base de datos con estado inicial pendiente.
+     * @param noReservacion  codigo unico que identifica la reservacion.
+     * @param total          monto total de la reservacion.
+     * @param usuarioId      ID del usuario que realiza la reservacion.
+     * @param fechaCreacion  fecha y hora en que se creo la reservacion.
+     * @param fechaExpiracion fecha y hora en que expira la reservacion si no se confirma.
+     * @return ID generado por la base de datos para la nueva reservacion.
+     */
     public int crearReservacion(String noReservacion, double total, int usuarioId,
                                 Timestamp fechaCreacion, Timestamp fechaExpiracion) {
         String sql = "INSERT INTO Reservacion " +
@@ -62,6 +95,15 @@ public class ReservacionRepository {
         );
     }
 
+    /**
+     * Inserta el detalle de una habitacion asociado a una reservacion existente.
+     * @param reservacionId   ID de la reservacion a la que pertenece el detalle.
+     * @param habitacionId    ID de la habitacion reservada.
+     * @param fechaCheckIn    fecha de entrada a la habitacion.
+     * @param fechaCheckOut   fecha de salida de la habitacion.
+     * @param cantidadPersonas numero de personas para esta habitacion.
+     * @param total           costo total calculado para este detalle.
+     */
     public void crearDetalle(int reservacionId, int habitacionId,
                              Date fechaCheckIn, Date fechaCheckOut,
                              int cantidadPersonas, double total) {
@@ -73,6 +115,11 @@ public class ReservacionRepository {
         );
     }
 
+    /**
+     * Retorna los datos principales de una reservacion junto con su estado actual.
+     * @param reservacionId ID de la reservacion a consultar.
+     * @return arreglo con los campos de la reservacion, o null si no existe.
+     */
     public Object[] obtenerReservacion(int reservacionId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, r.Fecha_Creacion, r.Fecha_Expiracion, " +
                 "e.Estado " +
@@ -92,6 +139,12 @@ public class ReservacionRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
+    /**
+     * Retorna todas las reservaciones de un usuario con el detalle completo de cada habitacion.
+     * Incluye informacion del hotel, tipo de habitacion, cama y fechas de cada detalle.
+     * @param usuarioId ID del usuario cuyas reservaciones se desean consultar.
+     * @return lista de DTOs con la informacion consolidada de reservaciones y detalles.
+     */
     public List<ReservacionDetalleDTO> obtenerReservacionesDeUsuario(int usuarioId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, " +
                 "r.Fecha_Creacion, r.Fecha_Expiracion, r.Fecha_Cancelacion, r.Motivo_Cancelacion, " +
@@ -114,6 +167,7 @@ public class ReservacionRepository {
                 "WHERE r.Usuario_ID = ? " +
                 "ORDER BY r.Fecha_Creacion DESC, r.ID, dr.ID";
 
+        // Mapea cada fila del resultado a un DTO con todos los campos de reservacion y detalle
         return DatabaseManager.executeQuery(sql, rs -> {
             ReservacionDetalleDTO dto = new ReservacionDetalleDTO();
             dto.setId(rs.getInt("ID"));
@@ -140,18 +194,32 @@ public class ReservacionRepository {
         }, usuarioId);
     }
 
-    // --------------------------- IDs de imágenes -----------------------------------
+    // IDs de imagenes asociadas a hoteles y habitaciones
 
+    /**
+     * Retorna los IDs de todas las imagenes registradas para un hotel.
+     * @param hotelId ID del hotel del que se quieren obtener las imagenes.
+     * @return lista de IDs de imagenes del hotel.
+     */
     public List<Integer> obtenerImagenesHotel(int hotelId) {
         String sql = "SELECT ID FROM ImagenHotel WHERE HotelID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelId);
     }
 
+    /**
+     * Retorna los IDs de todas las imagenes registradas para una habitacion.
+     * @param habitacionId ID de la habitacion de la que se quieren obtener las imagenes.
+     * @return lista de IDs de imagenes de la habitacion.
+     */
     public List<Integer> obtenerImagenesHabitacion(int habitacionId) {
         String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
     }
 
+    /**
+     * Marca como expiradas todas las reservaciones pendientes cuya fecha de expiracion ya paso.
+     * @return numero de filas actualizadas en la base de datos.
+     */
     public int expirarReservacionesVencidas() {
         String sql = "UPDATE Reservacion " +
                 "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada') " +

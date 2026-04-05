@@ -1,30 +1,42 @@
 <script>
+  /**
+   * @file Footer.svelte
+   * @description Pie de pagina global de Miku Inn. Muestra enlaces de navegacion,
+   * informacion de contacto, redes sociales y links legales.
+   */
+
   // @ts-nocheck
   import logo from '../assets/mikuinn-logo.png';
   import '../styles/Footer.css';
 
+  /** Funcion de navegacion recibida desde el componente padre. @type {Function} */
   export let navigateTo;
 
+  /** Ano actual para el copyright dinamico. @type {number} */
   const currentYear = new Date().getFullYear();
 
+  /** Enlaces de navegacion rapida. @type {Array<{name: string, page: string}>} */
   const quickLinks = [
     { name: 'Inicio',         page: 'home' },
     { name: 'Sobre Nosotros', page: 'sobre-nosotros' },
   ];
 
+  /** Links de soporte y ayuda al usuario. @type {Array<{name: string, page: string}>} */
   const support = [
-    { name: 'Centro de Ayuda',       page: 'centro-ayuda' },
-    { name: 'Contactanos',           page: 'contactanos' },
-    { name: 'Preguntas Frecuentes',  page: 'preguntas-frecuentes' },
+    { name: 'Centro de Ayuda',         page: 'centro-ayuda' },
+    { name: 'Contactanos',             page: 'contactanos' },
+    { name: 'Preguntas Frecuentes',    page: 'preguntas-frecuentes' },
     { name: 'Politica de Cancelacion', page: 'politica-cancelacion' },
   ];
 
+  /** Links legales del footer. @type {Array<{name: string, page: string}>} */
   const legalLinks = [
     { name: 'Privacidad', page: 'privacidad' },
     { name: 'Terminos',   page: 'terminos' },
     { name: 'Cookies',    page: 'cookies' },
   ];
 
+  /** Redes sociales con nombre, URL e icono SVG inline. @type {Array} */
   const socialLinks = [
     {
       name: 'Facebook', href: 'https://facebook.com',
@@ -40,13 +52,16 @@
     },
   ];
 
+  /** Icono de flecha para los links de navegacion. @type {string} */
   const chevronRight = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
 </script>
 
+<!-- Pie de pagina principal -->
 <footer class="footer">
   <div class="footer-main">
     <div class="footer-container">
 
+      <!-- Seccion de la empresa: logo, descripcion y redes sociales -->
       <div class="footer-section company-section">
         <img src={logo} alt="Miku Inn" class="footer-logo" />
         <p class="company-description">
@@ -61,6 +76,7 @@
         </div>
       </div>
 
+      <!-- Enlaces rapidos de navegacion -->
       <div class="footer-section">
         <h3 class="footer-title">Enlaces Rapidos</h3>
         <ul class="footer-links">
@@ -74,6 +90,7 @@
         </ul>
       </div>
 
+      <!-- Links de ayuda y soporte -->
       <div class="footer-section">
         <h3 class="footer-title">Ayuda</h3>
         <ul class="footer-links">
@@ -87,6 +104,7 @@
         </ul>
       </div>
 
+      <!-- Informacion de contacto: telefono, email y direccion -->
       <div class="footer-section contact-section">
         <h3 class="footer-title">Contactanos</h3>
         <div class="contact-items">
@@ -123,6 +141,7 @@
     </div>
   </div>
 
+  <!-- Barra inferior con copyright y links legales -->
   <div class="footer-bottom">
     <div class="footer-container footer-bottom-content">
       <p class="copyright">© {currentYear} <strong>Miku Inn</strong>. Todos los derechos reservados.</p>

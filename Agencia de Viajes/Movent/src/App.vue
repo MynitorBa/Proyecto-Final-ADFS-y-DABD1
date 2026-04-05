@@ -1,12 +1,26 @@
 <template>
+  <!-- Punto de montaje del router: renderiza la vista activa según la ruta -->
   <router-view />
 </template>
 
 <script setup>
+/**
+ * @file App.vue
+ * @description Componente raíz de la aplicación MOVENT. Al montarse, verifica la
+ * sesión del usuario con el backend y sincroniza los datos en sessionStorage para
+ * que todos los componentes accedan a la información actualizada del usuario.
+ */
 import { onMounted } from 'vue'
 
+/** URL base del backend. @type {string} */
 const API_BASE = 'http://localhost:8080'
 
+/**
+ * Al montar la app, consulta el endpoint de sesión para validar la cookie activa.
+ * Si la cookie expiró o no existe, limpia los datos de sesión local.
+ * Si es válida, mergea los datos del servidor con lo que ya hay guardado
+ * para preservar nombre y apellido obtenidos durante el login.
+ */
 onMounted(async () => {
   try {
     const res = await fetch(`${API_BASE}/api/sesion`, {

@@ -6,13 +6,21 @@ import org.example.services.ReservacionService;
 
 import java.util.Map;
 
+/**
+ * Controller que gestiona las reservaciones de usuarios autenticados.
+ * Requiere sesion activa; el usuarioId se obtiene del contexto inyectado por el middleware JWT.
+ */
 public class ReservacionController {
 
     private final ReservacionService reservacionService = new ReservacionService();
 
+    /**
+     * Registra las rutas de reservaciones en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registran las rutas.
+     */
     public void registerRoutes(Javalin app) {
 
-        // POST /reservaciones — crear reservación
+        // Crea una nueva reservacion en nombre del usuario autenticado
         app.post("/reservaciones", ctx -> {
             int usuarioId = ctx.attribute("usuarioId");
             ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
@@ -25,7 +33,7 @@ public class ReservacionController {
             }
         });
 
-        // GET /reservaciones — todas las reservaciones del usuario en sesión
+        // Retorna todas las reservaciones registradas por el usuario autenticado
         app.get("/reservaciones", ctx -> {
             int usuarioId = ctx.attribute("usuarioId");
             ctx.status(200).json(reservacionService.obtenerReservaciones(usuarioId));

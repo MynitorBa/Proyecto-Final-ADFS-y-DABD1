@@ -1,6 +1,7 @@
-/* ── info-pages.css — shared styles for all static pages ───── */
+/* Estilos compartidos para todas las páginas estáticas informativas */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* Variables de color, sombra y radio para páginas informativas */
 :root {
   --ip-primary:   #667eea;
   --ip-secondary: #764ba2;
@@ -19,7 +20,7 @@
   --ip-t:         all 0.25s ease;
 }
 
-/* ── Shell ─────────────────────────────────────────────────── */
+/* Envoltura de la página con fondo gris claro */
 .info-page {
   min-height: 100vh;
   background: var(--ip-bg);
@@ -27,7 +28,7 @@
   color: var(--ip-dark);
 }
 
-/* ── Hero banner ───────────────────────────────────────────── */
+/* Banner hero con gradiente y overlay de imagen */
 .info-hero {
   background: var(--ip-grad);
   padding: 4rem 2rem 3.5rem;
@@ -36,6 +37,7 @@
   overflow: hidden;
 }
 
+/* Imagen de fondo semitransparente en el hero */
 .info-hero::before {
   content: '';
   position: absolute;
@@ -48,6 +50,7 @@
 
 .info-hero__content { position: relative; z-index: 1; }
 
+/* Ícono circular del hero */
 .info-hero__icon {
   width: 64px; height: 64px;
   border-radius: 50%;
@@ -58,6 +61,7 @@
   font-size: 1.75rem;
 }
 
+/* Texto pequeño de categoría sobre el título */
 .info-hero__eyebrow {
   font-size: .7rem;
   font-weight: 700;
@@ -67,6 +71,7 @@
   margin: 0 0 .5rem;
 }
 
+/* Título principal del hero */
 .info-hero__title {
   font-size: clamp(1.9rem, 4vw, 2.75rem);
   font-weight: 800;
@@ -76,6 +81,7 @@
   text-shadow: 0 2px 12px rgba(0,0,0,.15);
 }
 
+/* Subtítulo descriptivo del hero */
 .info-hero__subtitle {
   font-size: 1rem;
   color: rgba(255,255,255,.85);
@@ -84,14 +90,14 @@
   line-height: 1.65;
 }
 
-/* ── Main content container ────────────────────────────────── */
+/* Contenedor central del contenido de la página */
 .info-container {
   max-width: 900px;
   margin: 0 auto;
   padding: 3rem 1.5rem 6rem;
 }
 
-/* ── Cards ─────────────────────────────────────────────────── */
+/* Tarjeta de contenido con borde y sombra */
 .info-card {
   background: var(--ip-white);
   border: 1.5px solid var(--ip-border);
@@ -108,12 +114,14 @@
   transform: translateY(-2px);
 }
 
+/* Ícono decorativo de la tarjeta */
 .info-card__icon {
   font-size: 2rem;
   margin-bottom: 1rem;
   display: block;
 }
 
+/* Título de la tarjeta */
 .info-card__title {
   font-size: 1.15rem;
   font-weight: 700;
@@ -121,6 +129,7 @@
   margin: 0 0 .6rem;
 }
 
+/* Texto descriptivo de la tarjeta */
 .info-card__text {
   font-size: .95rem;
   color: var(--ip-muted);
@@ -128,7 +137,7 @@
   margin: 0;
 }
 
-/* ── Section heading inside content ───────────────────────── */
+/* Título de sección dentro del contenido */
 .info-section-title {
   font-size: 1.35rem;
   font-weight: 800;
@@ -140,7 +149,7 @@
 
 .info-section-title:first-child { margin-top: 0; }
 
-/* ── Prose text ────────────────────────────────────────────── */
+/* Texto en prosa del cuerpo de la página */
 .info-prose {
   font-size: .97rem;
   color: var(--ip-medium);
@@ -154,7 +163,7 @@
   text-underline-offset: 3px;
 }
 
-/* ── Highlight box ─────────────────────────────────────────── */
+/* Caja de texto destacado con borde izquierdo */
 .info-highlight {
   background: rgba(102,126,234,.07);
   border-left: 4px solid var(--ip-primary);
@@ -166,7 +175,7 @@
   line-height: 1.65;
 }
 
-/* ── FAQ item ──────────────────────────────────────────────── */
+/* Ítem de preguntas frecuentes colapsable */
 .info-faq {
   border: 1.5px solid var(--ip-border);
   border-radius: var(--ip-r);
@@ -175,6 +184,7 @@
   background: var(--ip-white);
 }
 
+/* Botón de pregunta del FAQ */
 .info-faq__q {
   width: 100%;
   background: none;
@@ -195,6 +205,7 @@
 .info-faq__q:hover { background: rgba(102,126,234,.04); }
 .info-faq__q.open  { color: var(--ip-primary); }
 
+/* Ícono de flecha que rota al abrir el FAQ */
 .info-faq__chevron {
   flex-shrink: 0;
   transition: transform .25s ease;
@@ -202,6 +213,7 @@
 }
 .info-faq__q.open .info-faq__chevron { transform: rotate(180deg); color: var(--ip-primary); }
 
+/* Respuesta del FAQ */
 .info-faq__a {
   padding: 0 1.5rem 1.25rem;
   font-size: .93rem;
@@ -211,7 +223,7 @@
   padding-top: 1rem;
 }
 
-/* ── Contact item ──────────────────────────────────────────── */
+/* Grid de métodos de contacto */
 .info-contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -219,6 +231,7 @@
   margin-bottom: 2rem;
 }
 
+/* Ítem individual de contacto con ícono */
 .info-contact-item {
   background: var(--ip-white);
   border: 1.5px solid var(--ip-border);
@@ -235,6 +248,7 @@
   box-shadow: var(--ip-shadow-sm);
 }
 
+/* Ícono circular del ítem de contacto */
 .info-contact-item__icon {
   width: 44px; height: 44px;
   border-radius: 50%;
@@ -244,6 +258,7 @@
   flex-shrink: 0;
 }
 
+/* Etiqueta pequeña del canal de contacto */
 .info-contact-item__label {
   font-size: .72rem;
   font-weight: 700;
@@ -266,7 +281,7 @@
   margin: 0;
 }
 
-/* ── Grid de cards ─────────────────────────────────────────── */
+/* Grid de tarjetas de información */
 .info-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -274,7 +289,7 @@
   margin-bottom: 2rem;
 }
 
-/* ── Tag badge ─────────────────────────────────────────────── */
+/* Badge de etiqueta tipo pill */
 .info-badge {
   display: inline-flex;
   align-items: center;
@@ -291,7 +306,7 @@
   margin-bottom: 1rem;
 }
 
-/* ── Back button ───────────────────────────────────────────── */
+/* Botón de volver atrás */
 .info-back {
   display: inline-flex;
   align-items: center;
@@ -315,7 +330,7 @@
   background: rgba(102,126,234,.05);
 }
 
-/* ── List ──────────────────────────────────────────────────── */
+/* Lista de ítems con flecha decorativa */
 .info-list {
   list-style: none;
   padding: 0; margin: 0 0 1.25rem;
@@ -333,6 +348,7 @@
   line-height: 1.6;
 }
 
+/* Flecha decorativa de cada ítem de la lista */
 .info-list li::before {
   content: '›';
   color: var(--ip-primary);
@@ -342,7 +358,7 @@
   margin-top: -.05em;
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* Responsive para móviles */
 @media (max-width: 640px) {
   .info-hero        { padding: 3rem 1.5rem 2.5rem; }
   .info-card        { padding: 1.5rem; }
@@ -350,36 +366,38 @@
   .info-contact-grid { grid-template-columns: 1fr; }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   Contactanos — Form (used by Contactanos.svelte)
-   ═══════════════════════════════════════════════════════════ */
-
+/* Formulario de contacto de la página Contáctanos */
 .info-contacto-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
+/* Grid de dos columnas para los campos del formulario */
 .info-contacto-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
 }
 
+/* Campo individual del formulario */
 .info-contacto-field {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
+/* Etiqueta de campo del formulario */
 .info-contacto-label {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--ip-dark);
 }
 
+/* Asterisco de campo requerido */
 .info-contacto-req { color: #ef4444; }
 
+/* Input y textarea del formulario de contacto */
 .info-contacto-input {
   width: 100%;
   padding: 0.8rem 1rem;
@@ -401,28 +419,33 @@
   box-shadow: 0 0 0 3px rgba(102,126,234,.15);
 }
 
+/* Campo con error de validación */
 .info-contacto-input--error {
   border-color: #ef4444 !important;
   background: rgba(239,68,68,.04) !important;
 }
 
+/* Textarea redimensionable verticalmente */
 .info-contacto-textarea {
   resize: vertical;
   min-height: 120px;
   line-height: 1.6;
 }
 
+/* Texto de ayuda debajo del campo */
 .info-contacto-helper {
   font-size: 0.8rem;
   color: var(--ip-muted);
 }
 
+/* Mensaje de error de validación */
 .info-contacto-error {
   color: #ef4444;
   font-size: 0.8rem;
   font-weight: 500;
 }
 
+/* Botón de envío del formulario */
 .info-contacto-submit {
   width: 100%;
   padding: 0.9rem;
@@ -453,12 +476,14 @@
   cursor: not-allowed;
 }
 
+/* Spinner de carga del botón de envío */
 .info-contacto-spinner {
   animation: ipSpin 0.8s linear infinite;
 }
 
 @keyframes ipSpin { to { transform: rotate(360deg); } }
 
+/* Mensaje de éxito tras enviar el formulario */
 .info-contacto-success {
   text-align: center;
   padding: 1rem 0;
@@ -469,6 +494,7 @@
   margin-bottom: 1rem;
 }
 
+/* Responsive: grid de una columna en móviles */
 @media (max-width: 640px) {
   .info-contacto-grid { grid-template-columns: 1fr; }
 }

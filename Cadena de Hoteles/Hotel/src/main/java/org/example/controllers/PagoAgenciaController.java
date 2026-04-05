@@ -7,16 +7,25 @@ import org.example.services.PagoAgenciaService;
 
 import java.util.Map;
 
+/**
+ * Controller que gestiona el procesamiento de pagos de reservaciones realizadas por agencias externas.
+ * Requiere autenticacion mediante el header X-Agencia-Token.
+ */
 public class PagoAgenciaController {
 
     private final PagoAgenciaService pagoAgenciaService = new PagoAgenciaService();
 
+    /**
+     * Registra la ruta de pago de agencias en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registra la ruta.
+     */
     public void registerRoutes(Javalin app) {
 
-        // POST /agencia/reservaciones/{id}/pago
+        // Procesa el pago de una reservacion asociada a la agencia autenticada
         app.post("/agencia/reservaciones/{id}/pago", ctx -> {
             if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 
+            // Extrae la agencia autenticada y el ID de la reservacion desde el path
             int agenciaId     = ctx.attribute("agenciaId");
             int reservacionId = Integer.parseInt(ctx.pathParam("id"));
 

@@ -2,13 +2,15 @@
   <div class="page">
     <Encabezado />
 
-    <!-- HERO -->
+    <!-- HERO: sección principal con estadísticas y buscador -->
     <section class="hero">
       <div class="hero-overlay"></div>
       <div class="hero-content">
         <div class="hero-text">
           <h1 class="hero-title">Tu Próxima Aventura<br>Comienza <span>Aquí</span></h1>
           <p class="hero-subtitle">Vuelos, hospedajes y paquetes combinados de múltiples proveedores en un solo lugar</p>
+
+          <!-- Estadísticas en tiempo real cargadas desde el backend -->
           <div class="hero-stats">
             <div class="hero-stat">
               <strong>{{ stats.aerolineas }}</strong>
@@ -29,9 +31,11 @@
           </div>
         </div>
 
+        <!-- Tarjeta de búsqueda: vuelos, hoteles o paquete combinado -->
         <div class="search-card">
           <h2 class="search-card-title">¿A dónde viajamos?</h2>
 
+          <!-- Tabs para seleccionar el tipo de búsqueda -->
           <div class="search-tabs">
             <button :class="{ active: searchType === 'flights' }" @click="searchType = 'flights'" type="button">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -47,8 +51,10 @@
             </button>
           </div>
 
+          <!-- Autocomplete de origen y destino (país + ciudad) -->
           <div :class="['vuelos-cards', { 'vuelos-cards--solo': searchType === 'hotels' }]">
 
+            <!-- Panel de origen (oculto en modo hoteles) -->
             <div class="vuelo-card" v-if="searchType !== 'hotels'">
               <div class="vuelo-card__label">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -82,6 +88,7 @@
               </div>
             </div>
 
+            <!-- Panel de destino (siempre visible) -->
             <div :class="['vuelo-card', { 'vuelo-card--full': searchType === 'hotels' }]">
               <div class="vuelo-card__label">
                 <template v-if="searchType === 'hotels'">
@@ -125,7 +132,7 @@
 
           </div>
 
-          <!-- TAB VUELOS -->
+          <!-- TAB VUELOS: fecha, pasajeros y tipo de viaje -->
           <template v-if="searchType === 'flights'">
             <div class="trip-type-toggle">
               <button :class="['trip-type-btn', { 'trip-type-btn--active': tipoVuelo === 'ida' }]"
@@ -175,7 +182,7 @@
             </button>
           </template>
 
-          <!-- TAB HOTELES -->
+          <!-- TAB HOTELES: check-in, check-out y cantidad de personas -->
           <template v-if="searchType === 'hotels'">
             <div class="form-grid" style="grid-template-columns: repeat(3, 1fr)">
               <div class="form-group">
@@ -212,7 +219,7 @@
             </button>
           </template>
 
-          <!-- TAB COMBO -->
+          <!-- TAB COMBO: fechas de vuelo + check-in/out del hotel dentro del período del vuelo -->
           <template v-if="searchType === 'combo'">
             <div class="combo-label">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -256,6 +263,7 @@
               </div>
             </div>
 
+            <!-- Sección hotel del combo con restricción de fechas dentro del vuelo -->
             <div class="combo-label" style="border-top: 1px solid #e2e8f0; margin-top:0; border-radius:0;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Hotel
@@ -304,7 +312,7 @@
       </div>
     </section>
 
-    <!-- FEATURES -->
+    <!-- FEATURES: beneficios de usar Movent -->
     <section class="features-section">
       <div class="container">
         <div class="section-header">
@@ -321,7 +329,7 @@
       </div>
     </section>
 
-    <!-- CTA -->
+    <!-- CTA: llamada a la acción para registrarse o reservar -->
     <section class="cta-section">
       <div class="container">
         <div class="cta-content">
@@ -332,6 +340,7 @@
       </div>
     </section>
 
+    <!-- Botón flotante de scroll-to-top, visible después de 300px de desplazamiento -->
     <button v-if="showScrollTop" class="scroll-top" type="button" @click="scrollToTop">
       <svg viewBox="0 0 24 24" class="avion-icon">
         <path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z" />
@@ -343,49 +352,94 @@
 </template>
 
 <script setup>
+/**
+ * @file Principal.vue
+ * @description Vista principal (home) de Movent. Muestra estadísticas en tiempo real,
+ * un buscador con autocompletado para vuelos, hoteles y paquetes combinados,
+ * una sección de features y un CTA. Navega a las vistas de resultados según
+ * el tipo de búsqueda seleccionado.
+ */
+
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/principal.css'
 
-const router      = useRouter()
-const API         = 'http://localhost:8080'
-const buscando    = ref(false)
+/** Instancia del router para navegar a las vistas de resultados. */
+const router = useRouter()
+
+/** URL base del backend. @type {string} */
+const API = 'http://localhost:8080'
+
+/** Indica si hay una búsqueda en curso para deshabilitar el botón. @type {boolean} */
+const buscando = ref(false)
+
+/** Mensaje de error de validación o de respuesta vacía en la búsqueda. @type {string} */
 const searchError = ref('')
 
-const searchType     = ref('flights')
-const showScrollTop  = ref(false)
-const hoy            = new Date().toISOString().split('T')[0]
-const tipoVuelo      = ref('ida')
+/** Tipo de búsqueda activo: 'flights' | 'hotels' | 'combo'. @type {string} */
+const searchType = ref('flights')
+
+/** Controla la visibilidad del botón flotante de volver arriba. @type {boolean} */
+const showScrollTop = ref(false)
+
+/** Fecha de hoy en formato ISO (YYYY-MM-DD) usada como mínimo en los inputs de fecha. @type {string} */
+const hoy = new Date().toISOString().split('T')[0]
+
+/** Tipo de vuelo seleccionado en el tab de vuelos: 'ida' | 'idaVuelta'. @type {string} */
+const tipoVuelo = ref('ida')
+
+/** Tipo de vuelo seleccionado dentro del combo vuelo+hotel. @type {string} */
 const comboTipoVuelo = ref('ida')
 
+/** Parámetros del formulario de búsqueda de vuelos. @type {{ fecha: string, fechaRegreso: string, cantidadPasajeros: number }} */
 const flightData = ref({ fecha: '', fechaRegreso: '', cantidadPasajeros: 1 })
-const hotelData  = ref({ checkIn: '', checkOut: '', cantidadPersonas: 1 })
-const comboData  = ref({ fecha: '', fechaRegreso: '', cantidadPersonas: 1, checkIn: '', checkOut: '' })
 
-// ── Stats reales del backend ───────────────────────────────────
+/** Parámetros del formulario de búsqueda de hoteles. @type {{ checkIn: string, checkOut: string, cantidadPersonas: number }} */
+const hotelData = ref({ checkIn: '', checkOut: '', cantidadPersonas: 1 })
+
+/** Parámetros del formulario de búsqueda de paquetes combinados. @type {Object} */
+const comboData = ref({ fecha: '', fechaRegreso: '', cantidadPersonas: 1, checkIn: '', checkOut: '' })
+
+/** Estadísticas reales de la plataforma cargadas desde el backend al montar. @type {{ aerolineas: number, hoteles: number, reservaciones: number, usuarios: number }} */
 const stats = ref({ aerolineas: 0, hoteles: 0, reservaciones: 0, usuarios: 0 })
 
-// ── Computed: fechas mínimas para vuelos ──────────────────────
+/**
+ * Fecha mínima para el campo de regreso en búsqueda de vuelos (día siguiente a la ida).
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minFechaRegreso = computed(() => {
   if (!flightData.value.fecha) return hoy
   const d = new Date(flightData.value.fecha); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
+/**
+ * Fecha mínima de regreso dentro del combo (día siguiente a la fecha de vuelo).
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minFechaRegresoCombo = computed(() => {
   if (!comboData.value.fecha) return hoy
   const d = new Date(comboData.value.fecha); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
+/**
+ * Fecha mínima de check-out en hoteles (día siguiente al check-in).
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minCheckOutHotel = computed(() => {
   if (!hotelData.value.checkIn) return hoy
   const d = new Date(hotelData.value.checkIn); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
+/**
+ * Fecha máxima de check-in en el combo, calculada para que el checkout
+ * no supere la fecha de regreso del vuelo.
+ * @type {import('vue').ComputedRef<string|undefined>}
+ */
 const maxCheckInCombo = computed(() => {
   if (comboTipoVuelo.value === 'idaVuelta' && comboData.value.fechaRegreso) {
     const base = comboData.value.checkOut || comboData.value.fechaRegreso
@@ -396,13 +450,17 @@ const maxCheckInCombo = computed(() => {
   return undefined
 })
 
+/**
+ * Fecha mínima de check-out dentro del combo (día siguiente al check-in del hotel).
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minCheckOutCombo = computed(() => {
   if (!comboData.value.checkIn) return hoy
   const d = new Date(comboData.value.checkIn); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
-// ── Watchers combo ────────────────────────────────────────────
+// Sincroniza el check-in del hotel con la fecha de ida del vuelo en el combo
 watch(() => comboData.value.fecha, (nuevaFecha) => {
   if (!nuevaFecha) return
   comboData.value.checkIn = nuevaFecha
@@ -410,6 +468,7 @@ watch(() => comboData.value.fecha, (nuevaFecha) => {
     comboData.value.checkOut = ''
 })
 
+// Sincroniza el check-out del hotel con la fecha de regreso cuando aplica
 watch(() => comboData.value.fechaRegreso, (nuevaFechaRegreso) => {
   if (!nuevaFechaRegreso || comboTipoVuelo.value !== 'idaVuelta') return
   comboData.value.checkOut = nuevaFechaRegreso
@@ -417,80 +476,163 @@ watch(() => comboData.value.fechaRegreso, (nuevaFechaRegreso) => {
     comboData.value.checkIn = comboData.value.fecha || ''
 })
 
+// Limpia las fechas de regreso si se cambia a solo ida en el combo
 watch(() => comboTipoVuelo.value, (tipo) => {
   if (tipo === 'ida') { comboData.value.fechaRegreso = ''; comboData.value.checkOut = '' }
 })
 
+// Resetea el check-out si el check-in cambia a una fecha posterior
 watch(() => comboData.value.checkIn, (nuevoCheckIn) => {
   if (!nuevoCheckIn) return
   if (comboData.value.checkOut && comboData.value.checkOut <= nuevoCheckIn)
     comboData.value.checkOut = ''
 })
 
-// ── Helper fecha corta ────────────────────────────────────────
+/**
+ * Formatea una fecha ISO a formato legible corto en español (ej. "04 abr").
+ *
+ * @param {string} f - Fecha en formato YYYY-MM-DD.
+ * @returns {string} Fecha formateada o la cadena original si falla el parse.
+ */
 function formatFechaCorta(f) {
   if (!f) return ''
   try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short' }) }
   catch { return f }
 }
 
-// ── Autocomplete países/ciudades ──────────────────────────────
+/** Cache en memoria de la lista de países de la API externa. @type {Array|null} */
 let paisesCache = null
+
+/**
+ * Obtiene la lista de países desde countriesnow.space.
+ * Usa cache en memoria para evitar múltiples llamadas.
+ *
+ * @async
+ * @returns {Promise<Array>} Lista de objetos con al menos { country: string }.
+ */
 async function getPaises() {
   if (paisesCache) return paisesCache
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] } catch { paisesCache = [] }
   return paisesCache
 }
+
+/**
+ * Obtiene las ciudades de un país desde countriesnow.space.
+ *
+ * @async
+ * @param {string} country - Nombre del país en inglés.
+ * @returns {Promise<string[]>} Lista de nombres de ciudades.
+ */
 async function getCiudades(country) {
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] } catch { return [] }
 }
+
+/**
+ * Aplaza una función de cierre de dropdown para que el clic en la lista
+ * se procese antes de que desaparezca.
+ *
+ * @param {Function} fn - Función que limpia el array de sugerencias.
+ */
 function blur(fn) { setTimeout(fn, 200) }
 
-// ── Origen ────────────────────────────────────────────────────
+/** Query del input de país de origen. @type {string} */
 const oPaisQ = ref(''); const oPaisSug = ref([]); const oPaisSel = ref(null)
+/** Query del input de ciudad de origen. @type {string} */
 const oCiudadQ = ref(''); const oCiudadSug = ref([]); const oCiudadLoading = ref(false)
+/** Lista completa de ciudades del país de origen seleccionado. @type {string[]} */
 const oCiudades = ref([])
+/** Objeto con el país y ciudad de origen confirmados. @type {{ pais: string, ciudad: string }} */
 const origen = ref({ pais: '', ciudad: '' })
 
+/**
+ * Filtra países que coincidan con el input de origen y actualiza oPaisSug.
+ * Resetea la selección de ciudad al cambiar de país.
+ *
+ * @async
+ */
 async function onOPaisInput() {
   oPaisSel.value = null; oCiudadQ.value = ''; oCiudades.value = []; origen.value = { pais: '', ciudad: '' }
   const q = oPaisQ.value.trim(); if (q.length < 2) { oPaisSug.value = []; return }
   oPaisSug.value = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+
+/**
+ * Confirma la selección de un país de origen y carga sus ciudades.
+ *
+ * @async
+ * @param {{ country: string }} p - Objeto del país seleccionado.
+ */
 async function selOPais(p) {
   oPaisSel.value = p; oPaisQ.value = p.country; oPaisSug.value = []; origen.value.pais = p.country
   oCiudadLoading.value = true; oCiudades.value = await getCiudades(p.country); oCiudadLoading.value = false
 }
+
+/** Filtra las ciudades del país de origen según el texto escrito. */
 function onOCiudadInput() {
   const q = oCiudadQ.value.toLowerCase()
   oCiudadSug.value = q.length < 2 ? [] : oCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   origen.value.ciudad = ''
 }
+
+/**
+ * Confirma la selección de la ciudad de origen.
+ *
+ * @param {string} c - Nombre de la ciudad.
+ */
 function selOCiudad(c) { oCiudadQ.value = c; oCiudadSug.value = []; origen.value.ciudad = c; searchError.value = '' }
 
-// ── Destino ───────────────────────────────────────────────────
+/** Query del input de país de destino. @type {string} */
 const dPaisQ = ref(''); const dPaisSug = ref([]); const dPaisSel = ref(null)
+/** Query del input de ciudad de destino. @type {string} */
 const dCiudadQ = ref(''); const dCiudadSug = ref([]); const dCiudadLoading = ref(false)
+/** Lista completa de ciudades del país de destino seleccionado. @type {string[]} */
 const dCiudades = ref([])
+/** Objeto con el país y ciudad de destino confirmados. @type {{ pais: string, ciudad: string }} */
 const destino = ref({ pais: '', ciudad: '' })
 
+/**
+ * Filtra países que coincidan con el input de destino.
+ *
+ * @async
+ */
 async function onDPaisInput() {
   dPaisSel.value = null; dCiudadQ.value = ''; dCiudades.value = []; destino.value = { pais: '', ciudad: '' }
   const q = dPaisQ.value.trim(); if (q.length < 2) { dPaisSug.value = []; return }
   dPaisSug.value = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+
+/**
+ * Confirma la selección de un país de destino y carga sus ciudades.
+ *
+ * @async
+ * @param {{ country: string }} p - Objeto del país seleccionado.
+ */
 async function selDPais(p) {
   dPaisSel.value = p; dPaisQ.value = p.country; dPaisSug.value = []; destino.value.pais = p.country
   dCiudadLoading.value = true; dCiudades.value = await getCiudades(p.country); dCiudadLoading.value = false
 }
+
+/** Filtra las ciudades del país de destino según el texto escrito. */
 function onDCiudadInput() {
   const q = dCiudadQ.value.toLowerCase()
   dCiudadSug.value = q.length < 2 ? [] : dCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   destino.value.ciudad = ''
 }
+
+/**
+ * Confirma la selección de la ciudad de destino.
+ *
+ * @param {string} c - Nombre de la ciudad.
+ */
 function selDCiudad(c) { dCiudadQ.value = c; dCiudadSug.value = []; destino.value.ciudad = c; searchError.value = '' }
 
-// ── Validación de resultados ──────────────────────────────────
+/**
+ * Verifica si la respuesta del backend contiene al menos un vuelo disponible
+ * (ya sea directo o con escala en algún bloque de resultados).
+ *
+ * @param {Array} respuesta - Array de bloques de resultados devueltos por /api/busqueda/vuelos.
+ * @returns {boolean}
+ */
 function tieneVuelos(respuesta) {
   if (!Array.isArray(respuesta) || respuesta.length === 0) return false
   return respuesta.some(b => b.datos && (
@@ -499,12 +641,25 @@ function tieneVuelos(respuesta) {
   ))
 }
 
+/**
+ * Verifica si la respuesta del backend contiene al menos un hotel disponible.
+ *
+ * @param {Array} respuesta - Array de bloques de resultados devueltos por /api/busqueda/hoteles.
+ * @returns {boolean}
+ */
 function tieneHoteles(respuesta) {
   if (!Array.isArray(respuesta) || respuesta.length === 0) return false
   return respuesta.some(b => Array.isArray(b.datos) && b.datos.length > 0)
 }
 
-// ── Buscar Vuelos ─────────────────────────────────────────────
+/**
+ * Valida los campos del buscador de vuelos, llama al endpoint correspondiente
+ * y navega a /resultados-vuelos pasando los resultados por router state.
+ * Soporta vuelo de solo ida e ida y vuelta (hace dos peticiones en paralelo).
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 const buscarVuelos = async () => {
   searchError.value = ''
   if (!origen.value.pais || !origen.value.ciudad)   { searchError.value = 'Selecciona el país y ciudad de origen.'; return }
@@ -577,7 +732,13 @@ const buscarVuelos = async () => {
   } finally { buscando.value = false }
 }
 
-// ── Buscar Hoteles ────────────────────────────────────────────
+/**
+ * Valida los campos del buscador de hoteles, llama al endpoint y navega
+ * a /resultados-hoteles pasando los resultados por router state.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 const buscarHoteles = async () => {
   searchError.value = ''
   if (!destino.value.pais || !destino.value.ciudad)          { searchError.value = 'Selecciona el país y ciudad de destino.'; return }
@@ -601,7 +762,13 @@ const buscarHoteles = async () => {
   } finally { buscando.value = false }
 }
 
-// ── Buscar Paquetes ───────────────────────────────────────────
+/**
+ * Valida los campos del buscador de paquetes, ejecuta peticiones paralelas
+ * para vuelo(s) y hotel, y navega a /resultados-paquetes con los resultados.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 const buscarPaquetes = async () => {
   searchError.value = ''
   if (!origen.value.pais || !origen.value.ciudad)            { searchError.value = 'Selecciona el país y ciudad de origen.'; return }
@@ -669,7 +836,11 @@ const buscarPaquetes = async () => {
   } finally { buscando.value = false }
 }
 
-// ── Features ──────────────────────────────────────────────────
+/**
+ * Lista de tarjetas de características mostradas en la sección "¿Por qué elegir Movent?".
+ * Cada ítem tiene un SVG inline, un título y una descripción.
+ * @type {Array<{ icon: string, title: string, description: string }>}
+ */
 const features = [
   { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>`, title: 'Vuelos Globales', description: 'Accede a vuelos de múltiples aerolíneas con las mejores tarifas garantizadas desde cualquier destino.' },
   { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`, title: 'Hospedaje Premium', description: 'Desde hoteles boutique hasta resorts de lujo, encuentra el alojamiento perfecto para tu viaje.' },
@@ -677,15 +848,16 @@ const features = [
   { icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`, title: 'Mejor Precio', description: 'Comparamos precios de múltiples proveedores para ofrecerte siempre la mejor tarifa disponible.' },
 ]
 
-// ── Scroll ────────────────────────────────────────────────────
-const onScroll    = () => { showScrollTop.value = window.scrollY > 300 }
+/** Actualiza showScrollTop según la posición vertical del scroll. */
+const onScroll = () => { showScrollTop.value = window.scrollY > 300 }
+
+/** Hace scroll suave hasta el tope de la página. */
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
-// ── onMounted ─────────────────────────────────────────────────
 onMounted(async () => {
   window.addEventListener('scroll', onScroll)
 
-  // Cargar stats reales del backend
+  // Cargar estadísticas reales desde el backend al montar la vista
   try {
     const res = await fetch(`${API}/api/stats`)
     if (res.ok) stats.value = await res.json()

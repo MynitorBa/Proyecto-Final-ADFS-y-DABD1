@@ -2,11 +2,12 @@
   <header class="header" :class="{ scrolled: isScrolled }">
     <div class="header-container">
 
+      <!-- Logo de MOVENT, clickeable para volver al inicio -->
       <button class="logo" @click="$router.push('/principal')" aria-label="Ir al inicio" type="button">
         <img src="/movent.png" alt="Movent" class="logo-image" />
       </button>
 
-      <!-- ── NAV DESKTOP ── -->
+      <!-- Navegación principal visible en desktop -->
       <nav class="desktop-nav">
         <router-link to="/principal"        class="nav-link" active-class="active">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -21,20 +22,20 @@
           Mis Reservas
         </router-link>
 
-        <!-- Botón Panel Admin (solo admin) -->
+        <!-- Enlace al panel de administración, solo visible para administradores -->
         <router-link v-if="sesion?.isAdmin" to="/admin/dashboard" class="nav-link nav-link--panel" active-class="active">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Panel Admin
         </router-link>
 
-        <!-- Botón Panel WebService (solo WS) -->
+        <!-- Enlace al panel WebService, solo visible para usuarios con rol WS que no sean admin -->
         <router-link v-if="sesion?.isWS && !sesion?.isAdmin" to="/admin/webservice" class="nav-link nav-link--ws" active-class="active">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           Panel WS
         </router-link>
       </nav>
 
-      <!-- ── SEARCH BAR ── -->
+      <!-- Barra de búsqueda de destinos con autocompletado -->
       <div class="search-bar" ref="searchBarRef">
         <div class="search-input-wrapper">
           <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -62,7 +63,7 @@
       </div>
 
       <div class="user-actions">
-        <!-- ── CARRITO ── -->
+        <!-- Botón de carrito con indicador de reserva pendiente de pago -->
         <div class="cart-wrap" ref="cartWrapRef">
           <button
             class="cart-btn"
@@ -84,8 +85,10 @@
             </span>
           </button>
 
+          <!-- Dropdown del carrito con detalles de la reserva pendiente -->
           <Transition name="enc-drop">
             <div v-if="showCartDropdown" class="cart-dropdown" @click.stop>
+              <!-- Estado vacío cuando no hay reserva pendiente -->
               <template v-if="!reservaActiva">
                 <div class="cart-dropdown__empty">
                   <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,204,0,0.4)" stroke-width="1.2" width="40" height="40">
@@ -97,6 +100,7 @@
                   <button class="cart-dropdown__cta-btn" @click="$router.push('/principal'); closeCartDropdown()" type="button">Explorar viajes</button>
                 </div>
               </template>
+              <!-- Estado con reserva activa: muestra código, tipo y total -->
               <template v-else>
                 <div class="cart-dropdown__head">
                   <div class="cart-dropdown__head-left">
@@ -128,6 +132,7 @@
                     <strong class="cart-dropdown__info-total">{{ totalReservaActiva }}</strong>
                   </div>
                 </div>
+                <!-- Acciones principales y secundarias del carrito -->
                 <template v-if="!cancelandoDesdeCart">
                   <div class="cart-dropdown__actions">
                     <button class="cart-dropdown__btn-pay" @click="handleCartClick" type="button">
@@ -146,6 +151,7 @@
                     </button>
                   </div>
                 </template>
+                <!-- Formulario de confirmación de cancelación desde el carrito -->
                 <template v-else>
                   <div class="cart-dropdown__cancel-form">
                     <div class="cart-dropdown__cancel-head">
@@ -171,7 +177,7 @@
           </Transition>
         </div>
 
-        <!-- ── CON SESIÓN ── -->
+        <!-- Sección de usuario autenticado con chip y dropdown de opciones -->
         <template v-if="sesion">
           <div v-if="showUserMenu" class="user-dropdown-overlay" @click="showUserMenu = false"></div>
           <div class="user-chip" @click.stop="toggleUserMenu">
@@ -180,6 +186,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
 
+          <!-- Dropdown de usuario con accesos rápidos según el rol -->
           <div v-if="showUserMenu" class="user-dropdown" @click.stop>
             <div class="user-dropdown__head">
               <div class="user-dropdown__avatar">{{ iniciales }}</div>
@@ -196,7 +203,7 @@
             </div>
             <div class="user-dropdown__divider"></div>
 
-            <!-- Links SOLO para Admin -->
+            <!-- Links exclusivos para el rol Administrador -->
             <template v-if="sesion.isAdmin">
               <router-link to="/admin/dashboard"   class="user-dropdown__item user-dropdown__item--admin" @click="showUserMenu=false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
@@ -216,7 +223,7 @@
               <div class="user-dropdown__divider"></div>
             </template>
 
-            <!-- Links SOLO para WebService (rol 3) -->
+            <!-- Links exclusivos para el rol WebService (rol 3, no admin) -->
             <template v-if="sesion.isWS && !sesion.isAdmin">
               <router-link to="/admin/webservice" class="user-dropdown__item user-dropdown__item--ws" @click="showUserMenu=false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Panel WebService
@@ -224,7 +231,7 @@
               <div class="user-dropdown__divider"></div>
             </template>
 
-            <!-- Común para todos -->
+            <!-- Links disponibles para todos los usuarios autenticados -->
             <router-link to="/mis-reservaciones" class="user-dropdown__item" @click="showUserMenu=false">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Mis reservaciones
             </router-link>
@@ -237,11 +244,13 @@
             </button>
           </div>
         </template>
+        <!-- Botones para usuarios no autenticados -->
         <template v-else>
           <router-link to="/ingreso"  class="btn-secondary">Iniciar Sesión</router-link>
           <router-link to="/registro" class="btn-primary">Registrarse</router-link>
         </template>
 
+        <!-- Botón hamburguesa para abrir el menú móvil -->
         <button class="mobile-menu-toggle" @click.stop="toggleMobileMenu" aria-label="Abrir menú" type="button">
           <svg v-if="showMobileMenu" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -249,7 +258,7 @@
       </div>
     </div>
 
-    <!-- ── AUTOCOMPLETE ── -->
+    <!-- Dropdown de autocompletado con sugerencias de ciudades y pills de tipo -->
     <div v-if="searchSuggestions.length > 0" class="search-ac-dropdown">
       <div class="search-ac-inner">
         <div v-for="(sug, i) in searchSuggestions" :key="`${sug.pais}-${sug.ciudad}`"
@@ -259,6 +268,7 @@
             <span class="search-ac-item__ciudad">{{ sug.ciudad }}</span>
             <span class="search-ac-item__pais">{{ sug.pais }}</span>
           </div>
+          <!-- Pills de acceso rápido por tipo de búsqueda -->
           <div class="search-ac-item__pills">
             <span :class="['search-ac-pill','search-ac-pill--vuelo', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-vuelos' }]" @mousedown.prevent.stop="irA(sug, 'vuelos')">
               <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -277,7 +287,7 @@
       </div>
     </div>
 
-    <!-- ── LOADING OVERLAY ── -->
+    <!-- Overlay de carga global durante la búsqueda y navegación a resultados -->
     <Teleport to="body">
       <div v-if="pillLoading" class="loading-overlay">
         <div class="loading-overlay__card">
@@ -288,7 +298,7 @@
       </div>
     </Teleport>
 
-    <!-- ── MENÚ MÓVIL ── -->
+    <!-- Menú de navegación móvil desplegable -->
     <nav v-if="showMobileMenu" class="mobile-nav">
       <form class="mobile-search" @submit.prevent>
         <div class="search-input-wrapper">
@@ -301,12 +311,13 @@
         <router-link to="/informacion"       class="mobile-nav-link" @click="showMobileMenu=false">Información</router-link>
         <router-link to="/mis-reservaciones" class="mobile-nav-link" @click="showMobileMenu=false">Mis Reservas</router-link>
 
+        <!-- Acceso directo al checkout si hay reserva activa -->
         <button v-if="reservaActiva" class="mobile-nav-link mobile-nav-link--pagar" @click="handleCartClick; showMobileMenu=false" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="1" y="5" width="22" height="14" rx="2.5"/><line x1="15.5" y1="5" x2="15.5" y2="19"/></svg>
           Ir a pagar · {{ noReservacionActiva }}
         </button>
 
-        <!-- Admin móvil SOLO para admin -->
+        <!-- Links del panel admin en móvil, solo para administradores -->
         <template v-if="sesion?.isAdmin">
           <div class="mobile-divider"></div>
           <router-link to="/admin/dashboard"   class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Panel Admin</router-link>
@@ -316,7 +327,7 @@
           <router-link to="/admin/webservice"   class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">WebService</router-link>
         </template>
 
-        <!-- WS móvil SOLO para rol 3 -->
+        <!-- Link al panel WS en móvil, solo para rol WebService -->
         <template v-if="sesion?.isWS && !sesion?.isAdmin">
           <div class="mobile-divider"></div>
           <router-link to="/admin/webservice" class="mobile-nav-link mobile-nav-link--ws" @click="showMobileMenu=false">
@@ -341,46 +352,116 @@
 </template>
 
 <script setup>
+/**
+ * @file Encabezado.vue
+ * @description Componente de encabezado global de la aplicación MOVENT. Incluye
+ * navegación principal, barra de búsqueda de destinos con autocompletado usando
+ * la API de CountriesNow, carrito de reserva activa con opción de cancelación,
+ * menú de usuario con accesos según rol y menú móvil responsive.
+ */
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import '../styles/encabezado.css'
 
+/** URL base del backend. @type {string} */
 const API = 'http://localhost:8080'
+
+/** Instancia del router para navegación programática. */
 const router = useRouter()
+
+/** Ruta activa actual, usada para reaccionar a cambios de página. */
 const route  = useRoute()
 
+/**
+ * Devuelve la fecha de hoy en formato ISO (YYYY-MM-DD).
+ * @returns {string}
+ */
 function fechaHoy()     { return new Date().toISOString().split('T')[0] }
+
+/**
+ * Devuelve la fecha de hoy más un mes en formato ISO.
+ * Se usa como fecha de checkout por defecto en búsquedas rápidas.
+ * @returns {string}
+ */
 function fechaEnUnMes() { const d = new Date(); d.setMonth(d.getMonth() + 1); return d.toISOString().split('T')[0] }
 
+/** Indica si el usuario hizo scroll hacia abajo (para aplicar estilos al header). @type {import('vue').Ref<boolean>} */
 const isScrolled       = ref(false)
+
+/** Controla la visibilidad del menú de navegación móvil. @type {import('vue').Ref<boolean>} */
 const showMobileMenu   = ref(false)
+
+/** Controla la visibilidad del dropdown de usuario. @type {import('vue').Ref<boolean>} */
 const showUserMenu     = ref(false)
+
+/** Controla la visibilidad del dropdown del carrito. @type {import('vue').Ref<boolean>} */
 const showCartDropdown = ref(false)
+
+/** Datos de la sesión actual del usuario o null si no está autenticado. @type {import('vue').Ref<Object|null>} */
 const sesion           = ref(null)
+
+/** Ref al contenedor del carrito para detectar clics fuera de él. @type {import('vue').Ref<HTMLElement|null>} */
 const cartWrapRef      = ref(null)
+
+/** Ref al contenedor de la barra de búsqueda. @type {import('vue').Ref<HTMLElement|null>} */
 const searchBarRef     = ref(null)
 
+/** Texto actualmente escrito en la barra de búsqueda. @type {import('vue').Ref<string>} */
 const searchQuery       = ref('')
+
+/** Sugerencias devueltas por CountriesNow para el autocomplete. @type {import('vue').Ref<Array>} */
 const searchSuggestions = ref([])
+
+/** Índice de la sugerencia actualmente resaltada con el teclado. @type {import('vue').Ref<number>} */
 const selectedIdx       = ref(-1)
+
+/**
+ * Clave de la pill que está en proceso de carga.
+ * Formato: 'Ciudad-tipo'. Vacío si no hay carga activa.
+ * @type {import('vue').Ref<string>}
+ */
 const pillLoading       = ref('')
 
+/** Timer del debounce de búsqueda para no disparar peticiones en cada tecla. */
 let searchDebounce = null
+
+/** Cache de países de CountriesNow para no volver a pedirlos. */
 let paisesCache    = null
 
+/** Indica si hay una reservación pendiente de pago en sesión. @type {import('vue').Ref<boolean>} */
 const reservaActiva       = ref(false)
+
+/** Número de reservación activa (ej. MOV-12345). @type {import('vue').Ref<string>} */
 const noReservacionActiva = ref('')
+
+/** ID interno de la reservación activa. @type {import('vue').Ref<number|null>} */
 const reservacionIdActiva = ref(null)
+
+/** Tipo de la reservación activa en texto (Vuelo, Hospedaje, Paquete completo). @type {import('vue').Ref<string>} */
 const tipoReservaActiva   = ref('')
+
+/** Total formateado de la reservación activa (ej. '$250.00'). @type {import('vue').Ref<string>} */
 const totalReservaActiva  = ref('')
+
+/** Flag para evitar doble ejecución de verificarReservaActiva. */
 let   verificandoReserva  = false
 
+/** Muestra el formulario de confirmación de cancelación dentro del carrito. @type {import('vue').Ref<boolean>} */
 const cancelandoDesdeCart = ref(false)
+
+/** Motivo ingresado por el usuario para cancelar la reservación desde el carrito. @type {import('vue').Ref<string>} */
 const cancelMotivoCart    = ref('')
+
+/** Indica si la petición de cancelación está en proceso. @type {import('vue').Ref<boolean>} */
 const cancelLoadingCart   = ref(false)
+
+/** Error de cancelación mostrado dentro del formulario del carrito. @type {import('vue').Ref<string>} */
 const cancelErrorCart     = ref('')
 
-// ── Sesión ────────────────────────────────────────────────────
+/**
+ * Lee y parsea la sesión guardada en sessionStorage.
+ * Determina si el usuario es admin (rolId 2) o WebService (rolId 3).
+ */
 function cargarSesion() {
   try {
     const raw = sessionStorage.getItem('usuario_sesion')
@@ -392,6 +473,10 @@ function cargarSesion() {
   } catch { sesion.value = null }
 }
 
+/**
+ * Observa cambios de ruta para recargar la sesión y verificar si hay reserva activa.
+ * En la ruta '/confirmacion' solo limpia el UI del carrito.
+ */
 watch(() => route.path, (path) => {
   cargarSesion()
   if (path === '/confirmacion') {
@@ -402,10 +487,24 @@ watch(() => route.path, (path) => {
   }
 }, { immediate: true })
 
+/**
+ * Nombre visible del usuario para el chip del header.
+ * Prioriza nombre > username > usuario > 'Usuario'.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const nombreVisible = computed(() => sesion.value?.nombre || sesion.value?.username || sesion.value?.usuario || 'Usuario')
+
+/**
+ * Iniciales del usuario para el avatar, máximo 2 caracteres.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const iniciales     = computed(() => { const n = nombreVisible.value; return (!n || n === 'Usuario') ? '?' : n.slice(0,2).toUpperCase() })
 
-// ── Countriesnow ──────────────────────────────────────────────
+/**
+ * Obtiene la lista de países y ciudades de CountriesNow.
+ * Guarda el resultado en caché para no repetir la petición.
+ * @returns {Promise<Array>}
+ */
 async function getPaises() {
   if (paisesCache) return paisesCache
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] }
@@ -413,6 +512,12 @@ async function getPaises() {
   return paisesCache
 }
 
+/**
+ * Busca ciudades que coincidan con el query en los datos de CountriesNow.
+ * Limita los resultados a 6 sugerencias para no saturar el dropdown.
+ * @param {string} q - Texto de búsqueda.
+ * @returns {Promise<Array<{ciudad: string, pais: string}>>}
+ */
 async function buscarCiudadesQ(q) {
   if (q.length < 2) return []
   const paises = await getPaises()
@@ -436,13 +541,34 @@ async function buscarCiudadesQ(q) {
   return res.slice(0, 6)
 }
 
+/** Dispara la búsqueda de ciudades con debounce de 280ms al escribir en el input. */
 function onSearchInput()  { selectedIdx.value = -1; clearTimeout(searchDebounce); const q = searchQuery.value.trim(); if (q.length < 2) { searchSuggestions.value = []; return }; searchDebounce = setTimeout(async () => { searchSuggestions.value = await buscarCiudadesQ(q) }, 280) }
+
+/** Reactiva el autocomplete si ya había texto al recuperar el foco. */
 function onSearchFocus()  { if (searchQuery.value.trim().length >= 2 && !searchSuggestions.value.length) onSearchInput() }
+
+/** Navega a la primera sugerencia o a la seleccionada con el teclado al presionar Enter. */
 function onSearchEnter()  { const sug = searchSuggestions.value[selectedIdx.value >= 0 ? selectedIdx.value : 0]; if (sug) irA(sug, 'hoteles') }
+
+/**
+ * Mueve la selección del teclado en el dropdown hacia arriba o abajo.
+ * @param {1|-1} d - Dirección del movimiento.
+ */
 function moveSelection(d) { selectedIdx.value = Math.max(0, Math.min(searchSuggestions.value.length - 1, selectedIdx.value + d)) }
+
+/** Limpia el texto del buscador y las sugerencias. */
 function clearSearch()    { searchQuery.value = ''; searchSuggestions.value = [] }
+
+/** Cierra el dropdown de sugerencias sin borrar el texto. */
 function closeSearch()    { searchSuggestions.value = [] }
 
+/**
+ * Realiza la búsqueda de disponibilidad según el tipo elegido y navega a los resultados.
+ * Usa Guatemala City como origen por defecto para vuelos y paquetes.
+ * @param {{ciudad: string, pais: string}} sug - La sugerencia de destino seleccionada.
+ * @param {'hoteles'|'vuelos'|'paquete'} tipo - El tipo de búsqueda a realizar.
+ * @returns {Promise<void>}
+ */
 async function irA(sug, tipo) {
   pillLoading.value = `${sug.ciudad}-${tipo}`
   closeSearch(); searchQuery.value = ''
@@ -476,7 +602,10 @@ async function irA(sug, tipo) {
   } finally { pillLoading.value = '' }
 }
 
-// ── Carrito ───────────────────────────────────────────────────
+/**
+ * Lee checkout_data de sessionStorage y actualiza el estado del carrito.
+ * Verifica que la reservación no haya expirado antes de marcarla como activa.
+ */
 function verificarReservaActiva() {
   if (verificandoReserva) return; verificandoReserva = true
   try {
@@ -498,13 +627,29 @@ function verificarReservaActiva() {
   } catch {} finally { verificandoReserva = false }
 }
 
+/** Resetea todos los refs del estado del carrito a sus valores iniciales. */
 function limpiarEstadoCarrito() { reservaActiva.value = false; reservacionIdActiva.value = null; noReservacionActiva.value = ''; tipoReservaActiva.value = ''; totalReservaActiva.value = '' }
+
+/** Elimina todos los datos de la reservación actual del sessionStorage. */
 function limpiarSesionReserva() { ['checkout_data','_reserva_expires_at','_reserva_id','_reserva_no','vuelo_seleccionado','hotel_seleccionado','paquete_seleccionado'].forEach(k => sessionStorage.removeItem(k)) }
+
+/** Alterna la visibilidad del dropdown del carrito, cerrando el de usuario si está abierto. */
 function toggleCartDropdown()   { showCartDropdown.value = !showCartDropdown.value; showUserMenu.value = false; if (!showCartDropdown.value) resetCancelCart() }
+
+/** Cierra el dropdown del carrito y resetea el formulario de cancelación. */
 function closeCartDropdown()    { showCartDropdown.value = false; resetCancelCart() }
+
+/** Limpia el estado del formulario de cancelación dentro del carrito. */
 function resetCancelCart()      { cancelandoDesdeCart.value = false; cancelMotivoCart.value = ''; cancelErrorCart.value = '' }
+
+/** Cierra el carrito y navega al checkout. */
 function handleCartClick()      { closeCartDropdown(); showMobileMenu.value = false; router.push('/checkout') }
 
+/**
+ * Envía la solicitud de cancelación de la reservación activa desde el carrito.
+ * Tras cancelar con éxito, limpia la sesión y redirige a Mis Reservaciones.
+ * @returns {Promise<void>}
+ */
 async function cancelarDesdeCarrito() {
   if (!cancelMotivoCart.value.trim()) { cancelErrorCart.value = 'Escribe un motivo de cancelación.'; return }
   cancelLoadingCart.value = true; cancelErrorCart.value = ''
@@ -518,10 +663,22 @@ async function cancelarDesdeCarrito() {
   finally   { cancelLoadingCart.value = false }
 }
 
+/**
+ * Cierra la sesión del usuario: limpia sessionStorage, resetea estados y
+ * redirige al inicio.
+ */
 function cerrarSesion()    { sessionStorage.removeItem('usuario_sesion'); sesion.value = null; showUserMenu.value = false; showMobileMenu.value = false; limpiarEstadoCarrito(); closeCartDropdown(); router.push('/principal') }
+
+/** Alterna la visibilidad del menú móvil, cerrando el dropdown de usuario. */
 const toggleMobileMenu = () => { showMobileMenu.value = !showMobileMenu.value; showUserMenu.value = false }
+
+/** Alterna la visibilidad del dropdown de usuario, cerrando el carrito. */
 const toggleUserMenu   = () => { showUserMenu.value = !showUserMenu.value; closeCartDropdown() }
 
+/**
+ * Manejador global de clics para cerrar dropdowns al hacer clic fuera de ellos.
+ * @param {MouseEvent} e - El evento de clic del documento.
+ */
 function handleGlobalClick(e) {
   if (showUserMenu.value) showUserMenu.value = false
   if (showCartDropdown.value && cartWrapRef.value && !cartWrapRef.value.contains(e.target)) closeCartDropdown()
@@ -529,15 +686,24 @@ function handleGlobalClick(e) {
   showMobileMenu.value = false
 }
 
+/** Actualiza isScrolled según la posición del scroll vertical. */
 const handleScroll = () => { isScrolled.value = window.scrollY > 10 }
+
+/**
+ * Reacciona a cambios en el storage para sincronizar la sesión entre pestañas.
+ * @param {StorageEvent} e - El evento de storage del navegador.
+ */
 function onStorageChange(e) { cargarSesion(); if (!e || e.key === 'checkout_data' || e.key === '_reserva_expires_at') verificarReservaActiva() }
 
+/** Registra los listeners globales al montar el componente. */
 onMounted(() => {
   cargarSesion(); verificarReservaActiva()
   window.addEventListener('scroll',  handleScroll)
   window.addEventListener('click',   handleGlobalClick)
   window.addEventListener('storage', onStorageChange)
 })
+
+/** Elimina los listeners globales al desmontar para evitar memory leaks. */
 onUnmounted(() => {
   window.removeEventListener('scroll',  handleScroll)
   window.removeEventListener('click',   handleGlobalClick)

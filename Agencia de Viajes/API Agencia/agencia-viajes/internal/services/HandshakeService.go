@@ -1,4 +1,8 @@
-// internal/services/handshake_service.go
+// # Package services
+//
+// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
+// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
+// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -13,11 +17,28 @@ import (
 	"net/http"
 )
 
+// HandshakeService
+//
+// Servicio encargado de gestionar el proceso de handshake de autenticacion
+// con proveedores de tipo aerolinea. Genera un token de entrada para la agencia,
+// lo envia a la aerolinea y almacena ambos tokens (entrada y salida) en BD
+// para su uso en comunicaciones posteriores.
 type HandshakeService struct {
 	repo      *repositories.ProveedorRepository
 	serverURL string
 }
 
+// NewHandshakeService
+//
+// Crea e inicializa una nueva instancia de HandshakeService con su repositorio
+// de proveedores y la URL publica de la agencia.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos SQL
+//   - cfg: configuracion de la aplicacion que contiene la URL del servidor
+//
+// Retorna:
+//   - *HandshakeService: instancia lista para usar
 func NewHandshakeService(db *sql.DB, cfg *config.Config) *HandshakeService {
 	return &HandshakeService{
 		repo:      repositories.NewProveedorRepository(db),
@@ -25,6 +46,20 @@ func NewHandshakeService(db *sql.DB, cfg *config.Config) *HandshakeService {
 	}
 }
 
+// IniciarHandshake
+//
+// Ejecuta el flujo completo de handshake con una aerolinea proveedora.
+// Obtiene la URL del proveedor, genera un token de entrada para la agencia,
+// lo envia a la aerolinea junto con la URL de la agencia, recibe el token
+// de salida del proveedor y guarda ambos tokens en BD.
+//
+// Parametros:
+//   - proveedorID: identificador del proveedor aerolinea con quien hacer handshake
+//
+// Retorna:
+//   - string: token de salida recibido del proveedor aerolinea
+//   - error: si el proveedor no existe, no tiene URL, falla la generacion del token,
+//     falla la comunicacion con la aerolinea o falla el guardado en BD
 func (s *HandshakeService) IniciarHandshake(proveedorID int) (string, error) {
 
 	// 1. Obtener URL de la aerolinea
@@ -57,6 +92,19 @@ func (s *HandshakeService) IniciarHandshake(proveedorID int) (string, error) {
 	return tokenSalida, nil
 }
 
+// llamarHandshakeAerolinea
+//
+// Realiza la llamada HTTP POST al endpoint de handshake de la aerolinea,
+// enviando el token de entrada de la agencia y su URL publica. Retorna
+// el token de salida que el proveedor asigna a esta agencia.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor aerolinea
+//   - tokenEntrada: token generado por la agencia para identificarse ante la aerolinea
+//
+// Retorna:
+//   - string: token de salida asignado por la aerolinea para autenticar sus llamadas
+//   - error: si la peticion HTTP falla, la aerolinea retorna error o no incluye token_salida
 func (s *HandshakeService) llamarHandshakeAerolinea(urlAPI, tokenEntrada string) (string, error) {
 	body, _ := json.Marshal(map[string]string{
 		"token_entrada": tokenEntrada,

@@ -4,14 +4,21 @@ import io.javalin.Javalin;
 import org.example.helpers.AgenciaAuthMiddleware;
 import org.example.services.HotelAgenciaService;
 
+/**
+ * Controller que expone el endpoint de consulta de hoteles para agencias externas.
+ * Requiere autenticacion mediante el header X-Agencia-Token.
+ */
 public class HotelAgenciaController {
 
     private final HotelAgenciaService service = new HotelAgenciaService();
 
+    /**
+     * Registra la ruta de hoteles para agencias en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registra la ruta.
+     */
     public void registrarRutas(Javalin app) {
 
-        // GET /api/hoteles-agencia
-        // Protegido: requiere header X-Agencia-Token válido
+        // Retorna el catalogo de hoteles disponibles para la agencia autenticada
         app.get("/api/hoteles-agencia", ctx -> {
             if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 

@@ -27,6 +27,12 @@ import org.example.dtos.ReservacionDetalleDTO;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 
+/**
+ * Helper para la generacion de comprobantes y facturas de reservacion en PDF.
+ * Construye el documento con iText 7, incluyendo header y footer por pagina,
+ * tabla de habitaciones con subtotales, datos fiscales opcionales
+ * y bloque de terminos y condiciones.
+ */
 public class PdfHelper {
 
     private static final Color INK       = new DeviceRgb(0x1A, 0x1A, 0x1A);
@@ -54,12 +60,20 @@ public class PdfHelper {
     private static final float MH    = 50f;
     private static final float MT    = HDR_H + 26f;
     private static final float MB    = FTR_H + 24f;
+    private static final float GAP   = 22f;
 
-    private static final float GAP = 22f;
-
-    // Número de columnas de la tabla de habitaciones (usado en colspans)
+    /** Numero de columnas de la tabla de habitaciones, usado en colspans. */
     private static final int COLS = 9;
 
+    /**
+     * Genera el PDF completo del comprobante o factura de una reservacion.
+     * Si se proporciona el arreglo de factura el documento incluye datos fiscales;
+     * de lo contrario se emite como comprobante simple.
+     *
+     * @param detalles lista de DTOs con el detalle de cada habitacion.
+     * @param factura  arreglo [id, fechaEmision, nit, codigoPostal], o null si es comprobante.
+     * @return bytes del PDF generado listos para enviar como respuesta HTTP.
+     */
     public static byte[] generarPdfReservacion(List<ReservacionDetalleDTO> detalles, Object[] factura) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfDocument pdf = new PdfDocument(new PdfWriter(baos));
@@ -90,6 +104,12 @@ public class PdfHelper {
         return baos.toByteArray();
     }
 
+    /**
+     * Envuelve una tabla en un Div con borde y fondo blanco para formar un bloque visual.
+     *
+     * @param inner tabla a envolver.
+     * @return Div estilizado listo para agregar al documento.
+     */
     private static Div bloque(Table inner) {
         return new Div()
                 .setBorder(new SolidBorder(BDR_DARK, 0.8f))
@@ -97,14 +117,18 @@ public class PdfHelper {
                 .add(inner);
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    //  HEADER / FOOTER
-    // ══════════════════════════════════════════════════════════════════
-
+    /**
+     * Renderer del header del PDF. Dibuja el fondo oscuro con nombre del hotel,
+     * numero de reservacion y estado en cada pagina.
+     */
     static class HeaderRenderer implements IEventHandler {
         private final ReservacionDetalleDTO p0;
         private final boolean esF;
-        HeaderRenderer(ReservacionDetalleDTO p0, boolean esF) { this.p0 = p0; this.esF = esF; }
+
+        HeaderRenderer(ReservacionDetalleDTO p0, boolean esF) {
+            this.p0 = p0;
+            this.esF = esF;
+        }
 
         @Override
         public void handleEvent(Event event) {
@@ -156,6 +180,10 @@ public class PdfHelper {
         }
     }
 
+    /**
+     * Renderer del footer del PDF. Dibuja la barra inferior con datos de contacto
+     * del hotel en cada pagina.
+     */
     static class FooterRenderer implements IEventHandler {
         @Override
         public void handleEvent(Event event) {
@@ -182,7 +210,7 @@ public class PdfHelper {
                                 .setFontSize(7f).setFontColor(HDR_SOFT))
                         .setPaddingLeft(MH).setPaddingTop(13));
                 ft.addCell(new Cell().setBorder(Border.NO_BORDER)
-                        .add(new Paragraph("Comprobante oficial de reservación")
+                        .add(new Paragraph("Comprobante oficial de reservacion")
                                 .setFontSize(7f).setFontColor(new DeviceRgb(0x55, 0x62, 0x78))
                                 .setTextAlignment(TextAlignment.RIGHT))
                         .setTextAlignment(TextAlignment.RIGHT).setPaddingRight(MH).setPaddingTop(13));
@@ -191,10 +219,16 @@ public class PdfHelper {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    //  BLOQUE 1 — Info reservación + facturación
-    // ══════════════════════════════════════════════════════════════════
-
+    /**
+     * Construye el bloque superior con datos de la reservacion.
+     * La columna derecha muestra datos de facturacion si es factura,
+     * o datos de contacto del hotel si es comprobante.
+     *
+     * @param p   primer detalle con los datos generales de la reservacion.
+     * @param esF true si el documento es una factura.
+     * @param fac arreglo con datos fiscales, o null si es comprobante.
+     * @return tabla lista para agregar al documento.
+     */
     private static Table buildInfoBlock(ReservacionDetalleDTO p, boolean esF, Object[] fac) {
         Table outer = new Table(UnitValue.createPercentArray(new float[]{50, 50}))
                 .setWidth(UnitValue.createPercentValue(100));
@@ -202,26 +236,26 @@ public class PdfHelper {
         Cell cL = new Cell().setBorder(Border.NO_BORDER)
                 .setBorderRight(new SolidBorder(BDR, 1f))
                 .setPadding(18);
-        cL.add(colTitle("DATOS DE LA RESERVACIÓN"));
+        cL.add(colTitle("DATOS DE LA RESERVACION"));
         cL.add(sp(8));
         Table tL = infoTbl();
-        iRow(tL, "Nro. Reservación", p.getNoReservacion(), true);
+        iRow(tL, "Nro. Reservacion", p.getNoReservacion(), true);
         iRow(tL, "Hotel",            nn(p.getNombreHotel()), false);
         iRow(tL, "Check-in",         nn(p.getFechaCheckIn()), false);
         iRow(tL, "Check-out",        nn(p.getFechaCheckOut()), false);
-        if (p.getFechaCancelacion() != null)  iRow(tL, "Cancelación", p.getFechaCancelacion(), false);
+        if (p.getFechaCancelacion() != null)  iRow(tL, "Cancelacion", p.getFechaCancelacion(), false);
         if (p.getMotivoCancelacion() != null) iRow(tL, "Motivo",      p.getMotivoCancelacion(), false);
         cL.add(tL);
         outer.addCell(cL);
 
         Cell cR = new Cell().setBorder(Border.NO_BORDER).setPadding(18);
         if (esF && fac != null) {
-            cR.add(colTitle("DATOS DE FACTURACIÓN"));
+            cR.add(colTitle("DATOS DE FACTURACION"));
             cR.add(sp(8));
             Table tR = infoTbl();
             iRow(tR, "NIT / RFC",     s(fac[2]), false);
-            iRow(tR, "Código Postal", s(fac[3]), false);
-            iRow(tR, "Fecha Emisión", s(fac[1]), false);
+            iRow(tR, "Codigo Postal", s(fac[3]), false);
+            iRow(tR, "Fecha Emision", s(fac[1]), false);
             cR.add(tR);
         } else {
             cR.add(colTitle("DATOS DE CONTACTO"));
@@ -236,10 +270,15 @@ public class PdfHelper {
         return outer;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    //  BLOQUE 2 — Tabla de habitaciones + filas de total al final
-    // ══════════════════════════════════════════════════════════════════
-
+    /**
+     * Construye la tabla de habitaciones con subtotales por habitacion y total general.
+     * Si hay mas de una habitacion agrega filas de subtotal antes del total final.
+     *
+     * @param detalles lista de DTOs con el detalle de cada habitacion.
+     * @param p0       primer detalle usado para obtener el total general.
+     * @param esF      true si el documento es una factura (cambia el titulo de la seccion).
+     * @return tabla lista para agregar al documento.
+     */
     private static Table buildTablaConTotales(List<ReservacionDetalleDTO> detalles,
                                               ReservacionDetalleDTO p0, boolean esF) {
         Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
@@ -249,30 +288,31 @@ public class PdfHelper {
 
         Cell tableWrap = new Cell().setBorder(Border.NO_BORDER).setPadding(0);
 
-        // ── 9 columnas: se añadió "Nro. Hab." entre "Habitación" y "Cama" ──
+        // 9 columnas: #, Habitacion, Nro. Hab., Cama, Noches, Pers., Check-in, Check-out, Subtotal
         Table t = new Table(UnitValue.createPercentArray(new float[]{5, 19, 10, 13, 7, 7, 13, 13, 13}))
                 .setWidth(UnitValue.createPercentValue(100));
 
-        String[]        hs = {"#", "Habitación", "Nro. Hab.", "Cama", "Noches", "Pers.", "Check-in", "Check-out", "Subtotal"};
+        String[]        hs = {"#", "Habitacion", "Nro. Hab.", "Cama", "Noches", "Pers.", "Check-in", "Check-out", "Subtotal"};
         TextAlignment[] ta = {
-                TextAlignment.CENTER,   // #
-                TextAlignment.LEFT,     // Habitación
-                TextAlignment.CENTER,   // Nro. Hab.  ← NUEVO
-                TextAlignment.LEFT,     // Cama
-                TextAlignment.CENTER,   // Noches
-                TextAlignment.CENTER,   // Pers.
-                TextAlignment.CENTER,   // Check-in
-                TextAlignment.CENTER,   // Check-out
-                TextAlignment.RIGHT     // Subtotal
+                TextAlignment.CENTER,
+                TextAlignment.LEFT,
+                TextAlignment.CENTER,
+                TextAlignment.LEFT,
+                TextAlignment.CENTER,
+                TextAlignment.CENTER,
+                TextAlignment.CENTER,
+                TextAlignment.CENTER,
+                TextAlignment.RIGHT
         };
         for (int i = 0; i < hs.length; i++) t.addHeaderCell(thC(hs[i], ta[i]));
 
+        // Filas de datos con fondo alternado entre blanco y gris claro
         for (int i = 0; i < detalles.size(); i++) {
             ReservacionDetalleDTO d = detalles.get(i);
             Color bg = i % 2 == 0 ? BG_WHITE : BG_ROW;
-            t.addCell(tdC(String.valueOf(i + 1),                            TextAlignment.CENTER, bg, false));
+            t.addCell(tdC(String.valueOf(i + 1),                             TextAlignment.CENTER, bg, false));
             t.addCell(tdC(nn(d.getTipoHabitacion()),                         TextAlignment.LEFT,   bg, false));
-            t.addCell(tdC(nn(d.getNumeroHabitacion()),                       TextAlignment.CENTER, bg, false)); // ← NUEVO
+            t.addCell(tdC(nn(d.getNumeroHabitacion()),                       TextAlignment.CENTER, bg, false));
             t.addCell(tdC(nn(d.getTipoCama()),                               TextAlignment.LEFT,   bg, false));
             t.addCell(tdC(nights(d.getFechaCheckIn(), d.getFechaCheckOut()), TextAlignment.CENTER, bg, false));
             t.addCell(tdC(String.valueOf(d.getCantidadPersonas()),           TextAlignment.CENTER, bg, false));
@@ -281,15 +321,13 @@ public class PdfHelper {
             t.addCell(tdC("$ " + fmt(d.getTotalDetalle()),                   TextAlignment.RIGHT,  bg, true));
         }
 
-        // Separador horizontal — abarca COLS columnas
+        // Separador antes de los subtotales
         t.addCell(new Cell(1, COLS).setHeight(1f).setBackgroundColor(BDR)
                 .setBorder(Border.NO_BORDER).setPadding(0));
 
-        // Sub-totales por habitación (solo si hay más de una)
         if (detalles.size() > 1) {
             for (int i = 0; i < detalles.size(); i++) {
                 ReservacionDetalleDTO d = detalles.get(i);
-                // Celda vacía ocupa las primeras (COLS - 3) columnas
                 t.addCell(new Cell(1, COLS - 3).setBorder(Border.NO_BORDER)
                         .setBackgroundColor(BG_WHITE).setPadding(0));
                 t.addCell(new Cell(1, 2)
@@ -310,18 +348,18 @@ public class PdfHelper {
                         .setBorderRight(Border.NO_BORDER)
                         .setBorderBottom(new SolidBorder(BDR, 0.5f)));
             }
-            // Línea divisoria antes del total general
+            // Linea divisoria antes del total general
             t.addCell(new Cell(1, COLS - 3).setBorder(Border.NO_BORDER)
                     .setBackgroundColor(BG_WHITE).setPadding(0));
             t.addCell(new Cell(1, 3).setHeight(1f).setBackgroundColor(BDR_DARK)
                     .setBorder(Border.NO_BORDER).setPadding(0));
         }
 
-        // Fila TOTAL RESERVACIÓN — misma lógica de colspan
+        // Fila del total general de la reservacion
         t.addCell(new Cell(1, COLS - 3).setBorder(Border.NO_BORDER)
                 .setBackgroundColor(BG_WHITE).setPadding(0));
         t.addCell(new Cell(1, 2)
-                .add(new Paragraph("TOTAL RESERVACIÓN")
+                .add(new Paragraph("TOTAL RESERVACION")
                         .setFontSize(9.5f).setBold().setFontColor(HDR_TEXT))
                 .setBackgroundColor(HDR_MID)
                 .setPaddingTop(11).setPaddingBottom(11).setPaddingLeft(10).setPaddingRight(8)
@@ -342,17 +380,21 @@ public class PdfHelper {
         return outer;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    //  BLOQUE 3 — Datos fiscales
-    // ══════════════════════════════════════════════════════════════════
-
+    /**
+     * Construye el bloque de datos fiscales de la factura.
+     * Muestra NIT, codigo postal, fecha de emision y total en una grilla de 4 columnas.
+     *
+     * @param fac arreglo con datos fiscales [id, fechaEmision, nit, codigoPostal].
+     * @param p0  primer detalle de la reservacion para obtener el total.
+     * @return tabla lista para agregar al documento.
+     */
     private static Table buildDatosFactura(Object[] fac, ReservacionDetalleDTO p0) {
         Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
                 .setWidth(UnitValue.createPercentValue(100));
 
         outer.addCell(titleBar("DATOS FISCALES"));
 
-        String[] lbls = {"NIT / RFC", "Código Postal", "Fecha Emisión", "Total Factura"};
+        String[] lbls = {"NIT / RFC", "Codigo Postal", "Fecha Emision", "Total Factura"};
         String[] vals = {s(fac[2]), s(fac[3]), s(fac[1]), "$ " + fmt(p0.getTotal())};
 
         Table grid = new Table(UnitValue.createPercentArray(new float[]{28, 18, 20, 34}))
@@ -384,10 +426,11 @@ public class PdfHelper {
         return outer;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    //  BLOQUE 4 — Términos y condiciones
-    // ══════════════════════════════════════════════════════════════════
-
+    /**
+     * Construye el bloque de terminos y condiciones al pie del documento.
+     *
+     * @return tabla lista para agregar al documento.
+     */
     private static Table buildCondiciones() {
         Table outer = new Table(UnitValue.createPercentArray(new float[]{100}))
                 .setWidth(UnitValue.createPercentValue(100));
@@ -396,26 +439,28 @@ public class PdfHelper {
                 .setBorderBottom(new SolidBorder(BDR, 0.8f))
                 .setBackgroundColor(BG_LBL)
                 .setPaddingTop(10).setPaddingBottom(10).setPaddingLeft(18).setPaddingRight(18)
-                .add(new Paragraph("TÉRMINOS Y CONDICIONES").setFontSize(7.5f).setBold()
+                .add(new Paragraph("TERMINOS Y CONDICIONES").setFontSize(7.5f).setBold()
                         .setFontColor(TEXT_MID).setCharacterSpacing(0.8f)));
 
         outer.addCell(new Cell().setBorder(Border.NO_BORDER)
                 .setBackgroundColor(BG_WHITE)
                 .setPaddingTop(14).setPaddingBottom(14).setPaddingLeft(18).setPaddingRight(18)
                 .add(new Paragraph(
-                        "1. Esta reservación es válida únicamente para las fechas indicadas.\n" +
-                                "2. Check-in estándar: 15:00 hrs  ·  Check-out estándar: 12:00 hrs.\n" +
-                                "3. Cancelaciones con menos de 24 hrs de anticipación generan cargo del 100%.\n" +
-                                "4. El hotel no se responsabiliza por objetos de valor no declarados en recepción.\n" +
-                                "5. Este documento es comprobante oficial de reservación.")
+                        "1. Esta reservacion es valida unicamente para las fechas indicadas.\n" +
+                        "2. Check-in estandar: 15:00 hrs  ·  Check-out estandar: 12:00 hrs.\n" +
+                        "3. Cancelaciones con menos de 24 hrs de anticipacion generan cargo del 100%.\n" +
+                        "4. El hotel no se responsabiliza por objetos de valor no declarados en recepcion.\n" +
+                        "5. Este documento es comprobante oficial de reservacion.")
                         .setFontSize(7.5f).setFontColor(TEXT_SOFT)));
         return outer;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    //  HELPERS
-    // ══════════════════════════════════════════════════════════════════
-
+    /**
+     * Crea una celda de titulo de seccion con fondo oscuro para usar como barra de encabezado.
+     *
+     * @param txt texto del titulo en mayusculas.
+     * @return celda estilizada lista para agregar a una tabla.
+     */
     private static Cell titleBar(String txt) {
         return new Cell().setBorder(Border.NO_BORDER)
                 .setBorderBottom(new SolidBorder(HDR_DARK, 1f))
@@ -425,6 +470,13 @@ public class PdfHelper {
                         .setFontColor(HDR_TEXT).setCharacterSpacing(1.2f));
     }
 
+    /**
+     * Crea una celda de encabezado para la tabla de habitaciones.
+     *
+     * @param txt texto del encabezado.
+     * @param ta  alineacion del texto.
+     * @return celda de encabezado estilizada.
+     */
     private static Cell thC(String txt, TextAlignment ta) {
         return new Cell()
                 .add(new Paragraph(txt).setFontSize(7.5f).setBold().setFontColor(HDR_TEXT).setTextAlignment(ta))
@@ -436,6 +488,15 @@ public class PdfHelper {
                 .setTextAlignment(ta);
     }
 
+    /**
+     * Crea una celda de datos para la tabla de habitaciones.
+     *
+     * @param txt  texto a mostrar; si es null se muestra un guion.
+     * @param ta   alineacion del texto.
+     * @param bg   color de fondo de la celda.
+     * @param bold true si el texto debe ir en negrita.
+     * @return celda de datos estilizada.
+     */
     private static Cell tdC(String txt, TextAlignment ta, Color bg, boolean bold) {
         Paragraph p = new Paragraph(txt != null ? txt : "—").setFontSize(8).setFontColor(INK).setTextAlignment(ta);
         if (bold) p.setBold();
@@ -447,16 +508,35 @@ public class PdfHelper {
                 .setTextAlignment(ta);
     }
 
+    /**
+     * Crea un parrafo de titulo de columna con estilo de acento azul.
+     *
+     * @param txt texto del titulo.
+     * @return parrafo estilizado.
+     */
     private static Paragraph colTitle(String txt) {
         return new Paragraph(txt).setFontSize(7.5f).setBold().setFontColor(ACCENT)
                 .setCharacterSpacing(0.8f).setMarginBottom(0);
     }
 
+    /**
+     * Crea una tabla de dos columnas (38/62) para mostrar pares etiqueta-valor.
+     *
+     * @return tabla de informacion vacia lista para agregar filas.
+     */
     private static Table infoTbl() {
         return new Table(UnitValue.createPercentArray(new float[]{38, 62}))
                 .setWidth(UnitValue.createPercentValue(100));
     }
 
+    /**
+     * Agrega una fila de etiqueta-valor a una tabla de informacion.
+     *
+     * @param t   tabla donde se agrega la fila.
+     * @param lbl texto de la etiqueta.
+     * @param val valor a mostrar; si es null se muestra un guion.
+     * @param hi  true para usar el color de fondo resaltado en la etiqueta.
+     */
     private static void iRow(Table t, String lbl, String val, boolean hi) {
         t.addCell(new Cell()
                 .add(new Paragraph(lbl).setFontSize(7.5f).setBold().setFontColor(TEXT_MID))
@@ -474,20 +554,41 @@ public class PdfHelper {
                 .setBorderBottom(new SolidBorder(BDR, 0.6f)));
     }
 
+    /**
+     * Crea un parrafo de espacio vacio con altura proporcional a los puntos indicados.
+     *
+     * @param pts puntos de separacion deseados.
+     * @return parrafo de espacio.
+     */
     private static Paragraph sp(float pts) {
         return new Paragraph(" ").setFontSize(pts / 4f).setMargin(0);
     }
 
+    /**
+     * Retorna el color correspondiente al estado de la reservacion.
+     * Confirmada usa verde, cancelada rojo, pendiente naranja y cualquier otro gris.
+     *
+     * @param e nombre del estado en texto.
+     * @return color asociado al estado.
+     */
     private static Color sColor(String e) {
         if (e == null) return new DeviceRgb(0x88, 0x9A, 0xB4);
         return switch (e.toLowerCase()) {
-            case "confirmada"  -> S_OK;
-            case "cancelada"   -> S_ERR;
-            case "pendiente"   -> S_WARN;
-            default            -> new DeviceRgb(0x88, 0x9A, 0xB4);
+            case "confirmada" -> S_OK;
+            case "cancelada"  -> S_ERR;
+            case "pendiente"  -> S_WARN;
+            default           -> new DeviceRgb(0x88, 0x9A, 0xB4);
         };
     }
 
+    /**
+     * Calcula la cantidad de noches entre dos fechas en formato ISO y la retorna como texto.
+     * Si las fechas son invalidas retorna un guion.
+     *
+     * @param ci fecha de check-in en formato ISO (yyyy-MM-dd...).
+     * @param co fecha de check-out en formato ISO (yyyy-MM-dd...).
+     * @return numero de noches seguido de " n.", o "—" si hay un error al parsear.
+     */
     private static String nights(String ci, String co) {
         try {
             java.time.LocalDate d1 = java.time.LocalDate.parse(ci.substring(0, 10));
@@ -496,6 +597,13 @@ public class PdfHelper {
         } catch (Exception ex) { return "—"; }
     }
 
+    /**
+     * Formatea un numero como string con separadores de miles.
+     * Si el numero es entero no muestra decimales; si tiene decimales muestra dos.
+     *
+     * @param o objeto a formatear; puede ser Double, Integer o cualquier tipo parseable.
+     * @return numero formateado como string, o "—" si es null o no parseable.
+     */
     private static String fmt(Object o) {
         if (o == null) return "—";
         try {
@@ -504,6 +612,19 @@ public class PdfHelper {
         } catch (Exception e) { return o.toString(); }
     }
 
-    private static String s(Object o)  { return o != null ? o.toString() : "—"; }
+    /**
+     * Convierte un objeto a String, retornando un guion si es null.
+     *
+     * @param o objeto a convertir.
+     * @return representacion en texto del objeto, o "—" si es null.
+     */
+    private static String s(Object o) { return o != null ? o.toString() : "—"; }
+
+    /**
+     * Retorna el String recibido si no es null ni vacio, o un guion en caso contrario.
+     *
+     * @param s cadena a evaluar.
+     * @return el mismo string si tiene contenido, o "—" si esta vacio o es null.
+     */
     private static String nn(String s) { return s != null && !s.isBlank() ? s : "—"; }
 }

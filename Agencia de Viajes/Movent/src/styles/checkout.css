@@ -1,9 +1,6 @@
-/* ═══════════════════════════════════════════════════════════
-   CHECKOUT — Movent
-   ═══════════════════════════════════════════════════════════ */
-
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
+/* Página base del checkout con fondo crema */
 .co-page {
   background: #F5F2EC;
   min-height: calc(100vh - 64px);
@@ -15,7 +12,7 @@
   padding: 0 20px;
 }
 
-/* ── Steps ── */
+/* Indicador de pasos del proceso de pago */
 .co-header { margin-bottom: 32px; }
 
 .co-steps {
@@ -33,6 +30,8 @@
   color: #b0a898;
   white-space: nowrap;
 }
+
+/* Número del paso con estado activo y completado */
 .co-step__num {
   width: 26px; height: 26px;
   border-radius: 50%;
@@ -48,6 +47,7 @@
 .co-step--active .co-step__lbl,
 .co-step--done   .co-step__lbl { color: #1C1A18; }
 
+/* Conector visual entre pasos */
 .co-step__connector {
   flex: 1;
   height: 2px;
@@ -57,7 +57,7 @@
 }
 .co-step__connector--done { background: #FFCC00; }
 
-/* ── Layout ── */
+/* Layout principal: formulario y sidebar */
 .co-layout {
   display: grid;
   grid-template-columns: 1fr 290px;
@@ -65,7 +65,7 @@
   align-items: start;
 }
 
-/* ── Error ── */
+/* Mensaje de error genérico y variante API */
 .co-error {
   font-size: 12px; color: #D40511;
   font-weight: 600; margin: 0;
@@ -80,10 +80,7 @@
   color: #991b1b;
 }
 
-/* ═════════════════════════════════════════════════════════
-   PAGO — TARJETA + FORM
-   ═════════════════════════════════════════════════════════ */
-
+/* Contenedor del formulario y tarjeta de pago */
 .pago-stage {
   background: #fff;
   border: 1px solid #e8e3dc;
@@ -93,7 +90,7 @@
   flex-direction: column;
 }
 
-/* ── Tarjeta 3D ── */
+/* Escena 3D de la tarjeta de crédito */
 .card-scene {
   background: linear-gradient(135deg, #0f0d0b 0%, #1c1a18 40%, #2a2420 100%);
   padding: 40px 36px 32px;
@@ -118,6 +115,7 @@
   pointer-events: none;
 }
 
+/* Contenedor de la tarjeta con flip 3D */
 .card-wrap {
   width: 360px; height: 220px;
   position: relative;
@@ -127,6 +125,7 @@
 }
 .card-wrap--flip { transform: rotateY(180deg); }
 
+/* Cara de la tarjeta con backface hidden para el flip */
 .card-face {
   position: absolute; inset: 0;
   border-radius: 18px;
@@ -141,6 +140,7 @@
 .card-face--front {
   background: linear-gradient(135deg, #1a1714 0%, #2c2520 30%, #1a1714 60%, #221d18 100%);
 }
+/* Textura de ruido sobre la tarjeta */
 .card-noise {
   position: absolute; inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
@@ -160,6 +160,7 @@
   font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700;
   color: #fff; letter-spacing: .05em; text-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
+/* Ícono de MasterCard con dos círculos superpuestos */
 .card-mc {
   display: flex; position: relative; width: 42px; height: 26px;
   align-items: center; justify-content: center;
@@ -173,6 +174,7 @@
   font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
   color: rgba(255,255,255,.8); letter-spacing: .12em;
 }
+/* Chip dorado de la tarjeta */
 .card-chip {
   position: absolute; top: 68px; left: 24px;
   width: 42px; height: 32px;
@@ -184,6 +186,7 @@
 .card-chip__inner { position: absolute; inset: 6px; border: 1px solid rgba(0,0,0,.25); border-radius: 2px; }
 .card-chip__h { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(0,0,0,.2); transform: translateY(-50%); }
 .card-chip__v { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,.2); transform: translateX(-50%); }
+/* Número de la tarjeta en monospace */
 .card-number {
   position: absolute; bottom: 60px; left: 24px; right: 24px;
   display: flex; gap: 16px; justify-content: space-between;
@@ -192,6 +195,7 @@
   text-shadow: 0 2px 12px rgba(0,0,0,.5);
 }
 .card-number__group { flex: 1; text-align: center; }
+/* Pie de la tarjeta con nombre y expiración */
 .card-foot {
   position: absolute; bottom: 18px; left: 24px; right: 24px;
   display: flex; justify-content: space-between; align-items: flex-end;
@@ -207,6 +211,7 @@
 }
 .card-foot__exp .card-foot__val { max-width: 60px; }
 
+/* Cara trasera de la tarjeta con banda magnética */
 .card-face--back {
   background: linear-gradient(135deg, #1a1714 0%, #2c2520 100%);
   transform: rotateY(180deg);
@@ -237,7 +242,7 @@
   letter-spacing: .12em; color: rgba(255,255,255,.4);
 }
 
-/* ── Formulario pago ── */
+/* Formulario de datos de la tarjeta con inputs styled */
 .pago-form {
   padding: 28px 32px 32px;
   display: flex; flex-direction: column; gap: 16px;
@@ -249,6 +254,7 @@
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: #9a9089;
 }
+/* Wrapper del input con ícono e indicador de foco */
 .pago-form__input-wrap {
   display: flex; align-items: center; gap: 10px;
   background: #F5F2EC; border: 1.5px solid #e0d9cf;
@@ -260,6 +266,7 @@
 }
 .pago-form__ico { color: #b0a898; flex-shrink: 0; }
 .pago-form__input-wrap--focus .pago-form__ico { color: #8B6B4A; }
+/* Input de pago en monospace para números de tarjeta */
 .pago-form__input {
   flex: 1; background: transparent; border: none; outline: none;
   padding: 12px 0; font-size: 15px; color: #1C1A18;
@@ -272,7 +279,7 @@
 .badge-mc    { font-size: 11px; font-weight: 700; color: #B91C1C; }
 .badge-amex  { font-size: 11px; font-weight: 700; color: #1d4ed8; letter-spacing: .08em; }
 
-/* ── Sección facturación (NIT + postal) ── */
+/* Sección de facturación con NIT y código postal */
 .pago-billing {
   background: #fdfcfa;
   border: 1px solid #f0ebe3;
@@ -288,7 +295,7 @@
   letter-spacing: .08em; color: #9a9089;
 }
 
-/* ── Badges seguridad ── */
+/* Badges de seguridad (SSL, cifrado) */
 .pago-badges { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
 .pago-badge {
   display: inline-flex; align-items: center; gap: 5px;
@@ -297,7 +304,7 @@
   border-radius: 20px; padding: 4px 10px;
 }
 
-/* ── Botón confirmar ── */
+/* Botón de confirmar pago con efecto de brillo */
 .pago-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
 .pago-btn-confirm {
   display: inline-flex; align-items: center; gap: 9px;
@@ -314,6 +321,7 @@
   background: #2d2b27; box-shadow: 0 8px 24px rgba(28,26,24,.4); transform: translateY(-1px);
 }
 .pago-btn-confirm:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+/* Spinner inline mientras procesa el pago */
 .pago-btn-confirm__spin {
   display: inline-block; width: 16px; height: 16px;
   border: 2px solid rgba(255,204,0,.3); border-top-color: #FFCC00;
@@ -321,9 +329,7 @@
 }
 @keyframes co-spin { to { transform: rotate(360deg); } }
 
-/* ═════════════════════════════════════════════════════════
-   SIDEBAR RESUMEN
-   ═════════════════════════════════════════════════════════ */
+/* Sidebar de resumen de compra pegajosa */
 .co-sidebar { position: sticky; top: 24px; }
 
 .co-resumen {
@@ -339,6 +345,7 @@
   font-size: 12px; font-weight: 700; color: #1C1A18;
   font-family: 'Space Mono', monospace; letter-spacing: .04em;
 }
+/* Ítem del resumen con badge de tipo de servicio */
 .co-resumen__item {
   padding: 14px 18px; border-bottom: 1px solid #f0ebe3;
   display: flex; flex-direction: column; gap: 6px;
@@ -360,6 +367,7 @@
 .co-resumen__item-nombre--lg { font-size: 14px; font-weight: 700; color: #1C1A18; }
 .co-resumen__divider { height: 1px; background: #f0ebe3; margin: 4px 0; }
 
+/* Fila de pasajero con ícono circular */
 .co-resumen__pasajero {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 12px 18px; border-bottom: 1px solid #f0ebe3;
@@ -372,13 +380,14 @@
 .co-resumen__pasajero-nombre { font-size: 13px; font-weight: 700; color: #1C1A18; margin: 0 0 2px; }
 .co-resumen__pasajero-meta   { font-size: 11px; color: #9a9089; margin: 0; line-height: 1.5; }
 
+/* Fila de precio total del resumen */
 .co-resumen__precio-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 18px; font-size: 13px; color: #9a9089;
 }
 .co-resumen__precio-row strong { font-size: 22px; font-weight: 800; color: #1C1A18; }
 
-/* ── Responsive ── */
+/* Responsive para pantallas menores a 860px */
 @media (max-width: 860px) {
   .co-layout { grid-template-columns: 1fr; }
   .co-sidebar { position: static; }

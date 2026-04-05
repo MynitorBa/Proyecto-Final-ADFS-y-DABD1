@@ -7,16 +7,25 @@ import org.example.services.BusquedaAgenciaService;
 
 import java.util.Map;
 
+/**
+ * Controller que expone el endpoint de busqueda para agencias externas.
+ * Las peticiones se autentican mediante el header X-Agencia-Token.
+ */
 public class BusquedaAgenciaController {
 
     private final BusquedaAgenciaService busquedaAgenciaService = new BusquedaAgenciaService();
 
+    /**
+     * Registra la ruta de busqueda de agencias en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registra la ruta.
+     */
     public void registerRoutes(Javalin app) {
 
-        // POST /agencia/busqueda — autenticación por X-Agencia-Token
+        // Valida el token de agencia antes de procesar la busqueda
         app.post("/agencia/busqueda", ctx -> {
             if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 
+            // Extrae el token del header para identificar la agencia solicitante
             String token = ctx.header("X-Agencia-Token");
 
             BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);

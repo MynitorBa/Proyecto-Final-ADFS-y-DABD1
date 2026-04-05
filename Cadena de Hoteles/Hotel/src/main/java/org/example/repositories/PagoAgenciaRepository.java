@@ -5,9 +5,19 @@ import org.example.dtos.PagoResponseDTO;
 
 import java.util.List;
 
+/**
+ * Repository para el procesamiento de pagos de reservaciones realizadas por agencias.
+ * Maneja la validacion de reservaciones, confirmacion y generacion de facturas.
+ */
 public class PagoAgenciaRepository {
 
-    // Verifica que la reservación pertenece a la agencia y está pendiente
+    /**
+     * Busca una reservacion verificando que pertenezca a la agencia indicada.
+     * Se usa para validar la reservacion antes de procesar el pago.
+     * @param reservacionId ID de la reservacion a consultar.
+     * @param agenciaId     ID de la agencia propietaria de la reservacion.
+     * @return arreglo con {ID, No_Reservacion, Total, Estado, EstadoID} o null si no existe o no pertenece a la agencia.
+     */
     public Object[] obtenerReservacionParaPago(int reservacionId, int agenciaId) {
         String sql = "SELECT r.ID, r.No_Reservacion, r.Total, er.Estado, r.EstadoID " +
                 "FROM Reservacion r " +
@@ -27,7 +37,10 @@ public class PagoAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // Confirmar reservación: estado 2, quitar expiración
+    /**
+     * Confirma una reservacion actualizando su estado a Confirmada (EstadoID = 2) y eliminando la fecha de expiracion.
+     * @param reservacionId ID de la reservacion a confirmar.
+     */
     public void confirmarReservacion(int reservacionId) {
         String sql = "UPDATE Reservacion " +
                 "SET EstadoID = 2, Fecha_Expiracion = NULL " +
@@ -35,7 +48,14 @@ public class PagoAgenciaRepository {
         DatabaseManager.executeUpdate(sql, reservacionId);
     }
 
-    // Crear factura
+    /**
+     * Crea una factura asociada a una reservacion y retorna el ID generado.
+     * @param reservacionId ID de la reservacion a facturar.
+     * @param nit           numero de identificacion tributaria del cliente.
+     * @param codigoPostal  codigo postal del cliente.
+     * @param total         monto total de la factura.
+     * @return ID de la factura recien insertada.
+     */
     public int crearFactura(int reservacionId, String nit, String codigoPostal, double total) {
         String sql = "INSERT INTO Factura (ReservacionID, Fecha, NIT, Codigo_Postal, Total) " +
                 "VALUES (?, SYSDATE, ?, ?, ?)";
@@ -43,7 +63,11 @@ public class PagoAgenciaRepository {
                 reservacionId, nit, codigoPostal, total);
     }
 
-    // Obtener factura para la respuesta
+    /**
+     * Retorna los datos completos de una factura junto con el estado y numero de su reservacion asociada.
+     * @param facturaId ID de la factura a consultar.
+     * @return PagoResponseDTO con los datos de la factura, o null si no existe.
+     */
     public PagoResponseDTO obtenerFactura(int facturaId) {
         String sql = "SELECT f.ID, f.Fecha, f.NIT, f.Codigo_Postal, f.Total, " +
                 "r.No_Reservacion, er.Estado " +

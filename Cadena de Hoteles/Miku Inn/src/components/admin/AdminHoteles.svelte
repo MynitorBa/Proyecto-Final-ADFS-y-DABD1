@@ -1,65 +1,211 @@
 <script>
+  /**
+   * @file AdminHoteles.svelte
+   * @description Modulo de gestion de hoteles del panel de administracion.
+   * Contiene dos vistas: la lista de hoteles con busqueda y filtros, y el detalle
+   * de un hotel seleccionado con pestanas para informacion, imagenes, amenidades y habitaciones.
+   * Permite editar, crear, eliminar hoteles y gestionar sus recursos relacionados.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   export let API_BASE;
+
+  /**
+   * Funcion que retorna la clase CSS del badge segun el estado del registro.
+   * @type {function(string): string}
+   */
   export let badge;
+
+  /**
+   * Convierte un File a cadena Base64 para subirlo al backend.
+   * @type {function(File): Promise<string>}
+   */
   export let fileToBase64;
+
+  /** Lista de tipos de habitacion disponibles (proveniente del padre). @type {Array<{id: number, nombre: string}>} */
   export let tiposHabitacion;
+
+  /** Contador de hoteles totales, expuesto al componente padre. @type {number} */
   export let count = 0;
 
+  /** Dialogo de confirmacion personalizado para acciones destructivas. @type {Object|null} */
   let confirmDialog = null;
+
+  /**
+   * Abre el dialogo de confirmacion con titulo, mensaje y funcion de callback.
+   * @param {string} t - Titulo del dialogo.
+   * @param {string} m - Mensaje descriptivo.
+   * @param {function} fn - Funcion a ejecutar al confirmar.
+   */
   function pedirConfirmacion(t, m, fn) { confirmDialog = { titulo: t, mensaje: m, onConfirm: fn }; }
+
+  /** Cierra el dialogo sin ejecutar ninguna accion. */
   function cerrarConfirm() { confirmDialog = null; }
+
+  /** Ejecuta la accion confirmada y cierra el dialogo. */
   function ejecutarConfirm() { if (confirmDialog?.onConfirm) confirmDialog.onConfirm(); confirmDialog = null; }
 
-  // ── Lista hoteles ──
-  let hoteles = []; let cargandoHoteles = false; let errorHoteles = null;
-  let busquedaHotel = ''; let filtroEstadoHotel = 'todos';
+  /** Lista completa de hoteles cargados desde el backend. @type {Array<Object>} */
+  let hoteles = [];
 
-  // ── Vista ──
-  let vistaHoteles = 'lista'; let hotelDetalle = null; let tabDetalle = 'info';
+  /** Indica si se esta cargando la lista de hoteles. @type {boolean} */
+  let cargandoHoteles = false;
 
-  // ── Info hotel ──
+  /** Mensaje de error si la carga de hoteles falla. @type {string|null} */
+  let errorHoteles = null;
+
+  /** Texto del buscador para filtrar hoteles por nombre, ciudad o pais. @type {string} */
+  let busquedaHotel = '';
+
+  /** Estado seleccionado en el filtro de hoteles: 'todos', 'activo' o 'cerrado'. @type {string} */
+  let filtroEstadoHotel = 'todos';
+
+  /** Vista actual del modulo: 'lista' o 'detalle'. @type {string} */
+  let vistaHoteles = 'lista';
+
+  /** Hotel actualmente seleccionado en la vista de detalle. @type {Object|null} */
+  let hotelDetalle = null;
+
+  /** Pestana activa en la vista de detalle: 'info', 'imagenes', 'amenidades' o 'habitaciones'. @type {string} */
+  let tabDetalle = 'info';
+
+  /** Copia editable de los datos basicos del hotel en la pestana de informacion. @type {Object} */
   let editInfoHotel = { nombre: '', direccion: '', descripcion: '', rating: 0, estadoId: 1 };
-  let guardandoInfo = false; let mensajeInfo = null;
 
-  // ── Imágenes hotel ──
-  let subiendoImgHotel = false; let mensajeImgHotel = null;
+  /** Indica si se esta guardando la informacion basica del hotel. @type {boolean} */
+  let guardandoInfo = false;
 
-  // ── Amenidades ──
-  let amenidades = []; let amenidadesHotel = [];
-  let cargandoAmenidades = false; let mensajeAmenidad = null;
+  /** Mensaje de retroalimentacion en la pestana de informacion. @type {{tipo: string, texto: string}|null} */
+  let mensajeInfo = null;
+
+  /** Indica si se esta subiendo una imagen del hotel. @type {boolean} */
+  let subiendoImgHotel = false;
+
+  /** Mensaje de retroalimentacion en la seccion de imagenes del hotel. @type {{tipo: string, texto: string}|null} */
+  let mensajeImgHotel = null;
+
+  /** Lista del catalogo global de amenidades. @type {Array<{id: number, nombre: string}>} */
+  let amenidades = [];
+
+  /** Lista de amenidades asignadas al hotel en detalle. @type {Array<Object>} */
+  let amenidadesHotel = [];
+
+  /** Indica si se estan cargando las amenidades del hotel. @type {boolean} */
+  let cargandoAmenidades = false;
+
+  /** Mensaje de retroalimentacion en la seccion de amenidades. @type {{tipo: string, texto: string}|null} */
+  let mensajeAmenidad = null;
+
+  /** Controla la visibilidad del formulario de asignacion de amenidad. @type {boolean} */
   let showFormAmenidad = false;
+
+  /** Datos del formulario de nueva amenidad a asignar. @type {{amenidadId: number, descripcion: string}} */
   let nuevaAmenidad = { amenidadId: 1, descripcion: '' };
-  let amenidadEditandoId = null; let editDescAmenidad = '';
+
+  /** ID de la amenidad cuya descripcion esta siendo editada inline. @type {number|null} */
+  let amenidadEditandoId = null;
+
+  /** Texto temporal de la descripcion mientras se edita. @type {string} */
+  let editDescAmenidad = '';
+
+  /** Set con los IDs de amenidades cuya imagen se esta subiendo. @type {Set<number>} */
   let subiendoImgAmenidadSet = new Set();
+
+  /** Controla la visibilidad del formulario para crear una nueva categoria de amenidad. @type {boolean} */
   let showFormNuevaAmenidadCatalogo = false;
+
+  /** Nombre de la nueva categoria a crear en el catalogo global. @type {string} */
   let nuevaAmenidadCatalogoNombre = '';
+
+  /** Indica si se esta creando una nueva categoria de amenidad. @type {boolean} */
   let creandoAmenidadCatalogo = false;
+
+  /** Mensaje de retroalimentacion al crear una categoria. @type {{tipo: string, texto: string}|null} */
   let mensajeNuevaAmenidadCatalogo = null;
 
-  // ── Habitaciones ──
-  let habitaciones = []; let cargandoHabitaciones = false; let errorHabitaciones = null;
+  /** Lista de habitaciones del hotel en detalle. @type {Array<Object>} */
+  let habitaciones = [];
 
-  // Modal editar habitación — mantiene numeroHabitacion (ya existe en BD)
-  let showModalHabitacion = false; let habitacionEditando = null;
+  /** Indica si se estan cargando las habitaciones. @type {boolean} */
+  let cargandoHabitaciones = false;
+
+  /** Mensaje de error si la carga de habitaciones falla. @type {string|null} */
+  let errorHabitaciones = null;
+
+  /** Controla la visibilidad del modal de edicion de habitacion existente. @type {boolean} */
+  let showModalHabitacion = false;
+
+  /** Habitacion siendo editada en el modal. @type {Object|null} */
+  let habitacionEditando = null;
+
+  /**
+   * Copia editable de los campos de la habitacion en el modal.
+   * Incluye numeroHabitacion ya que la habitacion existe en BD y se puede editar.
+   * @type {Object}
+   */
   let editHabitacion = { tipoHabitacionId: 1, numeroHabitacion: '', descripcion: '', estadoId: 1 };
-  let guardandoHabitacion = false; let mensajeHabitacion = null;
-  let subiendoImgHab = false; let mensajeImgHab = null;
 
-  // Modal nueva habitación — SIN numeroHabitacion (backend lo auto-asigna)
+  /** Indica si se esta guardando la habitacion en edicion. @type {boolean} */
+  let guardandoHabitacion = false;
+
+  /** Mensaje de retroalimentacion en el modal de habitacion. @type {{tipo: string, texto: string}|null} */
+  let mensajeHabitacion = null;
+
+  /** Indica si se esta subiendo una imagen en el modal de habitacion. @type {boolean} */
+  let subiendoImgHab = false;
+
+  /** Mensaje de retroalimentacion en la seccion de imagenes del modal de habitacion. @type {{tipo: string, texto: string}|null} */
+  let mensajeImgHab = null;
+
+  /** Controla la visibilidad del modal de nueva habitacion. @type {boolean} */
   let showModalNuevaHab = false;
+
+  /**
+   * Datos del formulario de nueva habitacion en el modal de gestion.
+   * Sin numeroHabitacion: el backend lo asigna automaticamente.
+   * @type {Object}
+   */
   let nuevaHabGestion = { tipoHabitacionId: 1, descripcion: '', estadoId: 1, cantidad: 1 };
-  let guardandoNuevaHab = false; let mensajeNuevaHab = null;
 
-  // Modales eliminar
-  let showModalEliminarHab = false; let habEliminando = null; let eliminandoHab = false;
-  let showModalEliminarHotel = false; let hotelEliminando = null; let eliminandoHotel = false;
+  /** Indica si se esta creando la nueva habitacion desde el modal de gestion. @type {boolean} */
+  let guardandoNuevaHab = false;
 
-  // Overlays
-  let creandoMasivo = false; let creandoMasivoProgreso = '';
-  let eliminandoMasivo = false; let eliminandoMasivoProgreso = '';
+  /** Mensaje de retroalimentacion en el modal de nueva habitacion. @type {{tipo: string, texto: string}|null} */
+  let mensajeNuevaHab = null;
 
+  /** Controla la visibilidad del modal de confirmacion de eliminacion de habitacion. @type {boolean} */
+  let showModalEliminarHab = false;
+
+  /** Habitacion pendiente de eliminar. @type {Object|null} */
+  let habEliminando = null;
+
+  /** Indica si la eliminacion de habitacion esta en curso. @type {boolean} */
+  let eliminandoHab = false;
+
+  /** Controla la visibilidad del modal de confirmacion de eliminacion de hotel. @type {boolean} */
+  let showModalEliminarHotel = false;
+
+  /** Hotel pendiente de eliminar. @type {Object|null} */
+  let hotelEliminando = null;
+
+  /** Indica si la eliminacion de hotel esta en curso. @type {boolean} */
+  let eliminandoHotel = false;
+
+  /** Indica si hay una operacion masiva de creacion en progreso. @type {boolean} */
+  let creandoMasivo = false;
+
+  /** Mensaje de progreso durante la creacion masiva. @type {string} */
+  let creandoMasivoProgreso = '';
+
+  /** Indica si hay una operacion masiva de eliminacion en progreso. @type {boolean} */
+  let eliminandoMasivo = false;
+
+  /** Mensaje de progreso durante la eliminacion masiva. @type {string} */
+  let eliminandoMasivoProgreso = '';
+
+  // Lista de hoteles filtrada reactivamente por busqueda y estado.
   $: hotelesFiltrados = hoteles.filter(h => {
     const q = busquedaHotel.toLowerCase();
     const matchBusqueda = q === '' || h.nombre.toLowerCase().includes(q) || (h.ciudad ?? '').toLowerCase().includes(q) || (h.pais ?? '').toLowerCase().includes(q);
@@ -67,14 +213,16 @@
     return matchBusqueda && (filtroEstadoHotel === 'todos' || estadoNorm === filtroEstadoHotel);
   });
 
+  // Mantiene el contador exportado sincronizado con el total de hoteles.
   $: count = hoteles.length;
 
   onMount(() => { cargarHoteles(); });
 
-  // ════════════════════════════════════════════════════
-  //  HOTELES
-  // ════════════════════════════════════════════════════
-
+  /**
+   * Carga la lista completa de hoteles desde el backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarHoteles() {
     cargandoHoteles = true; errorHoteles = null;
     try {
@@ -85,6 +233,10 @@
     finally { cargandoHoteles = false; }
   }
 
+  /**
+   * Abre la vista de detalle de un hotel y carga sus habitaciones y amenidades.
+   * @param {Object} h - Hotel a mostrar en detalle.
+   */
   function abrirDetalleHotel(h) {
     hotelDetalle = { ...h };
     editInfoHotel = { nombre: h.nombre ?? '', direccion: h.direccion ?? '', descripcion: h.descripcion ?? '', rating: h.rating ?? 0, estadoId: h.estadoId ?? 1 };
@@ -92,8 +244,16 @@
     cargarHabitacionesDetalle(h.id); cargarAmenidadesHotel(h.id);
   }
 
+  /**
+   * Vuelve a la vista de lista y limpia el estado del detalle.
+   */
   function volverListaHoteles() { vistaHoteles = 'lista'; hotelDetalle = null; habitaciones = []; }
 
+  /**
+   * Guarda los cambios de informacion basica del hotel mediante PATCH.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function guardarInfoHotel() {
     guardandoInfo = true; mensajeInfo = null;
     try {
@@ -111,9 +271,21 @@
     finally { guardandoInfo = false; }
   }
 
+  /**
+   * Abre el modal de confirmacion de eliminacion de hotel desde la lista.
+   * @param {Object} h - Hotel a eliminar.
+   */
   function abrirEliminarHotel(h) { hotelEliminando = h; showModalEliminarHotel = true; }
+
+  /** Abre el modal de eliminacion desde la vista de detalle. */
   function abrirEliminarHotelDetalle() { hotelEliminando = hotelDetalle; showModalEliminarHotel = true; }
 
+  /**
+   * Elimina el hotel seleccionado del backend y lo quita de la lista local.
+   * @async
+   * @param {boolean} volverLista - Si es true, vuelve a la vista de lista tras eliminar.
+   * @returns {Promise<void>}
+   */
   async function _eliminarHotel(volverLista) {
     if (!hotelEliminando) return;
     eliminandoHotel = true; showModalEliminarHotel = false;
@@ -128,7 +300,12 @@
     finally { eliminandoHotel = false; eliminandoMasivo = false; }
   }
 
-  // ── Imágenes hotel ──
+  /**
+   * Sube una imagen al hotel actualmente en detalle.
+   * @async
+   * @param {Event} event - Evento del input file.
+   * @returns {Promise<void>}
+   */
   async function subirImagenHotel(event) {
     const file = event.target.files[0]; if (!file) return;
     subiendoImgHotel = true; mensajeImgHotel = null;
@@ -144,7 +321,18 @@
     finally { subiendoImgHotel = false; event.target.value = ''; }
   }
 
+  /**
+   * Solicita confirmacion antes de eliminar una imagen del hotel.
+   * @param {number} imagenId - ID de la imagen a eliminar.
+   */
   function pedirEliminarImgHotel(imagenId) { pedirConfirmacion('Eliminar imagen', '¿Eliminar esta imagen del hotel?', () => _eliminarImgHotel(imagenId)); }
+
+  /**
+   * Elimina una imagen del hotel en el backend y actualiza el estado local.
+   * @async
+   * @param {number} imagenId - ID de la imagen.
+   * @returns {Promise<void>}
+   */
   async function _eliminarImgHotel(imagenId) {
     try {
       const res = await fetch(`${API_BASE}/admin/hoteles/imagenes/${imagenId}`, { method: 'DELETE', credentials: 'include' });
@@ -154,10 +342,12 @@
     } catch (e) { mensajeImgHotel = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message }; }
   }
 
-  // ════════════════════════════════════════════════════
-  //  AMENIDADES
-  // ════════════════════════════════════════════════════
-
+  /**
+   * Carga en paralelo el catalogo de amenidades y las amenidades asignadas al hotel.
+   * @async
+   * @param {number} hotelId - ID del hotel.
+   * @returns {Promise<void>}
+   */
   async function cargarAmenidadesHotel(hotelId) {
     cargandoAmenidades = true; mensajeAmenidad = null;
     try {
@@ -171,6 +361,11 @@
     finally { cargandoAmenidades = false; }
   }
 
+  /**
+   * Crea una nueva categoria de amenidad en el catalogo global.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function crearAmenidadCatalogo() {
     if (!nuevaAmenidadCatalogoNombre.trim()) { mensajeNuevaAmenidadCatalogo = { tipo: 'error', texto: 'El nombre es obligatorio.' }; return; }
     creandoAmenidadCatalogo = true; mensajeNuevaAmenidadCatalogo = null;
@@ -186,6 +381,11 @@
     finally { creandoAmenidadCatalogo = false; }
   }
 
+  /**
+   * Asigna una amenidad del catalogo al hotel actual.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function agregarAmenidadHotel() {
     mensajeAmenidad = null;
     try {
@@ -199,6 +399,12 @@
     } catch(e) { mensajeAmenidad = { tipo: 'error', texto: e.message }; }
   }
 
+  /**
+   * Guarda la descripcion editada de una amenidad del hotel.
+   * @async
+   * @param {Object} ha - Amenidad asignada al hotel.
+   * @returns {Promise<void>}
+   */
   async function guardarDescAmenidad(ha) {
     try {
       const res = await fetch(`${API_BASE}/admin/hoteles/amenidades/${ha.id}`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amenidadId: ha.amenidadId, descripcion: editDescAmenidad }) });
@@ -208,7 +414,19 @@
     } catch(e) { mensajeAmenidad = { tipo: 'error', texto: e.message }; }
   }
 
+  /**
+   * Solicita confirmacion antes de eliminar una amenidad del hotel.
+   * @param {number} haId - ID de la amenidad asignada.
+   * @param {string} nombre - Nombre de la amenidad para el mensaje.
+   */
   function pedirEliminarAmenidad(haId, nombre) { pedirConfirmacion('Eliminar amenidad', `¿Eliminar "${nombre}" y sus imágenes?`, () => _eliminarAmenidad(haId)); }
+
+  /**
+   * Elimina una amenidad del hotel en el backend.
+   * @async
+   * @param {number} haId - ID de la amenidad asignada.
+   * @returns {Promise<void>}
+   */
   async function _eliminarAmenidad(haId) {
     try {
       await fetch(`${API_BASE}/admin/hoteles/amenidades/${haId}`, { method: 'DELETE', credentials: 'include' });
@@ -216,6 +434,13 @@
     } catch(e) { mensajeAmenidad = { tipo: 'error', texto: e.message }; }
   }
 
+  /**
+   * Sube una imagen a una amenidad especifica del hotel.
+   * @async
+   * @param {Event} event - Evento del input file.
+   * @param {number} haId - ID de la amenidad destino.
+   * @returns {Promise<void>}
+   */
   async function subirImagenAmenidad(event, haId) {
     const file = event.target.files[0]; if (!file) return;
     subiendoImgAmenidadSet = new Set([...subiendoImgAmenidadSet, haId]);
@@ -229,7 +454,20 @@
     finally { subiendoImgAmenidadSet = new Set([...subiendoImgAmenidadSet].filter(id => id !== haId)); event.target.value = ''; }
   }
 
+  /**
+   * Solicita confirmacion antes de eliminar una imagen de una amenidad.
+   * @param {number} haId - ID de la amenidad.
+   * @param {number} imgId - ID de la imagen.
+   */
   function pedirEliminarImgAmenidad(haId, imgId) { pedirConfirmacion('Eliminar imagen', '¿Eliminar esta imagen de la amenidad?', () => _eliminarImgAmenidad(haId, imgId)); }
+
+  /**
+   * Elimina una imagen de una amenidad del hotel.
+   * @async
+   * @param {number} haId - ID de la amenidad.
+   * @param {number} imgId - ID de la imagen.
+   * @returns {Promise<void>}
+   */
   async function _eliminarImgAmenidad(haId, imgId) {
     try {
       await fetch(`${API_BASE}/admin/hoteles/amenidades/imagenes/${imgId}`, { method: 'DELETE', credentials: 'include' });
@@ -237,10 +475,12 @@
     } catch(e) { mensajeAmenidad = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message }; }
   }
 
-  // ════════════════════════════════════════════════════
-  //  HABITACIONES
-  // ════════════════════════════════════════════════════
-
+  /**
+   * Carga la lista de habitaciones del hotel seleccionado.
+   * @async
+   * @param {number} hotelId - ID del hotel.
+   * @returns {Promise<void>}
+   */
   async function cargarHabitacionesDetalle(hotelId) {
     cargandoHabitaciones = true; errorHabitaciones = null;
     try {
@@ -251,7 +491,11 @@
     finally { cargandoHabitaciones = false; }
   }
 
-  // Editar: numeroHabitacion SÍ se muestra/edita (ya existe en BD)
+  /**
+   * Abre el modal de edicion de una habitacion existente. Incluye el numeroHabitacion
+   * ya que la habitacion ya existe en la base de datos y el campo es editable.
+   * @param {Object} h - Habitacion a editar.
+   */
   function abrirEditarHabitacion(h) {
     habitacionEditando = { ...h };
     editHabitacion = {
@@ -263,6 +507,11 @@
     mensajeHabitacion = null; mensajeImgHab = null; showModalHabitacion = true;
   }
 
+  /**
+   * Guarda los cambios de la habitacion editada mediante PATCH.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function guardarHabitacion() {
     guardandoHabitacion = true; mensajeHabitacion = null;
     try {
@@ -287,6 +536,12 @@
     finally { guardandoHabitacion = false; }
   }
 
+  /**
+   * Sube una imagen a la habitacion que se esta editando en el modal.
+   * @async
+   * @param {Event} event - Evento del input file.
+   * @returns {Promise<void>}
+   */
   async function subirImagenHabitacion(event) {
     const file = event.target.files[0]; if (!file) return;
     subiendoImgHab = true; mensajeImgHab = null;
@@ -303,7 +558,18 @@
     finally { subiendoImgHab = false; event.target.value = ''; }
   }
 
+  /**
+   * Solicita confirmacion antes de eliminar una imagen de la habitacion en edicion.
+   * @param {number} imagenId - ID de la imagen.
+   */
   function pedirEliminarImgHab(imagenId) { pedirConfirmacion('Eliminar imagen', '¿Eliminar esta imagen de la habitación?', () => _eliminarImgHab(imagenId)); }
+
+  /**
+   * Elimina una imagen de la habitacion en edicion.
+   * @async
+   * @param {number} imagenId - ID de la imagen.
+   * @returns {Promise<void>}
+   */
   async function _eliminarImgHab(imagenId) {
     try {
       await fetch(`${API_BASE}/admin/habitaciones/imagenes/${imagenId}`, { method: 'DELETE', credentials: 'include' });
@@ -313,8 +579,17 @@
     } catch (e) { mensajeImgHab = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message }; }
   }
 
+  /**
+   * Abre el modal de confirmacion de eliminacion de una habitacion.
+   * @param {Object} h - Habitacion a eliminar.
+   */
   function abrirEliminarHab(h) { habEliminando = h; showModalEliminarHab = true; }
 
+  /**
+   * Confirma y ejecuta la eliminacion de la habitacion seleccionada.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function confirmarEliminarHab() {
     if (!habEliminando) return;
     eliminandoHab = true; showModalEliminarHab = false;
@@ -328,19 +603,28 @@
     finally { eliminandoHab = false; eliminandoMasivo = false; }
   }
 
-  // Nueva habitación: SIN numeroHabitacion — el backend lo auto-asigna
+  /**
+   * Abre el modal de nueva habitacion reseteando el formulario.
+   * Sin numeroHabitacion: el backend lo asigna automaticamente (count + 1).
+   */
   function abrirModalNuevaHab() {
     nuevaHabGestion = { tipoHabitacionId: 1, descripcion: '', estadoId: 1, cantidad: 1 };
     mensajeNuevaHab = null; showModalNuevaHab = true;
   }
 
+  /**
+   * Crea una o varias habitaciones nuevas en el hotel en detalle.
+   * El numero de habitacion es generado automaticamente por el backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function crearHabGestion() {
     if (!hotelDetalle) return;
     const cant = Math.max(1, Math.min(50, Number(nuevaHabGestion.cantidad) || 1));
     guardandoNuevaHab = true; mensajeNuevaHab = null;
     if (cant > 1) { creandoMasivo = true; creandoMasivoProgreso = `Creando habitación 0 de ${cant}...`; }
     try {
-      // Payload sin numeroHabitacion — el backend lo genera automáticamente (count + 1)
+      // Payload sin numeroHabitacion — el backend lo genera automaticamente (count + 1)
       const payload = {
         tipoHabitacionId: Number(nuevaHabGestion.tipoHabitacionId),
         descripcion:      nuevaHabGestion.descripcion,
@@ -362,15 +646,23 @@
     finally { guardandoNuevaHab = false; creandoMasivo = false; }
   }
 
+  /**
+   * Cierra todos los modales abiertos y limpia su estado relacionado.
+   */
   function cerrarModales() {
     showModalHabitacion = false; showModalNuevaHab = false;
     showModalEliminarHab = false; showModalEliminarHotel = false;
     habitacionEditando = null; habEliminando = null; hotelEliminando = null;
   }
+
+  /**
+   * Maneja la tecla Escape sobre los overlays para cerrar modales.
+   * @param {KeyboardEvent} e
+   */
   function handleOverlayKey(e) { if (e.key === 'Escape') cerrarModales(); }
 </script>
 
-<!-- Overlays bloqueantes -->
+<!-- Overlay bloqueante durante creacion masiva de habitaciones -->
 {#if creandoMasivo}
   <div class="adm__overlay" style="z-index:3500"></div>
   <div class="adm__confirm" style="z-index:3501;text-align:center">
@@ -384,6 +676,8 @@
     </div>
   </div>
 {/if}
+
+<!-- Overlay bloqueante durante eliminacion masiva -->
 {#if eliminandoMasivo}
   <div class="adm__overlay" style="z-index:3500"></div>
   <div class="adm__confirm" style="z-index:3501;text-align:center">
@@ -399,7 +693,7 @@
 {/if}
 
 {#if vistaHoteles === 'lista'}
-<!-- ══ LISTA ══ -->
+<!-- VISTA: Lista de hoteles con buscador, filtro de estado y tabla -->
   <div class="adm__filters-bar">
     <div class="adm__search-wrap">
       <svg class="adm__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -421,6 +715,7 @@
   {:else if errorHoteles}
     <div class="adm__error-state"><p>{errorHoteles}</p><button class="adm__btn adm__btn--ghost" on:click={cargarHoteles}>Reintentar</button></div>
   {:else}
+    <!-- Tabla de hoteles con miniatura, ubicacion, rating, habitaciones y acciones -->
     <div class="adm__card adm__card--no-pad">
       <div class="adm__table-wrap">
         <table class="adm__table">
@@ -450,13 +745,14 @@
   {/if}
 
 {:else}
-<!-- ══ DETALLE ══ -->
+<!-- VISTA: Detalle del hotel con pestanas de gestion -->
   <div class="adm__detalle-header">
     <button class="adm__btn adm__btn--ghost" on:click={volverListaHoteles}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver a hoteles</button>
     <div class="adm__detalle-title"><h2>{hotelDetalle.nombre}</h2><span class="adm__badge {badge(hotelDetalle.estado)}">{hotelDetalle.estado}</span><span class="adm__detalle-loc">{hotelDetalle.ciudad}, {hotelDetalle.pais}</span></div>
     <button class="adm__btn adm__btn--danger" on:click={abrirEliminarHotelDetalle} style="margin-left:auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Eliminar Hotel</button>
   </div>
 
+  <!-- Pestanas: informacion, imagenes, amenidades, habitaciones -->
   <div class="adm__tabs">
     {#each [
       { key: 'info',         label: 'Información',  icon: 'M12 12a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 16v-4 M12 8h.01' },
@@ -471,7 +767,7 @@
     {/each}
   </div>
 
-  <!-- ── Info ── -->
+  <!-- Pestana: Informacion basica del hotel -->
   {#if tabDetalle === 'info'}
     <div class="adm__card adm__detalle-form-card">
       <div class="adm__form-grid">
@@ -487,7 +783,7 @@
       </div>
     </div>
 
-  <!-- ── Imágenes ── -->
+  <!-- Pestana: Imagenes del hotel -->
   {:else if tabDetalle === 'imagenes'}
     <div class="adm__card">
       <div class="adm__img-section-header">
@@ -500,7 +796,7 @@
       {:else}<div class="adm__img-empty"><p>Sin imágenes. Agrega la primera.</p></div>{/if}
     </div>
 
-  <!-- ── Amenidades ── -->
+  <!-- Pestana: Amenidades del hotel -->
   {:else if tabDetalle === 'amenidades'}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
       <span style="color:var(--adm-text-muted);font-size:.85rem">{amenidadesHotel.length} amenidad(es) asignada(s)</span>
@@ -513,6 +809,7 @@
       </div>
     </div>
 
+    <!-- Formulario de nueva categoria de amenidad en el catalogo global -->
     {#if showFormNuevaAmenidadCatalogo}
       <div class="adm__wizard-subcard" style="margin-bottom:1rem;border-color:rgba(123,147,255,.35)">
         <p class="adm__modal-section-title" style="color:#a5b4fc">Nueva categoría (catálogo global)</p>
@@ -525,6 +822,7 @@
       </div>
     {/if}
 
+    <!-- Formulario de asignacion de amenidad existente al hotel -->
     {#if showFormAmenidad}
       <div class="adm__wizard-subcard" style="margin-bottom:1rem">
         <p class="adm__modal-section-title">Asignar amenidad a {hotelDetalle.nombre}</p>
@@ -546,6 +844,7 @@
     {:else if amenidadesHotel.length === 0 && !showFormAmenidad && !showFormNuevaAmenidadCatalogo}
       <div class="adm__img-empty" style="padding:2.5rem 0"><p>Sin amenidades. Asigna la primera.</p></div>
     {:else}
+      <!-- Lista de amenidades con edicion inline de descripcion e imagenes -->
       <div style="display:flex;flex-direction:column;gap:.75rem">
         {#each amenidadesHotel as ha (ha.id)}
           <div class="adm__amenidad-card">
@@ -566,7 +865,7 @@
       </div>
     {/if}
 
-  <!-- ── Habitaciones ── -->
+  <!-- Pestana: Habitaciones del hotel -->
   {:else if tabDetalle === 'habitaciones'}
     {#if cargandoHabitaciones}
       <div class="adm__loading-state"><svg class="adm__spinner" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><p>Cargando habitaciones...</p></div>
@@ -577,6 +876,7 @@
         <span style="color:var(--adm-text-muted);font-size:.85rem">{habitaciones.length} habitación(es)</span>
         <button class="adm__btn adm__btn--primary" on:click={abrirModalNuevaHab}>+ Nueva Habitación</button>
       </div>
+      <!-- Tabla de habitaciones: tipo, numero, cama, precio, capacidad, estado, imagenes -->
       <div class="adm__card adm__card--no-pad">
         <div class="adm__table-wrap">
           <table class="adm__table">
@@ -608,9 +908,9 @@
   {/if}
 {/if}
 
-<!-- ═══ MODALES ═══ -->
+<!-- MODALES -->
 
-<!-- EDITAR habitación — mantiene numeroHabitacion editable (ya existe en BD) -->
+<!-- Modal de edicion de habitacion existente (incluye numeroHabitacion editable) -->
 {#if showModalHabitacion && habitacionEditando}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__hotel-modal adm__hotel-modal--wide">
@@ -627,12 +927,14 @@
         <div class="adm__field"><label>Estado</label><select bind:value={editHabitacion.estadoId}><option value={1}>Activa</option><option value={2}>Cerrada</option></select></div>
         <div class="adm__field adm__field--full"><label>Descripción</label><textarea bind:value={editHabitacion.descripcion} rows="3" placeholder="Descripción..."></textarea></div>
       </div>
+      <!-- Caracteristicas del tipo de habitacion (solo lectura, heredadas del tipo) -->
       <div style="margin:.75rem 0;padding:.75rem 1rem;background:rgba(123,147,255,.06);border:1px solid rgba(123,147,255,.15);border-radius:8px;font-size:.78rem;color:#8b95b0">
         <strong style="color:#a5b4fc">Características (solo lectura):</strong> Cama: {habitacionEditando.tipoCama || '—'} · Capacidad: {habitacionEditando.capacidadMaxima ?? '—'} pers. · Precio noche: $ {habitacionEditando.precioPorNoche?.toFixed(2) ?? '—'}
       </div>
       {#if mensajeHabitacion}<div class="adm__feedback adm__feedback--{mensajeHabitacion.tipo}" style="margin:.75rem 0">{mensajeHabitacion.texto}</div>{/if}
       <div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem"><button class="adm__btn adm__btn--primary" on:click={guardarHabitacion} disabled={guardandoHabitacion}>{#if guardandoHabitacion}Guardando...{:else}Guardar cambios{/if}</button></div>
       <div class="adm__modal-section-divider"></div>
+      <!-- Seccion de imagenes dentro del modal de edicion de habitacion -->
       <div class="adm__img-section-header" style="margin-top:1rem">
         <p class="adm__modal-section-title" style="margin:0">Imágenes</p>
         <label class="adm__btn adm__btn--ghost adm__upload-btn">{#if subiendoImgHab}Subiendo...{:else}+ Agregar{/if}<input type="file" accept="image/*" on:change={subirImagenHabitacion} disabled={subiendoImgHab} style="display:none" /></label>
@@ -646,7 +948,7 @@
   </div>
 {/if}
 
-<!-- NUEVA habitación — SIN campo numeroHabitacion -->
+<!-- Modal de nueva habitacion: sin campo de numero (lo asigna el backend automaticamente) -->
 {#if showModalNuevaHab && hotelDetalle}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__hotel-modal adm__hotel-modal--wide">
@@ -657,7 +959,7 @@
     </div>
     <div class="adm__hotel-modal__body">
       <p class="adm__modal-section-title">Datos de la habitación</p>
-      <!-- Nota informativa sobre número automático -->
+      <!-- Aviso informativo sobre la asignacion automatica del numero -->
       <div style="margin-bottom:.75rem;padding:.6rem .9rem;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.2);border-radius:8px;font-size:.78rem;color:#8b95b0">
         El número de habitación se asigna automáticamente según el total existente en el hotel.
       </div>
@@ -671,6 +973,7 @@
         </div>
         <div class="adm__field adm__field--full"><label>Descripción</label><textarea bind:value={nuevaHabGestion.descripcion} rows="3" placeholder="Descripción..."></textarea></div>
       </div>
+      <!-- Nota: caracteristicas como precio, cama y capacidad se heredan del tipo de habitacion -->
       <div style="margin:.75rem 0;padding:.75rem 1rem;background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15);border-radius:8px;font-size:.78rem;color:#8b95b0">
         Las características (precio, cama, capacidad) son heredadas del <strong style="color:#2dd4bf">Tipo de Habitación</strong>.
       </div>
@@ -683,7 +986,7 @@
   </div>
 {/if}
 
-<!-- Eliminar habitación -->
+<!-- Modal de confirmacion para eliminar una habitacion -->
 {#if showModalEliminarHab && habEliminando}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__rol-modal" style="max-width:420px">
@@ -696,18 +999,16 @@
   </div>
 {/if}
 
-<!-- Eliminar hotel -->
+<!-- Modal de confirmacion para eliminar un hotel completo -->
 {#if showModalEliminarHotel && hotelEliminando}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__rol-modal" style="max-width:460px">
     <div class="adm__cancel-modal__header"><div class="adm__cancel-modal__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div><div><p class="adm__cancel-modal__title">Eliminar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelEliminando.nombre} — ID #{hotelEliminando.id}</p></div><button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="adm__cancel-modal__body">
       <div class="adm__cancel-info-box"><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Hotel</span><span class="adm__cancel-info-row__value">{hotelEliminando.nombre}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Ubicación</span><span class="adm__cancel-info-row__value">{hotelEliminando.ciudad}, {hotelEliminando.pais}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitaciones</span><span class="adm__cancel-info-row__value">{hotelEliminando.cantidadHabitaciones ?? 0}</span></div></div>
+      <!-- Advertencia: se eliminan tambien todas las habitaciones, amenidades e imagenes -->
       <div class="adm__cancel-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Se eliminarán <strong>todas</strong> las habitaciones, amenidades e imágenes.</span></div>
     </div>
     <div class="adm__cancel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button><button class="adm__btn--cancel-confirm" on:click={() => _eliminarHotel(vistaHoteles === 'detalle')} disabled={eliminandoHotel}>{#if eliminandoHotel}Eliminando...{:else}Sí, eliminar hotel{/if}</button></div>
   </div>
 {/if}
-
-<!-- Custom confirm -->
-{#if confirmDialog}<div class="adm__overlay" on:click={cerrarConfirm} on:keydown={e => e.key === 'Escape' && cerrarConfirm()} role="button" tabindex="-1" aria-label="Cerrar"></div><div class="adm__confirm"><div class="adm__confirm__header"><div class="adm__confirm__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><p class="adm__confirm__title">{confirmDialog.titulo}</p></div><div class="adm__confirm__body"><p>{confirmDialog.mensaje}</p></div><div class="adm__confirm__footer"><button class="adm__confirm__btn-cancel" on:click={cerrarConfirm}>Cancelar</button><button class="adm__confirm__btn-ok" on:click={ejecutarConfirm}>Confirmar</button></div></div>{/if}

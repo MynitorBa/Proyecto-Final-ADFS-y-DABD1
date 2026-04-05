@@ -1,27 +1,59 @@
 <script>
+  /**
+   * @file MyReservations.svelte
+   * @description Pagina de mis reservaciones. Muestra todas las reservas del usuario
+   * autenticado, permite filtrarlas, ver el detalle en un panel lateral, descargar
+   * la factura en PDF, cancelar una reserva activa y dejar una resena cuando la
+   * estadia ya fue completada.
+   */
+
   import '../styles/myreservations.css';
 
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo = (/** @type {string} */ _page, /** @type {any} */ _data = null) => {};
 
+  /** URL base de la API del backend. @type {string} */
   const API = 'http://localhost:7000';
 
+  /** Lista de reservaciones agrupadas del usuario. @type {any[]} */
   let reservations        = [];
+
+  /** Indica si la carga inicial todavia esta en curso. @type {boolean} */
   let loading             = true;
+
+  /** Mensaje de error si la carga falla. @type {string} */
   let loadError           = '';
-  /** @type {any} */
+
+  /** Reservacion seleccionada para el panel de detalle. @type {any} */
   let selectedReservation = null;
 
-  /** @type {Set<number>} */
+  /** IDs de hoteles en los que el usuario ya dejo una resena. @type {Set<number>} */
   let hotelesConResena = new Set();
 
+  /** Datos del comentario/resena que el usuario esta por enviar. @type {{ resena: number, contenido: string }} */
   let comentario       = { resena: 5, contenido: '' };
+
+  /** Indica si el comentario se esta enviando al servidor. @type {boolean} */
   let comentarioSaving = false;
+
+  /** Mensaje de error al enviar el comentario. @type {string} */
   let comentarioError  = '';
+
+  /** Indica si el comentario fue enviado con exito. @type {boolean} */
   let comentarioOk     = false;
 
+  /** ID de la reservacion cuya factura se esta descargando en este momento. @type {any} */
   let downloadingId = null;
+
+  /** Mensaje de error al intentar descargar la factura PDF. @type {string} */
   let downloadError = '';
 
+  /**
+   * Descarga la factura PDF de una reservacion y la abre como archivo.
+   * @async
+   * @param {number} reservacionId - ID de la reservacion a descargar.
+   * @returns {Promise<void>}
+   */
   async function downloadFactura(reservacionId) {
     downloadingId = reservacionId;
     downloadError = '';
@@ -50,7 +82,12 @@
     }
   }
 
-  // ── Agrupar filas por id de reservación ──────────────────
+  /**
+   * Agrupa las filas planas devueltas por la API en objetos de reservacion,
+   * cada uno con un array de habitaciones anidado.
+   * @param {any[]} rows - Filas crudas de la API.
+   * @returns {any[]} Array de reservaciones agrupadas.
+   */
   function groupReservations(rows) {
     const map = new Map();
     for (const row of rows) {
@@ -72,7 +109,7 @@
       map.get(row.id).habitaciones.push({
         detalleId:             row.detalleId,
         habitacionId:          row.habitacionId,
-        numeroHabitacion:      row.numeroHabitacion,   // ← AÑADIDO
+        numeroHabitacion:      row.numeroHabitacion,
         hotelId:               row.hotelId,
         fechaCheckIn:          row.fechaCheckIn,
         fechaCheckOut:         row.fechaCheckOut,
@@ -86,6 +123,12 @@
     return Array.from(map.values());
   }
 
+  /**
+   * Carga las reservaciones del usuario y los hoteles que ya tienen resena.
+   * Se llama al montar el componente y al reintentar tras error.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function fetchAll() {
     loading = true; loadError = '';
     try {
@@ -116,9 +159,14 @@
     }
   }
 
+  // Carga inicial al montar el componente
   fetchAll();
 
-  /** @param {string|null|undefined} estado */
+  /**
+   * Devuelve la etiqueta visual y clase CSS correspondiente al estado de una reservacion.
+   * @param {string|null|undefined} estado - Estado de la reservacion.
+   * @returns {{ text: string|null|undefined, cls: string, icon: string }}
+   */
   function getStatus(estado) {
     const e = (estado || '').toLowerCase();
     if (e === 'confirmada') return { text: 'Confirmada', cls: 'confirmed', icon: '✓' };
@@ -129,6 +177,12 @@
     return { text: estado, cls: 'pending', icon: '⏳' };
   }
 
+  /**
+   * Calcula la cantidad de noches entre check-in y check-out.
+   * @param {string} checkIn - Fecha de entrada.
+   * @param {string} checkOut - Fecha de salida.
+   * @returns {number} Numero de noches (minimo 0).
+   */
   function calcNights(checkIn, checkOut) {
     if (!checkIn || !checkOut) return 0;
     return Math.max(0, Math.ceil(
@@ -136,25 +190,43 @@
     ));
   }
 
+  /**
+   * Formatea una fecha ISO a solo la parte de fecha (YYYY-MM-DD).
+   * @param {any} str - Cadena de fecha.
+   * @returns {string}
+   */
   function fmtDate(str) {
     if (!str) return '—';
     return str.toString().split(' ')[0];
   }
 
+  /**
+   * Formatea un numero como moneda USD.
+   * @param {number} p - Valor a formatear.
+   * @returns {string}
+   */
   function fmt(p) {
     return new Intl.NumberFormat('es-GT', {
       style: 'currency', currency: 'USD', minimumFractionDigits: 0
     }).format(p);
   }
 
+  /**
+   * Pares [valor, etiqueta] para los botones de filtro de estado.
+   * @type {[string, string][]}
+   */
   const FILTERS = [
     ['all','Todas'],['pendiente','Pendientes'],['confirmada','Confirmadas'],
     ['completada','Completadas'],['cancelada','Canceladas'],['expirada','Expiradas']
   ];
 
+  /** Filtro activo actualmente. @type {string} */
   let filter = 'all';
+
+  /** Texto de busqueda por codigo de reserva. @type {string} */
   let search = '';
 
+  // Lista de reservaciones que pasan el filtro y la busqueda activos.
   $: filtered = reservations.filter(r => {
     const estado = (r.estado || '').toLowerCase();
     const matchFilter = filter === 'all' || estado === filter;
@@ -163,11 +235,22 @@
     return matchFilter && matchSearch;
   });
 
+  /** ID de la reservacion que esta siendo cancelada. @type {any} */
   let cancelingId  = null;
+
+  /** Motivo escrito por el usuario para la cancelacion. @type {string} */
   let cancelMotivo = '';
+
+  /** Mensaje de error en el flujo de cancelacion. @type {string} */
   let cancelError  = '';
+
+  /** Indica si la peticion de cancelacion esta en vuelo. @type {boolean} */
   let cancelSaving = false;
 
+  /**
+   * Abre el dialogo de cancelacion para la reservacion indicada.
+   * @param {number} id - ID de la reservacion a cancelar.
+   */
   function openCancelDialog(id) {
     cancelingId  = id;
     cancelMotivo = '';
@@ -175,12 +258,20 @@
     cancelSaving = false;
   }
 
+  /**
+   * Cierra el dialogo de cancelacion y limpia su estado.
+   */
   function closeCancelDialog() {
     cancelingId = null;
     cancelMotivo = '';
     cancelError  = '';
   }
 
+  /**
+   * Envia la solicitud de cancelacion al servidor con el motivo ingresado.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function confirmCancel() {
     if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo para cancelar.'; return; }
     cancelSaving = true; cancelError = '';
@@ -205,6 +296,11 @@
     }
   }
 
+  /**
+   * Abre el panel lateral de detalle para una reservacion y reinicia
+   * el formulario de comentario.
+   * @param {any} r - Objeto de reservacion.
+   */
   function openPanel(r) {
     selectedReservation = r;
     comentario       = { resena: 5, contenido: '' };
@@ -213,6 +309,12 @@
     downloadError    = '';
   }
 
+  /**
+   * Envia la resena del usuario para el hotel de la reservacion seleccionada.
+   * Solo disponible cuando la reservacion esta en estado "completada".
+   * @async
+   * @returns {Promise<void>}
+   */
   async function submitComentario() {
     if (!selectedReservation) return;
     const hotelId = selectedReservation.hotelId
@@ -250,6 +352,7 @@
   }
 </script>
 
+<!-- Cierra el panel con Escape -->
 <svelte:window on:keydown={(e) => {
   if (e.key === 'Escape' && selectedReservation) selectedReservation = null;
 }} />
@@ -257,6 +360,7 @@
 <div class="wrap">
   <div class="inner">
 
+    <!-- Encabezado principal de la pagina -->
     <header class="hdr">
       <div>
         <h1>Mis Reservas</h1>
@@ -264,6 +368,7 @@
       </div>
     </header>
 
+    <!-- Barra de filtros y busqueda por codigo -->
     <div class="controls">
       <div class="filters">
         {#each FILTERS as [val, label]}
@@ -276,12 +381,14 @@
       </div>
     </div>
 
+    <!-- Estado de carga -->
     {#if loading}
       <div class="empty">
         <div class="empty-icon">⏳</div>
         <h2>Cargando reservaciones...</h2>
       </div>
 
+    <!-- Estado de error con boton de reintento -->
     {:else if loadError}
       <div class="empty">
         <div class="empty-icon">⚠️</div>
@@ -291,6 +398,7 @@
       </div>
 
     {:else}
+      <!-- Lista de tarjetas de reservacion -->
       <div class="list">
         {#if filtered.length === 0}
           <div class="empty">
@@ -305,6 +413,7 @@
             {@const nights = calcNights(hab?.fechaCheckIn, hab?.fechaCheckOut)}
             <div class="card">
 
+              <!-- Imagen placeholder con badge de estado -->
               <div class="img-wrap">
                 <div class="img-placeholder">
                   <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.2">
@@ -315,6 +424,7 @@
                 <span class="badge {s.cls}">{s.icon} {s.text}</span>
               </div>
 
+              <!-- Informacion resumida de la reservacion -->
               <div class="info">
                 <div class="info-hdr">
                   <div>
@@ -327,6 +437,7 @@
                   </div>
                 </div>
 
+                <!-- Grid de datos rapidos: fechas, noches, huespedes, total -->
                 <div class="grid">
                   <div class="cell"><span class="lbl">📅 Check-in</span>    <span class="val">{fmtDate(hab?.fechaCheckIn)}</span></div>
                   <div class="cell"><span class="lbl">📅 Check-out</span>   <span class="val">{fmtDate(hab?.fechaCheckOut)}</span></div>
@@ -343,6 +454,7 @@
                 {/if}
               </div>
 
+              <!-- Acciones de la tarjeta: detalle, PDF y cancelar -->
               <div class="actions">
                 <button class="abtn primary" on:click={() => openPanel(r)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -375,7 +487,7 @@
   </div>
 </div>
 
-<!-- ── Panel lateral deslizante ── -->
+<!-- Panel lateral deslizante con el detalle completo de la reservacion -->
 {#if selectedReservation}
   {@const sr = selectedReservation}
   {@const ss = getStatus(sr.estado)}
@@ -386,6 +498,7 @@
   <div class="panel-overlay" on:click|self={() => selectedReservation = null}>
     <div class="panel" role="dialog" aria-modal="true" aria-label="Detalle de reservación">
 
+      <!-- Encabezado del panel con hotel, codigo y badge de estado -->
       <div class="panel-header">
         <div class="panel-header-info">
           <div class="panel-hotel-name">{sr.nombreHotel}</div>
@@ -403,7 +516,7 @@
 
       <div class="panel-body">
 
-        <!-- Botón descargar -->
+        <!-- Boton para descargar la factura PDF desde el panel -->
         <div class="panel-download-wrap">
           <button
             class="panel-download-btn"
@@ -426,7 +539,7 @@
           {/if}
         </div>
 
-        <!-- Info general -->
+        <!-- Informacion general de la reservacion -->
         <div class="panel-section">
           <h4 class="panel-section-title">Información general</h4>
           <div class="panel-info-grid">
@@ -453,7 +566,7 @@
           </div>
         </div>
 
-        <!-- Habitaciones -->
+        <!-- Detalle de las habitaciones reservadas -->
         <div class="panel-section">
           <h4 class="panel-section-title">
             Habitaciones reservadas
@@ -465,7 +578,7 @@
                 <div class="panel-room-title-wrap">
                   <strong class="panel-room-name">{h.tipoHabitacion}</strong>
 
-                  <!-- ── Número de habitación ── -->
+                  <!-- Numero fisico de la habitacion -->
                   {#if h.numeroHabitacion}
                     <span class="panel-room-number">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -502,12 +615,12 @@
           {/each}
         </div>
 
-        <!-- Desglose -->
+        <!-- Desglose de costos por habitacion y total -->
         <div class="panel-section panel-totals">
           <h4 class="panel-section-title">Desglose de costos</h4>
           {#each sr.habitaciones as h}
             <div class="panel-total-row">
-              <!-- Muestra tipo + número para identificar fácilmente cada línea -->
+              <!-- Tipo de habitacion + numero para identificar la linea facilmente -->
               <span>
                 {h.tipoHabitacion}
                 {#if h.numeroHabitacion}
@@ -523,7 +636,7 @@
           </div>
         </div>
 
-        <!-- Reseña: solo si completada -->
+        <!-- Seccion de resena: solo visible si la estadia fue completada -->
         {#if esCompletada}
           <div class="panel-section panel-comment-section">
             <h4 class="panel-section-title">
@@ -532,18 +645,21 @@
             </h4>
 
             {#if yaReseno && !comentarioOk}
+              <!-- Aviso de resena ya existente para este hotel -->
               <div class="comment-already">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Ya dejaste una reseña para <strong>{sr.nombreHotel}</strong>. Solo se permite una reseña por hotel.
               </div>
 
             {:else if comentarioOk}
+              <!-- Confirmacion de envio exitoso -->
               <div class="comment-success">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 ¡Gracias por tu reseña! Tu comentario fue enviado correctamente.
               </div>
 
             {:else}
+              <!-- Formulario de calificacion con estrellas y campo de texto -->
               <div class="stars-row">
                 <span class="panel-lbl" style="margin-bottom:.5rem;display:block">Calificación</span>
                 <div class="stars">
@@ -587,7 +703,7 @@
           </div>
         {/if}
 
-        <!-- Cancelar -->
+        <!-- Boton de cancelacion visible solo para reservas pendientes o confirmadas -->
         {#if sr.estado?.toLowerCase() === 'pendiente' || sr.estado?.toLowerCase() === 'confirmada'}
           <button class="panel-cancel-btn" on:click={() => openCancelDialog(sr.id)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -600,7 +716,7 @@
   </div>
 {/if}
 
-<!-- ── Modal de cancelación ── -->
+<!-- Modal de confirmacion de cancelacion con campo de motivo -->
 {#if cancelingId !== null}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->

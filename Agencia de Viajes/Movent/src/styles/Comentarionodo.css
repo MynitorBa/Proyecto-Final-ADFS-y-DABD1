@@ -1,9 +1,4 @@
-/* ═══════════════════════════════════════════
-   COMENTARIO NODO — Movent
-   Paleta: #1C1A18 | #FFCC00 | #D40511 | #F5F2EC
-   Componente recursivo: votos + cuerpo + hilo
-   ═══════════════════════════════════════════ */
-
+/* Nodo raíz del componente de comentario recursivo */
 .cn-nodo {
   width: 100%;
 }
@@ -13,16 +8,14 @@
   flex-direction: column;
 }
 
-/* ── Layout votos + cuerpo ── */
+/* Layout horizontal: columna de votos + cuerpo del comentario */
 .cn-layout {
   display: flex;
   gap: 10px;
   align-items: flex-start;
 }
 
-/* ════════════════════════
-   COLUMNA DE VOTOS
-════════════════════════ */
+/* Columna de votos arriba/abajo con contador central */
 .cn-votes {
   display: flex;
   flex-direction: column;
@@ -33,6 +26,7 @@
   width: 28px;
 }
 
+/* Botón de flecha de voto con estado activo por color */
 .cn-arrow {
   background: none;
   border: none;
@@ -52,7 +46,7 @@
 .cn-arrow--up.cn-arrow--active   { color: #22c55e; }
 .cn-arrow--down.cn-arrow--active { color: #D40511; }
 
-/* Score */
+/* Puntuación con color según valor positivo, negativo o neutro */
 .cn-score {
   font-size: 11px;
   font-weight: 800;
@@ -64,9 +58,7 @@
 .cn-score--neg  { color: #D40511; }
 .cn-score--zero { color: #b0a89e; }
 
-/* ════════════════════════
-   CUERPO
-════════════════════════ */
+/* Cuerpo del comentario con cabecera, contenido y acciones */
 .cn-body {
   flex: 1;
   min-width: 0;
@@ -75,7 +67,7 @@
   gap: 6px;
 }
 
-/* Header usuario */
+/* Encabezado con avatar, nombre y fecha */
 .cn-header {
   display: flex;
   align-items: center;
@@ -90,6 +82,7 @@
   gap: 8px;
 }
 
+/* Avatar circular con inicial del usuario */
 .cn-avatar {
   width: 30px;
   height: 30px;
@@ -131,7 +124,7 @@
   flex-shrink: 0;
 }
 
-/* Estrellas */
+/* Estrellas de valoración del comentario */
 .cn-estrellas {
   display: flex;
   align-items: center;
@@ -141,7 +134,7 @@
 .cn-estrella       { color: #e0d9cf; }
 .cn-estrella--llena { color: #FFCC00; }
 
-/* Contenido */
+/* Texto del comentario con salto de línea si es largo */
 .cn-contenido {
   font-size: 13px;
   color: #4a4035;
@@ -150,9 +143,7 @@
   word-break: break-word;
 }
 
-/* ════════════════════════
-   ACCIONES
-════════════════════════ */
+/* Barra de acciones: responder, ver más, etc. */
 .cn-acciones {
   display: flex;
   align-items: center;
@@ -160,6 +151,7 @@
   flex-wrap: wrap;
 }
 
+/* Botón de responder con hover suave */
 .cn-responder-btn {
   display: inline-flex;
   align-items: center;
@@ -183,6 +175,7 @@
   font-style: italic;
 }
 
+/* Botón expandir/contraer respuestas */
 .cn-ver-mas {
   display: inline-flex;
   align-items: center;
@@ -202,9 +195,7 @@
 .cn-ver-mas--expanded { color: #D40511; }
 .cn-ver-mas--expanded:hover { color: #D40511; }
 
-/* ════════════════════════
-   FORMULARIO RESPUESTA
-════════════════════════ */
+/* Formulario de respuesta anidada con animación de entrada */
 .cn-reply-form {
   display: flex;
   flex-direction: column;
@@ -213,6 +204,7 @@
   animation: cn-fade-in .15s ease;
 }
 
+/* Textarea de respuesta con foco amarillo */
 .cn-reply-textarea {
   width: 100%;
   padding: 8px 11px;
@@ -233,6 +225,7 @@
   box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
 }
 
+/* Acciones del formulario de respuesta alineadas a la derecha */
 .cn-reply-actions {
   display: flex;
   justify-content: flex-end;
@@ -253,6 +246,7 @@
 }
 .cn-reply-cancel:hover { background: #f5f2ec; color: #1C1A18; }
 
+/* Botón de enviar respuesta en amarillo */
 .cn-reply-submit {
   display: inline-flex;
   align-items: center;
@@ -271,6 +265,7 @@
 .cn-reply-submit:hover:not(:disabled) { background: #f0c000; }
 .cn-reply-submit:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Spinner pequeño de carga dentro del botón */
 .cn-spin {
   width: 11px;
   height: 11px;
@@ -281,15 +276,14 @@
   flex-shrink: 0;
 }
 
-/* ════════════════════════
-   HILO RECURSIVO
-════════════════════════ */
+/* Hilo vertical de respuestas anidadas con línea lateral */
 .cn-hilo {
   display: flex;
   margin-top: 8px;
   padding-left: 13px;
 }
 
+/* Línea vertical del hilo que al hover se pone amarilla */
 .cn-hilo-linea {
   width: 2px;
   background: #e8e3dc;
@@ -309,9 +303,7 @@
   gap: 10px;
 }
 
-/* ════════════════════════
-   ANIMACIONES
-════════════════════════ */
+/* Animaciones del formulario de respuesta y spinner */
 @keyframes cn-fade-in {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -321,9 +313,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* ════════════════════════
-   RESPONSIVE
-════════════════════════ */
+/* Responsive para pantallas muy pequeñas */
 @media (max-width: 480px) {
   .cn-votes { width: 22px; }
   .cn-nombre { font-size: 12px; }

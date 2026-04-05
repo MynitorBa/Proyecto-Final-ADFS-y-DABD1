@@ -1,3 +1,8 @@
+// # Package repositories
+//
+// Repositorios de acceso a datos para la agencia de viajes.
+// Este paquete centraliza todas las consultas a la base de datos
+// utilizadas por los servicios de la aplicacion.
 package repositories
 
 import (
@@ -7,14 +12,38 @@ import (
 	"database/sql"
 )
 
+// UsuarioRepository
+//
+// Repositorio encargado de las operaciones sobre la entidad Usuario,
+// incluyendo validacion de unicidad de campos, creacion de nuevos usuarios,
+// asignacion de nacionalidades y consulta de datos de contacto.
 type UsuarioRepository struct {
 	db *sql.DB
 }
 
+// NewUsuarioRepository
+//
+// Crea e inicializa una nueva instancia de UsuarioRepository.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos
+//
+// Retorna:
+//   - *UsuarioRepository: instancia lista para usar
 func NewUsuarioRepository(db *sql.DB) *UsuarioRepository {
 	return &UsuarioRepository{db: db}
 }
 
+// ExisteCorreo
+//
+// Verifica si ya existe un usuario registrado con el correo electronico indicado.
+//
+// Parametros:
+//   - correo: correo electronico a verificar
+//
+// Retorna:
+//   - bool: true si el correo ya esta en uso, false en caso contrario
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *UsuarioRepository) ExisteCorreo(correo string) (bool, error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -33,6 +62,16 @@ func (r *UsuarioRepository) ExisteCorreo(correo string) (bool, error) {
 	return true, nil
 }
 
+// ExistePasaporte
+//
+// Verifica si ya existe un usuario registrado con el numero de pasaporte indicado.
+//
+// Parametros:
+//   - pasaporte: numero de pasaporte a verificar
+//
+// Retorna:
+//   - bool: true si el pasaporte ya esta en uso, false en caso contrario
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *UsuarioRepository) ExistePasaporte(pasaporte string) (bool, error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -51,6 +90,16 @@ func (r *UsuarioRepository) ExistePasaporte(pasaporte string) (bool, error) {
 	return true, nil
 }
 
+// ExisteUsername
+//
+// Verifica si ya existe un usuario registrado con el nombre de usuario indicado.
+//
+// Parametros:
+//   - username: nombre de usuario a verificar
+//
+// Retorna:
+//   - bool: true si el username ya esta en uso, false en caso contrario
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *UsuarioRepository) ExisteUsername(username string) (bool, error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -69,6 +118,20 @@ func (r *UsuarioRepository) ExisteUsername(username string) (bool, error) {
 	return true, nil
 }
 
+// CrearUsuario
+//
+// Inserta un nuevo usuario en la base de datos. La contrasena se hashea antes
+// de persistirse utilizando el helper de seguridad.
+//
+// Parametros:
+//   - req: DTO con los datos del formulario de registro del usuario
+//   - ciudadID: ID de la ciudad de residencia del usuario
+//   - rolID: ID del rol asignado al nuevo usuario
+//   - estadoID: ID del estado inicial del usuario (activo, pendiente, etc.)
+//
+// Retorna:
+//   - int: ID autogenerado del usuario recien creado
+//   - error: error de hasheo o de base de datos, nil si la operacion fue exitosa
 func (r *UsuarioRepository) CrearUsuario(req dto.RegistroUsuarioRequest, ciudadID, rolID, estadoID int) (int, error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -96,6 +159,17 @@ func (r *UsuarioRepository) CrearUsuario(req dto.RegistroUsuarioRequest, ciudadI
 	return int(id), nil
 }
 
+// AsignarNacionalidades
+//
+// Inserta las asociaciones entre un usuario y sus nacionalidades en la tabla
+// UsuarioNacionalidad. Itera sobre la lista de IDs de nacionalidad proporcionada.
+//
+// Parametros:
+//   - usuarioID: ID del usuario al que se le asignan las nacionalidades
+//   - nacionalidadIDs: lista de IDs de nacionalidades a asociar
+//
+// Retorna:
+//   - error: error de base de datos si alguna insercion falla, nil si todas fueron exitosas
 func (r *UsuarioRepository) AsignarNacionalidades(usuarioID int, nacionalidadIDs []int) error {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -116,8 +190,19 @@ func (r *UsuarioRepository) AsignarNacionalidades(usuarioID int, nacionalidadIDs
 	return nil
 }
 
-// ObtenerNombreYEmail devuelve nombre completo y correo del usuario por ID.
-// Escanea Nombre y Apellido por separado para evitar problemas de concatenación en Oracle.
+// ObtenerNombreYEmail
+//
+// Recupera el nombre completo y el correo electronico de un usuario por su ID.
+// El nombre completo se construye concatenando Nombre y Apellido en Go para
+// evitar problemas de concatenacion en distintos motores de base de datos.
+//
+// Parametros:
+//   - usuarioID: ID del usuario a consultar
+//
+// Retorna:
+//   - nombre: nombre completo del usuario (Nombre + Apellido)
+//   - email: correo electronico del usuario
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *UsuarioRepository) ObtenerNombreYEmail(usuarioID int) (nombre, email string, err error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {

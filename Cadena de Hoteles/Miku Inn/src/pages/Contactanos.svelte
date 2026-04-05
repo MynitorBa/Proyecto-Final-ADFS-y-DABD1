@@ -1,13 +1,45 @@
 <script>
+  /**
+   * @file Contactanos.svelte
+   * @description Pagina de contacto de Miku Inn. Muestra la informacion de contacto
+   * de la empresa (telefono, email, oficina) y un formulario para que el usuario
+   * envie un mensaje directamente al equipo de soporte.
+   */
+
   // @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Funcion de navegacion inyectada por el router. @type {Function} */
   export let navigateTo;
 
+  /**
+   * Datos del formulario de contacto.
+   * @type {{ nombre: string, correo: string, asunto: string, mensaje: string }}
+   */
   let formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
+
+  /**
+   * Estado del envio del formulario.
+   * Puede ser: '' (inicial), 'sending', 'success' o 'error'.
+   * @type {string}
+   */
   let status = '';
+
+  /** Mensaje descriptivo del resultado del envio, ya sea exito o error. @type {string} */
   let statusMsg = '';
+
+  /**
+   * Objeto con los errores de validacion por campo.
+   * Las claves coinciden con los nombres de los campos del formulario.
+   * @type {Record<string, string>}
+   */
   let errors = {};
 
+  /**
+   * Valida los campos requeridos del formulario antes de enviarlo.
+   * Actualiza el objeto `errors` con los mensajes correspondientes.
+   * @returns {boolean} True si el formulario es valido, false en caso contrario.
+   */
   function validate() {
     errors = {};
     if (!formData.nombre.trim()) errors.nombre = 'Nombre requerido';
@@ -18,6 +50,12 @@
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Maneja el envio del formulario. Valida primero los datos y luego hace
+   * un POST al endpoint /contacto del backend. Actualiza el estado segun la respuesta.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleSubmit() {
     if (!validate()) return;
     status = 'sending';
@@ -51,7 +89,10 @@
   }
 </script>
 
+<!-- Pagina completa de contacto -->
 <div class="info-page">
+
+  <!-- Hero con icono y titulo de la seccion -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">✉️</div>
@@ -67,6 +108,7 @@
       Volver al inicio
     </button>
 
+    <!-- Grid con los datos de contacto de la empresa -->
     <div class="info-contact-grid">
       <div class="info-contact-item">
         <div class="info-contact-item__icon">📞</div>
@@ -94,6 +136,7 @@
       </div>
     </div>
 
+    <!-- Mensaje de exito tras enviar el formulario -->
     {#if status === 'success'}
       <div class="info-card">
         <div class="info-contacto-success">
@@ -107,11 +150,14 @@
         </div>
       </div>
 
+    <!-- Formulario de contacto -->
     {:else}
       <div class="info-card">
         <h2 class="info-section-title" style="margin-top:0;">Envíanos un mensaje</h2>
 
         <form on:submit|preventDefault={handleSubmit} class="info-contacto-form">
+
+          <!-- Fila de nombre y correo -->
           <div class="info-contacto-grid">
             <div class="info-contacto-field">
               <label class="info-contacto-label" for="contactNombre">Nombre completo <span class="info-contacto-req">*</span></label>
@@ -127,12 +173,14 @@
             </div>
           </div>
 
+          <!-- Campo de asunto (opcional) -->
           <div class="info-contacto-field">
             <label class="info-contacto-label" for="contactAsunto">Asunto</label>
             <input type="text" id="contactAsunto" class="info-contacto-input"
               bind:value={formData.asunto} placeholder="¿Sobre qué nos escribes? (opcional)" autocomplete="off" />
           </div>
 
+          <!-- Area de texto para el mensaje principal -->
           <div class="info-contacto-field">
             <label class="info-contacto-label" for="contactMensaje">Mensaje <span class="info-contacto-req">*</span></label>
             <textarea id="contactMensaje" class="info-contacto-input info-contacto-textarea" class:info-contacto-input--error={errors.mensaje}
@@ -143,12 +191,14 @@
             {#if errors.mensaje}<span class="info-contacto-error">{errors.mensaje}</span>{/if}
           </div>
 
+          <!-- Alerta de error en el envio -->
           {#if status === 'error'}
             <div class="info-highlight" style="border-left-color:#ef4444;background:rgba(239,68,68,.07);color:#ef4444;">
               {statusMsg}
             </div>
           {/if}
 
+          <!-- Boton de envio con spinner mientras procesa -->
           <button type="submit" class="info-contacto-submit" disabled={status === 'sending'}>
             {#if status === 'sending'}
               <svg class="info-contacto-spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
@@ -162,6 +212,7 @@
       </div>
     {/if}
 
+    <!-- Nota de contacto urgente al pie de la pagina -->
     <div class="info-highlight">
       Para consultas urgentes llámanos al <strong>+502 4276-8687</strong> o escríbenos a <strong>info@mikuinn.com</strong>
     </div>

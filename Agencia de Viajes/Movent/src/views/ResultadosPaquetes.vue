@@ -5,7 +5,7 @@
     <div class="rp-page">
       <div class="rp-layout">
 
-        <!-- ═══ SIDEBAR (se adapta al paso actual) ═══ -->
+        <!-- Sidebar de filtros: cambia dinámicamente entre filtros de vuelo (paso 1-2) y filtros de hotel (paso hotel) -->
         <aside class="rp-sidebar" :class="{ 'rp-sidebar--collapsed': sidebarColapsado }">
           <div class="rp-sidebar__head" @click="sidebarColapsado = !sidebarColapsado">
             <h3 class="rp-sidebar__title">
@@ -25,7 +25,7 @@
 
           <div class="rp-sidebar__body">
 
-            <!-- ── FILTROS VUELO (paso 1) ── -->
+            <!-- Filtros de vuelo: precio, clase, escalas, duración, aerolínea y horario de salida -->
             <template v-if="paso === 1">
               <div class="rp-filter-group">
                 <h4 class="rp-filter-group__title">Precio por persona</h4>
@@ -87,7 +87,7 @@
               </div>
             </template>
 
-            <!-- ── FILTROS HOTEL (paso 2+) ── -->
+            <!-- Filtros de hotel: precio por noche, tipo de habitación, hotel y amenidades -->
             <template v-else>
               <div class="rp-filter-group">
                 <h4 class="rp-filter-group__title">Precio por noche</h4>
@@ -133,10 +133,10 @@
           </div>
         </aside>
 
-        <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+        <!-- Área principal: search bar, indicador de pasos, listas de vuelos y hoteles -->
         <div class="rp-main">
 
-          <!-- ── SEARCH BAR ── -->
+          <!-- Search bar con resumen de ruta, fechas y personas; se puede expandir para modificar la búsqueda -->
           <div class="rp-search-bar" :class="{ 'rp-search-bar--open': modificarAbierto }">
             <div class="rp-search-bar__summary" @click="toggleModificar">
               <div class="rp-search-bar__ruta">
@@ -169,7 +169,7 @@
             </button>
           </div>
 
-          <!-- ── FORM MODIFICAR INLINE ── -->
+          <!-- Formulario expandible para modificar origen, destino, fechas de vuelo, hotel y personas sin salir de la vista -->
           <transition name="rp-expand">
             <div v-if="modificarAbierto" class="rp-modificar-inline">
               <div class="rp-modificar-grid">
@@ -274,7 +274,7 @@
             </div>
           </transition>
 
-          <!-- ── INDICADOR DE PASOS ── -->
+          <!-- Indicador de pasos del flujo: vuelo ida → (vuelo regreso) → hospedaje; marca paso actual y completados -->
           <div v-if="!loading" class="rp-pasos">
             <div :class="['rp-paso', { 'rp-paso--activo': paso === 1, 'rp-paso--done': paso > 1 }]">
               <span class="rp-paso__num">{{ paso > 1 ? '✓' : '1' }}</span>
@@ -306,7 +306,7 @@
             </button>
           </div>
 
-          <!-- ── VUELO SELECCIONADO (pasos 2 y 3) ── -->
+          <!-- Banda de vuelos ya confirmados (ida y opcionalmente regreso); visible a partir del paso 2 -->
           <div v-if="paso >= 2 && vueloSel" class="rp-vuelo-sel">
             <div class="rp-vuelo-sel__icon">
               <svg viewBox="0 0 24 24" fill="#FFCC00" width="18" height="18"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -341,7 +341,7 @@
             Elige tu vuelo de regreso — {{ busqueda.destino }} → {{ busqueda.origen }} · {{ formatFecha(busqueda.fechaRegreso) }}
           </div>
 
-          <!-- ── RESUMEN FINAL ── -->
+          <!-- Resumen de precio total del paquete: vuelo(s) + hotel, visible solo cuando todos los componentes están seleccionados -->
           <div v-if="vueloSel && (!esIdaVuelta || vueloRegresoSel) && hotelSel" class="rp-resumen">
             <div class="rp-resumen__col">
               <span class="rp-resumen__lbl">✈ Ida</span>
@@ -370,7 +370,7 @@
             </button>
           </div>
 
-          <!-- ── TOOLBAR ── -->
+          <!-- Toolbar: contador de resultados visibles y selector de ordenamiento (diferente según si estamos en vuelos o hotel) -->
           <div class="rp-toolbar">
             <p class="rp-toolbar__count">
               <strong>{{ paso < pasoHotel ? (paso === 1 ? vuelosFiltrados.length : vuelosRegreso.length) : gruposPorHotel.length }}</strong>
@@ -407,9 +407,7 @@
             <button class="rp-btn rp-btn--yellow" @click="toggleModificar" type="button">Modificar búsqueda</button>
           </div>
 
-          <!-- ══════════════════════════
-               PASOS 1 Y 2: VUELOS
-          ══════════════════════════ -->
+          <!-- Lista de vuelos de ida (paso 1) y vuelos de regreso (paso 2 en idaVuelta) -->
           <template v-if="!loading && !error && paso < pasoHotel">
             <template v-if="paso === 1">
               <div v-if="vuelos.length === 0" class="rp-empty">
@@ -469,7 +467,7 @@
               </div>
             </template>
 
-            <!-- Lista vuelos REGRESO (paso 2, solo idaVuelta) -->
+            <!-- Lista de vuelos de regreso: solo se muestra en paso 2 cuando el tipo de viaje es ida y vuelta -->
             <template v-if="paso === 2 && esIdaVuelta">
               <div v-if="vuelosRegreso.length === 0" class="rp-empty">
                 <p class="rp-empty__title">Sin vuelos de regreso</p>
@@ -523,9 +521,7 @@
             </template>
           </template>
 
-          <!-- ══════════════════════════
-               PASO HOTEL
-          ══════════════════════════ -->
+          <!-- Lista de hoteles agrupados por establecimiento, con habitaciones individuales y combos -->
           <template v-if="!loading && !error && paso === pasoHotel">
             <div v-if="todasLasHabitaciones.length === 0" class="rp-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="48" height="48"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -574,7 +570,7 @@
                   <span v-for="am in grupo.amenidades" :key="am.amenidadId" class="rh-amenidad-hotel" :title="am.descripcion">{{ am.nombre }}</span>
                 </div>
 
-                <!-- Combos -->
+                <!-- Paneles de combos de habitaciones: exacto, aproximado y persona extra -->
                 <template v-if="getHotelCombos(grupo)">
                   <div class="rh-hotel-combos">
                     <div v-if="getHotelCombos(grupo).combo" class="rh-combo-panel rh-combo-panel--exact">
@@ -616,7 +612,7 @@
                   </div>
                 </template>
 
-                <!-- Habitaciones individuales -->
+                <!-- Tarjetas de habitaciones individuales que pueden alojar a todos los pasajeros -->
                 <div class="rh-habitaciones"
                   v-if="grupo.habitaciones.filter(h => h.capacidadMaxima >= busqueda.cantidadPersonas).length > 0">
                   <article v-for="hab in grupo.habitaciones.filter(h => h.capacidadMaxima >= busqueda.cantidadPersonas)"
@@ -677,6 +673,13 @@
 </template>
 
 <script setup>
+/**
+ * @file ResultadosPaquetes.vue
+ * @description Vista de selección de paquetes de viaje. Guía al usuario por un flujo
+ * multi-paso: vuelo de ida → (vuelo de regreso en ida y vuelta) → hospedaje.
+ * Aplica filtros independientes para vuelos y hoteles, calcula combos de habitaciones,
+ * y pre-crea la reservación en background al confirmar el/los vuelo(s).
+ */
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
@@ -686,11 +689,21 @@ import '../styles/resultadoshoteles.css'
 import '../styles/resultadospaquetes.css'
 
 const router = useRouter()
-const API    = 'http://localhost:8080'
-const hoy    = new Date().toISOString().split('T')[0]
 
-// ── State desde history ───────────────────────────────────────
+/** URL base del backend. @type {string} */
+const API = 'http://localhost:8080'
+
+/** Fecha de hoy en formato ISO (YYYY-MM-DD), usada como mínimo para los inputs de fecha. @type {string} */
+const hoy = new Date().toISOString().split('T')[0]
+
+// Estado inicial recuperado desde history.state (inyectado por el buscador principal)
 const state = history.state || {}
+
+/**
+ * Parámetros de la búsqueda activa: origen/destino, fechas de vuelo, fechas de hotel,
+ * personas y tipo de viaje. Se actualizan al rebuscar.
+ * @type {import('vue').Ref<{origen: string, origenPais: string, destino: string, destinoPais: string, fecha: string, fechaRegreso: string, checkIn: string, checkOut: string, cantidadPersonas: number, tipoVuelo: string}>}
+ */
 const busqueda = ref({
   origen:           state.busqueda?.origen           || '',
   origenPais:       state.busqueda?.origenPais       || '',
@@ -704,31 +717,77 @@ const busqueda = ref({
   tipoVuelo:        state.busqueda?.tipoVuelo        || 'ida',
 })
 
+/**
+ * True si el tipo de viaje es ida y vuelta; determina si aparece el paso 2 (regreso).
+ * @type {import('vue').ComputedRef<boolean>}
+ */
 const esIdaVuelta = computed(() => busqueda.value.tipoVuelo === 'idaVuelta')
-const pasoHotel   = computed(() => esIdaVuelta.value ? 3 : 2)
 
-// ── Datos ─────────────────────────────────────────────────────
-const vuelos               = ref([])
-const vuelosRegreso        = ref([])
+/**
+ * Número del paso en que se selecciona el hotel (2 en solo ida, 3 en ida y vuelta).
+ * @type {import('vue').ComputedRef<number>}
+ */
+const pasoHotel = computed(() => esIdaVuelta.value ? 3 : 2)
+
+/** Lista de vuelos de ida mapeados desde la API. @type {import('vue').Ref<object[]>} */
+const vuelos = ref([])
+
+/** Lista de vuelos de regreso (solo ida y vuelta). @type {import('vue').Ref<object[]>} */
+const vuelosRegreso = ref([])
+
+/** Lista plana de todas las habitaciones disponibles mapeadas desde la API. @type {import('vue').Ref<object[]>} */
 const todasLasHabitaciones = ref([])
-const loading              = ref(true)
-const buscando             = ref(false)
-const error                = ref('')
-const modError             = ref('')
-const paso                 = ref(1)
-const vueloSel             = ref(null)
-const vueloRegresoSel      = ref(null)
-const hotelSel             = ref(null)
-const modificarAbierto     = ref(false)
-const sidebarColapsado     = ref(false)
-const ordenVuelos          = ref('precio-asc')
-const ordenHoteles         = ref('precio-asc')
 
+/** Indica que los datos iniciales están cargando. @type {import('vue').Ref<boolean>} */
+const loading = ref(true)
+
+/** True mientras se ejecuta una rebúsqueda desde el formulario de modificar. @type {import('vue').Ref<boolean>} */
+const buscando = ref(false)
+
+/** Mensaje de error global. @type {import('vue').Ref<string>} */
+const error = ref('')
+
+/** Mensaje de error específico del formulario de modificar búsqueda. @type {import('vue').Ref<string>} */
+const modError = ref('')
+
+/** Paso actual del flujo (1 = vuelo ida, 2 = vuelo regreso o hotel, 3 = hotel en idaVuelta). @type {import('vue').Ref<number>} */
+const paso = ref(1)
+
+/** Vuelo de ida seleccionado por el usuario. @type {import('vue').Ref<object|null>} */
+const vueloSel = ref(null)
+
+/** Vuelo de regreso seleccionado (solo en ida y vuelta). @type {import('vue').Ref<object|null>} */
+const vueloRegresoSel = ref(null)
+
+/** Hotel/habitación seleccionado para el paquete. @type {import('vue').Ref<object|null>} */
+const hotelSel = ref(null)
+
+/** Controla si el formulario de modificar está expandido. @type {import('vue').Ref<boolean>} */
+const modificarAbierto = ref(false)
+
+/** Controla si el sidebar está colapsado (útil en móvil). @type {import('vue').Ref<boolean>} */
+const sidebarColapsado = ref(false)
+
+/** Criterio de ordenamiento para la lista de vuelos. @type {import('vue').Ref<string>} */
+const ordenVuelos = ref('precio-asc')
+
+/** Criterio de ordenamiento para la lista de hoteles. @type {import('vue').Ref<string>} */
+const ordenHoteles = ref('precio-asc')
+
+/**
+ * Número de noches entre check-in y check-out del hotel.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const noches = computed(() => {
   if (!busqueda.value.checkIn || !busqueda.value.checkOut) return 0
   return Math.max(0, Math.ceil((new Date(busqueda.value.checkOut) - new Date(busqueda.value.checkIn)) / 86400000))
 })
 
+/**
+ * Precio total del paquete: vuelo ida + (vuelo regreso si aplica) + hotel.
+ * Solo tiene valor cuando todos los componentes están seleccionados.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const precioTotal = computed(() => {
   if (!vueloSel.value || !hotelSel.value) return 0
   if (esIdaVuelta.value && !vueloRegresoSel.value) return 0
@@ -738,13 +797,31 @@ const precioTotal = computed(() => {
   return pflight + pregreso + photel
 })
 
-// ── Filtros ───────────────────────────────────────────────────
+/**
+ * Filtros de vuelo (precio por persona, clases, escalas, duración, aerolínea, horario de salida).
+ * @type {import('vue').Ref<{precioMin: number, precioMax: number, clases: string[], escalas: number[], duracionMax: number, aerolineas: string[], horario: string}>}
+ */
 const fv = ref({ precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' })
+
+/**
+ * Filtros de hotel (precio por noche, tipo de habitación, nombre de hotel, amenidades).
+ * @type {import('vue').Ref<{precioMin: number, precioMax: number, tipos: string[], hoteles: string[], amenidades: string[]}>}
+ */
 const fh = ref({ precioMin: 0, precioMax: 9999, tipos: [], hoteles: [], amenidades: [] })
 
+/** Opciones del filtro de clase de vuelo. @type {{val: string, label: string}[]} */
 const clasesFilter = [{ val: 'economica', label: 'Económica' }, { val: 'ejecutiva', label: 'Ejecutiva' }]
-const escalasOpts  = [{ val: 0, label: 'Solo directos' }, { val: 1, label: '1 escala' }, { val: 2, label: '2+ escalas' }]
+
+/** Opciones del filtro de escalas. @type {{val: number, label: string}[]} */
+const escalasOpts = [{ val: 0, label: 'Solo directos' }, { val: 1, label: '1 escala' }, { val: 2, label: '2+ escalas' }]
+
+/** Opciones del filtro de duración máxima en minutos. @type {{val: number, label: string}[]} */
 const duracionOpts = [{ val: 180, label: '< 3h' }, { val: 360, label: '< 6h' }, { val: 720, label: '< 12h' }, { val: 1440, label: '< 24h' }]
+
+/**
+ * Opciones del filtro de horario de salida, con íconos SVG inline.
+ * @type {{val: string, icon: string, label: string, rango: string}[]}
+ */
 const horariosOpts = [
   { val: 'madrugada', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`, label: 'Madrugada', rango: '00:00–05:59' },
   { val: 'manana',    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/></svg>`, label: 'Mañana', rango: '06:00–11:59' },
@@ -752,6 +829,11 @@ const horariosOpts = [
   { val: 'noche',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>`, label: 'Noche', rango: '18:00–23:59' },
 ]
 
+/**
+ * Número total de filtros activos en el paso actual (vuelo o hotel).
+ * Se usa para mostrar el badge de la sidebar.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const cantFiltrosActivos = computed(() => {
   if (paso.value === 1) {
     let n = 0
@@ -766,12 +848,19 @@ const cantFiltrosActivos = computed(() => {
   return n
 })
 
+/**
+ * Reinicia los filtros del paso actual (vuelo o hotel) a sus valores predeterminados.
+ */
 function resetFiltros() {
   if (paso.value === 1) fv.value = { precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' }
   else fh.value = { precioMin: 0, precioMax: 9999, tipos: [], hoteles: [], amenidades: [] }
 }
 
-// ── Form modificar ────────────────────────────────────────────
+/**
+ * Estado reactivo del formulario de modificar búsqueda. Incluye campos con autocompletado
+ * para origen y destino (país/ciudad), fechas de vuelo, fechas del hotel, personas y tipo de viaje.
+ * @type {{oPaisQ: string, oPaisSug: any[], oPaisSel: any, oCiudadQ: string, oCiudadSug: string[], oCiudadLoading: boolean, oCiudades: string[], oPais: string, oCiudad: string, dPaisQ: string, dPaisSug: any[], dPaisSel: any, dCiudadQ: string, dCiudadSug: string[], dCiudadLoading: boolean, dCiudades: string[], dPais: string, dCiudad: string, fecha: string, fechaRegreso: string, checkIn: string, checkOut: string, cantidadPersonas: number, tipoVuelo: string}}
+ */
 const form = reactive({
   oPaisQ: '', oPaisSug: [], oPaisSel: null,
   oCiudadQ: '', oCiudadSug: [], oCiudadLoading: false, oCiudades: [],
@@ -783,48 +872,98 @@ const form = reactive({
   cantidadPersonas: 1, tipoVuelo: 'ida',
 })
 
+/**
+ * Fecha mínima del check-out en el formulario: día siguiente al check-in ingresado.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minCheckOut = computed(() => {
   if (!form.checkIn) return hoy
   const d = new Date(form.checkIn); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
-// ── countriesnow ──────────────────────────────────────────────
+/** Caché en memoria de la lista de países de CountriesNow. @type {any[]|null} */
 let paisesCache = null
+
+/**
+ * Obtiene la lista de países desde CountriesNow, usando caché en memoria.
+ * @returns {Promise<any[]>}
+ */
 async function getPaises() {
   if (paisesCache) return paisesCache
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] } catch { paisesCache = [] }
   return paisesCache
 }
+
+/**
+ * Obtiene las ciudades de un país dado desde CountriesNow.
+ * @param {string} country - Nombre del país en inglés
+ * @returns {Promise<string[]>}
+ */
 async function getCiudades(country) {
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] } catch { return [] }
 }
+
+/**
+ * Cierra el dropdown de autocompletado con delay para que el click en la opción se registre primero.
+ * @param {Function} fn
+ */
 function blurClose(fn) { setTimeout(fn, 200) }
 
+/** Filtra países por el texto del campo de origen. */
 async function onOPaisInput() {
   form.oPaisSel = null; form.oCiudadQ = ''; form.oCiudades = []; form.oPais = ''; form.oCiudad = ''
   const q = form.oPaisQ.trim(); if (q.length < 2) { form.oPaisSug = []; return }
   form.oPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+
+/**
+ * Selecciona un país de origen y carga sus ciudades.
+ * @param {{country: string}} p
+ */
 async function selOPais(p) {
   form.oPaisSel = p; form.oPaisQ = p.country; form.oPaisSug = []; form.oPais = p.country
   form.oCiudadLoading = true; form.oCiudades = await getCiudades(p.country); form.oCiudadLoading = false
 }
+
+/** Filtra ciudades de origen por el texto ingresado. */
 function onOCiudadInput() { const q = form.oCiudadQ.toLowerCase(); form.oCiudadSug = q.length < 2 ? [] : form.oCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6); form.oCiudad = '' }
+
+/**
+ * Selecciona una ciudad de origen del dropdown.
+ * @param {string} c
+ */
 function selOCiudad(c) { form.oCiudadQ = c; form.oCiudadSug = []; form.oCiudad = c; modError.value = '' }
 
+/** Filtra países por el texto del campo de destino. */
 async function onDPaisInput() {
   form.dPaisSel = null; form.dCiudadQ = ''; form.dCiudades = []; form.dPais = ''; form.dCiudad = ''
   const q = form.dPaisQ.trim(); if (q.length < 2) { form.dPaisSug = []; return }
   form.dPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+
+/**
+ * Selecciona un país de destino y carga sus ciudades.
+ * @param {{country: string}} p
+ */
 async function selDPais(p) {
   form.dPaisSel = p; form.dPaisQ = p.country; form.dPaisSug = []; form.dPais = p.country
   form.dCiudadLoading = true; form.dCiudades = await getCiudades(p.country); form.dCiudadLoading = false
 }
+
+/** Filtra ciudades de destino por el texto ingresado. */
 function onDCiudadInput() { const q = form.dCiudadQ.toLowerCase(); form.dCiudadSug = q.length < 2 ? [] : form.dCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6); form.dCiudad = '' }
+
+/**
+ * Selecciona una ciudad de destino del dropdown.
+ * @param {string} c
+ */
 function selDCiudad(c) { form.dCiudadQ = c; form.dCiudadSug = []; form.dCiudad = c; modError.value = '' }
 
+/**
+ * Abre o cierra el formulario de modificar búsqueda. Al abrir, pre-llena todos los campos
+ * con los valores de la búsqueda activa para facilitar ajustes rápidos.
+ */
 function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
@@ -867,13 +1006,29 @@ function toggleModificar() {
   }
 }
 
+/**
+ * Verifica si la respuesta cruda de la API de vuelos contiene al menos un resultado.
+ * @param {any[]} res
+ * @returns {boolean}
+ */
 function tieneVuelos(res) {
   return Array.isArray(res) && res.some(b => b.datos && ((b.datos.directos?.length > 0) || (b.datos.conEscala?.length > 0)))
 }
+
+/**
+ * Verifica si la respuesta cruda de la API de hoteles contiene al menos un resultado.
+ * @param {any[]} res
+ * @returns {boolean}
+ */
 function tieneHoteles(res) {
   return Array.isArray(res) && res.some(b => Array.isArray(b.datos) && b.datos.length > 0)
 }
 
+/**
+ * Valida el formulario de modificar y ejecuta una nueva búsqueda paralela de vuelos y hoteles.
+ * En ida y vuelta lanza 3 peticiones simultáneas; en solo ida lanza 2.
+ * Al completar reinicia el flujo al paso 1.
+ */
 async function rebuscar() {
   modError.value = ''
   const o  = form.oCiudad  || form.oCiudadQ.trim()
@@ -940,9 +1095,19 @@ async function rebuscar() {
   finally { buscando.value = false }
 }
 
-// ── Mapeo vuelos ──────────────────────────────────────────────
+/**
+ * Recorta una cadena de hora HH:MM:SS a HH:MM para mostrarla en las tarjetas.
+ * @param {string} h - Hora en formato HH:MM:SS
+ * @returns {string}
+ */
 function formatHora(h) { return h ? String(h).substring(0, 5) : '--' }
 
+/**
+ * Transforma la respuesta cruda de la API de vuelos en una lista plana normalizada,
+ * incluyendo vuelos directos y con escala.
+ * @param {any[]} respuesta - Array de objetos proveedor retornado por el backend
+ * @returns {object[]}
+ */
 function mapearVuelos(respuesta) {
   const res = []
   for (const b of respuesta) {
@@ -952,6 +1117,12 @@ function mapearVuelos(respuesta) {
   }
   return res
 }
+/**
+ * Normaliza un vuelo directo de la API al formato interno de la vista.
+ * @param {object} v - Objeto vuelo directo del proveedor
+ * @param {object} b - Objeto proveedor
+ * @returns {object}
+ */
 function mapDirecto(v, b) {
   return {
     id: `${b.proveedor_id}-d-${v.id ?? Math.random()}`,
@@ -967,6 +1138,13 @@ function mapDirecto(v, b) {
     escalas: 0, paradas: [], tiempoEscalaMinutos: 0,
   }
 }
+/**
+ * Normaliza un vuelo con escalas (tramos múltiples) al formato interno de la vista.
+ * Extrae origen del primer tramo y destino del último.
+ * @param {object} v - Objeto vuelo con escala del proveedor
+ * @param {object} b - Objeto proveedor
+ * @returns {object}
+ */
 function mapEscala(v, b) {
   const tramos = Array.isArray(v.tramos) ? v.tramos : []
   const p = tramos[0] || {}, u = tramos[tramos.length - 1] || {}
@@ -987,7 +1165,12 @@ function mapEscala(v, b) {
   }
 }
 
-// ── Mapeo hoteles ─────────────────────────────────────────────
+/**
+ * Transforma la respuesta cruda de la API de hoteles en una lista plana de habitaciones
+ * normalizadas, incluyendo datos del hotel y metadata de combos por capacidad.
+ * @param {any[]} respuesta - Array de objetos proveedor retornado por el backend
+ * @returns {object[]}
+ */
 function mapearHoteles(respuesta) {
   const resultado = []
   if (!Array.isArray(respuesta)) return resultado
@@ -1032,9 +1215,17 @@ function mapearHoteles(respuesta) {
   return resultado
 }
 
-// ── Computed vuelos filtrados ─────────────────────────────────
+/**
+ * Lista deduplicada de aerolíneas disponibles en los vuelos de ida, para el filtro de aerolínea.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const aerolineasDisponibles = computed(() => [...new Set(vuelos.value.map(v => v.aerolinea).filter(Boolean))])
 
+/**
+ * Vuelos de ida filtrados por todos los criterios activos (precio, clase, escalas, duración, aerolínea, horario)
+ * y ordenados según el criterio seleccionado.
+ * @type {import('vue').ComputedRef<object[]>}
+ */
 const vuelosFiltrados = computed(() => {
   let list = vuelos.value
   if (fv.value.precioMin > 0)    list = list.filter(v => v.precioTurista >= fv.value.precioMin)
@@ -1061,11 +1252,28 @@ const vuelosFiltrados = computed(() => {
   })
 })
 
-// ── Computed hoteles filtrados ────────────────────────────────
+/**
+ * Lista deduplicada de tipos de habitación para el filtro de hotel.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const tiposHabitacionDisponibles = computed(() => [...new Set(todasLasHabitaciones.value.map(h => h.tipoHabitacion).filter(Boolean))])
-const hotelesDisponibles         = computed(() => [...new Set(todasLasHabitaciones.value.map(h => h.nombreHotel).filter(Boolean))])
-const amenidadesDisponibles      = computed(() => { const s = new Set(); todasLasHabitaciones.value.forEach(h => h.amenidades?.forEach(a => s.add(a.nombre))); return [...s] })
 
+/**
+ * Lista deduplicada de nombres de hotel para el filtro de hotel.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
+const hotelesDisponibles = computed(() => [...new Set(todasLasHabitaciones.value.map(h => h.nombreHotel).filter(Boolean))])
+
+/**
+ * Lista deduplicada de nombres de amenidad para el filtro de amenidades.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
+const amenidadesDisponibles = computed(() => { const s = new Set(); todasLasHabitaciones.value.forEach(h => h.amenidades?.forEach(a => s.add(a.nombre))); return [...s] })
+
+/**
+ * Habitaciones que pasan todos los filtros de hotel activos, ordenadas por criterio seleccionado.
+ * @type {import('vue').ComputedRef<object[]>}
+ */
 const habitacionesFiltradas = computed(() => {
   let list = todasLasHabitaciones.value
   if (fh.value.precioMin > 0)    list = list.filter(h => h.precioPorNoche >= fh.value.precioMin)
@@ -1083,6 +1291,11 @@ const habitacionesFiltradas = computed(() => {
   })
 })
 
+/**
+ * Agrupa las habitaciones filtradas por hotel y descarta los grupos que no pueden
+ * alojar a la cantidad de personas buscada (ni directamente, ni mediante combos).
+ * @type {import('vue').ComputedRef<object[]>}
+ */
 const gruposPorHotel = computed(() => {
   const map = new Map()
   for (const hab of habitacionesFiltradas.value) {
@@ -1109,9 +1322,19 @@ const gruposPorHotel = computed(() => {
   )
 })
 
-// ══ COMBO HELPERS ═════════════════════════════════════════════
+/**
+ * Formatea un monto en USD con separadores de miles.
+ * @param {number} p
+ * @returns {string}
+ */
 function fmt(p) { return new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(p) }
 
+/**
+ * Intenta construir una combinación exacta de habitaciones para cubrir el número de personas,
+ * usando la primera combinación numérica disponible del hotel.
+ * @param {object} hotel
+ * @returns {{habs: object[], total: number}|null}
+ */
 function _getComboHabs(hotel) {
   if (!hotel.combinacionesNumericas?.length) return null
   const combo = hotel.combinacionesNumericas[0]; if (combo.length <= 1) return null
@@ -1126,6 +1349,13 @@ function _getComboHabs(hotel) {
   return { habs: result, total: result.reduce((s, h) => s + h.precio, 0) }
 }
 
+/**
+ * Arma una combinación aproximada cuando no hay habitación individual ni combinación exacta.
+ * Solo acepta hasta 2 personas de exceso y requiere más de una habitación.
+ * @param {object} hotel
+ * @param {number} personas
+ * @returns {{habs: object[], capacidadTotal: number, total: number}|null}
+ */
 function _getComboAproximado(hotel, personas) {
   if (hotel.tiposHabitacion?.length || _getComboHabs(hotel)) return null
   const porCap = hotel.tiposHabitacionPorCapacidad
@@ -1142,6 +1372,12 @@ function _getComboAproximado(hotel, personas) {
   return { habs: selec, capacidadTotal: sumCap, total: selec.reduce((s, h) => s + h.precio, 0) }
 }
 
+/**
+ * Busca la habitación de capacidad (personas-1) más económica que acepte persona extra.
+ * @param {object} hotel
+ * @param {number} personas
+ * @returns {object|null}
+ */
 function _getPersonaExtraMin(hotel, personas) {
   if (personas <= 1) return null
   const rooms = hotel.tiposHabitacionPorCapacidad?.[String(personas - 1)]
@@ -1150,6 +1386,12 @@ function _getPersonaExtraMin(hotel, personas) {
   return { tipo: best.tipoHabitacion, precioPorNoche: best.precioPorNoche, precioPorPersona: best.precioPorPersona, cap: personas - 1, total: best.precioPorNoche + best.precioPorPersona, habitacionesDisponibles: best.habitacionesDisponibles || [] }
 }
 
+/**
+ * Calcula los tres tipos de combo para un grupo de hotel (exacto, aproximado, persona extra).
+ * Devuelve null si ninguno aplica.
+ * @param {object} grupo
+ * @returns {{combo: object|null, aprox: object|null, extra: object|null}|null}
+ */
 function getHotelCombos(grupo) {
   const personas = busqueda.value.cantidadPersonas
   const combo = _getComboHabs(grupo); const aprox = _getComboAproximado(grupo, personas); const extra = _getPersonaExtraMin(grupo, personas)
@@ -1157,33 +1399,63 @@ function getHotelCombos(grupo) {
   return { combo, aprox, extra }
 }
 
-// ── Helpers UI ────────────────────────────────────────────────
+/**
+ * Formatea una fecha ISO (YYYY-MM-DD) en formato legible en español guatemalteco.
+ * @param {string} f
+ * @returns {string}
+ */
 function formatFecha(f) {
   if (!f) return '--'
   try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
 }
+/**
+ * Formatea una duración en minutos a formato legible (ej. "2h 30m").
+ * @param {number} min
+ * @returns {string}
+ */
 function formatDuracion(min) {
   if (!min || min === 9999) return '--'
   const h = Math.floor(min / 60), m = min % 60
   return `${h}h${m > 0 ? ` ${m}m` : ''}`
 }
 
-// ── Helpers para IDs de vuelos ────────────────────────────────
+/**
+ * Extrae el ID numérico del vuelo desde su ID compuesto (`proveedorId-tipo-vueloId`).
+ * @param {string} compositeId
+ * @returns {number|null}
+ */
 function parseVueloId(compositeId) {
   if (!compositeId) return null
   const parts = String(compositeId).split('-')
   const val   = parseFloat(parts[parts.length - 1])
   return Number.isFinite(val) ? Math.round(val) : null
 }
+/**
+ * Extrae el ID del proveedor desde el ID compuesto del vuelo.
+ * @param {string} compositeId
+ * @returns {number|null}
+ */
 function parseProveedorId(compositeId) {
   if (!compositeId) return null
   return parseInt(String(compositeId).split('-')[0]) || null
 }
+
+/**
+ * Convierte el nombre de clase a su ID numérico para el payload de la API (1 = económica, 2 = ejecutiva).
+ * @param {string} clase
+ * @returns {number}
+ */
 function claseToId(clase) { return clase === 'ejecutiva' ? 2 : 1 }
 
-// ── PRE-CREACIÓN DE RESERVA EN BACKGROUND (paquetes) ─────────
-// Se dispara al confirmar vuelo(s), antes de elegir hotel.
-// Reserva.vue awaits window.__reservaPromise en onMounted.
+/**
+ * Pre-crea la reservación de paquete en background al confirmar el/los vuelo(s),
+ * antes de que el usuario elija el hotel. Crea la reservación (tipo 3 = paquete),
+ * agrega el detalle de vuelo(s) y calcula el tiempo de expiración.
+ * El resultado se asigna a `window.__reservaPromise` para ser consumido en Reserva.vue.
+ * @param {object} vueloData - Datos del vuelo de ida seleccionado
+ * @param {object|null} vueloRegresoData - Datos del vuelo de regreso (solo en ida y vuelta)
+ * @returns {Promise<{reserva: object, detalle: object|null, segundos: number, expiresAt: number}|null>}
+ */
 async function precrearReservacion(vueloData, vueloRegresoData) {
   try {
     // PASO 1: crear la reservación (tipo 3 = paquete)
@@ -1229,7 +1501,12 @@ async function precrearReservacion(vueloData, vueloRegresoData) {
   } catch { return null }
 }
 
-// ── Selección vuelo ───────────────────────────────────────────
+/**
+ * Procesa la selección de un vuelo según el paso actual del flujo.
+ * En paso 1 (ida): avanza al paso 2 en idaVuelta o directamente al hotel si es solo ida,
+ * disparando la pre-creación de reserva. En paso 2 (regreso): confirma el regreso y dispara la reserva.
+ * @param {object} vuelo - Objeto vuelo de la lista filtrada con claseSeleccionada
+ */
 function seleccionarVuelo(vuelo) {
   const data = {
     id: vuelo.id,
@@ -1265,7 +1542,11 @@ function seleccionarVuelo(vuelo) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// ── Selección hotel ───────────────────────────────────────────
+/**
+ * Establece una habitación individual como el hotel seleccionado para el paquete.
+ * @param {object} hab - Habitación de la lista filtrada
+ * @param {object} grupo - Grupo de hotel al que pertenece
+ */
 function seleccionarHotelHab(hab, grupo) {
   hotelSel.value = {
     tipo: 'habitacion', uid: hab.uid,
@@ -1281,6 +1562,11 @@ function seleccionarHotelHab(hab, grupo) {
     noches: noches.value,
   }
 }
+/**
+ * Establece una combinación de habitaciones (exacta o aproximada) como el hotel del paquete.
+ * @param {object} comboInfo - Resultado de _getComboHabs o _getComboAproximado
+ * @param {object} grupo - Grupo de hotel
+ */
 function seleccionarHotelCombo(comboInfo, grupo) {
   hotelSel.value = {
     tipo: 'combo', habs: comboInfo.habs,
@@ -1293,6 +1579,11 @@ function seleccionarHotelCombo(comboInfo, grupo) {
     noches: noches.value,
   }
 }
+/**
+ * Establece una habitación con persona extra como el hotel del paquete.
+ * @param {object} extraInfo - Resultado de _getPersonaExtraMin
+ * @param {object} grupo - Grupo de hotel
+ */
 function seleccionarHotelExtra(extraInfo, grupo) {
   hotelSel.value = {
     tipo: 'extra', tipoHabitacion: extraInfo.tipo,
@@ -1306,7 +1597,10 @@ function seleccionarHotelExtra(extraInfo, grupo) {
   }
 }
 
-// ── Retroceder ────────────────────────────────────────────────
+/**
+ * Retrocede un paso en el flujo, anulando la selección del componente del paso actual
+ * y cancelando la promesa de pre-creación si corresponde.
+ */
 function retroceder() {
   if (paso.value === pasoHotel.value) {
     hotelSel.value = null
@@ -1328,7 +1622,10 @@ function retroceder() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// ── Reservar paquete ──────────────────────────────────────────
+/**
+ * Consolida todos los componentes del paquete en sessionStorage y navega a la vista de pago.
+ * La promesa de pre-creación ya fue disparada en seleccionarVuelo; Reserva.vue la awaita en onMounted.
+ */
 function reservarPaquete() {
   if (!vueloSel.value || !hotelSel.value) return
   if (esIdaVuelta.value && !vueloRegresoSel.value) return
@@ -1353,7 +1650,10 @@ function reservarPaquete() {
   router.push('/reservar')
 }
 
-// ── Init ──────────────────────────────────────────────────────
+/**
+ * Al montar: procesa los resultados de vuelos y hoteles desde history.state,
+ * los normaliza y actualiza los refs reactivos. Si faltan datos muestra un error.
+ */
 onMounted(() => {
   const rawV = state.resultadosVuelos  || null
   const rawR = state.resultadosRegreso || null

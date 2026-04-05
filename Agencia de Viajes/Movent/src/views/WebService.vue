@@ -5,7 +5,7 @@
     <div class="adm-page">
       <div class="adm-layout">
 
-        <!-- SIDEBAR WebService — sin links de admin -->
+        <!-- Sidebar exclusivo del panel WebService, sin links de administración general -->
         <aside class="adm-sidebar adm-sidebar--ws">
           <div class="adm-sidebar__head">
             <div class="adm-sidebar__logo adm-sidebar__logo--ws">
@@ -21,13 +21,13 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
               WebService
             </router-link>
-
           </nav>
         </aside>
 
-        <!-- CONTENIDO -->
+        <!-- Contenido principal de la documentación del WebService -->
         <div class="adm-main">
 
+          <!-- Encabezado con título y badge de estado activo -->
           <div class="adm-topbar">
             <div>
               <h1 class="adm-topbar__titulo">WebService</h1>
@@ -39,7 +39,7 @@
             </div>
           </div>
 
-          <!-- ── Endpoint principal ── -->
+          <!-- Tarjeta del endpoint principal con método, URL y botón de copiar -->
           <div class="ws-endpoint-card">
             <div class="ws-endpoint-card__head">
               <span class="ws-method ws-method--post">POST</span>
@@ -54,9 +54,10 @@
             </p>
           </div>
 
-          <!-- ── Autenticación + Body ── -->
+          <!-- Fila: autenticación y descripción de campos del body -->
           <div class="adm-row2">
 
+            <!-- Detalles del header de autenticación requerido -->
             <div class="adm-card">
               <div class="adm-card__head">
                 <h3 class="adm-card__title">Autenticación</h3>
@@ -89,6 +90,7 @@
               </div>
             </div>
 
+            <!-- Lista de campos del body con sus tipos y descripciones -->
             <div class="adm-card">
               <div class="adm-card__head">
                 <h3 class="adm-card__title">Body (JSON)</h3>
@@ -109,7 +111,7 @@
 
           </div>
 
-          <!-- ── Ejemplo request / response ── -->
+          <!-- Fila: ejemplo de request JSON y tabla de respuestas HTTP posibles -->
           <div class="adm-row2">
 
             <div class="adm-card">
@@ -137,7 +139,7 @@
 
           </div>
 
-          <!-- ── Estados aceptados ── -->
+          <!-- Grid con todos los estados aceptados por el endpoint -->
           <div class="adm-card adm-card--full">
             <div class="adm-card__head">
               <h3 class="adm-card__title">Estados aceptados en nuevoEstado</h3>
@@ -163,30 +165,55 @@
 </template>
 
 <script setup>
+/**
+ * @file WebService.vue
+ * @description Panel de documentación del endpoint REST que los proveedores
+ * (Broom AirLine, Miku Inn) usan para notificar cambios de estado en reservaciones.
+ * Incluye especificación de autenticación, campos del body, ejemplos y tabla de respuestas.
+ */
 import { ref } from 'vue'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/admin.css'
 import '../styles/WebService.css'
 
+/** URL base del backend. @type {string} */
 const API = 'http://localhost:8080'
 
-const copiado       = ref(false)
-const copiadoHeader = ref(false)
-const copiadoReq    = ref(false)
+/** Controla el feedback visual del botón "Copiar URL". @type {import('vue').Ref<boolean>} */
+const copiado = ref(false)
 
+/** Controla el feedback visual del botón de copiar el header de autenticación. @type {import('vue').Ref<boolean>} */
+const copiadoHeader = ref(false)
+
+/** Controla el feedback visual del botón de copiar el request de ejemplo. @type {import('vue').Ref<boolean>} */
+const copiadoReq = ref(false)
+
+/**
+ * Definición de los campos aceptados en el body JSON del endpoint.
+ * Cada objeto describe nombre, tipo, obligatoriedad y valores posibles.
+ * @type {Array<{name: string, type: string, req: boolean, desc: string, values: string|null}>}
+ */
 const bodyFields = [
   { name: 'reservacionProveedorId', type: 'string', req: true,  desc: 'ID de la reservación en el sistema del proveedor.', values: null },
   { name: 'nuevoEstado',            type: 'string', req: true,  desc: 'Nuevo estado que debe reflejarse en MOVENT.', values: '"cancelada" | "confirmada" | "completada" | "en curso"' },
   { name: 'motivo',                 type: 'string', req: false, desc: 'Motivo del cambio. Requerido cuando nuevoEstado = "cancelada".', values: null },
 ]
 
+/**
+ * JSON de ejemplo que se muestra en la sección de request.
+ * @type {string}
+ */
 const ejemploRequest = `{
   "reservacionProveedorId": "42",
   "nuevoEstado": "cancelada",
   "motivo": "El vuelo fue cancelado por mantenimiento"
 }`
 
+/**
+ * Tabla de respuestas HTTP posibles del endpoint con código, título y descripción.
+ * @type {Array<{code: string, color: string, title: string, desc: string}>}
+ */
 const responses = [
   { code: '200', color: 'ok',   title: 'OK',           desc: 'Notificación procesada. Estado actualizado en DB.' },
   { code: '400', color: 'warn', title: 'Bad Request',  desc: 'Datos inválidos, estado desconocido o falta el motivo.' },
@@ -195,6 +222,11 @@ const responses = [
   { code: '500', color: 'err',  title: 'Server Error', desc: 'Error interno. Reintentar en unos momentos.' },
 ]
 
+/**
+ * Lista de estados que el endpoint acepta en el campo nuevoEstado,
+ * con su descripción, color indicador y badge de referencia al EstadoID en DB.
+ * @type {Array<{valor: string, desc: string, color: string, badge: string, estadoId: string}>}
+ */
 const estadosAceptados = [
   { valor: 'confirmada', desc: 'La reservación fue confirmada por el proveedor.',       color: '#22c55e', badge: 'adm-badge--confirmada', estadoId: 'EstadoID 2' },
   { valor: 'cancelada',  desc: 'Cancelación. Requiere campo "motivo" en el body.',      color: '#D40511', badge: 'adm-badge--cancelada',  estadoId: 'EstadoID 3' },
@@ -202,8 +234,19 @@ const estadosAceptados = [
   { valor: 'en curso',   desc: 'El servicio está en ejecución (vuelo despegó).',        color: '#8b5cf6', badge: 'adm-badge--encurso',    estadoId: 'EstadoID 6' },
 ]
 
+/**
+ * Activa el feedback visual de un botón de copia durante un tiempo determinado.
+ * @param {import('vue').Ref<boolean>} r - ref del estado del botón
+ * @param {number} [ms=2000] - milisegundos que dura el estado activo
+ */
 function copiar(r, ms = 2000) { r.value = true; setTimeout(() => r.value = false, ms) }
+
+/** Copia la URL completa del endpoint al portapapeles. */
 function copiarURL()     { navigator.clipboard.writeText(`${API}/api/webservice/notificacion`).catch(() => {}); copiar(copiado) }
+
+/** Copia el ejemplo de header de autenticación al portapapeles. */
 function copiarHeader()  { navigator.clipboard.writeText('X-Proveedor-Token: <tu-token>').catch(() => {}); copiar(copiadoHeader) }
+
+/** Copia el JSON de ejemplo del request al portapapeles. */
 function copiarRequest() { navigator.clipboard.writeText(ejemploRequest).catch(() => {}); copiar(copiadoReq) }
 </script>

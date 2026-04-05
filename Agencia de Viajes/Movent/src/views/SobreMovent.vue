@@ -1,6 +1,8 @@
 <template>
   <div class="page">
     <Encabezado />
+
+    <!-- Hero con imagen de fondo y texto descriptivo -->
     <section class="info-hero" style="background-image: url('/compañeros.png')">
       <div class="info-hero-overlay"></div>
       <div class="info-hero-content">
@@ -12,23 +14,32 @@
         <p class="info-hero-subtitle">Conoce quiénes somos, nuestra misión y los servicios que ofrecemos.</p>
       </div>
     </section>
+
     <div class="info-wrap">
+      <!-- Botón para regresar a la página de información general -->
       <button class="info-back" @click="$router.push('/informacion')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver a Información
       </button>
+
       <div class="info-section-body">
+
+        <!-- Sección: quiénes somos y misión de Movent -->
         <div class="info-card">
           <h2 class="info-section-title">¿Quiénes somos?</h2>
           <p class="info-prose">Movent es una agencia de viajes guatemalteca fundada para ser la plataforma tecnológica de referencia en 2026. Integramos vuelos y hospedajes de múltiples proveedores mediante APIs REST, presentando opciones consolidadas y ordenadas por precio para que encuentres siempre la mejor tarifa.</p>
           <p class="info-prose">Nuestra misión es que los usuarios comparen opciones, reserven servicios individuales o paquetes combinados de vuelo con hospedaje, y administren sus viajes con seguimiento completo de cada operación, todo desde un solo lugar.</p>
         </div>
+
+        <!-- Sección: visión de la empresa -->
         <div class="info-card">
           <h2 class="info-section-title">Nuestra visión</h2>
           <div class="info-highlight">
             Establecer a Movent como proveedor líder de servicios de viajes mediante una plataforma que integre tecnología, operaciones y experiencia del cliente en un solo sistema conectado a los mejores proveedores del mundo.
           </div>
         </div>
+
+        <!-- Grid de tarjetas con los servicios principales -->
         <div class="info-cards-grid">
           <div class="info-mini-card">
             <div class="info-mini-icon">
@@ -59,13 +70,20 @@
             <p>Procesamiento con encriptación SSL, confirmación inmediata y voucher PDF por correo.</p>
           </div>
         </div>
+
       </div>
     </div>
+
     <Piepagina />
   </div>
 </template>
 
 <script setup>
+/**
+ * @file SobreMovent.vue
+ * @description Vista estática informativa que presenta la misión, visión y servicios
+ * principales de Movent. No maneja estado reactivo ni llamadas al backend.
+ */
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/informacion.css'

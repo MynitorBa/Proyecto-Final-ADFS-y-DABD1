@@ -1,14 +1,16 @@
+/* Footer con fondo negro */
 .footer {
   background: #1C1A18;
   color: #e2e8f0;
   font-family: inherit;
 }
 
-/* ── MAIN ── */
+/* Sección principal del footer con padding superior */
 .footer-main {
   padding: 3.5rem 0 2rem;
 }
 
+/* Grid de 4 columnas: marca, enlaces, más enlaces y contacto */
 .footer-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -18,7 +20,7 @@
   gap: 3rem;
 }
 
-/* ── BRAND ── */
+/* Logo invertido a blanco para el fondo oscuro */
 .footer-logo {
   height: 55px;
   width: auto;
@@ -28,6 +30,7 @@
   margin-bottom: 1.25rem;
 }
 
+/* Descripción breve de la empresa */
 .footer-description {
   color: #94a3b8;
   font-size: 0.9rem;
@@ -36,7 +39,7 @@
   max-width: 280px;
 }
 
-/* ── SOCIAL ── */
+/* Iconos de redes sociales con hover en amarillo */
 .footer-social {
   display: flex;
   gap: 0.6rem;
@@ -63,7 +66,7 @@
   transform: translateY(-3px);
 }
 
-/* ── COLS ── */
+/* Título de columna en amarillo con separador inferior */
 .footer-col-title {
   color: #FFCC00;
   font-size: 0.8rem;
@@ -75,6 +78,7 @@
   border-bottom: 1px solid rgba(255,204,0,0.2);
 }
 
+/* Lista de links con animación de línea lateral al hover */
 .footer-links {
   list-style: none;
   margin: 0;
@@ -94,6 +98,7 @@
   gap: 0.4rem;
 }
 
+/* Línea amarilla que crece desde la izquierda al hover */
 .footer-link::before {
   content: '';
   display: inline-block;
@@ -113,7 +118,7 @@
   width: 8px;
 }
 
-/* ── CONTACT ── */
+/* Lista de ítems de contacto con íconos */
 .footer-contact {
   list-style: none;
   margin: 0;
@@ -129,6 +134,7 @@
   gap: 0.75rem;
 }
 
+/* Ícono de contacto con fondo amarillo semi-transparente */
 .contact-icon {
   width: 34px;
   height: 34px;
@@ -162,7 +168,7 @@
   font-weight: 500;
 }
 
-/* ── BOTTOM ── */
+/* Barra inferior con copyright y enlaces legales */
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,0.06);
   background: rgba(0,0,0,0.25);
@@ -180,6 +186,7 @@
   flex-wrap: wrap;
 }
 
+/* Texto de copyright con nombre en amarillo */
 .footer-copy {
   font-size: 0.85rem;
   color: #64748b;
@@ -191,6 +198,7 @@
   font-weight: 800;
 }
 
+/* Links legales: privacidad y términos */
 .footer-legal {
   display: flex;
   align-items: center;
@@ -211,7 +219,7 @@
   font-size: 0.8rem;
 }
 
-/* ── RESPONSIVE ── */
+/* Responsive: 2 columnas en tablet, 1 en móvil */
 @media (max-width: 1100px) {
   .footer-container {
     grid-template-columns: 1fr 1fr;

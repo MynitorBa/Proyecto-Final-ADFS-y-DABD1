@@ -1,3 +1,7 @@
+// # Package services
+//
+// Contiene los servicios de negocio de la agencia de viajes,
+// incluyendo procesamiento de pagos, reservaciones, proveedores y usuarios.
 package services
 
 import (
@@ -8,8 +12,10 @@ import (
 	"fmt"
 )
 
-// ── Structs de deserialización ─────────────────────────────────────────────
-
+// reservacionDetallePDF
+//
+// Struct interno de deserializacion que representa el detalle completo
+// de una reservacion obtenido desde los proveedores, usado para la generacion del PDF.
 type reservacionDetallePDF struct {
 	ID            int          `json:"id"`
 	NoReservacion string       `json:"no_reservacion"`
@@ -20,11 +26,19 @@ type reservacionDetallePDF struct {
 	Detalles      []detallePDF `json:"detalles"`
 }
 
+// detallePDF
+//
+// Struct interno que representa un detalle individual de una reservacion,
+// con el tipo de detalle y los datos crudos del proveedor en formato JSON.
 type detallePDF struct {
 	TipoDetalleID int             `json:"tipo_detalle_id"`
 	DataProveedor json.RawMessage `json:"data_proveedor"`
 }
 
+// dataVueloPDF
+//
+// Struct interno de deserializacion para los datos de vuelo recibidos
+// desde el proveedor de aerolinea, incluyendo boletos y datos del usuario titular.
 type dataVueloPDF struct {
 	Boletos []struct {
 		NoBoleto      string  `json:"noBoleto"`
@@ -53,6 +67,10 @@ type dataVueloPDF struct {
 	UsuarioEmail  string `json:"usuarioEmail"`
 }
 
+// habitacionProveedorPDF
+//
+// Struct interno de deserializacion para los datos de habitacion de hotel
+// recibidos desde el proveedor hotelero.
 type habitacionProveedorPDF struct {
 	NombreHotel      string  `json:"nombreHotel"`
 	TipoHabitacion   string  `json:"tipoHabitacion"`
@@ -65,18 +83,35 @@ type habitacionProveedorPDF struct {
 	Estado           string  `json:"estado"`
 }
 
+// estadoIDLabelPDF
+//
+// Mapa que relaciona el ID de estado de una reservacion con su etiqueta
+// de texto para mostrar en el PDF generado.
 var estadoIDLabelPDF = map[int]string{
 	1: "Pendiente", 2: "Confirmada", 3: "Cancelada",
 	4: "Expirada", 5: "Completada", 6: "En Curso",
 }
 
-// ── Service ────────────────────────────────────────────────────────────────
-
+// PdfReservacionService
+//
+// Servicio encargado de generar el PDF de una reservacion combinando
+// los datos obtenidos desde los proveedores externos con la informacion
+// del usuario almacenada en la base de datos propia.
 type PdfReservacionService struct {
 	misSvc  *MisReservacionesService
 	usuRepo *repositories.UsuarioRepository
 }
 
+// NewPdfReservacionService
+//
+// Crea e inicializa una nueva instancia de PdfReservacionService con sus dependencias.
+//
+// Parametros:
+//   - misSvc: servicio de mis reservaciones para obtener el detalle completo desde proveedores
+//   - usuRepo: repositorio de usuarios para consultar nombre y correo cuando no los provee la aerolinea
+//
+// Retorna:
+//   - *PdfReservacionService: instancia inicializada del servicio de generacion de PDF
 func NewPdfReservacionService(
 	misSvc *MisReservacionesService,
 	usuRepo *repositories.UsuarioRepository,
@@ -84,7 +119,21 @@ func NewPdfReservacionService(
 	return &PdfReservacionService{misSvc: misSvc, usuRepo: usuRepo}
 }
 
-// GenerarPDF obtiene el detalle completo y produce el PDF.
+// GenerarPDF
+//
+// Obtiene el detalle completo de una reservacion desde los proveedores, lo mapea
+// a la estructura de datos del PDF, completa el nombre y correo del usuario
+// desde la base de datos si no fueron provistos por el proveedor (caso reservas de hotel puro),
+// y genera los bytes del archivo PDF.
+//
+// Parametros:
+//   - reservacionID: identificador de la reservacion a convertir en PDF
+//   - usuarioID: identificador del usuario propietario de la reservacion
+//
+// Retorna:
+//   - []byte: bytes del PDF generado
+//   - error: error si la reservacion no existe, falla la serializacion,
+//     el mapeo de datos o la generacion del PDF
 func (s *PdfReservacionService) GenerarPDF(reservacionID, usuarioID int) ([]byte, error) {
 	// 1. Detalle completo desde proveedores
 	resultado, err := s.misSvc.ObtenerDetalle(reservacionID, usuarioID)
@@ -126,8 +175,19 @@ func (s *PdfReservacionService) GenerarPDF(reservacionID, usuarioID int) ([]byte
 	return helpers.GenerarPDFReservacion(pdfData)
 }
 
-// ── Mapeador ───────────────────────────────────────────────────────────────
-
+// mapearAPDFData
+//
+// Convierte la estructura cruda de deserializacion de una reservacion al formato
+// ReservacionPDFData usado por el helper de generacion de PDF. Procesa cada detalle
+// segun su tipo: vuelo (tipo 1) extrae boletos y datos del titular, hotel (tipo 2)
+// extrae las habitaciones reservadas.
+//
+// Parametros:
+//   - raw: datos crudos deserializados de la reservacion
+//
+// Retorna:
+//   - helpers.ReservacionPDFData: datos formateados listos para la generacion del PDF
+//   - error: siempre nil, los errores de deserializacion de detalles individuales se ignoran
 func mapearAPDFData(raw reservacionDetallePDF) (helpers.ReservacionPDFData, error) {
 	data := helpers.ReservacionPDFData{
 		NoReservacion: raw.NoReservacion,

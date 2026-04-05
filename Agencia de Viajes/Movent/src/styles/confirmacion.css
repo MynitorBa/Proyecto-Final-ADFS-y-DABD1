@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
-/* ── Base ── */
+/* Página base de confirmación de compra */
 .conf-page { background: #F5F2EC; min-height: 100vh; padding: 40px 0 80px; }
 .conf-container { max-width: 1060px; margin: 0 auto; padding: 0 20px; }
 
-/* ── Steps ── */
+/* Barra de pasos del proceso de compra */
 .conf-steps-bar {
   display: flex; align-items: center;
   max-width: 360px; margin: 0 auto 36px;
@@ -28,7 +28,7 @@
 }
 .conf-step__connector--done { background: #FFCC00; }
 
-/* ── Hero ── */
+/* Hero de éxito con checkmark verde y código de reserva */
 .conf-hero { text-align: center; margin-bottom: 40px; }
 .conf-hero__check {
   width: 64px; height: 64px; background: #16a34a; border-radius: 50%;
@@ -38,6 +38,7 @@
 }
 .conf-hero__title { font-size: 30px; font-weight: 800; color: #1C1A18; margin: 0 0 8px; letter-spacing: -.02em; }
 .conf-hero__sub   { font-size: 15px; color: #5a5047; margin: 0 0 20px; }
+/* Número de reserva en monospace con fondo blanco */
 .conf-hero__no {
   display: inline-flex; align-items: center; gap: 10px;
   background: #fff; border: 1px solid #e0d9cf; border-radius: 10px;
@@ -46,10 +47,10 @@
 .conf-hero__no-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #9a9089; font-weight: 700; }
 .conf-hero__no-val { font-size: 15px; font-weight: 700; color: #1C1A18; letter-spacing: .06em; }
 
-/* ── Layout ── */
+/* Layout de dos columnas: detalles y sidebar */
 .conf-grid { display: grid; grid-template-columns: 1fr 290px; gap: 24px; align-items: start; }
 
-/* ── Card detalles ── */
+/* Tarjeta de detalles con encabezado oscuro */
 .conf-card {
   background: #fff; border: 1px solid #e8e3dc;
   border-radius: 14px; overflow: hidden; margin-bottom: 16px;
@@ -60,7 +61,7 @@
 }
 .conf-card__body { padding: 24px 22px; }
 
-/* ── Ruta ── */
+/* Visualización de ruta de vuelo con IATA */
 .conf-ruta-wrap { display: flex; flex-direction: column; gap: 20px; }
 .conf-ruta { display: flex; align-items: center; gap: 12px; }
 .conf-ruta__punto { display: flex; flex-direction: column; align-items: flex-start; }
@@ -76,7 +77,7 @@
 .conf-ruta__line     { flex: 1; height: 1px; background: #e0d9cf; }
 .conf-ruta--sm       { display: flex; align-items: center; gap: 8px; }
 
-/* ── Tramos (ida y vuelta) ── */
+/* Tramo de vuelo (ida o regreso) con borde para regresos */
 .conf-tramo {
   border: 1px solid #f0ebe3; border-radius: 10px; padding: 14px 16px;
   display: flex; flex-direction: column; gap: 12px;
@@ -90,7 +91,7 @@
 }
 .conf-tramo__badge--reg { background: rgba(28,26,24,.06); color: #5a5047; }
 
-/* ── Detalles grid ── */
+/* Grid de detalles del vuelo (fecha, clase, duración, etc.) */
 .conf-detalles-row {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 12px; padding-top: 16px; border-top: 1px solid #f0ebe3;
@@ -100,7 +101,7 @@
 .conf-detalle span   { font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: #9a9089; font-weight: 700; }
 .conf-detalle strong { font-size: 13px; font-weight: 700; color: #1C1A18; }
 
-/* ── Boletos ── */
+/* Lista de boletos de los pasajeros */
 .conf-boletos {
   margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0ebe3;
   display: flex; flex-direction: column; gap: 8px;
@@ -120,13 +121,13 @@
 }
 .conf-boleto__asiento { font-size: 11px; color: #9a9089; }
 
-/* ── Hotel ── */
+/* Información del hotel reservado */
 .conf-hotel-wrap { display: flex; flex-direction: column; gap: 16px; }
 .conf-hotel__top { display: flex; align-items: center; justify-content: space-between; }
 .conf-hotel__nombre    { font-size: 20px; font-weight: 800; color: #1C1A18; margin: 0; }
 .conf-hotel__ubicacion { font-size: 13px; color: #9a9089; margin: 0; }
 
-/* ── Paquete ── */
+/* Secciones del detalle del paquete */
 .conf-paquete-wrap { display: flex; flex-direction: column; gap: 0; }
 .conf-paquete__seccion {
   display: flex; flex-direction: column; gap: 6px;
@@ -141,7 +142,7 @@
 .conf-paquete__val            { font-size: 13px; font-weight: 600; color: #1C1A18; margin: 0; }
 .conf-paquete__val--nombre    { font-size: 16px; font-weight: 800; }
 
-/* ── Acciones PDF ── */
+/* Botones de acción (descargar PDF, etc.) */
 .conf-actions { display: flex; gap: 10px; margin-bottom: 10px; }
 .conf-btn {
   display: inline-flex; align-items: center; gap: 8px;
@@ -151,6 +152,7 @@
 .conf-btn--pdf { background: #1C1A18; color: #FFCC00; }
 .conf-btn--pdf:hover:not(:disabled) { background: #2d2b27; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(28,26,24,.3); }
 .conf-btn--pdf:disabled { opacity: .6; cursor: wait; }
+/* Spinner del botón de PDF mientras genera */
 .conf-btn__spin {
   display: inline-block; width: 14px; height: 14px;
   border: 2px solid rgba(255,204,0,.3); border-top-color: #FFCC00;
@@ -158,6 +160,7 @@
 }
 @keyframes conf-spin { to { transform: rotate(360deg); } }
 
+/* Toast de estado exitoso o con error */
 .conf-toast {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 600; padding: 8px 14px;
@@ -166,7 +169,7 @@
 .conf-toast--ok  { background: rgba(22,163,74,.08);  border: 1px solid rgba(22,163,74,.25);  color: #166534; }
 .conf-toast--err { background: rgba(212,5,17,.07);   border: 1px solid rgba(212,5,17,.25);   color: #991b1b; }
 
-/* ── Recomendaciones ── */
+/* Sección de recomendaciones con tarjetas de destinos */
 .conf-recomendaciones {
   background: #fff; border: 1px solid #e8e3dc;
   border-radius: 14px; padding: 24px; margin-top: 24px;
@@ -174,6 +177,8 @@
 .conf-recom__title { font-size: 18px; font-weight: 800; color: #1C1A18; margin: 0 0 4px; }
 .conf-recom__sub   { font-size: 13px; color: #9a9089; margin: 0 0 20px; }
 .conf-recom-grid   { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+
+/* Tarjeta de recomendación con imagen y precio */
 .conf-recom-card {
   border-radius: 12px; overflow: hidden; border: 1px solid #e8e3dc; transition: transform .2s, box-shadow .2s;
 }
@@ -208,7 +213,7 @@
 }
 .conf-recom-card__btn:hover { background: #f0be00; }
 
-/* ── Sidebar ── */
+/* Sidebar de resumen de la confirmación */
 .conf-sidebar { display: flex; flex-direction: column; gap: 14px; }
 .conf-resumen {
   background: #fff; border: 1px solid #e8e3dc; border-radius: 14px; overflow: hidden;
@@ -217,6 +222,7 @@
   background: #1C1A18; color: #fff; font-size: 13px; font-weight: 700;
   padding: 14px 18px; letter-spacing: .02em;
 }
+/* Indicador de pago confirmado */
 .conf-resumen__check-row {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 18px; background: rgba(22,163,74,.06);
@@ -231,13 +237,14 @@
 .conf-resumen__row:last-child { border-bottom: none; }
 .conf-resumen__row span   { color: #9a9089; flex-shrink: 0; }
 .conf-resumen__row strong { color: #1C1A18; font-weight: 700; text-align: right; word-break: break-all; }
+/* Fila de total final en el sidebar */
 .conf-resumen__total {
   display: flex; justify-content: space-between; align-items: center;
   padding: 14px 18px; font-size: 13px; color: #9a9089; font-weight: 600;
 }
 .conf-resumen__total strong { font-size: 22px; font-weight: 800; color: #1C1A18; }
 
-/* ── Nav btns ── */
+/* Botones de navegación post-confirmación */
 .conf-nav-btns { display: flex; flex-direction: column; gap: 8px; }
 .conf-nav-btn {
   display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -250,7 +257,7 @@
 .conf-nav-btn--secondary { background: #fff; color: #1C1A18; border: 1.5px solid #e0d9cf; }
 .conf-nav-btn--secondary:hover { border-color: #FFCC00; background: #fffbec; }
 
-/* ── Responsive ── */
+/* Responsive para pantallas menores a 860px */
 @media (max-width: 860px) {
   .conf-grid          { grid-template-columns: 1fr; }
   .conf-sidebar       { order: -1; }
@@ -263,7 +270,7 @@
   .conf-actions     { flex-direction: column; }
 }
 
-/* ── Recomendaciones: estados loading / vacío ── */
+/* Estado de carga de recomendaciones */
 .conf-recom-loading {
   display: flex; align-items: center; gap: 14px;
   padding: 48px 0; justify-content: center;
@@ -275,13 +282,15 @@
   border-radius: 50%; animation: conf-spin-recom .8s linear infinite; flex-shrink: 0;
 }
 @keyframes conf-spin-recom { to { transform: rotate(360deg); } }
+
+/* Estado vacío de recomendaciones */
 .conf-recom-empty {
   text-align: center; padding: 40px;
   color: #9a9089; font-size: 14px;
   background: #faf8f5; border-radius: 12px; border: 1px dashed #e0d9cf;
 }
 
-/* ── Card empty state ────────────────────────────── */
+/* Estado vacío de la tarjeta de detalles */
 .conf-card__empty {
   display: flex;
   align-items: flex-start;
@@ -301,7 +310,7 @@
   line-height: 1.5;
 }
 
-/* ── Sidebar mejorado ────────────────────────────── */
+/* Encabezado mejorado del sidebar de resumen */
 .conf-resumen__head {
   display: flex;
   align-items: center;
@@ -312,6 +321,7 @@
   align-items: center;
   gap: 10px;
 }
+/* Ícono verde de confirmación de pago */
 .conf-resumen__check-icon {
   width: 22px;
   height: 22px;
@@ -322,6 +332,7 @@
   justify-content: center;
   flex-shrink: 0;
 }
+/* Código de reserva en monospace */
 .conf-resumen__code {
   font-family: 'Space Mono', monospace;
   font-size: 11px;
