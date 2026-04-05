@@ -1,12 +1,13 @@
-/* ── Layout ── */
+/* Layout general de la página de mis reservas */
 .wrap  { min-height: 100vh; background: #f8f9fa; padding: 3rem 0; }
 .inner { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
 
-/* ── Header ── */
+/* Encabezado de la página con título y subtítulo */
 .hdr    { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
 .hdr h1 { color: #333; font-size: 2.5rem; margin-bottom: 0.5rem; }
 .sub    { color: #666; font-size: 1.05rem; }
 
+/* Botón para reintentar carga cuando hay error */
 .btn-retry {
   margin-top: 1rem; padding: 0.75rem 1.75rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -14,10 +15,11 @@
   font-weight: 600; cursor: pointer;
 }
 
-/* ── Controls ── */
+/* Controles de búsqueda y filtros */
 .controls { display: flex; justify-content: space-between; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap; }
 .filters  { display: flex; gap: .75rem; flex-wrap: wrap; }
 
+/* Botones de filtro por estado de reserva */
 .fbtn {
   padding: 0.65rem 1.25rem; border: 2px solid #e0e0e0;
   background: white; border-radius: 8px; cursor: pointer;
@@ -26,6 +28,7 @@
 .fbtn:hover  { border-color: #667eea; background: #f0f2ff; }
 .fbtn.active { border-color: #667eea; background: #667eea; color: white; }
 
+/* Campo de búsqueda de reservas */
 .search      { position: relative; flex: 1; max-width: 400px; }
 .search span { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-size: 1.2rem; }
 .search input {
@@ -34,9 +37,10 @@
 }
 .search input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
 
-/* ── Card ── */
+/* Lista vertical de tarjetas de reserva */
 .list { display: flex; flex-direction: column; gap: 1.5rem; }
 
+/* Tarjeta de reserva con imagen, info y acciones */
 .card {
   background: white; border-radius: 12px; overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
@@ -45,18 +49,21 @@
 }
 .card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.15); }
 
-/* ── Image ── */
+/* Contenedor de imagen de la reserva */
 .img-wrap {
   position: relative; width: 220px; min-height: 200px;
   flex-shrink: 0; overflow: hidden;
 }
 .img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Placeholder cuando la reserva no tiene imagen */
 .img-placeholder {
   width: 100%; height: 100%; min-height: 200px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex; align-items: center; justify-content: center;
 }
 
+/* Badge de estado de la reserva sobre la imagen */
 .badge {
   position: absolute; top: 1rem; left: 1rem;
   padding: 0.4rem .9rem; border-radius: 20px;
@@ -68,38 +75,45 @@
 .badge.pending   { background: rgba(255,165,0,.9); }
 .badge.expirada  { background: rgba(100,100,100,.85); }
 
-/* ── Info ── */
+/* Cuerpo de información de la reserva */
 .info     { padding: 1.5rem; }
 .info-hdr { display: flex; justify-content: space-between; margin-bottom: 1.25rem; align-items: flex-start; }
 .info-hdr h3 { color: #333; font-size: 1.4rem; margin: 0 0 .25rem; }
 .room { color: #667eea; font-weight: 600; font-size: .9rem; margin: 0; }
 
+/* Código de reserva alineado a la derecha */
 .code        { text-align: right; flex-shrink: 0; margin-left: 1rem; }
 .code small  { display: block; color: #888; font-size: .8rem; margin-bottom: .25rem; }
 .code strong { color: #333; font-family: monospace; font-size: 1rem; }
 
+/* Grid de datos de la reserva (fechas, huéspedes, etc.) */
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .875rem; }
 .cell { display: flex; flex-direction: column; gap: .2rem; }
 .lbl  { color: #888; font-size: .82rem; }
 .val  { color: #333; font-weight: 600; font-size: .95rem; }
 
+/* Nota de cancelación pendiente */
 .cancel-note {
   margin-top: 1rem; padding: .65rem 1rem;
   background: #fff3e0; color: #e65100;
   border-radius: 8px; font-size: .88rem; border-left: 3px solid #ff9800;
 }
+
+/* Nota de vencimiento de la reserva */
 .expiry-note {
   margin-top: 1rem; padding: .65rem 1rem;
   background: #e8f5e9; color: #2e7d32;
   border-radius: 8px; font-size: .88rem; border-left: 3px solid #4caf50;
 }
 
-/* ── Actions ── */
+/* Columna de acciones de la tarjeta */
 .actions {
   display: flex; flex-direction: column;
   padding: 1.25rem; gap: .65rem;
   border-left: 1px solid #e0e0e0; justify-content: center;
 }
+
+/* Botones de acción de la reserva */
 .abtn {
   display: inline-flex; align-items: center; gap: .45rem;
   padding: .7rem 1.25rem; border: 2px solid #e0e0e0;
@@ -111,7 +125,7 @@
 .abtn.danger        { color: #f44336; border-color: #f44336; }
 .abtn.danger:hover  { background: #f44336; color: white; }
 
-/* ── Botón descargar factura (card) ── */
+/* Botón de descargar factura en la tarjeta */
 .abtn.download {
   color: #667eea; border-color: #667eea; background: white;
 }
@@ -120,15 +134,13 @@
 }
 .abtn.download:disabled { opacity: .55; cursor: not-allowed; }
 
-/* ── Empty ── */
+/* Estado vacío cuando no hay reservas */
 .empty      { background: white; padding: 4rem 2rem; border-radius: 12px; text-align: center; }
 .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
 .empty h2   { color: #333; margin-bottom: .5rem; }
 .empty p    { color: #666; }
 
-/* ══════════════════════════════════════════
-   PANEL LATERAL DE DETALLES
-══════════════════════════════════════════ */
+/* Panel lateral deslizante de detalles de reserva */
 .panel-overlay {
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(0,0,0,.45); backdrop-filter: blur(3px);
@@ -139,6 +151,7 @@
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
+/* Panel lateral con animación de entrada */
 .panel {
   width: 480px; max-width: 95vw;
   background: white; height: 100%;
@@ -147,7 +160,7 @@
   animation: slideIn .3s cubic-bezier(.4,0,.2,1);
 }
 
-/* Header fijo */
+/* Encabezado fijo del panel lateral */
 .panel-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 1.5rem; border-bottom: 1.5px solid #e8ecf0;
@@ -164,6 +177,7 @@
   display: flex; align-items: center; gap: .75rem; flex-shrink: 0;
 }
 
+/* Badge de estado en el encabezado del panel */
 .panel-badge {
   padding: .35rem .85rem; border-radius: 20px;
   font-size: .78rem; font-weight: 700; color: white;
@@ -174,6 +188,7 @@
 .panel-badge.pending   { background: rgba(255,165,0,.9); }
 .panel-badge.expirada  { background: rgba(100,100,100,.8); }
 
+/* Botón de cerrar el panel */
 .panel-close {
   background: rgba(255,255,255,.2); border: none; border-radius: 8px;
   width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
@@ -181,17 +196,18 @@
 }
 .panel-close:hover { background: rgba(255,255,255,.35); }
 
-/* Cuerpo scrolleable */
+/* Cuerpo scrolleable del panel lateral */
 .panel-body {
   flex: 1; overflow-y: auto; padding: 1.5rem;
   display: flex; flex-direction: column; gap: 1.25rem;
 }
 
-/* ── Botón descargar factura (panel) ── */
+/* Área del botón de descarga de factura en el panel */
 .panel-download-wrap {
   display: flex; flex-direction: column; gap: .5rem;
 }
 
+/* Botón de descargar PDF de la factura */
 .panel-download-btn {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
   width: 100%; padding: .875rem;
@@ -203,6 +219,7 @@
 .panel-download-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
 .panel-download-btn:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Mensaje de error al intentar descargar */
 .download-error {
   display: flex; align-items: center; gap: .45rem;
   padding: .6rem .875rem;
@@ -210,38 +227,46 @@
   border-radius: 8px; color: #ef4444; font-size: .83rem;
 }
 
+/* Secciones internas del panel con fondo gris */
 .panel-section {
   background: #f8fafc; border: 1px solid #e8ecf0;
   border-radius: 12px; padding: 1.25rem;
 }
+
+/* Título de sección del panel en mayúsculas */
 .panel-section-title {
   font-size: .8rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .06em; color: #64748b;
   margin: 0 0 1rem; display: flex; align-items: center; gap: .5rem;
 }
+
+/* Contador de habitaciones del panel */
 .panel-section-count {
   background: #667eea; color: white;
   font-size: .72rem; padding: .15rem .5rem; border-radius: 20px;
 }
 
-/* Info grid */
+/* Grid de datos informativos del panel */
 .panel-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 .panel-info-cell { display: flex; flex-direction: column; gap: .2rem; }
 .panel-lbl { font-size: .78rem; color: #94a3b8; font-weight: 500; }
 .panel-val { font-size: .95rem; color: #1e293b; font-weight: 600; }
+
+/* Total de la reserva con gradiente de texto */
 .panel-val-total {
   font-size: 1.1rem; font-weight: 800;
   background: linear-gradient(135deg,#667eea,#764ba2);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
-/* Habitación individual */
+/* Ficha de habitación individual en el panel */
 .panel-room {
   background: white; border: 1.5px solid #e2e8f0;
   border-radius: 10px; padding: 1rem; margin-bottom: .75rem;
 }
 .panel-room:last-child { margin-bottom: 0; }
 
+/* Encabezado de la ficha de habitación */
 .panel-room-top {
   display: flex; align-items: flex-start;
   justify-content: space-between; gap: .75rem; margin-bottom: .625rem;
@@ -254,12 +279,14 @@
 }
 .panel-room-price { font-size: 1.05rem; font-weight: 800; color: #667eea; flex-shrink: 0; }
 
+/* Descripción de la habitación con borde izquierdo */
 .panel-room-desc {
   font-size: .85rem; color: #64748b; line-height: 1.55;
   margin: 0 0 .75rem; padding: .625rem; background: #f8fafc;
   border-radius: 8px; border-left: 3px solid #667eea;
 }
 
+/* Metadatos de la habitación (tamaño, camas, etc.) */
 .panel-room-meta {
   display: flex; flex-wrap: wrap; gap: .4rem .875rem;
 }
@@ -269,13 +296,15 @@
 }
 .panel-room-meta-item svg { flex-shrink: 0; }
 
-/* Desglose total */
+/* Filas de desglose de totales */
 .panel-totals .panel-total-row {
   display: flex; justify-content: space-between;
   font-size: .9rem; color: #475569; padding: .4rem 0;
   border-bottom: 1px solid #e2e8f0;
 }
 .panel-totals .panel-total-row:last-of-type { border-bottom: none; }
+
+/* Fila del total final con gradiente en el monto */
 .panel-total-final {
   display: flex; justify-content: space-between; align-items: center;
   padding: .875rem 0 0; margin-top: .25rem;
@@ -288,7 +317,7 @@
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 
-/* Botón cancelar */
+/* Botón de cancelar reserva */
 .panel-cancel-btn {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
   width: 100%; padding: .875rem; margin-top: .25rem;
@@ -298,7 +327,7 @@
 }
 .panel-cancel-btn:hover { background: #ef4444; color: white; }
 
-/* ── Responsive ── */
+/* Responsive para tablets */
 @media (max-width: 1024px) {
   .card     { grid-template-columns: 1fr; }
   .img-wrap { width: 100%; height: 180px; min-height: 180px; }
@@ -306,6 +335,8 @@
   .actions  { border-left: none; border-top: 1px solid #e0e0e0; flex-direction: row; flex-wrap: wrap; }
   .grid     { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Responsive para móviles */
 @media (max-width: 640px) {
   .hdr      { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .controls { flex-direction: column; }
@@ -316,10 +347,11 @@
   .panel-info-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Sección comentario ── */
+/* Sección de comentario con estilos distintivos */
 .panel-comment-section { border: 1.5px solid #e0e7ff; background: #f5f7ff; }
 .panel-comment-section .panel-section-title { color: #4f46e5; }
 
+/* Selector de estrellas para la reseña */
 .stars-row { margin-bottom: 1rem; }
 .stars { display: flex; align-items: center; gap: .2rem; }
 .star-btn {
@@ -331,6 +363,7 @@
 .star-btn:hover  { color: #fbbf24; transform: scale(1.15); }
 .stars-label { font-size: .85rem; color: #64748b; margin-left: .5rem; font-weight: 600; }
 
+/* Campo de texto del comentario */
 .comment-field { margin-bottom: .875rem; }
 .comment-textarea {
   width: 100%; padding: .75rem 1rem;
@@ -345,11 +378,13 @@
 }
 .comment-textarea::placeholder { color: #94a3b8; }
 
+/* Error de validación del comentario */
 .comment-error {
   padding: .625rem 1rem; background: #fef2f2; border: 1.5px solid #fecaca;
   border-radius: 8px; color: #ef4444; font-size: .85rem; margin-bottom: .875rem;
 }
 
+/* Botón de enviar comentario */
 .comment-submit-btn {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
   width: 100%; padding: .8rem;
@@ -361,6 +396,7 @@
 .comment-submit-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
 .comment-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Spinner del botón de comentario */
 .comment-spinner {
   display: inline-block; width: 16px; height: 16px;
   border: 2.5px solid rgba(255,255,255,.35);
@@ -369,12 +405,14 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Mensaje de éxito al publicar el comentario */
 .comment-success {
   display: flex; align-items: center; gap: .625rem;
   padding: 1rem; background: #ecfdf5; border: 1.5px solid #6ee7b7;
   border-radius: 10px; color: #065f46; font-size: .9rem; font-weight: 600;
 }
 
+/* Aviso cuando ya existe un comentario publicado */
 .comment-already {
   display: flex; align-items: flex-start; gap: .625rem;
   padding: .875rem 1rem; background: #fffbeb; border: 1.5px solid #fcd34d;
@@ -382,7 +420,7 @@
 }
 .comment-already svg { flex-shrink: 0; margin-top: .1rem; color: #d97706; }
 
-/* ── Modal cancelación con motivo ── */
+/* Modal de confirmación de cancelación con motivo */
 .cancel-overlay {
   position: fixed; inset: 0; z-index: 1100;
   background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
@@ -391,6 +429,7 @@
   animation: fadeIn .18s ease;
 }
 
+/* Tarjeta del modal de cancelación */
 .cancel-modal {
   background: white; border-radius: 16px;
   width: 100%; max-width: 440px;
@@ -402,6 +441,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Encabezado del modal con ícono de advertencia */
 .cancel-modal-header {
   display: flex; align-items: center; gap: .75rem;
   margin-bottom: .5rem; color: #ef4444;
@@ -412,6 +452,7 @@
   color: #64748b; font-size: .9rem; margin: 0 0 1.25rem;
 }
 
+/* Textarea del motivo de cancelación */
 .cancel-motivo-input {
   width: 100%; padding: .75rem 1rem;
   border: 1.5px solid #e2e8f0; border-radius: 10px;
@@ -424,6 +465,7 @@
   box-shadow: 0 0 0 3px rgba(239,68,68,.1);
 }
 
+/* Error de validación en el modal de cancelación */
 .cancel-modal-error {
   display: flex; align-items: center; gap: .5rem;
   margin-top: .75rem; padding: .625rem .875rem;
@@ -431,6 +473,7 @@
   border-radius: 8px; color: #ef4444; font-size: .85rem;
 }
 
+/* Botones de acción del modal de cancelación */
 .cancel-modal-actions {
   display: flex; gap: .75rem; margin-top: 1.25rem; justify-content: flex-end;
 }
@@ -444,6 +487,7 @@
 }
 .cancel-modal-back:hover:not(:disabled) { border-color: #94a3b8; color: #1e293b; }
 
+/* Botón de confirmar cancelación en rojo */
 .cancel-modal-confirm {
   display: flex; align-items: center; gap: .45rem;
   padding: .65rem 1.4rem;
@@ -454,6 +498,7 @@
 .cancel-modal-confirm:hover:not(:disabled) { background: #dc2626; }
 .cancel-modal-confirm:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Badge de número de habitación en el panel */
 .panel-room-number {
   display: inline-flex;
   align-items: center;
@@ -467,6 +512,7 @@
   margin: .25rem 0 .2rem;
 }
 
+/* Badge inline del número de habitación en las filas de total */
 .total-row-num {
   font-size: .75rem;
   font-weight: 600;

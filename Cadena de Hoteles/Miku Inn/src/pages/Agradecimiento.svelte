@@ -1,16 +1,40 @@
 <script>
+  /**
+   * @file Agradecimiento.svelte
+   * @description Pagina de confirmacion de pago. Muestra el detalle de las
+   * facturas generadas tras completar una reservacion, permite descargar
+   * cada factura en PDF y presenta el total general si hay mas de una.
+   */
+
   // @ts-nocheck
   import '../styles/Agradecimiento.css';
 
+  /** Funcion de navegacion recibida desde App. @type {Function} */
   export let navigateTo;
+
+  /**
+   * Datos de la confirmacion de pago, incluyendo el array de facturas.
+   * Se pasa desde App al navegar a esta pagina.
+   * @type {object|null}
+   */
   export let agradecimientoData = null;
 
+  /** URL base del backend. @type {string} */
   const API = 'http://localhost:7000';
 
-  // ── Descarga de factura ───────────────────────────────────
+  /** ID de la reservacion cuya factura PDF se esta descargando en este momento. @type {number|null} */
   let downloadingId = null;
+
+  /** Mensaje de error que se muestra si falla la descarga del PDF. @type {string} */
   let downloadError = '';
 
+  /**
+   * Solicita al backend el PDF de la factura y lo descarga en el navegador.
+   * Crea un enlace temporal en el DOM para disparar la descarga del blob.
+   * @async
+   * @param {number|null} reservacionId - ID de la reservacion cuya factura se quiere descargar.
+   * @returns {Promise<void>}
+   */
   async function downloadFactura(reservacionId) {
     if (!reservacionId) { downloadError = 'ID de reservación no disponible.'; return; }
     downloadingId = reservacionId;
@@ -40,6 +64,11 @@
     }
   }
 
+  /**
+   * Formatea un numero como moneda USD con dos decimales.
+   * @param {number} p - Valor numerico a formatear.
+   * @returns {string} Cadena con formato de moneda, p.ej. "$1,250.00".
+   */
   const fmt = (p) =>
     new Intl.NumberFormat('es-GT', {
       style: 'currency',
@@ -47,6 +76,11 @@
       minimumFractionDigits: 2,
     }).format(p || 0);
 
+  /**
+   * Formatea una cadena de fecha ISO en formato legible en espanol.
+   * @param {string} str - Fecha en formato ISO o cadena de fecha.
+   * @returns {string} Fecha formateada, p.ej. "15 de enero de 2025", o "—" si no hay valor.
+   */
   function fmtDate(str) {
     if (!str) return '—';
     const d = new Date(str);
@@ -54,14 +88,17 @@
     return d.toLocaleDateString('es-GT', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
+  // Lista de facturas extraida de agradecimientoData.
   $: facturas = agradecimientoData?.facturas ?? [];
+
+  // Suma total de todas las facturas, util cuando hay mas de una reservacion.
   $: grandTotal = facturas.reduce((s, f) => s + (f.total || 0), 0);
 </script>
 
 <div class="agradecimiento">
   <div class="agradecimiento__inner">
 
-    <!-- ── Hero banner ── -->
+    <!-- Banner principal de confirmacion exitosa -->
     <div class="ag-hero">
       <div class="ag-hero__content">
         <div class="ag-check">
@@ -79,7 +116,7 @@
       </div>
     </div>
 
-    <!-- ── Facturas ── -->
+    <!-- Listado de facturas generadas por la compra -->
     {#if facturas.length === 0}
       <p style="text-align:center; color: var(--ag-muted); padding: 2rem 0;">
         No hay información de pago disponible.
@@ -88,8 +125,10 @@
       <div class="ag-facturas">
         {#each facturas as f, i}
           {@const reservacionId = f._reservacion?.id ?? f.reservacionId ?? null}
+          <!-- Tarjeta de factura individual con animacion escalonada -->
           <div class="ag-factura" style="animation-delay: {i * 0.08}s">
 
+            <!-- Cabecera de la factura: nombre del hotel y estado -->
             <div class="ag-factura__head">
               <span class="ag-factura__hotel">
                 🏨 {f._reservacion?.nombreHotel ?? 'Hotel'}
@@ -97,6 +136,7 @@
               <span class="ag-badge">✓ {f.estado ?? 'Pagada'}</span>
             </div>
 
+            <!-- Cuerpo con los campos de detalle de la factura -->
             <div class="ag-factura__body">
               <div class="ag-field">
                 <span class="ag-field__label">Factura #</span>
@@ -115,6 +155,7 @@
                 <span class="ag-field__value">{f.codigoPostal ?? '—'}</span>
               </div>
 
+              <!-- Habitaciones reservadas, si estan disponibles en los datos -->
               {#if f._reservacion?.habitaciones?.length}
                 <div class="ag-field ag-field--full">
                   <span class="ag-field__label">Habitaciones</span>
@@ -126,6 +167,7 @@
                 </div>
               {/if}
 
+              <!-- Fechas de check-in y check-out de la reservacion -->
               {#if f._reservacion?.fechaCheckIn || f._reservacion?._checkIn}
                 <div class="ag-field">
                   <span class="ag-field__label">Check-in</span>
@@ -141,18 +183,20 @@
                 </div>
               {/if}
 
+              <!-- Total pagado, destacado visualmente -->
               <div class="ag-field ag-field--total">
                 <span class="ag-field__label">Total pagado</span>
                 <span class="ag-field__value">{fmt(f.total)}</span>
               </div>
             </div>
 
+            <!-- Numero de reservacion -->
             <div class="ag-factura__code">
               <span class="ag-factura__code-label">Reservación</span>
               <span class="ag-factura__code-val">{f.noReservacion ?? '—'}</span>
             </div>
 
-            <!-- ── Botón descargar factura ── -->
+            <!-- Boton para descargar el PDF de esta factura -->
             <div class="ag-factura__download">
               <button
                 class="ag-download-btn"
@@ -171,6 +215,7 @@
                   Descargar Factura PDF
                 {/if}
               </button>
+              <!-- Mensaje de error si la descarga falla -->
               {#if downloadError && downloadingId === null}
                 <p class="ag-download-error">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -187,7 +232,7 @@
         {/each}
       </div>
 
-      <!-- Grand total si hay más de 1 -->
+      <!-- Barra de total general, visible solo cuando hay mas de una factura -->
       {#if facturas.length > 1}
         <div class="ag-total-bar">
           <span class="ag-total-bar__label">
@@ -198,7 +243,7 @@
       {/if}
     {/if}
 
-    <!-- ── Acciones ── -->
+    <!-- Acciones finales: volver al inicio o ir a mis reservaciones -->
     <div class="ag-actions">
       <button class="ag-btn ag-btn--primary" on:click={() => navigateTo('home')}>
         🏠 Volver al inicio

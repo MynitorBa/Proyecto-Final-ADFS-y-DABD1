@@ -3,6 +3,7 @@
     <div class="footer-main">
       <div class="footer-container">
 
+        <!-- Sección de marca: logo, descripción y redes sociales -->
         <div class="footer-brand">
           <img src="/movent.png" alt="Movent" class="footer-logo" />
           <p class="footer-description">
@@ -22,6 +23,7 @@
           </div>
         </div>
 
+        <!-- Columna de navegación general del sitio -->
         <div class="footer-col">
           <h4 class="footer-col-title">Navegación</h4>
           <ul class="footer-links">
@@ -33,6 +35,7 @@
           </ul>
         </div>
 
+        <!-- Columna de soporte y políticas -->
         <div class="footer-col">
           <h4 class="footer-col-title">Soporte</h4>
           <ul class="footer-links">
@@ -43,6 +46,7 @@
           </ul>
         </div>
 
+        <!-- Columna de información de contacto directa -->
         <div class="footer-col">
           <h4 class="footer-col-title">Contáctanos</h4>
           <ul class="footer-contact">
@@ -79,6 +83,7 @@
       </div>
     </div>
 
+    <!-- Barra inferior con copyright y links legales -->
     <div class="footer-bottom">
       <div class="footer-bottom-inner">
         <p class="footer-copy">&copy; {{ currentYear }} <strong>Movent</strong>. Todos los derechos reservados.</p>
@@ -95,6 +100,17 @@
 </template>
 
 <script setup>
+/**
+ * @file Piepagina.vue
+ * @description Componente de pie de página global de MOVENT. Muestra la marca,
+ * descripción, redes sociales, columnas de navegación, soporte, información de
+ * contacto y la barra inferior con copyright y links legales.
+ */
 import '../styles/piepagina.css'
+
+/**
+ * Año actual calculado dinámicamente para el copyright.
+ * @type {number}
+ */
 const currentYear = new Date().getFullYear()
 </script>

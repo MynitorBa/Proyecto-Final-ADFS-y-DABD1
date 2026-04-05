@@ -1,10 +1,7 @@
-/* ============================================
-   APP.CSS - MIKU INN
-   ============================================ */
-
-/* ========== RESET ========== */
+/* Reset global: box-sizing, márgenes y padding en cero para todos los elementos */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Configuración base del documento: tamaño de fuente, suavizado y scroll suave */
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
@@ -12,6 +9,7 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Estilos base del body: tipografía, color de texto y fondo general */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
   font-size: 1rem;
@@ -22,6 +20,7 @@ body {
   overflow-x: hidden;
 }
 
+/* Tipografía básica: encabezados, párrafos, links, listas e imágenes */
 h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 700; line-height: 1.25; color: #333333; }
 p { margin: 0 0 1rem 0; line-height: 1.75; }
 a { color: #667eea; text-decoration: none; transition: color 0.2s ease; }
@@ -32,20 +31,24 @@ button { cursor: pointer; border: none; background: none; padding: 0; font-famil
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 input, textarea, select { font-family: inherit; font-size: inherit; line-height: inherit; }
 input:focus, textarea:focus, select:focus { outline: none; }
+
+/* Oculta las flechas nativas de los inputs numéricos */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
+/* Selección de texto y anillo de foco accesible */
 ::selection { background: #667eea; color: #ffffff; }
 *:focus-visible { outline: 2px solid #667eea; outline-offset: 2px; }
 
+/* Scrollbar personalizada para navegadores webkit y Firefox */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #f8f9fa; }
 ::-webkit-scrollbar-thumb { background: #b0b0b0; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #888888; }
 * { scrollbar-width: thin; scrollbar-color: #b0b0b0 #f8f9fa; }
 
-/* ========== APP LAYOUT ========== */
+/* Layout principal de la app: columna flex que ocupa toda la pantalla */
 .app-wrapper {
   width: 100%;
   min-height: 100vh;
@@ -53,6 +56,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   flex-direction: column;
 }
 
+/* Pantalla de carga inicial con gradiente de fondo */
 .loading-screen {
   width: 100%;
   height: 100vh;
@@ -62,13 +66,14 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+/* Área de contenido principal que crece para llenar el espacio disponible */
 .app-main {
   flex: 1;
   width: 100%;
   background: var(--color-bg, #f8fafc);
 }
 
-/* ========== PÁGINA PLACEHOLDER ========== */
+/* Página placeholder usada mientras se carga una sección */
 .page-placeholder {
   min-height: 70vh;
   display: flex;
@@ -78,6 +83,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   background: var(--color-bg, #f8fafc);
 }
 
+/* Tarjeta de contenido del placeholder, centrada y con sombra suave */
 .placeholder-content {
   text-align: center;
   max-width: 600px;
@@ -90,7 +96,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .placeholder-content h1 { font-size: 3rem; margin-bottom: 1rem; color: #1e293b; }
 .placeholder-content p  { font-size: 1.125rem; color: #64748b; margin-bottom: 2rem; }
 
-/* ========== PÁGINA 404 ========== */
+/* Página 404: contenedor centrado con animación de entrada */
 .not-found-page {
   min-height: 70vh;
   display: flex;
@@ -106,12 +112,13 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   animation: fadeInUp 0.6s ease-out;
 }
 
+/* Elementos visuales de la página 404 */
 .not-found-icon    { color: #667eea; margin-bottom: 1rem; display: flex; justify-content: center; }
 .not-found-title   { font-size: 8rem; font-weight: 800; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; margin: 0 0 1rem 0; }
 .not-found-subtitle { font-size: 2rem; color: #1e293b; margin: 0 0 1rem 0; }
 .not-found-text    { font-size: 1.1rem; color: #64748b; margin: 0 0 2rem 0; line-height: 1.6; }
 
-/* ========== BOTONES GLOBALES ========== */
+/* Botón primario global con gradiente y efecto hover elevado */
 .btn-primary {
   padding: 1rem 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -130,7 +137,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
 }
 
-/* ========== ANIMACIONES ========== */
+/* Keyframes globales reutilizables en toda la app */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -166,6 +173,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   50%       { transform: translateY(-20px); }
 }
 
+/* Clases utilitarias de animación para aplicar directamente en el HTML */
 .animate-fadeIn   { animation: fadeIn   0.5s ease-in-out; }
 .animate-fadeInUp { animation: fadeInUp 0.6s ease-out; }
 .animate-slideUp  { animation: slideUp  0.5s ease-out; }
@@ -175,20 +183,23 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .fade-in          { animation: fadeIn   0.3s ease; }
 .slide-up         { animation: slideUp  0.3s ease; }
 
+/* Efecto de elevación al pasar el cursor */
 .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
 
+/* Skeleton loader con animación shimmer para estados de carga */
 .skeleton {
   background: linear-gradient(90deg, #e0e0e0 25%, #f8f9fa 50%, #e0e0e0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
-/* ========== UTILIDADES ========== */
+/* Contenedor con ancho máximo y padding responsivo */
 .container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 1rem; }
 @media (min-width: 640px)  { .container { padding: 0 1.5rem; } }
 @media (min-width: 1024px) { .container { padding: 0 2rem; } }
 
+/* Clases utilitarias de layout y visibilidad */
 .flex         { display: flex; }
 .flex-center  { display: flex; align-items: center; justify-content: center; }
 .flex-between { display: flex; align-items: center; justify-content: space-between; }
@@ -198,7 +209,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 .hidden       { display: none !important; }
 .sr-only      { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
 
-/* ========== RESPONSIVE ========== */
+/* Ajustes responsive para pantallas menores a 768px */
 @media (max-width: 768px) {
   .not-found-title     { font-size: 5rem; }
   .not-found-subtitle  { font-size: 1.5rem; }
@@ -207,9 +218,10 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .placeholder-content h1 { font-size: 2rem; }
 }
 
+/* Oculta elementos en móvil */
 @media (max-width: 640px) { .hide-mobile { display: none !important; } }
 
-/* ========== DARK MODE ========== */
+/* Soporte para modo oscuro del sistema */
 @media (prefers-color-scheme: dark) {
   .app-main, .page-placeholder, .not-found-page { background: #0f172a; }
   .placeholder-content { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); }
@@ -217,7 +229,7 @@ input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
   .placeholder-content p, .not-found-text { color: #cbd5e1; }
 }
 
-/* ========== REDUCE MOTION ========== */
+/* Desactiva animaciones para usuarios con preferencia de movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

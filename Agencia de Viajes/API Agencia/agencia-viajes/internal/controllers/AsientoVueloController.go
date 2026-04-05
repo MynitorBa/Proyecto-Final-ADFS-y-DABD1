@@ -1,3 +1,8 @@
+// # Package controllers
+//
+// Controladores HTTP de la agencia de viajes. Cada controlador recibe
+// solicitudes de Gin, delega la logica de negocio al servicio correspondiente
+// y devuelve la respuesta JSON al cliente.
 package controllers
 
 import (
@@ -8,19 +13,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AsientoVueloController
+//
+// Controlador encargado de gestionar el mapa de asientos de un vuelo
+// y el cambio de asiento de un boleto especifico.
 type AsientoVueloController struct {
 	service *services.AsientoVueloService
 }
 
+// NewAsientoVueloController
+//
+// Crea e inicializa un nuevo AsientoVueloController con el servicio recibido.
+//
+// Parametros:
+//   - service: instancia del servicio de asientos de vuelo
+//
+// Retorna:
+//   - *AsientoVueloController: puntero al controlador creado
 func NewAsientoVueloController(service *services.AsientoVueloService) *AsientoVueloController {
 	return &AsientoVueloController{service: service}
 }
 
-// ObtenerAsientos maneja el GET para visualizar el mapa de asientos
-// POST o GET /api/reservaciones/asientos-vuelo
-// (Si usas ShouldBindJSON, recuerda que el cliente debe enviar un Body JSON)
+// ObtenerAsientos
+//
+// Handler HTTP que devuelve el mapa de asientos de un vuelo para el usuario
+// autenticado. Valida la sesion del usuario y delega la consulta al servicio.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200: objeto AsientosVueloResponse con el mapa de asientos y boletos de la agencia
+//   - HTTP 400: error si el body JSON es invalido o el servicio retorna un error
+//   - HTTP 401: error si el usuario no esta autenticado
 func (ctrl *AsientoVueloController) ObtenerAsientos(c *gin.Context) {
-	// Extraer el usuario del middleware de autenticación
 	val, exists := c.Get("usuario_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
@@ -34,10 +60,8 @@ func (ctrl *AsientoVueloController) ObtenerAsientos(c *gin.Context) {
 		return
 	}
 
-	// Llamada al servicio que ahora retorna AsientosVueloResponse (con BoletosAgencia)
 	resp, err := ctrl.service.ObtenerAsientosVuelo(usuarioID, req)
 	if err != nil {
-		// El error devuelto por el servicio ya viene formateado
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -45,8 +69,19 @@ func (ctrl *AsientoVueloController) ObtenerAsientos(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// CambiarAsiento maneja el PUT para actualizar el asiento de un boleto específico
-// PUT /api/reservaciones/asientos-vuelo
+// CambiarAsiento
+//
+// Handler HTTP que actualiza el asiento de un boleto especifico dentro de una
+// reservacion. Valida la sesion del usuario y delega la operacion al servicio,
+// que verifica que el boleto pertenezca a la reserva del usuario.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200: mensaje de confirmacion indicando que el cambio fue procesado por la aerolinea
+//   - HTTP 400: error si los datos enviados son invalidos o el servicio retorna un error
+//   - HTTP 401: error si el usuario no esta autenticado
 func (ctrl *AsientoVueloController) CambiarAsiento(c *gin.Context) {
 	val, exists := c.Get("usuario_id")
 	if !exists {
@@ -55,14 +90,12 @@ func (ctrl *AsientoVueloController) CambiarAsiento(c *gin.Context) {
 	}
 	usuarioID := val.(int)
 
-	// Usamos la estructura CambiarAsientoVueloRequest que definimos como pública
 	var req dto.CambiarAsientoVueloRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "datos de cambio de asiento inválidos"})
 		return
 	}
 
-	// El servicio se encarga de validar que el boleto pertenezca a la reserva
 	if err := ctrl.service.CambiarAsientoVuelo(usuarioID, req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

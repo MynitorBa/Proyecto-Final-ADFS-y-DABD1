@@ -5,6 +5,11 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.util.Properties;
 
+/**
+ * Helper para el envio de correos electronicos via SMTP usando Gmail.
+ * Configura la sesion con autenticacion y TLS, y expone un metodo
+ * estatico para enviar mensajes en formato HTML.
+ */
 public class EmailHelper {
 
     private static final String HOST     = "smtp.gmail.com";
@@ -12,6 +17,12 @@ public class EmailHelper {
     private static final String CORREO   = "distribuidorapine@gmail.com";
     private static final String PASSWORD = "axvv hnkv gylv gupb";
 
+    /**
+     * Crea y configura una sesion SMTP autenticada con el servidor de Gmail.
+     * Usa STARTTLS en el puerto 587 para cifrar la conexion.
+     *
+     * @return sesion de JavaMail lista para enviar mensajes.
+     */
     private static Session crearSesion() {
         Properties props = new Properties();
         props.put("mail.smtp.host",            HOST);
@@ -27,6 +38,14 @@ public class EmailHelper {
         });
     }
 
+    /**
+     * Envia un correo electronico en formato HTML al destinatario indicado.
+     *
+     * @param destinatario direccion de correo del receptor.
+     * @param asunto       asunto del mensaje.
+     * @param cuerpoHtml   contenido del mensaje en formato HTML.
+     * @throws RuntimeException si ocurre un error durante el envio del correo.
+     */
     public static void enviar(String destinatario, String asunto, String cuerpoHtml) {
         try {
             Session session = crearSesion();
@@ -34,6 +53,7 @@ public class EmailHelper {
             message.setFrom(new InternetAddress(CORREO));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destinatario));
             message.setSubject(asunto);
+            // Especificar charset UTF-8 para soportar caracteres especiales en el HTML
             message.setContent(cuerpoHtml, "text/html; charset=utf-8");
             Transport.send(message);
         } catch (MessagingException e) {

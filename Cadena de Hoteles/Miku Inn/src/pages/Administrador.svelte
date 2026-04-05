@@ -1,4 +1,11 @@
 <script>
+  /**
+   * @file Administrador.svelte
+   * @description Panel de administracion de Miku Inn. Contiene un sidebar con
+   * navegacion entre secciones (dashboard, usuarios, hoteles, reservas, agencias
+   * y reportes) y carga el sub-componente correspondiente segun la seccion activa.
+   */
+
   import '../styles/administrador.css';
   import { onMount } from 'svelte';
 
@@ -10,19 +17,38 @@
   import AdminAgencias   from '../components/admin/AdminAgencias.svelte';
   import AdminReportes   from '../components/admin/AdminReportes.svelte';
 
+  /** URL base del backend usada por todos los sub-componentes de admin. @type {string} */
   const API_BASE = 'http://localhost:7000';
 
+  /** Funcion de navegacion para redirigir fuera del panel si es necesario. @type {Function} */
   export let navigateTo = (page, data = null) => {};
 
+  /** Identificador de la seccion activa en el panel. @type {string} */
   let activeSection = 'dashboard';
 
+  /** Contador de usuarios, actualizado por AdminUsuarios via bind. @type {number} */
   let countUsuarios = 0;
+
+  /** Contador de hoteles, actualizado por AdminHoteles via bind. @type {number} */
   let countHoteles  = 0;
+
+  /** Contador de reservas, actualizado por AdminReservas via bind. @type {number} */
   let countReservas = 0;
+
+  /** Contador de agencias, actualizado por AdminAgencias via bind. @type {number} */
   let countAgencias = 0;
 
+  /**
+   * Cambia la seccion visible dentro del panel de administracion.
+   * @param {string} id - Identificador de la seccion destino.
+   */
   function setSection(id) { activeSection = id; }
 
+  /**
+   * Devuelve la clase CSS de badge segun el estado de un registro.
+   * @param {string} estado - Estado del elemento (activo, cerrado, pendiente, etc.).
+   * @returns {string} Nombre de la clase CSS del badge.
+   */
   function badge(estado) {
     const e = (estado ?? '').toLowerCase();
     if (e === 'activo'  || e === 'confirmada' || e === 'activa')    return 'badge--green';
@@ -32,6 +58,12 @@
     return 'badge--gray';
   }
 
+  /**
+   * Convierte un objeto File a una cadena en base64 (data URL).
+   * Se usa para previsualizar y enviar imagenes de hoteles al backend.
+   * @param {File} file - Archivo de imagen seleccionado por el usuario.
+   * @returns {Promise<string>} Data URL en base64.
+   */
   function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -41,8 +73,11 @@
     });
   }
 
-  // Las características (cama, precio, capacidad) ahora viven en TipoHabitacion.
-  // Solo se necesita el combo de tipos para los selects del formulario.
+  /**
+   * Tipos de habitacion disponibles para los selects de formularios de hotel.
+   * Las caracteristicas reales (cama, precio, capacidad) viven en TipoHabitacion en el backend.
+   * @type {Array<{id: number, nombre: string}>}
+   */
   const tiposHabitacion = [
     { id: 1, nombre: 'Doble' },
     { id: 2, nombre: 'Junior Suite' },
@@ -50,6 +85,10 @@
     { id: 4, nombre: 'Gran Suite' },
   ];
 
+  /**
+   * Items del sidebar de navegacion con su id, etiqueta e icono SVG (path d).
+   * @type {Array<{id: string, label: string, icon: string}>}
+   */
   const navItems = [
     { id: 'dashboard',    label: 'Dashboard',    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
     { id: 'usuarios',     label: 'Usuarios',      icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -61,9 +100,10 @@
   ];
 </script>
 
+<!-- Contenedor principal del panel: sidebar + area de contenido -->
 <div class="adm">
 
-  <!-- SIDEBAR -->
+  <!-- SIDEBAR con logo, navegacion entre secciones y boton de volver -->
   <aside class="adm__sidebar">
     <div class="adm__sidebar-header">
       <div class="adm__sidebar-logo">
@@ -74,6 +114,7 @@
         </div>
       </div>
     </div>
+    <!-- Menu de secciones del panel -->
     <nav class="adm__sidebar-nav">
       {#each navItems as item}
         <button
@@ -88,6 +129,7 @@
         </button>
       {/each}
     </nav>
+    <!-- Boton para salir del panel y volver al sitio publico -->
     <div class="adm__sidebar-footer">
       <button class="adm__back-btn" on:click={() => navigateTo('home')}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -96,10 +138,11 @@
     </div>
   </aside>
 
-  <!-- MAIN -->
+  <!-- AREA PRINCIPAL: topbar con titulo de seccion y contenido dinamico -->
   <div class="adm__main">
     <header class="adm__topbar">
       <div class="adm__topbar-left">
+        <!-- Titulo que cambia segun la seccion activa -->
         <h1 class="adm__topbar-title">
           {#if activeSection === 'dashboard'}Dashboard General
           {:else if activeSection === 'usuarios'}Gestión de Usuarios
@@ -112,6 +155,7 @@
         </h1>
         <p class="adm__topbar-sub">Panel de Administración · Miku Inn</p>
       </div>
+      <!-- Fecha actual en el topbar -->
       <div class="adm__topbar-right">
         <div class="adm__topbar-date">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -120,6 +164,7 @@
       </div>
     </header>
 
+    <!-- Seccion de contenido: renderiza el componente correspondiente a la seccion activa -->
     <div class="adm__content">
 
       {#if activeSection === 'dashboard'}

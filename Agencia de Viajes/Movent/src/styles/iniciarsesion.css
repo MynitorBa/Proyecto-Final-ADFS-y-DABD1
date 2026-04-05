@@ -1,9 +1,10 @@
+/* Página de login a pantalla completa */
 .login-page {
   min-height: 100vh;
   display: flex;
 }
 
-/* Split layout */
+/* Layout dividido en dos paneles iguales */
 .login-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -11,7 +12,7 @@
   min-height: 100vh;
 }
 
-/* Panel izquierdo */
+/* Panel izquierdo de marca con imagen de fondo y overlay oscuro */
 .login-brand {
   position: relative;
   background: #1C1A18;
@@ -31,6 +32,7 @@
   background: linear-gradient(135deg, rgba(28,26,24,0.92) 0%, rgba(139,107,74,0.75) 100%);
 }
 
+/* Contenido del panel de marca: logo, título y features */
 .login-brand__content {
   position: relative;
   z-index: 1;
@@ -62,6 +64,7 @@
   max-width: 380px;
 }
 
+/* Lista de ventajas con íconos amarillos */
 .login-brand__features {
   display: flex;
   flex-direction: column;
@@ -93,7 +96,7 @@
   font-weight: 600;
 }
 
-/* Panel derecho */
+/* Panel derecho con el formulario de inicio de sesión */
 .login-form-panel {
   background: #f8f9fa;
   display: flex;
@@ -110,6 +113,7 @@
   gap: 0;
 }
 
+/* Enlace de volver con desplazamiento a la izquierda al hover */
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -128,6 +132,7 @@
 
 .back-link:hover { color: #1C1A18; transform: translateX(-3px); }
 
+/* Encabezado del formulario con título y descripción */
 .login-form-header {
   margin-bottom: 2rem;
 }
@@ -145,7 +150,7 @@
   margin: 0;
 }
 
-/* Success */
+/* Caja de éxito con ícono animado y puntos de carga */
 .success-box {
   text-align: center;
   padding: 3rem 1rem;
@@ -155,6 +160,7 @@
   gap: 1rem;
 }
 
+/* Ícono de éxito circular con animación de entrada */
 .success-icon {
   width: 80px;
   height: 80px;
@@ -172,6 +178,7 @@
 .success-box h3 { font-size: 1.4rem; font-weight: 800; color: #1C1A18; margin: 0; }
 .success-box p  { color: #64748b; margin: 0; }
 
+/* Puntos de carga animados en amarillo */
 .loading-dots { display: flex; gap: 0.4rem; }
 .loading-dots span {
   width: 8px; height: 8px;
@@ -183,9 +190,10 @@
 .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
 @keyframes bounce { 0%,80%,100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-/* Form */
+/* Formulario de login con campos apilados */
 .login-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
+/* Alerta de error con fondo rojo claro */
 .alert-error {
   display: flex;
   align-items: center;
@@ -199,6 +207,7 @@
   font-weight: 500;
 }
 
+/* Campo de formulario con label en mayúsculas y foco amarillo */
 .form-field { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .form-field label {
@@ -209,6 +218,7 @@
   letter-spacing: 0.03em;
 }
 
+/* Wrapper para inputs con ícono a la izquierda */
 .input-icon-wrap { position: relative; display: flex; align-items: center; }
 
 .input-icon-wrap svg {
@@ -220,6 +230,7 @@
 
 .input-icon-wrap input { padding-left: 3rem; }
 
+/* Input estándar con borde que se vuelve amarillo al enfocar */
 .form-field input,
 .password-wrap input {
   width: 100%;
@@ -245,6 +256,7 @@
 .password-wrap input.error { border-color: #ef4444; background: #fef2f2; }
 .form-field input::placeholder { color: #94a3b8; }
 
+/* Wrapper de contraseña con botón para mostrar/ocultar */
 .password-wrap { position: relative; }
 .password-wrap input { padding-right: 3rem; }
 
@@ -265,7 +277,7 @@
 
 .error-text { color: #ef4444; font-size: 0.8rem; font-weight: 500; }
 
-/* Checkbox */
+/* Checkbox personalizado con estilo amarillo al marcar */
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -293,6 +305,7 @@
   border-color: #000;
 }
 
+/* Checkmark dibujado con pseudo-elemento */
 .checkbox-label input:checked ~ .checkbox-custom::after {
   content: '';
   position: absolute;
@@ -303,7 +316,7 @@
   transform: rotate(45deg);
 }
 
-/* Submit */
+/* Botón de envío del formulario en amarillo */
 .submit-btn {
   width: 100%;
   padding: 1rem;
@@ -337,6 +350,7 @@
 .spinner { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Texto de pie con enlace a registro */
 .footer-text {
   text-align: center;
   font-size: 0.875rem;
@@ -352,7 +366,7 @@
 
 .link-btn:hover { text-decoration: underline; }
 
-/* reCAPTCHA */
+/* Wrapper del reCAPTCHA con mensaje de error */
 .captcha-wrap {
   display: flex;
   flex-direction: column;
@@ -365,7 +379,7 @@
   font-weight: 500;
 }
 
-/* Responsive */
+/* Responsive: ocultar panel de marca en móviles */
 @media (max-width: 768px) {
   .login-split { grid-template-columns: 1fr; }
   .login-brand { display: none; }

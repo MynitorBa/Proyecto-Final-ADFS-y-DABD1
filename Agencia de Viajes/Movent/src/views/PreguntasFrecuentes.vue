@@ -1,6 +1,8 @@
 <template>
   <div class="page">
     <Encabezado />
+
+    <!-- Hero de sección con imagen de fondo -->
     <section class="info-hero" style="background-image: url('/empleado.png')">
       <div class="info-hero-overlay"></div>
       <div class="info-hero-content">
@@ -12,12 +14,17 @@
         <p class="info-hero-subtitle">Respuestas a las dudas más comunes sobre reservaciones, pagos y políticas.</p>
       </div>
     </section>
+
+    <!-- Contenido principal: lista de FAQs con acordeón -->
     <div class="info-wrap">
       <button class="info-back" @click="$router.push('/informacion')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver a Información
       </button>
+
       <div class="info-section-body">
+
+        <!-- Cada pregunta es un acordeón: click en el botón expande la respuesta -->
         <div v-for="(faq, i) in faqs" :key="i" class="info-faq">
           <button class="info-faq-q" :class="{ open: abierto[i] }" @click="toggle(i)">
             {{ faq.q }}
@@ -26,25 +33,41 @@
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
+          <!-- Respuesta visible solo cuando el índice está abierto -->
           <div v-if="abierto[i]" class="info-faq-a">{{ faq.a }}</div>
         </div>
+
+        <!-- Tarjeta de contacto directo si no se encontró respuesta -->
         <div class="info-card" style="margin-top:1rem">
           <p class="info-prose" style="margin:0">
             ¿No encontraste tu respuesta? Escríbenos a <strong>info@movent.com</strong> o llámanos al <strong>+502 5754-5388</strong>
           </p>
         </div>
+
       </div>
     </div>
+
     <Piepagina />
   </div>
 </template>
 
 <script setup>
+/**
+ * @file PreguntasFrecuentes.vue
+ * @description Vista de preguntas frecuentes de Movent. Muestra un listado de
+ * preguntas y respuestas en formato acordeón. Cada ítem se expande/colapsa
+ * de forma independiente al hacer clic.
+ */
+
 import { ref } from 'vue'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/informacion.css'
 
+/**
+ * Lista estática de preguntas y respuestas frecuentes.
+ * @type {Array<{ q: string, a: string }>}
+ */
 const faqs = [
   { q: '¿Cómo realizo una reservación?', a: 'Busca tu vuelo u hotel con los filtros disponibles (origen, destino, fechas, pasajeros, clase). Selecciona la opción deseada, revisa el itinerario completo con precio total y completa el proceso de pago. Recibirás un voucher PDF con tu código único #MVT-2026-XXXXXX.' },
   { q: '¿Qué tipos de asiento están disponibles?', a: 'Ofrecemos tres clases: Económica, Ejecutiva y Primera Clase. Cada una tiene precio diferenciado con características claramente visibles antes de reservar.' },
@@ -56,6 +79,17 @@ const faqs = [
   { q: '¿Dónde veo mis reservaciones anteriores?', a: 'En tu perfil, sección "Mis Reservaciones", encontrarás todas tus reservaciones categorizadas: activas, completadas y canceladas. Desde ahí también puedes descargar el voucher PDF.' },
 ]
 
+/**
+ * Array de booleanos que controla qué preguntas están expandidas.
+ * El índice de cada elemento corresponde al índice de su FAQ.
+ * @type {import('vue').Ref<boolean[]>}
+ */
 const abierto = ref(faqs.map(() => false))
+
+/**
+ * Alterna el estado abierto/cerrado de una pregunta del acordeón.
+ *
+ * @param {number} i - Índice de la pregunta a togglear.
+ */
 const toggle = (i) => { abierto.value[i] = !abierto.value[i] }
 </script>

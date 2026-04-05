@@ -1,3 +1,4 @@
+/* Header sticky con fondo amarillo y sombra al hacer scroll */
 .header {
   position: sticky;
   top: 0;
@@ -9,6 +10,7 @@
 
 .header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
 
+/* Contenedor interior centrado con espaciado horizontal */
 .header-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -19,6 +21,7 @@
   gap: 1rem;
 }
 
+/* Logo con animación de escala al pasar el mouse */
 .logo {
   display: flex; align-items: center;
   background: none; border: none; padding: 0;
@@ -27,8 +30,10 @@
 .logo:hover { transform: scale(1.05); }
 .logo-image { height: 48px; width: auto; display: block; object-fit: contain; }
 
+/* Navegación desktop con links en fila */
 .desktop-nav { display: flex; align-items: center; gap: 0.15rem; flex-shrink: 0; }
 
+/* Link de navegación con estado activo en negro/amarillo */
 .nav-link {
   display: inline-flex; align-items: center; gap: 0.45rem;
   padding: 0.55rem 0.9rem; color: #1C1A18; font-weight: 600;
@@ -39,7 +44,7 @@
 .nav-link:hover  { background: rgba(0,0,0,0.08); color: #000; }
 .nav-link.active { background: #000; color: #FFCC00; font-weight: 700; }
 
-/* ── Search bar ── */
+/* Barra de búsqueda con ancho fijo y wrapper para el ícono */
 .search-bar { flex: 0 0 340px; width: 340px; position: relative; }
 
 .search-input-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
@@ -49,6 +54,7 @@
   color: rgba(0,0,0,0.5); pointer-events: none;
 }
 
+/* Input de búsqueda con foco en blanco y borde negro */
 .search-input {
   width: 100%;
   padding: 0.7rem 2.4rem 0.7rem 2.75rem;
@@ -67,6 +73,7 @@
 
 .search-spinner { display: none; }
 
+/* Botón de limpiar búsqueda posicionado a la derecha del input */
 .search-clear {
   position: absolute; right: 10px;
   background: none; border: none; cursor: pointer;
@@ -76,17 +83,14 @@
 }
 .search-clear:hover { background: rgba(0,0,0,0.12); color: #000; }
 
-/* ════════════════════════════════════════════════
-   AUTOCOMPLETE — hijo directo del header,
-   pegado al borde negro, a todo lo ancho
-   ════════════════════════════════════════════════ */
+/* Dropdown de autocomplete pegado al borde inferior del header, a todo el ancho */
 .search-ac-dropdown {
   position: absolute;
-  top: 100%;      /* justo debajo del header */
+  top: 100%;
   left: 0;
   right: 0;
   background: #fff;
-  border-top: none;                      /* el borde negro del header hace de separador */
+  border-top: none;
   border-bottom: 2px solid #000;
   border-radius: 0 0 16px 16px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.16);
@@ -102,6 +106,7 @@
   padding: 0 1.5rem;
 }
 
+/* Ítem del autocomplete con pills de categoría a la derecha */
 .search-ac-item {
   display: flex;
   align-items: center;
@@ -125,6 +130,7 @@
 
 .search-ac-item__pills { display: flex; gap: 6px; flex-shrink: 0; }
 
+/* Pills de vuelo, hotel y paquete con hover de color sólido */
 .search-ac-pill {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 13px; border-radius: 20px;
@@ -142,9 +148,7 @@
 .search-ac-pill--hotel:hover   { background: #1C1A18; color: #FFCC00; border-color: #1C1A18; }
 .search-ac-pill--paquete:hover { background: #D40511; color: #fff;   border-color: #D40511; }
 
-/* ════════════════════════════════════════════════
-   CARRITO / BOARDING PASS
-   ════════════════════════════════════════════════ */
+/* Botón del carrito con badge rojo y animación de pulso cuando tiene items */
 .cart-wrap { position: relative; }
 
 .cart-btn {
@@ -169,6 +173,7 @@
   50%       { box-shadow: 0 0 0 6px rgba(28,26,24,0.06); }
 }
 
+/* Badge rojo de cantidad sobre el botón de carrito */
 .cart-badge {
   position: absolute; top: -4px; right: -4px;
   width: 14px; height: 14px; border-radius: 50%;
@@ -176,9 +181,7 @@
   display: flex; align-items: center; justify-content: center;
 }
 
-/* ════════════════════════════════════════════════
-   CART DROPDOWN
-   ════════════════════════════════════════════════ */
+/* Dropdown del carrito con resumen de reserva y acciones */
 .cart-dropdown {
   position: absolute; top: calc(100% + 10px); right: 0;
   background: #fff; border: 1px solid #e8e3dc; border-radius: 16px;
@@ -186,11 +189,13 @@
   min-width: 260px; max-width: 300px; z-index: 500; overflow: hidden;
 }
 
+/* Transición de entrada y salida del dropdown */
 .enc-drop-enter-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
 .enc-drop-leave-active { transition: all 0.15s ease; }
 .enc-drop-enter-from   { transform: translateY(-8px) scale(0.97); opacity: 0; }
 .enc-drop-leave-to     { transform: translateY(-4px) scale(0.98); opacity: 0; }
 
+/* Cabecera del dropdown con fondo negro y nombre/ícono de cierre */
 .cart-dropdown__head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; background: #1C1A18; padding: 12px 14px;
@@ -205,6 +210,7 @@
 }
 .cart-dropdown__close-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
 
+/* Bloque de información: destino, vuelo, código de reserva y total */
 .cart-dropdown__info-block {
   padding: 12px 14px; display: flex; flex-direction: column;
   gap: 6px; border-bottom: 1px solid #f0ebe3;
@@ -222,6 +228,7 @@
 .cart-dropdown__info-row--total { padding-top: 6px; border-top: 1px solid #f0ebe3; margin-top: 2px; }
 .cart-dropdown__info-total { font-size: 17px; font-weight: 900; color: #1C1A18; flex: 1; text-align: right; }
 
+/* Acciones principales del carrito: pagar, ver reserva */
 .cart-dropdown__actions { padding: 12px 14px 6px; }
 .cart-dropdown__btn-pay {
   display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -233,6 +240,7 @@
 
 .cart-dropdown__secondary-actions { display: flex; flex-direction: column; padding: 0 8px 10px; gap: 2px; }
 
+/* Botones secundarios de texto dentro del dropdown */
 .cart-dropdown__btn-secondary {
   display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 10px;
   background: none; border: none; border-radius: 8px; font-size: 12.5px;
@@ -241,6 +249,7 @@
 }
 .cart-dropdown__btn-secondary:hover { background: #f5f2ec; color: #1C1A18; }
 
+/* Botón para abrir el formulario de cancelación */
 .cart-dropdown__btn-cancel-open {
   display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 10px;
   background: none; border: none; border-radius: 8px; font-size: 12.5px;
@@ -249,6 +258,7 @@
 }
 .cart-dropdown__btn-cancel-open:hover { background: #fde8e8; }
 
+/* Formulario de cancelación con fondo rosado y animación de entrada */
 .cart-dropdown__cancel-form {
   padding: 14px; display: flex; flex-direction: column; gap: 10px;
   background: #fff8f8; border-top: 1px solid #fecaca; animation: enc-fade-in 0.18s ease;
@@ -259,6 +269,7 @@
 .cart-dropdown__cancel-title { font-size: 13px; font-weight: 700; color: #1C1A18; margin: 0 0 2px; }
 .cart-dropdown__cancel-sub   { font-size: 11px; color: #9a9089; margin: 0; line-height: 1.4; }
 
+/* Textarea del motivo de cancelación con borde rojo al enfocar */
 .cart-dropdown__cancel-textarea {
   width: 100%; padding: 9px 11px; border: 1.5px solid #fca5a5; border-radius: 8px;
   font-size: 13px; font-family: inherit; resize: none; outline: none;
@@ -267,12 +278,14 @@
 .cart-dropdown__cancel-textarea:focus { border-color: #D40511; }
 .cart-dropdown__cancel-textarea::placeholder { color: #bbb; }
 
+/* Mensaje de error de validación dentro del formulario de cancelación */
 .cart-dropdown__cancel-error {
   font-size: 11px; color: #D40511; font-weight: 600; margin: 0;
   padding: 6px 8px; background: rgba(212,5,17,0.06); border-radius: 6px;
 }
 .cart-dropdown__cancel-btns { display: flex; gap: 8px; }
 
+/* Botón volver del formulario de cancelación */
 .cart-dropdown__btn-back {
   flex: 1; padding: 9px 12px; background: transparent; border: 1.5px solid #ddd;
   border-radius: 8px; font-size: 12.5px; font-weight: 600; color: #7a7067;
@@ -281,6 +294,7 @@
 .cart-dropdown__btn-back:hover:not(:disabled) { background: #f0ede7; color: #1C1A18; }
 .cart-dropdown__btn-back:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Botón de confirmar cancelación en rojo */
 .cart-dropdown__btn-confirm-cancel {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 9px 12px; background: #D40511; color: #fff; border: 2px solid #a5030d;
@@ -290,6 +304,7 @@
 .cart-dropdown__btn-confirm-cancel:hover:not(:disabled) { background: #a5030d; }
 .cart-dropdown__btn-confirm-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* Spinner pequeño dentro del botón mientras se procesa la cancelación */
 .cart-spin {
   display: inline-block; width: 13px; height: 13px;
   border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
@@ -297,6 +312,7 @@
 }
 @keyframes enc-spin { to { transform: rotate(360deg); } }
 
+/* Estado vacío del carrito con CTA para buscar */
 .cart-dropdown__empty {
   padding: 28px 20px 24px; display: flex; flex-direction: column;
   align-items: center; text-align: center; gap: 8px;
@@ -311,9 +327,7 @@
 }
 .cart-dropdown__cta-btn:hover { background: #000; color: #FFCC00; }
 
-/* ════════════════════════════════════════════════
-   USER CHIP & DROPDOWN
-   ════════════════════════════════════════════════ */
+/* Chip de usuario con avatar inicial y dropdown de perfil */
 .user-dropdown-overlay { position: fixed; inset: 0; z-index: 499; background: transparent; }
 
 .user-chip {
@@ -333,6 +347,7 @@
 }
 .user-chip svg { color: #FFCC00; }
 
+/* Dropdown de usuario con cabecera negra y opciones de perfil/logout */
 .user-dropdown {
   position: absolute; top: calc(100% + 10px); right: 0;
   background: #fff; border: 1px solid #e8e3dc; border-radius: 14px;
@@ -369,9 +384,7 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-/* ════════════════════════════════════════════════
-   MOBILE
-   ════════════════════════════════════════════════ */
+/* Menú hamburguesa y navegación móvil */
 .mobile-menu-toggle {
   display: none; align-items: center; justify-content: center; padding: 0.5rem;
   background: none; border: 2px solid #000; color: #000; cursor: pointer;
@@ -396,9 +409,7 @@
 .mobile-nav-link--admin { font-weight: 700 !important; border-left: 3px solid #1C1A18; padding-left: 14px !important; }
 .mobile-divider { height: 1px; background: rgba(0,0,0,0.15); margin: 0.5rem 0; }
 
-/* ════════════════════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════════════════════ */
+/* Responsive: ocultar desktop nav y mostrar hamburguesa */
 @media (max-width: 1024px) {
   .desktop-nav { display: none; }
   .search-bar  { display: none; }
@@ -412,8 +423,10 @@
   .cart-dropdown { right: -8px; min-width: 240px; max-width: 90vw; }
 }
 
+/* Acciones del header: carrito, botones y chip de usuario */
 .user-actions { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; position: relative; }
 
+/* Botones de sesión: secundario (borde) y primario (rojo) */
 .btn-secondary {
   padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem;
   transition: all 0.2s ease; cursor: pointer; font-family: inherit;
@@ -430,9 +443,7 @@
 }
 .btn-primary:hover { background: #a00410; border-color: #a00410; transform: translateY(-1px); }
 
-/* ════════════════════════════════════════════════
-   LOADING OVERLAY — bloquea todo mientras redirige
-   ════════════════════════════════════════════════ */
+/* Overlay de carga que bloquea la pantalla mientras se redirige */
 .loading-overlay {
   position: fixed;
   inset: 0;
@@ -447,6 +458,7 @@
 
 @keyframes lo-fadein { from { opacity: 0; } to { opacity: 1; } }
 
+/* Tarjeta central del overlay con spinner y texto */
 .loading-overlay__card {
   background: #fff;
   border-radius: 20px;
@@ -467,6 +479,7 @@
   to   { transform: scale(1);    opacity: 1; }
 }
 
+/* Anillo de carga amarillo giratorio */
 .loading-overlay__ring {
   width: 52px;
   height: 52px;

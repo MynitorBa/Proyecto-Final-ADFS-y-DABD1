@@ -1,4 +1,4 @@
-/* ── Variables ─────────────────────────────────────────────── */
+/* Variables globales de color, sombra, radio y transición */
 :root {
   --primary:      #667eea;
   --primary-dark: #5568d3;
@@ -23,12 +23,12 @@
   --transition:   all 0.2s ease;
 }
 
-/* ── Base ──────────────────────────────────────────────────── */
+/* Página base y contenedor principal */
 .hotel-detail-page { background: var(--bg-light); min-height: 100vh; padding-bottom: 4rem; }
 
 .hdet__container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
 
-/* ── Hotel Header ──────────────────────────────────────────── */
+/* Sección de encabezado del hotel */
 .hotel-header-section {
   background: var(--bg-white);
   padding: 2rem 0;
@@ -42,11 +42,13 @@
 
 .hotel-title-group { flex: 1; }
 
+/* Nombre principal del hotel */
 .hdet__hotel-name {
   font-size: 2.5rem; font-weight: 700;
   color: var(--text-dark); margin: 0 0 .75rem; line-height: 1.2;
 }
 
+/* Fila de estrellas, tipo de propiedad y ubicación */
 .hotel-stars-location {
   display: flex; align-items: center; gap: .625rem;
   flex-wrap: wrap; font-size: .95rem; color: var(--text-medium);
@@ -57,6 +59,7 @@
 
 .hdet__hotel-location { display: flex; align-items: center; gap: .375rem; }
 
+/* Caja de calificación y acciones del encabezado */
 .hotel-rating-actions {
   display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;
 }
@@ -72,6 +75,7 @@
 
 .header-actions { display: flex; gap: .75rem; }
 
+/* Botones de acción secundarios del encabezado (compartir, guardar) */
 .hdet__action-btn {
   display: flex; align-items: center; gap: .5rem;
   padding: .75rem 1.25rem; border-radius: 10px;
@@ -87,7 +91,7 @@
   background: var(--bg-light); border-color: var(--primary); color: var(--primary);
 }
 
-/* ── Gallery Preview ───────────────────────────────────────── */
+/* Grid de la galería de imágenes */
 .gallery-preview-section { padding: 1.5rem 0; }
 
 .gallery-grid {
@@ -95,6 +99,7 @@
   gap: .75rem; border-radius: var(--radius-lg); overflow: hidden;
 }
 
+/* Imagen principal y miniaturas de la galería */
 .hdet__gallery-main-image,
 .hdet__gallery-thumb {
   position: relative; background: none; border: none;
@@ -112,6 +117,7 @@
 .hdet__gallery-main-image:hover img { transform: scale(1.05); }
 .hdet__gallery-thumb:hover img      { transform: scale(1.1); }
 
+/* Overlay "ver todas las fotos" sobre la imagen principal */
 .gallery-overlay {
   position: absolute; bottom: 1.5rem; right: 1.5rem;
   background: rgba(255,255,255,.95);
@@ -129,7 +135,7 @@
   display: grid; grid-template-columns: 1fr 1fr; gap: .75rem;
 }
 
-/* ── Main Content Layout ───────────────────────────────────── */
+/* Layout principal con contenido izquierdo y sidebar derecho */
 .main-content-section { padding: 2rem 0; }
 
 .content-layout {
@@ -137,7 +143,7 @@
   gap: 2rem; align-items: start;
 }
 
-/* ── Tabs ──────────────────────────────────────────────────── */
+/* Barra de navegación por pestañas */
 .tabs-nav {
   display: flex; gap: .5rem;
   background: var(--bg-white); padding: .75rem;
@@ -145,6 +151,7 @@
   box-shadow: var(--shadow-sm); overflow-x: auto;
 }
 
+/* Botones individuales de cada pestaña */
 .tab-btn {
   display: flex; align-items: center; gap: .5rem;
   padding: .75rem 1.25rem; background: transparent; border: none;
@@ -155,7 +162,7 @@
 .tab-btn:hover { background: var(--bg-light); color: var(--primary); }
 .tab-btn.active { background: var(--grad); color: white; }
 
-/* ── Content Sections ──────────────────────────────────────── */
+/* Secciones de contenido con fondo blanco */
 .content-section {
   background: var(--bg-white); padding: 2rem;
   border-radius: var(--radius-lg); margin-bottom: 1.5rem;
@@ -167,17 +174,19 @@
   color: var(--text-dark); margin: 0 0 1rem;
 }
 
+/* Descripción general y descripción larga del hotel */
 .hdet__section-description,
 .hotel-long-description {
   color: var(--text-medium); line-height: 1.7; margin-bottom: 1.5rem;
 }
 .hotel-long-description { font-size: 1.05rem; line-height: 1.8; margin-bottom: 2rem; }
 
-/* Amenities */
+/* Grid de amenidades del hotel */
 .amenities-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem;
 }
 
+/* Tarjeta individual de amenidad */
 .amenity-card {
   display: flex; align-items: flex-start; gap: .875rem;
   padding: 1rem 1.1rem; background: var(--bg-light); border-radius: 10px;
@@ -190,9 +199,10 @@
 .amenity-info { display: flex; flex-direction: column; gap: .2rem; }
 .amenity-desc { color: var(--text-light); font-size: .8rem; line-height: 1.4; }
 
-/* ── Rooms ─────────────────────────────────────────────────── */
+/* Lista de habitaciones disponibles */
 .rooms-list { display: flex; flex-direction: column; gap: 2rem; }
 
+/* Tarjeta de detalle de habitación individual */
 .room-detail-card {
   display: grid; grid-template-columns: 350px 1fr;
   border: 2px solid var(--border); border-radius: var(--radius-lg);
@@ -223,6 +233,7 @@
 
 .room-main-image { width: 100%; height: 100%; object-fit: cover; }
 
+/* Badge de capacidad sobre la imagen de la habitación */
 .room-capacity-badge {
   position: absolute; top: 1rem; right: 1rem;
   display: flex; align-items: center; gap: .35rem;
@@ -245,11 +256,13 @@
 .room-name { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); margin: 0 0 .5rem; }
 .room-description { color: var(--text-medium); font-size: .95rem; margin: 0; }
 
+/* Especificaciones técnicas de la habitación (tamaño, camas, etc.) */
 .room-specs { display: flex; flex-wrap: wrap; gap: 1.25rem; }
 
 .spec-item { display: flex; align-items: center; gap: .5rem; color: var(--text-medium); font-size: .9rem; }
 .spec-item svg { color: var(--primary); }
 
+/* Pie de la tarjeta con precio y botón de selección */
 .room-footer {
   display: flex; justify-content: space-between; align-items: flex-end;
   margin-top: auto; padding-top: 1.25rem;
@@ -266,6 +279,7 @@
 .price-per-person    { color: var(--text-light); font-size: .85rem; }
 .total-nights-price  { color: var(--text-medium); font-size: .875rem; font-weight: 600; }
 
+/* Botón para seleccionar habitación */
 .btn-select-room {
   display: flex; align-items: center; gap: .5rem;
   padding: .875rem 2rem; background: var(--grad); color: white;
@@ -276,13 +290,14 @@
 .btn-select-room:hover:not(.selected) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102,126,234,.4); }
 .btn-select-room.selected { background: linear-gradient(135deg, var(--success), #059669); }
 
-/* ── Sección habitaciones superiores ──────────────────────── */
+/* Sección de habitaciones superiores con borde de advertencia */
 .hdet__superior-section {
   border-left: 4px solid var(--warning);
 }
 
 .hdet__superior-header { margin-bottom: 1.5rem; }
 
+/* Badge que identifica las habitaciones superiores */
 .hdet__superior-badge {
   display: inline-flex; align-items: center; gap: .5rem;
   padding: .375rem .875rem; border-radius: 20px;
@@ -292,7 +307,7 @@
   margin-bottom: .75rem;
 }
 
-/* ── Sin habitaciones ──────────────────────────────────────── */
+/* Estado vacío cuando no hay habitaciones disponibles */
 .hdet__no-rooms {
   display: flex; flex-direction: column; align-items: center;
   padding: 3rem 1rem; text-align: center; gap: 1rem;
@@ -302,7 +317,7 @@
 .hdet__no-rooms p   { font-size: 1.05rem; color: var(--text-medium); margin: 0; }
 .hdet__no-rooms span { font-size: .9rem; }
 
-/* ── Sin hotel ─────────────────────────────────────────────── */
+/* Estado vacío cuando no se encontró el hotel */
 .hdet__no-hotel {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; min-height: 60vh; gap: 1.5rem;
@@ -313,10 +328,7 @@
   border: none; border-radius: 10px; cursor: pointer; font-weight: 600;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SECCIÓN COMBINACIONES DE HABITACIONES
-   ═══════════════════════════════════════════════════════════ */
-
+/* Sección de combinaciones de habitaciones para grupos */
 .hdet__combo-section {
   border-left: 4px solid var(--primary);
   background: linear-gradient(135deg, rgba(102,126,234,.02), rgba(118,75,162,.02));
@@ -324,6 +336,7 @@
 
 .hdet__combo-header { margin-bottom: 1.75rem; }
 
+/* Badge que identifica la sección de combos */
 .hdet__combo-badge {
   display: inline-flex; align-items: center; gap: .5rem;
   padding: .375rem .875rem; border-radius: 20px;
@@ -333,7 +346,7 @@
   box-shadow: 0 2px 8px rgba(102,126,234,.3);
 }
 
-/* ── Selector de combinación ── */
+/* Selector de cantidad de habitaciones en el combo */
 .hdet__combo-selector {
   margin-bottom: 1.5rem;
   padding: 1rem 1.25rem;
@@ -351,6 +364,7 @@
   display: flex; flex-wrap: wrap; gap: .625rem;
 }
 
+/* Botones de selección de cantidad para el combo */
 .hdet__combo-selector-btn {
   padding: .5rem 1.125rem;
   background: var(--bg-white); border: 2px solid var(--border);
@@ -367,6 +381,7 @@
   box-shadow: var(--shadow-primary);
 }
 
+/* Variante de botón para combos con precio aproximado */
 .hdet__combo-selector-btn--aprox {
   border-color: rgba(245,158,11,.4); color: #92400e;
   background: rgba(245,158,11,.05);
@@ -380,7 +395,7 @@
   box-shadow: 0 4px 12px rgba(245,158,11,.35);
 }
 
-/* ── Aviso aproximado ── */
+/* Aviso de precio aproximado en combos */
 .hdet__combo-aprox-notice {
   display: flex; align-items: flex-start; gap: .625rem;
   padding: .875rem 1rem; margin-bottom: 1.5rem;
@@ -391,18 +406,20 @@
 }
 .hdet__combo-aprox-notice svg { flex-shrink: 0; margin-top: .1rem; }
 
-/* ── Slots ── */
+/* Lista de slots de habitación del combo */
 .hdet__combo-slots {
   display: flex; flex-direction: column; gap: 1.25rem;
   margin-bottom: 1.5rem;
 }
 
+/* Slot individual de habitación dentro del combo */
 .hdet__combo-slot {
   border: 2px solid var(--border); border-radius: var(--radius-md);
   overflow: hidden; transition: border-color .2s;
 }
 .hdet__combo-slot:focus-within { border-color: var(--primary); }
 
+/* Encabezado de cada slot del combo */
 .hdet__combo-slot-header {
   display: flex; align-items: center; gap: 1rem;
   padding: .875rem 1.25rem;
@@ -422,11 +439,12 @@
 }
 .hdet__combo-slot-cap svg { color: var(--primary); }
 
-/* ── Opciones dentro de un slot ── */
+/* Lista de opciones de habitación dentro de un slot */
 .hdet__combo-slot-opciones {
   display: flex; flex-direction: column; gap: 0;
 }
 
+/* Opción individual de habitación dentro del slot */
 .hdet__combo-slot-opcion {
   display: flex; align-items: center; gap: 1rem;
   padding: .875rem 1.25rem;
@@ -476,14 +494,14 @@
   font-size: .9rem; font-weight: 700; color: var(--primary);
 }
 
-/* Check activo */
+/* Icono de check cuando la opción está activa */
 .hdet__combo-opcion-check {
   width: 28px; height: 28px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--grad); border-radius: 50%; color: white;
 }
 
-/* Candado bloqueado */
+/* Icono de candado cuando la opción está bloqueada */
 .hdet__combo-opcion-blocked {
   width: 28px; height: 28px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
@@ -491,7 +509,7 @@
   color: var(--text-light);
 }
 
-/* Resumen del slot */
+/* Resumen inferior del slot con habitación seleccionada y precio */
 .hdet__combo-slot-resumen {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: .625rem 1.25rem;
@@ -523,7 +541,7 @@
   font-size: .75rem; font-weight: 600; color: var(--text-medium);
 }
 
-/* ── Barra total del combo ── */
+/* Barra de total del combo con precio final y botón de confirmar */
 .hdet__combo-total-bar {
   display: flex; align-items: center; gap: 1.5rem;
   padding: 1.25rem 1.5rem;
@@ -558,6 +576,7 @@
   font-size: .85rem; color: var(--text-medium); font-weight: 600;
 }
 
+/* Botón para seleccionar el combo completo */
 .hdet__combo-btn-seleccionar {
   display: flex; align-items: center; gap: .5rem;
   padding: .875rem 1.75rem;
@@ -573,9 +592,10 @@
   box-shadow: 0 4px 12px rgba(16,185,129,.3);
 }
 
-/* ── Location ──────────────────────────────────────────────── */
+/* Contenedor del mapa de ubicación */
 .hdet__map-container { border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 2rem; }
 
+/* Placeholder del mapa cuando no carga */
 .hdet__map-placeholder {
   height: 400px; background: var(--bg-light);
   display: flex; flex-direction: column;
@@ -584,9 +604,10 @@
 .hdet__map-placeholder p    { font-size: 1.25rem; font-weight: 600; color: var(--text-dark); margin: 0; }
 .hdet__map-placeholder span { color: var(--text-medium); }
 
-/* ── Booking Sidebar ───────────────────────────────────────── */
+/* Sidebar pegajoso de reserva */
 .booking-sidebar { position: sticky; top: 100px; }
 
+/* Tarjeta resumen de reserva */
 .booking-summary {
   background: var(--bg-white); border: 2px solid var(--border);
   border-radius: var(--radius-xl); padding: 2rem;
@@ -595,6 +616,7 @@
 
 .booking-title { font-size: 1.5rem; font-weight: 700; color: var(--text-dark); margin: 0 0 1.5rem; }
 
+/* Secciones internas del formulario de reserva */
 .booking-section {
   margin-bottom: 1.5rem; padding-bottom: 1.5rem;
   border-bottom: 1.5px solid var(--border);
@@ -603,6 +625,7 @@
 
 .booking-label { display: block; font-weight: 600; color: var(--text-dark); margin-bottom: .75rem; }
 
+/* Campos de fecha de entrada y salida */
 .date-inputs { display: flex; flex-direction: column; gap: .75rem; }
 .date-input-group { display: flex; flex-direction: column; gap: .375rem; }
 .input-label { font-size: .85rem; color: var(--text-medium); font-weight: 500; }
@@ -619,6 +642,7 @@
   box-shadow: 0 0 0 3px rgba(102,126,234,.1);
 }
 
+/* Indicador de número de noches calculado */
 .nights-display {
   margin-top: .75rem; padding: .75rem;
   background: rgba(102,126,234,.08); border-radius: var(--radius-sm);
@@ -632,7 +656,7 @@
 }
 .hdet__guests-display svg { color: var(--primary); }
 
-/* Selected Room */
+/* Sección de habitación seleccionada en el sidebar */
 .selected-room-section {
   background: rgba(102,126,234,.03);
   padding: 1.25rem; border-radius: var(--radius-md);
@@ -644,6 +668,7 @@
 .selected-room-info strong { color: var(--text-dark); font-weight: 600; }
 .selected-room-info span   { color: var(--text-medium); font-size: .9rem; }
 
+/* Botón para quitar la habitación seleccionada */
 .remove-room-btn {
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
@@ -654,7 +679,7 @@
 .remove-room-btn:hover { background: var(--danger); border-color: var(--danger); transform: scale(1.05); }
 .remove-room-btn:hover svg { stroke: white; }
 
-/* ── Precio por persona prominente en tarjetas de habitación ─ */
+/* Precio por persona destacado en las tarjetas de habitación */
 .price-per-person--prominent {
   display: flex; align-items: center; gap: .35rem;
   font-size: .95rem; font-weight: 700;
@@ -663,7 +688,7 @@
 }
 .price-per-person--prominent svg { color: var(--primary); flex-shrink: 0; }
 
-/* ── Desglose sidebar - filas por habitación en combo ── */
+/* Filas de desglose por habitación en combo (sidebar) */
 .price-row--hab-label {
   font-size: .8rem; font-weight: 800;
   color: var(--text-dark);
@@ -678,7 +703,7 @@
   padding-left: .5rem;
 }
 
-/* ── Slot header personas asignadas ── */
+/* Contador de personas asignadas al slot */
 .hdet__combo-slot-personas {
   margin-left: auto;
   font-size: .75rem; font-weight: 700;
@@ -687,7 +712,7 @@
   padding: .2rem .625rem; border-radius: 12px;
 }
 
-/* ── Precios en opciones del combo ── */
+/* Columna de precios en opciones del combo */
 .hdet__combo-opcion-precios {
   display: flex; flex-direction: column; gap: .1rem;
   margin-top: .15rem;
@@ -705,11 +730,12 @@
   font-size: .85rem; font-weight: 700; color: var(--secondary);
 }
 
-/* ── Sidebar combo mejorado ── */
+/* Lista de slots del combo en el sidebar */
 .hdet__sidebar-combo {
   display: flex; flex-direction: column; gap: .5rem;
 }
 
+/* Fila de slot en el resumen del sidebar */
 .hdet__sidebar-combo-slot {
   display: flex; align-items: center; gap: .625rem;
   padding: .5rem .75rem;
@@ -740,11 +766,12 @@
   white-space: nowrap;
 }
 
+/* Estado vacío cuando no hay habitación seleccionada */
 .no-room-selected { text-align: center; padding: 2rem 1rem; color: var(--text-light); }
 .no-room-selected svg { margin-bottom: 1rem; }
 .no-room-selected p   { margin: 0; font-size: .95rem; }
 
-/* Price Summary */
+/* Resumen de precios en el sidebar */
 .price-summary { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.5rem; }
 
 .price-row {
@@ -758,9 +785,10 @@
 .total-amount { font-size: 1.75rem; color: var(--primary); }
 .taxes-note { color: var(--text-light); font-size: .8rem; text-align: center; margin-top: .5rem; }
 
-/* Booking Buttons */
+/* Botones de acción de reserva */
 .booking-actions { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.5rem; }
 
+/* Botón principal de reservar ahora */
 .btn-book-now {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
   padding: 1rem 1.5rem; border: none; border-radius: var(--radius-md);
@@ -770,17 +798,19 @@
 .btn-book-now:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102,126,234,.4); }
 .btn-book-now:disabled { opacity: .5; cursor: not-allowed; }
 
+/* Variante verde para reservar combos */
 .btn-book-combo {
   background: linear-gradient(135deg, #059669, #10b981);
   box-shadow: 0 4px 12px rgba(16,185,129,.3);
 }
 .btn-book-combo:hover:not(:disabled) { box-shadow: 0 6px 16px rgba(16,185,129,.45); }
 
+/* Insignias de confianza (seguridad, cancelación gratuita, etc.) */
 .trust-badges { display: flex; flex-direction: column; gap: .75rem; }
 .trust-badge { display: flex; align-items: center; gap: .5rem; color: var(--text-medium); font-size: .85rem; }
 .trust-badge svg { color: var(--primary); flex-shrink: 0; }
 
-/* ── Aviso booking ─────────────────────────────────────────── */
+/* Aviso informativo en el proceso de reserva */
 .hdet__book-notice {
   display: flex; align-items: flex-start; gap: .5rem;
   padding: .875rem 1rem;
@@ -791,7 +821,7 @@
 }
 .hdet__book-notice svg { flex-shrink: 0; margin-top: .1rem; color: #d97706; }
 
-/* ── Habitación sin imagen ─────────────────────────────────── */
+/* Placeholder cuando la habitación no tiene imagen */
 .room-no-image {
   width: 100%; height: 100%; min-height: 220px;
   display: flex; flex-direction: column;
@@ -800,7 +830,7 @@
 }
 .room-no-image span { font-size: .85rem; }
 
-/* ── Gallery Modal ─────────────────────────────────────────── */
+/* Modal de galería de imágenes a pantalla completa */
 .gallery-modal {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.95); z-index: 10000;
@@ -813,6 +843,7 @@
   to   { opacity: 1; }
 }
 
+/* Botones de cierre y navegación del modal de galería */
 .gallery-close,
 .gallery-nav-btn {
   position: absolute; display: flex; align-items: center; justify-content: center;
@@ -839,12 +870,13 @@
   border-radius: var(--radius-md); object-fit: contain;
 }
 
+/* Contador de imágenes en el modal */
 .gallery-counter {
   background: rgba(0,0,0,.7); color: white;
   padding: .5rem 1rem; border-radius: 20px; font-weight: 600;
 }
 
-/* ── Modal confirmación ────────────────────────────────────── */
+/* Modal de confirmación de reserva */
 .hdet__confirm-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,.6); z-index: 9999;
@@ -873,6 +905,7 @@
   color: var(--text-dark); margin: 0 0 .5rem;
 }
 
+/* Código de reserva generado */
 .hdet__confirm-code {
   display: inline-block;
   background: rgba(102,126,234,.08); color: var(--primary);
@@ -880,6 +913,7 @@
   padding: .4rem 1.25rem; border-radius: 20px; margin-bottom: 1.5rem;
 }
 
+/* Filas de detalle de la confirmación */
 .hdet__confirm-rows {
   display: flex; flex-direction: column; gap: .5rem;
   text-align: left; margin-bottom: 1rem;
@@ -904,6 +938,7 @@
   font-size: .78rem; color: var(--text-light); margin-bottom: 1.5rem;
 }
 
+/* Botones de acción de la confirmación */
 .hdet__confirm-btns { display: flex; gap: .75rem; flex-wrap: wrap; }
 
 .hdet__confirm-btn-home {
@@ -934,10 +969,7 @@
 }
 .hdet__confirm-btn-close:hover { border-color: var(--primary); color: var(--primary); }
 
-/* ═══════════════════════════════════════════════════════════
-   MODAL: INICIAR SESIÓN REQUERIDO
-   ═══════════════════════════════════════════════════════════ */
-
+/* Modal de inicio de sesión requerido para reservar */
 .hdet__login-prompt-modal {
   background: white; border-radius: 24px;
   padding: 2.5rem 2rem; max-width: 440px; width: 100%;
@@ -974,6 +1006,7 @@
   display: flex; flex-direction: column; gap: .75rem;
 }
 
+/* Botón ir a iniciar sesión */
 .hdet__login-prompt-btn-login {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
   width: 100%; padding: 1rem;
@@ -988,6 +1021,7 @@
   box-shadow: 0 6px 20px rgba(102,126,234,.45);
 }
 
+/* Botón ir a registrarse */
 .hdet__login-prompt-btn-register {
   display: flex; align-items: center; justify-content: center; gap: .5rem;
   width: 100%; padding: 1rem;
@@ -1013,10 +1047,7 @@
   background: var(--bg-light); color: var(--text-medium);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   COMENTARIOS / RESEÑAS — estilo Reddit
-   ═══════════════════════════════════════════════════════════ */
-
+/* Sección de comentarios y reseñas estilo Reddit */
 .cmt-loading {
   display: flex; align-items: center; justify-content: center; gap: 1rem;
   padding: 3rem; color: var(--text-light);
@@ -1028,6 +1059,7 @@
 }
 @keyframes cmt-spin { to { transform: rotate(360deg); } }
 
+/* Estado vacío de la sección de comentarios */
 .cmt-empty {
   display: flex; flex-direction: column; align-items: center;
   gap: 1rem; padding: 3rem; color: var(--text-light); text-align: center;
@@ -1035,6 +1067,7 @@
 .cmt-empty svg { opacity: .3; }
 .cmt-empty p { font-size: 1rem; color: var(--text-medium); margin: 0; }
 
+/* Título de grupo de comentarios (verificados, generales) */
 .cmt-group-title {
   display: flex; align-items: center; gap: .5rem;
   font-size: 1.1rem; font-weight: 700; color: var(--text-dark);
@@ -1045,6 +1078,7 @@
 
 .cmt-list { display: flex; flex-direction: column; gap: .875rem; }
 
+/* Tarjeta individual de comentario */
 .cmt-card {
   display: flex; gap: 0;
   background: white; border: 1.5px solid var(--border);
@@ -1054,6 +1088,7 @@
 .cmt-card:hover { border-color: #c8d0d8; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
 .cmt-resena { border-left: 3px solid var(--primary); }
 
+/* Columna de votos al estilo Reddit */
 .cmt-votes {
   display: flex; flex-direction: column; align-items: center;
   gap: .25rem; padding: .75rem .5rem;
@@ -1063,6 +1098,7 @@
 }
 .cmt-votes-sm { min-width: 38px; padding: .5rem .4rem; }
 
+/* Flechas de votar arriba y abajo */
 .cmt-arrow {
   display: flex; align-items: center; justify-content: center;
   width: 28px; height: 28px;
@@ -1075,6 +1111,7 @@
 .cmt-arrow.active-up   { color: #ff4500; }
 .cmt-arrow.active-down { color: #7193ff; }
 
+/* Puntuación numérica del comentario */
 .cmt-score {
   font-size: .8rem; font-weight: 700; color: #1c1c1c;
   line-height: 1; text-align: center; min-width: 20px;
@@ -1086,12 +1123,14 @@
 .cmt-voted-up   { background: rgba(255,69,0,.04); }
 .cmt-voted-down { background: rgba(113,147,255,.04); }
 
+/* Cuerpo del comentario con texto y acciones */
 .cmt-body {
   flex: 1; padding: .875rem 1rem;
   display: flex; flex-direction: column; gap: .5rem;
   min-width: 0;
 }
 
+/* Encabezado con avatar, usuario, fecha y estrellas */
 .cmt-header {
   display: flex; align-items: center; gap: .625rem; flex-wrap: wrap;
 }
@@ -1106,6 +1145,7 @@
 .cmt-user { font-size: .85rem; font-weight: 700; color: var(--text-dark); }
 .cmt-date { font-size: .78rem; color: var(--text-light); }
 
+/* Estrellas de calificación en la reseña */
 .cmt-stars-box { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
 .cmt-stars { display: flex; gap: .05rem; font-size: 1rem; }
 .cmt-stars span       { color: #d1d5db; }
@@ -1119,6 +1159,7 @@
 
 .cmt-actions { display: flex; align-items: center; gap: .375rem; }
 
+/* Botón para mostrar u ocultar respuestas */
 .cmt-reply-toggle {
   display: flex; align-items: center; gap: .35rem;
   padding: .35rem .625rem;
@@ -1128,6 +1169,7 @@
 }
 .cmt-reply-toggle:hover { background: rgba(0,0,0,.06); color: var(--text-dark); }
 
+/* Hilo de respuestas anidadas */
 .cmt-replies {
   margin-top: .625rem; display: flex; flex-direction: column; gap: .5rem;
   border-left: 2px solid #edeff1; padding-left: .75rem;
@@ -1145,6 +1187,7 @@
   border-radius: 4px; overflow: hidden;
 }
 
+/* Formulario para escribir una respuesta */
 .cmt-reply-form {
   margin-top: .625rem; display: flex; flex-direction: column; gap: .5rem;
   padding-top: .625rem; border-top: 1px solid var(--border);
@@ -1186,12 +1229,13 @@
   padding-left: .625rem;
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* Responsive para pantallas menores a 1200px */
 @media (max-width: 1200px) {
   .content-layout { grid-template-columns: 1fr; }
   .booking-sidebar { position: static; max-width: 500px; margin: 0 auto; }
 }
 
+/* Responsive para tablets */
 @media (max-width: 992px) {
   .hdet__hotel-header { flex-direction: column; }
   .hotel-rating-actions { width: 100%; flex-direction: row; justify-content: space-between; align-items: center; }
@@ -1201,6 +1245,7 @@
   .room-detail-card { grid-template-columns: 1fr; }
 }
 
+/* Responsive para móviles */
 @media (max-width: 768px) {
   .hdet__container { padding: 0 1rem; }
   .hdet__hotel-name { font-size: 1.75rem; }

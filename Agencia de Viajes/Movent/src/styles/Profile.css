@@ -1,4 +1,4 @@
-/* ── PAGE ── */
+/* Página de perfil con fondo crema */
 .prf-page {
   background: #F5F2EC;
   min-height: 100vh;
@@ -10,7 +10,7 @@
   margin: 0 auto;
 }
 
-/* ── HEADER ── */
+/* Encabezado con avatar circular e información del usuario */
 .prf-header {
   display: flex;
   align-items: center;
@@ -18,6 +18,7 @@
   margin-bottom: 2rem;
 }
 
+/* Avatar circular negro con iniciales en amarillo */
 .prf-avatar {
   width: 64px;
   height: 64px;
@@ -49,7 +50,7 @@
   margin: 0;
 }
 
-/* ── CARDS ── */
+/* Tarjetas de sección con cabecera negra y borde amarillo inferior */
 .prf-card {
   background: #fff;
   border: 1px solid #e2e8f0;
@@ -79,7 +80,7 @@
   padding: 1.5rem;
 }
 
-/* ── GRID INFO ── */
+/* Grid de 2 columnas para mostrar datos del usuario */
 .prf-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -94,6 +95,7 @@
 
 .prf-info-cell--full { grid-column: 1 / -1; }
 
+/* Etiqueta del campo en gris pequeño */
 .prf-info-cell__lbl {
   font-size: .72rem;
   font-weight: 700;
@@ -110,6 +112,7 @@
 
 .prf-info-cell__val--muted { color: #9a9089; font-style: italic; }
 
+/* Tags de nacionalidad tipo pill */
 .prf-nac-tags {
   display: flex;
   flex-wrap: wrap;
@@ -128,13 +131,14 @@
   color: #6b5b00;
 }
 
-/* ── FORM ── */
+/* Fila de formulario con campos en línea */
 .prf-form-row {
   display: flex;
   gap: .75rem;
   align-items: flex-end;
 }
 
+/* Campo del formulario con label y margen inferior */
 .prf-field {
   display: flex;
   flex-direction: column;
@@ -144,6 +148,7 @@
 
 .prf-field:last-child { margin-bottom: 0; }
 
+/* Label del campo en mayúsculas */
 .prf-label {
   font-size: .78rem;
   font-weight: 700;
@@ -161,6 +166,7 @@
   margin-left: .3rem;
 }
 
+/* Wrapper del input con borde que cambia al enfocar o tener error */
 .prf-input-wrap {
   display: flex;
   align-items: center;
@@ -174,6 +180,7 @@
 .prf-input-wrap--focus { border-color: #FFCC00; }
 .prf-input-wrap--error { border-color: #ef4444; }
 
+/* Ícono izquierdo dentro del input */
 .prf-input-ico {
   padding: 0 .75rem;
   color: #9a9089;
@@ -182,6 +189,7 @@
   flex-shrink: 0;
 }
 
+/* Input sin bordes propios dentro del wrapper */
 .prf-input {
   flex: 1;
   border: none;
@@ -193,6 +201,7 @@
   padding: .7rem .75rem .7rem 0;
 }
 
+/* Select de prefijo telefónico con fondo claro */
 .prf-select {
   border: none;
   outline: none;
@@ -210,7 +219,7 @@
 .prf-error { font-size: .78rem; color: #ef4444; font-weight: 600; }
 .prf-success { font-size: .78rem; color: #16a34a; font-weight: 600; }
 
-/* ── BOTONES ── */
+/* Botones: primario amarillo y ghost transparente */
 .prf-btn {
   display: inline-flex;
   align-items: center;
@@ -249,6 +258,7 @@
 
 .prf-btn:disabled { opacity: .55; cursor: not-allowed; }
 
+/* Spinner dentro del botón */
 .prf-btn__spin {
   width: 14px;
   height: 14px;
@@ -261,7 +271,7 @@
 
 @keyframes prf-spin { to { transform: rotate(360deg); } }
 
-/* ── TOAST ── */
+/* Stack de toasts fijo en la esquina inferior derecha */
 .prf-toast-stack {
   position: fixed;
   bottom: 1.5rem;
@@ -272,6 +282,7 @@
   gap: .5rem;
 }
 
+/* Toast con borde izquierdo amarillo y animación de entrada */
 .prf-toast {
   display: flex;
   align-items: center;
@@ -294,7 +305,7 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* ── LOADING ── */
+/* Estado de carga centrado con spinner */
 .prf-loading {
   display: flex;
   flex-direction: column;
@@ -315,14 +326,14 @@
   animation: prf-spin .8s linear infinite;
 }
 
-/* ── RESPONSIVE ── */
+/* Responsive: grid de 1 columna y formulario apilado */
 @media (max-width: 600px) {
   .prf-info-grid { grid-template-columns: 1fr; }
   .prf-form-row { flex-direction: column; }
   .prf-card__body { padding: 1.25rem; }
 }
 
-/* ── Prefijo fijo (no dropdown) ── */
+/* Prefijo fijo de teléfono sin dropdown */
 .prf-prefix-fixed {
   padding: 0 .75rem;
   font-size: .88rem;
@@ -339,6 +350,7 @@
   justify-content: center;
 }
 
+/* Texto de advertencia en naranja */
 .prf-warn {
   font-size: .78rem;
   color: #b45309;

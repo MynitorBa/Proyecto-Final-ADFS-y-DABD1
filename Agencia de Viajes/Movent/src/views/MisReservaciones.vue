@@ -2,7 +2,7 @@
   <div class="page">
     <Encabezado />
 
-    <!-- TOASTS -->
+    <!-- Stack de notificaciones toast (éxito / error) -->
     <div class="mv-toast-stack">
       <div v-for="t in toasts" :key="t.id" :class="['mv-toast', `mv-toast--${t.tipo}`]">
         <svg v-if="t.tipo==='success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -11,11 +11,12 @@
       </div>
     </div>
 
-    <!-- PANEL LATERAL -->
+    <!-- PANEL LATERAL: detalle completo de una reserva seleccionada -->
     <Transition name="mv-panel">
       <div v-if="panelReserva" class="mv-overlay" @click.self="cerrarPanel">
         <div class="mv-panel" role="dialog" aria-modal="true">
 
+          <!-- Cabecera del panel: tipo, estado y botón de cierre -->
           <div class="mv-panel__head">
             <div class="mv-panel__head-left">
               <div class="mv-panel__tipo-badge" :class="`mv-panel__tipo-badge--${panelReserva._categoria}`">
@@ -33,7 +34,7 @@
 
           <div class="mv-panel__body">
 
-            <!-- Hero del panel -->
+            <!-- Hero del panel: código de reserva y total pagado -->
             <div class="mv-panel__hero">
               <div>
                 <p class="mv-panel__hero-lbl">Código de reserva</p>
@@ -45,7 +46,7 @@
               </div>
             </div>
 
-            <!-- Loading panel detail -->
+            <!-- Spinner mientras se carga el detalle del proveedor -->
             <div v-if="panelLoading" class="mv-panel__center">
               <div class="mv-spinner mv-spinner--lg"></div>
               <p>Cargando detalles del proveedor...</p>
@@ -53,7 +54,7 @@
 
             <template v-else-if="!panelError">
 
-              <!-- Info general -->
+              <!-- Información general: fechas, usuario y cancelación -->
               <div class="mv-panel__section">
                 <h4 class="mv-panel__stitle">Información general</h4>
                 <div class="mv-panel__igrid">
@@ -80,7 +81,7 @@
                 </div>
               </div>
 
-              <!-- BOLETOS — datos reales de Broom AirLine (data_proveedor) -->
+              <!-- BOLETOS: datos reales del proveedor Broom AirLine (data_proveedor) -->
               <template v-if="(panelReserva._categoria==='vuelo' || panelReserva._categoria==='paquete') && (panelReserva.boletos?.length ?? 0) > 0">
                 <div class="mv-panel__section">
                   <h4 class="mv-panel__stitle">
@@ -130,7 +131,7 @@
                 </div>
               </template>
 
-              <!-- HABITACIONES — datos reales de Miku Inn (data_proveedor) -->
+              <!-- HABITACIONES: datos reales del proveedor Miku Inn (data_proveedor) -->
               <template v-if="(panelReserva._categoria==='hotel' || panelReserva._categoria==='paquete') && (panelReserva.habitaciones?.length ?? 0) > 0">
                 <div class="mv-panel__section">
                   <h4 class="mv-panel__stitle">
@@ -155,7 +156,7 @@
                       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> {{ h.cantidadPersonas }} huésped{{ h.cantidadPersonas !== 1 ? 'es' : '' }}</span>
                     </div>
                   </div>
-                  <!-- Desglose de costos -->
+                  <!-- Desglose de costos por habitación -->
                   <div class="mv-desglose">
                     <div v-for="h in panelReserva.habitaciones" :key="h.detalleId" class="mv-desglose__row">
                       <span>{{ h.tipoHabitacion }}</span><span>${{ h.totalDetalle?.toFixed(2) }}</span>
@@ -168,7 +169,7 @@
                 </div>
               </template>
 
-              <!-- ═══════ COMENTARIOS DEL PROVEEDOR (lectura) ═══════ -->
+              <!-- COMENTARIOS DEL PROVEEDOR (solo lectura, reservas completadas) -->
               <div
                 v-if="panelReserva.estadoReserva?.toLowerCase()==='completada' && getComentariosRaizMR().length > 0"
                 class="mv-panel__section"
@@ -197,8 +198,7 @@
                 </div>
               </div>
 
-              <!-- ═══════ CALIFICAR VUELO ═══════ -->
-              <!-- Solo si: categoría vuelo/paquete + estado completada + rutaId disponible -->
+              <!-- CALIFICAR VUELO: solo si categoría vuelo/paquete + completada + rutaId disponible -->
               <div
                 v-if="(panelReserva._categoria==='vuelo' || panelReserva._categoria==='paquete')
                        && panelReserva.estadoReserva?.toLowerCase()==='completada'
@@ -210,13 +210,13 @@
                   Calificar vuelo {{ panelReserva.boletos[0].origenCodigo }} → {{ panelReserva.boletos[0].destinoCodigo }}
                 </h4>
 
-                <!-- Loading comentarios vuelo -->
+                <!-- Spinner mientras se verifican calificaciones existentes -->
                 <div v-if="comentariosLoading" class="mv-panel__center" style="padding:1.2rem">
                   <div class="mv-spinner"></div>
                   <p style="font-size:0.8rem;color:#7a7067">Verificando calificaciones...</p>
                 </div>
 
-                <!-- Ya calificó -->
+                <!-- El usuario ya calificó: muestra su calificación existente -->
                 <div v-else-if="yaComentaRuta(panelReserva.boletos[0].rutaId) || calExito" class="mv-ya-califico">
                   <div class="mv-ya-califico__stars">
                     <svg v-for="n in 5" :key="n" viewBox="0 0 24 24"
@@ -232,7 +232,7 @@
                   <span class="mv-ya-califico__badge">✓ Ya calificaste este vuelo</span>
                 </div>
 
-                <!-- Formulario calificación -->
+                <!-- Formulario para enviar nueva calificación de vuelo -->
                 <div v-else class="mv-calificar">
                   <div class="mv-calificar__stars">
                     <button v-for="n in 5" :key="n" type="button" class="mv-calificar__star"
@@ -259,8 +259,7 @@
                 </div>
               </div>
 
-              <!-- ═══════ RESEÑA HOTEL ═══════ -->
-              <!-- Solo si: categoría hotel/paquete + estado completada -->
+              <!-- RESEÑA HOTEL: solo si categoría hotel/paquete + completada -->
               <div
                 v-if="(panelReserva._categoria==='hotel' || panelReserva._categoria==='paquete')
                        && panelReserva.estadoReserva?.toLowerCase()==='completada'"
@@ -271,13 +270,13 @@
                   Reseña · {{ panelReserva.nombreHotel }}
                 </h4>
 
-                <!-- Loading comentarios hotel -->
+                <!-- Spinner mientras se verifican reseñas existentes -->
                 <div v-if="comentariosLoading" class="mv-panel__center" style="padding:1.2rem">
                   <div class="mv-spinner"></div>
                   <p style="font-size:0.8rem;color:#7a7067">Verificando reseñas...</p>
                 </div>
 
-                <!-- Ya reseñó -->
+                <!-- El usuario ya reseñó este hotel: muestra su reseña -->
                 <div v-else-if="resenaOk || yaResenaHotel(panelReserva.hotelId)" class="mv-ya-califico">
                   <div v-if="obtenerResenaHotel(panelReserva.hotelId)" class="mv-ya-califico__stars">
                     <svg v-for="n in 5" :key="n" viewBox="0 0 24 24"
@@ -293,7 +292,7 @@
                   <span class="mv-ya-califico__badge">✓ Ya dejaste una reseña para este hospedaje</span>
                 </div>
 
-                <!-- Formulario reseña -->
+                <!-- Formulario para enviar nueva reseña del hotel -->
                 <div v-else class="mv-calificar">
                   <div class="mv-calificar__stars">
                     <button v-for="n in 5" :key="n" type="button" class="mv-calificar__star"
@@ -318,8 +317,7 @@
                 </div>
               </div>
 
-              <!-- ═══════ CANCELAR ═══════ -->
-              <!-- Solo Pendiente o Confirmada -->
+              <!-- CANCELAR: disponible solo para reservas pendientes o confirmadas -->
               <div v-if="['confirmada','pendiente'].includes(panelReserva.estadoReserva?.toLowerCase())" class="mv-panel__section">
                 <button v-if="!cancelAbierto" class="mv-btn mv-btn--danger-ghost" @click="cancelAbierto=true" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -354,7 +352,7 @@
 
             <div v-if="panelError" class="mv-panel__error">{{ panelError }}</div>
 
-            <!-- Footer panel -->
+            <!-- Footer del panel: cerrar, descargar PDF y enviar al correo -->
             <div class="mv-panel__footer">
               <button class="mv-btn mv-btn--ghost" @click="cerrarPanel" type="button">Cerrar</button>
               <template v-if="['confirmada','completada'].includes(panelReserva.estadoReserva?.toLowerCase())">
@@ -376,10 +374,11 @@
       </div>
     </Transition>
 
-    <!-- ═══════════════════ PÁGINA PRINCIPAL ═══════════════════ -->
+    <!-- PÁGINA PRINCIPAL: listado de reservaciones del usuario -->
     <div class="mv-page">
       <div class="mv-container">
 
+        <!-- Cabecera con título y buscador por código -->
         <div class="mv-header">
           <div>
             <h1 class="mv-title">Mis Reservaciones</h1>
@@ -391,7 +390,7 @@
           </div>
         </div>
 
-        <!-- RESUMEN -->
+        <!-- RESUMEN: totales y conteo por estado y categoría -->
         <div v-if="resumen" class="mv-resumen">
           <div class="mv-resumen__hero">
             <div class="mv-resumen__hero-left">
@@ -402,6 +401,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,204,0,0.25)" stroke-width="0.8" width="100" height="100" class="mv-resumen__hero-deco"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
           </div>
 
+          <!-- Contadores por estado de reservación -->
           <div class="mv-resumen__estados">
             <div class="mv-estado mv-estado--confirmada">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -435,6 +435,7 @@
             </div>
           </div>
 
+          <!-- Contadores por categoría: vuelos, hoteles y paquetes -->
           <div class="mv-resumen__cats">
             <div class="mv-cat mv-cat--vuelo">
               <div class="mv-cat__icon-wrap"><svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg></div>
@@ -451,7 +452,7 @@
           </div>
         </div>
 
-        <!-- Filtros de estado -->
+        <!-- Filtros de estado (todas, pendientes, confirmadas, etc.) -->
         <div class="mv-controles">
           <div class="mv-filtros">
             <button v-for="f in filtros" :key="f.key"
@@ -463,7 +464,7 @@
           </div>
         </div>
 
-        <!-- Tabs por categoría -->
+        <!-- Tabs por categoría (todas, vuelos, hoteles, paquetes) -->
         <div class="mv-tabs">
           <button v-for="t in tabs" :key="t.key"
             :class="['mv-tab', { 'mv-tab--active': tabActivo===t.key }]"
@@ -474,20 +475,20 @@
           </button>
         </div>
 
-        <!-- Loading -->
+        <!-- Estado de carga inicial -->
         <div v-if="loading" class="mv-empty">
           <div class="mv-spinner mv-spinner--xl"></div>
           <p>Cargando tus reservaciones...</p>
         </div>
 
-        <!-- Error -->
+        <!-- Estado de error con opción de reintentar -->
         <div v-else-if="error" class="mv-empty">
           <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="48" height="48"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <p>{{ error }}</p>
           <button class="mv-btn mv-btn--primary" @click="cargarTodo" type="button">Reintentar</button>
         </div>
 
-        <!-- Vacío -->
+        <!-- Estado vacío cuando no hay resultados con el filtro activo -->
         <div v-else-if="reservasFiltradas.length===0" class="mv-empty">
           <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1" width="56" height="56"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
           <p class="mv-empty__title">Sin reservaciones</p>
@@ -496,13 +497,13 @@
           <button v-else class="mv-btn mv-btn--ghost" @click="filtroActivo='todas'; tabActivo='todas'" type="button">Ver todas</button>
         </div>
 
-        <!-- ═══════════════════ LISTA DE CARDS ═══════════════════ -->
+        <!-- LISTA DE CARDS: una tarjeta por cada reservación filtrada -->
         <div v-else class="mv-lista">
           <article v-for="r in reservasFiltradas" :key="r.id"
             class="mv-card" :class="`mv-card--${r._categoria}`"
             @click="abrirPanel(r)" tabindex="0" @keydown.enter="abrirPanel(r)">
 
-            <!-- Franja de categoría -->
+            <!-- Franja de categoría con icono y etiqueta -->
             <div class="mv-card__franja">
               <svg v-if="r._categoria==='vuelo'" viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
               <svg v-else-if="r._categoria==='hotel'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -516,9 +517,9 @@
                 <span :class="['mv-badge', estadoClase(r.estadoReserva)]">{{ r.estadoReserva }}</span>
               </div>
 
-              <!-- VUELO / PAQUETE -->
+              <!-- VUELO / PAQUETE: ruta con datos del proveedor si están disponibles -->
               <template v-if="(r._categoria==='vuelo' || r._categoria==='paquete') && r.boletos?.length">
-                <!-- Ruta completa (data_proveedor, solo desde panel) -->
+                <!-- Ruta completa (disponible solo desde el detalle del proveedor) -->
                 <template v-if="r.boletos[0]?.origenCodigo">
                   <div class="mv-card__ruta">
                     <div class="mv-card__punto">
@@ -541,7 +542,7 @@
                   </div>
                 </template>
 
-                <!-- Preview compacto: datos snapshot (parametros_json) -->
+                <!-- Preview compacto con datos snapshot (parametros_json) cuando no hay data_proveedor -->
                 <template v-else>
                   <div class="mv-card__meta" style="padding:0.3rem 0">
                     <span>
@@ -555,7 +556,7 @@
                 </template>
               </template>
 
-              <!-- HOTEL / PAQUETE — habitaciones -->
+              <!-- HOTEL / PAQUETE: habitaciones con datos completos del proveedor -->
               <template v-if="(r._categoria==='hotel' || r._categoria==='paquete') && r.habitaciones?.[0]">
                 <div class="mv-card__hotel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -571,6 +572,7 @@
                 </div>
               </template>
 
+              <!-- Preview hotel cuando solo está disponible el snapshot -->
               <template v-else-if="(r._categoria==='hotel' || r._categoria==='paquete') && r._habitacionesPreview?.[0]">
                 <div class="mv-card__hotel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -581,7 +583,7 @@
                 </div>
               </template>
 
-              <!-- Fecha de creación siempre visible -->
+              <!-- Fecha de creación siempre visible en la parte inferior de la card -->
               <div class="mv-card__meta" style="margin-top:auto">
                 <span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -608,6 +610,15 @@
 </template>
 
 <script setup>
+/**
+ * @file MisReservaciones.vue
+ * @description Vista del historial de reservaciones del usuario autenticado.
+ * Carga un listado paginado desde el backend (snapshot), y al abrir una reserva
+ * consulta los datos reales al proveedor (Broom AirLine / Miku Inn).
+ * Permite filtrar por estado y categoría, cancelar reservas, calificar vuelos,
+ * dejar reseñas de hoteles, descargar PDF y enviar confirmación por correo.
+ */
+
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
@@ -615,19 +626,18 @@ import Piepagina from '../components/Piepagina.vue'
 import '../styles/misreservaciones.css'
 import ComentarioNodo from '../components/Comentarionodo.vue'
 
+/** Instancia del router (no se usa actualmente pero está disponible para navegación). */
 const router = useRouter()
 
-// ─── CONFIG ────────────────────────────────────────────────────────────────────
+/** URL base del backend Go/Gin. @type {string} */
 const BASE = 'http://localhost:8080'
 
-
-
-// ─── JWT DECODE ────────────────────────────────────────────────────────────────
 /**
- * Extrae el usuarioId del JWT guardado en storage.
+ * Extrae el usuarioId del JWT guardado en localStorage o sessionStorage.
  * Soporta claims: id | usuarioId | userId | sub (como número).
- * Si no encuentra ninguno, retorna null y los checks de "ya calificó"
- * quedarán en false (el usuario verá el formulario siempre).
+ * Retorna null si el token no existe o no se puede decodificar.
+ *
+ * @returns {number|null}
  */
 function getUsuarioIdActual() {
   try {
@@ -640,7 +650,12 @@ function getUsuarioIdActual() {
   }
 }
 
-// ─── AUTH HEADERS ─────────────────────────────────────────────────────────────
+/**
+ * Construye los headers de autenticación para las peticiones al backend.
+ * Incluye Authorization: Bearer <token> si existe alguno en storage.
+ *
+ * @returns {Object} Headers listo para usar en fetch.
+ */
 function authHeaders() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
   return {
@@ -649,6 +664,15 @@ function authHeaders() {
   }
 }
 
+/**
+ * Wrapper de fetch que incluye credenciales y headers de autenticación.
+ * Lanza un Error con el mensaje del backend si el status no es 2xx.
+ *
+ * @async
+ * @param {string} url - Endpoint a consumir.
+ * @param {RequestInit} [opts={}] - Opciones adicionales para fetch.
+ * @returns {Promise<any>} JSON de la respuesta.
+ */
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, { headers: authHeaders(), credentials: 'include', ...opts })
   if (!res.ok) {
@@ -658,18 +682,37 @@ async function apiFetch(url, opts = {}) {
   return res.json()
 }
 
-// ─── ESTADO ID MAP ─────────────────────────────────────────────────────────────
-// 1=Pendiente  2=Confirmada  3=Cancelada  4=Expirada  5=Completada  6=En Curso
+/**
+ * Mapa de ID de estado a etiqueta legible.
+ * 1=Pendiente  2=Confirmada  3=Cancelada  4=Expirada  5=Completada  6=En Curso
+ * @type {Object<number, string>}
+ */
 const ESTADO_ID_MAP = { 1:'Pendiente', 2:'Confirmada', 3:'Cancelada', 4:'Expirada', 5:'Completada', 6:'En Curso' }
 
+/**
+ * Convierte el ID numérico de estado en su etiqueta de texto.
+ *
+ * @param {number} id - ID del estado.
+ * @returns {string}
+ */
 function estadoLabel(id) { return ESTADO_ID_MAP[id] ?? 'Pendiente' }
-function tipoLabel(t)    { return t === 1 ? 'vuelo' : t === 2 ? 'hotel' : 'paquete' }
-
-// ─── NORMALIZADORES ────────────────────────────────────────────────────────────
 
 /**
- * fromLista — snapshot de GET /api/reservaciones/mias
- * Solo contiene parametros_json. Sin data_proveedor (real).
+ * Convierte el tipo de reserva numérico en su categoría de texto.
+ * 1 = vuelo, 2 = hotel, cualquier otro = paquete.
+ *
+ * @param {number} t - Tipo de reserva.
+ * @returns {'vuelo'|'hotel'|'paquete'}
+ */
+function tipoLabel(t) { return t === 1 ? 'vuelo' : t === 2 ? 'hotel' : 'paquete' }
+
+/**
+ * Normaliza una reserva del listado (GET /api/reservaciones/mias).
+ * Solo contiene datos del snapshot (parametros_json), sin data_proveedor real.
+ * Los boletos carecen de rutaId, origenCodigo, etc. hasta abrir el detalle.
+ *
+ * @param {Object} r - Objeto de reserva crudo del endpoint de listado.
+ * @returns {Object} Reserva normalizada con _preview: true.
  */
 function fromLista(r) {
   const boletosSnapshot    = []
@@ -715,8 +758,12 @@ function fromLista(r) {
 }
 
 /**
- * fromDetalle — datos reales de GET /api/reservaciones/mias/:id
- * Incluye data_proveedor (estado actual en Broom / Miku).
+ * Normaliza una reserva del detalle (GET /api/reservaciones/mias/:id).
+ * Incluye los datos reales del proveedor: boletos con rutaId, habitaciones, etc.
+ * Extrae también proveedorId para construir las URLs de comentarios.
+ *
+ * @param {Object} r - Objeto de reserva crudo del endpoint de detalle.
+ * @returns {Object} Reserva normalizada con _preview: false.
  */
 function fromDetalle(r) {
   const boletos      = []
@@ -725,7 +772,6 @@ function fromDetalle(r) {
   let usuarioNombre = null, usuarioEmail = null
   let fechaCancelacion = null, motivoCancelacion = null
   let estadoReserva    = estadoLabel(r.estado_id)
-  // proveedorId extraído dinámicamente del detalle (soporta múltiples proveedores)
   let proveedorIdVuelo = null
   let proveedorIdHotel = null
 
@@ -766,63 +812,119 @@ function fromDetalle(r) {
   }
 }
 
-// ─── ESTADO REACTIVO ───────────────────────────────────────────────────────────
-const reservas     = ref([])
-const resumen      = ref(null)
-const loading      = ref(true)
-const error        = ref('')
+/** Lista completa de reservaciones del usuario (snapshots). @type {import('vue').Ref<Object[]>} */
+const reservas = ref([])
+
+/** Objeto de resumen calculado localmente con totales y conteos. @type {import('vue').Ref<Object|null>} */
+const resumen = ref(null)
+
+/** Indica si la carga inicial está en progreso. @type {boolean} */
+const loading = ref(true)
+
+/** Mensaje de error de la carga principal. @type {string} */
+const error = ref('')
+
+/** Clave del filtro de estado activo. @type {string} */
 const filtroActivo = ref('todas')
-const tabActivo    = ref('todas')
-const busqueda     = ref('')
-const toasts       = ref([])
 
+/** Clave del tab de categoría activo. @type {string} */
+const tabActivo = ref('todas')
+
+/** Texto del buscador por código de reservación. @type {string} */
+const busqueda = ref('')
+
+/** Lista de notificaciones toast visibles. @type {Array<{ id: number, msg: string, tipo: string }>} */
+const toasts = ref([])
+
+/** Reserva actualmente abierta en el panel lateral (null si está cerrado). @type {Object|null} */
 const panelReserva = ref(null)
-const panelLoading = ref(false)
-const panelError   = ref('')
 
-const cancelAbierto  = ref(false)
-const cancelMotivo   = ref('')
-const cancelLoading  = ref(false)
-const cancelError    = ref('')
+/** Indica si el panel está cargando los datos del proveedor. @type {boolean} */
+const panelLoading = ref(false)
+
+/** Error del panel lateral al cargar datos del proveedor. @type {string} */
+const panelError = ref('')
+
+/** Controla si el formulario de cancelación está expandido. @type {boolean} */
+const cancelAbierto = ref(false)
+
+/** Texto del motivo de cancelación escrito por el usuario. @type {string} */
+const cancelMotivo = ref('')
+
+/** Indica si la petición de cancelación está en curso. @type {boolean} */
+const cancelLoading = ref(false)
+
+/** Error de validación o del backend al intentar cancelar. @type {string} */
+const cancelError = ref('')
+
+/** Indica si el usuario aceptó los términos de cancelación. @type {boolean} */
 const cancelTerminos = ref(false)
 
-// ─── ESTADO COMENTARIOS PANEL ─────────────────────────────────────────────────
 /**
- * comentariosPanel: comentarios del panel actualmente abierto.
- * Cargados desde el proveedor real al abrir el panel.
- * Se vacían al cerrar.
- *
- * Estructura mezclada:
- *   Vuelo: { id, rutaId, usuarioId, username, cantidadEstrellas, contenido,
- *             comentarioPadreId, fecha, origen, destino, downs }
- *   Hotel: { id, hotelId, usuarioId, username, resena, contenido,
- *             comentarioPadreId, fecha, downs }
+ * Comentarios cargados desde el proveedor para la reserva abierta en el panel.
+ * Mezcla comentarios de vuelo (con rutaId / cantidadEstrellas) y de hotel (con hotelId / resena).
+ * Se vacía al cerrar el panel.
+ * @type {import('vue').Ref<Array>}
  */
-const comentariosPanel  = ref([])
+const comentariosPanel = ref([])
+
+/** Indica si los comentarios del panel están cargando. @type {boolean} */
 const comentariosLoading = ref(false)
 
-// Cal vuelo
+/** Número de estrellas seleccionado en el formulario de calificación de vuelo (1-5). @type {number} */
 const calEstrellas = ref(0)
-const calHover     = ref(0)
+
+/** Estrella sobre la que está el cursor (hover) en el selector de calificación. @type {number} */
+const calHover = ref(0)
+
+/** Texto del comentario de calificación de vuelo. @type {string} */
 const calContenido = ref('')
-const calLoading   = ref(false)
-const calError     = ref('')
-const calExito     = ref(false)
 
-// Res hotel
+/** Indica si la petición de calificación de vuelo está en curso. @type {boolean} */
+const calLoading = ref(false)
+
+/** Error de validación al enviar la calificación de vuelo. @type {string} */
+const calError = ref('')
+
+/** Se activa cuando la calificación de vuelo fue enviada exitosamente. @type {boolean} */
+const calExito = ref(false)
+
+/** Número de estrellas seleccionado en el formulario de reseña de hotel (1-5). @type {number} */
 const resEstrellas = ref(0)
-const resHover     = ref(0)
-const resContenido = ref('')
-const resLoading   = ref(false)
-const resError     = ref('')
-const resenaOk     = ref(false)
 
-const pdfLoading    = ref(false)
+/** Estrella sobre la que está el cursor (hover) en el selector de reseña. @type {number} */
+const resHover = ref(0)
+
+/** Texto del contenido de la reseña del hotel. @type {string} */
+const resContenido = ref('')
+
+/** Indica si la petición de reseña de hotel está en curso. @type {boolean} */
+const resLoading = ref(false)
+
+/** Error de validación al enviar la reseña del hotel. @type {string} */
+const resError = ref('')
+
+/** Se activa cuando la reseña del hotel fue enviada exitosamente. @type {boolean} */
+const resenaOk = ref(false)
+
+/** Indica si la descarga del PDF está en curso. @type {boolean} */
+const pdfLoading = ref(false)
+
+/** Indica si el envío del correo de confirmación está en curso. @type {boolean} */
 const correoLoading = ref(false)
 
-// ─── ESTADO COMENTARIOS PANEL (modo lectura) ──────────────────────────────────
+/**
+ * Estado de expansión de nodos en el árbol de comentarios del panel (modo lectura).
+ * Clave: id del comentario, valor: { expandido, mostrandoForm, textoRespuesta, enviando, votoActual }.
+ * @type {import('vue').Ref<Object>}
+ */
 const estadoNodosMR = ref({})
 
+/**
+ * Alterna el estado expandido de un nodo de comentario en el panel.
+ *
+ * @param {number} id - ID del comentario a expandir/colapsar.
+ */
 function toggleExpandidoMR(id) {
   estadoNodosMR.value = {
     ...estadoNodosMR.value,
@@ -833,25 +935,49 @@ function toggleExpandidoMR(id) {
   }
 }
 
+/**
+ * Devuelve los comentarios hijos de un comentario padre dado.
+ *
+ * @param {number} parentId - ID del comentario padre.
+ * @returns {Array}
+ */
 function getHijosMR(parentId) {
   return comentariosPanel.value.filter(c => c.comentarioPadreId === parentId)
 }
 
+/**
+ * Devuelve los comentarios raíz (sin padre) del panel actual.
+ *
+ * @returns {Array}
+ */
 function getComentariosRaizMR() {
   return comentariosPanel.value.filter(c => c.comentarioPadreId === null)
 }
 
+/**
+ * Devuelve solo los comentarios raíz que tienen puntuación (reseñas reales).
+ *
+ * @returns {Array}
+ */
 function getResenasRaizMR() {
   return comentariosPanel.value.filter(c => c.comentarioPadreId === null && (c.resena !== null || c.cantidadEstrellas !== null))
 }
 
+/**
+ * Calcula el promedio de estrellas de las reseñas raíz del panel actual.
+ *
+ * @returns {number} Promedio entre 0 y 5.
+ */
 function getPromedioMR() {
   const r = getResenasRaizMR()
   if (!r.length) return 0
   return r.reduce((s, c) => s + (c.resena ?? c.cantidadEstrellas ?? 0), 0) / r.length
 }
 
-// ─── FILTROS / TABS ────────────────────────────────────────────────────────────
+/**
+ * Definición de los filtros de estado disponibles en la barra de controles.
+ * @type {Array<{ key: string, label: string, campo: string }>}
+ */
 const filtros = [
   { key: 'todas',      label: 'Todas',      campo: 'totalReservaciones' },
   { key: 'pendiente',  label: 'Pendientes',  campo: 'pendientes' },
@@ -862,6 +988,10 @@ const filtros = [
   { key: 'expirada',   label: 'Expiradas',   campo: 'expiradas' },
 ]
 
+/**
+ * Definición de los tabs de categoría con su icono SVG inline.
+ * @type {Array<{ key: string, label: string, icon: string }>}
+ */
 const tabs = [
   { key: 'todas',   label: 'Todas',    icon: '<circle cx="12" cy="12" r="10"/>' },
   { key: 'vuelo',   label: 'Vuelos',   icon: '<path fill="currentColor" stroke="none" d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>' },
@@ -869,7 +999,10 @@ const tabs = [
   { key: 'paquete', label: 'Paquetes', icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>' },
 ]
 
-// ─── COMPUTADOS ────────────────────────────────────────────────────────────────
+/**
+ * Lista de reservaciones filtradas por estado activo, tab de categoría y búsqueda por código.
+ * @type {import('vue').ComputedRef<Object[]>}
+ */
 const reservasFiltradas = computed(() => {
   let list = reservas.value
   if (filtroActivo.value !== 'todas')
@@ -881,18 +1014,35 @@ const reservasFiltradas = computed(() => {
   return list
 })
 
+/**
+ * Cuenta las reservaciones de una categoría específica (o todas si key = 'todas').
+ *
+ * @param {string} key - Clave del tab ('todas' | 'vuelo' | 'hotel' | 'paquete').
+ * @returns {number}
+ */
 function countPorTab(key) {
   if (key === 'todas') return reservas.value.length
   return reservas.value.filter(r => r._categoria === key).length
 }
 
-// ─── HELPERS GENERALES ─────────────────────────────────────────────────────────
+/**
+ * Agrega un mensaje toast a la pila y lo elimina automáticamente después de 4 segundos.
+ *
+ * @param {string} msg - Mensaje a mostrar.
+ * @param {'success'|'error'} [tipo='success'] - Tipo de notificación.
+ */
 function addToast(msg, tipo = 'success') {
   const id = Date.now()
   toasts.value.push({ id, msg, tipo })
   setTimeout(() => { toasts.value = toasts.value.filter(t => t.id !== id) }, 4000)
 }
 
+/**
+ * Devuelve la clase CSS del badge según el estado de una reserva o boleto.
+ *
+ * @param {string} e - Etiqueta del estado.
+ * @returns {string} Clase CSS correspondiente.
+ */
 function estadoClase(e) {
   if (!e) return 'mv-badge--pendiente'
   const s = e.toLowerCase()
@@ -904,26 +1054,61 @@ function estadoClase(e) {
   return 'mv-badge--pendiente'
 }
 
+/**
+ * Formatea una fecha ISO incluyendo hora en formato legible en español.
+ *
+ * @param {string} f - Fecha ISO.
+ * @returns {string}
+ */
 function formatFechaHora(f) {
   if (!f) return '--'
   const d = new Date(f)
   return d.toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' })
     + ' ' + d.toLocaleTimeString('es-GT', { hour:'2-digit', minute:'2-digit' })
 }
+
+/**
+ * Formatea una fecha ISO a cadena legible corta en español (ej. "04 abr 2026").
+ *
+ * @param {string} f - Fecha ISO.
+ * @returns {string}
+ */
 function formatFecha(f) {
   if (!f) return '--'
   return new Date(f).toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' })
 }
-function formatHora(h)       { return h ? h.substring(0, 5) : '--' }
-function formatDuracion(min) { if (!min) return '--'; return `${Math.floor(min/60)}h${min%60>0?' '+min%60+'m':''}` }
-function calcNoches(ci, co)  { if (!ci||!co) return 0; return Math.max(0, Math.ceil((new Date(co)-new Date(ci))/86400000)) }
-
-// ─── HELPERS COMENTARIOS ──────────────────────────────────────────────────────
 
 /**
- * yaComentaRuta — ¿el usuario actual ya calificó esta ruta?
- * Busca en comentariosPanel: comentario raíz (sin padre) con estrellas
- * y que pertenezca al usuario actual.
+ * Extrae la hora (HH:MM) de una cadena de tiempo "HH:MM:SS".
+ *
+ * @param {string} h - Cadena de hora.
+ * @returns {string}
+ */
+function formatHora(h) { return h ? h.substring(0, 5) : '--' }
+
+/**
+ * Formatea una duración en minutos a "Xh Ym".
+ *
+ * @param {number} min - Duración en minutos.
+ * @returns {string}
+ */
+function formatDuracion(min) { if (!min) return '--'; return `${Math.floor(min/60)}h${min%60>0?' '+min%60+'m':''}` }
+
+/**
+ * Calcula la cantidad de noches entre check-in y check-out.
+ *
+ * @param {string} ci - Fecha de check-in ISO.
+ * @param {string} co - Fecha de check-out ISO.
+ * @returns {number}
+ */
+function calcNoches(ci, co) { if (!ci||!co) return 0; return Math.max(0, Math.ceil((new Date(co)-new Date(ci))/86400000)) }
+
+/**
+ * Verifica si el usuario actual ya calificó una ruta de vuelo específica
+ * buscando en los comentarios del panel un comentario raíz con estrellas.
+ *
+ * @param {number} rutaId - ID de la ruta aérea.
+ * @returns {boolean}
  */
 function yaComentaRuta(rutaId) {
   if (!rutaId) return false
@@ -932,13 +1117,16 @@ function yaComentaRuta(rutaId) {
     c.rutaId === rutaId &&
     c.comentarioPadreId === null &&
     c.cantidadEstrellas !== null &&
-    (uid === null || c.usuarioId === uid)  // si no hay uid, consideramos que no ha calificado
+    (uid === null || c.usuarioId === uid)
   )
 }
 
 /**
- * obtenerComentarioRuta — devuelve el comentario/calificación del usuario
- * para una ruta dada (o null si no existe).
+ * Devuelve el comentario/calificación del usuario para una ruta dada,
+ * o null si no existe todavía.
+ *
+ * @param {number} rutaId - ID de la ruta aérea.
+ * @returns {Object|null}
  */
 function obtenerComentarioRuta(rutaId) {
   if (!rutaId) return null
@@ -952,8 +1140,11 @@ function obtenerComentarioRuta(rutaId) {
 }
 
 /**
- * yaResenaHotel — ¿el usuario actual ya dejó reseña en este hotel?
- * resena !== null identifica comentarios con puntuación (reseña raíz).
+ * Verifica si el usuario actual ya dejó una reseña para un hotel concreto.
+ * Busca comentarios raíz con campo resena != null en los datos del panel.
+ *
+ * @param {number} hotelId - ID del hotel.
+ * @returns {boolean}
  */
 function yaResenaHotel(hotelId) {
   if (!hotelId) return false
@@ -967,7 +1158,10 @@ function yaResenaHotel(hotelId) {
 }
 
 /**
- * obtenerResenaHotel — devuelve la reseña del usuario para un hotel (o null).
+ * Devuelve la reseña del usuario para un hotel dado, o null si no existe.
+ *
+ * @param {number} hotelId - ID del hotel.
+ * @returns {Object|null}
  */
 function obtenerResenaHotel(hotelId) {
   if (!hotelId) return null
@@ -980,7 +1174,10 @@ function obtenerResenaHotel(hotelId) {
   ) ?? null
 }
 
-// ─── RESUMEN ──────────────────────────────────────────────────────────────────
+/**
+ * Calcula el objeto resumen a partir de la lista local de reservaciones.
+ * Se llama después de cada carga o actualización del array reservas.
+ */
 function calcularResumen() {
   const list = reservas.value
   resumen.value = {
@@ -998,7 +1195,13 @@ function calcularResumen() {
   }
 }
 
-// ─── CARGA PRINCIPAL ──────────────────────────────────────────────────────────
+/**
+ * Carga la lista de reservaciones del usuario desde el backend y recalcula el resumen.
+ * Se llama al montar la vista y después de cancelar una reserva.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 async function cargarTodo() {
   loading.value = true
   error.value   = ''
@@ -1013,16 +1216,15 @@ async function cargarTodo() {
   }
 }
 
-// ─── CARGA DE COMENTARIOS DEL PANEL ───────────────────────────────────────────
 /**
- * cargarComentariosPanel — carga los comentarios/reseñas reales desde el proveedor
- * para la reserva que acaba de abrirse en el panel.
+ * Carga los comentarios y reseñas reales del proveedor para la reserva abierta en el panel.
+ * Para cada ruta única en los boletos llama a GET /api/comentarios/vuelo/:provId/:rutaId.
+ * Si hay hotel llama a GET /api/comentarios/hotel/:provId/:hotelId.
+ * Todas las peticiones se hacen en paralelo con Promise.all.
  *
- * Llama:
- *   GET /api/comentarios/vuelo/:proveedorId/:rutaId   → para cada ruta única en boletos
- *   GET /api/comentarios/hotel/:proveedorId/:hotelId  → si hay hotelId
- *
- * Los resultados se acumulan en comentariosPanel.
+ * @async
+ * @param {Object} reserva - Reserva normalizada (fromDetalle) actualmente en el panel.
+ * @returns {Promise<void>}
  */
 async function cargarComentariosPanel(reserva) {
   comentariosPanel.value  = []
@@ -1031,10 +1233,9 @@ async function cargarComentariosPanel(reserva) {
   try {
     const promesas = []
 
-    // ── Comentarios de vuelo ─────────────────────────────────────────────────
+    // Comentarios de vuelo: una petición por cada rutaId único en los boletos
     if (reserva._categoria === 'vuelo' || reserva._categoria === 'paquete') {
       const provId = reserva.proveedorIdVuelo
-      // Rutas únicas con rutaId válido
       const rutasUnicas = [...new Set(
         (reserva.boletos ?? [])
           .map(b => b.rutaId)
@@ -1053,7 +1254,7 @@ async function cargarComentariosPanel(reserva) {
       }
     }
 
-    // ── Comentarios de hotel ─────────────────────────────────────────────────
+    // Comentarios del hotel si la reserva incluye hospedaje
     if ((reserva._categoria === 'hotel' || reserva._categoria === 'paquete') && reserva.hotelId) {
       const provId = reserva.proveedorIdHotel
       const url = provId
@@ -1072,9 +1273,16 @@ async function cargarComentariosPanel(reserva) {
   }
 }
 
-// ─── PANEL LATERAL ────────────────────────────────────────────────────────────
+/**
+ * Abre el panel lateral para una reserva. Muestra el snapshot inmediatamente
+ * y luego carga los datos reales del proveedor en segundo plano.
+ * Si el estado es "completada" también carga los comentarios del proveedor.
+ *
+ * @async
+ * @param {Object} reserva - Reserva normalizada del listado.
+ * @returns {Promise<void>}
+ */
 async function abrirPanel(reserva) {
-  // Mostrar snapshot inmediatamente (UX sin espera)
   panelReserva.value  = { ...reserva }
   panelLoading.value  = true
   panelError.value    = ''
@@ -1086,7 +1294,7 @@ async function abrirPanel(reserva) {
   resetRes()
 
   try {
-    // 1. Traer datos reales del proveedor (boletos con rutaId, habitaciones, etc.)
+    // Obtener datos reales del proveedor (boletos con rutaId, habitaciones, etc.)
     const data = await apiFetch(`${BASE}/api/reservaciones/mias/${reserva.id}`)
     panelReserva.value = fromDetalle(data)
   } catch {
@@ -1097,13 +1305,15 @@ async function abrirPanel(reserva) {
     panelLoading.value = false
   }
 
-  // 2. Cargar comentarios/reseñas reales (async, no bloquea el panel)
-  //    Solo si el estado es "completada" (única situación donde se muestran)
+  // Cargar comentarios/reseñas solo si la reserva ya fue completada
   if (panelReserva.value.estadoReserva?.toLowerCase() === 'completada') {
     await cargarComentariosPanel(panelReserva.value)
   }
 }
 
+/**
+ * Cierra el panel lateral y limpia todo su estado interno.
+ */
 function cerrarPanel() {
   panelReserva.value   = null
   panelError.value     = ''
@@ -1113,7 +1323,14 @@ function cerrarPanel() {
   resetRes()
 }
 
-// ─── CANCELAR ─────────────────────────────────────────────────────────────────
+/**
+ * Envía la solicitud de cancelación de la reserva activa en el panel.
+ * Requiere que el usuario haya escrito un motivo y aceptado los términos.
+ * Recarga la lista y reabre el panel con el estado actualizado.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 async function confirmarCancelar() {
   if (!cancelMotivo.value.trim()) { cancelError.value = 'Escribe un motivo de cancelación.'; return }
   if (!cancelTerminos.value)      { cancelError.value = 'Debes aceptar los términos de cancelación.'; return }
@@ -1161,7 +1378,13 @@ async function confirmarCancelar() {
   }
 }
 
-// ─── PDF / CORREO ─────────────────────────────────────────────────────────────
+/**
+ * Descarga el PDF de una reservación y lo ofrece al usuario como archivo.
+ *
+ * @async
+ * @param {number} id - ID de la reservación.
+ * @returns {Promise<void>}
+ */
 async function descargarPDF(id) {
   pdfLoading.value = true
   try {
@@ -1186,6 +1409,13 @@ async function descargarPDF(id) {
   }
 }
 
+/**
+ * Solicita al backend que envíe el correo de confirmación de una reservación.
+ *
+ * @async
+ * @param {number} id - ID de la reservación.
+ * @returns {Promise<void>}
+ */
 async function enviarCorreo(id) {
   correoLoading.value = true
   try {
@@ -1198,7 +1428,7 @@ async function enviarCorreo(id) {
   }
 }
 
-// ─── CALIFICACIÓN VUELO ───────────────────────────────────────────────────────
+/** Resetea todos los refs del formulario de calificación de vuelo. */
 function resetCal() {
   calEstrellas.value = 0
   calHover.value     = 0
@@ -1207,6 +1437,14 @@ function resetCal() {
   calExito.value     = false
 }
 
+/**
+ * Envía la calificación de un vuelo al proveedor y recarga los comentarios del panel.
+ * Requiere al menos 1 estrella y un comentario no vacío.
+ *
+ * @async
+ * @param {number} rutaId - ID de la ruta aérea a calificar.
+ * @returns {Promise<void>}
+ */
 async function enviarCalificacion(rutaId) {
   if (calEstrellas.value < 1)       { calError.value = 'Selecciona al menos 1 estrella.'; return }
   if (!calContenido.value.trim())   { calError.value = 'Escribe tu comentario.'; return }
@@ -1224,7 +1462,7 @@ async function enviarCalificacion(rutaId) {
       })
     })
 
-    // Recargar comentarios para reflejar el nuevo estado
+    // Recargar comentarios para reflejar la nueva calificación
     await cargarComentariosPanel(panelReserva.value)
     calExito.value = true
     addToast('¡Calificación enviada! Gracias por tu opinión.')
@@ -1236,7 +1474,7 @@ async function enviarCalificacion(rutaId) {
   }
 }
 
-// ─── RESEÑA HOTEL ─────────────────────────────────────────────────────────────
+/** Resetea todos los refs del formulario de reseña de hotel. */
 function resetRes() {
   resEstrellas.value = 0
   resHover.value     = 0
@@ -1245,6 +1483,13 @@ function resetRes() {
   resenaOk.value     = false
 }
 
+/**
+ * Envía la reseña de un hotel al proveedor y recarga los comentarios del panel.
+ * Requiere al menos 1 estrella y texto no vacío. Detecta el hotelId desde la reserva activa.
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
 async function enviarResenaHotel() {
   const hotelId = panelReserva.value?.hotelId ?? panelReserva.value?.habitaciones?.[0]?.hotelId
 
@@ -1277,6 +1522,5 @@ async function enviarResenaHotel() {
   }
 }
 
-// ─── INIT ──────────────────────────────────────────────────────────────────────
 onMounted(() => cargarTodo())
 </script>

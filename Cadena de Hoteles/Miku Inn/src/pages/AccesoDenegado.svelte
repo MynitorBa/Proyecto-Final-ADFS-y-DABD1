@@ -1,14 +1,26 @@
 <script>
+  /**
+   * @file AccesoDenegado.svelte
+   * @description Pagina de error 403 que se muestra cuando un usuario intenta
+   * acceder a una ruta para la que no tiene permisos. Incluye una cuenta
+   * regresiva de 5 segundos que redirige automaticamente al inicio.
+   */
+
   // @ts-nocheck
   import { onMount } from 'svelte';
   import '../styles/acceso-denegado.css';
 
+  /** Funcion de navegacion recibida desde App. @type {Function} */
   export let navigateTo;
 
+  /** Segundos restantes antes de la redireccion automatica al inicio. @type {number} */
   let countdown = 5;
+
+  /** Referencia al intervalo del temporizador para poder cancelarlo. @type {number} */
   let interval;
 
   onMount(() => {
+    // Iniciar la cuenta regresiva que redirige al home al llegar a 0
     interval = setInterval(() => {
       countdown -= 1;
       if (countdown <= 0) {
@@ -20,6 +32,9 @@
     return () => clearInterval(interval);
   });
 
+  /**
+   * Cancela el temporizador y navega al inicio de forma inmediata.
+   */
   function goHome() {
     clearInterval(interval);
     navigateTo('home');
@@ -28,7 +43,7 @@
 
 <div class="acceso-denegado-page">
 
-  <!-- Fondo animado -->
+  <!-- Fondo animado con orbs decorativos y cuadricula -->
   <div class="ad-bg">
     <div class="ad-orb ad-orb--1"></div>
     <div class="ad-orb ad-orb--2"></div>
@@ -38,7 +53,7 @@
 
   <div class="ad-card">
 
-    <!-- Candado -->
+    <!-- Icono de candado con gradiente SVG -->
     <div class="ad-lock-wrapper">
       <div class="ad-lock-ring"></div>
       <div class="ad-lock-icon">
@@ -57,10 +72,10 @@
       </div>
     </div>
 
-    <!-- Código de error -->
+    <!-- Codigo de error HTTP -->
     <div class="ad-error-code">403</div>
 
-    <!-- Textos -->
+    <!-- Titulo y mensajes explicativos -->
     <h1 class="ad-title">Acceso Denegado</h1>
     <p class="ad-subtitle">
       No tienes los permisos necesarios para acceder a esta sección.
@@ -70,7 +85,7 @@
       contacta al administrador del sistema.
     </p>
 
-    <!-- Cuenta regresiva -->
+    <!-- Cuenta regresiva visual con barra de progreso -->
     <div class="ad-countdown">
       <p class="ad-countdown__label">
         Redirigiendo al inicio en <span class="ad-countdown__number">{countdown}</span> segundos...
@@ -80,7 +95,7 @@
       </div>
     </div>
 
-    <!-- Botón -->
+    <!-- Boton para ir al inicio sin esperar la cuenta regresiva -->
     <button class="ad-home-btn" on:click={goHome}>
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
         <path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>

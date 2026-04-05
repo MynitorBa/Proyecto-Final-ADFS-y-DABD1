@@ -1,41 +1,94 @@
 <script>
+  /**
+   * @file Profile.svelte
+   * @description Pagina de perfil del usuario autenticado. Muestra la informacion
+   * de la cuenta en modo solo lectura y ofrece formularios para actualizar el
+   * numero de telefono (con selector de pais y codigo de marcado) y cambiar la
+   * contrasena actual.
+   */
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
   import '../styles/profile.css';
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   const API = 'http://localhost:7000';
 
+  /** Datos del perfil cargados desde el servidor. @type {any} */
   let perfil = null;
+
+  /** Indica si la carga inicial esta en curso. @type {boolean} */
   let loading = true;
+
+  /** Mensaje de error global si el perfil no se pudo cargar. @type {string} */
   let serverError = '';
 
-  // ── Teléfono + País ──
+  /** Nuevo numero de telefono que el usuario esta escribiendo. @type {string} */
   let nuevoTelefono = '';
+
+  /** Mensaje de exito al guardar el telefono. @type {string} */
   let telefonoMsg = '';
+
+  /** Mensaje de error en el formulario de telefono. @type {string} */
   let telefonoError = '';
+
+  /** Indica si la peticion de actualizar telefono esta en vuelo. @type {boolean} */
   let savingTelefono = false;
 
-  // País para el teléfono
+  /** Texto del buscador de pais. @type {string} */
   let paisQuery = '';
+
+  /** Sugerencias de paises filtradas mientras el usuario escribe. @type {any[]} */
   let paisesSugeridos = [];
-  let todosLosPaises = [];      // lista de countriesnow
-  let dialCodesMap = {};        // { "guatemala": { code: "+502", digits: 8 } }
+
+  /** Lista completa de paises cargada desde countriesnow. @type {any[]} */
+  let todosLosPaises = [];
+
+  /** Mapa de codigo de marcado por nombre de pais. @type {Object.<string, {code: string, digits: number}>} */
+  let dialCodesMap = {};
+
+  /** Codigo de marcado internacional del pais seleccionado (ej. "+502"). @type {string} */
   let dialCode = '';
+
+  /** Cantidad de digitos locales requeridos para el pais seleccionado. @type {number} */
   let phoneDigitCount = 9;
+
+  /** Pais seleccionado del autocomplete. @type {string|null} */
   let paisSeleccionado = null;
 
-  // ── Contraseña ──
+  /** Contrasena actual ingresada por el usuario. @type {string} */
   let contrasenaActual = '';
+
+  /** Nueva contrasena deseada. @type {string} */
   let contrasenaNueva = '';
+
+  /** Confirmacion de la nueva contrasena. @type {string} */
   let confirmarNueva = '';
+
+  /** Alterna la visibilidad del campo de contrasena actual. @type {boolean} */
   let showActual = false;
+
+  /** Alterna la visibilidad del campo de nueva contrasena. @type {boolean} */
   let showNueva = false;
+
+  /** Alterna la visibilidad del campo de confirmacion. @type {boolean} */
   let showConfirmar = false;
+
+  /** Mensaje de exito al cambiar la contrasena. @type {string} */
   let contrasenaMsg = '';
+
+  /** Mensaje de error en el formulario de contrasena. @type {string} */
   let contrasenaError = '';
+
+  /** Indica si la peticion de cambio de contrasena esta en vuelo. @type {boolean} */
   let savingContrasena = false;
 
-  // Dígitos locales reales por código de país (igual que en Register)
+  /**
+   * Tabla de cantidad de digitos locales por codigo de marcado internacional.
+   * Basada en los estandares ITU, igual que en Register.svelte.
+   * @type {Object.<string, number>}
+   */
   const knownDigits = {
     '+1':    10, '+7':    10, '+20':   10, '+27':   9,  '+30':   10,
     '+31':   9,  '+32':   9,  '+33':   9,  '+34':   9,  '+36':   9,
@@ -80,6 +133,12 @@
     '+994':  9,  '+995':  9,  '+996':  9,  '+998':  9,
   };
 
+  /**
+   * Da formato visual a un numero local segun la cantidad de digitos del pais.
+   * @param {string} digits - Digitos sin formato.
+   * @param {number} total - Total de digitos esperados para el pais.
+   * @returns {string} Numero formateado con espacios.
+   */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
     if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
@@ -88,18 +147,32 @@
     return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
   }
 
+  /**
+   * Maneja el evento de escritura en el campo de telefono.
+   * Extrae solo digitos, limita al maximo del pais y aplica formato visual.
+   * @param {Event} e - Evento de input.
+   */
   function onPhoneInput(e) {
     const raw = e.target.value.replace(/\D/g, '');
     const capped = raw.slice(0, phoneDigitCount);
     nuevoTelefono = formatLocalPhone(capped, phoneDigitCount);
   }
 
+  /**
+   * Genera el texto placeholder de ejemplo para el campo de telefono.
+   * @param {number} digits - Total de digitos del pais.
+   * @returns {string}
+   */
   function getPhonePlaceholder(digits) {
     return formatLocalPhone('5'.repeat(digits), digits);
   }
 
+  /**
+   * Carga el perfil del usuario, la lista de paises y los codigos de marcado
+   * al montar el componente. Pre-selecciona el pais del perfil si ya esta guardado.
+   */
   onMount(async () => {
-    // Cargar perfil
+    // Cargar datos del perfil desde el backend
     try {
       const res = await fetch(`${API}/usuarios/perfil`, { credentials: 'include' });
       if (!res.ok) { serverError = 'No se pudo cargar el perfil.'; loading = false; return; }
@@ -108,14 +181,14 @@
     } catch { serverError = 'Error de conexión.'; }
     finally { loading = false; }
 
-    // Cargar países para autocomplete
+    // Cargar lista de paises desde la API de countriesnow
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
       const data = await res.json();
       todosLosPaises = data.data;
     } catch { console.error('Error cargando países'); }
 
-    // Cargar dial codes desde restcountries usando knownDigits (igual que Register)
+    // Construir mapa de codigos de marcado usando restcountries + knownDigits
     try {
       const res = await fetch('https://restcountries.com/v3.1/all?fields=name,idd');
       const data = await res.json();
@@ -132,7 +205,7 @@
         }
       });
 
-      // Pre-seleccionar el país del perfil si ya lo tenemos
+      // Pre-seleccionar el pais guardado en el perfil
       if (perfil?.pais) {
         const info = dialCodesMap[perfil.pais.toLowerCase()];
         if (info) {
@@ -145,7 +218,10 @@
     } catch { console.error('Error cargando dial codes'); }
   });
 
-  // ── Autocomplete país ──
+  /**
+   * Filtra las sugerencias de paises a medida que el usuario escribe.
+   * Limpia el codigo de marcado si no hay pais confirmado.
+   */
   function onPaisInput() {
     const q = paisQuery.toLowerCase();
     paisesSugeridos = q.length < 2
@@ -154,6 +230,11 @@
     if (!paisSeleccionado) { dialCode = ''; nuevoTelefono = ''; }
   }
 
+  /**
+   * Confirma la seleccion de un pais del autocomplete y actualiza el codigo
+   * de marcado y el contador de digitos correspondiente.
+   * @param {{ country: string }} p - Pais seleccionado.
+   */
   function seleccionarPais(p) {
     paisSeleccionado = p.country;
     paisQuery = p.country;
@@ -165,6 +246,10 @@
     telefonoError = '';
   }
 
+  /**
+   * Valida que el usuario haya seleccionado un pais de la lista al salir
+   * del campo. Si escribio texto libre sin confirmar, lo limpia.
+   */
   function validarPaisSeleccionado() {
     if (paisQuery && !paisSeleccionado) {
       telefonoError = 'Selecciona un país de la lista';
@@ -172,7 +257,12 @@
     }
   }
 
-  // ── Guardar teléfono ──
+  /**
+   * Envia el nuevo numero de telefono al servidor tras validar que tenga
+   * exactamente la cantidad de digitos requerida para el pais elegido.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function guardarTelefono() {
     telefonoMsg = ''; telefonoError = '';
     if (!paisSeleccionado) { telefonoError = 'Selecciona un país primero.'; return; }
@@ -202,7 +292,12 @@
     finally { savingTelefono = false; }
   }
 
-  // ── Guardar contraseña ──
+  /**
+   * Valida y envia el cambio de contrasena al servidor. Verifica que la nueva
+   * contrasena tenga al menos 8 caracteres y que la confirmacion coincida.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function guardarContrasena() {
     contrasenaMsg = ''; contrasenaError = '';
     if (!contrasenaActual) { contrasenaError = 'Ingresa tu contraseña actual.'; return; }
@@ -231,12 +326,14 @@
 <div class="profile-page">
   <div class="profile-container">
 
+    <!-- Estado de carga -->
     {#if loading}
       <div class="profile-loading">
         <div class="profile-spinner"></div>
         <p>Cargando perfil...</p>
       </div>
 
+    <!-- Estado de error con opcion de volver al inicio -->
     {:else if serverError}
       <div class="profile-error-box">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -248,7 +345,7 @@
 
     {:else if perfil}
 
-      <!-- Hero -->
+      <!-- Hero del perfil con avatar, nombre y etiquetas de pais/nacionalidad -->
       <div class="profile-hero">
         <div class="profile-avatar-big">{perfil.nombre.charAt(0).toUpperCase()}</div>
         <div class="profile-hero-info">
@@ -264,7 +361,7 @@
         </div>
       </div>
 
-      <!-- Info solo lectura -->
+      <!-- Tarjeta de informacion de la cuenta en modo solo lectura -->
       <div class="profile-card">
         <h2 class="profile-section-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -292,7 +389,7 @@
         </div>
       </div>
 
-      <!-- Actualizar teléfono -->
+      <!-- Tarjeta para actualizar el numero de telefono -->
       <div class="profile-card">
         <h2 class="profile-section-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -304,7 +401,7 @@
         {#if telefonoMsg}<div class="profile-alert success">{telefonoMsg}</div>{/if}
         {#if telefonoError}<div class="profile-alert error">{telefonoError}</div>{/if}
 
-        <!-- Selector de país -->
+        <!-- Selector de pais con autocompletado -->
         <div class="profile-field">
           <label for="pais-telefono">País del número</label>
           <div class="profile-autocomplete-wrap">
@@ -331,7 +428,7 @@
           </div>
         </div>
 
-        <!-- Campo teléfono con dialCode -->
+        <!-- Campo de telefono con prefijo de marcado internacional -->
         <div class="profile-field">
           <label for="telefono">
             Nuevo número
@@ -352,6 +449,7 @@
               disabled={!dialCode}
             />
           </div>
+          <!-- Indicador de progreso de digitos ingresados -->
           {#if nuevoTelefono && !telefonoError}
             {@const d = nuevoTelefono.replace(/\D/g, '').length}
             {#if d === phoneDigitCount}
@@ -372,7 +470,7 @@
         </button>
       </div>
 
-      <!-- Cambiar contraseña -->
+      <!-- Tarjeta para cambiar la contrasena de la cuenta -->
       <div class="profile-card">
         <h2 class="profile-section-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -384,6 +482,7 @@
         {#if contrasenaMsg}<div class="profile-alert success">{contrasenaMsg}</div>{/if}
         {#if contrasenaError}<div class="profile-alert error">{contrasenaError}</div>{/if}
 
+        <!-- Campo de contrasena actual con toggle de visibilidad -->
         <div class="profile-field">
           <label for="pwd-actual">Contraseña actual</label>
           <div class="profile-pwd-wrap">
@@ -397,6 +496,7 @@
           </div>
         </div>
 
+        <!-- Campo de nueva contrasena con toggle de visibilidad -->
         <div class="profile-field">
           <label for="pwd-nueva">Nueva contraseña</label>
           <div class="profile-pwd-wrap">
@@ -410,6 +510,7 @@
           </div>
         </div>
 
+        <!-- Campo de confirmacion de nueva contrasena con indicador de coincidencia -->
         <div class="profile-field">
           <label for="pwd-confirmar">Confirmar nueva contraseña</label>
           <div class="profile-pwd-wrap">

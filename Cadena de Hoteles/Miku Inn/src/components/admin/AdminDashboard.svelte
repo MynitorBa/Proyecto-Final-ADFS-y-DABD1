@@ -1,19 +1,46 @@
 <script>
+  /**
+   * @file AdminDashboard.svelte
+   * @description Panel principal del administrador. Muestra metricas generales del sistema,
+   * las ultimas reservas, un resumen de hoteles con su rating y los usuarios mas recientes.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   export let API_BASE;
+
+  /**
+   * Funcion que devuelve la clase CSS del badge segun el estado del registro.
+   * @type {function(string): string}
+   */
   export let badge;
+
+  /**
+   * Funcion para navegar a otra seccion del panel de administracion.
+   * @type {function(string): void}
+   */
   export let setSection;
 
+  /** Objeto con las metricas globales del sistema (usuarios, reservas, ingresos, hoteles). @type {Object|null} */
   let metricas = null;
+
+  /** Indica si se estan cargando las metricas. @type {boolean} */
   let cargandoMetricas = false;
 
+  /** Lista de reservaciones del sistema. @type {Array<Object>} */
   let reservas = [];
+
+  /** Indica si se estan cargando las reservas. @type {boolean} */
   let cargandoReservas = false;
 
+  /** Lista de hoteles del sistema. @type {Array<Object>} */
   let hoteles = [];
+
+  /** Lista de usuarios registrados en el sistema. @type {Array<Object>} */
   let usuarios = [];
 
+  // Tarjetas de estadisticas construidas a partir de las metricas. Muestra placeholders con "—" mientras los datos no esten disponibles.
   $: statsData = metricas ? [
     { label: 'Usuarios Totales',     value: metricas.totalUsuarios.toLocaleString('es-GT'),    icon: 'users',    color: 'blue'   },
     { label: 'Reservas Confirmadas', value: metricas.reservasActivas.toLocaleString('es-GT'),  icon: 'calendar', color: 'green'  },
@@ -33,6 +60,11 @@
     cargarUsuarios();
   });
 
+  /**
+   * Carga las metricas globales del sistema desde el backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarMetricas() {
     cargandoMetricas = true;
     try {
@@ -42,6 +74,11 @@
     finally { cargandoMetricas = false; }
   }
 
+  /**
+   * Carga todas las reservaciones del sistema para mostrar las mas recientes.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservas() {
     cargandoReservas = true;
     try {
@@ -51,6 +88,11 @@
     finally { cargandoReservas = false; }
   }
 
+  /**
+   * Carga la lista de hoteles para mostrar el resumen de rating en el dashboard.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarHoteles() {
     try {
       const res = await fetch(`${API_BASE}/admin/hoteles`, { credentials: 'include' });
@@ -58,6 +100,11 @@
     } catch (e) { /* silencioso */ }
   }
 
+  /**
+   * Carga la lista de usuarios registrados para mostrar los mas recientes.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarUsuarios() {
     try {
       const res = await fetch(`${API_BASE}/admin/usuarios`, { credentials: 'include' });
@@ -66,7 +113,7 @@
   }
 </script>
 
-<!-- Stats cards -->
+<!-- Tarjetas de estadisticas del sistema (usuarios, reservas, hoteles, ingresos) -->
 <div class="adm__stats-grid">
   {#each statsData as stat}
     <div class="adm__stat-card adm__stat-card--{stat.color}">
@@ -90,7 +137,7 @@
   {/each}
 </div>
 
-<!-- Grid: Últimas Reservas + Hoteles -->
+<!-- Grid con las ultimas reservas y el resumen de hoteles por rating -->
 <div class="adm__dashboard-grid">
   <div class="adm__card">
     <div class="adm__card-header">
@@ -106,6 +153,7 @@
           {:else if reservas.length === 0}
             <tr><td colspan="4" class="adm__empty-cell">Sin reservas registradas</td></tr>
           {:else}
+            <!-- Muestra solo las 5 reservas mas recientes -->
             {#each reservas.slice(0, 5) as r}
               <tr>
                 <td class="adm__table-mono">{r.noReservacion}</td>
@@ -120,6 +168,7 @@
     </div>
   </div>
 
+  <!-- Lista de hoteles con barra proporcional al rating (maximo 5) -->
   <div class="adm__card">
     <div class="adm__card-header">
       <h3 class="adm__card-title">Hoteles</h3>
@@ -144,7 +193,7 @@
   </div>
 </div>
 
-<!-- Usuarios recientes -->
+<!-- Tabla de los 5 usuarios registrados mas recientemente -->
 <div class="adm__card">
   <div class="adm__card-header">
     <h3 class="adm__card-title">Usuarios Recientes</h3>
@@ -158,6 +207,7 @@
           <tr>
             <td>
               <div class="adm__user-mini">
+                <!-- Avatar con color diferenciado por rol -->
                 <div class="adm__user-mini-avatar" style="background: {u.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : u.rolId === 3 ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
                   {u.nombre.charAt(0)}
                 </div>

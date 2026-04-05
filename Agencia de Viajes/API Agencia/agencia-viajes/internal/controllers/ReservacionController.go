@@ -1,3 +1,7 @@
+// # Package controllers
+//
+// Controladores HTTP de la API de Movent. Cada controlador agrupa los handlers
+// relacionados a un recurso o dominio especifico de la aplicacion.
 package controllers
 
 import (
@@ -10,12 +14,28 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ReservacionController
+//
+// Controlador que maneja los endpoints de creacion de reservaciones,
+// descarga de PDF y envio de correo de confirmacion al usuario autenticado.
 type ReservacionController struct {
 	service      *services.ReservacionService
 	pdfService   *services.PdfReservacionService
 	emailService *services.EmailReservacionService
 }
 
+// NewReservacionController
+//
+// Constructor que retorna una nueva instancia de ReservacionController
+// con los servicios de reservacion, PDF y correo inyectados.
+//
+// Parametros:
+//   - service: servicio principal de reservaciones
+//   - pdfService: servicio de generacion de PDF
+//   - emailService: servicio de envio de correo de confirmacion
+//
+// Retorna:
+//   - *ReservacionController: puntero a la nueva instancia
 func NewReservacionController(
 	service *services.ReservacionService,
 	pdfService *services.PdfReservacionService,
@@ -28,7 +48,20 @@ func NewReservacionController(
 	}
 }
 
-// POST /api/reservaciones
+// CrearReservacion
+//
+// Crea una nueva reservacion para el usuario autenticado. Valida que el
+// tipo de reserva sea 1 (Aerolinea), 2 (Hotelera) o 3 (Paquete) antes
+// de delegar al servicio.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 201 Created: JSON con los datos de la reservacion creada
+//   - HTTP 400 Bad Request: si el body es invalido o el tipo de reserva es incorrecto
+//   - HTTP 401 Unauthorized: si el usuario no esta autenticado
+//   - HTTP 500 Internal Server Error: si ocurre un error en la capa de servicio
 func (ctrl *ReservacionController) CrearReservacion(c *gin.Context) {
 	usuarioID, exists := c.Get("usuario_id")
 	if !exists {
@@ -56,7 +89,23 @@ func (ctrl *ReservacionController) CrearReservacion(c *gin.Context) {
 	c.JSON(http.StatusCreated, resp)
 }
 
-// GET /api/reservaciones/:id/pdf
+// DescargarPDF
+//
+// Genera y retorna el PDF de una reservacion especifica del usuario autenticado.
+// El ID de la reservacion se lee desde el parametro de URL :id.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: archivo PDF adjunto con nombre reservacion-{id}.pdf
+//   - HTTP 400 Bad Request: si el ID de la reservacion no es un entero valido
+//   - HTTP 401 Unauthorized: si el usuario no esta autenticado
+//   - HTTP 404 Not Found: si la reservacion no existe
+//   - HTTP 500 Internal Server Error: si ocurre un error al generar el PDF
+//
+// Notas:
+//   - El PDF se entrega con Content-Disposition attachment para forzar la descarga
 func (ctrl *ReservacionController) DescargarPDF(c *gin.Context) {
 	usuarioID, exists := c.Get("usuario_id")
 	if !exists {
@@ -87,7 +136,22 @@ func (ctrl *ReservacionController) DescargarPDF(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", pdfBytes)
 }
 
-// POST /api/reservaciones/:id/correo
+// EnviarCorreo
+//
+// Envia un correo de confirmacion al usuario autenticado para una reservacion
+// especifica. El ID de la reservacion se lee desde el parametro de URL :id.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de exito al enviar el correo
+//   - HTTP 400 Bad Request: si el ID de la reservacion no es un entero valido
+//   - HTTP 401 Unauthorized: si el usuario no esta autenticado
+//   - HTTP 500 Internal Server Error: si ocurre un error al enviar el correo
+//
+// Notas:
+//   - Los errores del servicio de correo se registran en el log del servidor
 func (ctrl *ReservacionController) EnviarCorreo(c *gin.Context) {
 	usuarioID, exists := c.Get("usuario_id")
 	if !exists {

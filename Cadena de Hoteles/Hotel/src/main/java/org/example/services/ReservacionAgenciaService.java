@@ -16,22 +16,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service para la gestion de reservaciones realizadas por agencias.
+ * Maneja la creacion con descuento aplicado, consulta de reservaciones
+ * y expiracion manual de reservaciones pendientes.
+ */
 public class ReservacionAgenciaService {
 
     private final ReservacionAgenciaRepository repository = new ReservacionAgenciaRepository();
 
+    /**
+     * Crea una nueva reservacion para una agencia aplicando su descuento.
+     * Valida disponibilidad de cada habitacion, calcula totales con el descuento
+     * de la agencia, genera el numero de reservacion y persiste los detalles.
+     * La reservacion expira automaticamente en 15 minutos si no se paga.
+     * @param request   datos de la reservacion: lista de habitaciones con fechas y personas.
+     * @param agenciaId ID de la agencia que realiza la reservacion.
+     * @return DTO con los datos de la reservacion creada y el desglose por habitacion.
+     * @throws IllegalArgumentException si la agencia no esta activa, no hay habitaciones,
+     *                                  las fechas son invalidas o alguna habitacion no esta disponible.
+     */
     public ReservacionAgenciaResponseDTO crearReservacion(ReservacionRequestDTO request, int agenciaId) {
 
         int[] datosAgencia = repository.obtenerDatosAgencia(agenciaId);
         if (datosAgencia == null)
-            throw new IllegalArgumentException("La agencia no está activa");
+            throw new IllegalArgumentException("La agencia no esta activa");
 
         int    usuarioWebisId      = datosAgencia[0];
         double porcentajeDescuento = repository.obtenerDescuentoAgencia(agenciaId);
 
         if (request.getHabitaciones() == null || request.getHabitaciones().isEmpty())
-            throw new IllegalArgumentException("Debe incluir al menos una habitación");
+            throw new IllegalArgumentException("Debe incluir al menos una habitacion");
 
+        // Factor multiplicador para aplicar el descuento de la agencia
         double factor = 1.0 - (porcentajeDescuento / 100.0);
 
         double totalGeneral = 0;
@@ -44,23 +61,26 @@ public class ReservacionAgenciaService {
 
             if (dias <= 0)
                 throw new IllegalArgumentException(
-                        "Las fechas de la habitación " + item.getHabitacionId() + " son inválidas");
+                        "Las fechas de la habitacion " + item.getHabitacionId() + " son invalidas");
 
             Date fechaCheckIn  = Date.valueOf(checkIn);
             Date fechaCheckOut = Date.valueOf(checkOut);
 
+            // Verifica que la habitacion no tenga reservaciones que se traslapen
             if (repository.existeTraslape(item.getHabitacionId(), fechaCheckIn, fechaCheckOut))
                 throw new IllegalArgumentException(
-                        "La habitación " + item.getHabitacionId() +
-                                " no está disponible para las fechas seleccionadas");
+                        "La habitacion " + item.getHabitacionId() +
+                                " no esta disponible para las fechas seleccionadas");
 
             double[] precios = repository.obtenerPrecios(item.getHabitacionId());
 
+            // Aplica el descuento de la agencia al precio por noche y por persona
             double precioPorNoche   = Math.round(precios[0] * factor * 100.0) / 100.0;
             double precioPorPersona = Math.round(precios[1] * factor * 100.0) / 100.0;
             int    capacidadMaxima  = precios.length > 2 ? (int) precios[2] : Integer.MAX_VALUE;
             int    personasExtra    = Math.max(0, item.getCantidadPersonas() - capacidadMaxima);
 
+            // Total de la habitacion: noches base + cargo por personas extra
             double totalHab = Math.round(
                     ((dias * precioPorNoche) + (personasExtra * dias * precioPorPersona)) * 100.0
             ) / 100.0;
@@ -79,6 +99,7 @@ public class ReservacionAgenciaService {
 
         totalGeneral = Math.round(totalGeneral * 100.0) / 100.0;
 
+        // Genera un numero de reservacion unico con prefijo MIKU
         String noReservacion      = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
         Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(15));
@@ -87,6 +108,7 @@ public class ReservacionAgenciaService {
                 noReservacion, totalGeneral, usuarioWebisId, fechaCreacion, fechaExpiracion
         );
 
+        // Persiste el detalle de cada habitacion vinculada a la reservacion
         for (int i = 0; i < desglose.size(); i++) {
             HabitacionAgenciaResponseDTO hab = desglose.get(i);
             HabitacionReservaRequestDTO item = request.getHabitaciones().get(i);
@@ -113,26 +135,47 @@ public class ReservacionAgenciaService {
         return response;
     }
 
+    /**
+     * Retorna todas las reservaciones asociadas a una agencia.
+     * @param agenciaId ID de la agencia.
+     * @return lista de reservaciones con sus detalles.
+     */
     public List<ReservacionDetalleDTO> obtenerReservaciones(int agenciaId) {
         return repository.obtenerReservacionesDeAgencia(agenciaId);
     }
 
+    /**
+     * Expira manualmente una reservacion pendiente de una agencia.
+     * Solo aplica si la reservacion pertenece a la agencia y esta en estado Pendiente.
+     * @param reservacionId ID de la reservacion a expirar.
+     * @param agenciaId     ID de la agencia duena de la reservacion.
+     * @throws IllegalArgumentException si la reservacion no existe, no pertenece a la agencia
+     *                                  o no esta en estado pendiente.
+     */
     public void expirarReservacion(int reservacionId, int agenciaId) {
         boolean valida = repository.perteneceAAgenciaYEstaPendiente(reservacionId, agenciaId);
 
         if (!valida)
             throw new IllegalArgumentException(
-                    "La reservación no existe, no pertenece a esta agencia, o no está en estado pendiente");
+                    "La reservacion no existe, no pertenece a esta agencia, o no esta en estado pendiente");
 
         repository.expirarReservacion(reservacionId);
     }
 
+    /**
+     * Retorna el detalle completo de una reservacion de agencia con imagenes incluidas.
+     * @param reservacionId ID de la reservacion.
+     * @param agenciaId     ID de la agencia duena de la reservacion.
+     * @return lista de DTOs con detalles de habitaciones, hotel e imagenes.
+     * @throws IllegalArgumentException si la reservacion no existe o no pertenece a la agencia.
+     */
     public List<ReservacionDetalleDTO> obtenerDetalleReservacion(int reservacionId, int agenciaId) {
         List<ReservacionDetalleDTO> detalles = repository.obtenerDetalleReservacionAgencia(reservacionId, agenciaId);
 
         if (detalles == null || detalles.isEmpty())
-            throw new IllegalArgumentException("Reservación no encontrada o no pertenece a esta agencia");
+            throw new IllegalArgumentException("Reservacion no encontrada o no pertenece a esta agencia");
 
+        // Carga las imagenes del hotel y la habitacion para cada detalle
         for (ReservacionDetalleDTO dto : detalles) {
             dto.setImagenesHotelIds(repository.obtenerImagenesHotel(dto.getHotelId()));
             dto.setImagenesHabitacionIds(repository.obtenerImagenesHabitacion(dto.getHabitacionId()));

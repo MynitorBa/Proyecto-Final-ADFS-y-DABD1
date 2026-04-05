@@ -1,44 +1,92 @@
 <script>
+  /**
+   * @file AdminReportes.svelte
+   * @description Modulo de reportes del panel de administracion. Contiene dos vistas:
+   * un listado filtrable de busquedas realizadas en el sistema (web y REST) con opcion de
+   * exportacion por correo, y un dashboard con graficos de volumen, destinos y metricas generales.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   export let API_BASE;
+
+  /**
+   * Funcion que retorna la clase CSS del badge segun el estado del registro.
+   * @type {function(string): string}
+   */
   export let badge;
 
+  /** Sub-pestana activa: 'listado' o 'dashboard'. @type {string} */
   let reporteTab = 'listado';
 
-  // ── Listado búsquedas ──
+  /** Lista completa de busquedas registradas en el sistema. @type {Array<Object>} */
   let busquedasLog = [];
+
+  /** Indica si la carga de busquedas esta en progreso. @type {boolean} */
   let cargandoBusquedas = false;
+
+  /** Mensaje de error si la carga de busquedas falla. @type {string|null} */
   let errorBusquedas = null;
 
-  // ── Filtros (frontend) ──
+  /** Filtro de pais aplicado en el listado (frontend). @type {string} */
   let filtroPais = '';
+
+  /** Filtro de ciudad aplicado en el listado (frontend). @type {string} */
   let filtroCiudad = '';
+
+  /** Filtro de usuario o agencia aplicado en el listado (frontend). @type {string} */
   let filtroUsuarioAgencia = '';
+
+  /** Tipo de busqueda a filtrar: 'todos', 'web' o 'rest'. @type {string} */
   let filtroTipo = 'todos';
+
+  /** Fecha minima para el filtro de rango de fechas (YYYY-MM-DD). @type {string} */
   let filtroFechaDesde = '';
+
+  /** Fecha maxima para el filtro de rango de fechas (YYYY-MM-DD). @type {string} */
   let filtroFechaHasta = '';
 
-  // Autocomplete países/ciudades
+  /** Lista completa de paises con sus ciudades para el autocomplete. @type {Array<Object>} */
   let todosLosPaises = [];
+
+  /** Sugerencias de paises mostradas en el dropdown del autocomplete. @type {Array<Object>} */
   let paisSugerencias = [];
+
+  /** Sugerencias de ciudades segun el pais seleccionado. @type {Array<string>} */
   let ciudadSugerencias = [];
+
+  /** Pais actualmente seleccionado en el autocomplete. @type {Object|null} */
   let paisSeleccionado = null;
 
-  // ── Exportar ──
+  /** Controla la visibilidad del modal de exportacion por correo. @type {boolean} */
   let showModalExportar = false;
+
+  /** Direccion de correo destino para el reporte exportado. @type {string} */
   let emailExportar = '';
+
+  /** Indica si el proceso de exportacion esta en curso. @type {boolean} */
   let exportando = false;
+
+  /** Mensaje de retroalimentacion dentro del modal de exportacion. @type {{tipo: string, texto: string}|null} */
   let mensajeExportar = null;
 
-  // ── Dashboard ──
+  /** Resumen de busquedas para el dashboard (por dia, por tipo, top destinos). @type {Object|null} */
   let dashBusquedasResumen = null;
+
+  /** Indica si se estan cargando los datos del dashboard de busquedas. @type {boolean} */
   let cargandoDashBusquedas = false;
+
+  /** Metricas generales del sistema (ingresos, usuarios, reservas, hoteles). @type {Object|null} */
   let metricas = null;
+
+  /** Lista de hoteles para el grafico de ratings. @type {Array<Object>} */
   let hoteles = [];
+
+  /** Lista de reservas para la tabla resumen del dashboard. @type {Array<Object>} */
   let reservas = [];
 
-  // Filtrado reactivo frontend
+  // Lista de busquedas filtrada reactivamente segun todos los filtros activos.
   $: busquedasFiltradas = busquedasLog.filter(b => {
     const matchPais = !filtroPais.trim() || (b.destino ?? b.ciudad ?? '').toLowerCase().includes(filtroPais.toLowerCase().trim());
     const matchCiudad = !filtroCiudad.trim() || (b.destino ?? b.ciudad ?? '').toLowerCase().includes(filtroCiudad.toLowerCase().trim());
@@ -59,16 +107,31 @@
     return matchPais && matchCiudad && matchUsuario && matchTipo && matchFechaDesde && matchFechaHasta;
   });
 
+  // Verdadero si hay al menos un filtro activo (para mostrar el boton de limpiar).
   $: hayFiltrosActivos = filtroPais.trim() || filtroCiudad.trim() || filtroUsuarioAgencia.trim() || filtroTipo !== 'todos' || filtroFechaDesde || filtroFechaHasta;
 
-  // Dashboard reactives
+  // Datos de busquedas por dia para el grafico de barras.
   $: busquedasPorDia = dashBusquedasResumen?.porDia ?? [];
+
+  // Totales por tipo de origen (web / REST).
   $: busquedasPorTipo = { web: dashBusquedasResumen?.totalWeb ?? 0, rest: dashBusquedasResumen?.totalRest ?? 0 };
+
+  // Top de destinos mas buscados.
   $: topDestinos = dashBusquedasResumen?.topDestinos ?? [];
+
+  // Valor maximo en el eje Y del grafico de barras por dia.
   $: maxBusquedasDia = busquedasPorDia.length ? Math.max(...busquedasPorDia.map(d => d.total), 1) : 1;
+
+  // Total maximo entre los top destinos, usado para normalizar las barras.
   $: maxTopDestino = topDestinos.length ? Math.max(...topDestinos.map(d => d.total), 1) : 1;
+
+  // Total combinado de busquedas web + REST (minimo 1 para evitar division por cero).
   $: totalBusquedasTipo = (busquedasPorTipo.web + busquedasPorTipo.rest) || 1;
+
+  // Porcentaje del donut que corresponde a busquedas web.
   $: pctWeb = Math.round((busquedasPorTipo.web / totalBusquedasTipo) * 100);
+
+  // Porcentaje del donut que corresponde al servicio REST.
   $: pctRest = 100 - pctWeb;
 
   onMount(() => {
@@ -80,6 +143,11 @@
     cargarPaisesAutocomplete();
   });
 
+  /**
+   * Carga la lista de paises desde la API externa para el autocomplete de filtros.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarPaisesAutocomplete() {
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
@@ -88,7 +156,9 @@
     } catch (e) { /* silencioso */ }
   }
 
-  // Autocomplete País
+  /**
+   * Actualiza las sugerencias de paises conforme el usuario escribe en el campo de filtro.
+   */
   function onPaisInput() {
     paisSeleccionado = null;
     filtroCiudad = '';
@@ -97,6 +167,11 @@
     if (q.length < 2) { paisSugerencias = []; return; }
     paisSugerencias = todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
   }
+
+  /**
+   * Selecciona un pais del dropdown y carga sus ciudades disponibles.
+   * @param {Object} p - Objeto del pais seleccionado.
+   */
   function seleccionarPais(p) {
     paisSeleccionado = p;
     filtroPais = p.country;
@@ -104,31 +179,48 @@
     filtroCiudad = '';
     ciudadSugerencias = [];
   }
+
+  /**
+   * Intenta hacer match exacto si el usuario sale del campo sin seleccionar del dropdown.
+   */
   function validarPais() {
     if (filtroPais.trim() && !paisSeleccionado) {
-      // Intentar match exacto
       const match = todosLosPaises.find(p => p.country.toLowerCase() === filtroPais.toLowerCase().trim());
       if (match) { paisSeleccionado = match; filtroPais = match.country; }
     }
   }
 
-  // Autocomplete Ciudad
+  /**
+   * Actualiza las sugerencias de ciudades segun lo que escribe el usuario.
+   */
   function onCiudadInput() {
     const q = filtroCiudad.toLowerCase().trim();
     if (q.length < 2 || !paisSeleccionado) { ciudadSugerencias = []; return; }
     ciudadSugerencias = (paisSeleccionado.cities ?? []).filter(c => c.toLowerCase().includes(q)).slice(0, 6);
   }
+
+  /**
+   * Selecciona una ciudad del dropdown.
+   * @param {string} c - Nombre de la ciudad seleccionada.
+   */
   function seleccionarCiudad(c) {
     filtroCiudad = c;
     ciudadSugerencias = [];
   }
 
+  /**
+   * Reinicia todos los filtros activos a sus valores por defecto.
+   */
   function limpiarFiltros() {
     filtroPais = ''; filtroCiudad = ''; filtroUsuarioAgencia = ''; filtroTipo = 'todos'; filtroFechaDesde = ''; filtroFechaHasta = '';
     paisSeleccionado = null; paisSugerencias = []; ciudadSugerencias = [];
   }
 
-  // ── API calls ──
+  /**
+   * Carga el historial completo de busquedas desde el backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarBusquedas() {
     cargandoBusquedas = true;
     errorBusquedas = null;
@@ -145,6 +237,11 @@
     }
   }
 
+  /**
+   * Carga el resumen estadistico de busquedas para el dashboard (por dia, top destinos, etc.).
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarDashBusquedas() {
     cargandoDashBusquedas = true;
     try {
@@ -154,6 +251,11 @@
     finally { cargandoDashBusquedas = false; }
   }
 
+  /**
+   * Carga las metricas globales del sistema para la seccion de resumen del dashboard.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarMetricas() {
     try {
       const res = await fetch(`${API_BASE}/admin/metricas`, { credentials: 'include' });
@@ -161,6 +263,11 @@
     } catch (_) { /* silencioso */ }
   }
 
+  /**
+   * Carga la lista de hoteles para el grafico de ratings del dashboard.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarHoteles() {
     try {
       const res = await fetch(`${API_BASE}/admin/hoteles`, { credentials: 'include' });
@@ -168,6 +275,11 @@
     } catch (_) { /* silencioso */ }
   }
 
+  /**
+   * Carga las reservaciones para la tabla resumen del dashboard.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservas() {
     try {
       const res = await fetch(`${API_BASE}/admin/reservaciones`, { credentials: 'include' });
@@ -175,10 +287,21 @@
     } catch (_) { /* silencioso */ }
   }
 
-  // ── Exportar ──
+  /**
+   * Abre el modal de exportacion reiniciando el estado del formulario.
+   */
   function abrirExportar() { emailExportar = ''; mensajeExportar = null; showModalExportar = true; }
+
+  /**
+   * Cierra el modal de exportacion y limpia el estado relacionado.
+   */
   function cerrarExportar() { showModalExportar = false; mensajeExportar = null; }
 
+  /**
+   * Valida el correo y envia la solicitud de exportacion del reporte al backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function confirmarExportar() {
     if (!emailExportar.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailExportar.trim())) {
       mensajeExportar = { tipo: 'error', texto: 'Ingresa un correo electrónico válido.' };
@@ -200,7 +323,7 @@
   }
 </script>
 
-<!-- Sub-tabs -->
+<!-- Pestanas de sub-navegacion: Listado vs Dashboard -->
 <div class="adm__rep-tabs">
   <button class="adm__rep-tab" class:adm__rep-tab--active={reporteTab === 'listado'} on:click={() => reporteTab = 'listado'}>
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -212,9 +335,9 @@
   </button>
 </div>
 
-<!-- ══ TAB: LISTADO ══ -->
+<!-- TAB: Listado de busquedas con filtros y tabla -->
 {#if reporteTab === 'listado'}
-  <!-- Filtros -->
+  <!-- Panel de filtros: pais, ciudad, usuario/agencia, tipo, rango de fechas -->
   <div class="adm__rep-filters">
     <div class="adm__rep-filters-title">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -222,7 +345,7 @@
       {#if hayFiltrosActivos}<span class="adm__rep-filters-badge">Activos</span>{/if}
     </div>
     <div class="adm__rep-filters-grid">
-      <!-- País con autocomplete -->
+      <!-- Autocomplete de pais -->
       <div class="adm__rep-filter-field" style="position:relative">
         <label for="f-pais">País</label>
         <input id="f-pais" type="text" bind:value={filtroPais} on:input={onPaisInput} on:blur={() => setTimeout(() => { paisSugerencias = []; validarPais(); }, 150)} placeholder="Ej: Guatemala" autocomplete="off" />
@@ -234,7 +357,7 @@
           </ul>
         {/if}
       </div>
-      <!-- Ciudad con autocomplete -->
+      <!-- Autocomplete de ciudad (dependiente del pais seleccionado) -->
       <div class="adm__rep-filter-field" style="position:relative">
         <label for="f-ciudad">Ciudad</label>
         <input id="f-ciudad" type="text" bind:value={filtroCiudad} on:input={onCiudadInput} on:blur={() => setTimeout(() => { ciudadSugerencias = []; }, 150)} placeholder={paisSeleccionado ? 'Ej: Guatemala City' : 'Primero selecciona un país'} disabled={!paisSeleccionado} autocomplete="off" />
@@ -282,7 +405,7 @@
     </div>
   </div>
 
-  <!-- Info resultados -->
+  <!-- Indicador de resultados y estado de carga -->
   <div class="adm__rep-results-info">
     {#if cargandoBusquedas}
       <span class="adm__rep-results-label">
@@ -299,7 +422,7 @@
     {/if}
   </div>
 
-  <!-- Tabla -->
+  <!-- Tabla de busquedas con todos sus campos -->
   <div class="adm__card" style="padding:0; overflow:hidden">
     <div class="adm__table-wrap">
       <table class="adm__table adm__rep-table">
@@ -320,6 +443,7 @@
                 <td class="adm__table-mono">{b.checkOut ? b.checkOut.slice(0,10) : '—'}</td>
                 <td style="text-align:center">{b.personas ?? b.numeroPersonas ?? '—'}</td>
                 <td>
+                  <!-- Diferencia visual entre origen REST (agencia) y Web (usuario) -->
                   {#if (b.tipo ?? '').toLowerCase() === 'rest'}
                     <span style="color: var(--adm-blue); font-size:.8rem">{b.agencia ?? b.usuarioAgencia ?? '—'}</span>
                   {:else}
@@ -344,11 +468,11 @@
     </div>
   </div>
 
-<!-- ══ TAB: DASHBOARD ══ -->
+<!-- TAB: Dashboard con graficos y KPIs -->
 {:else}
   <div class="adm__reportes-grid">
 
-    <!-- Búsquedas Web vs REST -->
+    <!-- Donut: distribucion de busquedas web vs REST -->
     <div class="adm__card adm__reporte-card">
       <h3 class="adm__card-title">Búsquedas: Web vs REST</h3>
       {#if cargandoDashBusquedas}
@@ -366,7 +490,7 @@
       {/if}
     </div>
 
-    <!-- Reservas por estado -->
+    <!-- Donut: distribucion de reservas por estado -->
     <div class="adm__card adm__reporte-card">
       <h3 class="adm__card-title">Reservas por Estado</h3>
       {#if metricas}
@@ -394,7 +518,7 @@
       {/if}
     </div>
 
-    <!-- Top 5 destinos -->
+    <!-- Barras horizontales: top 5 destinos mas buscados -->
     <div class="adm__card adm__reporte-card adm__reporte-card--wide">
       <div class="adm__card-header"><h3 class="adm__card-title">Top 5 Destinos Más Buscados</h3><span style="font-size:.78rem; color:var(--adm-text-muted)">Últimos 30 días</span></div>
       {#if cargandoDashBusquedas}
@@ -416,7 +540,7 @@
       {/if}
     </div>
 
-    <!-- Búsquedas por día -->
+    <!-- Grafico de barras verticales: volumen de busquedas por dia (ultimos 14 dias) -->
     <div class="adm__card adm__reporte-card adm__reporte-card--wide">
       <div class="adm__card-header"><h3 class="adm__card-title">Volumen de Búsquedas por Día</h3><span style="font-size:.78rem;color:var(--adm-text-muted)">Últimos 14 días</span></div>
       {#if cargandoDashBusquedas}
@@ -436,7 +560,7 @@
       {/if}
     </div>
 
-    <!-- Resumen general -->
+    <!-- KPIs generales: ingresos, usuarios, reservas confirmadas/totales, hoteles -->
     <div class="adm__card adm__reporte-card">
       <h3 class="adm__card-title">Resumen General</h3>
       {#if metricas}
@@ -452,7 +576,7 @@
       {/if}
     </div>
 
-    <!-- Hoteles por rating -->
+    <!-- Barras horizontales: hoteles ordenados por rating de mayor a menor -->
     <div class="adm__card adm__reporte-card">
       <h3 class="adm__card-title">Hoteles por Rating</h3>
       <div class="adm__hotel-bars">
@@ -466,7 +590,7 @@
       </div>
     </div>
 
-    <!-- Últimas 10 reservas -->
+    <!-- Tabla resumen de las ultimas 10 reservas del sistema -->
     <div class="adm__card adm__reporte-card adm__reporte-card--wide">
       <div class="adm__card-header"><h3 class="adm__card-title">Últimas 10 Reservas</h3></div>
       <div class="adm__table-wrap">
@@ -490,7 +614,7 @@
   </div>
 {/if}
 
-<!-- Modal exportar -->
+<!-- Modal de exportacion del reporte por correo electronico -->
 {#if showModalExportar}
   <div class="adm__overlay" on:click={cerrarExportar} on:keydown={e => e.key === 'Escape' && cerrarExportar()} role="button" tabindex="-1" aria-label="Cerrar"></div>
   <div class="adm__rep-export-modal">

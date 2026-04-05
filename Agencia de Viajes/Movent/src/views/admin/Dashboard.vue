@@ -5,7 +5,7 @@
     <div class="adm-page">
       <div class="adm-layout">
 
-        <!-- SIDEBAR -->
+        <!-- Barra lateral de navegación del panel de administración -->
         <aside class="adm-sidebar">
           <div class="adm-sidebar__head">
             <div class="adm-sidebar__logo">
@@ -36,7 +36,7 @@
           </nav>
         </aside>
 
-        <!-- CONTENIDO -->
+        <!-- Área principal del dashboard con KPIs, gráficas y tablas -->
         <div class="adm-main">
 
           <div class="adm-topbar">
@@ -50,7 +50,7 @@
             </div>
           </div>
 
-          <!-- Loading -->
+          <!-- Indicador de carga mientras llegan los datos del servidor -->
           <div v-if="loading" class="adm-empty">
             <div class="adm-spinner"></div>
             <p>Cargando estadísticas...</p>
@@ -58,7 +58,7 @@
 
           <template v-else>
 
-            <!-- ── FILA 1: KPIs ── -->
+            <!-- Fila 1: tarjetas KPI con métricas generales del sistema -->
             <div class="adm-kpis">
               <div class="adm-kpi adm-kpi--dark">
                 <div class="adm-kpi__icon">
@@ -116,22 +116,22 @@
               </div>
             </div>
 
-            <!-- ── FILA 2: Gráfica donut + barras verticales ── -->
+            <!-- Fila 2: gráfica donut de estados y barras verticales por tipo de reserva -->
             <div class="adm-row2">
 
-              <!-- Donut chart — estados -->
+              <!-- Donut SVG que muestra la distribución de estados de reservaciones -->
               <div class="adm-card">
                 <div class="adm-card__head">
                   <h3 class="adm-card__title">Estados de reservaciones</h3>
                   <span class="adm-card__count">{{ stats.reservaciones ?? 0 }} total</span>
                 </div>
                 <div class="adm-chart-wrap">
-                  <!-- SVG Donut -->
+                  <!-- Gráfica de anillo construida con stroke-dasharray en SVG -->
                   <div class="adm-donut">
                     <svg viewBox="0 0 100 100" width="160" height="160">
-                      <!-- Fondo -->
+                      <!-- Fondo gris del anillo -->
                       <circle cx="50" cy="50" r="36" fill="none" stroke="#f0ebe3" stroke-width="14"/>
-                      <!-- Segmentos -->
+                      <!-- Segmentos coloreados por estado -->
                       <circle
                         v-for="(seg, i) in donutSegments"
                         :key="i"
@@ -143,11 +143,11 @@
                         :stroke-dashoffset="seg.offset"
                         style="transform: rotate(-90deg); transform-origin: 50px 50px; transition: stroke-dasharray 0.6s ease;"
                       />
-                      <!-- Centro -->
+                      <!-- Texto central con el total de reservas -->
                       <text x="50" y="46" text-anchor="middle" font-size="14" font-weight="800" fill="#1C1A18">{{ stats.reservaciones ?? 0 }}</text>
                       <text x="50" y="58" text-anchor="middle" font-size="7" fill="#9a9089">reservas</text>
                     </svg>
-                    <!-- Leyenda -->
+                    <!-- Leyenda de colores por estado -->
                     <div class="adm-donut__legend">
                       <div v-for="e in estadosRes" :key="e.label" class="adm-donut__legend-item">
                         <span class="adm-donut__legend-dot" :style="{ background: e.color }"></span>
@@ -159,7 +159,7 @@
                 </div>
               </div>
 
-              <!-- Barras verticales — tipo de reserva -->
+              <!-- Barras verticales que muestran la distribución por tipo (vuelo, hotel, paquete) -->
               <div class="adm-card">
                 <div class="adm-card__head">
                   <h3 class="adm-card__title">Distribución por tipo</h3>
@@ -179,7 +179,7 @@
                       <span class="adm-vchart__label">{{ b.label }}</span>
                     </div>
                   </div>
-                  <!-- Mini métricas proveedores -->
+                  <!-- Mini métricas de conteo de proveedores y usuarios -->
                   <div class="adm-mini-metrics">
                     <div class="adm-mini-metric">
                       <svg viewBox="0 0 24 24" fill="#FFCC00" width="14" height="14"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -202,7 +202,7 @@
 
             </div>
 
-            <!-- ── FILA 3: Proveedores ── -->
+            <!-- Fila 3: listado de proveedores configurados con su estado de conexión -->
             <div class="adm-card">
               <div class="adm-card__head">
                 <h3 class="adm-card__title">Proveedores conectados</h3>
@@ -228,7 +228,7 @@
               </div>
             </div>
 
-            <!-- ── FILA 4: Reservaciones recientes ── -->
+            <!-- Fila 4: tabla con las reservaciones más recientes de todos los usuarios -->
             <div class="adm-card adm-card--full">
               <div class="adm-card__head">
                 <h3 class="adm-card__title">Reservaciones recientes</h3>
@@ -271,25 +271,49 @@
 </template>
 
 <script setup>
+/**
+ * @file Dashboard.vue
+ * @description Vista principal del panel de administración. Muestra KPIs globales,
+ * gráfica de estados de reservaciones (donut SVG), distribución por tipo (barras),
+ * lista de proveedores y tabla de reservaciones recientes.
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../../components/Encabezado.vue'
 import Piepagina from '../../components/Piepagina.vue'
 import '../../styles/admin.css'
 
+/** Instancia del router para navegación programática. */
 const router  = useRouter()
+
+/** URL base del backend. @type {string} */
 const API     = 'http://localhost:8080'
+
+/** Controla si los datos están siendo cargados desde el servidor. @type {import('vue').Ref<boolean>} */
 const loading = ref(true)
 
+/** Objeto con todas las estadísticas generales del sistema. @type {import('vue').Ref<Object>} */
 const stats                  = ref({})
+
+/** Lista de proveedores configurados (aerolíneas y hoteles). @type {import('vue').Ref<Array>} */
 const proveedores            = ref([])
+
+/** Las últimas reservaciones realizadas por cualquier usuario. @type {import('vue').Ref<Array>} */
 const reservacionesRecientes = ref([])
 
+/**
+ * Fecha de hoy formateada al español de Guatemala para mostrar en el topbar.
+ * @type {string}
+ */
 const fechaHoy = new Date().toLocaleDateString('es-GT', {
   weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
 })
 
-// ── Estados ───────────────────────────────────────────────────────────
+/**
+ * Lista de estados posibles de una reservación con su color para la gráfica donut.
+ * Se construye reactivamente desde los datos de stats.
+ * @type {import('vue').ComputedRef<Array<{label: string, val: number, color: string}>>}
+ */
 const estadosRes = computed(() => [
   { label: 'Confirmadas', val: stats.value.confirmadas, color: '#22c55e' },
   { label: 'Pendientes',  val: stats.value.pendientes,  color: '#f59e0b' },
@@ -299,14 +323,27 @@ const estadosRes = computed(() => [
   { label: 'Expiradas',   val: stats.value.expiradas,   color: '#d1cdc7' },
 ])
 
+/**
+ * Suma total de reservaciones entre todos los estados, usado como denominador en la donut.
+ * Se le da al menos 1 para evitar división por cero.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const totalRes = computed(() =>
   estadosRes.value.reduce((s, e) => s + (e.val || 0), 0) || 1
 )
 
-// ── Donut chart (SVG stroke-dasharray) ───────────────────────────────
-// Circunferencia = 2 * PI * r = 2 * 3.14159 * 36 ≈ 226.2
+/**
+ * Circunferencia del círculo SVG con radio 36.
+ * Fórmula: 2 * PI * 36 ≈ 226.2
+ * @type {number}
+ */
 const CIRC = 226.2
 
+/**
+ * Calcula los segmentos del donut como offsets y dasharray de SVG.
+ * Cada segmento ocupa un arco proporcional a su cantidad de reservaciones.
+ * @type {import('vue').ComputedRef<Array<{color: string, dash: number, offset: number}>>}
+ */
 const donutSegments = computed(() => {
   let cumulative = 0
   return estadosRes.value.map(e => {
@@ -319,7 +356,11 @@ const donutSegments = computed(() => {
   })
 })
 
-// ── Barras verticales (por tipo) ──────────────────────────────────────
+/**
+ * Datos para las barras verticales por tipo de reservación.
+ * Incluye el valor absoluto y el porcentaje respecto al total.
+ * @type {import('vue').ComputedRef<Array<{label: string, val: number, color: string, pct: number}>>}
+ */
 const barData = computed(() => {
   const total = stats.value.reservaciones || 1
   return [
@@ -329,9 +370,13 @@ const barData = computed(() => {
   ]
 })
 
-// ── Carga ─────────────────────────────────────────────────────────────
+/** Carga todos los datos al montar el componente. */
 onMounted(() => cargarTodo())
 
+/**
+ * Carga en paralelo las estadísticas, los proveedores y las reservaciones recientes.
+ * @returns {Promise<void>}
+ */
 async function cargarTodo() {
   loading.value = true
   try {
@@ -350,12 +395,21 @@ async function cargarTodo() {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────
+/**
+ * Formatea un número como dinero con separadores de miles y dos decimales.
+ * @param {number|null} n - El valor a formatear.
+ * @returns {string} El número formateado o '--' si no hay valor.
+ */
 function formatMoney(n) {
   if (!n && n !== 0) return '--'
   return Number(n).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+/**
+ * Formatea una cadena de fecha ISO a formato legible en español de Guatemala.
+ * @param {string} f - La fecha en formato ISO o string.
+ * @returns {string} La fecha formateada o '--' si no hay valor.
+ */
 function formatFecha(f) {
   if (!f) return '--'
   try { return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) }

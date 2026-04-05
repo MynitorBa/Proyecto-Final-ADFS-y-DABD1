@@ -1,4 +1,4 @@
-/* Variables */
+/* Variables de color del formulario de registro */
 :root {
   --primary: #667eea;
   --primary-dark: #5568d3;
@@ -9,7 +9,7 @@
   --info: #3b82f6;
 }
 
-/* Base */
+/* Página de registro con fondo oscuro centrado */
 .register-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -19,11 +19,13 @@
   justify-content: center;
 }
 
+/* Contenedor principal del formulario */
 .register-container {
   width: 100%;
   max-width: 700px;
 }
 
+/* Tarjeta con efecto glassmorphism oscuro */
 .register-card {
   background: rgba(30, 41, 59, 0.95);
   backdrop-filter: blur(20px);
@@ -33,7 +35,7 @@
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Back Link */
+/* Enlace de volver al inicio */
 .register__back-link {
   display: inline-flex;
   align-items: center;
@@ -54,7 +56,7 @@
   transform: translateX(-4px);
 }
 
-/* Header */
+/* Encabezado con logo y título del formulario */
 .register__header {
   text-align: center;
   margin-bottom: 2.5rem;
@@ -68,6 +70,7 @@
   margin-bottom: 1.5rem;
 }
 
+/* Logo del hotel en el encabezado */
 .register__logo-image {
   width: 300px;
   max-width: 100%;
@@ -91,12 +94,13 @@
   line-height: 1.6;
 }
 
-/* Success */
+/* Pantalla de éxito tras completar el registro */
 .register__success-message {
   text-align: center;
   padding: 3rem 2rem;
 }
 
+/* Ícono animado de confirmación */
 .register__success-icon {
   display: inline-flex;
   align-items: center;
@@ -131,6 +135,7 @@
   margin: 0 0 2rem 0;
 }
 
+/* Puntos animados de carga */
 .register__loading-dots {
   display: flex;
   align-items: center;
@@ -154,19 +159,21 @@
   40% { transform: scale(1); }
 }
 
-/* Form */
+/* Formulario de registro */
 .register-form {
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
+/* Sección agrupada de campos relacionados */
 .form-section {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
+/* Título de sección con línea divisoria inferior */
 .register__section-title {
   display: flex;
   align-items: center;
@@ -183,14 +190,14 @@
   color: var(--primary);
 }
 
-/* Grid */
+/* Grid de dos columnas para los campos del formulario */
 .register__form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
 }
 
-/* Fields */
+/* Campo individual del formulario */
 .register__form-field {
   display: flex;
   flex-direction: column;
@@ -203,10 +210,12 @@
   color: #e2e8f0;
 }
 
+/* Asterisco de campo requerido */
 .required {
   color: var(--danger);
 }
 
+/* Inputs y selects oscuros del formulario */
 .register__form-field input,
 .register__form-field select {
   width: 100%;
@@ -243,7 +252,7 @@
   cursor: not-allowed;
 }
 
-/* Input con ícono */
+/* Input con ícono decorativo a la izquierda */
 .register__input-with-icon {
   position: relative;
 }
@@ -261,7 +270,7 @@
   padding-left: 3rem;
 }
 
-/* Password */
+/* Campo de contraseña con toggle de visibilidad */
 .register__password-field {
   position: relative;
 }
@@ -270,6 +279,7 @@
   padding-right: 3rem;
 }
 
+/* Botón de mostrar/ocultar contraseña */
 .register__toggle-btn {
   position: absolute;
   right: 0.75rem;
@@ -288,7 +298,7 @@
   color: var(--primary);
 }
 
-/* Strength */
+/* Indicador de fortaleza de contraseña */
 .strength-indicator {
   display: flex;
   align-items: center;
@@ -308,6 +318,7 @@
   transition: all 0.3s;
 }
 
+/* Texto del nivel de fortaleza */
 .strength-text {
   font-size: 0.8rem;
   font-weight: 600;
@@ -315,13 +326,14 @@
   text-align: right;
 }
 
-/* Requirements */
+/* Lista de requisitos de la contraseña */
 .requirements {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
 }
 
+/* Ítem de requisito con ícono */
 .req {
   display: flex;
   align-items: center;
@@ -336,6 +348,7 @@
   transition: opacity 0.2s;
 }
 
+/* Requisito cumplido en verde */
 .req.met {
   color: var(--success);
 }
@@ -344,7 +357,7 @@
   opacity: 1;
 }
 
-/* Helper text */
+/* Texto de ayuda debajo de un campo */
 .helper-text {
   font-size: 0.8rem;
   font-weight: 500;
@@ -358,7 +371,7 @@
   color: var(--danger);
 }
 
-/* Error text */
+/* Mensaje de error de validación bajo el campo */
 .register__error-text {
   display: block;
   color: var(--danger);
@@ -366,11 +379,12 @@
   font-weight: 500;
 }
 
-/* Autocomplete */
+/* Contenedor del campo con autocompletado */
 .autocomplete-wrap {
   position: relative;
 }
 
+/* Lista desplegable del autocompletado */
 .autocomplete__list {
   position: absolute;
   top: calc(100% + 4px);
@@ -393,6 +407,7 @@
   padding: 0;
 }
 
+/* Botón de opción del autocompletado */
 .autocomplete__btn {
   width: 100%;
   text-align: left;
@@ -412,7 +427,7 @@
   color: #fff;
 }
 
-/* Fila nacionalidad */
+/* Fila del campo de nacionalidad con botón quitar */
 .nac-row {
   display: flex;
   align-items: center;
@@ -420,6 +435,7 @@
   margin-bottom: 0.5rem;
 }
 
+/* Botón para quitar una nacionalidad seleccionada */
 .btn-quitar {
   padding: 0.4rem 0.75rem;
   background: rgba(239,68,68,0.15);
@@ -437,13 +453,14 @@
   color: white;
 }
 
-/* Captcha */
+/* Contenedor del captcha */
 .captcha-container {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
+/* Caja del captcha con estados de verificación y error */
 .captcha-box {
   display: flex;
   justify-content: space-between;
@@ -470,12 +487,14 @@
   animation: shake 0.5s;
 }
 
+/* Animación de sacudida cuando el captcha falla */
 @keyframes shake {
   0%,100% { transform: translateX(0); }
   10%,30%,50%,70%,90% { transform: translateX(-5px); }
   20%,40%,60%,80% { transform: translateX(5px); }
 }
 
+/* Checkbox visual del captcha */
 .captcha-checkbox {
   width: 32px;
   height: 32px;
@@ -497,6 +516,7 @@
   color: white;
 }
 
+/* Spinner de verificación del captcha */
 .captcha-spinner {
   width: 20px;
   height: 20px;
@@ -516,6 +536,7 @@
   color: #e2e8f0;
 }
 
+/* Logo y texto de reCAPTCHA */
 .captcha-logo {
   display: flex;
   flex-direction: column;
@@ -548,6 +569,7 @@
   color: #475569;
 }
 
+/* Mensaje de error del captcha con botón de reintentar */
 .captcha-error-message {
   display: flex;
   align-items: center;
@@ -577,13 +599,14 @@
   background: #dc2626;
 }
 
-/* Términos */
+/* Sección de aceptación de términos y condiciones */
 .terms-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* Checkbox personalizado con texto de términos */
 .register__checkbox-label {
   display: flex;
   align-items: start;
@@ -598,6 +621,7 @@
   height: 0;
 }
 
+/* Cuadro visual del checkbox */
 .register__checkbox-custom {
   width: 20px;
   height: 20px;
@@ -615,6 +639,7 @@
   border-color: transparent;
 }
 
+/* Tilde del checkbox marcado */
 .register__checkbox-label input:checked ~ .register__checkbox-custom::after {
   content: '';
   position: absolute;
@@ -633,6 +658,7 @@
   line-height: 1.5;
 }
 
+/* Enlace inline para términos y política de privacidad */
 .register__link-btn {
   background: none;
   border: none;
@@ -647,7 +673,7 @@
   text-decoration: underline;
 }
 
-/* Submit */
+/* Botón de envío del formulario */
 .register__submit-btn {
   width: 100%;
   padding: 1rem;
@@ -678,11 +704,12 @@
   transform: none;
 }
 
+/* Spinner del botón de envío */
 .register__spinner {
   animation: spin 0.8s linear infinite;
 }
 
-/* Footer */
+/* Pie del formulario con enlace a login */
 .register__footer-text {
   text-align: center;
   font-size: 0.9rem;
@@ -690,7 +717,7 @@
   margin-top: 1rem;
 }
 
-/* Responsive */
+/* Responsive para móviles */
 @media (max-width: 640px) {
   .register-page { padding: 1rem; }
   .register-card { padding: 2rem 1.5rem; }
@@ -702,7 +729,7 @@
   .recaptcha-badge { align-self: flex-end; }
 }
 
-/* Phone field con prefijo */
+/* Campo de teléfono con prefijo de país */
 .phone-field {
   display: flex;
   align-items: center;
@@ -724,6 +751,7 @@
   background: rgba(239,68,68,0.1);
 }
 
+/* Prefijo de marcación del país */
 .phone-prefix {
   padding: 0.875rem 0.75rem 0.875rem 1rem;
   color: var(--primary);
@@ -734,6 +762,7 @@
   flex-shrink: 0;
 }
 
+/* Input del número sin bordes para integrarse con el prefijo */
 .phone-field input {
   border: none !important;
   border-radius: 0 !important;

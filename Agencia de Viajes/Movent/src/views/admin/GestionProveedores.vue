@@ -5,7 +5,7 @@
     <div class="adm-page">
       <div class="adm-layout">
 
-        <!-- SIDEBAR -->
+        <!-- Barra lateral de navegación del panel de administración -->
         <aside class="adm-sidebar">
           <div class="adm-sidebar__head">
             <div class="adm-sidebar__logo">
@@ -36,7 +36,7 @@
           </nav>
         </aside>
 
-        <!-- CONTENIDO -->
+        <!-- Área principal con la grilla de tarjetas de proveedores -->
         <div class="adm-main">
 
           <div class="adm-topbar">
@@ -45,6 +45,7 @@
               <p class="adm-topbar__sub">Configura aerolíneas y hoteles conectados</p>
             </div>
             <div class="adm-topbar__actions">
+              <!-- Buscador para filtrar proveedores por nombre o URL -->
               <div class="adm-search">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input v-model="busqueda" type="text" placeholder="Buscar proveedor..." class="adm-search__input" />
@@ -56,7 +57,7 @@
             </div>
           </div>
 
-          <!-- Filtros tipo -->
+          <!-- Filtros de tipo: todos, aerolíneas o hoteles -->
           <div class="adm-filtros-rol">
             <button v-for="t in tiposOpts" :key="t.val"
               :class="['adm-filtro-rol', { 'adm-filtro-rol--active': filtroTipo === t.val }]"
@@ -66,27 +67,27 @@
             </button>
           </div>
 
-          <!-- Loading -->
+          <!-- Indicador de carga mientras llega la lista de proveedores -->
           <div v-if="loading" class="adm-empty">
             <div class="adm-spinner"></div>
             <p>Cargando proveedores...</p>
           </div>
 
-          <!-- Error -->
+          <!-- Mensaje de error con opción de reintentar la carga -->
           <div v-else-if="error" class="adm-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="40" height="40"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <p>{{ error }}</p>
             <button class="adm-btn adm-btn--yellow" @click="cargarProveedores" type="button">Reintentar</button>
           </div>
 
-          <!-- Sin resultados -->
+          <!-- Estado vacío: sin proveedores o sin coincidencias en la búsqueda -->
           <div v-else-if="proveedoresFiltrados.length === 0" class="adm-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1" width="44" height="44"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
             <p>{{ busqueda ? 'Sin resultados para "' + busqueda + '"' : 'No hay proveedores configurados' }}</p>
             <button v-if="!busqueda" class="adm-btn adm-btn--yellow" @click="abrirFormNuevo" type="button">Agregar el primero</button>
           </div>
 
-          <!-- Grid de proveedores -->
+          <!-- Grilla de tarjetas, una por cada proveedor filtrado -->
           <div v-else class="adm-proveedores-grid">
             <div v-for="p in proveedoresFiltrados" :key="p.id" class="adm-prov-card"
               :class="{ 'adm-prov-card--inactivo': !p.activo }">
@@ -114,6 +115,7 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   <span>Ganancia: {{ p.porcentajeGanancia }}%</span>
                 </div>
+                <!-- Estado de la última prueba de conexión, si ya fue probado -->
                 <div class="adm-prov-card__row" v-if="estadoConexion[p.id]">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span :style="{ color: estadoConexion[p.id] === 'ok' ? '#22c55e' : '#D40511' }">
@@ -122,6 +124,7 @@
                 </div>
               </div>
 
+              <!-- Acciones disponibles para cada proveedor -->
               <div class="adm-prov-card__foot">
                 <button class="adm-btn adm-btn--sm adm-btn--ghost"
                   @click="probarConexion(p)" :disabled="probando===p.id" type="button">
@@ -152,7 +155,7 @@
       </div>
     </div>
 
-    <!-- MODAL FORM PROVEEDOR -->
+    <!-- Modal de formulario para crear o editar un proveedor -->
     <div v-if="formAbierto" class="adm-modal-overlay" @click.self="cerrarForm">
       <div class="adm-modal adm-modal--lg">
         <div class="adm-modal__head">
@@ -162,6 +165,7 @@
           </button>
         </div>
 
+        <!-- Campos del formulario; tipo y usuarioId solo se muestran al crear -->
         <div class="adm-modal__body">
           <div class="adm-form-grid">
             <div class="adm-field adm-field--full">
@@ -211,7 +215,7 @@
       </div>
     </div>
 
-    <!-- Toast -->
+    <!-- Notificación temporal de éxito o error -->
     <div v-if="toast" class="adm-toast" :class="`adm-toast--${toast.tipo}`">
       <svg v-if="toast.tipo==='ok'" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
       <svg v-else viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -223,39 +227,90 @@
 </template>
 
 <script setup>
+/**
+ * @file GestionProveedores.vue
+ * @description Vista del panel de administración para gestionar los proveedores externos
+ * (aerolíneas y hoteles). Permite agregar, editar, activar/desactivar, probar la conexión
+ * y ejecutar handshake con cada proveedor conectado.
+ */
 import { ref, computed, onMounted } from 'vue'
 import Encabezado from '../../components/Encabezado.vue'
 import Piepagina from '../../components/Piepagina.vue'
 import '../../styles/admin.css'
 
+/** URL base del backend. @type {string} */
 const API = 'http://localhost:8080'
 
+/** Lista completa de proveedores cargados desde el servidor. @type {import('vue').Ref<Array>} */
 const proveedores    = ref([])
+
+/** Indica si la petición inicial de proveedores está en curso. @type {import('vue').Ref<boolean>} */
 const loading        = ref(true)
+
+/** Mensaje de error si la carga de proveedores falla. @type {import('vue').Ref<string>} */
 const error          = ref('')
+
+/** Texto del buscador para filtrar por nombre o URL. @type {import('vue').Ref<string>} */
 const busqueda       = ref('')
+
+/** Filtro activo de tipo de proveedor ('todos', 'aerolinea', 'hotel'). @type {import('vue').Ref<string>} */
 const filtroTipo     = ref('todos')
+
+/** Controla la visibilidad del formulario modal. @type {import('vue').Ref<boolean>} */
 const formAbierto    = ref(false)
+
+/** ID del proveedor en edición, null si se está creando uno nuevo. @type {import('vue').Ref<number|null>} */
 const editando       = ref(null)
+
+/** Indica si hay una petición de guardado en proceso. @type {import('vue').Ref<boolean>} */
 const guardando      = ref(false)
+
+/** ID del proveedor cuya conexión se está probando en este momento. @type {import('vue').Ref<number|null>} */
 const probando       = ref(null)
+
+/** ID del proveedor cuyo estado activo/inactivo se está cambiando. @type {import('vue').Ref<number|null>} */
 const toggling       = ref(null)
+
+/** ID del proveedor que está ejecutando el handshake. @type {import('vue').Ref<number|null>} */
 const handshaking    = ref(null)
+
+/** Error de validación o servidor mostrado dentro del formulario modal. @type {import('vue').Ref<string>} */
 const formError      = ref('')
+
+/** Notificación temporal de éxito o error. @type {import('vue').Ref<{tipo: string, msg: string}|null>} */
 const toast          = ref(null)
+
+/**
+ * Resultado de la última prueba de conexión para cada proveedor, indexado por ID.
+ * @type {import('vue').Ref<Object.<number, 'ok'|'err'>>}
+ */
 const estadoConexion = ref({})
 
+/**
+ * Devuelve un objeto vacío con los campos del formulario de proveedor.
+ * @returns {{nombre: string, tipoProveedorId: string, usuarioId: string, url: string, porcentajeGanancia: number}}
+ */
 const formVacio = () => ({
   nombre: '', tipoProveedorId: '', usuarioId: '', url: '', porcentajeGanancia: 15.5
 })
+
+/** Estado reactivo del formulario de creación/edición. @type {import('vue').Ref<Object>} */
 const form = ref(formVacio())
 
+/**
+ * Opciones para los botones de filtro por tipo de proveedor.
+ * @type {Array<{val: string, label: string}>}
+ */
 const tiposOpts = [
   { val: 'todos',     label: 'Todos' },
   { val: 'aerolinea', label: 'Aerolíneas' },
   { val: 'hotel',     label: 'Hoteles' },
 ]
 
+/**
+ * Lista de proveedores filtrada por tipo y por el texto de búsqueda.
+ * @type {import('vue').ComputedRef<Array>}
+ */
 const proveedoresFiltrados = computed(() => {
   let list = proveedores.value
   if (filtroTipo.value !== 'todos')
@@ -268,15 +323,30 @@ const proveedoresFiltrados = computed(() => {
   return list
 })
 
+/**
+ * Cuenta cuántos proveedores hay de un tipo determinado.
+ * @param {string} t - El tipo a contar o 'todos' para el total.
+ * @returns {number}
+ */
 const contarPorTipo = (t) =>
   t === 'todos' ? proveedores.value.length : proveedores.value.filter(p => tipoClase(p) === t).length
 
+/**
+ * Devuelve la clase CSS correspondiente al tipo de proveedor.
+ * @param {Object} p - El proveedor.
+ * @returns {'aerolinea'|'hotel'}
+ */
 function tipoClase(p) {
   return p.tipoProveedorId === 1 ? 'aerolinea' : 'hotel'
 }
 
+/** Carga la lista de proveedores al montar el componente. */
 onMounted(() => cargarProveedores())
 
+/**
+ * Obtiene todos los proveedores desde el backend.
+ * @returns {Promise<void>}
+ */
 async function cargarProveedores() {
   loading.value = true; error.value = ''
   try {
@@ -290,6 +360,9 @@ async function cargarProveedores() {
   }
 }
 
+/**
+ * Abre el modal en modo creación con todos los campos vacíos.
+ */
 function abrirFormNuevo() {
   editando.value = null
   form.value = formVacio()
@@ -297,6 +370,10 @@ function abrirFormNuevo() {
   formAbierto.value = true
 }
 
+/**
+ * Abre el modal en modo edición precargando los datos del proveedor seleccionado.
+ * @param {Object} p - El proveedor a editar.
+ */
 function abrirFormEditar(p) {
   editando.value = p.id
   form.value = {
@@ -310,11 +387,18 @@ function abrirFormEditar(p) {
   formAbierto.value = true
 }
 
+/**
+ * Cierra el modal de formulario y limpia el estado de edición.
+ */
 function cerrarForm() {
   formAbierto.value = false
   editando.value = null
 }
 
+/**
+ * Valida los campos del formulario antes de enviarlo.
+ * @returns {boolean} true si es válido, false si hay algún campo incompleto.
+ */
 function validarForm() {
   if (!form.value.nombre.trim()) { formError.value = 'El nombre es obligatorio.'; return false }
   if (!form.value.url.trim())    { formError.value = 'La URL es obligatoria.'; return false }
@@ -325,6 +409,11 @@ function validarForm() {
   formError.value = ''; return true
 }
 
+/**
+ * Guarda el proveedor mediante POST (creación) o PUT (edición).
+ * Recarga la lista tras un guardado exitoso.
+ * @returns {Promise<void>}
+ */
 async function guardarProveedor() {
   if (!validarForm()) return
   guardando.value = true
@@ -370,6 +459,12 @@ async function guardarProveedor() {
   }
 }
 
+/**
+ * Cambia el estado activo/inactivo de un proveedor mediante PATCH.
+ * Actualiza el valor localmente sin recargar la lista completa.
+ * @param {Object} p - El proveedor a activar o desactivar.
+ * @returns {Promise<void>}
+ */
 async function toggleActivo(p) {
   toggling.value = p.id
   try {
@@ -389,6 +484,12 @@ async function toggleActivo(p) {
   }
 }
 
+/**
+ * Realiza una petición directa a la URL del proveedor para verificar que responde.
+ * Guarda el resultado ('ok' o 'err') en estadoConexion indexado por ID.
+ * @param {Object} p - El proveedor a probar.
+ * @returns {Promise<void>}
+ */
 async function probarConexion(p) {
   probando.value = p.id
   try {
@@ -406,6 +507,12 @@ async function probarConexion(p) {
   }
 }
 
+/**
+ * Inicia el proceso de handshake con el proveedor para sincronizar credenciales.
+ * El endpoint cambia según si es aerolínea o hotelera.
+ * @param {Object} p - El proveedor con el que se hará handshake.
+ * @returns {Promise<void>}
+ */
 async function iniciarHandshake(p) {
   handshaking.value = p.id
   try {
@@ -423,6 +530,11 @@ async function iniciarHandshake(p) {
   }
 }
 
+/**
+ * Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
+ * @param {'ok'|'err'} tipo - Tipo de notificación.
+ * @param {string} msg - Mensaje a mostrar.
+ */
 function mostrarToast(tipo, msg) {
   toast.value = { tipo, msg }
   setTimeout(() => toast.value = null, 3500)

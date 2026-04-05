@@ -1,3 +1,8 @@
+// # Package main
+//
+// Punto de entrada del servidor HTTP de la agencia de viajes Movent.
+// Inicializa la configuracion, la base de datos, todos los servicios,
+// repositorios y controladores, y registra las rutas de la API REST.
 package main
 
 import (
@@ -12,6 +17,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// main
+//
+// Funcion principal del servidor. Carga la configuracion desde variables
+// de entorno, conecta con la base de datos MySQL, instancia todos los
+// servicios y controladores, configura los middlewares CORS y de
+// autenticacion, registra las rutas publicas y protegidas de la API,
+// arranca el servicio de expiracion de reservaciones en segundo plano
+// y levanta el servidor HTTP en el puerto configurado.
+//
+// Notas:
+//   - Las rutas bajo /api/ son publicas excepto las agrupadas en "protegido"
+//   - Las rutas bajo el grupo "admin" requieren rol 2 (administrador)
+//   - El servicio de expiracion se detiene de forma ordenada al cerrar
 func main() {
 	cfg := config.Load()
 	db := database.Connect(cfg)

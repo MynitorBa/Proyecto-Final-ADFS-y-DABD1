@@ -10,9 +10,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Repository para la gestion de agencias de viaje.
+ * Cubre operaciones de consulta, creacion, edicion, cambio de estado y eliminacion,
+ * tanto para el panel de administracion como para usuarios webservice.
+ */
 public class AgenciaRepository {
 
-    // ── Mapper reutilizable ───────────────────────────────────────────────────
+    /**
+     * Convierte una fila del ResultSet en un objeto AgenciaDTO.
+     * @param rs fila activa del ResultSet con los campos de la agencia.
+     * @return instancia de AgenciaDTO con los datos mapeados.
+     * @throws SQLException si ocurre un error al leer alguna columna del ResultSet.
+     */
     private AgenciaDTO mapRow(ResultSet rs) throws SQLException {
         AgenciaDTO dto = new AgenciaDTO();
         dto.setId(rs.getInt("ID"));
@@ -25,7 +35,10 @@ public class AgenciaRepository {
         return dto;
     }
 
-    // ── Listar TODAS las agencias (admin) ─────────────────────────────────────
+    /**
+     * Retorna todas las agencias registradas en el sistema, ordenadas por ID.
+     * @return lista de AgenciaDTO con todas las agencias.
+     */
     public List<AgenciaDTO> listarTodas() {
         String sql = """
                 SELECT a.ID, a.Nombre, a.Correo, a.UsuarioWebis_ID,
@@ -37,7 +50,11 @@ public class AgenciaRepository {
         return DatabaseManager.executeQuery(sql, rs -> mapRow(rs));
     }
 
-    // ── Listar agencias de un usuario webservice ──────────────────────────────
+    /**
+     * Retorna las agencias asociadas a un usuario webservice especifico.
+     * @param usuarioId ID del usuario webservice propietario de las agencias.
+     * @return lista de AgenciaDTO pertenecientes al usuario.
+     */
     public List<AgenciaDTO> listarPorUsuario(int usuarioId) {
         String sql = """
                 SELECT a.ID, a.Nombre, a.Correo, a.UsuarioWebis_ID,
@@ -50,20 +67,28 @@ public class AgenciaRepository {
         return DatabaseManager.executeQuery(sql, rs -> mapRow(rs), usuarioId);
     }
 
-    // ── Crear agencia ─────────────────────────────────────────────────────────
+    /**
+     * Crea una nueva agencia vinculada al usuario webservice indicado.
+     * Valida que los campos obligatorios esten presentes y que el usuario
+     * no tenga ya una agencia registrada, ya que solo se permite una por usuario.
+     * @param usuarioId ID del usuario webservice que sera propietario de la agencia.
+     * @param req       datos de la nueva agencia (nombre y correo).
+     * @return AgenciaDTO con los datos de la agencia recien creada.
+     * @throws IllegalArgumentException si el nombre o correo estan vacios, o si el usuario ya tiene una agencia.
+     */
     public AgenciaDTO crear(int usuarioId, CrearAgenciaRequestDTO req) {
         if (req.getNombre() == null || req.getNombre().isBlank())
             throw new IllegalArgumentException("El nombre de la agencia es obligatorio");
         if (req.getCorreo() == null || req.getCorreo().isBlank())
             throw new IllegalArgumentException("El correo de la agencia es obligatorio");
 
-        // Un usuario webservice solo puede tener una agencia
+        // Verifica que el usuario no tenga ya una agencia registrada
         String checkSql = "SELECT COUNT(*) AS C FROM Agencia WHERE UsuarioWebis_ID = ?";
         List<Integer> existe = DatabaseManager.executeQuery(checkSql, rs -> rs.getInt("C"), usuarioId);
         if (!existe.isEmpty() && existe.get(0) > 0)
             throw new IllegalArgumentException("Ya tienes una agencia registrada. Solo se permite una por usuario webservice.");
 
-        // EstadoID=1 → Activa. El descuento siempre inicia en 0.
+        // EstadoID=1 equivale a Activa; el descuento siempre inicia en 0
         String sql = """
                 INSERT INTO Agencia (Nombre, Correo, UsuarioWebis_ID, PorcentajeDescuento, EstadoID)
                 VALUES (?, ?, ?, 0, 1)
@@ -74,6 +99,7 @@ public class AgenciaRepository {
                 usuarioId
         );
 
+        // Construye y retorna el DTO con los datos insertados
         AgenciaDTO dto = new AgenciaDTO();
         dto.setId(nuevoId);
         dto.setNombre(req.getNombre().trim());
@@ -85,7 +111,13 @@ public class AgenciaRepository {
         return dto;
     }
 
-    // ── Editar agencia (admin) ────────────────────────────────────────────────
+    /**
+     * Actualiza los datos de una agencia existente desde el panel de administracion.
+     * Valida nombre, correo, porcentaje de descuento y estado antes de aplicar los cambios.
+     * @param agenciaId ID de la agencia a editar.
+     * @param req       datos actualizados de la agencia.
+     * @throws IllegalArgumentException si algun campo es invalido o el estado no corresponde a Activa o Inactiva.
+     */
     public void editar(int agenciaId, EditarAgenciaRequestDTO req) {
         if (req.getNombre() == null || req.getNombre().isBlank())
             throw new IllegalArgumentException("El nombre de la agencia es obligatorio");
@@ -95,7 +127,7 @@ public class AgenciaRepository {
             throw new IllegalArgumentException("El porcentaje de descuento debe estar entre 0 y 100");
         // EstadoAgencia: 1=Activa, 2=Inactiva
         if (req.getEstadoId() != 1 && req.getEstadoId() != 2)
-            throw new IllegalArgumentException("Estado inválido. Use 1 (Activa) o 2 (Inactiva)");
+            throw new IllegalArgumentException("Estado invalido. Use 1 (Activa) o 2 (Inactiva)");
 
         DatabaseManager.executeUpdate(
                 "UPDATE Agencia SET Nombre=?, Correo=?, PorcentajeDescuento=?, EstadoID=? WHERE ID=?",
@@ -107,8 +139,15 @@ public class AgenciaRepository {
         );
     }
 
-    // ── Cambiar estado (webservice) ───────────────────────────────────────────
+    /**
+     * Cambia el estado de una agencia verificando que pertenezca al usuario webservice indicado.
+     * @param agenciaId    ID de la agencia a modificar.
+     * @param usuarioId    ID del usuario webservice propietario de la agencia.
+     * @param nuevoEstadoId nuevo estado a asignar.
+     * @throws IllegalArgumentException si la agencia no existe o no pertenece al usuario.
+     */
     public void cambiarEstado(int agenciaId, int usuarioId, int nuevoEstadoId) {
+        // Verifica que la agencia exista y pertenezca al usuario antes de modificar
         String check = "SELECT COUNT(*) AS C FROM Agencia WHERE ID=? AND UsuarioWebis_ID=?";
         List<Integer> res = DatabaseManager.executeQuery(check,
                 rs -> rs.getInt("C"), agenciaId, usuarioId);
@@ -121,8 +160,14 @@ public class AgenciaRepository {
         );
     }
 
-    // ── Eliminar agencia (webservice) ─────────────────────────────────────────
+    /**
+     * Elimina una agencia verificando que pertenezca al usuario webservice indicado.
+     * @param agenciaId ID de la agencia a eliminar.
+     * @param usuarioId ID del usuario webservice propietario de la agencia.
+     * @throws IllegalArgumentException si la agencia no existe o no pertenece al usuario.
+     */
     public void eliminar(int agenciaId, int usuarioId) {
+        // Verifica que la agencia exista y pertenezca al usuario antes de eliminar
         String check = "SELECT COUNT(*) AS C FROM Agencia WHERE ID=? AND UsuarioWebis_ID=?";
         List<Integer> res = DatabaseManager.executeQuery(check,
                 rs -> rs.getInt("C"), agenciaId, usuarioId);
@@ -132,26 +177,34 @@ public class AgenciaRepository {
         DatabaseManager.executeUpdate("DELETE FROM Agencia WHERE ID=?", agenciaId);
     }
 
-
-
-
-
-
-
-
-
-
+    /**
+     * Busca el ID de una agencia a partir de su URL registrada.
+     * @param urlAgencia URL unica asociada a la agencia.
+     * @return ID de la agencia, o null si no se encuentra ninguna con esa URL.
+     */
     public Integer obtenerAgenciaIdPorURL(String urlAgencia) {
         String sql = "SELECT ID FROM Agencia WHERE URL_Agencia = ?";
         List<Integer> result = DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), urlAgencia);
         return result.isEmpty() ? null : result.get(0);
     }
 
+    /**
+     * Guarda los tokens de entrada y salida asociados a una agencia.
+     * @param agenciaId    ID de la agencia a actualizar.
+     * @param tokenEntrada hash del token de entrada.
+     * @param tokenSalida  hash del token de salida.
+     * @return true si se actualizo al menos un registro, false si no se encontro la agencia.
+     */
     public boolean guardarTokens(int agenciaId, String tokenEntrada, String tokenSalida) {
         String sql = "UPDATE Agencia SET Token_HASH_Entrada = ?, Token_HASH_Salida = ? WHERE ID = ?";
         return DatabaseManager.executeUpdate(sql, tokenEntrada, tokenSalida, agenciaId) > 0;
     }
 
+    /**
+     * Busca una agencia por su token de entrada y retorna su informacion de identidad.
+     * @param token hash del token de entrada a buscar.
+     * @return AgenciaIdentidad con los datos basicos de la agencia, o null si no existe.
+     */
     public AgenciaIdentidad obtenerAgenciaPorToken(String token) {
         String sql = "SELECT ID, Nombre, URL_Agencia FROM Agencia WHERE Token_HASH_Entrada = ?";
         List<AgenciaIdentidad> result = DatabaseManager.executeQuery(sql, rs -> {

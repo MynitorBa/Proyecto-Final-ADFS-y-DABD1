@@ -1,3 +1,8 @@
+// # Package services
+//
+// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
+// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
+// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -14,11 +19,29 @@ const (
 	TipoHotelera  = 2
 )
 
+// CatalogoService
+//
+// Servicio encargado de sincronizar el catalogo local de rutas y ubicaciones
+// con la informacion provista por los proveedores externos registrados.
+// Soporta proveedores de tipo aerolinea (rutas origen-destino) y hotelera
+// (hoteles por ciudad), gestionando la creacion de ubicaciones nuevas
+// mediante el UbicacionService.
 type CatalogoService struct {
 	repo             *repositories.CatalogoRepository
 	ubicacionService *UbicacionService
 }
 
+// NewCatalogoService
+//
+// Crea e inicializa una nueva instancia de CatalogoService con su repositorio
+// y el servicio de ubicaciones requerido.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos SQL
+//   - ubicacionService: servicio para obtener o crear ciudades/paises en BD
+//
+// Retorna:
+//   - *CatalogoService: instancia lista para usar
 func NewCatalogoService(db *sql.DB, ubicacionService *UbicacionService) *CatalogoService {
 	return &CatalogoService{
 		repo:             repositories.NewCatalogoRepository(db),
@@ -26,6 +49,16 @@ func NewCatalogoService(db *sql.DB, ubicacionService *UbicacionService) *Catalog
 	}
 }
 
+// ActualizarCatalogo
+//
+// Actualiza el catalogo completo de la agencia iterando sobre todos los
+// proveedores activos registrados en BD. Por cada proveedor llama a
+// actualizarProveedor y acumula el resultado o el error en la respuesta.
+// Un fallo en un proveedor no detiene el proceso para los demas.
+//
+// Retorna:
+//   - []dto.ActualizarCatalogoResponse: lista de resultados por proveedor con conteo de insertados
+//   - error: si falla la consulta de proveedores activos en BD
 func (s *CatalogoService) ActualizarCatalogo() ([]dto.ActualizarCatalogoResponse, error) {
 	// 1. Obtener todos los proveedores activos
 	proveedorIDs, err := s.repo.ObtenerProveedoresActivos()
@@ -51,6 +84,18 @@ func (s *CatalogoService) ActualizarCatalogo() ([]dto.ActualizarCatalogoResponse
 	return resultados, nil
 }
 
+// actualizarProveedor
+//
+// Actualiza el catalogo de un proveedor especifico. Determina su tipo
+// (aerolinea o hotelera), obtiene sus datos de conexion y delega el
+// procesamiento al metodo correspondiente segun el tipo.
+//
+// Parametros:
+//   - proveedorID: identificador del proveedor a actualizar
+//
+// Retorna:
+//   - dto.ActualizarCatalogoResponse: resultado con nombre del proveedor y cantidad de entradas insertadas
+//   - error: si falla la consulta del tipo, los datos de conexion o el procesamiento
 func (s *CatalogoService) actualizarProveedor(proveedorID int) (dto.ActualizarCatalogoResponse, error) {
 	// 1. Obtener tipo (aerolinea=1 / hotelera=2)
 	tipoID, err := s.repo.ObtenerTipoProveedor(proveedorID)
@@ -86,6 +131,21 @@ func (s *CatalogoService) actualizarProveedor(proveedorID int) (dto.ActualizarCa
 	}, nil
 }
 
+// procesarAerolinea
+//
+// Sincroniza el catalogo de rutas de una aerolinea. Obtiene las rutas desde
+// el API externo, limpia las entradas previas de ese proveedor en BD y luego
+// inserta cada ruta resolviendo o creando las ciudades de origen y destino.
+// Los errores por ruta individual se omiten y el conteo refleja solo las insertadas.
+//
+// Parametros:
+//   - proveedorID: identificador del proveedor aerolinea
+//   - urlAPI: URL base del API del proveedor
+//   - tokenEntrada: token de autenticacion para el proveedor
+//
+// Retorna:
+//   - int: numero de rutas insertadas exitosamente
+//   - error: si falla la llamada al API o la limpieza del catalogo en BD
 func (s *CatalogoService) procesarAerolinea(proveedorID int, urlAPI, tokenEntrada string) (int, error) {
 	// 1. Llamar a la aerolínea
 	rutas, err := s.obtenerRutasAerolinea(urlAPI, tokenEntrada)
@@ -133,6 +193,18 @@ func (s *CatalogoService) procesarAerolinea(proveedorID int, urlAPI, tokenEntrad
 	return insertados, nil
 }
 
+// obtenerRutasAerolinea
+//
+// Llama al endpoint de rutas del API de una aerolinea proveedora y retorna
+// la lista de rutas disponibles en formato DTO.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor aerolinea
+//   - token: token de autenticacion de agencia (X-Agencia-Token)
+//
+// Retorna:
+//   - []dto.RutaProveedorDTO: lista de rutas con ciudades y paises de origen y destino
+//   - error: si la peticion HTTP falla, el proveedor retorna error o el JSON es invalido
 func (s *CatalogoService) obtenerRutasAerolinea(urlAPI, token string) ([]dto.RutaProveedorDTO, error) {
 	req, err := http.NewRequest(http.MethodGet, urlAPI+"/api/rutas-agencia", nil)
 	if err != nil {
@@ -158,6 +230,22 @@ func (s *CatalogoService) obtenerRutasAerolinea(urlAPI, token string) ([]dto.Rut
 	return rutas, nil
 }
 
+// procesarHotelera
+//
+// Sincroniza el catalogo de hoteles de una hotelera. Obtiene los hoteles desde
+// el API externo, limpia las entradas previas de ese proveedor en BD y luego
+// inserta cada hotel resolviendo o creando la ciudad correspondiente.
+// A diferencia de las aerolineas, las hoteleras no tienen ciudad destino.
+// Los errores por hotel individual se omiten y el conteo refleja solo los insertados.
+//
+// Parametros:
+//   - proveedorID: identificador del proveedor hotelera
+//   - urlAPI: URL base del API del proveedor
+//   - tokenEntrada: token de autenticacion para el proveedor
+//
+// Retorna:
+//   - int: numero de hoteles insertados exitosamente
+//   - error: si falla la llamada al API o la limpieza del catalogo en BD
 func (s *CatalogoService) procesarHotelera(proveedorID int, urlAPI, tokenEntrada string) (int, error) {
 	// 1. Llamar a la hotelera
 	hoteles, err := s.obtenerHotelesHotelera(urlAPI, tokenEntrada)
@@ -195,6 +283,18 @@ func (s *CatalogoService) procesarHotelera(proveedorID int, urlAPI, tokenEntrada
 	return insertados, nil
 }
 
+// obtenerHotelesHotelera
+//
+// Llama al endpoint de hoteles del API de una hotelera proveedora y retorna
+// la lista de hoteles disponibles en formato DTO.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor hotelera
+//   - token: token de autenticacion de agencia (X-Agencia-Token)
+//
+// Retorna:
+//   - []dto.HotelProveedorDTO: lista de hoteles con ciudad y pais
+//   - error: si la peticion HTTP falla, el proveedor retorna error o el JSON es invalido
 func (s *CatalogoService) obtenerHotelesHotelera(urlAPI, token string) ([]dto.HotelProveedorDTO, error) {
 	req, err := http.NewRequest(http.MethodGet, urlAPI+"/api/hoteles-agencia", nil)
 	if err != nil {

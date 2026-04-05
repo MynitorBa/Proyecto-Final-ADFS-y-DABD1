@@ -5,7 +5,7 @@
     <div class="adm-page">
       <div class="adm-layout">
 
-        <!-- SIDEBAR -->
+        <!-- Barra lateral de navegación del panel de administración -->
         <aside class="adm-sidebar">
           <div class="adm-sidebar__head">
             <div class="adm-sidebar__logo">
@@ -36,10 +36,10 @@
           </nav>
         </aside>
 
-        <!-- CONTENIDO -->
+        <!-- Área principal con KPIs financieros y tabla de reservaciones -->
         <div class="adm-main">
 
-          <!-- Topbar -->
+          <!-- Topbar con título y buscador por código o usuario -->
           <div class="adm-topbar">
             <div>
               <h1 class="adm-topbar__titulo">Finanzas</h1>
@@ -53,13 +53,13 @@
             </div>
           </div>
 
-          <!-- Loading -->
+          <!-- Indicador de carga mientras se obtienen las métricas financieras -->
           <div v-if="loading" class="adm-empty">
             <div class="adm-spinner"></div>
             <p>Cargando métricas financieras...</p>
           </div>
 
-          <!-- Error -->
+          <!-- Error de carga con opción para reintentar -->
           <div v-else-if="error" class="adm-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="#D40511" stroke-width="1.5" width="40" height="40"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
             <p>{{ error }}</p>
@@ -68,7 +68,7 @@
 
           <template v-else>
 
-            <!-- ── KPIs globales ── -->
+            <!-- KPIs globales: total facturado, pagado a proveedores y ganancia neta -->
             <div class="adm-kpis">
               <div class="adm-kpi adm-kpi--dark">
                 <div class="adm-kpi__icon">
@@ -88,6 +88,7 @@
                   <p class="adm-kpi__val">${{ fmt(resumen.totalBase) }}</p>
                 </div>
               </div>
+              <!-- KPI de ganancia neta de MOVENT, destacado con borde amarillo -->
               <div class="adm-kpi" style="border: 2px solid #FFCC00;">
                 <div class="adm-kpi__icon adm-kpi__icon--yellow">
                   <svg viewBox="0 0 24 24" fill="#1C1A18" width="20" height="20"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -99,8 +100,9 @@
               </div>
             </div>
 
-            <!-- ── Desglose por tipo ── -->
+            <!-- Desglose financiero separado por tipo de reservación -->
             <div class="adm-fin-tipos">
+              <!-- Bloque de vuelos -->
               <div class="adm-fin-tipo adm-fin-tipo--vuelo">
                 <div class="adm-fin-tipo__head">
                   <svg viewBox="0 0 24 24" fill="#FFCC00" width="16" height="16"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
@@ -114,6 +116,7 @@
                 </div>
               </div>
 
+              <!-- Bloque de hoteles -->
               <div class="adm-fin-tipo adm-fin-tipo--hotel">
                 <div class="adm-fin-tipo__head">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -127,6 +130,7 @@
                 </div>
               </div>
 
+              <!-- Bloque de paquetes -->
               <div class="adm-fin-tipo adm-fin-tipo--paquete">
                 <div class="adm-fin-tipo__head">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
@@ -141,7 +145,7 @@
               </div>
             </div>
 
-            <!-- ── Filtro multi-tipo ── -->
+            <!-- Filtros de tipo para la tabla de reservaciones (multi-selección) -->
             <div class="adm-filtros-rol">
               <button
                 v-for="t in tiposOpts" :key="t.val"
@@ -152,13 +156,13 @@
               </button>
             </div>
 
-            <!-- Sin resultados -->
+            <!-- Estado vacío si la búsqueda no tiene resultados -->
             <div v-if="reservasFiltradas.length === 0" class="adm-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1" width="44" height="44"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               <p>Sin resultados{{ busqueda ? ` para "${busqueda}"` : '' }}</p>
             </div>
 
-            <!-- ── Tabla de reservaciones con desglose financiero ── -->
+            <!-- Tabla de reservaciones con desglose financiero expandible por fila -->
             <div v-else class="adm-card adm-card--full">
               <div class="adm-card__head">
                 <h3 class="adm-card__title">Detalle por reservación</h3>
@@ -180,7 +184,7 @@
                   </thead>
                   <tbody>
                     <template v-for="r in reservasFiltradas" :key="r.id">
-                      <!-- Fila principal -->
+                      <!-- Fila principal de la reservación, clic para expandir el desglose -->
                       <tr class="adm-fin-row" @click="toggleDetalle(r.id)" style="cursor:pointer">
                         <td><span class="adm-tabla__codigo">{{ r.noReservacion }}</span></td>
                         <td>{{ r.usuario }}</td>
@@ -191,7 +195,7 @@
                         <td><span class="adm-fin-gain">${{ fmt(r.totalGanancia) }}</span></td>
                         <td><span class="adm-badge" :class="`adm-badge--${r.estado}`">{{ r.estado }}</span></td>
                       </tr>
-                      <!-- Fila de detalle expandible -->
+                      <!-- Fila expandible con el desglose por vuelo y hotel -->
                       <tr v-if="detalleAbierto === r.id" class="adm-fin-detalle-row">
                         <td colspan="8">
                           <div class="adm-fin-detalle">
@@ -238,28 +242,64 @@
 </template>
 
 <script setup>
+/**
+ * @file GestionFinanzas.vue
+ * @description Vista del panel de administración para monitorear las finanzas de MOVENT.
+ * Muestra KPIs globales (total facturado, pagado a proveedores, ganancia neta),
+ * desglose por tipo de reservación y una tabla expandible con el detalle financiero
+ * de cada reservación individual.
+ */
 import { ref, computed, onMounted } from 'vue'
 import Encabezado from '../../components/Encabezado.vue'
 import Piepagina from '../../components/Piepagina.vue'
 import '../../styles/admin.css'
 
+/** URL base del backend. @type {string} */
 const API = 'http://localhost:8080'
 
+/** Controla si la petición inicial de métricas está en curso. @type {import('vue').Ref<boolean>} */
 const loading      = ref(true)
+
+/** Mensaje de error si la carga de métricas falla. @type {import('vue').Ref<string>} */
 const error        = ref('')
+
+/**
+ * Objeto con el resumen financiero global y el desglose por tipo.
+ * Estructura esperada: { totalCobrado, totalBase, totalGanancia, vuelos, hoteles, paquetes }.
+ * @type {import('vue').Ref<Object>}
+ */
 const resumen      = ref({})
+
+/** Lista completa de reservaciones con su información financiera. @type {import('vue').Ref<Array>} */
 const reservaciones = ref([])
+
+/** Texto del buscador para filtrar por código de reservación o nombre de usuario. @type {import('vue').Ref<string>} */
 const busqueda     = ref('')
-const filtros      = ref(['vuelo', 'hotel', 'paquete']) // todos activos por defecto
+
+/**
+ * Tipos de reservación activos en el filtro multi-selección.
+ * Por defecto todos están activos.
+ * @type {import('vue').Ref<string[]>}
+ */
+const filtros      = ref(['vuelo', 'hotel', 'paquete'])
+
+/** ID de la reservación cuyo desglose está expandido, o null si ninguno. @type {import('vue').Ref<number|null>} */
 const detalleAbierto = ref(null)
 
+/**
+ * Opciones disponibles para el filtro por tipo de reservación.
+ * @type {Array<{val: string, label: string}>}
+ */
 const tiposOpts = [
   { val: 'vuelo',   label: 'Vuelos' },
   { val: 'hotel',   label: 'Hoteles' },
   { val: 'paquete', label: 'Paquetes' },
 ]
 
-// ── Computed ──────────────────────────────────────────────────────────
+/**
+ * Lista de reservaciones filtrada por los tipos activos y el texto de búsqueda.
+ * @type {import('vue').ComputedRef<Array>}
+ */
 const reservasFiltradas = computed(() => {
   let list = reservaciones.value.filter(r => filtros.value.includes(r.tipoNombre))
   if (busqueda.value.trim()) {
@@ -272,10 +312,19 @@ const reservasFiltradas = computed(() => {
   return list
 })
 
+/**
+ * Cuenta cuántas reservaciones hay de un tipo específico en la lista completa.
+ * @param {string} tipo - El tipo a contar ('vuelo', 'hotel' o 'paquete').
+ * @returns {number}
+ */
 const contarTipo = (tipo) =>
   reservaciones.value.filter(r => r.tipoNombre === tipo).length
 
-// ── Helpers ───────────────────────────────────────────────────────────
+/**
+ * Agrega o quita un tipo del filtro multi-selección.
+ * Siempre mantiene al menos un tipo activo para no quedar con la tabla vacía.
+ * @param {string} val - El tipo a alternar.
+ */
 function toggleFiltro(val) {
   if (filtros.value.includes(val)) {
     if (filtros.value.length === 1) return // mínimo uno activo
@@ -285,24 +334,42 @@ function toggleFiltro(val) {
   }
 }
 
+/**
+ * Expande o contrae el desglose financiero de una reservación en la tabla.
+ * @param {number} id - El ID de la reservación a expandir o cerrar.
+ */
 function toggleDetalle(id) {
   detalleAbierto.value = detalleAbierto.value === id ? null : id
 }
 
+/**
+ * Formatea un número como moneda con dos decimales en español de Guatemala.
+ * @param {number|null} n - El valor a formatear.
+ * @returns {string} El número formateado o '0.00' si no hay valor.
+ */
 function fmt(n) {
   if (!n && n !== 0) return '0.00'
   return Number(n).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+/**
+ * Formatea una cadena de fecha ISO a formato corto legible.
+ * @param {string} f - La fecha en formato ISO.
+ * @returns {string} Fecha formateada o '--'.
+ */
 function formatFecha(f) {
   if (!f) return '--'
   try { return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) }
   catch { return f }
 }
 
-// ── Carga ─────────────────────────────────────────────────────────────
+/** Carga las métricas al montar el componente. */
 onMounted(() => cargar())
 
+/**
+ * Obtiene el resumen financiero y la lista de reservaciones desde el endpoint de métricas.
+ * @returns {Promise<void>}
+ */
 async function cargar() {
   loading.value = true; error.value = ''
   try {

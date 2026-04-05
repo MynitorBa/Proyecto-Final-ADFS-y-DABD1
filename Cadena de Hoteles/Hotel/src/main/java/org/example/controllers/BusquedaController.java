@@ -8,17 +8,26 @@ import io.jsonwebtoken.Claims;
 
 import java.util.Map;
 
+/**
+ * Controller que expone el endpoint publico de busqueda de vuelos.
+ * Si el usuario tiene sesion activa, asocia el usuarioId a la busqueda;
+ * de lo contrario la procesa de forma anonima.
+ */
 public class BusquedaController {
 
     private final BusquedaService busquedaService = new BusquedaService();
 
+    /**
+     * Registra la ruta de busqueda en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registra la ruta.
+     */
     public void registerRoutes(Javalin app) {
 
-        // POST /busqueda — pública, pero si hay sesión guarda el usuarioId
+        // Endpoint publico: acepta busquedas con o sin sesion iniciada
         app.post("/busqueda", ctx -> {
             BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
 
-            // Intentar leer el token si existe, sin bloquear si no hay
+            // Intenta extraer el usuarioId del token si existe y es valido, sin bloquear la peticion si no hay sesion
             Integer usuarioId = null;
             String token = ctx.cookie("auth_token");
             if (token != null && !token.isBlank() && JwtHelper.esValido(token)) {

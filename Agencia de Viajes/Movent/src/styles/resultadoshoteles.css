@@ -1,14 +1,11 @@
-/* ═══════════════════════════════════════════════
-   RESULTADOS HOTELES — Movent
-   Paleta: #1C1A18 | #FFCC00 | #D40511 | #F5F2EC
-   ═══════════════════════════════════════════════ */
-
+/* Página de resultados de hoteles con fondo crema */
 .rh-page {
   background: #F5F2EC;
   min-height: calc(100vh - 64px);
   padding: 24px 0 60px;
 }
 
+/* Layout de dos columnas: sidebar y contenido principal */
 .rh-layout {
   max-width: 1200px;
   margin: 0 auto;
@@ -19,9 +16,7 @@
   align-items: start;
 }
 
-/* ═══════════════════════════════
-   SIDEBAR
-═══════════════════════════════ */
+/* Sidebar de filtros sticky con scroll interno */
 .rh-sidebar {
   background: #fff;
   border-radius: 14px;
@@ -34,6 +29,7 @@
   flex-direction: column;
 }
 
+/* Cabecera del sidebar con título y badge de cantidad de filtros */
 .rh-sidebar__head {
   display: flex;
   align-items: center;
@@ -54,6 +50,7 @@
   border-radius: 10px; padding: 1px 6px; line-height: 1.5;
 }
 
+/* Botón de cerrar sidebar (solo visible en móvil) */
 .rh-sidebar__close {
   display: none;
   background: none; border: none; cursor: pointer;
@@ -70,12 +67,13 @@
 
 .rh-sidebar__reset { width: 100%; margin-top: 4px; font-size: 12px; padding: 7px 12px; }
 
+/* Overlay oscuro para el sidebar en móvil */
 .rh-sidebar-overlay {
   display: none;
   position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90;
 }
 
-/* Grupos de filtro */
+/* Grupos de filtro con separador inferior */
 .rh-filter-group {
   margin-bottom: 18px;
   padding-bottom: 18px;
@@ -88,7 +86,7 @@
   text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 10px;
 }
 
-/* Precio */
+/* Inputs de rango de precio con símbolo de moneda */
 .rh-price-inputs { display: flex; align-items: center; gap: 7px; }
 .rh-price-input {
   display: flex; align-items: center; gap: 4px;
@@ -104,7 +102,7 @@
 }
 .rh-price-sep { color: #9a9089; font-size: 13px; flex-shrink: 0; }
 
-/* Checkboxes */
+/* Checkboxes personalizados con marca amarilla al seleccionar */
 .rh-checkboxes { display: flex; flex-direction: column; gap: 9px; }
 .rh-checkbox { display: flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
 .rh-checkbox input { display: none; }
@@ -122,12 +120,10 @@
 }
 .rh-checkbox__label { font-size: 13px; color: #3a3530; }
 
-/* ═══════════════════════════════
-   MAIN
-═══════════════════════════════ */
+/* Área de contenido principal */
 .rh-main { min-width: 0; }
 
-/* ── SEARCH BAR ── */
+/* Barra de búsqueda oscura con resumen de la búsqueda actual */
 .rh-search-bar {
   background: #1C1A18;
   border-radius: 12px;
@@ -154,6 +150,8 @@
 }
 
 .rh-search-bar__actions { display: flex; gap: 8px; padding-right: 10px; flex-shrink: 0; }
+
+/* Botón de modificar búsqueda en la barra */
 .rh-search-bar__mod-btn {
   display: flex; align-items: center; gap: 6px;
   padding: 14px 18px;
@@ -171,7 +169,7 @@
   border-radius: 10px; padding: 1px 5px; line-height: 1.5;
 }
 
-/* ── FORM MODIFICAR INLINE ── */
+/* Formulario de modificación de búsqueda desplegable */
 .rh-modificar-inline {
   background: #fff;
   border: 1px solid #e8e3dc;
@@ -194,6 +192,7 @@
   border: 1px solid #e8e3dc;
 }
 
+/* Fila completa del grid de modificación con botón de búsqueda */
 .rh-mod-section--row {
   grid-column: 1 / -1;
   display: grid;
@@ -222,6 +221,7 @@
 }
 .rh-mod-hint { font-weight: 400; color: #9a9089; font-size: 10px; text-transform: none; }
 
+/* Input del formulario de modificación */
 .rh-mod-input {
   border: 1.5px solid #e0d9cf; border-radius: 8px;
   padding: 8px 11px; font-size: 13px; color: #1C1A18;
@@ -235,6 +235,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-mod-field--cta { justify-content: flex-end; gap: 6px; }
 .rh-mod-error { font-size: 12px; font-weight: 600; color: #D40511; margin: 0; }
 
+/* Botón de buscar en el formulario de modificación */
 .rh-mod-buscar {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 20px;
@@ -246,7 +247,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-mod-buscar:hover:not(:disabled) { background: #f0c000; transform: translateY(-1px); }
 .rh-mod-buscar:disabled { opacity: .6; cursor: not-allowed; }
 
-/* Autocomplete inline */
+/* Autocomplete del campo de destino */
 .rh-ac-wrap { position: relative; }
 .rh-ac-list {
   position: absolute; top: calc(100% + 3px); left: 0; right: 0;
@@ -264,14 +265,14 @@ select.rh-mod-input { cursor: pointer; }
 }
 .rh-ac-list button:hover { background: rgba(255,204,0,.15); }
 
-/* Expand transition */
+/* Transición de expansión del formulario inline */
 .rh-expand-enter-active, .rh-expand-leave-active {
   transition: all .25s ease; overflow: hidden;
 }
 .rh-expand-enter-from, .rh-expand-leave-to { opacity: 0; max-height: 0; margin-bottom: 0; }
 .rh-expand-enter-to, .rh-expand-leave-from { opacity: 1; max-height: 600px; margin-bottom: 14px; }
 
-/* Chips */
+/* Chips de filtros activos con botón para quitar */
 .rh-chips-activos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; margin-top: 12px; }
 .rh-chip {
   display: inline-flex; align-items: center; gap: 4px;
@@ -284,7 +285,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-chip--clear { border-color: #D40511; color: #D40511; background: #fff5f5; }
 .rh-chip--clear:hover { background: #D40511; color: #fff; }
 
-/* Toolbar */
+/* Toolbar con conteo de resultados y selector de ordenamiento */
 .rh-toolbar {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 16px; margin-top: 14px; flex-wrap: wrap; gap: 10px;
@@ -300,7 +301,7 @@ select.rh-mod-input { cursor: pointer; }
   font-family: inherit; outline: none;
 }
 
-/* Aviso proveedores */
+/* Aviso de proveedores sin disponibilidad */
 .rh-warn {
   display: flex; align-items: flex-start; gap: 8px;
   background: #fffbeb; border: 1px solid #fde68a;
@@ -308,9 +309,7 @@ select.rh-mod-input { cursor: pointer; }
   font-size: 12px; color: #92400e; margin-bottom: 12px; line-height: 1.5;
 }
 
-/* ═══════════════════════════════
-   GRUPOS DE HOTEL
-═══════════════════════════════ */
+/* Grupo de hotel: cabecera oscura con habitaciones debajo */
 .rh-grupo { margin-bottom: 28px; }
 
 .rh-grupo__head {
@@ -332,6 +331,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-grupo__header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 3px; }
 .rh-grupo__nombre { font-size: 17px; font-weight: 700; color: #fff; margin: 0; }
 
+/* Rating del hotel con estrella y número de reseñas */
 .rh-grupo__rating {
   display: inline-flex; align-items: center; gap: 4px;
   background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.3);
@@ -366,7 +366,7 @@ select.rh-mod-input { cursor: pointer; }
   background: rgba(255,255,255,0.06); border-radius: 6px; padding: 2px 8px;
 }
 
-/* DESDE precio en header */
+/* Precio "desde" en la cabecera del grupo */
 .rh-grupo__desde { text-align: right; }
 .rh-grupo__desde-lbl {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
@@ -381,7 +381,7 @@ select.rh-mod-input { cursor: pointer; }
   padding: 4px 12px; font-weight: 600; white-space: nowrap;
 }
 
-/* Amenidades del hotel */
+/* Lista de amenidades del hotel como chips */
 .rh-grupo__amenidades {
   display: flex; flex-wrap: wrap; gap: 6px;
   background: #f5f2ec;
@@ -396,21 +396,19 @@ select.rh-mod-input { cursor: pointer; }
 }
 .rh-amenidad-hotel:hover { background: #FFCC00; color: #1C1A18; border-color: #FFCC00; }
 
-/* ═══════════════════════════════
-   HABITACIONES
-   (sin border-radius inferior — lo tiene .rh-resenas)
-═══════════════════════════════ */
+/* Lista de habitaciones del hotel sin border-radius inferior */
 .rh-habitaciones {
   display: flex; flex-direction: column;
   border: 1px solid #e8e3dc; border-top: none;
   border-radius: 0;
   overflow: hidden;
 }
-/* Si .rh-resenas no se renderiza, .rh-habitaciones cierra el grupo */
+/* Si no hay sección de reseñas, las habitaciones cierran el grupo */
 .rh-habitaciones:last-child {
   border-radius: 0 0 14px 14px;
 }
 
+/* Tarjeta de habitación con imagen y detalles */
 .rh-card {
   display: grid; grid-template-columns: 150px 1fr;
   background: #fff; border-bottom: 1px solid #f0ebe3;
@@ -420,13 +418,15 @@ select.rh-mod-input { cursor: pointer; }
 .rh-card:hover { background: #fdfcfa; }
 .rh-card--seleccionada { background: #fffbeb; border-left: 3px solid #FFCC00; }
 
-/* Imagen */
+/* Imagen placeholder de la habitación */
 .rh-card__img { position: relative; overflow: hidden; }
 .rh-card__img-placeholder {
   width: 100%; height: 100%; min-height: 160px;
   background: linear-gradient(135deg, #1C1A18 0%, #3a3530 100%);
   display: flex; align-items: center; justify-content: center;
 }
+
+/* Badge de tipo de habitación y urgencia */
 .rh-card__tipo-badge {
   position: absolute; bottom: 10px; left: 10px;
   background: #FFCC00; color: #1C1A18;
@@ -443,7 +443,6 @@ select.rh-mod-input { cursor: pointer; }
 }
 @keyframes rh-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
 
-/* Info */
 .rh-card__info { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 
 .rh-card__info-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -454,7 +453,7 @@ select.rh-mod-input { cursor: pointer; }
   font-size: 12px; color: #9a9089; margin: 0;
 }
 
-/* Precios */
+/* Bloque de precios con desglose por persona y total */
 .rh-card__precio-bloque { text-align: right; flex-shrink: 0; }
 .rh-card__precio-lbl { font-size: 10px; color: #9a9089; display: block; }
 .rh-card__precio { font-size: 22px; font-weight: 800; color: #1C1A18; display: block; line-height: 1.1; }
@@ -463,7 +462,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-card__precio-total { font-size: 11px; color: #9a9089; display: block; margin-top: 3px; }
 .rh-card__precio-total strong { color: #1C1A18; }
 
-/* Meta */
+/* Meta de la habitación: capacidad, disponibilidad, camas */
 .rh-card__meta {
   display: flex; flex-wrap: wrap; gap: 12px;
   font-size: 12px; color: #6a6058;
@@ -473,7 +472,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-card__disponibles { font-weight: 600; }
 .rh-card__disponibles--bajo { color: #D40511; }
 
-/* Números de habitaciones */
+/* Badges de números de habitación disponibles */
 .rh-card__numeros { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .rh-card__numeros-label {
   font-size: 10px; font-weight: 700; color: #9a9089;
@@ -486,7 +485,7 @@ select.rh-mod-input { cursor: pointer; }
 }
 .rh-numero-badge--mas { background: #FFCC00; color: #1C1A18; border-color: #FFCC00; }
 
-/* ══ PANEL COMBOS DEL HOTEL ══ */
+/* Panel de combos del hotel: exactos, aproximados y extras */
 .rh-hotel-combos {
   display: flex; flex-wrap: wrap; gap: 10px;
   background: #faf7f0;
@@ -499,6 +498,7 @@ select.rh-mod-input { cursor: pointer; }
   border-radius: 10px; padding: 12px 14px;
 }
 
+/* Variantes de color para cada tipo de combo */
 .rh-combo-panel--exact {
   background: rgba(255,204,0,0.07);
   border: 1.5px solid rgba(255,204,0,0.4);
@@ -564,6 +564,7 @@ select.rh-mod-input { cursor: pointer; }
   padding: 9px 16px;
 }
 
+/* Amenidades del combo como chips pequeños */
 .rh-combo-amenidades {
   display: flex; flex-wrap: wrap; gap: 5px;
   margin-top: 8px; padding-top: 8px;
@@ -576,16 +577,11 @@ select.rh-mod-input { cursor: pointer; }
 }
 .rh-combo-amenidad-chip--mas { color: #9a9089; }
 
-/* CTA */
+/* Botón de selección de la habitación */
 .rh-card__cta { align-self: flex-end; margin-top: auto; }
 .rh-card__cta:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ═══════════════════════════════
-   RESEÑAS DEL HOTEL
-   Siempre último elemento del grupo
-   → lleva border-radius inferior
-   Los estilos de .cn-* están en ComentarioNodo.css
-═══════════════════════════════ */
+/* Sección de reseñas del hotel con border-radius inferior */
 .rh-resenas {
   background: #fff;
   border: 1px solid #e8e3dc;
@@ -594,7 +590,7 @@ select.rh-mod-input { cursor: pointer; }
   overflow: hidden;
 }
 
-/* Loading reseñas */
+/* Estado de carga de reseñas */
 .rh-resenas__loading {
   display: flex;
   align-items: center;
@@ -604,7 +600,7 @@ select.rh-mod-input { cursor: pointer; }
   color: #9a9089;
 }
 
-/* Sin reseñas */
+/* Estado vacío cuando no hay reseñas */
 .rh-resenas__empty {
   display: flex;
   align-items: center;
@@ -615,7 +611,7 @@ select.rh-mod-input { cursor: pointer; }
   font-style: italic;
 }
 
-/* Cabecera con promedio */
+/* Cabecera de reseñas con puntuación promedio */
 .rh-resenas__head {
   display: flex;
   align-items: center;
@@ -661,7 +657,7 @@ select.rh-mod-input { cursor: pointer; }
   margin: 0;
 }
 
-/* Lista — cada item es un ComentarioNodo */
+/* Lista de comentarios del hotel (estilos cn-* en ComentarioNodo.css) */
 .rh-resenas__lista {
   display: flex;
   flex-direction: column;
@@ -678,9 +674,7 @@ select.rh-mod-input { cursor: pointer; }
   border-bottom: none;
 }
 
-/* ═══════════════════════════════
-   EMPTY / LOADING
-═══════════════════════════════ */
+/* Estado vacío sin resultados de búsqueda */
 .rh-empty {
   display: flex; flex-direction: column; align-items: center;
   gap: 14px; padding: 60px 20px; text-align: center; color: #9a9089;
@@ -688,7 +682,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-empty__title { font-size: 17px; font-weight: 700; color: #1C1A18; margin: 0; }
 .rh-empty__sub { font-size: 14px; color: #9a9089; margin: 0; line-height: 1.5; }
 
-/* Spinners */
+/* Spinners de carga: grande y pequeño */
 .rh-spinner {
   width: 36px; height: 36px; border: 3px solid #e8e3dc;
   border-top-color: #FFCC00; border-radius: 50%;
@@ -699,9 +693,7 @@ select.rh-mod-input { cursor: pointer; }
 }
 @keyframes rh-spin { to { transform: rotate(360deg); } }
 
-/* ═══════════════════════════════
-   BOTONES
-═══════════════════════════════ */
+/* Botones del módulo: amarillo, outline y ghost */
 .rh-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 8px;
@@ -718,9 +710,7 @@ select.rh-mod-input { cursor: pointer; }
 .rh-btn--ghost { background: transparent; border: 1px solid #e0d9cf; color: #5a5047; }
 .rh-btn--ghost:hover { background: #f5f2ec; }
 
-/* ═══════════════════════════════
-   RESPONSIVE
-═══════════════════════════════ */
+/* Responsive: sidebar como drawer en tablet */
 @media (max-width: 960px) {
   .rh-layout { grid-template-columns: 1fr; }
 
@@ -748,6 +738,7 @@ select.rh-mod-input { cursor: pointer; }
   .rh-resenas__head { flex-direction: column; align-items: flex-start; }
 }
 
+/* Responsive: tarjeta de habitación de una columna en móvil */
 @media (max-width: 640px) {
   .rh-card { grid-template-columns: 1fr; }
   .rh-card__img-placeholder { min-height: 120px; }
@@ -757,5 +748,4 @@ select.rh-mod-input { cursor: pointer; }
   .rh-grupo__head-right { flex-direction: row; align-items: center; flex-wrap: wrap; }
   .rh-mod-row { grid-template-columns: 1fr; }
   .rh-mod-section--row { grid-template-columns: 1fr; }
-
 }

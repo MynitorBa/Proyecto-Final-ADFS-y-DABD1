@@ -9,10 +9,17 @@ import org.example.dtos.HabitacionResumenDTO;
 import java.sql.Date;
 import java.util.List;
 
+/**
+ * Repository para la busqueda de hoteles y habitaciones disponibles desde el canal de agencias.
+ * Maneja consultas de disponibilidad, descuentos, imagenes y registro de busquedas.
+ */
 public class BusquedaAgenciaRepository {
 
-    // ── Descuento de la agencia asociada al usuario webservice ────────────────
-
+    /**
+     * Retorna el porcentaje de descuento de la agencia activa asociada a un usuario webservice.
+     * @param usuarioId ID del usuario webservice vinculado a la agencia.
+     * @return porcentaje de descuento como Double, o null si no tiene agencia activa.
+     */
     public Double obtenerDescuentoAgencia(int usuarioId) {
         String sql = "SELECT PorcentajeDescuento FROM Agencia " +
                 "WHERE UsuarioWEBIs_ID = ? AND EstadoID = " +
@@ -23,8 +30,12 @@ public class BusquedaAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // ── Buscar ciudad ─────────────────────────────────────────────────────────
-
+    /**
+     * Busca el ID de una ciudad comparando nombre de ciudad y nombre de pais sin distincion de mayusculas.
+     * @param nombreCiudad nombre de la ciudad a buscar.
+     * @param nombrePais   nombre del pais al que pertenece la ciudad.
+     * @return ID de la ciudad si existe, o null si no se encuentra.
+     */
     public Integer buscarCiudadId(String nombreCiudad, String nombrePais) {
         String sql = "SELECT c.ID FROM Ciudad c JOIN Pais p ON c.Pais_ID = p.ID " +
                 "WHERE LOWER(TRIM(c.Nombre)) = LOWER(TRIM(?)) AND LOWER(TRIM(p.Nombre)) = LOWER(TRIM(?))";
@@ -34,8 +45,14 @@ public class BusquedaAgenciaRepository {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    // ── Guardar búsqueda — tipo 2 (Agencia) ──────────────────────────────────
-
+    /**
+     * Registra una busqueda realizada por un usuario webservice autenticado (TipoBusquedaID = 2).
+     * @param ciudadId        ID de la ciudad consultada.
+     * @param fechaCheckIn    fecha de entrada solicitada.
+     * @param fechaCheckOut   fecha de salida solicitada.
+     * @param cantidadPersonas numero de personas para la busqueda.
+     * @param usuarioId       ID del usuario webservice que realiza la busqueda.
+     */
     public void guardarBusqueda(int ciudadId, Date fechaCheckIn, Date fechaCheckOut,
                                 int cantidadPersonas, int usuarioId) {
         String sql = "INSERT INTO Busqueda " +
@@ -44,8 +61,11 @@ public class BusquedaAgenciaRepository {
         DatabaseManager.executeUpdate(sql, ciudadId, fechaCheckIn, fechaCheckOut, cantidadPersonas, usuarioId);
     }
 
-    // ── Hoteles activos en una ciudad ─────────────────────────────────────────
-
+    /**
+     * Retorna los hoteles activos ubicados en una ciudad especifica.
+     * @param ciudadId ID de la ciudad donde se buscan los hoteles.
+     * @return lista de HotelResultadoDTO con los hoteles activos encontrados.
+     */
     public List<HotelResultadoDTO> buscarHotelesPorCiudad(int ciudadId) {
         String sql = "SELECT h.ID, h.Nombre, h.Direccion, h.Descripcion, h.Rating, " +
                 "e.Estado, c.Nombre AS Ciudad, p.Nombre AS Pais " +
@@ -69,11 +89,21 @@ public class BusquedaAgenciaRepository {
         }, ciudadId);
     }
 
+    /**
+     * Retorna los IDs de las imagenes asociadas a un hotel.
+     * @param hotelId ID del hotel del que se quieren obtener las imagenes.
+     * @return lista de IDs de imagenes del hotel.
+     */
     public List<Integer> buscarImagenesHotel(int hotelId) {
         String sql = "SELECT ID FROM ImagenHotel WHERE HotelID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelId);
     }
 
+    /**
+     * Retorna las amenidades registradas para un hotel junto con su descripcion y nombre.
+     * @param hotelId ID del hotel del que se quieren obtener las amenidades.
+     * @return lista de AmenidadHotelDTO con los datos de cada amenidad.
+     */
     public List<AmenidadHotelDTO> buscarAmenidadesHotel(int hotelId) {
         String sql = "SELECT ha.ID AS HotelAmenidadId, ha.AmenidadID, ha.Descripcion, " +
                 "a.nombre AS NombreAmenidad " +
@@ -91,14 +121,26 @@ public class BusquedaAgenciaRepository {
         }, hotelId);
     }
 
+    /**
+     * Retorna los IDs de las imagenes asociadas a una amenidad de hotel.
+     * @param hotelAmenidadId ID del registro HotelAmenidad del que se buscan las imagenes.
+     * @return lista de IDs de imagenes de la amenidad.
+     */
     public List<Integer> buscarImagenesAmenidad(int hotelAmenidadId) {
         String sql = "SELECT ID FROM ImagenHotelAmenidad WHERE HotelAmenidadID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), hotelAmenidadId);
     }
 
-    // ── Tipos de habitación disponibles (capacidad >= mínima, sin traslape) ──
-    //    Precio y cama vienen de TipoHabitacion, ya NO de Habitacion.
-
+    /**
+     * Retorna los tipos de habitacion disponibles en un hotel para un rango de fechas y capacidad minima.
+     * Excluye habitaciones con reservaciones activas (Pendiente o Confirmada) que se traslapen con el rango solicitado.
+     * El precio y tipo de cama se obtienen desde TipoHabitacion, no desde Habitacion.
+     * @param hotelId         ID del hotel donde se busca disponibilidad.
+     * @param capacidadMinima capacidad minima requerida por tipo de habitacion.
+     * @param fechaCheckIn    fecha de entrada solicitada.
+     * @param fechaCheckOut   fecha de salida solicitada.
+     * @return lista de TipoHabitacionResultadoDTO con los tipos de habitacion disponibles.
+     */
     public List<TipoHabitacionResultadoDTO> buscarTiposHabitacionDisponibles(
             int hotelId, int capacidadMinima, Date fechaCheckIn, Date fechaCheckOut) {
 
@@ -136,8 +178,15 @@ public class BusquedaAgenciaRepository {
         }, capacidadMinima, hotelId, fechaCheckOut, fechaCheckIn);
     }
 
-    // ── Habitaciones concretas disponibles de un tipo (para reservar) ─────────
-
+    /**
+     * Retorna las habitaciones concretas disponibles de un tipo especifico en un hotel para un rango de fechas.
+     * Excluye habitaciones con reservaciones activas que se traslapen con el rango solicitado.
+     * @param hotelId          ID del hotel donde se busca disponibilidad.
+     * @param tipoHabitacionId ID del tipo de habitacion requerido.
+     * @param fechaCheckIn     fecha de entrada solicitada.
+     * @param fechaCheckOut    fecha de salida solicitada.
+     * @return lista de HabitacionResumenDTO con el ID y numero de cada habitacion disponible.
+     */
     public List<HabitacionResumenDTO> buscarHabitacionesResumenPorTipo(
             int hotelId, int tipoHabitacionId, Date fechaCheckIn, Date fechaCheckOut) {
 
@@ -163,14 +212,23 @@ public class BusquedaAgenciaRepository {
         }, hotelId, tipoHabitacionId, fechaCheckOut, fechaCheckIn);
     }
 
-    // ── Imágenes de habitación ────────────────────────────────────────────────
-
+    /**
+     * Retorna los IDs de las imagenes asociadas a una habitacion especifica.
+     * @param habitacionId ID de la habitacion de la que se quieren obtener las imagenes.
+     * @return lista de IDs de imagenes de la habitacion.
+     */
     public List<Integer> buscarImagenesHabitacion(int habitacionId) {
         String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
     }
 
-
+    /**
+     * Registra una busqueda anonima sin usuario autenticado (TipoBusquedaID = 2).
+     * @param ciudadId         ID de la ciudad consultada.
+     * @param fechaCheckIn     fecha de entrada solicitada.
+     * @param fechaCheckOut    fecha de salida solicitada.
+     * @param cantidadPersonas numero de personas para la busqueda.
+     */
     public void guardarBusquedaSinUsuario(int ciudadId, Date fechaCheckIn, Date fechaCheckOut,
                                           int cantidadPersonas) {
         String sql = "INSERT INTO Busqueda " +
@@ -179,7 +237,11 @@ public class BusquedaAgenciaRepository {
         DatabaseManager.executeUpdate(sql, ciudadId, fechaCheckIn, fechaCheckOut, cantidadPersonas);
     }
 
-
+    /**
+     * Retorna el porcentaje de descuento de la agencia activa identificada por su token de entrada.
+     * @param token hash del token de entrada asociado a la agencia.
+     * @return porcentaje de descuento como Double, o null si no se encuentra una agencia activa con ese token.
+     */
     public Double obtenerDescuentoAgenciaPorToken(String token) {
         String sql = "SELECT PorcentajeDescuento FROM Agencia " +
                 "WHERE Token_HASH_Entrada = ? AND EstadoID = " +

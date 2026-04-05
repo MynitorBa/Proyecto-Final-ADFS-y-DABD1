@@ -5,7 +5,7 @@
     <div class="rv-page">
       <div class="rv-layout">
 
-        <!-- ═══ SIDEBAR ═══ -->
+        <!-- Sidebar colapsable con todos los filtros de vuelo disponibles -->
         <aside class="rv-sidebar" :class="{ 'rv-sidebar--collapsed': sidebarColapsado }">
           <div class="rv-sidebar__head" @click="sidebarColapsado = !sidebarColapsado">
             <h3 class="rv-sidebar__title">
@@ -96,10 +96,10 @@
           </div>
         </aside>
 
-        <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+        <!-- Área principal con search bar, toolbar, chips y lista de vuelos -->
         <div class="rv-main">
 
-          <!-- Search bar -->
+          <!-- Barra de búsqueda activa con resumen de origen/destino/fecha -->
           <div class="rv-search-bar" :class="{ 'rv-search-bar--open': modificarAbierto }">
             <div class="rv-search-bar__summary" @click="toggleModificar">
               <div class="rv-search-bar__ruta">
@@ -130,7 +130,7 @@
             </button>
           </div>
 
-          <!-- Form modificar inline -->
+          <!-- Formulario expandible para modificar la búsqueda sin salir de la vista -->
           <transition name="rv-expand">
             <div v-if="modificarAbierto" class="rv-modificar-inline">
               <div class="rv-modificar-grid">
@@ -236,7 +236,7 @@
             </div>
           </transition>
 
-          <!-- Indicador de pasos -->
+          <!-- Indicador de pasos para vuelos de ida y vuelta (paso 1 = ida, paso 2 = regreso) -->
           <div v-if="esIdaVuelta && !loading" class="rv-pasos">
             <div :class="['rv-paso', { 'rv-paso--activo': paso === 1, 'rv-paso--done': paso === 2 }]">
               <span class="rv-paso__num">{{ paso === 2 ? '✓' : '1' }}</span>
@@ -258,7 +258,7 @@
             </button>
           </div>
 
-          <!-- Toolbar -->
+          <!-- Toolbar: contador de vuelos visibles y selector de orden -->
           <div class="rv-toolbar">
             <p class="rv-toolbar__count">
               <strong>{{ vuelosFiltrados.length }}</strong>
@@ -276,7 +276,7 @@
             </div>
           </div>
 
-          <!-- Chips -->
+          <!-- Chips de filtros activos, cada uno permite eliminar ese filtro individualmente -->
           <div v-if="hayFiltrosActivos" class="rv-chips-activos">
             <button v-if="filtros.precioMin > 0 || filtros.precioMax < 9999" class="rv-chip" @click="filtros.precioMin=0; filtros.precioMax=9999" type="button">${{ filtros.precioMin }}–${{ filtros.precioMax }} ✕</button>
             <button v-for="c in filtros.clases" :key="'c'+c" class="rv-chip" @click="filtros.clases = filtros.clases.filter(x=>x!==c)" type="button">{{ c === 'economica' ? 'Económica' : 'Ejecutiva' }} ✕</button>
@@ -287,7 +287,7 @@
             <button class="rv-chip rv-chip--clear" @click="resetFiltros" type="button">Limpiar todo</button>
           </div>
 
-          <!-- Loading -->
+          <!-- Estado de carga mientras se consultan las aerolíneas -->
           <div v-if="loading" class="rv-empty">
             <div class="rv-spinner"></div>
             <p>Consultando aerolíneas...</p>
@@ -321,7 +321,7 @@
             <button class="rv-btn rv-btn--ghost" @click="resetFiltros" type="button">Quitar filtros</button>
           </div>
 
-          <!-- ═══ LISTA DE VUELOS ═══ -->
+          <!-- Lista principal de tarjetas de vuelo, cambia entre ida y regreso según el paso activo -->
           <div v-if="!loading && (paso === 1 ? vuelosFiltrados.length > 0 : vuelosRegreso.length > 0)" class="rv-lista">
 
             <div v-if="esIdaVuelta && paso === 2" class="rv-regreso-header">
@@ -580,6 +580,13 @@
 </template>
 
 <script setup>
+/**
+ * @file ResultadosVuelos.vue
+ * @description Vista de resultados de búsqueda de vuelos. Soporta vuelos de solo ida
+ * e ida y vuelta (con paso 1 = ida, paso 2 = regreso), filtros dinámicos en sidebar,
+ * reordenamiento, comentarios lazy-loaded por IntersectionObserver y pre-creación de
+ * reserva en background al seleccionar un vuelo.
+ */
 import { ref, computed, onMounted, reactive, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
@@ -588,10 +595,17 @@ import ComentarioNodo from '../components/Comentarionodo.vue'
 import '../styles/resultadosvuelos.css'
 
 const router = useRouter()
-const API    = 'http://localhost:8080'
 
-// ── Estado inicial desde history.state ───────────────────────
+/** URL base del backend. @type {string} */
+const API = 'http://localhost:8080'
+
+/** Estado inicial de la búsqueda recuperado desde history.state. @type {object} */
 const state = history.state || {}
+
+/**
+ * Parámetros de la búsqueda activa: origen, destino, fechas, pasajeros y tipo de vuelo.
+ * @type {import('vue').Ref<{origen: string, origenPais: string, destino: string, destinoPais: string, fecha: string, fechaRegreso: string, cantidadPasajeros: number, tipoVuelo: string}>}
+ */
 const busqueda = ref({
   origen:            state.busqueda?.origen            || '',
   origenPais:        state.busqueda?.origenPais        || '',
@@ -603,35 +617,82 @@ const busqueda = ref({
   tipoVuelo:         state.busqueda?.tipoVuelo         || 'ida',
 })
 
+/** Respuesta cruda de la API para el vuelo de ida, pasada desde la búsqueda. @type {any} */
 const resultadosRaw        = state.resultados || null
+
+/** Respuesta cruda de la API para el vuelo de regreso (solo idaVuelta). @type {any} */
 const resultadosRegresoRaw = state.resultadosRegreso || null
 
-// ── Estado principal ──────────────────────────────────────────
-const vuelos               = ref([])
-const vuelosRegreso        = ref([])
-const loading              = ref(true)
-const buscando             = ref(false)
-const error                = ref('')
-const erroresProveedores   = ref([])
-const seleccionado         = ref(null)
-const seleccionadoRegreso  = ref(null)
-const paso                 = ref(1)
-const ordenar              = ref('precio-asc')
-const modificarAbierto     = ref(false)
-const modError             = ref('')
-const sidebarColapsado     = ref(false)
-const tramosAbiertos       = reactive({})
-const hoy                  = new Date().toISOString().split('T')[0]
+/** Lista de vuelos de ida disponibles, mapeados a formato interno. @type {import('vue').Ref<any[]>} */
+const vuelos = ref([])
 
+/** Lista de vuelos de regreso disponibles (solo aplica en idaVuelta). @type {import('vue').Ref<any[]>} */
+const vuelosRegreso = ref([])
+
+/** Indica si la carga inicial está en curso. @type {import('vue').Ref<boolean>} */
+const loading = ref(true)
+
+/** Indica si se está ejecutando una nueva búsqueda desde el form modificar. @type {import('vue').Ref<boolean>} */
+const buscando = ref(false)
+
+/** Mensaje de error general (sin resultados, falla de API). @type {import('vue').Ref<string>} */
+const error = ref('')
+
+/** Proveedores que respondieron con error parcial durante la búsqueda. @type {import('vue').Ref<any[]>} */
+const erroresProveedores = ref([])
+
+/** ID del vuelo de ida seleccionado por el usuario. @type {import('vue').Ref<string|null>} */
+const seleccionado = ref(null)
+
+/** ID del vuelo de regreso seleccionado (solo idaVuelta). @type {import('vue').Ref<string|null>} */
+const seleccionadoRegreso = ref(null)
+
+/** Paso actual del flujo: 1 = eligiendo ida, 2 = eligiendo regreso. @type {import('vue').Ref<number>} */
+const paso = ref(1)
+
+/** Criterio de ordenamiento activo para la lista de vuelos. @type {import('vue').Ref<string>} */
+const ordenar = ref('precio-asc')
+
+/** Controla si el panel de modificar búsqueda está expandido. @type {import('vue').Ref<boolean>} */
+const modificarAbierto = ref(false)
+
+/** Mensaje de error del form de modificación. @type {import('vue').Ref<string>} */
+const modError = ref('')
+
+/** Controla si el sidebar de filtros está colapsado. @type {import('vue').Ref<boolean>} */
+const sidebarColapsado = ref(false)
+
+/** Objeto reactivo que registra qué vuelos tienen el itinerario de tramos abierto. @type {Record<string, boolean>} */
+const tramosAbiertos = reactive({})
+
+/** Fecha de hoy en formato ISO para validaciones de fecha mínima. @type {string} */
+const hoy = new Date().toISOString().split('T')[0]
+
+/** True si la búsqueda activa es de tipo ida y vuelta. @type {import('vue').ComputedRef<boolean>} */
 const esIdaVuelta = computed(() => busqueda.value.tipoVuelo === 'idaVuelta')
 
+/**
+ * Alterna la visibilidad del itinerario de tramos de un vuelo con escalas.
+ * @param {string} id - ID compuesto del vuelo
+ */
 function toggleTramos(id) { tramosAbiertos[id] = !tramosAbiertos[id] }
 
-// ── Filtros ───────────────────────────────────────────────────
+/**
+ * Estado reactivo de todos los filtros aplicados a la lista de vuelos.
+ * @type {import('vue').Ref<{precioMin: number, precioMax: number, clases: string[], escalas: number[], duracionMax: number, aerolineas: string[], horario: string}>}
+ */
 const filtros = ref({ precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' })
+
+/** Opciones para el filtro de clase de vuelo. @type {{val: string, label: string}[]} */
 const clasesFilter = [{ val: 'economica', label: 'Económica' }, { val: 'ejecutiva', label: 'Ejecutiva' }]
+
+/** Opciones para el filtro de escalas. @type {{val: number, label: string}[]} */
 const escalasOpts  = [{ val: 0, label: 'Solo directos' }, { val: 1, label: '1 escala' }, { val: 2, label: '2+ escalas' }]
+
+/** Opciones para el filtro de duración máxima. @type {{val: number, label: string}[]} */
 const duracionOpts = [{ val: 180, label: '< 3h' }, { val: 360, label: '< 6h' }, { val: 720, label: '< 12h' }, { val: 1440, label: '< 24h' }]
+
+/** Opciones para el filtro de horario de salida, con icono SVG embebido. @type {Array<{val: string, icon: string, label: string, rango: string}>} */
 const horariosOpts = [
   { val: 'madrugada', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`, label: 'Madrugada', rango: '00:00–05:59' },
   { val: 'manana',    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="9" x2="12" y2="2"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><polyline points="8 6 12 2 16 6"/></svg>`, label: 'Mañana', rango: '06:00–11:59' },
@@ -639,11 +700,14 @@ const horariosOpts = [
   { val: 'noche',     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/><path d="M19 3v4M21 5h-4"/></svg>`, label: 'Noche', rango: '18:00–23:59' },
 ]
 
+/** True si hay al menos un filtro activo distinto al valor por defecto. @type {import('vue').ComputedRef<boolean>} */
 const hayFiltrosActivos = computed(() =>
   filtros.value.precioMin > 0 || filtros.value.precioMax < 9999 ||
   filtros.value.clases.length > 0 || filtros.value.escalas.length > 0 ||
   filtros.value.duracionMax < 9999 || filtros.value.aerolineas.length > 0 || !!filtros.value.horario
 )
+
+/** Cantidad numérica de filtros activos para el badge del sidebar. @type {import('vue').ComputedRef<number>} */
 const cantFiltrosActivos = computed(() => {
   let n = 0
   if (filtros.value.precioMin > 0 || filtros.value.precioMax < 9999) n++
@@ -652,14 +716,20 @@ const cantFiltrosActivos = computed(() => {
   if (filtros.value.horario) n++
   return n
 })
+
+/** Resetea todos los filtros a sus valores por defecto. */
 function resetFiltros() {
   filtros.value = { precioMin: 0, precioMax: 9999, clases: [], escalas: [], duracionMax: 9999, aerolineas: [], horario: '' }
 }
 
+/** Lista de aerolíneas únicas disponibles en los resultados actuales (para el filtro dinámico). @type {import('vue').ComputedRef<string[]>} */
 const aerolineasDisponibles = computed(() => [...new Set(vuelos.value.map(v => v.aerolinea).filter(Boolean))])
 
-// ── Computed vuelosFiltrados ─────────────────────────────────
-// IMPORTANTE: este computed debe definirse ANTES del watch que lo usa
+/**
+ * Lista de vuelos de ida con todos los filtros y el orden seleccionado aplicados.
+ * IMPORTANTE: debe definirse antes del watch que lo usa.
+ * @type {import('vue').ComputedRef<any[]>}
+ */
 const vuelosFiltrados = computed(() => {
   let list = vuelos.value
   if (filtros.value.precioMin > 0)    list = list.filter(v => v.precioTurista >= filtros.value.precioMin)
@@ -691,14 +761,30 @@ const vuelosFiltrados = computed(() => {
   })
 })
 
-// ══ COMENTARIOS VUELOS (solo lectura) ═════════════════════════
-// key = `${proveedorId}::${rutaId}`
-const comentariosVuelos     = ref({})
-const comentariosLoadingSet = ref(new Set())
-const yaObservadoRV         = ref(new Set())
-const estadoNodosRV         = ref({})
-let   vueloObserver         = null
+/**
+ * Mapa de comentarios de vuelos cargados de forma lazy.
+ * Clave: `${proveedorId}::${rutaId}`, valor: array de comentarios.
+ * @type {import('vue').Ref<Record<string, any[]>>}
+ */
+const comentariosVuelos = ref({})
 
+/** Set de claves de vuelo cuya petición de comentarios está en curso. @type {import('vue').Ref<Set<string>>} */
+const comentariosLoadingSet = ref(new Set())
+
+/** Set de claves de vuelo que ya fueron cargadas (evita peticiones duplicadas). @type {import('vue').Ref<Set<string>>} */
+const yaObservadoRV = ref(new Set())
+
+/** Estado de cada nodo de comentario (expandido, form, voto) para el componente ComentarioNodo. @type {import('vue').Ref<Record<string, object>>} */
+const estadoNodosRV = ref({})
+
+/** IntersectionObserver que dispara la carga de comentarios cuando la card entra al viewport. @type {IntersectionObserver|null} */
+let vueloObserver = null
+
+/**
+ * Genera la clave única del vuelo para el mapa de comentarios.
+ * @param {object} vuelo - objeto vuelo mapeado
+ * @returns {string|null}
+ */
 function getVueloKey(vuelo) {
   const pid = parseProveedorId(vuelo.id)
   const rid = vuelo.rutaId
@@ -706,29 +792,59 @@ function getVueloKey(vuelo) {
   return `${pid}::${rid}`
 }
 
+/**
+ * Devuelve todos los comentarios del vuelo (raíz e hijos).
+ * @param {object} vuelo
+ * @returns {any[]}
+ */
 function getComentariosVuelo(vuelo) {
   const key = getVueloKey(vuelo)
   return key ? (comentariosVuelos.value[key] ?? []) : []
 }
 
+/**
+ * Devuelve solo los comentarios raíz del vuelo (sin padre).
+ * @param {object} vuelo
+ * @returns {any[]}
+ */
 function getComentariosRaizVuelo(vuelo) {
   return getComentariosVuelo(vuelo).filter(c => c.comentarioPadreId === null)
 }
 
+/**
+ * Devuelve los comentarios raíz que tienen puntuación de estrellas (para el promedio).
+ * @param {object} vuelo
+ * @returns {any[]}
+ */
 function getResenasRaizVuelo(vuelo) {
   return getComentariosVuelo(vuelo).filter(c => c.comentarioPadreId === null && c.cantidadEstrellas !== null)
 }
 
+/**
+ * Devuelve los hijos de un comentario específico (respuestas).
+ * @param {object} vuelo
+ * @param {number} parentId
+ * @returns {any[]}
+ */
 function getHijosVuelo(vuelo, parentId) {
   return getComentariosVuelo(vuelo).filter(c => c.comentarioPadreId === parentId)
 }
 
+/**
+ * Calcula el promedio de estrellas de las reseñas del vuelo.
+ * @param {object} vuelo
+ * @returns {number} 0 si no hay reseñas
+ */
 function getPromedioVuelo(vuelo) {
   const r = getResenasRaizVuelo(vuelo)
   if (!r.length) return 0
   return r.reduce((s, c) => s + (c.cantidadEstrellas ?? 0), 0) / r.length
 }
 
+/**
+ * Alterna el estado expandido de un nodo de comentario en el árbol.
+ * @param {number} id - ID del comentario
+ */
 function toggleExpandidoRV(id) {
   estadoNodosRV.value = {
     ...estadoNodosRV.value,
@@ -739,6 +855,12 @@ function toggleExpandidoRV(id) {
   }
 }
 
+/**
+ * Carga los comentarios de un vuelo desde el backend y los guarda en el mapa.
+ * @param {number} proveedorId
+ * @param {number} rutaId
+ * @param {string} key - clave compuesta `${proveedorId}::${rutaId}`
+ */
 async function cargarComentariosVuelo(proveedorId, rutaId, key) {
   if (yaObservadoRV.value.has(key)) return
   yaObservadoRV.value = new Set([...yaObservadoRV.value, key])
@@ -757,6 +879,7 @@ async function cargarComentariosVuelo(proveedorId, rutaId, key) {
   }
 }
 
+/** Inicializa el IntersectionObserver que carga comentarios cuando una card de vuelo entra al viewport. */
 function initVueloObserver() {
   if (vueloObserver) vueloObserver.disconnect()
   vueloObserver = new IntersectionObserver((entries) => {
@@ -771,6 +894,7 @@ function initVueloObserver() {
   }, { rootMargin: '200px 0px' })
 }
 
+/** Registra en el observer todos los elementos con data-vuelo-key que aún no fueron cargados. */
 async function observarVuelos() {
   await nextTick()
   if (!vueloObserver) return
@@ -782,10 +906,14 @@ async function observarVuelos() {
   })
 }
 
-// WATCH: debe ir DESPUÉS de que vuelosFiltrados esté definido
+// Re-observar cuando cambia la lista filtrada o el paso (idaVuelta genera nuevos elementos en el DOM)
 watch([vuelosFiltrados, paso], () => observarVuelos(), { flush: 'post' })
 
-// ── Form modificar ────────────────────────────────────────────
+/**
+ * Estado del formulario para modificar la búsqueda sin salir de la vista.
+ * Incluye autocomplete de país y ciudad para origen y destino.
+ * @type {import('vue').Reactive<object>}
+ */
 const form = reactive({
   origenPaisQ: '', origenPaisSug: [], origenPaisSel: null,
   origenCiudadQ: '', origenCiudadSug: [], origenCiudadLoading: false,
@@ -797,12 +925,19 @@ const form = reactive({
   tipoVuelo: 'ida',
 })
 
+/**
+ * Fecha mínima permitida para el campo de regreso en el form: el día siguiente a la fecha de ida.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minFechaRegresoForm = computed(() => {
   if (!form.fecha) return hoy
   const d = new Date(form.fecha); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
+/**
+ * Abre o cierra el panel de modificar búsqueda. Al abrir resetea el form.
+ */
 function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
@@ -817,58 +952,89 @@ function toggleModificar() {
   }
 }
 
-// ── countriesnow ──────────────────────────────────────────────
+/** Cache en memoria de la lista de países de countriesnow para evitar peticiones repetidas. @type {any[]|null} */
 let paisesCache = null
+
+/**
+ * Obtiene la lista de países desde countriesnow, con cache local.
+ * @returns {Promise<any[]>}
+ */
 async function getPaises() {
   if (paisesCache) return paisesCache
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] } catch { paisesCache = [] }
   return paisesCache
 }
+/**
+ * Obtiene las ciudades de un país desde countriesnow.
+ * @param {string} country - nombre del país
+ * @returns {Promise<string[]>}
+ */
 async function getCiudades(country) {
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] } catch { return [] }
 }
+
+/**
+ * Cierra una lista de sugerencias después de un pequeño delay para permitir el click.
+ * @param {Function} fn - función que cierra la lista
+ */
 function blurClose(fn) { setTimeout(fn, 200) }
 
+/** Maneja el input del campo de país de origen del form modificar. */
 async function onFormOPaisInput() {
   form.origenPaisSel = null; form.origenCiudadQ = ''; form.origenCiudades = []; form.origenPais = ''; form.origenCiudad = ''
   const q = form.origenPaisQ.trim(); if (q.length < 2) { form.origenPaisSug = []; return }
   form.origenPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+/** Confirma la selección de un país de origen y carga sus ciudades. @param {object} p */
 async function selFormOPais(p) {
   form.origenPaisSel = p; form.origenPaisQ = p.country; form.origenPaisSug = []
   form.origenPais = p.country; form.origenCiudadLoading = true
   form.origenCiudades = await getCiudades(p.country); form.origenCiudadLoading = false
 }
+/** Filtra las ciudades del origen según el texto ingresado. */
 function onFormOCiudadInput() {
   const q = form.origenCiudadQ.toLowerCase()
   form.origenCiudadSug = q.length < 2 ? [] : form.origenCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   form.origenCiudad = ''
 }
+/** Confirma la ciudad de origen seleccionada. @param {string} c */
 function selFormOCiudad(c) { form.origenCiudadQ = c; form.origenCiudadSug = []; form.origenCiudad = c; modError.value = '' }
 
+/** Maneja el input del campo de país de destino del form modificar. */
 async function onFormDPaisInput() {
   form.destinoPaisSel = null; form.destinoCiudadQ = ''; form.destinoCiudades = []; form.destinoPais = ''; form.destinoCiudad = ''
   const q = form.destinoPaisQ.trim(); if (q.length < 2) { form.destinoPaisSug = []; return }
   form.destinoPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+/** Confirma la selección de un país de destino y carga sus ciudades. @param {object} p */
 async function selFormDPais(p) {
   form.destinoPaisSel = p; form.destinoPaisQ = p.country; form.destinoPaisSug = []
   form.destinoPais = p.country; form.destinoCiudadLoading = true
   form.destinoCiudades = await getCiudades(p.country); form.destinoCiudadLoading = false
 }
+/** Filtra las ciudades del destino según el texto ingresado. */
 function onFormDCiudadInput() {
   const q = form.destinoCiudadQ.toLowerCase()
   form.destinoCiudadSug = q.length < 2 ? [] : form.destinoCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   form.destinoCiudad = ''
 }
+/** Confirma la ciudad de destino seleccionada. @param {string} c */
 function selFormDCiudad(c) { form.destinoCiudadQ = c; form.destinoCiudadSug = []; form.destinoCiudad = c; modError.value = '' }
 
-// ── Rebuscar ──────────────────────────────────────────────────
+/**
+ * Verifica si una respuesta de API contiene al menos un vuelo (directo o con escalas).
+ * @param {any[]} respuesta - array de respuestas por proveedor
+ * @returns {boolean}
+ */
 function tieneVuelos(respuesta) {
   if (!Array.isArray(respuesta) || respuesta.length === 0) return false
   return respuesta.some(b => b.datos && ((b.datos.directos?.length > 0) || (b.datos.conEscala?.length > 0)))
 }
 
+/**
+ * Lanza una nueva búsqueda con los datos del form modificar.
+ * Valida campos, consulta la API y actualiza el estado reactivo.
+ */
 async function rebuscar() {
   modError.value = ''
   const o  = form.origenCiudad  || form.origenCiudadQ.trim()
@@ -928,23 +1094,49 @@ async function rebuscar() {
   finally { buscando.value = false }
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+/**
+ * Recorta una hora HH:MM:SS a HH:MM.
+ * @param {string} h
+ * @returns {string}
+ */
 function formatHora(h) { return h ? String(h).substring(0, 5) : '--' }
+
+/**
+ * Formatea una fecha ISO a formato legible en español (Guatemala).
+ * @param {string} f - fecha en formato YYYY-MM-DD
+ * @returns {string}
+ */
 function formatFecha(f) {
   if (!f) return '--'
   try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
 }
+/**
+ * Formatea una fecha desde un timestamp o string ISO a formato corto (para comentarios).
+ * @param {string} f
+ * @returns {string}
+ */
 function formatFechaCorta(f) {
   if (!f) return ''
   try { return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
 }
+
+/**
+ * Convierte minutos totales a texto legible: "2h 30m".
+ * @param {number} min
+ * @returns {string}
+ */
 function formatDuracion(min) {
   if (!min || min === 9999) return '--'
   const h = Math.floor(min / 60), m = min % 60
   return `${h}h${m > 0 ? ` ${m}m` : ''}`
 }
 
-// ── Mapeo respuesta API ───────────────────────────────────────
+/**
+ * Transforma la respuesta cruda de la API de vuelos al formato interno de la vista.
+ * Normaliza tanto vuelos directos como con escalas.
+ * @param {any[]} respuesta - array de respuestas por proveedor
+ * @returns {any[]}
+ */
 function mapearRespuesta(respuesta) {
   const res = []
   for (const b of respuesta) {
@@ -956,6 +1148,12 @@ function mapearRespuesta(respuesta) {
   return res
 }
 
+/**
+ * Mapea un vuelo directo al formato interno.
+ * @param {object} v - vuelo raw del proveedor
+ * @param {object} b - bloque proveedor con proveedor_id y nombre
+ * @returns {object}
+ */
 function mapDirecto(v, b) {
   return {
     id:       `${b.proveedor_id}-d-${v.id ?? Math.random()}`,
@@ -973,6 +1171,12 @@ function mapDirecto(v, b) {
   }
 }
 
+/**
+ * Mapea un vuelo con escalas al formato interno, extrayendo datos del primer y último tramo.
+ * @param {object} v - vuelo raw del proveedor
+ * @param {object} b - bloque proveedor con proveedor_id y nombre
+ * @returns {object}
+ */
 function mapEscala(v, b) {
   const tramos = Array.isArray(v.tramos) ? v.tramos : []
   const p = tramos[0] || {}, u = tramos[tramos.length - 1] || {}
@@ -994,19 +1198,40 @@ function mapEscala(v, b) {
   }
 }
 
-// ── Reservar ──────────────────────────────────────────────────
+/**
+ * Extrae el ID numérico del vuelo desde el ID compuesto del formato interno.
+ * @param {string} compositeId - ej. "1-d-42"
+ * @returns {number|null}
+ */
 function parseVueloId(compositeId) {
   if (!compositeId) return null
   const parts = String(compositeId).split('-')
   const val   = parseFloat(parts[parts.length - 1])
   return Number.isFinite(val) ? Math.round(val) : null
 }
+/**
+ * Extrae el ID del proveedor desde el ID compuesto del formato interno.
+ * @param {string} compositeId - ej. "1-d-42"
+ * @returns {number|null}
+ */
 function parseProveedorId(compositeId) {
   if (!compositeId) return null
   return parseInt(String(compositeId).split('-')[0]) || null
 }
+
+/**
+ * Convierte el nombre de clase a su ID numérico para el backend.
+ * @param {string} clase - "ejecutiva" | "economica"
+ * @returns {number}
+ */
 function claseToId(clase) { return clase === 'ejecutiva' ? 2 : 1 }
 
+/**
+ * Pre-crea la reservación en background inmediatamente al seleccionar el vuelo.
+ * Reserva.vue awaita window.__reservaPromise en su onMounted.
+ * @param {object} itemData - datos del vuelo (o vuelos ida+regreso) seleccionado
+ * @returns {Promise<{reserva: object, detalle: object, segundos: number, expiresAt: number}|null>}
+ */
 async function precrearReservacion(itemData) {
   try {
     const res1 = await fetch(`${API}/api/reservaciones`, {
@@ -1048,6 +1273,12 @@ async function precrearReservacion(itemData) {
   } catch { return null }
 }
 
+/**
+ * Maneja la selección de un vuelo por el usuario.
+ * En idaVuelta avanza al paso 2 para elegir el regreso.
+ * En solo ida guarda en sessionStorage y navega a reservar.
+ * @param {object} vuelo - objeto vuelo del formato interno
+ */
 function seleccionarVuelo(vuelo) {
   if (esIdaVuelta.value && paso.value === 1) {
     seleccionado.value = vuelo.id
@@ -1096,7 +1327,7 @@ function seleccionarVuelo(vuelo) {
   router.push('/reservar')
 }
 
-// ── onMounted ─────────────────────────────────────────────────
+/** Inicializa la vista: valida datos de history.state, mapea resultados e inicia el observer de comentarios. */
 onMounted(() => {
   if (!busqueda.value.origen || !busqueda.value.destino) {
     error.value = 'Faltan datos de búsqueda.'; loading.value = false; return

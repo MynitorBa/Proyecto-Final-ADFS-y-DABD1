@@ -2,7 +2,7 @@
   <div class="page">
     <Encabezado />
 
-    <!-- Toasts -->
+    <!-- Stack de notificaciones tipo toast (éxito y error) -->
     <div class="prf-toast-stack">
       <div v-for="t in toasts" :key="t.id" :class="['prf-toast', t.tipo === 'error' ? 'prf-toast--error' : '']">
         <svg v-if="t.tipo === 'success'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
@@ -14,7 +14,7 @@
     <div class="prf-page">
       <div class="prf-container">
 
-        <!-- Loading -->
+        <!-- Estado de carga mientras se obtiene el perfil del servidor -->
         <div v-if="loading" class="prf-loading">
           <div class="prf-spinner"></div>
           <span>Cargando tu perfil...</span>
@@ -22,7 +22,7 @@
 
         <template v-else-if="perfil">
 
-          <!-- Header -->
+          <!-- Encabezado con avatar de iniciales y nombre del usuario -->
           <div class="prf-header">
             <div class="prf-avatar">
               <span class="prf-avatar__initials">{{ iniciales }}</span>
@@ -33,7 +33,7 @@
             </div>
           </div>
 
-          <!-- ══ INFORMACIÓN PERSONAL ══ -->
+          <!-- Tarjeta: información personal de solo lectura -->
           <div class="prf-card">
             <div class="prf-card__head">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -83,7 +83,7 @@
             </div>
           </div>
 
-          <!-- ══ TELÉFONO ══ -->
+          <!-- Tarjeta: edición del número de teléfono -->
           <div class="prf-card">
             <div class="prf-card__head">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -98,6 +98,7 @@
                   Nuevo número
                   <span class="prf-hint">{{ telPrefijo }} · {{ telDigitCount }} dígitos requeridos</span>
                 </label>
+                <!-- Input con prefijo fijo según el país de registro -->
                 <div class="prf-input-wrap" :class="{ 'prf-input-wrap--focus': focusTel, 'prf-input-wrap--error': telError }">
                   <span class="prf-prefix-fixed">{{ telPrefijo }}</span>
                   <input class="prf-input" v-model="telNumero"
@@ -122,13 +123,15 @@
             </div>
           </div>
 
-          <!-- ══ CONTRASEÑA ══ -->
+          <!-- Tarjeta: formulario para cambiar la contraseña actual -->
           <div class="prf-card">
             <div class="prf-card__head">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               Cambiar contraseña
             </div>
             <div class="prf-card__body">
+
+              <!-- Campo: contraseña actual con toggle de visibilidad -->
               <div class="prf-field">
                 <label class="prf-label">Contraseña actual</label>
                 <div class="prf-input-wrap" :class="{ 'prf-input-wrap--focus': focusPwd==='actual', 'prf-input-wrap--error': pwdErrors.actual }">
@@ -146,6 +149,7 @@
                 <span v-if="pwdErrors.actual" class="prf-error">{{ pwdErrors.actual }}</span>
               </div>
 
+              <!-- Campo: nueva contraseña con toggle de visibilidad -->
               <div class="prf-field">
                 <label class="prf-label">Nueva contraseña <span class="prf-hint">(mín. 8 caracteres)</span></label>
                 <div class="prf-input-wrap" :class="{ 'prf-input-wrap--focus': focusPwd==='nueva', 'prf-input-wrap--error': pwdErrors.nueva }">
@@ -163,6 +167,7 @@
                 <span v-if="pwdErrors.nueva" class="prf-error">{{ pwdErrors.nueva }}</span>
               </div>
 
+              <!-- Campo: confirmación de nueva contraseña con indicador de coincidencia -->
               <div class="prf-field">
                 <label class="prf-label">Confirmar nueva contraseña</label>
                 <div class="prf-input-wrap" :class="{ 'prf-input-wrap--focus': focusPwd==='confirma', 'prf-input-wrap--error': pwdErrors.confirma }">
@@ -203,48 +208,90 @@
 </template>
 
 <script setup>
+/**
+ * @file Profile.vue
+ * @description Vista del perfil de usuario autenticado. Muestra su información personal
+ * de solo lectura y permite editar el número de teléfono y cambiar la contraseña.
+ */
 import { ref, computed, onMounted, reactive } from 'vue'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/Profile.css'
 
+/** URL base del backend. @type {string} */
 const API = 'http://localhost:8080'
 
-// ── Estado ────────────────────────────────────────────────────────────────────
+/** Datos del perfil cargados desde el servidor. @type {import('vue').Ref<object|null>} */
 const perfil   = ref(null)
+
+/** Indica si la petición de perfil sigue en curso. @type {import('vue').Ref<boolean>} */
 const loading  = ref(true)
+
+/** Lista de notificaciones activas en pantalla. @type {import('vue').Ref<Array>} */
 const toasts   = ref([])
 
-// Teléfono
+/** Prefijo telefónico del país con que se registró el usuario (ej. '+502'). @type {import('vue').Ref<string>} */
 const telPrefijo = ref('+502')
+
+/** Número local que el usuario escribe en el campo de teléfono. @type {import('vue').Ref<string>} */
 const telNumero   = ref('')
+
+/** Mensaje de error del campo teléfono. @type {import('vue').Ref<string>} */
 const telError    = ref('')
+
+/** Controla el estado de foco visual del input de teléfono. @type {import('vue').Ref<boolean>} */
 const focusTel    = ref(false)
+
+/** Previene doble click en el botón guardar teléfono. @type {import('vue').Ref<boolean>} */
 const savingTel   = ref(false)
 
+/** Cantidad de dígitos requeridos según el prefijo del país. @type {import('vue').ComputedRef<number>} */
 const telDigitCount  = computed(() => getDigitCount(telPrefijo.value))
+
+/** Cantidad de dígitos que el usuario ya ingresó (solo numéricos). @type {import('vue').ComputedRef<number>} */
 const telDigitsCount = computed(() => telNumero.value.replace(/\D/g, '').length)
+
+/** Placeholder con el formato esperado según la cantidad de dígitos. @type {import('vue').ComputedRef<string>} */
 const telPlaceholder = computed(() => formatLocalPhone('5'.repeat(telDigitCount.value), telDigitCount.value))
 
+/**
+ * Maneja el evento input del campo de teléfono: limpia no numéricos,
+ * recorta al máximo de dígitos y aplica formato visual.
+ * @param {Event} e
+ */
 function onTelInput(e) {
   const raw = e.target.value.replace(/\D/g, '').slice(0, telDigitCount.value)
   telNumero.value = formatLocalPhone(raw, telDigitCount.value)
 }
 
-// Contraseña
+/** Campos de la nueva contraseña agrupados en un objeto reactivo. */
 const pwd      = reactive({ actual: '', nueva: '', confirma: '' })
+
+/** Errores de validación del formulario de contraseña por campo. @type {import('vue').Ref<object>} */
 const pwdErrors = ref({})
+
+/** Campo que actualmente tiene el foco en el bloque de contraseña ('actual' | 'nueva' | 'confirma'). @type {import('vue').Ref<string>} */
 const focusPwd  = ref('')
+
+/** Previene doble envío al guardar la contraseña. @type {import('vue').Ref<boolean>} */
 const savingPwd = ref(false)
+
+/** Controla la visibilidad de cada campo de contraseña. */
 const showPwd   = reactive({ actual: false, nueva: false, confirma: false })
 
-// ── Computed ──────────────────────────────────────────────────────────────────
+/**
+ * Genera las iniciales del usuario a partir de nombre y apellido.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const iniciales = computed(() => {
   if (!perfil.value) return ''
   return (perfil.value.nombre?.[0] || '') + (perfil.value.apellido?.[0] || '')
 })
 
-// Prefijos por país
+/**
+ * Mapa de prefijos telefónicos internacionales por nombre de país en minúsculas.
+ * @type {Record<string, string>}
+ */
 const DIAL_CODES = {
   'guatemala': '+502', 'méxico': '+52', 'mexico': '+52',
   'el salvador': '+503', 'honduras': '+504', 'nicaragua': '+505',
@@ -260,7 +307,10 @@ const DIAL_CODES = {
   'canada': '+1', 'australia': '+61',
 }
 
-// Cantidad de dígitos del número local por código
+/**
+ * Cantidad de dígitos locales requeridos por código de marcación.
+ * @type {Record<string, number>}
+ */
 const DIGIT_COUNTS = {
   '+502':8, '+52':10, '+503':8, '+504':8, '+505':8, '+506':8, '+507':8,
   '+57':10, '+58':10, '+593':9, '+51':9, '+591':8, '+56':9, '+54':10,
@@ -268,16 +318,33 @@ const DIGIT_COUNTS = {
   '+49':10, '+33':9, '+39':10, '+86':11, '+81':10, '+91':10, '+61':9,
 }
 
+/**
+ * Devuelve el prefijo de marcación para un país dado.
+ * Si no se reconoce el país, devuelve '+502' (Guatemala) como fallback.
+ * @param {string} pais
+ * @returns {string}
+ */
 function getDialCode(pais) {
   if (!pais) return '+502'
   return DIAL_CODES[pais.toLowerCase()] ?? '+502'
 }
 
+/**
+ * Devuelve la cantidad de dígitos locales que requiere un código de marcación.
+ * @param {string} code - Ej. '+502'
+ * @returns {number}
+ */
 function getDigitCount(code) {
   return DIGIT_COUNTS[code] ?? 8
 }
 
-// Formato local igual que en Registrarse.vue
+/**
+ * Formatea una cadena de dígitos como número local según su longitud total.
+ * El formato es el mismo que en Registrarse.vue para mantener consistencia.
+ * @param {string} digits - Solo dígitos
+ * @param {number} total  - Cantidad total esperada
+ * @returns {string}
+ */
 function formatLocalPhone(digits, total) {
   if (total <= 7)   return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim()
   if (total === 8)  return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim()
@@ -286,18 +353,33 @@ function formatLocalPhone(digits, total) {
   return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim()
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+/**
+ * Agrega un toast a la pila y lo elimina automáticamente a los 4 segundos.
+ * @param {string} msg   - Texto del mensaje
+ * @param {'success'|'error'} tipo
+ */
 function addToast(msg, tipo = 'success') {
   const id = Date.now()
   toasts.value.push({ id, msg, tipo })
   setTimeout(() => { toasts.value = toasts.value.filter(t => t.id !== id) }, 4000)
 }
 
+/**
+ * Formatea una fecha ISO como texto legible en español guatemalteco.
+ * @param {string} f - Fecha en formato ISO
+ * @returns {string}
+ */
 function formatFecha(f) {
   if (!f) return ''
   return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
+/**
+ * Wrapper genérico para fetch que incluye credenciales y lanza error si la respuesta no es ok.
+ * @param {string} url
+ * @param {RequestInit} opts
+ * @returns {Promise<any>}
+ */
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, { credentials: 'include', ...opts })
   const data = await res.json().catch(() => ({}))
@@ -305,7 +387,10 @@ async function apiFetch(url, opts = {}) {
   return data
 }
 
-// ── Carga ─────────────────────────────────────────────────────────────────────
+/**
+ * Carga los datos del perfil desde la API y prepara el campo de teléfono
+ * con el prefijo correcto y el número ya formateado si existía.
+ */
 async function cargarPerfil() {
   loading.value = true
   try {
@@ -331,7 +416,10 @@ async function cargarPerfil() {
   }
 }
 
-// ── Guardar teléfono ──────────────────────────────────────────────────────────
+/**
+ * Valida y envía el nuevo número de teléfono al servidor mediante PUT.
+ * Muestra un toast de éxito o asigna el error al campo correspondiente.
+ */
 async function guardarTelefono() {
   telError.value = ''
   const numero = telNumero.value.trim()
@@ -358,7 +446,10 @@ async function guardarTelefono() {
   }
 }
 
-// ── Cambiar contraseña ────────────────────────────────────────────────────────
+/**
+ * Valida los tres campos de contraseña y envía el cambio al servidor.
+ * Si el servidor devuelve que la contraseña actual es incorrecta, lo muestra en campo.
+ */
 async function cambiarContrasena() {
   pwdErrors.value = {}
   const e = {}
@@ -389,6 +480,6 @@ async function cambiarContrasena() {
   }
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+/** Carga el perfil al montar la vista. */
 onMounted(() => cargarPerfil())
 </script>

@@ -6,13 +6,21 @@ import org.example.services.DownsService;
 
 import java.util.Map;
 
+/**
+ * Controller que gestiona las valoraciones negativas (downs) sobre comentarios.
+ * Todas las rutas requieren sesion activa; el usuarioId se obtiene del contexto JWT.
+ */
 public class DownsController {
 
     private final DownsService downsService = new DownsService();
 
+    /**
+     * Registra todas las rutas de downs en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registran las rutas.
+     */
     public void registerRoutes(Javalin app) {
 
-        // POST /comentarios/{id}/downs — agregar down
+        // Registra un down del usuario autenticado sobre un comentario especifico
         app.post("/comentarios/{id}/downs", ctx -> {
             int usuarioId    = ctx.attribute("usuarioId");
             int comentarioId = Integer.parseInt(ctx.pathParam("id"));
@@ -25,7 +33,7 @@ public class DownsController {
             }
         });
 
-        // DELETE /comentarios/{id}/downs — eliminar down
+        // Elimina el down que el usuario autenticado habia registrado en un comentario
         app.delete("/comentarios/{id}/downs", ctx -> {
             int usuarioId    = ctx.attribute("usuarioId");
             int comentarioId = Integer.parseInt(ctx.pathParam("id"));
@@ -37,7 +45,7 @@ public class DownsController {
             }
         });
 
-        // PATCH /comentarios/{id}/downs — actualizar down
+        // Actualiza el valor del down existente del usuario autenticado en un comentario
         app.patch("/comentarios/{id}/downs", ctx -> {
             int usuarioId    = ctx.attribute("usuarioId");
             int comentarioId = Integer.parseInt(ctx.pathParam("id"));
@@ -50,13 +58,13 @@ public class DownsController {
             }
         });
 
-        // GET /downs — todos los downs del usuario en sesión
+        // Retorna todos los downs registrados por el usuario autenticado
         app.get("/downs", ctx -> {
             int usuarioId = ctx.attribute("usuarioId");
             ctx.status(200).json(downsService.obtenerDownsDeUsuario(usuarioId));
         });
 
-        // GET /downs/hotel/{hotelId} — downs del usuario filtrados por hotel
+        // Retorna los downs del usuario autenticado filtrados por hotel
         app.get("/downs/hotel/{hotelId}", ctx -> {
             int usuarioId = ctx.attribute("usuarioId");
             int hotelId   = Integer.parseInt(ctx.pathParam("hotelId"));

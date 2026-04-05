@@ -1,8 +1,10 @@
+/* Página home: ancho completo con altura mínima de pantalla */
 .home-page {
   width: 100%;
   min-height: 100vh;
 }
 
+/* Sección hero con imagen de fondo paralax y overlay oscuro */
 .home__hero-section {
   position: relative;
   min-height: 85vh;
@@ -16,12 +18,14 @@
   background-attachment: fixed;
 }
 
+/* Capa de opacidad sobre la imagen del hero */
 .home__hero-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(102,126,234,0.75) 50%, rgba(118,75,162,0.85) 100%);
 }
 
+/* Contenido del hero centrado sobre el overlay */
 .home__hero-content {
   position: relative;
   z-index: 1;
@@ -35,6 +39,7 @@
 
 .hero-text { text-align: center; }
 
+/* Título principal del hero con tamaño fluido */
 .home__hero-title {
   font-size: clamp(2.5rem, 5vw, 4rem);
   font-weight: 800;
@@ -45,6 +50,7 @@
   letter-spacing: -0.02em;
 }
 
+/* Subtítulo del hero con opacidad suave */
 .hero-subtitle {
   font-size: clamp(1.1rem, 2vw, 1.4rem);
   color: rgba(255,255,255,0.95);
@@ -54,6 +60,7 @@
   line-height: 1.6;
 }
 
+/* Tarjeta blanca del buscador sobre el hero */
 .search-card {
   background: white;
   border-radius: 24px;
@@ -61,6 +68,7 @@
   box-shadow: 0 24px 80px rgba(0,0,0,0.35);
 }
 
+/* Título interno del buscador */
 .home__search-title {
   color: #0f172a;
   font-size: 1.5rem;
@@ -70,6 +78,7 @@
   letter-spacing: -0.02em;
 }
 
+/* Mensaje de error en el formulario de búsqueda */
 .home__search-error {
   display: flex;
   align-items: center;
@@ -90,7 +99,7 @@
   gap: 1.25rem;
 }
 
-/* Barra de campos en una fila con separadores */
+/* Grid de campos del formulario en una sola fila con separadores */
 .home__form-grid {
   display: grid;
   grid-template-columns: 2fr 2fr 1.4fr 1.4fr 1.1fr;
@@ -100,6 +109,7 @@
   overflow: visible;
 }
 
+/* Grupo de campo individual dentro del grid */
 .home__form-group {
   display: flex;
   flex-direction: column;
@@ -108,7 +118,7 @@
   gap: 0.3rem;
 }
 
-/* Separador vertical entre campos */
+/* Separador vertical entre campos del formulario */
 .home__form-group + .home__form-group::before {
   content: '';
   position: absolute;
@@ -117,11 +127,13 @@
   background: #e2e8f0;
 }
 
+/* Resalta el campo activo con fondo lila suave */
 .home__form-group:focus-within {
   background: #f8f7ff;
   border-radius: 14px;
 }
 
+/* Etiqueta con ícono de cada campo del formulario */
 .home__form-label {
   display: flex;
   align-items: center;
@@ -135,6 +147,7 @@
 
 .label-icon { color: #667eea; flex-shrink: 0; }
 
+/* Input del formulario sin bordes visibles, sobre fondo blanco */
 .home__form-input {
   border: none;
   outline: none;
@@ -152,6 +165,7 @@
 
 select.home__form-input { cursor: pointer; }
 
+/* Botón de búsqueda principal con gradiente y sombra */
 .search-button {
   padding: 1rem 2rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -180,15 +194,18 @@ select.home__form-input { cursor: pointer; }
   cursor: not-allowed;
 }
 
+/* Animación de rotación para el spinner del botón */
 @keyframes spin { to { transform: rotate(360deg); } }
 .home__spin { animation: spin 0.8s linear infinite; }
 
+/* Contenedor con ancho máximo para las secciones del home */
 .home__container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
+/* Cabecera de sección centrada con título y descripción */
 .home__section-header {
   text-align: center;
   margin-bottom: 4rem;
@@ -208,17 +225,20 @@ select.home__form-input { cursor: pointer; }
   margin: 0 auto;
 }
 
+/* Sección de características con fondo blanco */
 .features-section {
   padding: 6rem 0;
   background: white;
 }
 
+/* Grid responsivo de tarjetas de características */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2.5rem;
 }
 
+/* Tarjeta de característica con hover elevado */
 .feature-card {
   text-align: center;
   padding: 2.5rem 2rem;
@@ -234,6 +254,7 @@ select.home__form-input { cursor: pointer; }
   border-color: #667eea;
 }
 
+/* Ícono de la tarjeta de característica */
 .feature-icon {
   color: #667eea;
   margin-bottom: 1.5rem;
@@ -253,6 +274,7 @@ select.home__form-input { cursor: pointer; }
   font-size: 1rem;
 }
 
+/* Sección CTA con imagen de fondo y gradiente oscuro */
 .home__cta-section {
   padding: 6rem 0;
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -260,6 +282,7 @@ select.home__form-input { cursor: pointer; }
   overflow: hidden;
 }
 
+/* Imagen de fondo semitransparente del CTA */
 .home__cta-section::before {
   content: '';
   position: absolute;
@@ -270,6 +293,7 @@ select.home__form-input { cursor: pointer; }
   opacity: 0.1;
 }
 
+/* Contenido textual del CTA centrado */
 .home__cta-content {
   position: relative;
   text-align: center;
@@ -291,6 +315,7 @@ select.home__form-input { cursor: pointer; }
   line-height: 1.6;
 }
 
+/* Botones del CTA en fila */
 .cta-buttons {
   display: flex;
   gap: 1rem;
@@ -298,6 +323,7 @@ select.home__form-input { cursor: pointer; }
   flex-wrap: wrap;
 }
 
+/* Botón del CTA con variantes primary y secondary */
 .home__cta-button {
   padding: 1.125rem 2.5rem;
   border-radius: 12px;
@@ -333,10 +359,12 @@ select.home__form-input { cursor: pointer; }
   border-color: rgba(255,255,255,0.5);
 }
 
+/* Responsive: dos columnas en tablets */
 @media (max-width: 900px) {
   .home__form-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* Responsive: una columna en móviles */
 @media (max-width: 768px) {
   .home__hero-section { min-height: 100vh; background-attachment: scroll; }
   .home__hero-content  { gap: 2rem; }
@@ -348,11 +376,12 @@ select.home__form-input { cursor: pointer; }
   .home__cta-button    { width: 100%; justify-content: center; }
 }
 
-/* ── Autocomplete Home ── */
+/* Dropdown de autocompletado del campo de destino */
 .home__autocomplete-wrap {
   position: relative;
 }
 
+/* Lista de sugerencias del autocomplete */
 .home__autocomplete-list {
   position: absolute;
   top: calc(100% + 8px);
@@ -371,6 +400,7 @@ select.home__form-input { cursor: pointer; }
 
 .home__autocomplete-list li { display: block; }
 
+/* Botón de cada sugerencia del autocomplete */
 .home__autocomplete-btn {
   width: 100%;
   text-align: left;
@@ -389,6 +419,7 @@ select.home__form-input { cursor: pointer; }
   color: #667eea;
 }
 
+/* Indicador de carga mientras se buscan sugerencias */
 .home__autocomplete-loading {
   position: absolute;
   top: calc(100% + 8px);

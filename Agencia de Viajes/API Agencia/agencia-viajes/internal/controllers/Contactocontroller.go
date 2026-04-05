@@ -1,3 +1,7 @@
+// # Package controllers
+//
+// Controladores HTTP de la API de Movent. Cada controlador agrupa los handlers
+// relacionados a un recurso o dominio especifico de la aplicacion.
 package controllers
 
 import (
@@ -8,6 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// contactoRequest
+//
+// Estructura que representa el body esperado en el endpoint de contacto.
+// Los campos nombre, correo y mensaje son obligatorios.
 type contactoRequest struct {
 	Nombre  string `json:"nombre"  binding:"required"`
 	Correo  string `json:"correo"  binding:"required"`
@@ -15,6 +23,23 @@ type contactoRequest struct {
 	Mensaje string `json:"mensaje" binding:"required"`
 }
 
+// EnviarContacto
+//
+// Procesa el formulario de contacto enviado desde el sitio web. Valida que
+// el mensaje tenga al menos 10 caracteres, construye un correo HTML con los
+// datos del remitente y lo envia a la bandeja de entrada de soporte de MOVENT.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de confirmacion al visitante
+//   - HTTP 400 Bad Request: si faltan campos requeridos o el mensaje es muy corto
+//   - HTTP 500 Internal Server Error: si ocurre un error al enviar el correo
+//
+// Notas:
+//   - Si el asunto llega vacio se usa el valor por defecto "Consulta desde el sitio web"
+//   - El correo se envia a la cuenta configurada en el SMTP (cfg.User)
 func EnviarContacto(c *gin.Context) {
 	var req contactoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -43,6 +68,19 @@ func EnviarContacto(c *gin.Context) {
 	c.JSON(200, gin.H{"mensaje": "Mensaje enviado correctamente. Te responderemos pronto."})
 }
 
+// buildHTMLContacto
+//
+// Construye el cuerpo HTML del correo de contacto con el estilo visual de
+// MOVENT, incluyendo los datos del remitente y el mensaje recibido.
+//
+// Parametros:
+//   - nombre: nombre del visitante que envia el mensaje
+//   - correo: direccion de correo del remitente
+//   - asunto: asunto del mensaje
+//   - mensaje: contenido del mensaje enviado por el visitante
+//
+// Retorna:
+//   - string: cadena HTML lista para ser enviada como cuerpo del correo
 func buildHTMLContacto(nombre, correo, asunto, mensaje string) string {
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="es">

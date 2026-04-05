@@ -5,7 +5,7 @@
     <div class="rh-page">
       <div class="rh-layout">
 
-        <!-- ═══ SIDEBAR FILTROS ═══ -->
+        <!-- Sidebar de filtros con precio, tipo de habitación, hotel, proveedor y amenidades -->
         <aside class="rh-sidebar" :class="{ 'rh-sidebar--open': filtrosAbiertos }">
           <div class="rh-sidebar__head">
             <h3 class="rh-sidebar__title">
@@ -91,10 +91,10 @@
 
         <div v-if="filtrosAbiertos" class="rh-sidebar-overlay" @click="filtrosAbiertos = false"></div>
 
-        <!-- ═══ CONTENIDO PRINCIPAL ═══ -->
+        <!-- Contenido principal: search bar, chips, toolbar y lista agrupada por hotel -->
         <div class="rh-main">
 
-          <!-- ── SEARCH BAR con Modificar inline ── -->
+          <!-- Search bar con resumen del destino y fechas activos -->
           <div class="rh-search-bar" :class="{ 'rh-search-bar--open': modificarAbierto }">
             <div class="rh-search-bar__summary" @click="toggleModificar">
               <div class="rh-search-bar__destino">
@@ -122,7 +122,7 @@
             </div>
           </div>
 
-          <!-- ── FORM MODIFICAR INLINE ── -->
+          <!-- Formulario expandible para modificar destino, fechas y personas sin salir de la vista -->
           <transition name="rh-expand">
             <div v-if="modificarAbierto" class="rh-modificar-inline">
               <div class="rh-modificar-grid">
@@ -195,7 +195,7 @@
             </div>
           </transition>
 
-          <!-- Chips filtros activos -->
+          <!-- Chips de filtros activos: cada chip elimina ese filtro al hacer click -->
           <div v-if="hayFiltrosActivos" class="rh-chips-activos">
             <button v-if="filtros.precioMin > 0 || filtros.precioMax < 9999"
               class="rh-chip" @click="filtros.precioMin = 0; filtros.precioMax = 9999" type="button">
@@ -220,7 +220,7 @@
             <button class="rh-chip rh-chip--clear" @click="resetFiltros" type="button">Limpiar todo</button>
           </div>
 
-          <!-- Toolbar -->
+          <!-- Toolbar: contador de hoteles visibles y selector de ordenamiento -->
           <div class="rh-toolbar">
             <p class="rh-toolbar__count">
               <strong>{{ gruposPorHotel.length }}</strong>
@@ -294,7 +294,7 @@
             <button class="rh-btn rh-btn--yellow" @click="toggleModificar" type="button">Buscar otra fecha</button>
           </div>
 
-          <!-- Lista agrupada por hotel -->
+          <!-- Lista de grupos, uno por hotel, con sus habitaciones, combos y reseñas -->
           <template v-if="!loading && gruposPorHotel.length > 0">
             <div
               v-for="grupo in gruposPorHotel"
@@ -356,7 +356,7 @@
                 </span>
               </div>
 
-              <!-- ══ PANEL COMBOS DEL HOTEL ══ -->
+              <!-- Panel de combos del hotel: muestra combinaciones exactas, aproximadas y con persona extra -->
               <template v-if="getHotelCombos(grupo)">
                 <div class="rh-hotel-combos">
 
@@ -595,7 +595,7 @@
                 </article>
               </div>
 
-              <!-- ═══ RESEÑAS DEL HOTEL ═══ -->
+              <!-- Sección de reseñas del hotel: se carga lazy con IntersectionObserver -->
               <div v-if="comentariosLoadingSet.has(getHotelKey(grupo)) || yaObservado.has(getHotelKey(grupo))" class="rh-resenas">
 
                 <!-- Cargando -->
@@ -651,7 +651,7 @@
                 </div>
 
               </div>
-              <!-- ══ FIN RESEÑAS ══ -->
+              <!-- Fin sección reseñas del hotel -->
 
             </div>
           </template>
@@ -665,6 +665,13 @@
 </template>
 
 <script setup>
+/**
+ * @file ResultadosHoteles.vue
+ * @description Vista de resultados de búsqueda de hoteles. Agrupa las habitaciones por hotel,
+ * muestra combos inteligentes de habitaciones (exacto, aproximado, persona extra), aplica
+ * filtros dinámicos, carga reseñas de forma lazy con IntersectionObserver y pre-crea la
+ * reservación en background al seleccionar.
+ */
 import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
@@ -673,9 +680,14 @@ import '../styles/resultadoshoteles.css'
 import ComentarioNodo from '../components/Comentarionodo.vue'
 
 const router = useRouter()
-const API    = 'http://localhost:8080'
 
-// ── Auth fetch ────────────────────────────────────────────────
+/** URL base del backend. @type {string} */
+const API = 'http://localhost:8080'
+
+/**
+ * Genera los headers de autenticación incluyendo el JWT si está disponible en storage.
+ * @returns {Record<string, string>}
+ */
 function authHeaders() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
   return {
@@ -683,15 +695,28 @@ function authHeaders() {
     ...(token ? { Authorization: `Bearer ${token}` } : {})
   }
 }
+/**
+ * Wrapper de fetch que adjunta headers de auth y lanza error en respuestas no-OK.
+ * @param {string} url
+ * @param {RequestInit} [opts]
+ * @returns {Promise<any>}
+ */
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, { headers: authHeaders(), credentials: 'include', ...opts })
   if (!res.ok) throw new Error(`Error ${res.status}`)
   return res.json()
 }
 
-// ── Estado inicial desde history.state ───────────────────────
-const state         = history.state || {}
+// Estado inicial recuperado desde history.state (inyectado por el buscador principal)
+const state = history.state || {}
+
+/** Resultados crudos de hoteles recibidos desde el buscador, o null si no hay. @type {any[]|null} */
 const resultadosRaw = state.resultados || null
+
+/**
+ * Parámetros de la búsqueda activa. Se inicializan desde history.state y se actualizan al rebuscar.
+ * @type {import('vue').Ref<{ciudad: string, pais: string, checkIn: string, checkOut: string, cantidadPersonas: number}>}
+ */
 const busqueda = ref({
   ciudad:           state.busqueda?.ciudad           || '',
   pais:             state.busqueda?.pais             || '',
@@ -700,32 +725,60 @@ const busqueda = ref({
   cantidadPersonas: state.busqueda?.cantidadPersonas || 1,
 })
 
-// ── UI ────────────────────────────────────────────────────────
-const loading            = ref(true)
-const error              = ref('')
-const seleccionada       = ref(null)
-const filtrosAbiertos    = ref(false)
-const ordenar            = ref('precio-asc')
-const erroresProveedores = ref([])
-const modificarAbierto   = ref(false)
-const buscandoMod        = ref(false)
-const modError           = ref('')
-const hoy                = new Date().toISOString().split('T')[0]
+/** Indica que se está realizando una búsqueda (muestra spinner). @type {import('vue').Ref<boolean>} */
+const loading = ref(true)
 
-// ── Datos ─────────────────────────────────────────────────────
+/** Mensaje de error global; vacío cuando no hay error. @type {import('vue').Ref<string>} */
+const error = ref('')
+
+/** UID de la habitación actualmente marcada como seleccionada (feedback visual). @type {import('vue').Ref<string|null>} */
+const seleccionada = ref(null)
+
+/** Controla la visibilidad del sidebar de filtros en móvil. @type {import('vue').Ref<boolean>} */
+const filtrosAbiertos = ref(false)
+
+/** Criterio de ordenamiento activo en el selector de la toolbar. @type {import('vue').Ref<string>} */
+const ordenar = ref('precio-asc')
+
+/** Lista de proveedores que devolvieron error; se usa para mostrar el aviso de resultados incompletos. @type {import('vue').Ref<any[]>} */
+const erroresProveedores = ref([])
+
+/** Controla si el formulario de modificar búsqueda está expandido. @type {import('vue').Ref<boolean>} */
+const modificarAbierto = ref(false)
+
+/** True mientras se ejecuta una nueva búsqueda desde el formulario de modificar. @type {import('vue').Ref<boolean>} */
+const buscandoMod = ref(false)
+
+/** Mensaje de error específico del formulario de modificar búsqueda. @type {import('vue').Ref<string>} */
+const modError = ref('')
+
+/** Fecha de hoy en formato ISO (YYYY-MM-DD), usada como mínimo para los inputs de fecha. @type {string} */
+const hoy = new Date().toISOString().split('T')[0]
+
+/** Lista plana de todas las habitaciones disponibles mapeadas desde la API. @type {import('vue').Ref<object[]>} */
 const todasLasHabitaciones = ref([])
 
-// ── Filtros ───────────────────────────────────────────────────
+/**
+ * Objeto reactivo con todos los filtros aplicables a la lista de habitaciones.
+ * @type {import('vue').Ref<{precioMin: number, precioMax: number, tipos: string[], hoteles: string[], proveedores: string[], amenidades: string[]}>}
+ */
 const filtros = ref({
   precioMin: 0, precioMax: 9999,
   tipos: [], hoteles: [], proveedores: [],
   amenidades: [],
 })
 
-// ── Computed noches ───────────────────────────────────────────
+/**
+ * Número de noches entre check-in y check-out de la búsqueda activa.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const noches = computed(() => calcNoches(busqueda.value.checkIn, busqueda.value.checkOut))
 
-// ── Form modificar ────────────────────────────────────────────
+/**
+ * Estado reactivo del formulario de modificar búsqueda: campos de país/ciudad con
+ * autocompletado, fechas y cantidad de personas.
+ * @type {{dPaisQ: string, dPaisSug: any[], dPaisSel: any, dCiudadQ: string, dCiudadSug: string[], dCiudadLoading: boolean, dCiudades: string[], pais: string, ciudad: string, checkIn: string, checkOut: string, cantidadPersonas: number}}
+ */
 const form = reactive({
   dPaisQ: '', dPaisSug: [], dPaisSel: null,
   dCiudadQ: '', dCiudadSug: [], dCiudadLoading: false,
@@ -733,40 +786,77 @@ const form = reactive({
   checkIn: '', checkOut: '', cantidadPersonas: 1,
 })
 
+/**
+ * Fecha mínima permitida para el check-out en el formulario: un día después del check-in seleccionado.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const minCheckOutForm = computed(() => {
   if (!form.checkIn) return hoy
   const d = new Date(form.checkIn); d.setDate(d.getDate() + 1)
   return d.toISOString().split('T')[0]
 })
 
-// ── countriesnow ──────────────────────────────────────────────
+/** Caché en memoria de la lista de países obtenida de CountriesNow. @type {any[]|null} */
 let paisesCache = null
+
+/**
+ * Obtiene la lista de países desde la API de CountriesNow, usando caché en memoria.
+ * @returns {Promise<any[]>}
+ */
 async function getPaises() {
   if (paisesCache) return paisesCache
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries'); const d = await r.json(); paisesCache = d.data || [] } catch { paisesCache = [] }
   return paisesCache
 }
+
+/**
+ * Obtiene la lista de ciudades de un país específico desde CountriesNow.
+ * @param {string} country - Nombre del país en inglés
+ * @returns {Promise<string[]>}
+ */
 async function getCiudades(country) {
   try { const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ country }) }); const d = await r.json(); return d.data || [] } catch { return [] }
 }
+
+/**
+ * Cierra un dropdown de autocompletado con un pequeño delay para permitir que el click en la opción se registre antes.
+ * @param {Function} fn - Función que limpia la lista de sugerencias
+ */
 function blurClose(fn) { setTimeout(fn, 200) }
 
+/** Filtra la lista de países según el texto ingresado en el campo de país del formulario. */
 async function onFormDPaisInput() {
   form.dPaisSel = null; form.dCiudadQ = ''; form.dCiudades = []; form.pais = ''; form.ciudad = ''
   const q = form.dPaisQ.trim(); if (q.length < 2) { form.dPaisSug = []; return }
   form.dPaisSug = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
 }
+
+/**
+ * Selecciona un país del dropdown y carga sus ciudades disponibles.
+ * @param {{country: string}} p - Objeto país de CountriesNow
+ */
 async function selFormDPais(p) {
   form.dPaisSel = p; form.dPaisQ = p.country; form.dPaisSug = []; form.pais = p.country
   form.dCiudadLoading = true; form.dCiudades = await getCiudades(p.country); form.dCiudadLoading = false
 }
+
+/** Filtra la lista de ciudades según el texto ingresado en el campo de ciudad del formulario. */
 function onFormDCiudadInput() {
   const q = form.dCiudadQ.toLowerCase()
   form.dCiudadSug = q.length < 2 ? [] : form.dCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
   form.ciudad = ''
 }
+
+/**
+ * Selecciona una ciudad del dropdown y la establece como destino en el formulario.
+ * @param {string} c - Nombre de la ciudad seleccionada
+ */
 function selFormDCiudad(c) { form.dCiudadQ = c; form.dCiudadSug = []; form.ciudad = c; modError.value = '' }
 
+/**
+ * Abre o cierra el formulario de modificar búsqueda y, al abrir, pre-llena
+ * los campos con los valores de la búsqueda activa.
+ */
 function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
@@ -793,6 +883,10 @@ function toggleModificar() {
   }
 }
 
+/**
+ * Valida el formulario de modificar y lanza una nueva búsqueda de hoteles al backend.
+ * Al completar, reemplaza los resultados y reinicia los comentarios y filtros.
+ */
 async function rebuscar() {
   modError.value = ''
   if (!form.pais || !form.ciudad)    { modError.value = 'Selecciona país y ciudad de destino.'; return }
@@ -824,26 +918,58 @@ async function rebuscar() {
   finally { buscandoMod.value = false }
 }
 
-// ── Computed filtros dinámicos ────────────────────────────────
+/**
+ * Lista deduplicada de tipos de habitación presentes en los resultados,
+ * usada para poblar el filtro de tipo.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const tiposDisponibles = computed(() =>
   [...new Set(todasLasHabitaciones.value.map(h => h.tipoHabitacion).filter(Boolean))]
 )
+
+/**
+ * Lista deduplicada de nombres de hotel presentes en los resultados,
+ * usada para poblar el filtro de hotel.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const hotelesDisponibles = computed(() =>
   [...new Set(todasLasHabitaciones.value.map(h => h.nombreHotel).filter(Boolean))]
 )
+
+/**
+ * Lista deduplicada de nombres de proveedor, usada para el filtro de proveedor.
+ * Solo se muestra si hay más de uno disponible.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const proveedoresDisponibles = computed(() =>
   [...new Set(todasLasHabitaciones.value.map(h => h.proveedorNombre).filter(Boolean))]
 )
+
+/**
+ * Lista deduplicada de nombres de amenidad presentes en todos los hoteles,
+ * usada para el filtro de amenidades.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const amenidadesDisponibles = computed(() => {
   const set = new Set()
   todasLasHabitaciones.value.forEach(h => h.amenidades?.forEach(a => set.add(a.nombre)))
   return [...set]
 })
+
+/**
+ * True si al menos uno de los filtros tiene un valor diferente al predeterminado.
+ * @type {import('vue').ComputedRef<boolean>}
+ */
 const hayFiltrosActivos = computed(() =>
   filtros.value.precioMin > 0 || filtros.value.precioMax < 9999 ||
   filtros.value.tipos.length > 0 || filtros.value.hoteles.length > 0 ||
   filtros.value.proveedores.length > 0 || filtros.value.amenidades.length > 0
 )
+
+/**
+ * Número total de filtros activos; se usa para mostrar el badge en el sidebar.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const cantFiltrosActivos = computed(() => {
   let n = 0
   if (filtros.value.precioMin > 0 || filtros.value.precioMax < 9999) n++
@@ -851,7 +977,10 @@ const cantFiltrosActivos = computed(() => {
   return n
 })
 
-// ── Habitaciones filtradas y ordenadas ────────────────────────
+/**
+ * Lista de habitaciones que pasan todos los filtros activos, ordenada según el criterio seleccionado.
+ * @type {import('vue').ComputedRef<object[]>}
+ */
 const habitacionesFiltradas = computed(() => {
   let list = todasLasHabitaciones.value
   if (filtros.value.precioMin > 0)    list = list.filter(h => h.precioPorNoche >= filtros.value.precioMin)
@@ -872,7 +1001,11 @@ const habitacionesFiltradas = computed(() => {
   })
 })
 
-// ── Grupos por hotel ──────────────────────────────────────────
+/**
+ * Agrupa las habitaciones filtradas por hotel y filtra los grupos que no pueden
+ * alojar a la cantidad de personas buscada (ni directamente ni mediante combos).
+ * @type {import('vue').ComputedRef<object[]>}
+ */
 const gruposPorHotel = computed(() => {
   const map = new Map()
   for (const hab of habitacionesFiltradas.value) {
@@ -904,11 +1037,21 @@ const gruposPorHotel = computed(() => {
   })
 })
 
-// ══ COMBO HELPERS ═════════════════════════════════════════════
+/**
+ * Formatea un número como precio en USD con separadores de miles.
+ * @param {number} p - Monto a formatear
+ * @returns {string}
+ */
 function fmt(p) {
   return new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(p)
 }
 
+/**
+ * Intenta construir una combinación exacta de habitaciones que cubra exactamente
+ * a los pasajeros buscados usando la primera combinación numérica disponible del hotel.
+ * @param {object} hotel - Grupo de hotel con combinacionesNumericas y tiposHabitacionPorCapacidad
+ * @returns {{habs: object[], total: number}|null}
+ */
 function _getComboHabs(hotel) {
   if (!hotel.combinacionesNumericas?.length) return null
   const combo = hotel.combinacionesNumericas[0]
@@ -935,6 +1078,14 @@ function _getComboHabs(hotel) {
   return { habs: result, total }
 }
 
+/**
+ * Intenta armar una combinación aproximada de habitaciones cuando no existe
+ * una combinación exacta ni habitación individual. Acepta hasta 2 personas de exceso.
+ * Solo aplica si hay más de una habitación en la combinación.
+ * @param {object} hotel - Grupo de hotel
+ * @param {number} personas - Cantidad de personas buscadas
+ * @returns {{habs: object[], capacidadTotal: number, total: number}|null}
+ */
 function _getComboAproximado(hotel, personas) {
   const tieneDirecta = hotel.tiposHabitacion?.length > 0
   const tieneCombo   = !!_getComboHabs(hotel)
@@ -969,6 +1120,12 @@ function _getComboAproximado(hotel, personas) {
   return { habs: selec, capacidadTotal: sumCap, total }
 }
 
+/**
+ * Busca la habitación de capacidad (personas - 1) más económica que acepte persona extra.
+ * @param {object} hotel - Grupo de hotel
+ * @param {number} personas - Cantidad de personas buscadas
+ * @returns {object|null} Datos de la habitación con el precio extra calculado, o null si no aplica
+ */
 function _getPersonaExtraMin(hotel, personas) {
   if (personas <= 1) return null
   const rooms = hotel.tiposHabitacionPorCapacidad?.[String(personas - 1)]
@@ -986,6 +1143,13 @@ function _getPersonaExtraMin(hotel, personas) {
   }
 }
 
+/**
+ * Calcula los tres tipos de combo disponibles para un grupo de hotel:
+ * combinación exacta, aproximada y habitación con persona extra.
+ * Devuelve null si ninguno aplica.
+ * @param {object} grupo - Grupo de hotel de gruposPorHotel
+ * @returns {{combo: object|null, aprox: object|null, extra: object|null}|null}
+ */
 function getHotelCombos(grupo) {
   const personas = busqueda.value.cantidadPersonas
   const combo    = _getComboHabs(grupo)
@@ -995,48 +1159,95 @@ function getHotelCombos(grupo) {
   return { combo, aprox, extra }
 }
 
-// ══ COMENTARIOS / RESEÑAS HOTELES ═════════════════════════════
-// comentariosHoteles: objeto plano { [key]: Comment[] }
-// key = `${proveedorId}::${hotelId}`
-const comentariosHoteles    = ref({})
-const comentariosLoadingSet = ref(new Set())
-const yaObservado           = ref(new Set())
-let hotelObserver           = null
+/**
+ * Mapa reactivo de comentarios indexado por clave de hotel (`proveedorId::hotelId`).
+ * @type {import('vue').Ref<Record<string, object[]>>}
+ */
+const comentariosHoteles = ref({})
 
-// Estado de cada nodo de comentario (expandido, form, voto, etc.)
+/**
+ * Set reactivo de claves de hotel cuyos comentarios están actualmente cargando.
+ * @type {import('vue').Ref<Set<string>>}
+ */
+const comentariosLoadingSet = ref(new Set())
+
+/**
+ * Set reactivo de claves de hotel que ya fueron observadas por el IntersectionObserver
+ * (evita peticiones duplicadas).
+ * @type {import('vue').Ref<Set<string>>}
+ */
+const yaObservado = ref(new Set())
+
+/** Instancia del IntersectionObserver para carga lazy de reseñas. @type {IntersectionObserver|null} */
+let hotelObserver = null
+
+/**
+ * Estado de UI de cada nodo de comentario (expandido, formulario, etc.).
+ * @type {import('vue').Ref<Record<number, object>>}
+ */
 const estadoNodos = ref({})
 
+/**
+ * Genera la clave única para identificar el hotel en el mapa de comentarios.
+ * @param {object} grupo - Grupo de hotel
+ * @returns {string}
+ */
 function getHotelKey(grupo) {
   return `${grupo.proveedorId}::${grupo.hotelId}`
 }
 
+/**
+ * Devuelve todos los comentarios (raíz e hijos) de un hotel.
+ * @param {object} grupo - Grupo de hotel
+ * @returns {object[]}
+ */
 function getComentariosHotel(grupo) {
   return comentariosHoteles.value[getHotelKey(grupo)] ?? []
 }
 
-// Todos los comentarios raíz (sin padre) — para ComentarioNodo
+/**
+ * Devuelve solo los comentarios raíz (sin padre) de un hotel, usados por ComentarioNodo.
+ * @param {object} grupo - Grupo de hotel
+ * @returns {object[]}
+ */
 function getComentariosRaiz(grupo) {
   return getComentariosHotel(grupo).filter(c => c.comentarioPadreId === null)
 }
 
-// Solo los que tienen puntuación — para el promedio del header
+/**
+ * Devuelve los comentarios raíz que tienen puntuación, usados para calcular el promedio.
+ * @param {object} grupo - Grupo de hotel
+ * @returns {object[]}
+ */
 function getResenasRaiz(grupo) {
   return getComentariosHotel(grupo).filter(c => c.comentarioPadreId === null && c.resena !== null)
 }
 
-// Hijos de un comentario — lo usa ComentarioNodo internamente
+/**
+ * Devuelve los comentarios hijos de un comentario padre, usado internamente por ComentarioNodo.
+ * @param {object} grupo - Grupo de hotel
+ * @param {number} parentId - ID del comentario padre
+ * @returns {object[]}
+ */
 function getHijos(grupo, parentId) {
   return getComentariosHotel(grupo).filter(c => c.comentarioPadreId === parentId)
 }
 
-// Promedio de estrellas del hotel
+/**
+ * Calcula el promedio de estrellas del hotel a partir de las reseñas con puntuación.
+ * @param {object} grupo - Grupo de hotel
+ * @returns {number} Promedio de 0 a 5
+ */
 function getPromedioHotel(grupo) {
   const resenas = getResenasRaiz(grupo)
   if (!resenas.length) return 0
   return resenas.reduce((s, r) => s + (r.resena ?? 0), 0) / resenas.length
 }
 
-// ── Estado por nodo (solo expandido — modo lectura) ──────────────
+/**
+ * Alterna el estado expandido de un nodo de comentario (para ver respuestas anidadas).
+ * @param {number} id - ID del comentario
+ */
 function toggleExpandido(id) {
   estadoNodos.value = {
     ...estadoNodos.value,
@@ -1044,6 +1255,13 @@ function toggleExpandido(id) {
   }
 }
 
+/**
+ * Carga los comentarios de un hotel específico desde la API y los almacena en el mapa reactivo.
+ * Previene cargas duplicadas verificando `yaObservado`.
+ * @param {number} proveedorId
+ * @param {number} hotelId
+ * @param {string} key - Clave compuesta del hotel
+ */
 async function cargarComentariosHotel(proveedorId, hotelId, key) {
   if (yaObservado.value.has(key)) return
 
@@ -1063,6 +1281,10 @@ async function cargarComentariosHotel(proveedorId, hotelId, key) {
   }
 }
 
+/**
+ * Inicializa (o reinicia) el IntersectionObserver que dispara la carga de reseñas
+ * cuando un grupo de hotel entra en el viewport.
+ */
 function initHotelObserver() {
   if (hotelObserver) hotelObserver.disconnect()
   hotelObserver = new IntersectionObserver((entries) => {
@@ -1077,6 +1299,10 @@ function initHotelObserver() {
   }, { rootMargin: '200px 0px' })
 }
 
+/**
+ * Registra todos los elementos `[data-hotel-key]` visibles para ser observados
+ * por el IntersectionObserver. Se llama después de cada actualización del DOM.
+ */
 async function observarGrupos() {
   await nextTick()
   if (!hotelObserver) return
@@ -1088,10 +1314,15 @@ async function observarGrupos() {
   })
 }
 
-// Re-observar cuando cambian los grupos (rebuscar / filtros)
+// Re-observar cuando cambian los grupos visibles (por rebuscar o cambio de filtros)
 watch(gruposPorHotel, () => observarGrupos(), { flush: 'post' })
 
-// ── Mapeo respuesta API ───────────────────────────────────────
+/**
+ * Transforma la respuesta cruda de la API (array de proveedores con hoteles anidados)
+ * en una lista plana de habitaciones normalizadas. Registra proveedores con error.
+ * @param {any[]} respuesta - Array de objetos proveedor retornado por el backend
+ * @returns {object[]} Lista plana de habitaciones listas para mostrar
+ */
 function mapearRespuesta(respuesta) {
   const resultado = []
   if (!Array.isArray(respuesta)) return resultado
@@ -1145,24 +1376,49 @@ function mapearRespuesta(respuesta) {
   return resultado
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+/**
+ * Formatea una fecha ISO (YYYY-MM-DD) en formato legible en español guatemalteco.
+ * @param {string} f - Fecha en formato ISO
+ * @returns {string}
+ */
 function formatFecha(f) {
   if (!f) return '--'
   try { return new Date(f + 'T00:00:00').toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
 }
+
+/**
+ * Formatea una fecha ISO completa (con hora) en formato corto legible en español.
+ * @param {string} f - Fecha ISO completa
+ * @returns {string}
+ */
 function formatFechaCorta(f) {
   if (!f) return ''
   try { return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return f }
 }
+
+/**
+ * Calcula la cantidad de noches entre check-in y check-out.
+ * @param {string} ci - Fecha de check-in (YYYY-MM-DD)
+ * @param {string} co - Fecha de check-out (YYYY-MM-DD)
+ * @returns {number}
+ */
 function calcNoches(ci, co) {
   if (!ci || !co) return 0
   return Math.max(0, Math.ceil((new Date(co) - new Date(ci)) / 86400000))
 }
+
+/** Reinicia todos los filtros a sus valores predeterminados. */
 function resetFiltros() {
   filtros.value = { precioMin: 0, precioMax: 9999, tipos: [], hoteles: [], proveedores: [], amenidades: [] }
 }
 
-// ── PRE-CREACIÓN DE RESERVA EN BACKGROUND ────────────────────
+/**
+ * Construye el payload para el endpoint de detalle de reserva de hotel.
+ * Soporta reservas normales, combos de habitaciones y habitaciones con persona extra.
+ * @param {number} reservaId - ID de la reservación recién creada
+ * @param {object} itemData - Datos de la habitación/combo seleccionado
+ * @returns {{reservacionId: number, proveedorId: number, habitaciones: object[]}|null}
+ */
 function buildHotelPayload(reservaId, itemData) {
   const b = itemData.busqueda
   let habitaciones = []
@@ -1194,6 +1450,13 @@ function buildHotelPayload(reservaId, itemData) {
   return { reservacionId: reservaId, proveedorId: itemData.proveedorId, habitaciones }
 }
 
+/**
+ * Pre-crea la reservación en background al momento de seleccionar una habitación.
+ * Primero crea el encabezado de reserva, luego agrega el detalle de hotel.
+ * El resultado se asigna a `window.__reservaPromise` para ser consumido en la vista de pago.
+ * @param {object} itemData - Datos del hotel/habitación seleccionado
+ * @returns {Promise<{reserva: object, detalle: object|null, segundos: number, expiresAt: number}|null>}
+ */
 async function precrearReservacionHotel(itemData) {
   try {
     const res1 = await fetch(`${API}/api/reservaciones`, {
@@ -1231,7 +1494,12 @@ async function precrearReservacionHotel(itemData) {
   }
 }
 
-// ── Selección → reservar ──────────────────────────────────────
+/**
+ * Guarda la habitación seleccionada en sessionStorage, inicia la pre-creación
+ * de reserva en background y navega a la vista de confirmación.
+ * @param {object} hab - Objeto habitación de la lista filtrada
+ * @param {object} grupo - Grupo de hotel al que pertenece la habitación
+ */
 function seleccionarHabitacion(hab, grupo) {
   seleccionada.value = hab.uid
   sessionStorage.removeItem('vuelo_seleccionado')
@@ -1248,6 +1516,11 @@ function seleccionarHabitacion(hab, grupo) {
   router.push('/reservar')
 }
 
+/**
+ * Inicia la reserva de una habitación con persona extra (capacidad exacta - 1 + cargo adicional).
+ * @param {object} extraInfo - Datos del combo persona extra devueltos por _getPersonaExtraMin
+ * @param {object} grupo - Grupo de hotel
+ */
 function reservarExtra(extraInfo, grupo) {
   sessionStorage.removeItem('vuelo_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
@@ -1272,6 +1545,11 @@ function reservarExtra(extraInfo, grupo) {
   router.push('/reservar')
 }
 
+/**
+ * Inicia la reserva de un combo de habitaciones (exacto o aproximado).
+ * @param {object} comboInfo - Datos del combo devueltos por _getComboHabs o _getComboAproximado
+ * @param {object} grupo - Grupo de hotel
+ */
 function reservarCombo(comboInfo, grupo) {
   sessionStorage.removeItem('vuelo_seleccionado')
   sessionStorage.removeItem('paquete_seleccionado')
@@ -1294,6 +1572,10 @@ function reservarCombo(comboInfo, grupo) {
   router.push('/reservar')
 }
 
+/**
+ * Al montar: procesa los resultados crudos recibidos desde history.state,
+ * inicializa el IntersectionObserver y comienza a observar los grupos de hotel visibles.
+ */
 onMounted(() => {
   if (!busqueda.value.ciudad) { error.value = 'Faltan datos de búsqueda.'; loading.value = false; return }
   if (resultadosRaw && Array.isArray(resultadosRaw) && resultadosRaw.length > 0) {

@@ -1,6 +1,7 @@
-/* ── Agradecimiento — matches home.css palette ─────────────── */
+/* Importación de la fuente Inter desde Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* Variables de color, sombras, radios y transiciones de la página */
 :root {
   --ag-primary:   #667eea;
   --ag-secondary: #764ba2;
@@ -21,7 +22,7 @@
   --ag-t:         all 0.25s ease;
 }
 
-/* ── Page shell ────────────────────────────────────────────── */
+/* Contenedor principal de la página de agradecimiento */
 .agradecimiento {
   min-height: 100vh;
   background: var(--ag-bg);
@@ -33,12 +34,13 @@
   padding: 4rem 1.5rem 7rem;
 }
 
+/* Ancho máximo del contenido interno */
 .agradecimiento__inner {
   width: 100%;
   max-width: 780px;
 }
 
-/* ── Hero banner ───────────────────────────────────────────── */
+/* Banner hero con gradiente, imagen de fondo tenue y animación de entrada */
 .ag-hero {
   background: var(--ag-grad);
   border-radius: var(--ag-rl);
@@ -51,6 +53,7 @@
   animation: agFadeUp .6s ease both;
 }
 
+/* Imagen de fondo semitransparente del hero */
 .ag-hero::before {
   content: '';
   position: absolute;
@@ -63,6 +66,7 @@
 
 .ag-hero__content { position: relative; z-index: 1; }
 
+/* Ícono de check con círculo blanco semitransparente */
 .ag-check {
   width: 76px;
   height: 76px;
@@ -78,6 +82,7 @@
 
 .ag-check svg { width: 36px; height: 36px; }
 
+/* Textos del hero: eyebrow, título y subtítulo */
 .ag-eyebrow {
   font-size: .72rem;
   font-weight: 700;
@@ -106,7 +111,7 @@
   line-height: 1.65;
 }
 
-/* ── Facturas ──────────────────────────────────────────────── */
+/* Lista de facturas de la reserva */
 .ag-facturas {
   display: flex;
   flex-direction: column;
@@ -114,6 +119,7 @@
   margin-bottom: 1.75rem;
 }
 
+/* Tarjeta individual de factura con hover elevado */
 .ag-factura {
   background: var(--ag-white);
   border: 1.5px solid var(--ag-border);
@@ -130,7 +136,7 @@
   transform: translateY(-3px);
 }
 
-/* ── Factura head ── */
+/* Cabecera de la factura con nombre del hotel y badge */
 .ag-factura__head {
   display: flex;
   justify-content: space-between;
@@ -146,6 +152,7 @@
   color: var(--ag-dark);
 }
 
+/* Badge de estado de la reserva */
 .ag-badge {
   display: inline-flex;
   align-items: center;
@@ -161,7 +168,7 @@
   border: 1px solid rgba(16,185,129,.25);
 }
 
-/* ── Factura body grid ── */
+/* Cuerpo de la factura en grid con los campos de detalle */
 .ag-factura__body {
   padding: 2rem;
   display: grid;
@@ -190,6 +197,7 @@
   line-height: 1.4;
 }
 
+/* Campo de total con texto en gradiente */
 .ag-field--total .ag-field__value {
   font-size: 1.6rem;
   font-weight: 800;
@@ -202,7 +210,7 @@
 
 .ag-field--full { grid-column: 1 / -1; }
 
-/* ── Reservation code strip ── */
+/* Franja inferior con el código de reservación */
 .ag-factura__code {
   padding: 1rem 2rem;
   border-top: 1.5px solid var(--ag-border);
@@ -232,7 +240,7 @@
   letter-spacing: .06em;
 }
 
-/* ── Grand total bar ───────────────────────────────────────── */
+/* Barra de total general con monto destacado */
 .ag-total-bar {
   background: var(--ag-white);
   border: 1.5px solid var(--ag-border);
@@ -261,7 +269,7 @@
   background-clip: text;
 }
 
-/* ── Actions ───────────────────────────────────────────────── */
+/* Botones de acción al final: ir al inicio, imprimir, etc. */
 .ag-actions {
   display: flex;
   flex-wrap: wrap;
@@ -270,6 +278,7 @@
   animation: agFadeUp .5s .25s ease both;
 }
 
+/* Base de los botones de acción */
 .ag-btn {
   display: inline-flex;
   align-items: center;
@@ -285,6 +294,7 @@
   letter-spacing: .01em;
 }
 
+/* Botón primario con gradiente */
 .ag-btn--primary {
   background: var(--ag-grad);
   color: #fff;
@@ -296,6 +306,7 @@
   box-shadow: 0 8px 32px rgba(102,126,234,.52);
 }
 
+/* Botón outline con borde visible */
 .ag-btn--outline {
   background: var(--ag-white);
   color: var(--ag-primary);
@@ -308,7 +319,7 @@
   transform: translateY(-1px);
 }
 
-/* ── Animations ────────────────────────────────────────────── */
+/* Animaciones de entrada de los elementos */
 @keyframes agFadeUp {
   from { opacity: 0; transform: translateY(22px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -319,7 +330,7 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* Ajustes responsive para móvil */
 @media (max-width: 600px) {
   .ag-hero            { padding: 2.5rem 1.75rem; }
   .ag-factura__body   { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
@@ -330,7 +341,7 @@
   .ag-btn             { width: 100%; justify-content: center; }
 }
 
-/* ── Botón descargar factura ───────────────────────────────── */
+/* Sección inferior de descarga de factura en PDF */
 .ag-factura__download {
   padding: 1.1rem 2rem;
   border-top: 1.5px solid var(--ag-border);
@@ -340,6 +351,7 @@
   gap: .5rem;
 }
 
+/* Botón de descarga PDF a ancho completo */
 .ag-download-btn {
   display: inline-flex;
   align-items: center;
@@ -372,6 +384,7 @@
   transform: none;
 }
 
+/* Mensaje de error al intentar descargar la factura */
 .ag-download-error {
   display: flex;
   align-items: center;
@@ -385,7 +398,7 @@
   margin: 0;
 }
 
-/* ── Spinner ───────────────────────────────────────────────── */
+/* Spinner de carga dentro del botón de descarga */
 .ag-spinner {
   display: inline-block;
   width: 15px;
@@ -399,6 +412,7 @@
 
 @keyframes agSpin { to { transform: rotate(360deg); } }
 
+/* Responsive para la sección de descarga en móvil */
 @media (max-width: 600px) {
   .ag-factura__download { padding: 1rem 1.25rem; }
 }

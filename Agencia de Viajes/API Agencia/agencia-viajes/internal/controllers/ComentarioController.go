@@ -1,3 +1,7 @@
+// # Package controllers
+//
+// Controladores HTTP de la API de Movent. Cada controlador agrupa los handlers
+// relacionados a un recurso o dominio especifico de la aplicacion.
 package controllers
 
 import (
@@ -8,15 +12,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ComentarioController
+//
+// Controlador que maneja los endpoints de consulta de comentarios
+// asociados a vuelos y hoteles de proveedores registrados.
 type ComentarioController struct {
 	service *services.ComentarioService
 }
 
+// NewComentarioController
+//
+// Constructor que retorna una nueva instancia de ComentarioController
+// con el servicio de comentarios inyectado.
+//
+// Parametros:
+//   - s: puntero al servicio de comentarios
+//
+// Retorna:
+//   - *ComentarioController: puntero a la nueva instancia
 func NewComentarioController(s *services.ComentarioService) *ComentarioController {
 	return &ComentarioController{service: s}
 }
 
-// GET /api/comentarios/vuelo/:proveedorId/:rutaId
+// ObtenerComentariosVuelo
+//
+// Retorna la lista de comentarios asociados a una ruta de vuelo especifica
+// de un proveedor dado. Los parametros proveedorId y rutaId se leen desde
+// la URL.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con la lista de comentarios del vuelo
+//   - HTTP 400 Bad Request: si proveedorId o rutaId no son enteros validos
+//   - HTTP 500 Internal Server Error: si ocurre un error en la capa de servicio
 func (ctrl *ComentarioController) ObtenerComentariosVuelo(c *gin.Context) {
 	proveedorID, err := strconv.Atoi(c.Param("proveedorId"))
 	if err != nil {
@@ -39,7 +69,18 @@ func (ctrl *ComentarioController) ObtenerComentariosVuelo(c *gin.Context) {
 	c.JSON(http.StatusOK, comentarios)
 }
 
-// GET /api/comentarios/hotel/:proveedorId/:hotelId
+// ObtenerComentariosHotel
+//
+// Retorna la lista de comentarios asociados a un hotel especifico de un
+// proveedor dado. Los parametros proveedorId y hotelId se leen desde la URL.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con la lista de comentarios del hotel
+//   - HTTP 400 Bad Request: si proveedorId o hotelId no son enteros validos
+//   - HTTP 500 Internal Server Error: si ocurre un error en la capa de servicio
 func (ctrl *ComentarioController) ObtenerComentariosHotel(c *gin.Context) {
 	proveedorID, err := strconv.Atoi(c.Param("proveedorId"))
 	if err != nil {

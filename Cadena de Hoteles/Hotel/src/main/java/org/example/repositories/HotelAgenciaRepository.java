@@ -5,8 +5,16 @@ import org.example.dtos.HotelAgenciaDTO;
 
 import java.util.List;
 
+/**
+ * Repository para la consulta de hoteles disponibles desde el canal de agencias.
+ * Provee el listado de hoteles activos con su ciudad y pais para uso en reservaciones de agencia.
+ */
 public class HotelAgenciaRepository {
 
+    /**
+     * Retorna todos los hoteles activos con su informacion de ubicacion, ordenados por ID.
+     * @return lista de HotelAgenciaDTO con el ID, nombre, ciudad y pais de cada hotel activo.
+     */
     public List<HotelAgenciaDTO> listarHotelesParaAgencia() {
         String sql = """
                 SELECT h.ID,

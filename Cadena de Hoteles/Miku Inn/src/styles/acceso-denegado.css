@@ -1,8 +1,4 @@
-/* ============================================
-   ACCESO-DENEGADO.CSS - MIKU INN
-   ============================================ */
-
-/* ── Página base ── */
+/* Página base de acceso denegado: pantalla completa con fondo oscuro */
 .acceso-denegado-page {
   min-height: 100vh;
   width: 100%;
@@ -15,13 +11,14 @@
   overflow: hidden;
 }
 
-/* ── Fondo animado ── */
+/* Capa de fondo decorativo con orbes y grid, sin capturar eventos */
 .ad-bg {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
+/* Orbe de luz con blur para dar profundidad al fondo */
 .ad-orb {
   position: absolute;
   border-radius: 50%;
@@ -30,6 +27,7 @@
   animation: adOrbFloat 9s ease-in-out infinite;
 }
 
+/* Orbe superior izquierdo en tono azul/violeta */
 .ad-orb--1 {
   width: 520px;
   height: 520px;
@@ -39,6 +37,7 @@
   animation-delay: 0s;
 }
 
+/* Orbe inferior derecho en tono morado */
 .ad-orb--2 {
   width: 420px;
   height: 420px;
@@ -48,6 +47,7 @@
   animation-delay: -3.5s;
 }
 
+/* Orbe central más tenue como resplandor suave */
 .ad-orb--3 {
   width: 320px;
   height: 320px;
@@ -59,6 +59,7 @@
   animation-delay: -7s;
 }
 
+/* Grid sutil de líneas sobre el fondo */
 .ad-grid {
   position: absolute;
   inset: 0;
@@ -68,7 +69,7 @@
   background-size: 60px 60px;
 }
 
-/* ── Card ── */
+/* Tarjeta central con efecto glassmorphism */
 .ad-card {
   position: relative;
   z-index: 10;
@@ -88,7 +89,7 @@
   animation: adCardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ── Candado ── */
+/* Contenedor del ícono de candado con anillo animado */
 .ad-lock-wrapper {
   position: relative;
   width: 100px;
@@ -96,6 +97,7 @@
   margin: 0 auto 1.5rem;
 }
 
+/* Anillo giratorio con gradiente alrededor del candado */
 .ad-lock-ring {
   position: absolute;
   inset: -8px;
@@ -110,6 +112,7 @@
   animation: adRingPulse 2.5s ease-in-out infinite;
 }
 
+/* Círculo contenedor del SVG del candado */
 .ad-lock-icon {
   width: 100%;
   height: 100%;
@@ -122,11 +125,12 @@
   animation: adLockShake 6s ease-in-out infinite;
 }
 
+/* Resplandor del SVG del candado */
 .ad-lock-icon svg {
   filter: drop-shadow(0 0 16px rgba(102, 126, 234, 0.6));
 }
 
-/* ── Código de error ── */
+/* Código de error 403 con gradiente de texto */
 .ad-error-code {
   font-size: 6rem;
   font-weight: 800;
@@ -140,7 +144,7 @@
   filter: drop-shadow(0 0 30px rgba(102, 126, 234, 0.35));
 }
 
-/* ── Textos ── */
+/* Textos explicativos de la página */
 .ad-title {
   font-size: 1.75rem;
   font-weight: 700;
@@ -163,7 +167,7 @@
   line-height: 1.6;
 }
 
-/* ── Cuenta regresiva ── */
+/* Cuenta regresiva con barra de progreso que se vacía */
 .ad-countdown {
   margin-bottom: 1.75rem;
 }
@@ -180,6 +184,7 @@
   color: #667eea;
 }
 
+/* Barra de progreso contenedora */
 .ad-progress-bar {
   height: 4px;
   background: rgba(255, 255, 255, 0.08);
@@ -187,6 +192,7 @@
   overflow: hidden;
 }
 
+/* Relleno de la barra que drena en 5 segundos */
 .ad-progress-fill {
   height: 100%;
   width: 100%;
@@ -196,7 +202,7 @@
   box-shadow: 0 0 12px rgba(102, 126, 234, 0.6);
 }
 
-/* ── Botón ── */
+/* Botón de volver al inicio */
 .ad-home-btn {
   display: inline-flex;
   align-items: center;
@@ -216,6 +222,7 @@
   overflow: hidden;
 }
 
+/* Brillo interno del botón que aparece en hover */
 .ad-home-btn::before {
   content: '';
   position: absolute;
@@ -238,7 +245,7 @@
   transform: translateY(0);
 }
 
-/* ── Animaciones ── */
+/* Keyframes de todas las animaciones de esta página */
 @keyframes adCardIn {
   from { opacity: 0; transform: translateY(32px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
@@ -268,7 +275,7 @@
   to   { width: 0%; }
 }
 
-/* ── Responsive ── */
+/* Ajustes para pantallas pequeñas */
 @media (max-width: 480px) {
   .ad-card {
     padding: 2rem 1.5rem;
@@ -285,7 +292,7 @@
   }
 }
 
-/* ── Reduce motion ── */
+/* Desactiva animaciones si el usuario lo prefiere */
 @media (prefers-reduced-motion: reduce) {
   .ad-orb,
   .ad-lock-ring,

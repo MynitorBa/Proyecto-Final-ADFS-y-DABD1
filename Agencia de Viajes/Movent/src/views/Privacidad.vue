@@ -1,6 +1,8 @@
 <template>
   <div class="page">
     <Encabezado />
+
+    <!-- Hero con imagen de fondo y texto introductorio de la política -->
     <section class="info-hero" style="background-image: url('/empleado.png')">
       <div class="info-hero-overlay"></div>
       <div class="info-hero-content">
@@ -12,12 +14,18 @@
         <p class="info-hero-subtitle">Cómo recopilamos, usamos y protegemos tus datos personales.</p>
       </div>
     </section>
+
     <div class="info-wrap">
+      <!-- Botón para regresar a la página de información general -->
       <button class="info-back" @click="$router.push('/informacion')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         Volver a Información
       </button>
+
+      <!-- Sección de tarjetas de contenido: datos, seguridad y derechos -->
       <div class="info-section-body">
+
+        <!-- Tarjeta: qué datos se recopilan -->
         <div class="info-card">
           <span class="info-badge">Vigente desde febrero 2026</span>
           <h2 class="info-section-title">Datos que recopilamos</h2>
@@ -30,6 +38,8 @@
             <li>Historial de reservaciones, búsquedas y cancelaciones realizadas</li>
           </ul>
         </div>
+
+        <!-- Tarjeta: medidas de seguridad aplicadas a los datos -->
         <div class="info-card">
           <h2 class="info-section-title">Seguridad de tus datos</h2>
           <ul class="info-list">
@@ -43,6 +53,8 @@
             No compartimos tu información personal con terceros sin tu consentimiento, salvo cuando sea requerido por ley o necesario para procesar tu reservación con el proveedor.
           </div>
         </div>
+
+        <!-- Tarjeta: derechos del usuario sobre sus datos personales -->
         <div class="info-card">
           <h2 class="info-section-title">Tus derechos</h2>
           <ul class="info-list">
@@ -53,6 +65,7 @@
           </ul>
           <p class="info-prose">Para ejercer cualquiera de estos derechos contáctanos en <strong>info@movent.com</strong></p>
         </div>
+
       </div>
     </div>
     <Piepagina />
@@ -60,6 +73,11 @@
 </template>
 
 <script setup>
+/**
+ * @file Privacidad.vue
+ * @description Vista estática que muestra la política de privacidad de Movent.
+ * Incluye tres secciones: datos recopilados, seguridad y derechos del usuario.
+ */
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/informacion.css'

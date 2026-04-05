@@ -1,10 +1,20 @@
 <script>
+  /**
+   * @file Terminos.svelte
+   * @description Pagina de Terminos y Condiciones de Miku Inn. Detalla las
+   * normas de uso de la plataforma, las condiciones de reservacion y pagos,
+   * y las politicas relacionadas con resenas y calificaciones de hoteles.
+   */
+
   // @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
 </script>
 
 <div class="info-page">
+  <!-- Hero de la pagina con icono y subtitulo -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">📄</div>
@@ -15,11 +25,13 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton para regresar al inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
       Volver al inicio
     </button>
 
+    <!-- Bloque: normas de uso de la plataforma -->
     <div class="info-card">
       <span class="info-badge">📄 Vigente desde febrero 2026</span>
       <h2 class="info-section-title">Uso de la plataforma</h2>
@@ -32,6 +44,7 @@
       </ul>
     </div>
 
+    <!-- Bloque: condiciones que rigen las reservaciones -->
     <div class="info-card">
       <h2 class="info-section-title">Reservaciones</h2>
       <ul class="info-list">
@@ -43,6 +56,7 @@
       </ul>
     </div>
 
+    <!-- Bloque: condiciones de pago -->
     <div class="info-card">
       <h2 class="info-section-title">Pagos</h2>
       <p class="info-prose">Todos los pagos se procesan de forma segura mediante encriptación SSL.</p>
@@ -54,6 +68,7 @@
       </ul>
     </div>
 
+    <!-- Bloque: politica de resenas y calificaciones -->
     <div class="info-card">
       <h2 class="info-section-title">Reseñas y calificaciones</h2>
       <ul class="info-list">

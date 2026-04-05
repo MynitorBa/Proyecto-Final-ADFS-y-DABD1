@@ -1,21 +1,34 @@
+// # Package dto
+//
+// Contiene los Data Transfer Objects utilizados para la comunicacion
+// entre la capa de transporte y la capa de servicio de la agencia de viajes.
 package dto
 
+// RegistroUsuarioRequest
+//
+// Representa los datos enviados por un nuevo usuario
+// para crear una cuenta en el sistema de la agencia de viajes.
 type RegistroUsuarioRequest struct {
-	Nombre          string   `json:"nombre"`
-	Apellido        string   `json:"apellido"`
-	Correo          string   `json:"correo"`
-	Username        string   `json:"username"`
-	Contrasena      string   `json:"contrasena"`
-	Pasaporte       string   `json:"pasaporte"`
-	Telefono        string   `json:"telefono"`
-	FechaNacimiento string   `json:"fecha_nacimiento"`
-	Ciudad          string   `json:"ciudad"`
-	Pais            string   `json:"pais"`
-	Nacionalidades  []string `json:"nacionalidades"`
+	Nombre          string   `json:"nombre"`           // Nombre del usuario
+	Apellido        string   `json:"apellido"`         // Apellido del usuario
+	Correo          string   `json:"correo"`           // Correo electronico del usuario
+	Username        string   `json:"username"`         // Nombre de usuario unico
+	Contrasena      string   `json:"contrasena"`       // Contrasena de acceso al sistema
+	Pasaporte       string   `json:"pasaporte"`        // Numero de pasaporte del usuario
+	Telefono        string   `json:"telefono"`         // Numero de telefono de contacto
+	FechaNacimiento string   `json:"fecha_nacimiento"` // Fecha de nacimiento en formato ISO 8601
+	Ciudad          string   `json:"ciudad"`           // Ciudad de residencia del usuario
+	Pais            string   `json:"pais"`             // Pais de residencia del usuario
+	Nacionalidades  []string `json:"nacionalidades"`   // Lista de nacionalidades del usuario
 }
 
+// ValidacionUsuarioResponse
+//
+// Representa el resultado de la validacion de unicidad de los datos
+// de un usuario durante el proceso de registro, indicando si
+// el correo, pasaporte o username ya existen en el sistema.
 type ValidacionUsuarioResponse struct {
-	Correo    bool `json:"correo"`
-	Pasaporte bool `json:"pasaporte"`
-	Username  bool `json:"username"`
+	Correo    bool `json:"correo"`    // Indica si el correo ya esta registrado en el sistema
+	Pasaporte bool `json:"pasaporte"` // Indica si el pasaporte ya esta registrado en el sistema
+	Username  bool `json:"username"`  // Indica si el nombre de usuario ya esta registrado en el sistema
 }

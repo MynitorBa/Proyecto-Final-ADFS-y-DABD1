@@ -1,26 +1,60 @@
 <script>
+  /**
+   * @file SearchResults.svelte
+   * @description Pagina de resultados de busqueda de hoteles. Permite refinar
+   * la busqueda (pais, ciudad, fechas, huespedes), filtrar los resultados por
+   * precio, tipo de habitacion y amenidades, y ordenarlos por precio o calificacion.
+   * Tambien calcula y muestra distintas opciones de precio (directa, combinada,
+   * aproximada y con persona extra) para el numero de huespedes indicado.
+   */
+
   import { onMount } from 'svelte';
-  /** @type {{ pais?:string, ciudad?:string, fechaCheckIn?:string, fechaCheckOut?:string, cantidadPersonas?:number, hotels?:any[] } | null} */
+
+  /**
+   * Parametros de la busqueda recibidos del componente padre.
+   * @type {{ pais?:string, ciudad?:string, fechaCheckIn?:string, fechaCheckOut?:string, cantidadPersonas?:number, hotels?:any[] } | null}
+   */
   export let searchParams = null;
+
+  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
   import '../styles/searchresults.css';
 
+  /** URL base de la API del backend. @type {string} */
   const API = 'http://localhost:7000';
 
+  /** Indica si hay una carga en proceso (skeleton). @type {boolean} */
   let isLoading    = false;
+
+  /** Indica si se esta realizando una nueva busqueda. @type {boolean} */
   let isSearching  = false;
+
+  /** Modo de vista de la lista de hoteles: 'list' o 'grid'. @type {string} */
   let viewMode     = 'list';
+
+  /** Mensaje de error de validacion en el formulario de busqueda. @type {string} */
   let searchError  = '';
 
-  // Solo mostrar resultados si ya hubo una búsqueda real
+  /** Indica si ya se realizo al menos una busqueda y hay resultados que mostrar. @type {boolean} */
   let searchDone = !!(searchParams && Array.isArray(searchParams.hotels));
 
+  /** Fecha de check-in seleccionada. @type {string} */
   let fechaCheckIn     = (searchParams && searchParams.fechaCheckIn)     ? searchParams.fechaCheckIn     : '';
+
+  /** Fecha de check-out seleccionada. @type {string} */
   let fechaCheckOut    = (searchParams && searchParams.fechaCheckOut)    ? searchParams.fechaCheckOut    : '';
+
+  /** Cantidad de personas para la busqueda. @type {number} */
   let cantidadPersonas = (searchParams && searchParams.cantidadPersonas) ? searchParams.cantidadPersonas : 1;
+
+  /** Hoteles crudos devueltos por la API antes de aplicar filtros. @type {any[]} */
   let hotelsRaw        = (searchParams && Array.isArray(searchParams.hotels)) ? searchParams.hotels      : [];
 
-  // Fecha mínima: hoy
+  /**
+   * Convierte un objeto Date a cadena YYYY-MM-DD en la zona horaria local.
+   * @param {Date} date - Fecha a convertir.
+   * @returns {string}
+   */
   function toLocalDateStr(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -28,8 +62,10 @@
     return `${y}-${m}-${d}`;
   }
 
+  /** Fecha minima permitida para check-in (hoy). @type {string} */
   const today = toLocalDateStr(new Date());
 
+  // Fecha minima para check-out (al menos un dia despues del check-in)
   $: minCheckOut = (() => {
     if (!fechaCheckIn) return today;
     const d = new Date(fechaCheckIn);
@@ -37,21 +73,39 @@
     return toLocalDateStr(d);
   })();
 
-  // País autocomplete
+  /** Texto del buscador de pais. @type {string} */
   let paisQuery = (searchParams && searchParams.pais) ? searchParams.pais : '';
+
+  /** Sugerencias filtradas para el autocomplete de pais. @type {any[]} */
   let paisesSugeridos = [];
+
+  /** Objeto del pais seleccionado del autocomplete. @type {any} */
   let paisSeleccionado = (searchParams && searchParams.pais) ? { country: searchParams.pais } : null;
+
+  /** Indica si se esta cargando la lista de paises. @type {boolean} */
   let paisLoading = false;
+
+  /** Temporizador de debounce para la busqueda de paises. @type {any} */
   let paisTimer = null;
 
-  // Ciudad autocomplete
+  /** Texto del buscador de ciudad. @type {string} */
   let ciudadQuery = (searchParams && searchParams.ciudad) ? searchParams.ciudad : '';
+
+  /** Sugerencias filtradas para el autocomplete de ciudad. @type {string[]} */
   let ciudadesSugeridas = [];
+
+  /** Indica si una ciudad fue seleccionada formalmente del autocomplete. @type {boolean} */
   let ciudadSeleccionada = !!(searchParams && searchParams.ciudad);
+
+  /** Indica si se estan cargando las ciudades del pais seleccionado. @type {boolean} */
   let ciudadLoading = false;
+
+  /** Lista completa de ciudades disponibles para el pais seleccionado. @type {string[]} */
   let todasLasCiudades = [];
 
-  // Si venimos con país, cargar ciudades
+  /**
+   * Si venimos con un pais preseleccionado, cargamos sus ciudades al montar.
+   */
   onMount(async () => {
     if (paisSeleccionado) {
       ciudadLoading = true;
@@ -68,7 +122,10 @@
     }
   });
 
-  // ── País ──
+  /**
+   * Maneja la escritura en el campo de pais. Resetea la ciudad y lanza
+   * una busqueda con debounce de 300ms.
+   */
   function onPaisInput() {
     paisSeleccionado = null;
     ciudadQuery = ''; ciudadSeleccionada = false;
@@ -89,6 +146,12 @@
     }, 300);
   }
 
+  /**
+   * Confirma la seleccion de un pais y carga las ciudades correspondientes.
+   * @async
+   * @param {any} p - Pais seleccionado.
+   * @returns {Promise<void>}
+   */
   async function seleccionarPais(p) {
     paisSeleccionado = p;
     paisQuery = p.country;
@@ -108,6 +171,9 @@
     ciudadLoading = false;
   }
 
+  /**
+   * Limpia el campo de pais al perder el foco si el usuario no selecciono ninguno.
+   */
   function blurPais() {
     setTimeout(() => {
       if (paisQuery && !paisSeleccionado) { paisQuery = ''; paisesSugeridos = []; }
@@ -115,7 +181,9 @@
     }, 200);
   }
 
-  // ── Ciudad ──
+  /**
+   * Filtra las ciudades del pais seleccionado segun lo que escribe el usuario.
+   */
   function onCiudadInput() {
     ciudadSeleccionada = false;
     const q = ciudadQuery.toLowerCase().trim();
@@ -124,11 +192,18 @@
       : todasLasCiudades.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
   }
 
+  /**
+   * Confirma la seleccion de una ciudad del autocomplete.
+   * @param {string} c - Nombre de la ciudad seleccionada.
+   */
   function seleccionarCiudad(c) {
     ciudadQuery = c; ciudadSeleccionada = true;
     ciudadesSugeridas = [];
   }
 
+  /**
+   * Limpia el campo de ciudad al perder el foco si el usuario no selecciono ninguna.
+   */
   function blurCiudad() {
     setTimeout(() => {
       if (ciudadQuery && !ciudadSeleccionada) { ciudadQuery = ''; ciudadesSugeridas = []; }
@@ -136,6 +211,10 @@
     }, 200);
   }
 
+  /**
+   * Estado de los filtros aplicados a los resultados.
+   * @type {{ priceMin: number, priceMax: number, tiposHab: string[], amenidades: string[], sortBy: string }}
+   */
   let filters = {
     priceMin:    0,
     priceMax:    0,
@@ -144,29 +223,45 @@
     sortBy:      'recommended'
   };
 
+  // Numero de noches calculado de forma reactiva
   $: nights = (fechaCheckIn && fechaCheckOut)
     ? Math.max(1, Math.ceil((Number(new Date(fechaCheckOut)) - Number(new Date(fechaCheckIn))) / 86400000))
     : 1;
 
+  // Lista de amenidades unicas de todos los hoteles para el panel de filtros
   $: allAmenidades = (() => {
     const set = new Set();
     hotelsRaw.forEach(h => h.amenidades?.forEach(a => set.add(a.nombre)));
     return [...set].sort();
   })();
 
+  // Lista de tipos de habitacion unicos para el panel de filtros
   $: allTiposHab = (() => {
     const set = new Set();
     hotelsRaw.forEach(h => h.tiposHabitacion?.forEach(r => set.add(r.tipoHabitacion)));
     return [...set].sort();
   })();
 
+  // Hoteles filtrados y ordenados segun los filtros activos
   $: filteredHotels = filterAndSort(hotelsRaw, filters);
 
+  /**
+   * Obtiene el precio minimo por noche entre todos los tipos de habitacion del hotel
+   * que pueden acomodar exactamente a los huespedes sin extras.
+   * @param {any} hotel - Objeto hotel.
+   * @returns {number|null}
+   */
   function getMinPrice(hotel) {
     if (!hotel.tiposHabitacion || hotel.tiposHabitacion.length === 0) return null;
     return Math.min(...hotel.tiposHabitacion.map(r => r.precioPorNoche));
   }
 
+  /**
+   * Obtiene la combinacion exacta de habitaciones sugerida por el backend
+   * para cubrir al numero de huespedes con multiples cuartos.
+   * @param {any} hotel - Objeto hotel.
+   * @returns {any[]|null}
+   */
   function getComboHabs(hotel) {
     if (!hotel.combinacionesNumericas?.length) return null;
     const combo = hotel.combinacionesNumericas[0];
@@ -185,6 +280,13 @@
     return result;
   }
 
+  /**
+   * Cuando no hay combinacion exacta ni habitacion directa, calcula una opcion
+   * aproximada usando las habitaciones de mayor capacidad disponibles.
+   * @param {any} hotel - Objeto hotel.
+   * @param {number} personas - Numero de huespedes.
+   * @returns {{ habs: any[], capacidadTotal: number, esAproximado: boolean }|null}
+   */
   function getComboAproximado(hotel, personas) {
     const tieneDirecta = hotel.tiposHabitacion && hotel.tiposHabitacion.length > 0;
     const tieneCombo   = !!getComboHabs(hotel);
@@ -219,6 +321,13 @@
     return { habs: selec, capacidadTotal: sumCap, esAproximado: true };
   }
 
+  /**
+   * Calcula la opcion de habitacion para (personas - 1) mas una persona extra,
+   * cuando no cabe exactamente el grupo en ninguna habitacion disponible.
+   * @param {any} hotel - Objeto hotel.
+   * @param {number} personas - Numero de huespedes.
+   * @returns {{ tipo: string, precioPorNoche: number, precioPorPersona: number, cap: number, total: number }|null}
+   */
   function getPersonaExtraMin(hotel, personas) {
     if (personas <= 1) return null;
     const porCap = hotel.tiposHabitacionPorCapacidad;
@@ -232,10 +341,21 @@
     return { tipo: best.tipoHabitacion, precioPorNoche: best.precioPorNoche, precioPorPersona: best.precioPorPersona, cap: personas - 1, total: best.precioPorNoche + best.precioPorPersona };
   }
 
+  /**
+   * Suma los precios por noche de un array de habitaciones de combinacion.
+   * @param {any[]} habs - Array de habitaciones con campo `precio`.
+   * @returns {number}
+   */
   function sumPrecios(habs) {
     return habs.reduce((s, h) => s + h.precio, 0);
   }
 
+  /**
+   * Obtiene el precio minimo "desde" del hotel considerando todas las opciones
+   * disponibles (directa, combinada, aproximada, con extra).
+   * @param {any} hotel - Objeto hotel.
+   * @returns {number|null}
+   */
   function getDesde(hotel) {
     const directo = getMinPrice(hotel);
     const combo   = getComboHabs(hotel);
@@ -251,6 +371,13 @@
     return precios.length ? Math.min(...precios) : null;
   }
 
+  /**
+   * Filtra y ordena el array de hoteles segun los filtros activos.
+   * Excluye hoteles sin ninguna opcion disponible para el grupo.
+   * @param {any[]} hotels - Hoteles crudos.
+   * @param {typeof filters} f - Objeto de filtros activo.
+   * @returns {any[]}
+   */
   function filterAndSort(hotels, f) {
     return hotels
       .filter(h => {
@@ -279,16 +406,31 @@
       });
   }
 
+  /**
+   * Agrega o quita un valor de un array de filtros y fuerza reactividad.
+   * @param {string[]} arr - Array de filtros a modificar.
+   * @param {string} val - Valor a agregar o quitar.
+   */
   function toggleArr(arr, val) {
     const i = arr.indexOf(val);
     i > -1 ? arr.splice(i, 1) : arr.push(val);
     filters = { ...filters };
   }
 
+  /**
+   * Reinicia todos los filtros a sus valores por defecto.
+   */
   function resetFilters() {
     filters = { priceMin: 0, priceMax: 0, tiposHab: [], amenidades: [], sortBy: 'recommended' };
   }
 
+  /**
+   * Maneja el reenvio del formulario de busqueda con los nuevos parametros.
+   * Valida los campos, llama al endpoint y actualiza los resultados.
+   * @async
+   * @param {Event} e - Evento de submit del formulario.
+   * @returns {Promise<void>}
+   */
   async function handleReSearch(e) {
     e.preventDefault();
     searchError = '';
@@ -325,8 +467,17 @@
     }
   }
 
+  /**
+   * Formatea un numero como moneda USD.
+   * @param {number} p - Valor a formatear.
+   * @returns {string}
+   */
   const fmt = p => new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(p);
 
+  /**
+   * Opciones disponibles para el selector de ordenamiento.
+   * @type {{ id: string, label: string }[]}
+   */
   const SORTS = [
     { id: 'recommended', label: 'Recomendado' },
     { id: 'price-low',   label: 'Precio: Menor' },
@@ -334,6 +485,11 @@
     { id: 'rating',      label: 'Mejor Valorado' }
   ];
 
+  /**
+   * Devuelve el path SVG del icono correspondiente a una amenidad por nombre.
+   * @param {string} nombre - Nombre de la amenidad.
+   * @returns {string} Path SVG.
+   */
   function amenidadIcon(nombre) {
     const n = nombre.toLowerCase();
     if (n.includes('wifi'))           return 'M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01';
@@ -351,12 +507,13 @@
 <div class="sr-page">
   <div class="sr-container">
 
+    <!-- Barra de modificacion de busqueda con autocomplete de pais y ciudad -->
     <div class="sr-modify-bar">
       <div class="sr-modify-content">
         <form class="sr-modify-form" on:submit={handleReSearch}>
           <div class="sr-form-fields">
 
-            <!-- País con autocomplete -->
+            <!-- Autocomplete de pais con debounce -->
             <div class="sr-field-group sr-field-group--ac">
               <label for="sr-pais">Pais</label>
               <div class="sr-ac-wrap">
@@ -378,7 +535,7 @@
               </div>
             </div>
 
-            <!-- Ciudad con autocomplete -->
+            <!-- Autocomplete de ciudad (dependiente del pais seleccionado) -->
             <div class="sr-field-group sr-field-group--ac">
               <label for="sr-ciudad">
                 Ciudad
@@ -442,13 +599,14 @@
       </div>
     </div>
 
-    <!-- Header y resultados: solo se muestran si ya hubo búsqueda -->
+    <!-- Encabezado y resultados: solo se muestran si ya hubo una busqueda -->
     {#if searchDone}
       <div class="sr-header">
         <div>
           <h1>{ciudadQuery}{paisQuery ? ', ' + paisQuery : ''}: {filteredHotels.length} hotel{filteredHotels.length !== 1 ? 'es' : ''} encontrado{filteredHotels.length !== 1 ? 's' : ''}</h1>
           <p class="sr-subtitle">{nights} {nights === 1 ? 'noche' : 'noches'} · {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}</p>
         </div>
+        <!-- Toggle entre vista de lista y grilla -->
         <div class="sr-actions">
           <div class="view-toggle">
             <button class="vbtn" class:active={viewMode === 'list'} on:click={() => viewMode = 'list'} title="Lista">
@@ -463,12 +621,14 @@
 
       <div class="sr-layout">
 
+        <!-- Panel lateral de filtros -->
         <aside class="sr-filters">
           <div class="sr-filters-hdr">
             <h2>Filtrar por:</h2>
             <button class="btn-reset" on:click={resetFilters}>Limpiar</button>
           </div>
 
+          <!-- Filtro de rango de precio por noche -->
           <div class="filter-group">
             <h3 class="filter-title">Precio por noche</h3>
             <div class="price-row">
@@ -489,6 +649,7 @@
             <div class="price-display">${filters.priceMin || '0'} — {filters.priceMax ? '$' + filters.priceMax : 'Sin límite'} / noche</div>
           </div>
 
+          <!-- Filtro por tipo de habitacion -->
           {#if allTiposHab.length > 0}
             <div class="filter-group">
               <h3 class="filter-title">Tipo de habitacion</h3>
@@ -501,6 +662,7 @@
             </div>
           {/if}
 
+          <!-- Filtro por amenidades disponibles -->
           {#if allAmenidades.length > 0}
             <div class="filter-group">
               <h3 class="filter-title">Servicios y amenidades</h3>
@@ -516,6 +678,7 @@
 
         <main class="sr-main">
 
+          <!-- Barra de ordenamiento -->
           <div class="sort-bar">
             <span class="sort-lbl">Ordenar:</span>
             {#each SORTS as s}
@@ -523,6 +686,7 @@
             {/each}
           </div>
 
+          <!-- Skeleton de carga mientras se busca -->
           {#if isLoading || isSearching}
             {#each Array(3) as _}
               <div class="hotel-card skeleton">
@@ -536,6 +700,7 @@
             {/each}
 
           {:else if hotelsRaw.length === 0}
+            <!-- Estado vacio: ningun hotel encontrado para la busqueda -->
             <div class="no-results">
               <div class="no-results-icon">
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -546,6 +711,7 @@
             </div>
 
           {:else if filteredHotels.length === 0}
+            <!-- Estado vacio: filtros demasiado restrictivos -->
             <div class="no-results">
               <div class="no-results-icon">
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -556,6 +722,7 @@
             </div>
 
           {:else}
+            <!-- Lista/grilla de tarjetas de hotel con todas sus opciones de precio -->
             <div class="hotels-grid" class:list-view={viewMode === 'list'} class:grid-view={viewMode === 'grid'}>
               {#each filteredHotels as hotel (hotel.id)}
                 {@const minPrice  = getMinPrice(hotel)}
@@ -572,6 +739,7 @@
                   on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}
                   on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
 
+                  <!-- Galeria / imagen principal del hotel -->
                   <div class="hotel-gallery">
                     {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
                       <img
@@ -603,6 +771,7 @@
                     {/if}
                   </div>
 
+                  <!-- Contenido textual de la tarjeta -->
                   <div class="hotel-content">
                     <div class="hotel-hdr">
                       <div class="hotel-title-wrap">
@@ -622,6 +791,7 @@
 
                     <p class="hotel-desc">{hotel.descripcion}</p>
 
+                    <!-- Amenidades como pills con icono -->
                     {#if hotel.amenidades && hotel.amenidades.length > 0}
                       <div class="amenities-row">
                         {#each hotel.amenidades.slice(0, 5) as am}
@@ -636,6 +806,7 @@
                       </div>
                     {/if}
 
+                    <!-- Preview de tipos de habitacion disponibles -->
                     {#if hotel.tiposHabitacion && hotel.tiposHabitacion.length > 0}
                       <div class="habitaciones-preview">
                         <p class="habitaciones-label">
@@ -656,6 +827,7 @@
                       </div>
                     {/if}
 
+                    <!-- Footer con opciones de precio y boton de detalle -->
                     <div class="hotel-footer">
                       <div class="pricing">
 
@@ -669,6 +841,7 @@
 
                         <div class="price-boxes">
 
+                          <!-- Opcion de habitacion directa (exactamente la capacidad solicitada) -->
                           {#if minPrice !== null}
                             <div class="price-box">
                               <div class="price-box-label">Habitación directa</div>
@@ -684,6 +857,7 @@
                             <div class="price-box-divider">ó</div>
                           {/if}
 
+                          <!-- Opcion de combinacion exacta de habitaciones -->
                           {#if comboHabs}
                             <div class="price-box price-box--combo">
                               <div class="price-box-label">Combinación de habitaciones</div>
@@ -703,6 +877,7 @@
                             </div>
                           {/if}
 
+                          <!-- Opcion aproximada cuando no hay combinacion exacta -->
                           {#if comboAprox}
                             <div class="price-box price-box--aprox">
                               <div class="price-box-label">
@@ -725,6 +900,7 @@
                             </div>
                           {/if}
 
+                          <!-- Opcion de habitacion mas persona extra -->
                           {#if extraInfo}
                             {#if (minPrice !== null || comboHabs || comboAprox)}
                               <div class="price-box-divider">ó</div>

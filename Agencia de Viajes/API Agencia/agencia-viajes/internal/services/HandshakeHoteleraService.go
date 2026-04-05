@@ -1,3 +1,8 @@
+// # Package services
+//
+// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
+// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
+// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -12,11 +17,28 @@ import (
 	"net/http"
 )
 
+// HandshakeHoteleraService
+//
+// Servicio encargado de gestionar el proceso de handshake de autenticacion
+// con proveedores de tipo hotelera. Genera un token de entrada para la agencia,
+// lo envia a la hotelera y almacena ambos tokens (entrada y salida) en BD
+// para su uso en comunicaciones posteriores.
 type HandshakeHoteleraService struct {
 	repo      *repositories.ProveedorRepository
 	serverURL string
 }
 
+// NewHandshakeHoteleraService
+//
+// Crea e inicializa una nueva instancia de HandshakeHoteleraService con su
+// repositorio de proveedores y la URL publica de la agencia.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos SQL
+//   - cfg: configuracion de la aplicacion que contiene la URL del servidor
+//
+// Retorna:
+//   - *HandshakeHoteleraService: instancia lista para usar
 func NewHandshakeHoteleraService(db *sql.DB, cfg *config.Config) *HandshakeHoteleraService {
 	return &HandshakeHoteleraService{
 		repo:      repositories.NewProveedorRepository(db),
@@ -24,6 +46,20 @@ func NewHandshakeHoteleraService(db *sql.DB, cfg *config.Config) *HandshakeHotel
 	}
 }
 
+// IniciarHandshake
+//
+// Ejecuta el flujo completo de handshake con una hotelera proveedora.
+// Obtiene la URL del proveedor, genera un token de entrada para la agencia,
+// lo envia a la hotelera junto con la URL de la agencia, recibe el token
+// de salida del proveedor y guarda ambos tokens en BD.
+//
+// Parametros:
+//   - proveedorID: identificador del proveedor hotelera con quien hacer handshake
+//
+// Retorna:
+//   - string: token de salida recibido del proveedor hotelera
+//   - error: si el proveedor no existe, no tiene URL, falla la generacion del token,
+//     falla la comunicacion con la hotelera o falla el guardado en BD
 func (s *HandshakeHoteleraService) IniciarHandshake(proveedorID int) (string, error) {
 
 	// 1. Obtener URL de la hotelera
@@ -56,6 +92,19 @@ func (s *HandshakeHoteleraService) IniciarHandshake(proveedorID int) (string, er
 	return tokenSalida, nil
 }
 
+// llamarHandshakeHotelera
+//
+// Realiza la llamada HTTP POST al endpoint de handshake de la hotelera,
+// enviando el token de entrada de la agencia y su URL publica. Retorna
+// el token de salida que el proveedor asigna a esta agencia.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor hotelera
+//   - tokenEntrada: token generado por la agencia para identificarse ante la hotelera
+//
+// Retorna:
+//   - string: token de salida asignado por la hotelera para autenticar sus llamadas
+//   - error: si la peticion HTTP falla, la hotelera retorna error o no incluye token_salida
 func (s *HandshakeHoteleraService) llamarHandshakeHotelera(urlAPI, tokenEntrada string) (string, error) {
 	body, _ := json.Marshal(map[string]string{
 		"token_entrada": tokenEntrada,

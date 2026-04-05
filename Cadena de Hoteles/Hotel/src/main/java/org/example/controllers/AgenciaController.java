@@ -11,21 +11,29 @@ import org.example.services.HandshakeService;
 
 import java.util.Map;
 
+/**
+ * Controller que registra las rutas HTTP relacionadas con agencias.
+ * Expone endpoints para el rol Webservice (rol 3) y para el rol Administrador (rol 2).
+ */
 public class AgenciaController {
 
     private final AgenciaService agenciaService = new AgenciaService();
     private final HandshakeService handshakeService = new HandshakeService();
 
+    /**
+     * Registra todas las rutas de agencias en la aplicacion Javalin.
+     * Las rutas bajo /webservice requieren rol 3 y las de /admin requieren rol 2.
+     * @param app instancia de Javalin donde se registran las rutas.
+     */
     public void registerRoutes(Javalin app) {
 
-
-        // GET /webservice/agencias
+        // Lista las agencias asociadas al usuario autenticado
         app.get("/webservice/agencias", ctx -> {
             if (!esWebservice(ctx)) { deny(ctx); return; }
             ctx.json(agenciaService.listarPorUsuario(usuarioId(ctx)));
         });
 
-        // POST /webservice/agencias
+        // Crea una nueva agencia para el usuario autenticado
         app.post("/webservice/agencias", ctx -> {
             if (!esWebservice(ctx)) { deny(ctx); return; }
             try {
@@ -37,7 +45,7 @@ public class AgenciaController {
             }
         });
 
-        // PATCH /webservice/agencias/{id}/estado
+        // Cambia el estado de una agencia especifica del usuario autenticado
         app.patch("/webservice/agencias/{id}/estado", ctx -> {
             if (!esWebservice(ctx)) { deny(ctx); return; }
             try {
@@ -50,7 +58,7 @@ public class AgenciaController {
             }
         });
 
-        // DELETE /webservice/agencias/{id}
+        // Elimina una agencia perteneciente al usuario autenticado
         app.delete("/webservice/agencias/{id}", ctx -> {
             if (!esWebservice(ctx)) { deny(ctx); return; }
             try {
@@ -61,7 +69,7 @@ public class AgenciaController {
             }
         });
 
-        // POST /api/agencias/handshake
+        // Procesa el handshake de autenticacion entre sistemas externos y la plataforma
         app.post("/api/agencias/handshake", ctx -> {
             System.out.println("[HANDSHAKE] url_agencia recibida: '" + ctx.body() + "'");
             try {
@@ -76,17 +84,15 @@ public class AgenciaController {
             }
         });
 
-        // ════════════════════════════════════════════════════
-        //  ADMIN — rutas accesibles solo por rol 2
-        // ════════════════════════════════════════════════════
+        // Rutas exclusivas para administradores (rol 2)
 
-        // GET /admin/agencias  →  todas las agencias
+        // Retorna todas las agencias registradas en el sistema
         app.get("/admin/agencias", ctx -> {
             if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
             ctx.json(agenciaService.listarTodas());
         });
 
-        // PATCH /admin/agencias/{id}  →  editar agencia
+        // Edita los datos de una agencia especifica
         app.patch("/admin/agencias/{id}", ctx -> {
             if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
             try {
@@ -99,30 +105,58 @@ public class AgenciaController {
 
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
+    /**
+     * Verifica si el usuario autenticado tiene rol Webservice (rol 3).
+     * @param ctx contexto de la peticion HTTP.
+     * @return true si el rolId del contexto es 3, false en caso contrario.
+     */
     private boolean esWebservice(Context ctx) {
         Integer rolId = ctx.attribute("rolId");
         return rolId != null && rolId == 3;
     }
 
+    /**
+     * Verifica si el usuario autenticado tiene rol Administrador (rol 2).
+     * @param ctx contexto de la peticion HTTP.
+     * @return true si el rolId del contexto es 2, false en caso contrario.
+     */
     private boolean esAdmin(Context ctx) {
         Integer rolId = ctx.attribute("rolId");
         return rolId != null && rolId == 2;
     }
 
+    /**
+     * Responde con 403 cuando el acceso requiere rol Webservice y el usuario no lo tiene.
+     * @param ctx contexto de la peticion HTTP.
+     */
     private void deny(Context ctx) {
         ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Webservice"));
     }
 
+    /**
+     * Responde con 403 cuando el acceso requiere rol Administrador y el usuario no lo tiene.
+     * @param ctx contexto de la peticion HTTP.
+     */
     private void denyAdmin(Context ctx) {
         ctx.status(403).json(Map.of("mensaje", "Acceso denegado: se requiere rol Administrador"));
     }
 
+    /**
+     * Extrae y convierte a entero el path parameter indicado.
+     * @param ctx   contexto de la peticion HTTP.
+     * @param param nombre del path parameter a extraer.
+     * @return valor del parametro convertido a int.
+     */
     private int id(Context ctx, String param) {
         return Integer.parseInt(ctx.pathParam(param));
     }
 
+    /**
+     * Obtiene el ID del usuario autenticado desde los atributos del contexto.
+     * @param ctx contexto de la peticion HTTP.
+     * @return ID del usuario autenticado.
+     * @throws IllegalStateException si el atributo usuarioId no esta presente en el contexto.
+     */
     private int usuarioId(Context ctx) {
         Integer uid = ctx.attribute("usuarioId");
         if (uid == null) throw new IllegalStateException("Usuario no autenticado");

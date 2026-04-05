@@ -1,3 +1,8 @@
+// # Package controllers
+//
+// Controladores HTTP de la agencia de viajes. Cada controlador recibe
+// solicitudes de Gin, delega la logica de negocio al servicio correspondiente
+// y devuelve la respuesta JSON al cliente.
 package controllers
 
 import (
@@ -10,14 +15,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// LoginController
+//
+// Controlador encargado de gestionar la autenticacion de usuarios,
+// incluyendo el inicio y cierre de sesion mediante JWT almacenado en cookie.
 type LoginController struct {
 	service *services.LoginService
 }
 
+// NewLoginController
+//
+// Crea e inicializa un nuevo LoginController con el servicio recibido.
+//
+// Parametros:
+//   - service: instancia del servicio de login
+//
+// Retorna:
+//   - *LoginController: puntero al controlador creado
 func NewLoginController(service *services.LoginService) *LoginController {
 	return &LoginController{service: service}
 }
 
+// Login
+//
+// Handler HTTP que autentica al usuario con sus credenciales. Si son validas
+// genera un token JWT y lo persiste en una cookie HttpOnly con duracion de
+// 24 horas, retornando ademas los datos del usuario en el cuerpo de la respuesta.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200: datos del usuario autenticado y cookie de sesion establecida
+//   - HTTP 400: error si el body JSON es invalido
+//   - HTTP 401: error si las credenciales son incorrectas
+//   - HTTP 500: error interno al generar el token JWT o al procesar el login
 func (ctrl *LoginController) Login(c *gin.Context) {
 	var req dto.LoginRequest
 
@@ -57,6 +89,16 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Logout
+//
+// Handler HTTP que cierra la sesion del usuario eliminando la cookie de sesion
+// al establecer su tiempo de vida en -1.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200: mensaje confirmando que la sesion fue cerrada
 func (ctrl *LoginController) Logout(c *gin.Context) {
 	c.SetCookie("session", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Sesión cerrada"})

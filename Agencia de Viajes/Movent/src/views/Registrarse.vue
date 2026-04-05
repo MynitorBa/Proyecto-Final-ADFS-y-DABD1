@@ -4,18 +4,20 @@
     <div class="register-container">
       <div class="register-card">
 
+        <!-- Botón para regresar a la página principal sin guardar datos -->
         <button class="back-link" @click="$router.push('/principal')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Volver al inicio
         </button>
 
+        <!-- Encabezado con logo y descripción del formulario -->
         <div class="register-header">
           <img src="/movent.png" alt="Movent" class="register-logo" />
           <h2>Crear tu Cuenta</h2>
           <p>Únete a Movent y comienza a reservar experiencias de viaje</p>
         </div>
 
-        <!-- Success -->
+        <!-- Pantalla de éxito que aparece tras el registro exitoso -->
         <div v-if="registrationSuccess" class="success-box">
           <div class="success-icon">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -25,15 +27,17 @@
           <div class="loading-dots"><span></span><span></span><span></span></div>
         </div>
 
+        <!-- Formulario principal de registro, oculto tras registro exitoso -->
         <form v-else @submit.prevent="handleRegister" class="register-form">
 
-          <!-- ── Información Personal ── -->
+          <!-- Sección: información personal del usuario -->
           <div class="form-section">
             <h3 class="section-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Información Personal
             </h3>
 
+            <!-- Nombre y apellidos -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>Nombre <span class="req">*</span></label>
@@ -49,6 +53,7 @@
               </div>
             </div>
 
+            <!-- Fecha de nacimiento con indicador de edad y número de pasaporte -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>Fecha de Nacimiento <span class="req">*</span></label>
@@ -67,7 +72,7 @@
               </div>
             </div>
 
-            <!-- País + Teléfono -->
+            <!-- País con autocompletado y teléfono con prefijo dinámico -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>País <span class="req">*</span></label>
@@ -83,6 +88,7 @@
                 <span v-if="errors.country" class="error-text">{{ errors.country }}</span>
               </div>
 
+              <!-- Teléfono deshabilitado hasta que se elija un país -->
               <div class="form-field">
                 <label>
                   Teléfono <span class="req">*</span>
@@ -102,7 +108,7 @@
               </div>
             </div>
 
-            <!-- Ciudad -->
+            <!-- Ciudad: autocompletado dependiente del país seleccionado -->
             <div class="form-field">
               <label>Ciudad <span class="req">*</span>
                 <span v-if="ciudadLoading" class="label-hint">— Cargando ciudades...</span>
@@ -121,7 +127,7 @@
               <span v-if="errors.city" class="error-text">{{ errors.city }}</span>
             </div>
 
-            <!-- Nacionalidades -->
+            <!-- Nacionalidades: permite agregar múltiples con autocompletado -->
             <div class="form-field">
               <label>Nacionalidad(es) <span class="req">*</span></label>
               <div v-for="(nac, i) in nacionalidades" :key="i" class="nac-row">
@@ -148,13 +154,14 @@
             </div>
           </div>
 
-          <!-- ── Credenciales ── -->
+          <!-- Sección: credenciales de acceso (usuario, correo y contraseñas) -->
           <div class="form-section">
             <h3 class="section-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               Credenciales de Acceso
             </h3>
 
+            <!-- Nombre de usuario con sanitización automática -->
             <div class="form-field">
               <label>Nombre de Usuario <span class="req">*</span></label>
               <div class="input-icon-wrap">
@@ -166,6 +173,7 @@
               <span v-if="errors.username" class="error-text">{{ errors.username }}</span>
             </div>
 
+            <!-- Correo electrónico -->
             <div class="form-field">
               <label>Correo Electrónico <span class="req">*</span></label>
               <div class="input-icon-wrap">
@@ -176,6 +184,7 @@
               <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
             </div>
 
+            <!-- Contraseña con barra de fortaleza e indicadores de requisitos -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>Contraseña <span class="req">*</span></label>
@@ -187,10 +196,12 @@
                     <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                   </button>
                 </div>
+                <!-- Barra de fortaleza de contraseña -->
                 <div v-if="formData.password" class="strength-bar-wrap">
                   <div class="strength-bar"><div class="strength-fill" :style="{ width: passwordStrength.width, background: passwordStrength.color }"></div></div>
                   <span class="strength-label" :style="{ color: passwordStrength.color }">{{ passwordStrength.text }}</span>
                 </div>
+                <!-- Indicadores de requisitos de contraseña -->
                 <div class="requirements">
                   <span :class="['req-item', { met: passVal.minLength }]">✓ 8 caracteres</span>
                   <span :class="['req-item', { met: passVal.hasUpperCase }]">✓ Mayúscula</span>
@@ -200,6 +211,7 @@
                 <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
               </div>
 
+              <!-- Campo de confirmación de contraseña -->
               <div class="form-field">
                 <label>Confirmar Contraseña <span class="req">*</span></label>
                 <div class="password-wrap">
@@ -217,7 +229,7 @@
             </div>
           </div>
 
-          <!-- Términos -->
+          <!-- Aceptación de términos y política de privacidad -->
           <div class="terms-section">
             <label class="checkbox-label">
               <input type="checkbox" v-model="acceptTerms" />
@@ -234,14 +246,17 @@
             <span v-if="errors.privacy" class="error-text">{{ errors.privacy }}</span>
           </div>
 
+          <!-- Error general del servidor al intentar enviar el formulario -->
           <span v-if="errors.submit" class="error-text" style="text-align:center;">{{ errors.submit }}</span>
 
+          <!-- Botón de envío con spinner mientras procesa -->
           <button type="submit" class="submit-btn" :disabled="isSubmitting">
             <svg v-if="isSubmitting" class="spinner" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             {{ isSubmitting ? 'Creando cuenta...' : 'Crear Cuenta' }}
           </button>
 
+          <!-- Enlace hacia la pantalla de inicio de sesión -->
           <p class="footer-text">
             ¿Ya tienes una cuenta?
             <router-link to="/ingreso" class="link-btn">Inicia sesión aquí</router-link>
@@ -253,14 +268,28 @@
 </template>
 
 <script setup>
+/**
+ * @file Registrarse.vue
+ * @description Formulario de registro de nuevos usuarios en Movent.
+ * Recopila información personal, ubicación, teléfono con prefijo internacional,
+ * nacionalidades múltiples y credenciales de acceso. Valida todo del lado del cliente
+ * antes de enviar al backend.
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import '../styles/registrarse.css'
 
+/** URL base del backend. @type {string} */
 const API_BASE = 'http://localhost:8080'
+
+/** Instancia del router para redirigir tras el registro exitoso. */
 const router   = useRouter()
 
-// ── Dial codes (ITU) ────────────────────────────────────────────────
+/**
+ * Mapa de cantidad de dígitos locales por código de marcación internacional (ITU).
+ * Usado para validar y limitar el input del teléfono.
+ * @type {Record<string, number>}
+ */
 const knownDigits = {
   '+1':10,'+7':10,'+20':10,'+27':9,'+30':10,'+31':9,'+32':9,'+33':9,'+34':9,
   '+36':9,'+39':10,'+40':9,'+41':9,'+43':10,'+44':10,'+45':8,'+46':9,'+47':8,
@@ -283,10 +312,16 @@ const knownDigits = {
   '+994':9,'+995':9,'+996':9,'+998':9,
 }
 
+/** Lista de países con sus ciudades, cargada desde countriesnow. @type {import('vue').Ref<Array>} */
 const todosLosPaises      = ref([])
+
+/** Mapa de país → { code, digits } construido desde restcountries. @type {import('vue').Ref<Record<string, object>>} */
 const dialCodesMap        = ref({})
+
+/** Lista de nacionalidades con sus demónimos, para el autocompletado. @type {import('vue').Ref<Array>} */
 const todosNacionalidades = ref([])
 
+/** Carga países, prefijos telefónicos y nacionalidades al montar el componente. */
 onMounted(async () => {
   try {
     const res  = await fetch('https://countriesnow.space/api/v0.1/countries')
@@ -314,34 +349,77 @@ onMounted(async () => {
   } catch { console.error('Error cargando nacionalidades / dial codes') }
 })
 
+/**
+ * Objeto reactivo con todos los campos del formulario.
+ * @type {import('vue').Ref<object>}
+ */
 const formData = ref({
   firstName: '', lastName: '', birthDate: '', pasaporte: '',
   phone: '', username: '', email: '', password: '', confirmPassword: ''
 })
 
+/** Controla la visibilidad del campo de contraseña. @type {import('vue').Ref<boolean>} */
 const showPassword        = ref(false)
+
+/** Controla la visibilidad del campo de confirmación de contraseña. @type {import('vue').Ref<boolean>} */
 const showConfirmPassword = ref(false)
+
+/** Estado del checkbox de términos y condiciones. @type {import('vue').Ref<boolean>} */
 const acceptTerms         = ref(false)
+
+/** Estado del checkbox de política de privacidad. @type {import('vue').Ref<boolean>} */
 const acceptPrivacy       = ref(false)
+
+/** Errores de validación del formulario por campo. @type {import('vue').Ref<object>} */
 const errors              = ref({})
+
+/** Previene el doble envío mientras la petición está en curso. @type {import('vue').Ref<boolean>} */
 const isSubmitting        = ref(false)
+
+/** Determina si se muestra la pantalla de éxito o el formulario. @type {import('vue').Ref<boolean>} */
 const registrationSuccess = ref(false)
 
+/** Texto escrito en el campo de búsqueda de país. @type {import('vue').Ref<string>} */
 const paisQuery        = ref('')
+
+/** Países filtrados que se muestran en el dropdown. @type {import('vue').Ref<Array>} */
 const paisesSugeridos  = ref([])
+
+/** País seleccionado de la lista (objeto completo con cities). @type {import('vue').Ref<object|null>} */
 const paisSeleccionado = ref(null)
 
+/** Texto escrito en el campo de búsqueda de ciudad. @type {import('vue').Ref<string>} */
 const ciudadQuery        = ref('')
+
+/** Ciudades filtradas para el dropdown de ciudad. @type {import('vue').Ref<Array>} */
 const ciudadesSugeridas  = ref([])
+
+/** Indica si el usuario seleccionó una ciudad válida de la lista. @type {import('vue').Ref<boolean>} */
 const ciudadSeleccionada = ref(false)
+
+/** Indica que se están cargando ciudades de la API. @type {import('vue').Ref<boolean>} */
 const ciudadLoading      = ref(false)
+
+/** Listado completo de ciudades del país seleccionado. @type {import('vue').Ref<Array>} */
 const todasLasCiudades   = ref([])
 
+/** Código de marcación del país seleccionado (ej. '+502'). @type {import('vue').Ref<string>} */
 const dialCode        = ref('')
+
+/** Cantidad de dígitos locales requeridos según el país. @type {import('vue').Ref<number>} */
 const phoneDigitCount = ref(9)
 
+/**
+ * Array de nacionalidades que el usuario puede agregar una a una.
+ * Cada elemento tiene query (texto), seleccionada (boolean) y sugerencias.
+ * @type {import('vue').Ref<Array>}
+ */
 const nacionalidades = ref([{ query: '', seleccionada: false, sugerencias: [] }])
 
+/**
+ * Calcula la edad del usuario a partir de su fecha de nacimiento.
+ * @type {import('vue').ComputedRef<number>}
+ */
 const userAge = computed(() => {
   if (!formData.value.birthDate) return 0
   const today = new Date(), birth = new Date(formData.value.birthDate)
@@ -351,8 +429,13 @@ const userAge = computed(() => {
   return age
 })
 
+/** Cantidad de dígitos numéricos ingresados en el campo de teléfono. @type {import('vue').ComputedRef<number>} */
 const phoneDigits = computed(() => formData.value.phone.replace(/\D/g, '').length)
 
+/**
+ * Verifica qué requisitos de la contraseña ya se cumplen.
+ * @type {import('vue').ComputedRef<{minLength: boolean, hasUpperCase: boolean, hasLowerCase: boolean, hasNumber: boolean}>}
+ */
 const passVal = computed(() => ({
   minLength:    formData.value.password.length >= 8,
   hasUpperCase: /[A-Z]/.test(formData.value.password),
@@ -360,6 +443,10 @@ const passVal = computed(() => ({
   hasNumber:    /[0-9]/.test(formData.value.password),
 }))
 
+/**
+ * Devuelve el nivel de fortaleza de la contraseña con texto, color y ancho de barra.
+ * @type {import('vue').ComputedRef<{text: string, color: string, width: string}>}
+ */
 const passwordStrength = computed(() => {
   const n = Object.values(passVal.value).filter(Boolean).length
   if (n <= 1) return { text: 'Muy débil', color: '#ef4444', width: '25%' }
@@ -368,6 +455,12 @@ const passwordStrength = computed(() => {
   return              { text: 'Excelente', color: '#10b981', width: '100%' }
 })
 
+/**
+ * Aplica formato de espacios al número local según su longitud total esperada.
+ * @param {string} digits - Solo dígitos
+ * @param {number} total  - Cantidad total requerida
+ * @returns {string}
+ */
 function formatLocalPhone(digits, total) {
   if (total <= 7)   return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim()
   if (total === 8)  return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim()
@@ -375,17 +468,35 @@ function formatLocalPhone(digits, total) {
   if (total === 10) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,4})/, '$1 $2 $3').trim()
   return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim()
 }
+
+/**
+ * Genera el placeholder del campo de teléfono simulando dígitos con '5'.
+ * @param {number} total
+ * @returns {string}
+ */
 function getPhonePlaceholder(total) { return formatLocalPhone('5'.repeat(total), total) }
+
+/**
+ * Limpia no numéricos, recorta al máximo de dígitos y reformatea el teléfono al escribir.
+ * @param {Event} e
+ */
 function onPhoneInput(e) {
   const raw = e.target.value.replace(/\D/g, '').slice(0, phoneDigitCount.value)
   formData.value.phone = formatLocalPhone(raw, phoneDigitCount.value)
 }
 
+/**
+ * Sanitiza el username: solo permite letras, números, puntos y guion bajo.
+ * También limpia el error si ya no aplica.
+ */
 function onUsernameInput() {
   formData.value.username = formData.value.username.replace(/[^a-zA-Z0-9_.]/g, '')
   if (errors.value.username) errors.value.username = ''
 }
 
+/**
+ * Filtra la lista de países según lo escrito y resetea la ciudad/teléfono si cambia el país.
+ */
 function onPaisInput() {
   paisSeleccionado.value = null
   ciudadQuery.value = ''; ciudadSeleccionada.value = false
@@ -396,6 +507,10 @@ function onPaisInput() {
     todosLosPaises.value.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6)
 }
 
+/**
+ * Fija el país elegido y carga sus ciudades y código telefónico.
+ * @param {object} p - Objeto de país con cities y country
+ */
 function seleccionarPais(p) {
   paisSeleccionado.value = p; paisQuery.value = p.country; paisesSugeridos.value = []
   errors.value.country = ''
@@ -407,6 +522,10 @@ function seleccionarPais(p) {
   phoneDigitCount.value = info?.digits ?? 9
 }
 
+/**
+ * Al perder el foco en el campo de país, valida que se haya elegido uno de la lista.
+ * Si el texto no corresponde a ningún país seleccionado, lo limpia.
+ */
 function blurPais() {
   setTimeout(() => {
     if (paisQuery.value && !paisSeleccionado.value) {
@@ -416,16 +535,26 @@ function blurPais() {
   }, 200)
 }
 
+/** Filtra ciudades del país seleccionado según lo escrito. */
 function onCiudadInput() {
   ciudadSeleccionada.value = false
   const q = ciudadQuery.value.toLowerCase().trim()
   ciudadesSugeridas.value = q.length < 2 ? [] :
     todasLasCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
 }
+
+/**
+ * Confirma la ciudad seleccionada y limpia el error.
+ * @param {string} c - Nombre de la ciudad
+ */
 function seleccionarCiudad(c) {
   ciudadQuery.value = c; ciudadSeleccionada.value = true
   ciudadesSugeridas.value = []; errors.value.city = ''
 }
+
+/**
+ * Al perder el foco en ciudad, valida que se haya seleccionado de la lista.
+ */
 function blurCiudad() {
   setTimeout(() => {
     if (ciudadQuery.value && !ciudadSeleccionada.value) {
@@ -435,6 +564,10 @@ function blurCiudad() {
   }, 200)
 }
 
+/**
+ * Filtra el listado de nacionalidades según el texto en el campo indicado.
+ * @param {number} i - Índice del campo de nacionalidad
+ */
 function onNacInput(i) {
   const q = nacionalidades.value[i].query.toLowerCase().trim()
   nacionalidades.value[i].seleccionada = false
@@ -443,10 +576,21 @@ function onNacInput(i) {
     .filter(n => n.pais.toLowerCase().includes(q) || n.demonym.toLowerCase().includes(q))
     .slice(0, 6)
 }
+
+/**
+ * Fija la nacionalidad elegida en el campo correspondiente.
+ * @param {number} i - Índice del campo
+ * @param {{ pais: string, demonym: string }} s - Opción seleccionada
+ */
 function seleccionarNac(i, s) {
   nacionalidades.value[i].query = s.demonym; nacionalidades.value[i].seleccionada = true
   nacionalidades.value[i].sugerencias = []; errors.value.nacionalidades = ''
 }
+
+/**
+ * Valida que la nacionalidad se haya elegido de la lista al perder el foco.
+ * @param {number} i - Índice del campo
+ */
 function blurNac(i) {
   setTimeout(() => {
     if (nacionalidades.value[i].query && !nacionalidades.value[i].seleccionada) {
@@ -455,9 +599,20 @@ function blurNac(i) {
     } else { nacionalidades.value[i].sugerencias = [] }
   }, 200)
 }
+
+/** Agrega un nuevo campo de nacionalidad al array. */
 function agregarNac() { nacionalidades.value.push({ query: '', seleccionada: false, sugerencias: [] }) }
+
+/**
+ * Elimina un campo de nacionalidad por índice.
+ * @param {number} i
+ */
 function quitarNac(i) { nacionalidades.value.splice(i, 1) }
 
+/**
+ * Ejecuta todas las validaciones del formulario y llena el objeto `errors`.
+ * @returns {boolean} true si el formulario es válido
+ */
 function validateForm() {
   errors.value = {}
   if (!formData.value.firstName.trim() || formData.value.firstName.trim().length < 2)
@@ -492,7 +647,11 @@ function validateForm() {
   return Object.keys(errors.value).length === 0
 }
 
-
+/**
+ * Maneja el envío del formulario: valida, construye el payload y hace POST al backend.
+ * Trata errores de duplicado (409) por correo, pasaporte o username individualmente.
+ * Tras éxito, muestra la pantalla de confirmación y redirige al login en 2 segundos.
+ */
 async function handleRegister() {
   if (!validateForm()) {
     document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -541,7 +700,7 @@ async function handleRegister() {
       return
     }
 
-    // Éxito
+    // Registro exitoso: mostrar pantalla de confirmación y redirigir
     registrationSuccess.value = true
     setTimeout(() => router.push('/ingreso'), 2000)
 

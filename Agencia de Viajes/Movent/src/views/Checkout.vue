@@ -4,7 +4,7 @@
     <div class="co-page">
       <div class="co-container">
 
-        <!-- ═══ STEPS ═══ -->
+        <!-- Barra de progreso: paso 2 de 3 (Pago) -->
         <div class="co-header">
           <div class="co-steps">
             <div class="co-step co-step--done">
@@ -28,14 +28,14 @@
 
         <div class="co-layout">
 
-          <!-- ═══ PAGO ═══ -->
+          <!-- Sección principal: formulario de pago con tarjeta 3D -->
           <div class="pago-stage">
 
-            <!-- Tarjeta 3D flip -->
+            <!-- Tarjeta 3D con efecto flip al enfocar el campo CVV -->
             <div class="card-scene">
               <div class="card-wrap" :class="{ 'card-wrap--flip': mostrandoCVV }">
 
-                <!-- FRENTE -->
+                <!-- Cara frontal de la tarjeta visual -->
                 <div class="card-face card-face--front">
                   <div class="card-noise"></div>
                   <div class="card-top">
@@ -43,6 +43,7 @@
                       <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z" fill="#FFCC00"/></svg>
                       <span>MOVENT</span>
                     </div>
+                    <!-- Icono de red según el tipo de tarjeta detectado -->
                     <div class="card-type-icon">
                       <div v-if="tipoTarjeta==='visa'" class="card-visa">VISA</div>
                       <div v-else-if="tipoTarjeta==='mastercard'" class="card-mc">
@@ -58,6 +59,7 @@
                       <div class="card-chip__v"></div>
                     </div>
                   </div>
+                  <!-- Número de tarjeta agrupado en bloques de 4 dígitos -->
                   <div class="card-number">
                     <span v-for="(g, i) in numeroGrupos" :key="i" class="card-number__group">{{ g }}</span>
                   </div>
@@ -73,7 +75,7 @@
                   </div>
                 </div>
 
-                <!-- REVERSO -->
+                <!-- Cara trasera de la tarjeta: muestra el CVV enmascarado -->
                 <div class="card-face card-face--back">
                   <div class="card-noise"></div>
                   <div class="card-stripe"></div>
@@ -90,10 +92,10 @@
               </div>
             </div>
 
-            <!-- ── Formulario de pago ── -->
+            <!-- Formulario de datos de la tarjeta -->
             <div class="pago-form">
 
-              <!-- Número tarjeta -->
+              <!-- Campo: número de tarjeta con detección automática de red -->
               <div class="pago-form__field pago-form__field--full">
                 <label class="pago-form__label">Número de tarjeta</label>
                 <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='tarjeta' }">
@@ -109,7 +111,7 @@
                 </div>
               </div>
 
-              <!-- Vencimiento + CVV -->
+              <!-- Fila: vencimiento y CVV en paralelo -->
               <div class="pago-form__row">
                 <div class="pago-form__field">
                   <label class="pago-form__label">Vencimiento</label>
@@ -120,6 +122,7 @@
                       placeholder="MM/AA" maxlength="5" type="text" inputmode="numeric"/>
                   </div>
                 </div>
+                <!-- El foco en CVV activa el flip de la tarjeta hacia el reverso -->
                 <div class="pago-form__field">
                   <label class="pago-form__label">CVV</label>
                   <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='cvv' }">
@@ -133,7 +136,7 @@
                 </div>
               </div>
 
-              <!-- Nombre en tarjeta -->
+              <!-- Campo: nombre del titular tal como aparece en la tarjeta -->
               <div class="pago-form__field pago-form__field--full">
                 <label class="pago-form__label">Nombre en la tarjeta</label>
                 <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='nombre' }">
@@ -144,7 +147,7 @@
                 </div>
               </div>
 
-              <!-- ── Datos de facturación ── -->
+              <!-- Sección: datos de facturación (NIT y código postal) -->
               <div class="pago-billing">
                 <div class="pago-billing__title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -174,7 +177,7 @@
                 </div>
               </div>
 
-              <!-- Badges seguridad -->
+              <!-- Badges decorativos de seguridad del pago -->
               <div class="pago-badges">
                 <div class="pago-badge">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -187,9 +190,11 @@
                 </div>
               </div>
 
+              <!-- Mensajes de error de validación local y de la API -->
               <p v-if="formError" class="co-error">{{ formError }}</p>
               <p v-if="pagoError" class="co-error co-error--api">{{ pagoError }}</p>
 
+              <!-- Botón de pago: deshabilitado mientras se procesa la petición -->
               <div class="pago-actions">
                 <button class="pago-btn-confirm" @click="confirmarPago" :disabled="pagando" type="button">
                   <span v-if="pagando" class="pago-btn-confirm__spin"></span>
@@ -203,18 +208,18 @@
 
           </div><!-- /pago-stage -->
 
-          <!-- ═══ SIDEBAR RESUMEN ═══ -->
+          <!-- Sidebar con el resumen de la reserva que se está pagando -->
           <aside class="co-sidebar">
             <div class="co-resumen">
               <div class="co-resumen__head">Resumen de reserva</div>
 
-              <!-- Número de reserva -->
+              <!-- Número de reserva generado al crear la reservación -->
               <div class="co-resumen__nro">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="14" height="14"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
                 <span>{{ cd?.noReservacion || '—' }}</span>
               </div>
 
-              <!-- ── VUELO solo ida ── -->
+              <!-- Resumen para vuelo de solo ida -->
               <template v-if="tipoItem === 'vuelo' && cd?.item?.tipoVuelo === 'ida'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--vuelo">
@@ -231,7 +236,7 @@
                 </div>
               </template>
 
-              <!-- ── VUELO ida y vuelta ── -->
+              <!-- Resumen para vuelo de ida y vuelta -->
               <template v-else-if="tipoItem === 'vuelo' && cd?.item?.tipoVuelo === 'idaVuelta'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--vuelo">
@@ -248,7 +253,7 @@
                 </div>
               </template>
 
-              <!-- ── HOTEL ── -->
+              <!-- Resumen para hospedaje -->
               <template v-else-if="tipoItem === 'hotel'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--hotel">
@@ -262,7 +267,7 @@
                 </div>
               </template>
 
-              <!-- ── PAQUETE ── -->
+              <!-- Resumen para paquete combinado vuelo + hotel -->
               <template v-else-if="tipoItem === 'paquete'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--paquete">
@@ -281,7 +286,7 @@
                 </div>
               </template>
 
-              <!-- Pasajero -->
+              <!-- Datos del pasajero principal -->
               <div v-if="cd?.pasajero" class="co-resumen__pasajero">
                 <div class="co-resumen__pasajero-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -292,7 +297,7 @@
                 </div>
               </div>
 
-              <!-- Total -->
+              <!-- Total a pagar calculado según el tipo de item -->
               <div class="co-resumen__precio-row">
                 <span>Total a pagar</span>
                 <strong>{{ totalDisplay }}</strong>
@@ -308,20 +313,43 @@
 </template>
 
 <script setup>
+/**
+ * @file Checkout.vue
+ * @description Vista del paso 2 del flujo de compra. Presenta el formulario de
+ * pago con tarjeta de crédito/débito y una tarjeta 3D animada que refleja los
+ * datos ingresados en tiempo real. Lee la reserva desde sessionStorage, valida
+ * el formulario localmente, llama al endpoint de pago y redirige a Confirmacion.
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/checkout.css'
 
+/** Instancia del router para navegar entre vistas. */
 const router = useRouter()
-const API    = 'http://localhost:8080'
 
-// ── Datos de la reserva ───────────────────────────────────────
+/** URL base del backend. @type {string} */
+const API = 'http://localhost:8080'
+
+/**
+ * Datos del checkout leídos desde sessionStorage.
+ * Contiene item, pasajero, detalles de precio y número de reservación.
+ * @type {import('vue').Ref<object|null>}
+ */
 const cd = ref(null)
 
+/**
+ * Tipo de item reservado: 'vuelo', 'hotel' o 'paquete'.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const tipoItem = computed(() => cd.value?.tipoItem || '')
 
+/**
+ * Total formateado con símbolo de dólar para mostrar en el botón y el resumen.
+ * Suma vuelo y hotel si el item es un paquete.
+ * @type {import('vue').ComputedRef<string>}
+ */
 const totalDisplay = computed(() => {
   if (!cd.value) return '--'
   const tv = cd.value.detalleVuelo?.total_con_ganancia ?? 0
@@ -332,13 +360,25 @@ const totalDisplay = computed(() => {
   return '--'
 })
 
-// ── Formulario ────────────────────────────────────────────────
+/** Controla si la tarjeta 3D está volteada (true cuando el campo CVV tiene foco). @type {import('vue').Ref<boolean>} */
 const mostrandoCVV = ref(false)
-const focusField   = ref('')
-const formError    = ref('')
-const pagoError    = ref('')
-const pagando      = ref(false)
 
+/** Identificador del campo actualmente enfocado para aplicar el estilo de borde activo. @type {import('vue').Ref<string>} */
+const focusField = ref('')
+
+/** Mensaje de error de validación local del formulario. @type {import('vue').Ref<string>} */
+const formError = ref('')
+
+/** Mensaje de error recibido de la API al intentar procesar el pago. @type {import('vue').Ref<string>} */
+const pagoError = ref('')
+
+/** Indica si hay una petición de pago en curso para deshabilitar el botón. @type {import('vue').Ref<boolean>} */
+const pagando = ref(false)
+
+/**
+ * Campos del formulario de pago.
+ * @type {import('vue').Ref<{tarjeta: string, vencimiento: string, cvv: string, nombre: string, nit: string, codigoPostal: string}>}
+ */
 const pago = ref({
   tarjeta:      '',
   vencimiento:  '',
@@ -348,7 +388,10 @@ const pago = ref({
   codigoPostal: '',
 })
 
-// ── Tipo de tarjeta ───────────────────────────────────────────
+/**
+ * Detecta la red de la tarjeta según los primeros dígitos ingresados.
+ * @type {import('vue').ComputedRef<'visa'|'mastercard'|'amex'|''>}
+ */
 const tipoTarjeta = computed(() => {
   const n = pago.value.tarjeta.replace(/\s/g, '')
   if (/^4/.test(n))        return 'visa'
@@ -357,23 +400,39 @@ const tipoTarjeta = computed(() => {
   return ''
 })
 
+/**
+ * Divide el número de tarjeta en cuatro grupos de 4 caracteres para la visualización
+ * en la tarjeta 3D. Rellena con '·' si faltan dígitos.
+ * @type {import('vue').ComputedRef<string[]>}
+ */
 const numeroGrupos = computed(() => {
   const n = pago.value.tarjeta.replace(/\s/g, '').padEnd(16, '·')
   return [n.slice(0,4), n.slice(4,8), n.slice(8,12), n.slice(12,16)]
 })
 
-// ── Formatters ────────────────────────────────────────────────
+/**
+ * Formatea el número de tarjeta añadiendo espacios cada 4 dígitos mientras el usuario escribe.
+ * @param {Event} e - Evento input del campo de número de tarjeta.
+ */
 function formatTarjeta(e) {
   const val = e.target.value.replace(/\D/g,'').substring(0,16)
   pago.value.tarjeta = val.replace(/(.{4})/g,'$1 ').trim()
 }
+
+/**
+ * Formatea la fecha de vencimiento en el patrón MM/AA mientras el usuario escribe.
+ * @param {Event} e - Evento input del campo de vencimiento.
+ */
 function formatVencimiento(e) {
   let val = e.target.value.replace(/\D/g,'').substring(0,4)
   if (val.length >= 3) val = val.slice(0,2) + '/' + val.slice(2)
   pago.value.vencimiento = val
 }
 
-// ── onMounted ─────────────────────────────────────────────────
+/**
+ * Al montar la vista, lee los datos de la reserva desde sessionStorage.
+ * Si no hay datos o falta el ID de reservación, redirige al inicio.
+ */
 onMounted(() => {
   const raw = sessionStorage.getItem('checkout_data')
   if (!raw) { router.push('/principal'); return }
@@ -385,7 +444,12 @@ onMounted(() => {
   }
 })
 
-// ── Confirmar pago ────────────────────────────────────────────
+/**
+ * Valida el formulario, envía la petición de pago al backend y, si es exitosa,
+ * dispara el envío del correo de confirmación (fire-and-forget) antes de
+ * redirigir a la vista de Confirmacion.
+ * @returns {Promise<void>}
+ */
 async function confirmarPago() {
   formError.value = ''; pagoError.value = ''
 

@@ -1,24 +1,46 @@
 <script>
+  /**
+   * @file HotelDetail.svelte
+   * @description Pagina de detalle de un hotel. Muestra la galeria de imagenes,
+   * descripcion, amenidades, habitaciones disponibles (individuales, con capacidad
+   * superior, con persona extra y combinaciones) y un sidebar de reservacion con
+   * seleccion de fechas, resumen de precio y procesamiento de la reservacion.
+   * Tambien incluye la seccion de comentarios y resenas con sistema de votos.
+   */
+
   import { onMount } from 'svelte';
   import '../styles/hoteldetail.css';
   import CommentNode from './CommentNode.svelte';
 
+  /** Funcion de navegacion inyectada por el router. @type {Function} */
   export let navigateTo = (page, data = null) => {};
-  /** @type {any} */
+
+  /** Objeto del hotel a mostrar, inyectado desde la pagina de resultados. @type {any} */
   export let hotel = null;
-  /** @type {number} */
+
+  /** Numero de personas para el que se busca disponibilidad. @type {number} */
   export let cantidadPersonas = 1;
-  /** @type {string} */
+
+  /** Fecha de check-in pre-seleccionada desde la busqueda anterior. @type {string} */
   export let fechaCheckIn = '';
-  /** @type {string} */
+
+  /** Fecha de check-out pre-seleccionada desde la busqueda anterior. @type {string} */
   export let fechaCheckOut = '';
 
+  /** URL base del backend. @type {string} */
   const API = 'http://localhost:7000';
 
-  // ── Fechas ────────────────────────────────────────────────
+  /** Fecha de check-in activa en el sidebar (editable por el usuario). @type {string} */
   let checkInDate  = fechaCheckIn  || '';
+
+  /** Fecha de check-out activa en el sidebar (editable por el usuario). @type {string} */
   let checkOutDate = fechaCheckOut || '';
 
+  /**
+   * Convierte un objeto Date a string YYYY-MM-DD usando la zona horaria local.
+   * @param {Date} date
+   * @returns {string}
+   */
   function toLocalDateStr(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -27,6 +49,7 @@
   }
 
   onMount(() => {
+    // Si no se recibieron fechas desde la busqueda, usa manana y pasado manana
     if (!checkInDate || !checkOutDate) {
       const today    = new Date();
       const tomorrow = new Date(today);
@@ -38,11 +61,19 @@
     }
   });
 
+  /** Fecha de hoy como string, usada para validar que no se elija una fecha pasada. @type {string} */
   const todayStr = toLocalDateStr(new Date());
 
-  let datesWarning  = false;
+  /** True cuando el usuario cambio las fechas pero aun no actualizo la disponibilidad. @type {boolean} */
+  let datesWarning = false;
+
+  /** True mientras se recarga la disponibilidad tras un cambio de fechas. @type {boolean} */
   let fetchingAvail = false;
 
+  /**
+   * Se ejecuta cuando el usuario modifica las fechas en el sidebar.
+   * Resetea la seleccion activa y activa el aviso de fechas cambiadas.
+   */
   function onSidebarDateChange() {
     selectedRoom      = null;
     selectedRoomIsExtra = false;
@@ -52,6 +83,12 @@
     datesWarning      = true;
   }
 
+  /**
+   * Vuelve a consultar la disponibilidad del hotel para las nuevas fechas seleccionadas.
+   * Actualiza el objeto `hotel` con los datos frescos del backend.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function refetchDisponibilidad() {
     if (!checkInDate || !checkOutDate) return;
     if (new Date(checkOutDate) <= new Date(checkInDate)) {
@@ -94,11 +131,12 @@
     }
   }
 
-  // Solo esto: min reactivo para el checkout (no modifica ninguna variable, solo calcula el mínimo)
+  // Minimo de fecha permitido para el check-out, siempre un dia despues del check-in.
   $: minCheckOut = checkInDate
     ? toLocalDateStr(new Date(new Date(checkInDate).getTime() + 86400000))
     : todayStr;
 
+  // Numero de noches entre check-in y check-out.
   $: nights = (() => {
     if (!checkInDate || !checkOutDate) return 0;
     return Math.max(0, Math.ceil(
@@ -106,29 +144,45 @@
     ));
   })();
 
+  // Habitaciones disponibles para la cantidad de personas exacta.
   $: habitacionesDisponibles = hotel?.tiposHabitacion || [];
 
-  // ── UI state ─────────────────────────────────────────────
-  let activeTab         = 'overview';
-  let selectedRoom      = null;
-  let selectedRoomIsExtra = false;
-  let currentImageIndex = 0;
-  let showImageGallery  = false;
+  // --- Estado de la UI ---
 
-  // ── Modal de login requerido ──────────────────────────────
+  /** Pestana activa en la seccion de contenido principal. @type {string} */
+  let activeTab = 'overview';
+
+  /** Habitacion individual seleccionada para reservar. @type {any|null} */
+  let selectedRoom = null;
+
+  /** True si la habitacion seleccionada aplica tarifa de persona extra. @type {boolean} */
+  let selectedRoomIsExtra = false;
+
+  /** Indice de la imagen actualmente visible en la galeria modal. @type {number} */
+  let currentImageIndex = 0;
+
+  /** True cuando la galeria modal de imagenes esta abierta. @type {boolean} */
+  let showImageGallery = false;
+
+  /** True cuando se debe mostrar el modal de login requerido. @type {boolean} */
   let showLoginRequired = false;
 
+  /** Abre el modal que solicita al usuario iniciar sesion para poder reservar. */
   function promptLogin() {
     showLoginRequired = true;
   }
 
+  /** Cierra el modal de login requerido. */
   function closeLoginPrompt() {
     showLoginRequired = false;
   }
 
-  // ── Combinaciones ─────────────────────────────────────────
+  // --- Logica de combinaciones de habitaciones ---
+
+  /** Combinacion actualmente seleccionada y activa para reservar. @type {any|null} */
   let comboActivo = null;
 
+  // Lista de combinaciones exactas sugeridas por el backend para la cantidad de personas. Cada combinacion tiene slots con opciones de habitaciones intercambiables.
   $: combosSugeridos = (() => {
     if (!hotel) return [];
     const combNums = hotel.combinacionesNumericas || [];
@@ -141,6 +195,7 @@
     });
   })();
 
+  // Combinacion aproximada cuando no hay exacta disponible. Se construye greedy eligiendo las habitaciones de mayor capacidad primero.
   $: comboAproximada = (() => {
     if (!hotel) return null;
     const tieneDirecta = hotel.tiposHabitacion && hotel.tiposHabitacion.length > 0;
@@ -180,12 +235,16 @@
     return { slots, esAproximada: true, capacidadTotal: sumCap };
   })();
 
-  // ── Helpers combinaciones (declarados antes del reactivo que los usa) ──
-  $: hayCombosSugeridos  = combosSugeridos.length > 0;
-  $: hayComboAproximado  = !!comboAproximada;
-  $: hayCombinaciones    = hayCombosSugeridos || hayComboAproximado;
+  // True si hay alguna combinacion exacta disponible.
+  $: hayCombosSugeridos = combosSugeridos.length > 0;
 
-  // ── Combinaciones especiales (rooms de cap-1 combinadas) ──
+  // True si hay una combinacion aproximada disponible.
+  $: hayComboAproximado = !!comboAproximada;
+
+  // True si existe algun tipo de combinacion (exacta o aproximada).
+  $: hayCombinaciones = hayCombosSugeridos || hayComboAproximado;
+
+  // Combinaciones especiales construidas con habitaciones de capacidad (personas-1). Solo se generan cuando no hay combinaciones regulares disponibles.
   $: combosEspeciales = (() => {
     if (!hotel || cantidadPersonas <= 1) return [];
     if (hayCombinaciones) return [];
@@ -215,9 +274,10 @@
     return combos;
   })();
 
+  // True si existen combinaciones especiales disponibles.
   $: hayCombosEspeciales = combosEspeciales.length > 0;
 
-  // ── Inicializar comboActivo ───────────────────────────────
+  // Inicializa el combo activo automaticamente con el primero disponible
   $: if (combosSugeridos.length > 0 && comboActivo === null) {
     comboActivo = deepCloneCombo(combosSugeridos[0]);
   } else if (combosSugeridos.length === 0 && comboAproximada && comboActivo === null) {
@@ -226,6 +286,12 @@
     comboActivo = deepCloneCombo(combosEspeciales[0]);
   }
 
+  /**
+   * Crea una copia profunda de un objeto combo para que los cambios en los slots
+   * no afecten al combo original de la lista de sugeridos.
+   * @param {any} combo
+   * @returns {any}
+   */
   function deepCloneCombo(combo) {
     return {
       ...combo,
@@ -233,41 +299,66 @@
     };
   }
 
+  /**
+   * Activa una combinacion exacta sugerida por indice.
+   * @param {number} idx - Indice en combosSugeridos.
+   */
   function selectComboSugerido(idx) {
     comboActivo = deepCloneCombo(combosSugeridos[idx]);
   }
 
+  /** Activa la combinacion aproximada si esta disponible. */
   function selectComboAproximado() {
     if (comboAproximada) comboActivo = deepCloneCombo(comboAproximada);
   }
 
+  /**
+   * Activa una combinacion especial por indice.
+   * @param {number} idx - Indice en combosEspeciales.
+   */
   function selectComboEspecial(idx) {
     comboActivo = deepCloneCombo(combosEspeciales[idx]);
   }
 
+  /**
+   * Cambia la habitacion seleccionada en un slot especifico del combo activo.
+   * @param {number} slotIdx - Indice del slot a modificar.
+   * @param {any} habitacion - Nueva habitacion a asignar.
+   */
   function cambiarHabEnSlot(slotIdx, habitacion) {
     if (!comboActivo) return;
     comboActivo.slots[slotIdx].seleccionada = habitacion;
     comboActivo = { ...comboActivo, slots: [...comboActivo.slots] };
   }
 
+  /**
+   * Determina si una opcion de habitacion esta bloqueada en un slot porque
+   * ya fue seleccionada en otro slot del mismo combo.
+   * @param {any} comboActivo
+   * @param {number} slotIdx - Indice del slot actual.
+   * @param {number} opcionId - ID de la habitacion a verificar.
+   * @returns {boolean}
+   */
   function esOpcionBloqueada(comboActivo, slotIdx, opcionId) {
     if (!comboActivo) return false;
     return comboActivo.slots.some((s, i) => {
       if (i === slotIdx) return false;
-      if (s.seleccionada?.id !== opcionId) return false;
+      if (s.seleccionada?.tipoHabitacionId !== opcionId) return false;
       return s.opciones.length > 1;
     });
   }
 
+  // Distribucion de personas por slot del combo activo.
   $: personasPorSlotActivo = comboActivo
     ? distribuirPersonas(comboActivo.slots, cantidadPersonas)
     : [];
 
+  // Precio base total del combo (suma de precioPorNoche de cada slot).
   $: comboTotalPrecio = comboActivo
     ? comboActivo.slots.reduce((sum, s) => sum + (s.seleccionada?.precioPorNoche || 0), 0)
     : 0;
 
+  // Precio total del combo por noche incluyendo las habitaciones seleccionadas.
   $: comboTotalConPersonas = comboActivo
       ? comboActivo.slots.reduce((sum, s) => {
           const h = s.seleccionada;
@@ -276,17 +367,21 @@
         }, 0)
       : 0;
 
-  // ── Precio habitación individual ─────────────────────────
+  // Precio total de la habitacion individual seleccionada por la estancia completa. Incluye el cargo por persona extra si aplica.
   $: totalPrice = selectedRoom
     ? selectedRoomIsExtra
       ? (selectedRoom.precioPorNoche + selectedRoom.precioPorPersona) * nights
       : selectedRoom.precioPorNoche * nights
     : 0;
 
-  // ── Modo de reserva ───────────────────────────────────────
+  /**
+   * Modo de reserva activo.
+   * 'single' para habitacion individual, 'combo' para combinacion.
+   * @type {string}
+   */
   let bookMode = 'single';
 
-  // ── Imágenes ─────────────────────────────────────────────
+  // Lista de URLs de imagenes del hotel: hotel + habitaciones + amenidades.
   $: images = (() => {
     if (!hotel) return [];
     const imgs = [];
@@ -310,37 +405,71 @@
     return imgs;
   })();
 
+  /**
+   * Devuelve la URL de la primera imagen de una habitacion.
+   * @param {any} room
+   * @returns {string|null}
+   */
   function roomImage(room) {
     if (room.imagenesIds?.length > 0) return `${API}/imagenes/habitacion/${room.imagenesIds[0]}`;
     return null;
   }
 
+  /**
+   * Devuelve la URL de la primera imagen de una amenidad.
+   * @param {any} amenidad
+   * @returns {string|null}
+   */
   function amenityImage(amenidad) {
     if (amenidad.imagenesIds?.length > 0) return `${API}/imagenes/amenidad/${amenidad.imagenesIds[0]}`;
     return null;
   }
 
-  // ── Iconos amenidades ─────────────────────────────────────
+  /**
+   * Mapa de emojis por tipo de amenidad para usarlos como icono de respaldo.
+   * @type {Record<string, string>}
+   */
   const amenityIcons = {
     'wifi':'📶','piscina':'🏊','gimnasio':'💪','estacionamiento':'🅿️',
     'restaurante':'🍽️','spa':'💆','bar':'🍹','desayuno':'🍳','default':'✨',
   };
+
+  /**
+   * Devuelve el emoji correspondiente al nombre de una amenidad.
+   * @param {string} nombre - Nombre de la amenidad.
+   * @returns {string}
+   */
   function getAmenityIcon(nombre) {
     const key = nombre.toLowerCase();
     for (const k of Object.keys(amenityIcons)) { if (key.includes(k)) return amenityIcons[k]; }
     return amenityIcons.default;
   }
 
-  // ── Gallery ───────────────────────────────────────────────
+  // --- Galeria de imagenes ---
+
+  /**
+   * Abre la galeria modal en la imagen indicada y bloquea el scroll del body.
+   * @param {number} index - Indice de la imagen a mostrar inicialmente.
+   */
   function openGallery(index = 0) {
     currentImageIndex = index; showImageGallery = true;
     document.body.style.overflow = 'hidden';
   }
+
+  /** Cierra la galeria modal y restaura el scroll del body. */
   function closeGallery() { showImageGallery = false; document.body.style.overflow = 'auto'; }
+
+  /** Avanza a la siguiente imagen de la galeria de forma circular. */
   function nextImage() { currentImageIndex = (currentImageIndex + 1) % images.length; }
+
+  /** Retrocede a la imagen anterior de la galeria de forma circular. */
   function prevImage() { currentImageIndex = (currentImageIndex - 1 + images.length) % images.length; }
 
-  // ── Selección habitación individual ──────────────────────
+  /**
+   * Selecciona una habitacion individual para reservar y hace scroll al sidebar.
+   * @param {any} room - Habitacion seleccionada.
+   * @param {boolean} isExtra - True si aplica cargo por persona extra.
+   */
   function selectRoom(room, isExtra = false) {
     selectedRoom = room;
     selectedRoomIsExtra = isExtra;
@@ -349,12 +478,21 @@
     document.querySelector('.booking-summary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // ── Estado booking ────────────────────────────────────────
-  let booking     = false;
-  let bookError   = '';
+  // --- Estado del proceso de reservacion ---
+
+  /** True mientras se esta creando la reservacion en el backend. @type {boolean} */
+  let booking = false;
+
+  /** Mensaje de error durante el proceso de reservacion. @type {string} */
+  let bookError = '';
+
+  /** Objeto de reservacion creada, null si aun no se ha reservado. @type {any|null} */
   let reservacion = null;
 
-  // ── Validar fechas ────────────────────────────────────────
+  /**
+   * Valida que las fechas seleccionadas sean validas antes de procesar la reserva.
+   * @returns {boolean}
+   */
   function validarFechas() {
     if (!checkInDate || !checkOutDate) {
       bookError = 'Por favor selecciona las fechas de check-in y check-out.';
@@ -371,6 +509,12 @@
     return true;
   }
 
+  /**
+   * Detecta si un error de respuesta corresponde a un problema de autenticacion.
+   * @param {number} status - Codigo HTTP.
+   * @param {string} mensaje - Mensaje del error.
+   * @returns {boolean}
+   */
   function esErrorDeAutenticacion(status, mensaje) {
     if (status === 401 || status === 403) return true;
     const m = (mensaje || '').toLowerCase();
@@ -379,7 +523,12 @@
     return false;
   }
 
-  // ── Reservar habitación individual ────────────────────────
+  /**
+   * Procesa la reservacion de una habitacion individual.
+   * Elige al azar una habitacion fisica disponible del tipo seleccionado.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function bookNow() {
     if (!selectedRoom) return;
     if (!validarFechas()) return;
@@ -389,7 +538,7 @@
       ? selectedRoom.capacidadMaxima + 1
       : cantidadPersonas;
 
-    // Elegir una habitación disponible aleatoria del tipo seleccionado
+    // Elige una habitacion fisica disponible de forma aleatoria
     const disponibles = selectedRoom.habitacionesDisponibles || [];
     if (disponibles.length === 0) {
       bookError = 'No hay habitaciones disponibles de este tipo.';
@@ -438,7 +587,13 @@
     }
   }
 
-  // ── Reservar combinación ──────────────────────────────────
+  /**
+   * Procesa la reservacion de una combinacion de habitaciones.
+   * Elige habitaciones fisicas disponibles por cada slot, verifica unicidad de IDs
+   * y distribuye las personas entre los slots.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function bookCombo() {
     if (!comboActivo) return;
     if (!validarFechas()) return;
@@ -449,7 +604,7 @@
       return;
     }
 
-    const ids = comboActivo.slots.map(s => s.seleccionada.id);
+    const ids = comboActivo.slots.map(s => s.seleccionada.tipoHabitacionId);
     const idsUnicos = new Set(ids);
     if (idsUnicos.size !== ids.length) {
       bookError = 'No puedes seleccionar la misma habitación dos veces.';
@@ -460,7 +615,7 @@
 
     const personasPorSlot = distribuirPersonas(comboActivo.slots, cantidadPersonas);
 
-    // Elegir una habitación disponible aleatoria por cada slot
+    // Seleccion aleatoria de habitacion fisica por cada slot
     const habitacionesPorSlot = comboActivo.slots.map(s => {
       const disponibles = s.seleccionada?.habitacionesDisponibles || [];
       if (disponibles.length === 0) return null;
@@ -473,7 +628,7 @@
       return;
     }
 
-    // Verificar que no se repita el mismo ID de habitación física
+    // Verifica que no se repita la misma habitacion fisica en el combo
     const idsElegidos = habitacionesPorSlot.map(h => h.id);
     if (new Set(idsElegidos).size !== idsElegidos.length) {
       bookError = 'No hay suficientes habitaciones físicas disponibles para esta combinación.';
@@ -522,6 +677,13 @@
     }
   }
 
+  /**
+   * Distribuye el total de personas entre los slots del combo de forma proporcional,
+   * respetando la capacidad maxima de cada habitacion.
+   * @param {any[]} slots - Array de slots del combo.
+   * @param {number} total - Total de personas a distribuir.
+   * @returns {number[]}
+   */
   function distribuirPersonas(slots, total) {
     const result = new Array(slots.length).fill(0);
     let restante = total;
@@ -535,7 +697,10 @@
     return result;
   }
 
-  // ── Ir a pagar ────────────────────────────────────────────
+  /**
+   * Navega a la pagina de checkout pasando la reservacion recien creada.
+   * Construye el objeto con los datos correctos segun si es combo o individual.
+   */
   function goToCheckout() {
     if (reservacion._modo === 'combo') {
       navigateTo('checkout', {
@@ -566,33 +731,53 @@
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────
+  /**
+   * Formatea un numero como moneda USD sin decimales.
+   * @param {number} p
+   * @returns {string}
+   */
   function fmt(p) {
     return new Intl.NumberFormat('es-GT', {
       style: 'currency', currency: 'USD', minimumFractionDigits: 0
     }).format(p);
   }
 
+  /**
+   * Oculta una imagen con error en lugar de mostrar el icono roto del navegador.
+   * @param {Event} e
+   */
   function handleImgError(e) {
     /** @type {HTMLImageElement} */ (e.target).style.display = 'none';
   }
 
-  // ── Comentarios ───────────────────────────────────────────
-  /** @type {any[]} */
-  let comentarios   = [];
-  /** @type {Map<number,number>} */
-  let misDowns      = new Map();
+  // --- Sistema de comentarios ---
+
+  /** Lista de todos los comentarios del hotel (raiz e hijos). @type {any[]} */
+  let comentarios = [];
+
+  /** Mapa de votos del usuario autenticado: comentarioId -> valor. @type {Map<number,number>} */
+  let misDowns = new Map();
+
+  /** True mientras se cargan los comentarios. @type {boolean} */
   let comentLoading = false;
 
-  /** @type {Record<number,string>} */
-  let replyTexts  = {};
-  /** @type {Record<number,boolean>} */
-  let replyOpen   = {};
-  /** @type {Record<number,boolean>} */
+  /** Textos de respuesta en edicion por comentario padre. @type {Record<number,string>} */
+  let replyTexts = {};
+
+  /** Estado de apertura del formulario de respuesta por comentario. @type {Record<number,boolean>} */
+  let replyOpen = {};
+
+  /** Estado de guardado en curso por comentario. @type {Record<number,boolean>} */
   let replySaving = {};
 
+  // Carga los comentarios cuando el usuario abre la pestana correspondiente
   $: if (activeTab === 'comments' && hotel?.id) { loadComentarios(); }
 
+  /**
+   * Carga los comentarios del hotel y los votos del usuario actual en paralelo.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function loadComentarios() {
     comentLoading = true;
     try {
@@ -609,13 +794,29 @@
     comentLoading = false;
   }
 
-  $: resenasRaiz    = comentarios.filter(c => c.comentarioPadreId === null && c.resena !== null);
+  // Comentarios raiz que tienen puntuacion de resena (estrellas).
+  $: resenasRaiz = comentarios.filter(c => c.comentarioPadreId === null && c.resena !== null);
+
+  // Comentarios raiz que son solo texto, sin puntuacion de resena.
   $: comentariosRaiz = comentarios.filter(c => c.comentarioPadreId === null && c.resena === null);
 
+  /**
+   * Devuelve los comentarios que son respuesta directa a un comentario padre.
+   * @param {number} id - ID del comentario padre.
+   * @returns {any[]}
+   */
   function getRespuestas(id) {
     return comentarios.filter(c => c.comentarioPadreId === id);
   }
 
+  /**
+   * Registra, cambia o elimina el voto del usuario sobre un comentario.
+   * Si ya tiene el mismo voto, lo elimina; si tiene otro, lo actualiza; si no tiene, lo crea.
+   * @async
+   * @param {number} comentarioId
+   * @param {1|-1} valor
+   * @returns {Promise<void>}
+   */
   async function handleDown(comentarioId, valor) {
     const actual = misDowns.get(comentarioId);
     try {
@@ -640,6 +841,12 @@
     await loadComentarios();
   }
 
+  /**
+   * Envia una respuesta a un comentario por su ID de padre.
+   * @async
+   * @param {number} parentId
+   * @returns {Promise<void>}
+   */
   async function sendReply(parentId) {
     const texto = (replyTexts[parentId] || '').trim();
     if (!texto) return;
@@ -659,6 +866,13 @@
     replySaving[parentId] = false;
   }
 
+  /**
+   * Manejador de respuestas emitidas por el componente CommentNode hijo.
+   * Recibe el parentId, el contenido y un callback `done` para notificar el resultado.
+   * @async
+   * @param {{ parentId: number, contenido: string, done: Function }} param
+   * @returns {Promise<void>}
+   */
   async function sendReplyFromNode({ parentId, contenido, done }) {
     try {
       const res = await fetch(`${API}/comentarios`, {
@@ -677,10 +891,16 @@
     }
   }
 
+  /**
+   * Devuelve la etiqueta textual de una puntuacion de estrellas (1-5).
+   * @param {number} n
+   * @returns {string}
+   */
   function starLabel(n) {
     return ['','Muy malo','Malo','Regular','Bueno','Excelente'][n] || '';
   }
 
+  // Habitaciones con capacidad mayor a la buscada (el usuario puede reservarlas aunque sobren plazas). Excluye las que ya aparecen en la lista directa.
   $: habitacionesSuperiores = (() => {
     if (!hotel) return [];
     const directas = hotel.tiposHabitacion || [];
@@ -694,7 +914,7 @@
     return todas.filter(r => r.capacidadMaxima >= cantidadPersonas && !directas.find(d => d.id === r.id));
   })();
 
-  // ── Habitaciones con persona extra (+1) ───────────────────
+  // Habitaciones con capacidad de (personas-1) que admiten un huesped extra con cargo adicional. Solo se muestran si no aparecen ya en habitaciones directas o superiores.
   $: habitacionesPersonaExtra = (() => {
     if (!hotel || cantidadPersonas <= 1) return [];
     const directas = hotel.tiposHabitacion || [];
@@ -715,6 +935,7 @@
   })();
 </script>
 
+<!-- Navegacion con teclado para la galeria modal -->
 <svelte:window on:keydown={(e) => {
   if (!showImageGallery) return;
   if (e.key === 'Escape')     closeGallery();
@@ -722,6 +943,7 @@
   if (e.key === 'ArrowRight') nextImage();
 }} />
 
+<!-- Guard: si no se recibio un hotel valido, muestra mensaje de error -->
 {#if !hotel}
   <div class="hdet__no-hotel">
     <p>No se encontró información del hotel.</p>
@@ -730,7 +952,7 @@
 {:else}
 <div class="hotel-detail-page">
 
-  <!-- Hotel Header -->
+  <!-- Encabezado del hotel con nombre, ubicacion y rating -->
   <div class="hotel-header-section">
     <div class="hdet__container">
       <div class="hdet__hotel-header">
@@ -755,7 +977,7 @@
     </div>
   </div>
 
-  <!-- Gallery -->
+  <!-- Galeria de fotos del hotel con imagen principal y miniaturas -->
   {#if images.length > 0}
   <div class="gallery-preview-section">
     <div class="hdet__container">
@@ -779,13 +1001,14 @@
   </div>
   {/if}
 
-  <!-- Main Content -->
+  <!-- Contenido principal: pestanas a la izquierda y sidebar de reserva a la derecha -->
   <div class="main-content-section">
     <div class="hdet__container">
       <div class="content-layout">
 
-        <!-- LEFT -->
+        <!-- Columna principal con pestanas (descripcion, habitaciones, comentarios) -->
         <div class="content-main">
+          <!-- Navegacion de pestanas -->
           <nav class="tabs-nav">
             {#each [
               { id: 'overview',  label: 'Descripción'  },
@@ -798,13 +1021,14 @@
             {/each}
           </nav>
 
-          <!-- Descripción -->
+          <!-- Pestana: descripcion del hotel y amenidades -->
           {#if activeTab === 'overview'}
             <section class="content-section">
               <h2 class="hdet__section-title">Acerca de {hotel.nombre}</h2>
               <p class="hotel-long-description">{hotel.descripcion}</p>
             </section>
 
+            <!-- Grid de amenidades con imagen o emoji de respaldo -->
             {#if hotel.amenidades?.length > 0}
               <section class="content-section">
                 <h2 class="hdet__section-title">Servicios y Comodidades</h2>
@@ -828,10 +1052,10 @@
               </section>
             {/if}
 
-          <!-- Habitaciones -->
+          <!-- Pestana: habitaciones disponibles de todos los tipos -->
           {:else if activeTab === 'rooms'}
 
-            <!-- ═══ HABITACIONES INDIVIDUALES DISPONIBLES ═══ -->
+            <!-- Habitaciones con capacidad exacta para los huespedes -->
             {#if habitacionesDisponibles.length > 0}
               <section class="content-section">
                 <h2 class="hdet__section-title">Habitaciones Disponibles</h2>
@@ -882,7 +1106,7 @@
               </section>
             {/if}
 
-            <!-- ═══ HABITACIONES CON CAPACIDAD SUPERIOR ═══ -->
+            <!-- Habitaciones con capacidad superior a la solicitada -->
             {#if habitacionesSuperiores.length > 0}
               <section class="content-section hdet__superior-section">
                 <div class="hdet__superior-header">
@@ -921,7 +1145,7 @@
               </section>
             {/if}
 
-            <!-- ═══ HABITACIONES CON PERSONA EXTRA (+1) ═══ -->
+            <!-- Habitaciones que admiten una persona extra con cargo adicional -->
             {#if habitacionesPersonaExtra.length > 0}
               <section class="content-section hdet__superior-section">
                 <div class="hdet__superior-header">
@@ -960,7 +1184,7 @@
               </section>
             {/if}
 
-            <!-- ═══ SIN HABITACIONES DISPONIBLES ═══ -->
+            <!-- Aviso cuando no hay ningun tipo de habitacion disponible -->
             {#if habitacionesDisponibles.length === 0 && habitacionesSuperiores.length === 0 && habitacionesPersonaExtra.length === 0 && !hayCombinaciones && !hayCombosEspeciales}
               <section class="content-section">
                 <h2 class="hdet__section-title">Habitaciones</h2>
@@ -972,7 +1196,7 @@
               </section>
             {/if}
 
-            <!-- ═══ CREAR TU COMBINACIÓN (regulares) ═══ -->
+            <!-- Seccion de combinaciones exactas y aproximadas sugeridas por el backend -->
             {#if hayCombinaciones}
               <section class="content-section hdet__combo-section">
                 <div class="hdet__combo-header">
@@ -981,6 +1205,7 @@
                   <p class="hdet__section-description">Para {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}, el hotel sugiere combinar varias habitaciones. Puedes elegir qué habitación va en cada slot.</p>
                 </div>
 
+                <!-- Selector de combinacion cuando hay mas de una opcion sugerida -->
                 {#if combosSugeridos.length > 1}
                   <div class="hdet__combo-selector">
                     <p class="hdet__combo-selector-label">Elige una combinación sugerida:</p>
@@ -994,12 +1219,14 @@
                     </div>
                   </div>
                 {:else if hayComboAproximado && combosSugeridos.length === 0}
+                  <!-- Aviso cuando solo hay combinacion aproximada -->
                   <div class="hdet__combo-aprox-notice">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     No hay combinación exacta para {cantidadPersonas} personas. Mostramos la opción más cercana con capacidad para {comboAproximada.capacidadTotal} personas.
                   </div>
                 {/if}
 
+                <!-- Slots interactivos del combo activo (no especial) -->
                 {#if comboActivo && !comboActivo.esEspecial}
                   <div class="hdet__combo-slots">
                     {#each comboActivo.slots as slot, slotIdx}
@@ -1013,7 +1240,7 @@
                         </div>
                         <div class="hdet__combo-slot-opciones">
                           {#each slot.opciones as opcion}
-                            {@const bloqueada = esOpcionBloqueada(comboActivo, slotIdx, opcion.id)}
+                            {@const bloqueada = esOpcionBloqueada(comboActivo, slotIdx, opcion.tipoHabitacionId)}
                             <button class="hdet__combo-slot-opcion" class:active={slot.seleccionada?.id === opcion.id} class:blocked={bloqueada} disabled={bloqueada} on:click={() => cambiarHabEnSlot(slotIdx, opcion)} title={bloqueada ? 'Seleccionada en otro slot (cámbiala allí primero)' : opcion.tipoHabitacion}>
                               <div class="hdet__combo-opcion-img">{#if opcion.imagenesIds?.length > 0}<img src="{API}/imagenes/habitacion/{opcion.imagenesIds[0]}" alt={opcion.tipoHabitacion} on:error={handleImgError} />{:else}<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>{/if}</div>
                               <div class="hdet__combo-opcion-info">
@@ -1035,6 +1262,7 @@
                       </div>
                     {/each}
                   </div>
+                  <!-- Barra de total y boton para activar el combo en el sidebar -->
                   <div class="hdet__combo-total-bar">
                     <div class="hdet__combo-total-info"><span class="hdet__combo-total-label">Total combinación</span><span class="hdet__combo-total-habs">{comboActivo.slots.length} habitaciones · {cantidadPersonas} huéspedes</span></div>
                     <div class="hdet__combo-total-precios"><span class="hdet__combo-total-precio-noche">{fmt(comboTotalConPersonas)}/noche</span>{#if nights > 1}<span class="hdet__combo-total-precio-total">{fmt(comboTotalConPersonas * nights)} por {nights} noches</span>{/if}</div>
@@ -1046,7 +1274,7 @@
               </section>
             {/if}
 
-            <!-- ═══ COMBINACIONES ESPECIALES ═══ -->
+            <!-- Seccion de combinaciones especiales (habitaciones de capacidad n-1) -->
             {#if hayCombosEspeciales}
               <section class="content-section hdet__combo-section">
                 <div class="hdet__combo-header">
@@ -1055,6 +1283,7 @@
                   <p class="hdet__section-description">No hay una habitación individual para {cantidadPersonas} personas, pero puedes combinar {combosEspeciales[0]?.slots.length || 2} habitaciones de {cantidadPersonas - 1} personas para alojar a tu grupo.</p>
                 </div>
 
+                <!-- Selector de combinacion especial si hay mas de una opcion -->
                 {#if combosEspeciales.length > 1}
                   <div class="hdet__combo-selector">
                     <p class="hdet__combo-selector-label">Elige una combinación:</p>
@@ -1066,6 +1295,7 @@
                   </div>
                 {/if}
 
+                <!-- Slots del combo especial activo -->
                 {#if comboActivo && comboActivo.esEspecial}
                   <div class="hdet__combo-slots">
                     {#each comboActivo.slots as slot, slotIdx}
@@ -1112,29 +1342,35 @@
               </section>
             {/if}
 
+          <!-- Pestana: resenas y comentarios del hotel -->
           {:else if activeTab === 'comments'}
             <section class="content-section">
               <h2 class="hdet__section-title">Reseñas y Comentarios</h2>
               {#if comentLoading}<div class="cmt-loading"><div class="cmt-spinner"></div><span>Cargando comentarios...</span></div>
               {:else if comentarios.length === 0}<div class="cmt-empty"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Este hotel aún no tiene comentarios.</p></div>
               {:else}
+                <!-- Bloque de resenas con estrellas -->
                 {#if resenasRaiz.length > 0}<h3 class="cmt-group-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reseñas de huéspedes</h3><div class="cmt-list">{#each resenasRaiz as c (c.id)}<CommentNode comment={c} allComments={comentarios} misDowns={misDowns} isReply={false} on:vote={e => handleDown(e.detail.comentarioId, e.detail.valor)} on:reply={e => sendReplyFromNode(e.detail)} />{/each}</div>{/if}
+                <!-- Bloque de comentarios sin puntuacion -->
                 {#if comentariosRaiz.length > 0}<h3 class="cmt-group-title" style="margin-top: 2rem;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Comentarios</h3><div class="cmt-list">{#each comentariosRaiz as c (c.id)}<CommentNode comment={c} allComments={comentarios} misDowns={misDowns} isReply={false} on:vote={e => handleDown(e.detail.comentarioId, e.detail.valor)} on:reply={e => sendReplyFromNode(e.detail)} />{/each}</div>{/if}
               {/if}
             </section>
           {/if}
         </div>
 
-        <!-- SIDEBAR -->
+        <!-- Sidebar de reservacion con fechas, resumen de precio y boton de reservar -->
         <aside class="booking-sidebar">
           <div class="booking-summary">
             <h3 class="booking-title">Reserva tu Estancia</h3>
+
+            <!-- Selectores de fecha con aviso de actualizacion pendiente -->
             <div class="booking-section">
               <p class="booking-label">Fechas</p>
               <div class="date-inputs">
                 <div class="date-input-group"><span class="input-label">Check-in</span><input type="date" bind:value={checkInDate} min={todayStr} on:change={onSidebarDateChange} class="date-input" /></div>
                 <div class="date-input-group"><span class="input-label">Check-out</span><input type="date" bind:value={checkOutDate} min={minCheckOut} on:change={onSidebarDateChange} class="date-input" /></div>
               </div>
+              <!-- Aviso y boton para actualizar disponibilidad tras cambiar fechas -->
               {#if datesWarning}
                 <div class="hdet__book-notice" style="background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.4);color:#92400e;flex-direction:column;gap:0.5rem;align-items:flex-start;">
                   <div style="display:flex;align-items:center;gap:0.4rem;">
@@ -1151,11 +1387,14 @@
               {/if}
               {#if nights > 0}<div class="nights-display">{nights} {nights === 1 ? 'noche' : 'noches'}</div>{/if}
             </div>
+
+            <!-- Cantidad de huespedes (solo lectura, viene de la busqueda) -->
             <div class="booking-section">
               <p class="booking-label">Huéspedes</p>
               <div class="hdet__guests-display"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg><span>{cantidadPersonas} {cantidadPersonas === 1 ? 'huésped' : 'huéspedes'}</span></div>
             </div>
 
+            <!-- Resumen de la seleccion activa (habitacion individual o combo) -->
             {#if bookMode === 'single' && selectedRoom}
               <div class="booking-section selected-room-section">
                 <p class="booking-label">Habitación Seleccionada</p>
@@ -1185,9 +1424,11 @@
                 <button class="remove-room-btn" style="margin-top:.5rem;" on:click={() => { bookMode = 'single'; selectedRoomIsExtra = false; }} aria-label="Quitar combinación"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
               </div>
             {:else}
+              <!-- Estado vacio cuando no hay seleccion activa -->
               <div class="no-room-selected"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg><p>Selecciona una habitación o combinación para continuar</p></div>
             {/if}
 
+            <!-- Desglose de precio por noches segun el modo de reserva -->
             {#if bookMode === 'single' && selectedRoom && nights > 0}
               <div class="price-summary">
                 <div class="price-row"><span>{fmt(selectedRoom.precioPorNoche)}/noche × {nights} {nights === 1 ? 'noche' : 'noches'}</span><span>{fmt(selectedRoom.precioPorNoche * nights)}</span></div>
@@ -1211,8 +1452,10 @@
               </div>
             {/if}
 
+            <!-- Mensaje de error del proceso de reservacion -->
             {#if bookError}<div class="hdet__book-notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> {bookError}</div>{/if}
 
+            <!-- Botones de accion: reservar habitacion individual o combo -->
             <div class="booking-actions">
               {#if bookMode === 'single'}
                 <button class="btn-book-now" on:click={bookNow} disabled={!selectedRoom || booking}>{booking ? 'Procesando...' : selectedRoomIsExtra ? 'Reservar con +1 extra' : 'Reservar Ahora'}</button>
@@ -1221,6 +1464,7 @@
               {/if}
             </div>
 
+            <!-- Sellos de confianza -->
             <div class="trust-badges">
               <div class="trust-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span>Pago Seguro</span></div>
               <div class="trust-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Mejor Precio Garantizado</span></div>
@@ -1230,6 +1474,7 @@
       </div>
     </div>
 
+    <!-- Modal de confirmacion tras crear la reservacion -->
     {#if reservacion}
       <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
         <div class="hdet__confirm-modal">
@@ -1255,6 +1500,7 @@
       </div>
     {/if}
 
+    <!-- Modal que solicita al usuario iniciar sesion para poder reservar -->
     {#if showLoginRequired}
       <div class="hdet__confirm-overlay" role="dialog" aria-modal="true">
         <div class="hdet__login-prompt-modal">
@@ -1271,6 +1517,7 @@
     {/if}
   </div>
 
+  <!-- Galeria modal con navegacion por teclado y botones de anterior/siguiente -->
   {#if showImageGallery && images.length > 0}
     <div class="gallery-modal" role="dialog" aria-modal="true" aria-label="Galería de fotos">
       <button class="gallery-close" on:click={closeGallery} aria-label="Cerrar galería"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>

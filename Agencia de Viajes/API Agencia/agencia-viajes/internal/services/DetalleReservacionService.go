@@ -1,3 +1,8 @@
+// # Package services
+//
+// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
+// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
+// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -24,16 +29,48 @@ const (
 	TipoReservaPaquete   = 3
 )
 
+// DetalleReservacionService
+//
+// Servicio encargado de agregar detalles de vuelo y hotel a reservaciones
+// existentes en estado pendiente. Coordina la reserva con el proveedor externo,
+// aplica el margen de ganancia configurado, almacena el detalle en BD y
+// recalcula el total de la reservacion. Tambien gestiona el alta de pasajeros
+// en el sistema de la aerolinea.
 type DetalleReservacionService struct {
 	repo *repositories.DetalleReservacionRepository
 }
 
+// NewDetalleReservacionService
+//
+// Crea e inicializa una nueva instancia de DetalleReservacionService con su
+// repositorio de detalle de reservacion.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos SQL
+//
+// Retorna:
+//   - *DetalleReservacionService: instancia lista para usar
 func NewDetalleReservacionService(db *sql.DB) *DetalleReservacionService {
 	return &DetalleReservacionService{
 		repo: repositories.NewDetalleReservacionRepository(db),
 	}
 }
 
+// AgregarDetalleVuelo
+//
+// Agrega un detalle de vuelo a una reservacion existente. Valida que la
+// reservacion pertenezca al usuario, este en estado pendiente y no sea
+// exclusivamente de tipo hotelera. Llama al proveedor aerolinea para crear
+// la reserva, calcula el precio con ganancia por boleto y guarda el detalle
+// en BD, actualizando el total de la reservacion.
+//
+// Parametros:
+//   - usuarioID: identificador del usuario dueno de la reservacion
+//   - req: datos del detalle incluyendo ReservacionID, ProveedorID y lista de vuelos
+//
+// Retorna:
+//   - interface{}: mapa con mensaje, IDs, total base, total con ganancia y detalle del proveedor
+//   - error: si la reservacion no existe, no es valida, falla el proveedor o la BD
 func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.AgregarDetalleVueloRequest) (interface{}, error) {
 
 	reservacion, err := s.repo.ObtenerReservacionParaDetalle(req.ReservacionID, usuarioID)
@@ -105,6 +142,21 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 	}, nil
 }
 
+// AgregarDetalleHotel
+//
+// Agrega un detalle de hotel a una reservacion existente. Valida que la
+// reservacion pertenezca al usuario, este en estado pendiente y no sea
+// exclusivamente de tipo aerea. Llama al proveedor hotelera para crear
+// la reserva, calcula el precio con ganancia por noche (con soporte para
+// personas extra) y guarda el detalle en BD, actualizando el total.
+//
+// Parametros:
+//   - usuarioID: identificador del usuario dueno de la reservacion
+//   - req: datos del detalle incluyendo ReservacionID, ProveedorID y lista de habitaciones
+//
+// Retorna:
+//   - interface{}: mapa con mensaje, IDs, total base, total con ganancia y detalle del proveedor
+//   - error: si la reservacion no existe, no es valida, falla el proveedor o la BD
 func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.AgregarDetalleHotelRequest) (interface{}, error) {
 
 	reservacion, err := s.repo.ObtenerReservacionParaDetalle(req.ReservacionID, usuarioID)
@@ -197,6 +249,20 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.A
 	}, nil
 }
 
+// llamarReservacionAerolinea
+//
+// Realiza la llamada HTTP POST al endpoint de reservaciones de una aerolinea
+// proveedora enviando la seleccion de vuelos. Retorna la respuesta completa
+// del proveedor como mapa generico.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor aerolinea
+//   - token: token de autenticacion de agencia (X-Agencia-Token)
+//   - vuelos: lista de vuelos seleccionados con sus pasajeros
+//
+// Retorna:
+//   - map[string]interface{}: respuesta del proveedor con reservacionId, total y detalle
+//   - error: si la serializacion falla, la peticion HTTP falla o la respuesta es invalida
 func (s *DetalleReservacionService) llamarReservacionAerolinea(urlAPI, token string, vuelos []dto.SeleccionVuelo) (map[string]interface{}, error) {
 	body, err := json.Marshal(map[string]interface{}{
 		"vuelos": vuelos,
@@ -230,6 +296,20 @@ func (s *DetalleReservacionService) llamarReservacionAerolinea(urlAPI, token str
 	return resultado, nil
 }
 
+// llamarReservacionHotel
+//
+// Realiza la llamada HTTP POST al endpoint de reservaciones de una hotelera
+// proveedora enviando la seleccion de habitaciones. Retorna la respuesta
+// completa del proveedor como mapa generico.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor hotelera
+//   - token: token de autenticacion de agencia (X-Agencia-Token)
+//   - habitaciones: lista de habitaciones seleccionadas con fechas y opciones
+//
+// Retorna:
+//   - map[string]interface{}: respuesta del proveedor con id, total y detalle de habitaciones
+//   - error: si la serializacion falla, la peticion HTTP falla o la respuesta es invalida
 func (s *DetalleReservacionService) llamarReservacionHotel(urlAPI, token string, habitaciones []dto.SeleccionHabitacion) (map[string]interface{}, error) {
 	body, err := json.Marshal(map[string]interface{}{
 		"habitaciones": habitaciones,
@@ -263,6 +343,18 @@ func (s *DetalleReservacionService) llamarReservacionHotel(urlAPI, token string,
 	return resultado, nil
 }
 
+// AgregarPasajerosVuelo
+//
+// Registra los datos de los pasajeros en el sistema de la aerolinea para
+// una reservacion existente. Valida que cada pasajero tenga un numero de
+// pasaporte con solo digitos antes de enviar la solicitud al proveedor.
+//
+// Parametros:
+//   - usuarioID: identificador del usuario dueno de la reservacion
+//   - req: datos de la solicitud incluyendo ReservacionID, ProveedorID y lista de pasajeros
+//
+// Retorna:
+//   - error: si el pasaporte es invalido, falla la obtencion del detalle o falla el proveedor
 func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 	usuarioID int,
 	req dto.AgregarPasajerosVueloRequest,
@@ -297,6 +389,20 @@ func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 	return s.llamarPasajerosAerolinea(urlAPI, token, reservacionAerolineaID, req.Pasajeros)
 }
 
+// llamarPasajerosAerolinea
+//
+// Realiza la llamada HTTP POST al endpoint de pasajeros de la aerolinea
+// proveedora, enviando el ID de reservacion en el sistema externo y la
+// lista de pasajeros con sus datos personales y de pasaporte.
+//
+// Parametros:
+//   - urlAPI: URL base del API del proveedor aerolinea
+//   - token: token de autenticacion de agencia (X-Agencia-Token)
+//   - reservacionID: ID de la reservacion en el sistema de la aerolinea
+//   - pasajeros: lista de pasajeros con nombre, apellido, pasaporte y otros datos
+//
+// Retorna:
+//   - error: si la serializacion falla, la peticion HTTP falla o la aerolinea rechaza la solicitud
 func (s *DetalleReservacionService) llamarPasajerosAerolinea(
 	urlAPI, token string,
 	reservacionID int,

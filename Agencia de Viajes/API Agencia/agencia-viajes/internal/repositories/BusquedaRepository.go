@@ -1,3 +1,8 @@
+// # Package repositories
+//
+// Repositorios de acceso a datos para la agencia de viajes.
+// Este paquete centraliza todas las consultas a la base de datos
+// utilizadas por los servicios de la aplicacion.
 package repositories
 
 import (
@@ -6,14 +11,39 @@ import (
 	"database/sql"
 )
 
+// BusquedaRepository
+//
+// Repositorio encargado de las consultas de busqueda de ciudades
+// y proveedores disponibles segun origen, destino y tipo de servicio.
 type BusquedaRepository struct {
 	db *sql.DB
 }
 
+// NewBusquedaRepository
+//
+// Crea e inicializa una nueva instancia de BusquedaRepository.
+//
+// Parametros:
+//   - db: conexion activa a la base de datos
+//
+// Retorna:
+//   - *BusquedaRepository: instancia lista para usar
 func NewBusquedaRepository(db *sql.DB) *BusquedaRepository {
 	return &BusquedaRepository{db: db}
 }
 
+// BuscarCiudadID
+//
+// Consulta el ID de una ciudad a partir de su nombre y el nombre del pais
+// al que pertenece. La comparacion se realiza ignorando mayusculas y espacios.
+//
+// Parametros:
+//   - ciudad: nombre de la ciudad a buscar
+//   - pais: nombre del pais al que pertenece la ciudad
+//
+// Retorna:
+//   - *int: puntero al ID de la ciudad encontrada, nil si no existe
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *BusquedaRepository) BuscarCiudadID(ciudad, pais string) (*int, error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
@@ -38,6 +68,18 @@ func (r *BusquedaRepository) BuscarCiudadID(ciudad, pais string) (*int, error) {
 	return &id, nil
 }
 
+// ObtenerProveedoresPorOrigenYTipo
+//
+// Consulta los proveedores activos que operan desde una ciudad de origen dada
+// y que pertenecen a un tipo de catalogo especifico (por ejemplo, hotelero o aereo).
+//
+// Parametros:
+//   - ciudadOrigenID: ID de la ciudad de origen
+//   - tipoCatalogoID: ID del tipo de catalogo (1=aerolinea, 2=hotelera)
+//
+// Retorna:
+//   - []dto.ProveedorCatalogo: lista de proveedores que cumplen el criterio
+//   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *BusquedaRepository) ObtenerProveedoresPorOrigenYTipo(
 	ciudadOrigenID, tipoCatalogoID int,
 ) ([]dto.ProveedorCatalogo, error) {
@@ -71,6 +113,21 @@ func (r *BusquedaRepository) ObtenerProveedoresPorOrigenYTipo(
 	return proveedores, nil
 }
 
+// ObtenerAerolineasPorRuta
+//
+// Consulta los proveedores de tipo aerolinea (Tipo_Catalogo_ID = 1) activos
+// que operan desde una ciudad de origen determinada.
+//
+// Parametros:
+//   - ciudadOrigenID: ID de la ciudad de origen del vuelo
+//   - ciudadDestinoID: ID de la ciudad de destino (recibido pero no usado en el filtro SQL)
+//
+// Retorna:
+//   - []dto.ProveedorCatalogo: lista de aerolineas disponibles para la ruta
+//   - error: error de base de datos, nil si la operacion fue exitosa
+//
+// Notas:
+//   - El filtro por ciudad de destino no se aplica en la consulta actual
 func (r *BusquedaRepository) ObtenerAerolineasPorRuta(
 	ciudadOrigenID, ciudadDestinoID int,
 ) ([]dto.ProveedorCatalogo, error) {

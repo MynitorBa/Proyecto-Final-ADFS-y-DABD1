@@ -1,3 +1,9 @@
+// # Package helpers
+//
+// Provee funciones auxiliares reutilizables para tareas comunes de la
+// aplicacion Movent: generacion de tokens, hashing de contrasenas,
+// manejo de sesiones JWT, envio de correos electronicos y generacion
+// de documentos PDF.
 package helpers
 
 import (
@@ -10,6 +16,11 @@ import (
 
 // ── DTOs ──────────────────────────────────────────────────────────────────
 
+// ReservacionPDFData
+//
+// Agrupa todos los datos necesarios para generar el PDF y el correo
+// HTML de una reservacion. Contiene informacion del encabezado,
+// del usuario titular y las listas de boletos y habitaciones.
 type ReservacionPDFData struct {
 	NoReservacion string
 	EstadoReserva string
@@ -22,6 +33,10 @@ type ReservacionPDFData struct {
 	Habitaciones  []HabitacionPDF
 }
 
+// BoletoPDF
+//
+// Representa los datos de un boleto de vuelo para incluir
+// en el PDF o correo de confirmacion de reservacion.
 type BoletoPDF struct {
 	NoBoleto       string
 	NumeroVuelo    string
@@ -41,6 +56,10 @@ type BoletoPDF struct {
 	PasajeroNombre string
 }
 
+// HabitacionPDF
+//
+// Representa los datos de una habitacion de hotel para incluir
+// en el PDF o correo de confirmacion de reservacion.
 type HabitacionPDF struct {
 	NombreHotel      string
 	TipoHabitacion   string
@@ -70,12 +89,19 @@ var (
 	cNar  = [3]int{140, 90, 20}    // naranja estado pendiente
 )
 
+// fill establece el color de relleno del PDF con los valores RGB dados.
 func fill(pdf *gofpdf.Fpdf, c [3]int) { pdf.SetFillColor(c[0], c[1], c[2]) }
+
+// text establece el color de texto del PDF con los valores RGB dados.
 func text(pdf *gofpdf.Fpdf, c [3]int) { pdf.SetTextColor(c[0], c[1], c[2]) }
+
+// draw establece el color de linea del PDF con los valores RGB dados.
 func draw(pdf *gofpdf.Fpdf, c [3]int) { pdf.SetDrawColor(c[0], c[1], c[2]) }
 
 // ── Encoding UTF-8 → Latin-1 ─────────────────────────────────────────────
 
+// e convierte caracteres UTF-8 especiales del espanol a su equivalente
+// Latin-1 para compatibilidad con la libreria gofpdf.
 func e(s string) string {
 	r := strings.NewReplacer(
 		"á", "\xe1", "é", "\xe9", "í", "\xed", "ó", "\xf3", "ú", "\xfa",
@@ -87,6 +113,8 @@ func e(s string) string {
 	return r.Replace(s)
 }
 
+// dash retorna un guion si la cadena s esta vacia o solo espacios,
+// de lo contrario retorna la cadena convertida a Latin-1 mediante e().
 func dash(s string) string {
 	if strings.TrimSpace(s) == "" {
 		return "-"
@@ -96,6 +124,19 @@ func dash(s string) string {
 
 // ── Entrypoint ─────────────────────────────────────────────────────────────
 
+// GenerarPDFReservacion
+//
+// Genera el documento PDF de comprobante de reservacion a partir de
+// los datos proporcionados. Construye el layout en dos columnas con
+// un header fijo, banda de resumen, datos generales, boletos o
+// habitaciones, total y condiciones. Retorna los bytes del PDF.
+//
+// Parametros:
+//   - data: struct ReservacionPDFData con toda la informacion de la reservacion
+//
+// Retorna:
+//   - []byte: contenido binario del PDF generado
+//   - error: error si la generacion o escritura del PDF falla
 func GenerarPDFReservacion(data ReservacionPDFData) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	// Márgenes: top grande para header fijo, laterales ajustados
@@ -143,6 +184,8 @@ func GenerarPDFReservacion(data ReservacionPDFData) ([]byte, error) {
 
 // ── Header ─────────────────────────────────────────────────────────────────
 
+// header dibuja el encabezado fijo de cada pagina del PDF. Incluye el
+// logotipo MOVENT, subtitulo, numero de reservacion y estado.
 func header(pdf *gofpdf.Fpdf, data ReservacionPDFData) {
 	pw := 210.0
 
@@ -189,6 +232,8 @@ func header(pdf *gofpdf.Fpdf, data ReservacionPDFData) {
 
 // ── Banda de resumen rápido ────────────────────────────────────────────────
 
+// bandaResumen dibuja la franja de resumen inmediatamente debajo del header,
+// mostrando el tipo de reservacion, fecha, titular y correo del usuario.
 func bandaResumen(pdf *gofpdf.Fpdf, data ReservacionPDFData) {
 	pw := 210.0
 	mx := 13.0
@@ -235,6 +280,9 @@ func bandaResumen(pdf *gofpdf.Fpdf, data ReservacionPDFData) {
 
 // ── Columna izquierda: datos generales ────────────────────────────────────
 
+// renderColIzq dibuja la columna izquierda del PDF con los datos
+// generales de la reservacion (codigo, estado, tipo y fecha).
+// Retorna la coordenada Y final tras dibujar el contenido.
 func renderColIzq(pdf *gofpdf.Fpdf, data ReservacionPDFData, x, y, w float64) float64 {
 	y = secTitle(pdf, e("DATOS DE LA RESERVACION"), x, y, w)
 
@@ -250,6 +298,9 @@ func renderColIzq(pdf *gofpdf.Fpdf, data ReservacionPDFData, x, y, w float64) fl
 
 // ── Columna derecha: boletos / habitaciones ───────────────────────────────
 
+// renderColDer dibuja la columna derecha del PDF con las tarjetas de
+// boletos de vuelo y habitaciones de hotel incluidos en la reservacion.
+// Retorna la coordenada Y final tras dibujar todo el contenido.
 func renderColDer(pdf *gofpdf.Fpdf, data ReservacionPDFData, x, y, w float64) float64 {
 	if len(data.Boletos) > 0 {
 		label := fmt.Sprintf(e("BOLETOS (%d)"), len(data.Boletos))
@@ -273,6 +324,9 @@ func renderColDer(pdf *gofpdf.Fpdf, data ReservacionPDFData, x, y, w float64) fl
 	return y
 }
 
+// renderBoleto dibuja la tarjeta de un boleto de vuelo individual en el PDF,
+// mostrando la ruta, horarios, clase, asiento, precio y pasajero.
+// Retorna la coordenada Y final tras dibujar la tarjeta.
 func renderBoleto(pdf *gofpdf.Fpdf, b BoletoPDF, num int, x, y, w float64) float64 {
 	// Mini header boleto
 	fill(pdf, cOsc)
@@ -334,6 +388,9 @@ func renderBoleto(pdf *gofpdf.Fpdf, b BoletoPDF, num int, x, y, w float64) float
 	return y + 2
 }
 
+// renderHab dibuja la tarjeta de una habitacion de hotel individual en el PDF,
+// mostrando el nombre del hotel, tipo, cama, fechas y numero de huespedes.
+// Retorna la coordenada Y final tras dibujar la tarjeta.
 func renderHab(pdf *gofpdf.Fpdf, h HabitacionPDF, num int, x, y, w float64) float64 {
 	// Mini header habitación
 	fill(pdf, cOsc)
@@ -360,6 +417,8 @@ func renderHab(pdf *gofpdf.Fpdf, h HabitacionPDF, num int, x, y, w float64) floa
 
 // ── Total ──────────────────────────────────────────────────────────────────
 
+// renderTotal dibuja la barra de total de la reservacion en el PDF,
+// con fondo oscuro a la izquierda y fondo amarillo con el monto a la derecha.
 func renderTotal(pdf *gofpdf.Fpdf, total float64, x, y, w float64) {
 	h := 12.0
 
@@ -382,6 +441,8 @@ func renderTotal(pdf *gofpdf.Fpdf, total float64, x, y, w float64) {
 
 // ── Condiciones ────────────────────────────────────────────────────────────
 
+// renderCondiciones dibuja el bloque de terminos y condiciones al pie
+// del PDF con las politicas de la agencia en formato compacto.
 func renderCondiciones(pdf *gofpdf.Fpdf, x, y, w float64) {
 	// Título mínimo
 	fill(pdf, cCre)
@@ -410,7 +471,9 @@ func renderCondiciones(pdf *gofpdf.Fpdf, x, y, w float64) {
 
 // ── Helpers de layout ──────────────────────────────────────────────────────
 
-// secTitle dibuja el encabezado de una sección y retorna la Y siguiente
+// secTitle dibuja el encabezado de una seccion con fondo oscuro y franja
+// amarilla izquierda. Retorna la coordenada Y siguiente para continuar
+// dibujando debajo del titulo.
 func secTitle(pdf *gofpdf.Fpdf, titulo string, x, y, w float64) float64 {
 	h := 7.5
 
@@ -429,7 +492,8 @@ func secTitle(pdf *gofpdf.Fpdf, titulo string, x, y, w float64) float64 {
 	return y + h
 }
 
-// kvTable dibuja una tabla de pares clave/valor; retorna Y final
+// kvTable dibuja una tabla de pares clave/valor con fondo crema para
+// etiquetas y fondo blanco/alterno para valores. Retorna la Y final.
 func kvTable(pdf *gofpdf.Fpdf, rows [][2]string, x, y, w, rowH float64) float64 {
 	lblW := w * 0.40
 	valW := w - lblW
@@ -465,7 +529,8 @@ func kvTable(pdf *gofpdf.Fpdf, rows [][2]string, x, y, w, rowH float64) float64 
 	return y
 }
 
-// footer se llama al final de cada página (solo pie de página MOVENT)
+// footer dibuja el pie de pagina MOVENT con fondo oscuro y franja amarilla.
+// Se invoca automaticamente al final de cada pagina del PDF.
 func footer(pdf *gofpdf.Fpdf) {
 	pw := 210.0
 	fill(pdf, cOsc)
@@ -480,6 +545,9 @@ func footer(pdf *gofpdf.Fpdf) {
 
 // ── Utilidades ─────────────────────────────────────────────────────────────
 
+// estadoRGB retorna los valores RGB correspondientes al estado de la
+// reservacion para colorear el texto: verde (confirmada/completada),
+// rojo (cancelada) o naranja (cualquier otro estado).
 func estadoRGB(estado string) (int, int, int) {
 	switch strings.ToLower(estado) {
 	case "confirmada", "completada":

@@ -1,10 +1,11 @@
-/* ========== PROFILE PAGE ========== */
+/* Página de perfil con fondo oscuro degradado */
 .profile-page {
   min-height: 100vh;
   background: linear-gradient(160deg, #0f0f23 0%, #1a1a3e 40%, #0d2137 100%);
   padding: 2.5rem 1rem 4rem;
 }
 
+/* Contenedor centrado del perfil */
 .profile-container {
   max-width: 720px;
   margin: 0 auto;
@@ -13,7 +14,7 @@
   gap: 1.5rem;
 }
 
-/* ── Loading / Error ── */
+/* Estados de carga y error de la página */
 .profile-loading,
 .profile-error-box {
   display: flex;
@@ -26,6 +27,7 @@
   text-align: center;
 }
 
+/* Spinner de carga */
 .profile-spinner {
   width: 40px;
   height: 40px;
@@ -37,7 +39,7 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Hero ── */
+/* Hero con avatar, nombre y tags del usuario */
 .profile-hero {
   display: flex;
   align-items: center;
@@ -49,6 +51,7 @@
   backdrop-filter: blur(12px);
 }
 
+/* Avatar grande con iniciales del usuario */
 .profile-avatar-big {
   width: 80px;
   height: 80px;
@@ -64,6 +67,7 @@
   box-shadow: 0 8px 24px rgba(102,126,234,0.4);
 }
 
+/* Nombre visible del usuario */
 .profile-nombre {
   font-size: 1.5rem;
   font-weight: 700;
@@ -71,18 +75,21 @@
   margin: 0 0 0.2rem;
 }
 
+/* Nombre de usuario secundario */
 .profile-username {
   font-size: 0.9rem;
   color: rgba(255,255,255,0.5);
   margin: 0 0 0.75rem;
 }
 
+/* Fila de tags del perfil (rol, nacionalidad, etc.) */
 .profile-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
 
+/* Tag genérico del perfil */
 .profile-tag {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -92,12 +99,13 @@
   font-weight: 500;
 }
 
+/* Tag de nacionalidad con color específico */
 .profile-tag.nac {
   background: rgba(102,126,234,0.25);
   color: #a5b4fc;
 }
 
-/* ── Card ── */
+/* Tarjeta de sección del perfil */
 .profile-card {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
@@ -109,6 +117,7 @@
   gap: 1.25rem;
 }
 
+/* Título de cada sección con ícono */
 .profile-section-title {
   font-size: 1rem;
   font-weight: 600;
@@ -124,19 +133,21 @@
   color: #667eea;
 }
 
-/* ── Info Grid ── */
+/* Grid de dos columnas para datos informativos */
 .profile-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 
+/* Ítem individual de información de perfil */
 .profile-info-item {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
+/* Etiqueta de dato de perfil en mayúsculas */
 .profile-info-label {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -145,13 +156,14 @@
   font-weight: 600;
 }
 
+/* Valor del dato de perfil */
 .profile-info-value {
   font-size: 0.95rem;
   color: #e2e8f0;
   font-weight: 500;
 }
 
-/* ── Field ── */
+/* Campo editable del perfil con label e input */
 .profile-field {
   display: flex;
   flex-direction: column;
@@ -164,6 +176,7 @@
   color: rgba(255,255,255,0.75);
 }
 
+/* Input de edición con estilo oscuro */
 .profile-field input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -186,7 +199,7 @@
 
 .profile-field input::placeholder { color: rgba(255,255,255,0.3); }
 
-/* ── Password wrap ── */
+/* Contenedor de input de contraseña con botón de ojo */
 .profile-pwd-wrap {
   position: relative;
 }
@@ -195,6 +208,7 @@
   padding-right: 3rem;
 }
 
+/* Botón de mostrar/ocultar contraseña */
 .profile-eye {
   position: absolute;
   right: 0.75rem;
@@ -212,6 +226,7 @@
 
 .profile-eye:hover { color: rgba(255,255,255,0.8); }
 
+/* Indicador de coincidencia de contraseñas */
 .profile-match {
   font-size: 0.82rem;
   font-weight: 500;
@@ -220,7 +235,7 @@
 .profile-match.ok  { color: #4ade80; }
 .profile-match.err { color: #f87171; }
 
-/* ── Button ── */
+/* Botón principal de guardado */
 .profile-btn-primary {
   display: flex;
   align-items: center;
@@ -249,11 +264,12 @@
   cursor: not-allowed;
 }
 
+/* Spinner dentro del botón cuando está cargando */
 .btn-spinner {
   animation: spin 0.8s linear infinite;
 }
 
-/* ── Alert ── */
+/* Alertas de éxito o error tras guardar */
 .profile-alert {
   padding: 0.75rem 1rem;
   border-radius: 8px;
@@ -273,11 +289,12 @@
   border: 1px solid rgba(248,113,113,0.25);
 }
 
-/* ── Autocomplete país ── */
+/* Contenedor del autocomplete de país */
 .profile-autocomplete-wrap {
   position: relative;
 }
 
+/* Lista desplegable del autocomplete */
 .profile-autocomplete-list {
   position: absolute;
   top: calc(100% + 4px);
@@ -291,6 +308,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
+/* Opción del autocomplete */
 .profile-autocomplete-btn {
   width: 100%;
   text-align: left;
@@ -310,7 +328,7 @@
   color: #ffffff;
 }
 
-/* ── Phone wrap con dialCode ── */
+/* Campo de teléfono con prefijo internacional */
 .profile-phone-wrap {
   display: flex;
   align-items: center;
@@ -326,6 +344,7 @@
   box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
 }
 
+/* Código de marcación del país */
 .profile-dial-code {
   padding: 0.75rem 0.875rem;
   background: rgba(102,126,234,0.15);
@@ -337,6 +356,7 @@
   flex-shrink: 0;
 }
 
+/* Input del número de teléfono */
 .profile-phone-wrap input {
   flex: 1;
   background: transparent;
@@ -351,7 +371,7 @@
 .profile-phone-wrap input::placeholder { color: rgba(255,255,255,0.3); }
 .profile-phone-wrap input:disabled { cursor: not-allowed; opacity: 0.5; }
 
-/* ── Responsive ── */
+/* Responsive para móviles */
 @media (max-width: 600px) {
   .profile-hero { flex-direction: column; text-align: center; }
   .profile-tags { justify-content: center; }

@@ -1,34 +1,72 @@
 <script>
+  /**
+   * @file AdminUsuarios.svelte
+   * @description Modulo de gestion de usuarios del panel de administracion.
+   * Permite buscar, filtrar por rol y cambiar el rol de cualquier usuario registrado
+   * mediante un modal con tarjetas de seleccion visual.
+   */
+
   import { onMount } from 'svelte';
 
+  /** URL base de la API del backend. @type {string} */
   export let API_BASE;
+
+  /**
+   * Funcion que retorna la clase CSS del badge segun el estado o rol.
+   * @type {function(string): string}
+   */
   export let badge;
+
+  /** Contador de usuarios totales, expuesto al componente padre. @type {number} */
   export let count = 0;
 
+  /** Lista completa de usuarios cargados desde el servidor. @type {Array<Object>} */
   let usuarios = [];
+
+  /** Indica si la peticion de carga esta en progreso. @type {boolean} */
   let cargandoUsuarios = false;
+
+  /** Mensaje de error si la carga de usuarios falla. @type {string|null} */
   let errorUsuarios = null;
 
+  /** Texto ingresado en el buscador para filtrar por nombre, apellido, username o correo. @type {string} */
   let busquedaUsuario = '';
+
+  /** ID de rol usado como filtro; 'todos' para mostrar todos los roles. @type {string} */
   let filtroRol = 'todos';
 
-  // Modal editar rol
+  /** Controla la visibilidad del modal de cambio de rol. @type {boolean} */
   let showModalEditarUsuario = false;
+
+  /** Usuario que esta siendo editado en el modal. @type {Object|null} */
   let usuarioSeleccionado = null;
+
+  /** Copia mutable con el rolId que se quiere asignar al usuario. @type {{rolId: number}} */
   let editUsuario = { rolId: 1 };
+
+  /** Indica si la peticion para guardar el nuevo rol esta en curso. @type {boolean} */
   let guardandoRol = false;
+
+  /** Mensaje de retroalimentacion dentro del modal de roles. @type {{tipo: string, texto: string}|null} */
   let mensajeRol = null;
 
+  // Lista de usuarios filtrada reactivamente por busqueda y rol seleccionado.
   $: usuariosFiltrados = usuarios.filter(u => {
     const q = busquedaUsuario.toLowerCase();
     const matchBusqueda = q === '' || u.nombre.toLowerCase().includes(q) || u.apellido.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || u.correo.toLowerCase().includes(q);
     return matchBusqueda && (filtroRol === 'todos' || String(u.rolId) === filtroRol);
   });
 
+  // Mantiene el contador exportado sincronizado con el total de usuarios.
   $: count = usuarios.length;
 
   onMount(() => { cargarUsuarios(); });
 
+  /**
+   * Obtiene la lista completa de usuarios desde el endpoint del administrador.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarUsuarios() {
     cargandoUsuarios = true;
     errorUsuarios = null;
@@ -43,6 +81,10 @@
     }
   }
 
+  /**
+   * Abre el modal de edicion con el rol actual del usuario precargado.
+   * @param {Object} u - Objeto del usuario a editar.
+   */
   function abrirEditarUsuario(u) {
     usuarioSeleccionado = u;
     editUsuario = { rolId: u.rolId };
@@ -50,16 +92,28 @@
     showModalEditarUsuario = true;
   }
 
+  /**
+   * Cierra el modal y limpia el estado de la edicion.
+   */
   function cerrarModal() {
     showModalEditarUsuario = false;
     usuarioSeleccionado = null;
     mensajeRol = null;
   }
 
+  /**
+   * Maneja la tecla Escape para cerrar el modal al presionarla sobre el overlay.
+   * @param {KeyboardEvent} e
+   */
   function handleOverlayKey(e) {
     if (e.key === 'Escape') cerrarModal();
   }
 
+  /**
+   * Envia el nuevo rol al backend mediante PATCH y actualiza la lista local de usuarios.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function guardarCambioRol() {
     if (!usuarioSeleccionado) return;
     guardandoRol = true;
@@ -72,7 +126,8 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
-const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice' };
+      /** Mapa de IDs de rol a su nombre descriptivo. @type {Object<number, string>} */
+      const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice' };
       usuarios = usuarios.map(u =>
         u.id === usuarioSeleccionado.id
           ? { ...u, rolId: editUsuario.rolId, rolNombre: rolNombres[editUsuario.rolId] ?? 'Usuario Registrado' }
@@ -87,7 +142,7 @@ const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice
   }
 </script>
 
-<!-- Filtros -->
+<!-- Barra de busqueda, filtro por rol y boton de recarga -->
 <div class="adm__filters-bar">
   <div class="adm__search-wrap">
     <svg class="adm__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -117,6 +172,7 @@ const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice
     <button class="adm__btn adm__btn--ghost" on:click={cargarUsuarios}>Reintentar</button>
   </div>
 {:else}
+  <!-- Tabla de usuarios filtrados -->
   <div class="adm__card adm__card--no-pad">
     <div class="adm__table-wrap">
       <table class="adm__table">
@@ -127,6 +183,7 @@ const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice
           {#each usuariosFiltrados as u (u.id)}
             <tr>
               <td>
+                <!-- Avatar con inicial y color diferenciado segun el rol del usuario -->
                 <div class="adm__user-mini">
                   <div class="adm__user-mini-avatar" style="background: {u.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : u.rolId === 3 ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
                     {u.nombre.charAt(0)}
@@ -158,11 +215,12 @@ const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice
   </div>
 {/if}
 
-<!-- Modal cambiar rol -->
+<!-- Modal para cambiar el rol de un usuario con tarjetas de seleccion visual -->
 {#if showModalEditarUsuario && usuarioSeleccionado}
   <div class="adm__overlay" on:click={cerrarModal} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
   <div class="adm__rol-modal">
     <div class="adm__rol-modal__header">
+      <!-- Avatar con el color del rol actual del usuario -->
       <div class="adm__rol-modal__avatar" style="background: {usuarioSeleccionado.rolId === 2 ? 'linear-gradient(135deg,#f59e0b,#d97706)' : usuarioSeleccionado.rolId === 3 ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#667eea,#764ba2)'}">
         {usuarioSeleccionado.nombre.charAt(0)}
       </div>
@@ -176,6 +234,7 @@ const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice
       </button>
     </div>
 
+    <!-- Tarjetas de seleccion de rol: Usuario, Administrador, Webservice -->
     <div class="adm__rol-modal__body">
       <p class="adm__rol-modal__label">Seleccionar nuevo rol</p>
       <div class="adm__rol-cards">
@@ -204,6 +263,7 @@ const rolNombres = { 1: 'Usuario Registrado', 2: 'Administrador', 3: 'Webservice
         {/each}
       </div>
 
+      <!-- Mensaje de error si el guardado falla -->
       {#if mensajeRol}
         <div class="adm__feedback adm__feedback--{mensajeRol.tipo}">
           {#if mensajeRol.tipo === 'ok'}

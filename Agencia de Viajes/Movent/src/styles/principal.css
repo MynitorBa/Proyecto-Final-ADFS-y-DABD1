@@ -1,11 +1,10 @@
+/* Página principal a ancho completo */
 .page {
   width: 100%;
   min-height: 100vh;
 }
 
-/* ════════════════════════════════════════════════════════════
-  HERO
-════════════════════════════════════════════════════════════ */
+/* Hero con imagen de fondo fija y doble overlay con ruido sutil */
 .hero {
   position: relative;
   min-height: 92vh;
@@ -16,6 +15,7 @@
   overflow: hidden;
 }
 
+/* Overlay principal con degradado oscuro */
 .hero-overlay {
   position: absolute;
   inset: 0;
@@ -24,6 +24,7 @@
     linear-gradient(135deg, rgba(0,0,0,0.88) 0%, rgba(20,18,16,0.72) 45%, rgba(100,72,40,0.85) 100%);
 }
 
+/* Textura de ruido encima del overlay */
 .hero-overlay::after {
   content: '';
   position: absolute;
@@ -33,6 +34,7 @@
   pointer-events: none;
 }
 
+/* Línea amarilla degradada al fondo del hero */
 .hero::before {
   content: '';
   position: absolute;
@@ -42,6 +44,7 @@
   z-index: 2;
 }
 
+/* Contenido del hero centrado con texto y tarjeta de búsqueda */
 .hero-content {
   position: relative;
   z-index: 1;
@@ -53,11 +56,13 @@
   gap: 3rem;
 }
 
+/* Bloque de texto del hero con animación de entrada */
 .hero-text {
   text-align: center;
   animation: heroFadeUp 0.8s ease both;
 }
 
+/* Eyebrow generado por CSS antes del título */
 .hero-text::before {
   content: '✦  Vuelos · Hoteles · Paquetes  ✦';
   display: block;
@@ -70,6 +75,7 @@
   opacity: 0.9;
 }
 
+/* Título principal del hero con tipografía grande y sombra */
 .hero-title {
   font-size: clamp(2.8rem, 5.5vw, 4.5rem);
   font-weight: 900;
@@ -80,6 +86,7 @@
   letter-spacing: -0.03em;
 }
 
+/* Span del título en amarillo con línea decorativa inferior */
 .hero-title span {
   color: #FFCC00;
   position: relative;
@@ -104,6 +111,7 @@
   line-height: 1.7;
 }
 
+/* Estadísticas del hero en fila con separador superior */
 .hero-stats {
   display: flex;
   justify-content: center;
@@ -134,6 +142,7 @@
   margin-top: 0.3rem;
 }
 
+/* Tarjeta de búsqueda flotante con sombra intensa */
 .search-card {
   background: white;
   border-radius: 24px;
@@ -147,7 +156,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── SEARCH CARD INTERIOR ── */
+/* Título de la tarjeta de búsqueda */
 .search-card-title {
   color: #1C1A18;
   font-size: 1.4rem;
@@ -158,7 +167,7 @@
   letter-spacing: -0.01em;
 }
 
-/* ── TABS ── */
+/* Tabs de tipo de búsqueda: vuelos, hoteles y paquetes */
 .search-tabs {
   display: flex;
   gap: 10px;
@@ -187,7 +196,7 @@
 .search-tabs button.active { background: #FFCC00; color: #000; border-color: #000; }
 .search-tabs button:hover:not(.active) { border-color: #FFCC00; color: #1C1A18; }
 
-/* ── TRIP TYPE TOGGLE (solo ida / ida y vuelta) ── */
+/* Toggle solo ida / ida y vuelta con pill activa en amarillo */
 .trip-type-toggle {
   display: flex;
   gap: 4px;
@@ -223,7 +232,7 @@
   color: #5a4e00;
 }
 
-/* ── FORM GRID ── */
+/* Grid de campos del formulario de búsqueda con separadores internos */
 .form-grid {
   display: grid;
   align-items: stretch;
@@ -241,6 +250,7 @@
   gap: 0.3rem;
 }
 
+/* Separador vertical entre grupos del formulario */
 .form-group + .form-group::before {
   content: '';
   position: absolute;
@@ -251,6 +261,7 @@
 
 .form-group:focus-within { background: #fffef5; border-radius: 14px; }
 
+/* Label del campo con ícono decorativo */
 .form-label {
   display: flex;
   align-items: center;
@@ -264,6 +275,7 @@
 
 .label-icon { color: #8B6B4A; flex-shrink: 0; }
 
+/* Input transparente sin bordes dentro del grupo */
 .form-input {
   border: none;
   outline: none;
@@ -279,7 +291,7 @@
 .form-input:disabled { color: #cbd5e1; cursor: not-allowed; }
 select.form-input { cursor: pointer; }
 
-/* ── SEARCH BTN ── */
+/* Botón principal de búsqueda con sombra amarilla */
 .search-btn {
   width: 100%;
   padding: 1rem 2rem;
@@ -303,7 +315,7 @@ select.form-input { cursor: pointer; }
 .search-btn:hover { background: #000; color: #FFCC00; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
 .search-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-/* ── SEAT CLASS ROW ── */
+/* Fila de selección de clase de asiento */
 .seat-class-row {
   display: flex;
   align-items: center;
@@ -319,6 +331,7 @@ select.form-input { cursor: pointer; }
   text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
 }
 
+/* Botones de clase de asiento tipo pill */
 .seat-btn {
   padding: 0.35rem 0.85rem;
   border: 2px solid #e2e8f0; border-radius: 20px;
@@ -330,7 +343,7 @@ select.form-input { cursor: pointer; }
 .seat-btn.active { background: #FFCC00; color: #000; border-color: #000; font-weight: 800; }
 .seat-btn:hover:not(.active) { border-color: #FFCC00; color: #1C1A18; }
 
-/* ── COMBO LABEL ── */
+/* Label de combinación vuelo+hotel */
 .combo-label {
   display: flex;
   align-items: center;
@@ -342,7 +355,7 @@ select.form-input { cursor: pointer; }
   border-radius: 10px 10px 0 0;
 }
 
-/* ── INLINE AUTOCOMPLETE ── */
+/* Dropdown de autocompletado simple */
 .autocomplete-wrap { position: relative; }
 
 .inline-autocomplete {
@@ -365,7 +378,7 @@ select.form-input { cursor: pointer; }
 
 .inline-autocomplete button:hover { background: rgba(255,204,0,0.15); }
 
-/* ── ERROR ── */
+/* Mensaje de error de validación del formulario */
 .search-error {
   display: flex; align-items: center; gap: 0.45rem;
   color: #dc2626; font-size: 0.85rem; font-weight: 600;
@@ -373,9 +386,7 @@ select.form-input { cursor: pointer; }
   background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;
 }
 
-/* ════════════════════════════════════════════════════════════
-  VUELOS CARDS
-════════════════════════════════════════════════════════════ */
+/* Cards de vuelo de ida y vuelta */
 .vuelos-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -386,6 +397,7 @@ select.form-input { cursor: pointer; }
 
 .vuelos-cards--solo { grid-template-columns: 1fr; }
 
+/* Tarjeta de un vuelo individual */
 .vuelo-card {
   border: 2px solid #e2e8f0;
   border-radius: 14px;
@@ -395,6 +407,7 @@ select.form-input { cursor: pointer; }
   gap: 0;
 }
 
+/* Label superior de la tarjeta de vuelo */
 .vuelo-card__label {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em;
@@ -410,16 +423,19 @@ select.form-input { cursor: pointer; }
 .vuelo-card .campo + .campo { padding-top: 0.65rem; }
 .vuelo-card .campo .form-label { min-height: 1.1rem; line-height: 1; }
 
+/* Fila de origen y destino en 2 columnas */
 .destino-fila {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
 }
 
+/* Campo genérico con posición relativa para el autocomplete */
 .campo {
   display: flex; flex-direction: column; gap: 0.25rem; position: relative;
 }
 
+/* Input estándar dentro de los campos del formulario */
 .campo-input {
   border: 1.5px solid #e2e8f0; border-radius: 8px;
   padding: 0.5rem 0.75rem; font-size: 0.9rem; color: #1C1A18;
@@ -434,11 +450,10 @@ select.form-input { cursor: pointer; }
   font-weight: 400; color: #94a3b8; font-size: 0.65rem; text-transform: none;
 }
 
-/* ════════════════════════════════════════════════════════════
-  FEATURES
-════════════════════════════════════════════════════════════ */
+/* Sección de características del servicio en blanco */
 .features-section { padding: 6rem 0; background: white; }
 
+/* Contenedor centrado reutilizable */
 .container {
   max-width: 1200px; margin: 0 auto; padding: 0 2rem;
   width: 100%; display: flex; flex-direction: column; align-items: center;
@@ -450,10 +465,12 @@ select.form-input { cursor: pointer; }
 
 .section-description { font-size: 1.1rem; color: #64748b; max-width: 600px; margin: 0 auto; }
 
+/* Grid de 4 tarjetas de características */
 .features-grid {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; width: 100%;
 }
 
+/* Tarjeta de característica con hover de elevación */
 .feature-card {
   text-align: center; padding: 2.5rem 2rem; border-radius: 16px;
   background: white; border: 1px solid #e2e8f0; transition: all 0.3s ease;
@@ -465,9 +482,7 @@ select.form-input { cursor: pointer; }
 .feature-title { font-size: 1.3rem; font-weight: 800; color: #1C1A18; margin-bottom: 0.75rem; }
 .feature-description { color: #64748b; line-height: 1.6; font-size: 0.95rem; }
 
-/* ════════════════════════════════════════════════════════════
-  CTA
-════════════════════════════════════════════════════════════ */
+/* Sección CTA con fondo negro e imagen de fondo tenue */
 .cta-section {
   padding: 6rem 0; background: #1C1A18; position: relative; overflow: hidden;
 }
@@ -485,6 +500,7 @@ select.form-input { cursor: pointer; }
 
 .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
+/* Botones del CTA: primario amarillo y secundario transparente */
 .cta-btn {
   padding: 1.1rem 2.5rem; border-radius: 12px; font-weight: 800; font-size: 1rem;
   cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center;
@@ -496,9 +512,7 @@ select.form-input { cursor: pointer; }
 .cta-btn.secondary { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.4); }
 .cta-btn.secondary:hover { background: rgba(255,255,255,0.1); border-color: white; }
 
-/* ════════════════════════════════════════════════════════════
-  SCROLL TOP
-════════════════════════════════════════════════════════════ */
+/* Botón flotante de volver al inicio con avión SVG */
 .scroll-top {
   position: fixed; bottom: 40px; right: 40px;
   width: 60px; height: 60px; background: #FFCC00;
@@ -512,9 +526,7 @@ select.form-input { cursor: pointer; }
 .scroll-top:hover .avion-icon { fill: #FFCC00; }
 .avion-icon { width: 28px; height: 28px; fill: #000; }
 
-/* ════════════════════════════════════════════════════════════
-  AUTOCOMPLETE ESTILO BROOM
-════════════════════════════════════════════════════════════ */
+/* Autocomplete estilo broom con badge IATA */
 .inline-autocomplete--broom {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: white; border: 2px solid #FFCC00; border-radius: 12px;
@@ -534,6 +546,7 @@ select.form-input { cursor: pointer; }
 
 .inline-autocomplete--broom button:hover { background: rgba(255,204,0,0.12); }
 
+/* Pill del código IATA del aeropuerto */
 .ac-iata {
   font-size: 0.9rem; font-weight: 800; color: #8B6B4A;
   background: #fffef0; border: 1.5px solid #FFCC00; border-radius: 6px;
@@ -545,14 +558,13 @@ select.form-input { cursor: pointer; }
 .ac-ciudad { font-size: 0.9rem; font-weight: 700; color: #1C1A18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ac-nombre { font-size: 0.75rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Estados de validación del IATA */
 .iata-status { display: block; font-size: 0.75rem; font-weight: 600; margin-top: 4px; padding: 2px 0; }
 .iata-status--ok    { color: #16a34a; }
 .iata-status--error { color: #dc2626; }
 .iata-buscando { display: block; font-size: 0.75rem; color: #64748b; margin-top: 3px; }
 
-/* ════════════════════════════════════════════════════════════
-  RESPONSIVE
-════════════════════════════════════════════════════════════ */
+/* Responsive: ajustes de grids de features y formulario */
 @media (max-width: 1024px) {
   .features-grid { grid-template-columns: repeat(2, 1fr); }
   .form-grid { grid-template-columns: 1fr 1fr !important; }

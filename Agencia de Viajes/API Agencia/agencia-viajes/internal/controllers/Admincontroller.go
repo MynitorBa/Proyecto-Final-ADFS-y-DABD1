@@ -1,3 +1,7 @@
+// # Package controllers
+//
+// Controladores HTTP de la API de Movent. Cada controlador agrupa los handlers
+// relacionados a un recurso o dominio especifico de la aplicacion.
 package controllers
 
 import (
@@ -9,15 +13,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AdminController
+//
+// Controlador que maneja los endpoints del panel de administracion,
+// incluyendo gestion de usuarios, roles, proveedores, reservaciones
+// recientes y metricas financieras.
 type AdminController struct {
 	db *sql.DB
 }
 
+// NewAdminController
+//
+// Constructor que retorna una nueva instancia de AdminController
+// con la conexion a la base de datos inyectada.
+//
+// Parametros:
+//   - db: puntero a la conexion de base de datos SQL
+//
+// Retorna:
+//   - *AdminController: puntero a la nueva instancia
 func NewAdminController(db *sql.DB) *AdminController {
 	return &AdminController{db: db}
 }
 
-// GET /api/usuarios
+// ListarUsuarios
+//
+// Retorna la lista completa de usuarios registrados en el sistema junto
+// con su rol asignado, ordenada por ID ascendente.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con arreglo de usuarios (id, nombre, apellido, correo, fechaRegistro, rolId, rol)
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o consulta
 func (ctrl *AdminController) ListarUsuarios(c *gin.Context) {
 	conn, err := ctrl.db.Conn(context.Background())
 	if err != nil {
@@ -64,7 +93,18 @@ func (ctrl *AdminController) ListarUsuarios(c *gin.Context) {
 	c.JSON(http.StatusOK, lista)
 }
 
-// PUT /api/usuarios/:id/rol
+// ActualizarRol
+//
+// Actualiza el rol de un usuario especifico. El ID del usuario se lee
+// desde el parametro de URL :id y el nuevo rol desde el body JSON.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de confirmacion
+//   - HTTP 400 Bad Request: si el ID es invalido o el campo rolId no esta presente
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o al ejecutar el UPDATE
 func (ctrl *AdminController) ActualizarRol(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -96,7 +136,17 @@ func (ctrl *AdminController) ActualizarRol(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"mensaje": "rol actualizado"})
 }
 
-// GET /api/proveedores — listar (diferente al POST existente)
+// ListarProveedores
+//
+// Retorna la lista completa de proveedores registrados con su tipo, estado,
+// URL de API y porcentaje de ganancia configurado, ordenada por ID ascendente.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con arreglo de proveedores incluyendo campo activo derivado del EstadoID
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o consulta
 func (ctrl *AdminController) ListarProveedores(c *gin.Context) {
 	conn, err := ctrl.db.Conn(context.Background())
 	if err != nil {
@@ -151,7 +201,19 @@ func (ctrl *AdminController) ListarProveedores(c *gin.Context) {
 	c.JSON(http.StatusOK, lista)
 }
 
-// PATCH /api/proveedores/:id/estado
+// ToggleEstadoProveedor
+//
+// Activa o desactiva un proveedor segun el valor del campo activo recibido
+// en el body. El ID del proveedor se lee desde el parametro de URL :id.
+// EstadoID 1 equivale a activo, EstadoID 2 equivale a inactivo.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de confirmacion
+//   - HTTP 400 Bad Request: si el ID es invalido o el body no puede ser parseado
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o al ejecutar el UPDATE
 func (ctrl *AdminController) ToggleEstadoProveedor(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -188,7 +250,18 @@ func (ctrl *AdminController) ToggleEstadoProveedor(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"mensaje": "estado actualizado"})
 }
 
-// PUT /api/proveedores/:id
+// EditarProveedor
+//
+// Actualiza el nombre, URL de API y porcentaje de ganancia de un proveedor.
+// El ID del proveedor se lee desde el parametro de URL :id.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de confirmacion
+//   - HTTP 400 Bad Request: si el ID es invalido o el body no puede ser parseado
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o al ejecutar el UPDATE
 func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -223,7 +296,18 @@ func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"mensaje": "proveedor actualizado"})
 }
 
-// GET /api/admin/reservaciones/recientes — últimas 10 reservaciones de todos los usuarios
+// ReservacionesRecientes
+//
+// Retorna las ultimas 10 reservaciones realizadas en la plataforma por
+// cualquier usuario, ordenadas por fecha de creacion descendente.
+// Incluye nombre del usuario, tipo, total y estado de cada reservacion.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con arreglo de hasta 10 reservaciones recientes
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o consulta
 func (ctrl *AdminController) ReservacionesRecientes(c *gin.Context) {
 	conn, err := ctrl.db.Conn(context.Background())
 	if err != nil {
@@ -298,7 +382,24 @@ func (ctrl *AdminController) ReservacionesRecientes(c *gin.Context) {
 	c.JSON(http.StatusOK, lista)
 }
 
-// GET /api/admin/metricas — desglose financiero por reservación
+// ObtenerMetricas
+//
+// Retorna el desglose financiero detallado de todas las reservaciones,
+// separando el monto cobrado, el costo base y la ganancia por cada detalle
+// (vuelo u hotel) segun el porcentaje de ganancia configurado en cada proveedor.
+// Tambien incluye un resumen global agrupado por tipo de reservacion.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con campos resumen (totales globales y por tipo) y
+//     reservaciones (lista detallada con desglose financiero individual)
+//   - HTTP 500 Internal Server Error: si ocurre un error de conexion o consulta
+//
+// Notas:
+//   - El costo base se calcula como: cobrado / (1 + porcentaje/100)
+//   - La ganancia es la diferencia entre cobrado y base
 func (ctrl *AdminController) ObtenerMetricas(c *gin.Context) {
 	conn, err := ctrl.db.Conn(context.Background())
 	if err != nil {

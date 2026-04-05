@@ -1,21 +1,45 @@
 <script>
+  /**
+   * @file Checkout.svelte
+   * @description Pagina de pago de reservaciones pendientes. Muestra un resumen de las
+   * reservaciones del usuario, permite ingresar los datos de la tarjeta y procesa el pago
+   * contra el backend. Al finalizar redirige a la pagina de agradecimiento con las facturas.
+   */
+
   import '../styles/checkout.css';
 
+  /** Funcion de navegacion inyectada por el router. @type {Function} */
   export let navigateTo;
+
+  /**
+   * Datos opcionales para pre-cargar reservaciones desde otra pagina.
+   * Si se provee, se omite la llamada al API.
+   * @type {any}
+   */
   export let checkoutData = null;
 
+  /** URL base del backend. @type {string} */
   const API = 'http://localhost:7000';
 
-  // ── Estado general ────────────────────────────────────────
-  let loading       = true;
-  let loadError     = '';
-  let reservations  = [];
+  /** Indica si las reservaciones aun estan cargando. @type {boolean} */
+  let loading = true;
 
-  // ── Estado de pago ────────────────────────────────────────
+  /** Mensaje de error al cargar las reservaciones. @type {string} */
+  let loadError = '';
+
+  /** Lista de reservaciones agrupadas y pendientes de pago. @type {any[]} */
+  let reservations = [];
+
+  /** Indica si el formulario de pago se esta enviando. @type {boolean} */
   let submitting = false;
-  let payError   = '';
 
-  // ── Datos del formulario de pago ──────────────────────────
+  /** Mensaje de error que puede surgir al intentar pagar. @type {string} */
+  let payError = '';
+
+  /**
+   * Datos del formulario de pago.
+   * @type {{ nit: string, codigoPostal: string, numeroTarjeta: string, nombreTitular: string, fechaVencimiento: string, cvv: string }}
+   */
   let form = {
     nit:             '',
     codigoPostal:    '',
@@ -25,28 +49,50 @@
     cvv:             '',
   };
 
-  // ── Helpers ───────────────────────────────────────────────
+  /**
+   * Formatea un numero como moneda USD con separadores guatemaltecos.
+   * @param {number} p - El valor numerico a formatear.
+   * @returns {string}
+   */
   const fmt = p => new Intl.NumberFormat('es-GT', {
     style: 'currency', currency: 'USD', minimumFractionDigits: 2
   }).format(p);
 
+  /**
+   * Extrae solo la parte de fecha (YYYY-MM-DD) de una cadena de fecha completa.
+   * @param {string} str - Fecha en formato string.
+   * @returns {string}
+   */
   function fmtDate(str) {
     if (!str) return '—';
     return str.toString().split(' ')[0];
   }
 
+  /**
+   * Formatea el numero de tarjeta con espacios cada 4 digitos al escribir.
+   * @param {Event} e - Evento del input.
+   */
   function formatCardNumber(e) {
     let v = /** @type {HTMLInputElement} */ (e.target).value.replace(/\D/g,'').slice(0,16);
     form.numeroTarjeta = v.replace(/(.{4})/g,'$1 ').trim();
   }
 
+  /**
+   * Formatea la fecha de vencimiento de la tarjeta en formato MM/AA al escribir.
+   * @param {Event} e - Evento del input.
+   */
   function formatExpiry(e) {
     let v = /** @type {HTMLInputElement} */ (e.target).value.replace(/\D/g,'').slice(0,4);
     if (v.length > 2) v = v.slice(0,2)+'/'+v.slice(2);
     form.fechaVencimiento = v;
   }
 
-  // ── Agrupa filas del API por id de reservación ───────────
+  /**
+   * Agrupa las filas planas que devuelve el API en objetos de reservacion,
+   * cada uno con su array de habitaciones asociadas.
+   * @param {any[]} rows - Filas crudas del API.
+   * @returns {any[]}
+   */
   function groupRows(rows) {
     const map = new Map();
     for (const row of rows) {
@@ -77,7 +123,12 @@
     return Array.from(map.values());
   }
 
-  // ── Carga reservaciones pendientes ────────────────────────
+  /**
+   * Carga las reservaciones con estado "pendiente" del usuario autenticado.
+   * Si se recibieron datos previos via prop, los usa directamente sin llamar al API.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function loadPending() {
     loading = true; loadError = '';
     try {
@@ -100,10 +151,16 @@
 
   loadPending();
 
+  // Suma total de todas las reservaciones a pagar.
   $: totalSelected = reservations.reduce((s, r) => s + (r.total || 0), 0);
-  $: anySelected   = reservations.length > 0;
 
-  // ── Validación formulario ─────────────────────────────────
+  // True si hay al menos una reservacion lista para pagar.
+  $: anySelected = reservations.length > 0;
+
+  /**
+   * Valida los campos del formulario de pago antes de enviarlo.
+   * @returns {string|null} Mensaje de error o null si todo es valido.
+   */
   function validate() {
     const card = form.numeroTarjeta.replace(/\s/g,'');
     if (!form.nit.trim())             return 'Ingresa tu NIT';
@@ -115,7 +172,14 @@
     return null;
   }
 
-  // ── Procesar pagos ────────────────────────────────────────
+  /**
+   * Procesa el pago de todas las reservaciones pendientes.
+   * Itera cada reservacion, llama al endpoint de pago y acumula las facturas generadas.
+   * Al terminar, si hay facturas exitosas navega a la pantalla de agradecimiento.
+   * Tambien dispara el envio del correo de confirmacion de forma asincrona.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handlePay() {
     payError = '';
     const err = validate();
@@ -168,9 +232,11 @@
   }
 </script>
 
+<!-- Contenedor principal del checkout -->
 <div class="checkout">
   <div class="checkout__container">
 
+    <!-- Cabecera con boton para volver y titulo de la seccion -->
     <div class="checkout__header">
       <button class="checkout__back" on:click={() => navigateTo('home')}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -179,12 +245,14 @@
       <h1 class="checkout__title">Pagar reservaciones</h1>
     </div>
 
+    <!-- Estado de carga inicial -->
     {#if loading}
       <div class="checkout-loading">
         <div class="checkout-loading__spinner"></div>
         <p>Cargando reservaciones pendientes...</p>
       </div>
 
+    <!-- Error al intentar cargar las reservaciones -->
     {:else if loadError}
       <div class="checkout-empty">
         <div class="checkout-empty__icon">⚠️</div>
@@ -193,6 +261,7 @@
         <button class="confirm-btn" on:click={loadPending}>Reintentar</button>
       </div>
 
+    <!-- No hay reservaciones pendientes de pago -->
     {:else if reservations.length === 0}
       <div class="checkout-empty">
         <div class="checkout-empty__icon">🧾</div>
@@ -201,13 +270,14 @@
         <button class="confirm-btn" on:click={() => navigateTo('home')}>Buscar hoteles</button>
       </div>
 
+    <!-- Contenido principal: lista de reservaciones + formulario de pago + sidebar -->
     {:else}
       <div class="checkout__content">
 
-        <!-- ── Columna izquierda: lista + formulario ── -->
+        <!-- Columna izquierda: lista de reservaciones y formulario de tarjeta -->
         <div class="checkout__main">
 
-          <!-- Lista de reservaciones pendientes -->
+          <!-- Lista de reservaciones pendientes de pago -->
           <section class="checkout-section">
             <h2 class="checkout-section__title">Reservaciones pendientes de pago</h2>
             <p class="checkout-section__sub">Reservaciones a pagar en este momento</p>
@@ -240,7 +310,7 @@
             </div>
           </section>
 
-          <!-- Formulario de pago -->
+          <!-- Formulario con los datos de la tarjeta de credito/debito -->
           <section class="checkout-section">
             <h2 class="checkout-section__title">Datos de pago</h2>
 
@@ -277,6 +347,7 @@
               </div>
             </div>
 
+            <!-- Mensaje de error del proceso de pago -->
             {#if payError}
               <div class="checkout-error">{payError}</div>
             {/if}
@@ -284,7 +355,7 @@
 
         </div>
 
-        <!-- ── Sidebar resumen ── -->
+        <!-- Sidebar lateral con resumen del total y boton de pagar -->
         <aside class="checkout__sidebar">
           <div class="order-summary">
             <h2 class="order-summary__title">Resumen</h2>
@@ -292,6 +363,7 @@
             {#if reservations.length === 0}
               <p class="order-empty-note">Cargando reservaciones...</p>
             {:else}
+              <!-- Filas individuales por reservacion -->
               <div class="order-rows">
                 {#each reservations as r}
                   <div class="order-row">
@@ -303,12 +375,14 @@
 
               <div class="order-summary__divider"></div>
 
+              <!-- Total acumulado de todas las reservaciones -->
               <div class="order-summary__total">
                 <span class="order-summary__total-label">{reservations.length} reservación{reservations.length !== 1 ? 'es' : ''}</span>
                 <span class="order-summary__total-value">{fmt(totalSelected)}</span>
               </div>
             {/if}
 
+            <!-- Boton principal de pago -->
             <button class="order-summary__btn-pay"
               on:click={handlePay}
               disabled={submitting || !anySelected}>
@@ -321,6 +395,7 @@
               {/if}
             </button>
 
+            <!-- Indicadores de seguridad -->
             <div class="order-summary__security">
               <p class="security-badge">✓ Pago 100% seguro</p>
               <p class="security-note">Tus datos están protegidos con encriptación SSL</p>

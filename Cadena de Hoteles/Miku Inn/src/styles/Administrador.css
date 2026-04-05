@@ -1,10 +1,4 @@
-/* ════════════════════════════════════════════
-   ADMINISTRADOR PANEL — administrador.css
-   Layout: Sidebar fijo + main scrollable
-   VERSIÓN COMPLETA OPTIMIZADA
-   ════════════════════════════════════════════ */
-
-/* ── Variables locales ── */
+/* Variables locales del panel y layout flex principal */
 .adm {
   --adm-bg:          #0d1117;
   --adm-surface:     #161b22;
@@ -32,9 +26,7 @@
   color: var(--adm-text);
 }
 
-/* ════════════════════════════════════════════
-   ANIMATIONS
-   ════════════════════════════════════════════ */
+/* Keyframes de animaciones del panel */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 @keyframes modalIn {
@@ -56,13 +48,11 @@
   to   { opacity: 0; transform: translateX(40px); }
 }
 
-/* ── Spinner ── */
+/* Spinner de carga reutilizable */
 .adm__spinner { animation: adm-spin 0.8s linear infinite; }
 .adm__spinner--sm { width: 14px; height: 14px; }
 
-/* ════════════════════════════════════════════
-   SIDEBAR
-   ════════════════════════════════════════════ */
+/* Sidebar fijo con navegación vertical */
 .adm__sidebar {
   width: var(--adm-sidebar-w);
   flex-shrink: 0;
@@ -76,6 +66,7 @@
   overflow-y: auto;
 }
 
+/* Cabecera del sidebar con logo y nombre */
 .adm__sidebar-header {
   padding: 1.5rem 1.25rem 1rem;
   border-bottom: 1px solid var(--adm-border);
@@ -93,8 +84,10 @@
 .adm__sidebar-logo-title { font-weight: 700; font-size: 1rem; color: var(--adm-text); margin: 0; line-height: 1.2; }
 .adm__sidebar-logo-sub { font-size: 0.72rem; color: var(--adm-text-muted); margin: 0; line-height: 1.2; }
 
+/* Navegación principal del sidebar */
 .adm__sidebar-nav { flex: 1; padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; }
 
+/* Botones de navegación en el sidebar */
 .adm__nav-btn {
   display: flex; align-items: center; gap: 0.75rem; width: 100%;
   padding: 0.75rem 1rem; background: none; border: none; border-radius: var(--adm-radius);
@@ -108,12 +101,14 @@
 }
 .adm__nav-btn--active svg { color: #a5b4fc; }
 
+/* Contador de elementos junto al botón de nav */
 .adm__nav-count {
   margin-left: auto; background: rgba(255,255,255,0.1); color: var(--adm-text-muted);
   font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 20px;
 }
 .adm__nav-btn--active .adm__nav-count { background: rgba(102,126,234,0.3); color: #a5b4fc; }
 
+/* Footer del sidebar con botón de volver */
 .adm__sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid var(--adm-border); }
 
 .adm__back-btn {
@@ -123,11 +118,10 @@
 }
 .adm__back-btn:hover { background: rgba(255,255,255,0.05); color: var(--adm-text); }
 
-/* ════════════════════════════════════════════
-   MAIN
-   ════════════════════════════════════════════ */
+/* Área principal del panel con topbar y contenido */
 .adm__main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-x: hidden; }
 
+/* Barra superior fija con título y acciones */
 .adm__topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   padding: 1.25rem 2rem; background: var(--adm-surface);
@@ -138,21 +132,19 @@
 .adm__topbar-right { display: flex; align-items: center; gap: 1rem; }
 .adm__topbar-date { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--adm-text-muted); text-transform: capitalize; }
 
+/* Área de contenido con scroll vertical */
 .adm__content { flex: 1; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; }
 
-/* ════════════════════════════════════════════
-   LOADING / ERROR STATES
-   ════════════════════════════════════════════ */
+/* Estados de carga y error centralizados */
 .adm__loading-state { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 3rem; color: var(--adm-text-muted); font-size: 0.88rem; }
 .adm__loading-state p { margin: 0; }
 .adm__error-state { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 2.5rem; color: var(--adm-text-muted); font-size: 0.88rem; text-align: center; }
 .adm__error-state p { margin: 0; }
 
-/* ════════════════════════════════════════════
-   STATS GRID
-   ════════════════════════════════════════════ */
+/* Grid de tarjetas de estadísticas del dashboard */
 .adm__stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
 
+/* Tarjeta de estadística individual con hover */
 .adm__stat-card {
   background: var(--adm-surface); border: 1px solid var(--adm-border);
   border-radius: 14px; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s;
@@ -161,6 +153,7 @@
 .adm__stat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
 .adm__stat-icon-wrap { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
 
+/* Colores del ícono según variante de la tarjeta */
 .adm__stat-card--blue   .adm__stat-icon-wrap { background: rgba(88,166,255,0.15);  color: var(--adm-blue); }
 .adm__stat-card--green  .adm__stat-icon-wrap { background: rgba(63,185,80,0.15);   color: var(--adm-green); }
 .adm__stat-card--purple .adm__stat-icon-wrap { background: rgba(102,126,234,0.15); color: var(--adm-accent); }
@@ -171,9 +164,7 @@
 .adm__stat-value { font-size: 1.75rem; font-weight: 800; color: var(--adm-text); margin: 0 0 0.25rem; line-height: 1; }
 .adm__stat-label { font-size: 0.82rem; color: var(--adm-text-muted); margin: 0; }
 
-/* ════════════════════════════════════════════
-   CARDS
-   ════════════════════════════════════════════ */
+/* Tarjeta genérica del panel */
 .adm__card { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: 14px; padding: 1.5rem; }
 .adm__card--no-pad { padding: 0; overflow: hidden; }
 .adm__card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem; }
@@ -182,9 +173,7 @@
 .adm__link-btn { background: none; border: none; color: var(--adm-accent); font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0; transition: opacity 0.2s; }
 .adm__link-btn:hover { opacity: 0.75; }
 
-/* ════════════════════════════════════════════
-   TABLE
-   ════════════════════════════════════════════ */
+/* Tabla de datos con cabecera diferenciada y filas con hover */
 .adm__table-wrap { overflow-x: auto; }
 .adm__table { width: 100%; border-collapse: collapse; font-size: 0.88rem; table-layout: auto; }
 .adm__table thead th {
@@ -201,9 +190,7 @@
 .adm__table-center { text-align: center; font-weight: 600; color: var(--adm-text); }
 .adm__empty-cell { text-align: center; color: var(--adm-text-muted); padding: 3rem !important; font-size: 0.9rem; }
 
-/* ════════════════════════════════════════════
-   BADGES
-   ════════════════════════════════════════════ */
+/* Badges de estado con variantes de color */
 .adm__badge {
   display: inline-flex; align-items: center; padding: 0.2rem 0.65rem;
   border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; text-transform: capitalize;
@@ -223,9 +210,7 @@
 .adm__badge--gray   { background: rgba(139,148,158,0.15);  color: #8b949e; }
 .adm__badge--purple { background: rgba(167,139,250,0.15);  color: #a78bfa; }
 
-/* ════════════════════════════════════════════
-   USER MINI
-   ════════════════════════════════════════════ */
+/* Mini componente de usuario para filas de tabla */
 .adm__user-mini { display: flex; align-items: center; gap: 0.75rem; }
 .adm__user-mini-avatar {
   width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
@@ -234,9 +219,7 @@
 .adm__user-mini-name { font-weight: 600; font-size: 0.88rem; color: var(--adm-text); margin: 0; line-height: 1.2; }
 .adm__user-mini-sub { font-size: 0.75rem; color: var(--adm-text-muted); margin: 0; line-height: 1.2; }
 
-/* ════════════════════════════════════════════
-   BUTTONS
-   ════════════════════════════════════════════ */
+/* Botones de acción: ícono, primario, ghost, danger y variantes de tamaño */
 .adm__icon-btn {
   width: 32px; height: 32px; border-radius: 7px; border: 1px solid var(--adm-border);
   background: var(--adm-surface-2); display: flex; align-items: center; justify-content: center;
@@ -266,9 +249,7 @@
 .adm__btn--success { background: #1a5c30; color: #3fb950; border: 1.5px solid #3fb950; }
 .adm__btn--success:hover { background: #1f6e38; }
 
-/* ════════════════════════════════════════════
-   FILTERS BAR
-   ════════════════════════════════════════════ */
+/* Barra de filtros: búsqueda, selects y conteo de resultados */
 .adm__filters-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 .adm__search-wrap { position: relative; flex: 1; min-width: 220px; }
 .adm__search-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--adm-text-muted); pointer-events: none; }
@@ -287,9 +268,7 @@
 .adm__select option { background: #1c2128; }
 .adm__count-label { font-size: 0.82rem; color: var(--adm-text-muted); white-space: nowrap; }
 
-/* ════════════════════════════════════════════
-   DASHBOARD LAYOUT
-   ════════════════════════════════════════════ */
+/* Grid del dashboard con barras de ocupación por hotel */
 .adm__dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .adm__hotel-bars { display: flex; flex-direction: column; gap: 0.875rem; }
 .adm__hotel-bar-item { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -299,9 +278,7 @@
 .adm__hotel-bar-track { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
 .adm__hotel-bar-fill { height: 100%; background: linear-gradient(90deg, var(--adm-accent), var(--adm-accent-2)); border-radius: 3px; transition: width 0.8s ease; }
 
-/* ════════════════════════════════════════════
-   HOTEL TABLE — miniatura + datos
-   ════════════════════════════════════════════ */
+/* Componente miniatura de hotel para filas de tabla */
 .adm__hotel-mini { display: flex; align-items: center; gap: .75rem; }
 .adm__hotel-mini-thumb {
   width: 44px; height: 44px; border-radius: 8px; overflow: hidden; background: #252b3b;
@@ -320,24 +297,20 @@
   color: #f0a030; font-size: .82rem; font-weight: 700; padding: 3px 8px; border-radius: 20px;
 }
 
-/* ════════════════════════════════════════════
-   OVERLAY
-   ════════════════════════════════════════════ */
+/* Overlay oscuro para modales */
 .adm__overlay {
   position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   z-index: 2000; animation: fadeIn 0.2s ease;
 }
 
-/* ════════════════════════════════════════════
-   MODAL BASE — ROL / GENERAL
-   ════════════════════════════════════════════ */
+/* Modal de cambio de rol con información del usuario */
 .adm__rol-modal {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   z-index: 2001; width: 90%; max-width: 460px; background: #1e2330;
   border: 1px solid #363d52; border-radius: 20px;
   box-shadow: 0 32px 80px rgba(0,0,0,0.9);
-  animation: fadeIn 0.2s ease;  
+  animation: fadeIn 0.2s ease;
   overflow: hidden;
 }
 .adm__rol-modal__header {
@@ -363,7 +336,7 @@
 .adm__rol-modal__label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #8b95b0; margin: 0 0 .875rem; }
 .adm__rol-modal__footer { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.5rem; border-top: 1px solid #363d52; background: #1a1f2e; }
 
-/* ── Rol cards ── */
+/* Tarjetas de selección de rol con estados activos por color */
 .adm__rol-cards { display: flex; flex-direction: column; gap: .625rem; }
 .adm__rol-card {
   display: flex; align-items: center; gap: .875rem; padding: .9rem 1rem;
@@ -385,14 +358,12 @@
 .adm__rol-card--active-admin .adm__rol-card__check { background: #d4870a; }
 .adm__rol-card--active-ws .adm__rol-card__check { background: #7c3aed; }
 
-/* ── Feedback ── */
+/* Mensajes de feedback de éxito y error en modales */
 .adm__feedback { display: flex; align-items: center; gap: .5rem; margin-top: 1rem; padding: .7rem 1rem; border-radius: 10px; font-size: .85rem; font-weight: 500; }
 .adm__feedback--ok    { background: #0d2e18; color: #3fb950; border: 1px solid #1a5c30; }
 .adm__feedback--error { background: #2e0f0f; color: #f85149; border: 1px solid #5c1a1a; }
 
-/* ════════════════════════════════════════════
-   HOTEL MODAL (edit hab, new hab)
-   ════════════════════════════════════════════ */
+/* Modal de hotel para editar o crear habitaciones */
 .adm__hotel-modal {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   z-index: 2001; width: 90%; max-width: 560px; background: #1e2330;
@@ -417,9 +388,7 @@
 .adm__hotel-modal__body { padding: 1.5rem; overflow-y: auto; flex: 1; background: #1a2035; }
 .adm__hotel-modal__footer { display: flex; justify-content: flex-end; gap: .75rem; padding: 1rem 1.5rem; border-top: 2px solid #3d4666; background: #141929; flex-shrink: 0; }
 
-/* ════════════════════════════════════════════
-   FORM FIELDS
-   ════════════════════════════════════════════ */
+/* Campos de formulario genéricos del panel */
 .adm__form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .adm__field { display: flex; flex-direction: column; gap: 0.4rem; }
 .adm__field--full { grid-column: 1 / -1; }
@@ -434,7 +403,7 @@
 .adm__field select option { background: #1c2128; }
 .adm__field textarea { resize: vertical; min-height: 80px; }
 
-/* Modal body fields — high contrast */
+/* Campos dentro del modal de hotel con mayor contraste */
 .adm__hotel-modal__body .adm__field label { color: #c8d0e8; font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
 .adm__hotel-modal__body .adm__field input,
 .adm__hotel-modal__body .adm__field select,
@@ -448,19 +417,18 @@
 .adm__hotel-modal__body .adm__field select:focus,
 .adm__hotel-modal__body .adm__field textarea:focus { border-color: #7b93ff; background: #323b5c; box-shadow: 0 0 0 3px rgba(123,147,255,0.2); }
 
-/* Section titles */
+/* Títulos de sección dentro de modales con línea decorativa */
 .adm__modal-section-title { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: #7b93ff; margin: 0 0 1rem; display: flex; align-items: center; gap: .5rem; }
 .adm__modal-section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, #3d4666, transparent); }
 .adm__modal-section-divider { height: 1px; background: #3d4666; margin: 0 0 1rem; }
 
-/* ════════════════════════════════════════════
-   VISTA DETALLE HOTEL — header, tabs
-   ════════════════════════════════════════════ */
+/* Vista de detalle de hotel con header y tabs de secciones */
 .adm__detalle-header { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
 .adm__detalle-title { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .adm__detalle-title h2 { font-size: 1.1rem; font-weight: 700; color: var(--adm-text); margin: 0; }
 .adm__detalle-loc { font-size: .8rem; color: var(--adm-text-muted); }
 
+/* Tabs de navegación interna en la vista de detalle */
 .adm__tabs { display: flex; gap: .25rem; border-bottom: 2px solid #363d52; margin-bottom: 1.25rem; }
 .adm__tab {
   display: flex; align-items: center; gap: .4rem; padding: .6rem 1rem; border: none;
@@ -471,6 +439,7 @@
 .adm__tab:hover { color: var(--adm-text); background: rgba(255,255,255,0.04); }
 .adm__tab--active { color: #7b93ff; border-bottom-color: #7b93ff; background: rgba(123,147,255,0.06); }
 
+/* Formulario de edición de datos del hotel en la vista detalle */
 .adm__detalle-form-card { max-width: 760px; }
 .adm__detalle-form-card .adm__field label { color: var(--adm-text-muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: .4rem; }
 .adm__detalle-form-card .adm__field input,
@@ -480,9 +449,7 @@
 .adm__detalle-form-card .adm__field select:focus,
 .adm__detalle-form-card .adm__field textarea:focus { border-color: #5ba3f5; box-shadow: 0 0 0 3px rgba(91,163,245,0.15); }
 
-/* ════════════════════════════════════════════
-   IMAGE GALLERY
-   ════════════════════════════════════════════ */
+/* Galería de imágenes con grid y botón de eliminación en hover */
 .adm__img-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
 .adm__img-section-title { font-size: .9rem; font-weight: 600; color: var(--adm-text); margin: 0 0 .5rem; }
 .adm__upload-btn { cursor: pointer; }
@@ -499,26 +466,11 @@
 .adm__img-empty { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: 2.5rem 0; color: var(--adm-text-muted); font-size: .85rem; }
 .adm__img-empty p { margin: 0; }
 
-/* ═ Wizard: always-visible delete ═ */
+/* En wizard el botón de borrar imagen siempre es visible */
 .adm__wizard-card .adm__img-delete,
 .adm__wizard-subcard .adm__img-delete { opacity: 1 !important; }
 
-/* ════════════════════════════════════════════
-   AMENIDAD CARDS
-   ════════════════════════════════════════════ */
-.adm__amenidad-card { background: #1e2535; border: 1px solid #363d52; border-radius: 12px; padding: 1rem 1.25rem; transition: border-color 0.15s; }
-.adm__amenidad-card:hover { border-color: #4a527a; }
-.adm__amenidad-header { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .75rem; }
-.adm__amenidad-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(123,147,255,0.12); border: 1px solid rgba(123,147,255,0.25); display: flex; align-items: center; justify-content: center; color: #7b93ff; flex-shrink: 0; }
-.adm__amenidad-nombre { font-size: .9rem; font-weight: 700; color: #e8eeff; margin: 0 0 4px; }
-.adm__amenidad-desc { font-size: .8rem; color: #8b95b0; margin: 0; line-height: 1.4; }
-.adm__amenidad-desc-input { background: #2d3450; border: 1.5px solid #4a527a; border-radius: 6px; color: #fff; padding: .4rem .6rem; font-size: .85rem; font-family: inherit; width: 100%; box-sizing: border-box; resize: vertical; min-height: 52px; margin-top: 4px; }
-.adm__amenidad-desc-input:focus { outline: none; border-color: #7b93ff; box-shadow: 0 0 0 3px rgba(123,147,255,.2); }
-.adm__amenidad-imgs { padding-top: .75rem; border-top: 1px solid #2d3450; }
-
-/* ════════════════════════════════════════════
-   WIZARD — CREAR HOTEL (CENTERED)
-   ════════════════════════════════════════════ */
+/* Wizard para crear hotel: pasos, tarjetas y formularios */
 .adm__wizard-steps {
   display: flex; align-items: center; gap: 0;
   margin: 0 auto 1.75rem; max-width: 820px; width: 100%; box-sizing: border-box;
@@ -538,6 +490,7 @@
 .adm__wizard-step--done .adm__wizard-step-num { background: #1a5c30; border-color: #3fb950; color: #3fb950; }
 .adm__wizard-connector { flex: 1; height: 2px; background: #363d52; margin: 0 .75rem; max-width: 80px; }
 
+/* Tarjeta de contenido de cada paso del wizard */
 .adm__wizard-card {
   background: #1a2035; border: 1px solid #363d52; border-radius: 16px;
   padding: 2rem; max-width: 820px; width: 100%; margin: 0 auto; box-sizing: border-box;
@@ -545,6 +498,7 @@
 .adm__wizard-card-title { display: flex; align-items: center; gap: .6rem; font-size: 1rem; font-weight: 700; color: #e8eeff; margin: 0 0 1.5rem; }
 .adm__wizard-card-title strong { color: #7b93ff; }
 
+/* Grid y campos de formulario específicos del wizard */
 .adm__form-grid--wizard { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem 1.25rem; max-width: 100%; }
 .adm__form-grid--wizard .adm__field label { color: #c8d0e8; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .adm__form-grid--wizard .adm__field input,
@@ -561,24 +515,25 @@
 .adm__form-grid--wizard .adm__field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
 .adm__form-grid--wizard .adm__field--full { grid-column: 1 / -1; }
 
+/* Acciones de navegación al final de cada paso */
 .adm__wizard-actions { display: flex; justify-content: flex-end; align-items: center; gap: .75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid #363d52; }
 .adm__wizard-subcard { background: #222945; border: 1.5px solid #3d4666; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
 
+/* Tarjeta de habitación dentro del wizard */
 .adm__wizard-hab-card { background: #1e2535; border: 1px solid #363d52; border-radius: 12px; padding: 1rem 1.25rem; }
 .adm__wizard-hab-info { margin-bottom: .75rem; }
 .adm__wizard-hab-tipo { font-size: .95rem; font-weight: 700; color: #e8eeff; margin: 0 0 3px; }
 .adm__wizard-hab-meta { font-size: .78rem; color: #8b95b0; margin: 0; }
 .adm__wizard-hab-imgs .adm__img-grid--sm { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 
+/* Botón de agregar imagen con borde punteado */
 .adm__wizard-add-img-btn {
   aspect-ratio: 4/3; border-radius: 10px; background: #2d3450; border: 2px dashed #4a527a;
   display: flex; align-items: center; justify-content: center; cursor: pointer; color: #8b95b0; transition: border-color 0.15s, color 0.15s;
 }
 .adm__wizard-add-img-btn:hover { border-color: #7b93ff; color: #7b93ff; }
 
-/* ════════════════════════════════════════════
-   AUTOCOMPLETE
-   ════════════════════════════════════════════ */
+/* Autocomplete con lista desplegable de sugerencias */
 .adm__autocomplete-wrap { position: relative; }
 .adm__autocomplete-wrap input {
   width: 100%; box-sizing: border-box; background: #2d3450; border: 1.5px solid #4a527a;
@@ -601,9 +556,7 @@
 .adm__autocomplete-item:hover { background: rgba(123,147,255,.15); color: #ffffff; }
 .adm__field-error { display: block; margin-top: 4px; font-size: .72rem; color: #f85149; font-weight: 600; }
 
-/* ════════════════════════════════════════════
-   CANCEL MODAL
-   ════════════════════════════════════════════ */
+/* Modal de cancelación de reserva con tema rojo */
 .adm__cancel-modal__header { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #b91c1c, #7f1d1d); border-radius: 16px 16px 0 0; position: relative; }
 .adm__cancel-modal__icon { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
 .adm__cancel-modal__title { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 2px; }
@@ -637,9 +590,7 @@
 .adm__btn--cancel-confirm:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
 .adm__btn--cancel-confirm:disabled { opacity: .55; cursor: not-allowed; }
 
-/* ════════════════════════════════════════════
-   CUSTOM CONFIRM MODALf
-   ════════════════════════════════════════════ */
+/* Modal de confirmación genérico con icono de peligro */
 .adm__confirm {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   z-index: 2001; width: 90%; max-width: 400px; background: #1e2330;
@@ -668,9 +619,7 @@
 }
 .adm__confirm__btn-ok:hover { opacity: 0.88; }
 
-/* ════════════════════════════════════════════
-   TOAST NOTIFICATIONS
-   ════════════════════════════════════════════ */
+/* Toast notifications apiladas en esquina superior derecha */
 .adm__toast-container {
   position: fixed; top: 1.25rem; right: 1.25rem; z-index: 3000;
   display: flex; flex-direction: column; gap: 0.6rem; pointer-events: none; max-width: 380px;
@@ -687,13 +636,12 @@
 .adm__toast__close { margin-left: auto; background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; padding: 0; display: flex; }
 .adm__toast__close:hover { opacity: 1; }
 
-/* ════════════════════════════════════════════
-   REPORTES
-   ════════════════════════════════════════════ */
+/* Sección de reportes: grid de tarjetas, donut chart y KPIs */
 .adm__reportes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .adm__reporte-card { min-height: 240px; }
 .adm__reporte-card--wide { grid-column: 1 / -1; }
 
+/* Gráfico de donut con leyenda de colores */
 .adm__donut-wrap { display: flex; align-items: center; justify-content: center; gap: 2rem; flex: 1; margin-top: 1rem; }
 .adm__donut {
   width: 110px; height: 110px; border-radius: 50%;
@@ -709,12 +657,13 @@
 .adm__legend-dot--yellow { background: var(--adm-yellow); }
 .adm__legend-dot--red    { background: var(--adm-red); }
 
+/* KPIs numéricos en grid */
 .adm__kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-top: 0.5rem; }
 .adm__kpi-item { background: var(--adm-surface-2); border: 1px solid var(--adm-border); border-radius: 10px; padding: 1.25rem; text-align: center; }
 .adm__kpi-val { font-size: 1.6rem; font-weight: 800; color: var(--adm-text); margin: 0 0 0.25rem; }
 .adm__kpi-lbl { font-size: 0.78rem; color: var(--adm-text-muted); margin: 0; text-transform: uppercase; letter-spacing: 0.04em; }
 
-/* ── Reportes sub-tabs ── */
+/* Sub-tabs de reportes */
 .adm__rep-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border-bottom: 1px solid var(--adm-border); }
 .adm__rep-tab {
   display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.7rem 1.35rem;
@@ -726,7 +675,7 @@
 .adm__rep-tab:hover { color: var(--adm-text); }
 .adm__rep-tab--active { color: var(--adm-accent); border-bottom-color: var(--adm-accent); font-weight: 600; }
 
-/* ── Reportes filters ── */
+/* Panel de filtros de reportes con campos de fecha y select */
 .adm__rep-filters { background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-radius); padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
 .adm__rep-filters-title { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--adm-text-muted); margin-bottom: 1rem; }
 .adm__rep-filters-badge { padding: 0.15rem 0.55rem; background: rgba(102,126,234,0.18); border: 1px solid rgba(102,126,234,0.4); border-radius: 20px; color: var(--adm-accent); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -742,6 +691,8 @@
 .adm__rep-filter-field input:focus, .adm__rep-filter-field select:focus { border-color: rgba(102,126,234,0.6); box-shadow: 0 0 0 3px rgba(102,126,234,0.12); }
 .adm__rep-filters-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .adm__rep-filters-spacer { flex: 1; min-width: 1rem; }
+
+/* Botón de exportar reporte */
 .adm__rep-export-btn {
   display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.55rem 1.1rem;
   background: rgba(102,126,234,0.12); border: 1px solid rgba(102,126,234,0.35);
@@ -755,7 +706,7 @@
 .adm__rep-table th, .adm__rep-table td { font-size: 0.83rem; white-space: nowrap; }
 .adm__rep-table td:first-child { width: 56px; }
 
-/* ── Reportes pagination ── */
+/* Paginación de la tabla de reportes */
 .adm__rep-pag { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; flex-wrap: wrap; }
 .adm__rep-pag-btn {
   display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 1rem;
@@ -776,7 +727,7 @@
 .adm__rep-pag-num--active { background: var(--adm-accent) !important; border-color: var(--adm-accent) !important; color: #fff !important; font-weight: 700; }
 .adm__rep-pag-num:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Reportes bar chart ── */
+/* Gráfico de barras de reportes con columnas alineadas al fondo */
 .adm__rep-bar-chart { display: flex; align-items: flex-end; gap: 0.5rem; height: 160px; padding: 0 0.25rem; margin-top: 1rem; overflow-x: auto; }
 .adm__rep-bar-col { flex: 1; min-width: 32px; max-width: 56px; display: flex; flex-direction: column; align-items: center; gap: 0.35rem; height: 100%; justify-content: flex-end; }
 .adm__rep-bar-val { font-size: 0.7rem; font-weight: 700; color: var(--adm-text-muted); min-height: 1rem; text-align: center; }
@@ -784,7 +735,7 @@
 .adm__rep-bar-fill { width: 100%; background: linear-gradient(180deg, var(--adm-accent), var(--adm-accent-2)); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.6s ease; }
 .adm__rep-bar-lbl { font-size: 0.68rem; color: var(--adm-text-muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-/* ── Reportes export modal ── */
+/* Modal de exportación de reportes */
 .adm__rep-export-modal {
   position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
   z-index: 2001; width: 90%; max-width: 480px; border-radius: 16px; overflow: hidden;
@@ -796,9 +747,7 @@
 .adm__rep-export-modal__close { background: rgba(255,255,255,0.07); border: none; color: #b0c4d8; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 7px; transition: background 0.15s; flex-shrink: 0; }
 .adm__rep-export-modal__close:hover { background: rgba(255,255,255,0.14); }
 
-/* ════════════════════════════════════════════
-   HEADER NAV — admin extensions
-   ════════════════════════════════════════════ */
+/* Extensiones del header de navegación para el rol administrador */
 .nav-link--admin { background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.12)) !important; border: 1px solid rgba(102,126,234,0.25) !important; color: #a5b4fc !important; }
 .nav-link--admin:hover, .nav-link--admin.active { background: linear-gradient(135deg, rgba(102,126,234,0.28), rgba(118,75,162,0.22)) !important; border-color: rgba(102,126,234,0.45) !important; color: #c4b5fd !important; }
 .user-avatar--admin { background: linear-gradient(135deg, #f59e0b, #d97706) !important; border-color: rgba(245,158,11,0.5) !important; }
@@ -812,9 +761,7 @@
 .mobile-nav-link--admin { color: #a5b4fc !important; background: rgba(102,126,234,0.1); border: 1px solid rgba(102,126,234,0.2); margin-top: 0.25rem; }
 .mobile-nav-link--admin:hover { background: rgba(102,126,234,0.2) !important; border-color: rgba(102,126,234,0.4) !important; color: #c4b5fd !important; }
 
-/* ════════════════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════════════════ */
+/* Responsive: tablet y móvil */
 @media (max-width: 1024px) {
   .adm__sidebar { width: 220px; }
   .adm__dashboard-grid, .adm__reportes-grid { grid-template-columns: 1fr; }
@@ -843,6 +790,7 @@
   .adm__confirm { width: 95%; }
 }
 
+/* Responsive para móviles pequeños */
 @media (max-width: 480px) {
   .adm__stats-grid { grid-template-columns: 1fr; }
   .adm__kpi-grid { grid-template-columns: 1fr; }

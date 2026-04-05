@@ -3,13 +3,21 @@ package org.example.controllers;
 import io.javalin.Javalin;
 import org.example.services.ImagenService;
 
+/**
+ * Controller que expone los endpoints publicos de descarga de imagenes.
+ * Sirve imagenes de hoteles, habitaciones y amenidades en formato JPEG.
+ */
 public class ImagenController {
 
     private final ImagenService imagenService = new ImagenService();
 
+    /**
+     * Registra las rutas de imagenes en la aplicacion Javalin.
+     * @param app instancia de Javalin donde se registran las rutas.
+     */
     public void registerRoutes(Javalin app) {
 
-        // GET /imagenes/hotel/{id}
+        // Retorna la imagen de un hotel; responde 404 si no existe
         app.get("/imagenes/hotel/{id}", ctx -> {
             int id = Integer.parseInt(ctx.pathParam("id"));
             byte[] imagen = imagenService.obtenerImagenHotel(id);
@@ -17,7 +25,7 @@ public class ImagenController {
             ctx.contentType("image/jpeg").result(imagen);
         });
 
-        // GET /imagenes/habitacion/{id}
+        // Retorna la imagen de una habitacion; responde 404 si no existe
         app.get("/imagenes/habitacion/{id}", ctx -> {
             int id = Integer.parseInt(ctx.pathParam("id"));
             byte[] imagen = imagenService.obtenerImagenHabitacion(id);
@@ -25,7 +33,7 @@ public class ImagenController {
             ctx.contentType("image/jpeg").result(imagen);
         });
 
-        // GET /imagenes/amenidad/{id}
+        // Retorna la imagen de una amenidad; responde 404 si no existe
         app.get("/imagenes/amenidad/{id}", ctx -> {
             int id = Integer.parseInt(ctx.pathParam("id"));
             byte[] imagen = imagenService.obtenerImagenAmenidad(id);
