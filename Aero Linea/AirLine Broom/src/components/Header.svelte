@@ -8,7 +8,8 @@
   export let navigateTo;
   export let currentPage = 'home';
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
+
 
   let menuActive = false;
   let cartCount = 0;

@@ -15,7 +15,7 @@
 
   export let navigateTo = (page, data = null) => {};
 
-  const API = 'http://localhost:5190';
+  import { API } from '../lib/api.js';
 
   // ── Sesión ───────────────────────────────────────────────────────
   let rolNombre = null;

@@ -7,7 +7,7 @@
   let usuarioId = null;
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
-  const API = 'http://localhost:5190';
+  import { API } from '../lib/api.js';
 
   let activeTab = 'personal';
   let cargando = true;

@@ -5,8 +5,7 @@ import { writable } from 'svelte/store';
 // { usuarioId, nombre, correo, rolId, rolNombre } = autenticado
 export const sesion = writable(null);
 
-const API = 'http://localhost:5190';
-
+import { API } from '../lib/api.js'; 
 /**
  * Llama a GET /api/auth/sesion y actualiza el store.
  * Se llama al arrancar la app para restaurar sesión si la cookie sigue vigente.

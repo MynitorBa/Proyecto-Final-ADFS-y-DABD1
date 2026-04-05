@@ -6,7 +6,7 @@
 
   export let navigateTo;
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
 
   let usuarioId = null;
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });

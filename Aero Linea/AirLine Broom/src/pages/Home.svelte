@@ -4,10 +4,10 @@
   import { onMount } from 'svelte';
 
   export let navigateTo;
-  // CORREGIDO: ahora recibimos el objeto aeropuerto completo, no un string
+
   export let suggestedAeropuerto = null;
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
 
   let tripType      = 'roundtrip';
   let departureDate = '';

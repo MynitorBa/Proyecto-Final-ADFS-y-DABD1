@@ -2,6 +2,7 @@
   import '../styles/flight-notification.css';
   import avionPath from '../assets/AvionB.png';
   import { onMount } from 'svelte';
+  import { API } from '../lib/api.js';
 
   // CORREGIDO: el callback ahora pasa el objeto aeropuerto completo
   export let onDestinationClick = (aeropuertoObj: any) => {};
@@ -14,7 +15,7 @@
 
   onMount(async () => {
     try {
-      const res = await fetch('https://localhost:7107/api/aeropuertos');
+      const res = await fetch(`${API}/api/aeropuertos`);
       const aeropuertos = await res.json();
       
       // CORREGIDO: guardamos el aeropuerto original completo para pasarlo después

@@ -3,7 +3,7 @@
   import '../styles/info-pages.css';
   export let navigateTo;
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
   let formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
   let status = '';
   let statusMsg = '';

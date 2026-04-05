@@ -52,9 +52,25 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True
       - Cors__Origins__0=http://localhost:${FRONTEND_PORT}
+      - COOKIE_NAME=aerolinea_session_${COMPOSE_PROJECT_NAME}
     depends_on:
       db:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway" 
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: "../AirLine Broom"
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-frontend
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    environment:
+      - VITE_API_URL=http://localhost:${BACKEND_PORT}
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:

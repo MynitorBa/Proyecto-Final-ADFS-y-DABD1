@@ -8,7 +8,7 @@
   export let flight;   // vuelo directo O objeto escala con tramos[]
   export let onClose;
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
 
   // ── Normalizar: escala tiene tramos[], directo no ──
   $: esEscala  = Array.isArray(flight?.tramos) && flight.tramos.length > 0;
