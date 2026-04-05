@@ -16,7 +16,7 @@
   import Carrito from './pages/Carrito.svelte';
   import Checkout from './pages/Checkout.svelte';
   import DatosPasajeros from './pages/DatosPasajeros.svelte';
-  import SeleccionAsientos from './pages/SeleccionAsientos.svelte'; // ← NUEVO
+  import SeleccionAsientos from './pages/Seleccionasientos.svelte';
   import Login from './pages/Login.svelte';
   import Register from './pages/Register.svelte';
   import Profile from './pages/Profile.svelte';

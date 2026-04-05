@@ -7,7 +7,7 @@
   export let navigateTo;
   export let searchParams = null;
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
 
   // ── flag búsqueda global ──
   let isGlobalSearch = false;

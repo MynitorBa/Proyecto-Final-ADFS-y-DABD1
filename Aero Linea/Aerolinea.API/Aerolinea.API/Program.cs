@@ -110,10 +110,10 @@ builder.Services.AddHostedService<ReservasCleanupService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.Cookie.Name = "aerolinea_session";
+        options.Cookie.Name = builder.Configuration["COOKIE_NAME"] ?? "aerolinea_session";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.None;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
         options.Events.OnRedirectToLogin = ctx =>

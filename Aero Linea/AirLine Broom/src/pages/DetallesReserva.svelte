@@ -1,6 +1,7 @@
 <script>
   import '../styles/detallereserva.css';
   import { onMount } from 'svelte';
+  import { API } from '../lib/api.js';
 
   export let reservation;
   export let onClose;
@@ -35,7 +36,7 @@
       const rutaId = reservation.boletos[0].rutaId;
       console.log('Verificando comentarios para ruta:', rutaId);
       
-      const response = await fetch(`http://localhost:5190/api/comentarios/ruta/${rutaId}`);
+      const response = await fetch(`${API}/api/comentarios/ruta/${rutaId}`);
       
       if (response.ok) {
         const comentarios = await response.json();
@@ -67,7 +68,7 @@
       
       const rutaId = reservation.boletos[0].rutaId;
       
-      const response = await fetch('http://localhost:5190/api/comentarios', {
+      const response = await fetch('${API}/api/comentarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

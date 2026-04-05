@@ -1,6 +1,7 @@
 <script>
-  import '../styles/register.css';
+  import '../styles/Register.css';
   import { onMount } from 'svelte';
+  import { API } from '../lib/api.js';
   export let navigateTo;
 
   let registerData = {
@@ -356,7 +357,7 @@
     };
 
     try {
-      const vRes = await fetch('http://localhost:5190/api/usuarios/verificar', {
+      const vRes = await fetch(`${API}/api/usuarios/verificar`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
       const c = await vRes.json();
@@ -366,7 +367,7 @@
       if (c.pasaporteExiste) errores.pasaporte = 'Este pasaporte ya está registrado.';
       if (c.correoExiste || c.usernameExiste || c.pasaporteExiste) { submitting = false; return; }
 
-      const res = await fetch('http://localhost:5190/api/usuarios', {
+      const res = await fetch(`${API}/api/usuarios`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error();

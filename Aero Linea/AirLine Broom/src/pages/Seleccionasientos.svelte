@@ -6,7 +6,7 @@
   export let navigateTo;
   export let flightData = [];
 
-  const API = 'https://localhost:7107';
+  import { API } from '../lib/api.js';
 
   // ── Nomenclatura del backend ─────────────────────────────────────────────
   // Las FILAS son NÚMEROS (1, 2, 3...) y las COLUMNAS son LETRAS (A-F).
