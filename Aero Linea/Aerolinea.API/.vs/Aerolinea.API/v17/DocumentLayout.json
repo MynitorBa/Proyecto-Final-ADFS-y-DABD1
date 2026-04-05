@@ -493,21 +493,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 5,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "appsettings.Development.json",
-              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.Development.json",
-              "RelativeDocumentMoniker": "Aerolinea.API\\appsettings.Development.json",
-              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.Development.json",
-              "RelativeToolTip": "Aerolinea.API\\appsettings.Development.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-05T20:35:27.334Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Document",
               "DocumentIndex": 3,
@@ -518,8 +505,7 @@
               "RelativeToolTip": "Aerolinea.API\\Dockerfile",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAOAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-04-05T16:05:47.564Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-05T16:05:47.564Z"
             },
             {
               "$type": "Document",
@@ -555,8 +541,7 @@
               "RelativeToolTip": "Aerolinea.API\\appsettings.Docker.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-04-05T15:25:58.894Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-05T15:25:58.894Z"
             },
             {
               "$type": "Document",
@@ -578,10 +563,22 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Program.cs",
               "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Program.cs",
               "RelativeToolTip": "Aerolinea.API\\Program.cs",
-              "ViewState": "AgIAAGUAAAAAAAAAAAAQwH4AAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAAGUAAAAAAAAAAAAQwHAAAABaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-28T16:49:00.371Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.Development.json",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.Development.json",
+              "RelativeDocumentMoniker": "Aerolinea.API\\appsettings.Development.json",
+              "ToolTip": "C:\\Users\\USUARIO\\Desktop\\Proyecto Final ADFS BABD1\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\appsettings.Development.json",
+              "RelativeToolTip": "Aerolinea.API\\appsettings.Development.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-04-05T20:35:27.334Z"
             },
             {
               "$type": "Document",
@@ -593,8 +590,7 @@
               "RelativeToolTip": "Aerolinea.API\\Controllers\\HealthController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-30T01:11:22.946Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-30T01:11:22.946Z"
             },
             {
               "$type": "Document",
