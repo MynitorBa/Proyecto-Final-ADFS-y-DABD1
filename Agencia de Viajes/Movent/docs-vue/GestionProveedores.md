@@ -15,33 +15,34 @@
 *   [probando][11]
 *   [toggling][12]
 *   [handshaking][13]
-*   [formError][14]
-*   [toast][15]
-*   [estadoConexion][16]
-*   [formVacio][17]
-*   [form][18]
-*   [tiposOpts][19]
-*   [proveedoresFiltrados][20]
-*   [contarPorTipo][21]
-    *   [Parameters][22]
-*   [tipoClase][23]
-    *   [Parameters][24]
-*   [onMounted][25]
-*   [cargarProveedores][26]
-*   [abrirFormNuevo][27]
-*   [abrirFormEditar][28]
-    *   [Parameters][29]
-*   [cerrarForm][30]
-*   [validarForm][31]
-*   [guardarProveedor][32]
-*   [toggleActivo][33]
-    *   [Parameters][34]
-*   [probarConexion][35]
-    *   [Parameters][36]
-*   [iniciarHandshake][37]
-    *   [Parameters][38]
-*   [mostrarToast][39]
-    *   [Parameters][40]
+*   [usuariosWS][14]
+*   [formError][15]
+*   [toast][16]
+*   [estadoConexion][17]
+*   [formVacio][18]
+*   [form][19]
+*   [tiposOpts][20]
+*   [proveedoresFiltrados][21]
+*   [contarPorTipo][22]
+    *   [Parameters][23]
+*   [tipoClase][24]
+    *   [Parameters][25]
+*   [onMounted][26]
+*   [cargarProveedores][27]
+*   [abrirFormNuevo][28]
+*   [abrirFormEditar][29]
+    *   [Parameters][30]
+*   [cerrarForm][31]
+*   [validarForm][32]
+*   [guardarProveedor][33]
+*   [toggleActivo][34]
+    *   [Parameters][35]
+*   [probarConexion][36]
+    *   [Parameters][37]
+*   [iniciarHandshake][38]
+    *   [Parameters][39]
+*   [mostrarToast][40]
+    *   [Parameters][41]
 
 ## ref
 
@@ -53,7 +54,7 @@ y ejecutar handshake con cada proveedor conectado.
 
 URL base del backend. @type {string}
 
-Type: [string][41]
+Type: [string][42]
 
 ## proveedores
 
@@ -99,6 +100,10 @@ ID del proveedor cuyo estado activo/inactivo se está cambiando. @type {import('
 
 ID del proveedor que está ejecutando el handshake. @type {import('vue').Ref\<number|null>}
 
+## usuariosWS
+
+Lista de usuarios conectados o disponibles en el WebSocket. @type {import('vue').Ref\<any\[]>}
+
 ## formError
 
 Error de validación o servidor mostrado dentro del formulario modal. @type {import('vue').Ref<string>}
@@ -115,7 +120,7 @@ Resultado de la última prueba de conexión para cada proveedor, indexado por ID
 
 Devuelve un objeto vacío con los campos del formulario de proveedor.
 
-Returns **{nombre: [string][41], tipoProveedorId: [string][41], usuarioId: [string][41], url: [string][41], porcentajeGanancia: [number][42]}**&#x20;
+Returns **{nombre: [string][42], tipoProveedorId: [string][42], usuarioId: [string][42], url: [string][42], porcentajeGanancia: [number][43]}**&#x20;
 
 ## form
 
@@ -125,7 +130,7 @@ Estado reactivo del formulario de creación/edición. @type {import('vue').Ref<O
 
 Opciones para los botones de filtro por tipo de proveedor.
 
-Type: [Array][43]<{val: [string][41], label: [string][41]}>
+Type: [Array][44]<{val: [string][42], label: [string][42]}>
 
 ## proveedoresFiltrados
 
@@ -137,9 +142,9 @@ Cuenta cuántos proveedores hay de un tipo determinado.
 
 ### Parameters
 
-*   `t` **[string][41]** El tipo a contar o 'todos' para el total.
+*   `t` **[string][42]** El tipo a contar o 'todos' para el total.
 
-Returns **[number][42]**&#x20;
+Returns **[number][43]**&#x20;
 
 ## tipoClase
 
@@ -147,7 +152,7 @@ Devuelve la clase CSS correspondiente al tipo de proveedor.
 
 ### Parameters
 
-*   `p` **[Object][44]** El proveedor.
+*   `p` **[Object][45]** El proveedor.
 
 Returns **(`"aerolinea"` | `"hotel"`)**&#x20;
 
@@ -159,7 +164,7 @@ Carga la lista de proveedores al montar el componente.
 
 Obtiene todos los proveedores desde el backend.
 
-Returns **[Promise][45]\<void>**&#x20;
+Returns **[Promise][46]\<void>**&#x20;
 
 ## abrirFormNuevo
 
@@ -171,7 +176,7 @@ Abre el modal en modo edición precargando los datos del proveedor seleccionado.
 
 ### Parameters
 
-*   `p` **[Object][44]** El proveedor a editar.
+*   `p` **[Object][45]** El proveedor a editar.
 
 ## cerrarForm
 
@@ -181,14 +186,14 @@ Cierra el modal de formulario y limpia el estado de edición.
 
 Valida los campos del formulario antes de enviarlo.
 
-Returns **[boolean][46]** true si es válido, false si hay algún campo incompleto.
+Returns **[boolean][47]** true si es válido, false si hay algún campo incompleto.
 
 ## guardarProveedor
 
 Guarda el proveedor mediante POST (creación) o PUT (edición).
 Recarga la lista tras un guardado exitoso.
 
-Returns **[Promise][45]\<void>**&#x20;
+Returns **[Promise][46]\<void>**&#x20;
 
 ## toggleActivo
 
@@ -197,9 +202,9 @@ Actualiza el valor localmente sin recargar la lista completa.
 
 ### Parameters
 
-*   `p` **[Object][44]** El proveedor a activar o desactivar.
+*   `p` **[Object][45]** El proveedor a activar o desactivar.
 
-Returns **[Promise][45]\<void>**&#x20;
+Returns **[Promise][46]\<void>**&#x20;
 
 ## probarConexion
 
@@ -208,9 +213,9 @@ Guarda el resultado ('ok' o 'err') en estadoConexion indexado por ID.
 
 ### Parameters
 
-*   `p` **[Object][44]** El proveedor a probar.
+*   `p` **[Object][45]** El proveedor a probar.
 
-Returns **[Promise][45]\<void>**&#x20;
+Returns **[Promise][46]\<void>**&#x20;
 
 ## iniciarHandshake
 
@@ -219,9 +224,9 @@ El endpoint cambia según si es aerolínea o hotelera.
 
 ### Parameters
 
-*   `p` **[Object][44]** El proveedor con el que se hará handshake.
+*   `p` **[Object][45]** El proveedor con el que se hará handshake.
 
-Returns **[Promise][45]\<void>**&#x20;
+Returns **[Promise][46]\<void>**&#x20;
 
 ## mostrarToast
 
@@ -230,7 +235,7 @@ Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
 ### Parameters
 
 *   `tipo` **(`"ok"` | `"err"`)** Tipo de notificación.
-*   `msg` **[string][41]** Mensaje a mostrar.
+*   `msg` **[string][42]** Mensaje a mostrar.
 
 [1]: #ref
 
@@ -258,68 +263,70 @@ Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
 
 [13]: #handshaking
 
-[14]: #formerror
+[14]: #usuariosws
 
-[15]: #toast
+[15]: #formerror
 
-[16]: #estadoconexion
+[16]: #toast
 
-[17]: #formvacio
+[17]: #estadoconexion
 
-[18]: #form
+[18]: #formvacio
 
-[19]: #tiposopts
+[19]: #form
 
-[20]: #proveedoresfiltrados
+[20]: #tiposopts
 
-[21]: #contarportipo
+[21]: #proveedoresfiltrados
 
-[22]: #parameters
+[22]: #contarportipo
 
-[23]: #tipoclase
+[23]: #parameters
 
-[24]: #parameters-1
+[24]: #tipoclase
 
-[25]: #onmounted
+[25]: #parameters-1
 
-[26]: #cargarproveedores
+[26]: #onmounted
 
-[27]: #abrirformnuevo
+[27]: #cargarproveedores
 
-[28]: #abrirformeditar
+[28]: #abrirformnuevo
 
-[29]: #parameters-2
+[29]: #abrirformeditar
 
-[30]: #cerrarform
+[30]: #parameters-2
 
-[31]: #validarform
+[31]: #cerrarform
 
-[32]: #guardarproveedor
+[32]: #validarform
 
-[33]: #toggleactivo
+[33]: #guardarproveedor
 
-[34]: #parameters-3
+[34]: #toggleactivo
 
-[35]: #probarconexion
+[35]: #parameters-3
 
-[36]: #parameters-4
+[36]: #probarconexion
 
-[37]: #iniciarhandshake
+[37]: #parameters-4
 
-[38]: #parameters-5
+[38]: #iniciarhandshake
 
-[39]: #mostrartoast
+[39]: #parameters-5
 
-[40]: #parameters-6
+[40]: #mostrartoast
 
-[41]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[41]: #parameters-6
 
-[42]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[42]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[43]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[43]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[44]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[44]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[45]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[45]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
 
-[46]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[46]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+[47]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean

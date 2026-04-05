@@ -6,29 +6,33 @@
 *   [router][2]
 *   [API][3]
 *   [cd][4]
-*   [tipoItem][5]
-*   [totalDisplay][6]
-*   [mostrandoCVV][7]
-*   [focusField][8]
-*   [formError][9]
-*   [pagoError][10]
-*   [pagando][11]
-*   [pago][12]
-*   [tipoTarjeta][13]
-*   [numeroGrupos][14]
-*   [formatTarjeta][15]
-    *   [Parameters][16]
-*   [formatVencimiento][17]
-    *   [Parameters][18]
-*   [onMounted][19]
-*   [confirmarPago][20]
+*   [porcentajeDescuento][5]
+*   [mostrandoCVV][6]
+*   [focusField][7]
+*   [formError][8]
+*   [pagoError][9]
+*   [pagando][10]
+*   [pago][11]
+*   [tipoItem][12]
+*   [subtotal][13]
+*   [montoDescuento][14]
+*   [totalDisplay][15]
+*   [tipoTarjeta][16]
+*   [numeroGrupos][17]
+*   [formatTarjeta][18]
+    *   [Parameters][19]
+*   [formatVencimiento][20]
+    *   [Parameters][21]
+*   [onMounted][22]
+*   [confirmarPago][23]
 
 ## ref
 
 Vista del paso 2 del flujo de compra. Presenta el formulario de
-pago con tarjeta de crédito/débito y una tarjeta 3D animada que refleja los
-datos ingresados en tiempo real. Lee la reserva desde sessionStorage, valida
-el formulario localmente, llama al endpoint de pago y redirige a Confirmacion.
+pago con tarjeta de credito/debito y una tarjeta 3D animada que refleja los
+datos ingresados en tiempo real. Lee la reserva desde sessionStorage, consulta
+el descuento de paquete si aplica, valida el formulario localmente, llama al
+endpoint de pago y redirige a Confirmacion.
 
 ## router
 
@@ -38,25 +42,21 @@ Instancia del router para navegar entre vistas.
 
 URL base del backend. @type {string}
 
-Type: [string][21]
+Type: [string][24]
 
 ## cd
 
-Datos del checkout leídos desde sessionStorage.
-Contiene item, pasajero, detalles de precio y número de reservación.
+Datos del checkout leidos desde sessionStorage.
+Contiene item, pasajero, detalles de precio y numero de reservacion.
 
-## tipoItem
+## porcentajeDescuento
 
-Tipo de item reservado: 'vuelo', 'hotel' o 'paquete'.
-
-## totalDisplay
-
-Total formateado con símbolo de dólar para mostrar en el botón y el resumen.
-Suma vuelo y hotel si el item es un paquete.
+Porcentaje de descuento para paquetes leido desde el backend.
+Solo aplica cuando tipoItem === 'paquete'. Valor 0 si no hay descuento.
 
 ## mostrandoCVV
 
-Controla si la tarjeta 3D está volteada (true cuando el campo CVV tiene foco). @type {import('vue').Ref<boolean>}
+Controla si la tarjeta 3D esta volteada (true cuando el campo CVV tiene foco). @type {import('vue').Ref<boolean>}
 
 ## focusField
 
@@ -64,7 +64,7 @@ Identificador del campo actualmente enfocado para aplicar el estilo de borde act
 
 ## formError
 
-Mensaje de error de validación local del formulario. @type {import('vue').Ref<string>}
+Mensaje de error de validacion local del formulario. @type {import('vue').Ref<string>}
 
 ## pagoError
 
@@ -72,49 +72,71 @@ Mensaje de error recibido de la API al intentar procesar el pago. @type {import(
 
 ## pagando
 
-Indica si hay una petición de pago en curso para deshabilitar el botón. @type {import('vue').Ref<boolean>}
+Indica si hay una peticion de pago en curso para deshabilitar el boton. @type {import('vue').Ref<boolean>}
 
 ## pago
 
 Campos del formulario de pago.
 
+## tipoItem
+
+Tipo de item reservado: 'vuelo', 'hotel' o 'paquete'.
+
+## subtotal
+
+Suma del total de vuelo y hotel antes de aplicar el descuento de paquete.
+Para tipos distintos de paquete retorna el total correspondiente.
+
+## montoDescuento
+
+Monto del descuento calculado sobre el subtotal segun el porcentaje configurado.
+Retorna 0 si el tipo no es paquete o si el porcentaje es 0.
+
+## totalDisplay
+
+Total formateado con simbolo de dolar para mostrar en el boton y el resumen.
+Para paquetes aplica el descuento sobre el subtotal.
+
 ## tipoTarjeta
 
-Detecta la red de la tarjeta según los primeros dígitos ingresados.
+Detecta la red de la tarjeta segun los primeros digitos ingresados.
 
 ## numeroGrupos
 
-Divide el número de tarjeta en cuatro grupos de 4 caracteres para la visualización
-en la tarjeta 3D. Rellena con '·' si faltan dígitos.
+Divide el numero de tarjeta en cuatro grupos de 4 caracteres para la visualizacion
+en la tarjeta 3D. Rellena con '·' si faltan digitos.
 
 ## formatTarjeta
 
-Formatea el número de tarjeta añadiendo espacios cada 4 dígitos mientras el usuario escribe.
+Formatea el numero de tarjeta añadiendo espacios cada 4 digitos mientras el usuario escribe.
 
 ### Parameters
 
-*   `e` **[Event][22]** Evento input del campo de número de tarjeta.
+*   `e` **[Event][25]** Evento input del campo de numero de tarjeta.
 
 ## formatVencimiento
 
-Formatea la fecha de vencimiento en el patrón MM/AA mientras el usuario escribe.
+Formatea la fecha de vencimiento en el patron MM/AA mientras el usuario escribe.
 
 ### Parameters
 
-*   `e` **[Event][22]** Evento input del campo de vencimiento.
+*   `e` **[Event][25]** Evento input del campo de vencimiento.
 
 ## onMounted
 
 Al montar la vista, lee los datos de la reserva desde sessionStorage.
-Si no hay datos o falta el ID de reservación, redirige al inicio.
+Si el tipo de item es paquete, consulta el porcentaje de descuento al backend.
+Si no hay datos o falta el ID de reservacion, redirige al inicio.
+
+Returns **[Promise][26]\<void>**&#x20;
 
 ## confirmarPago
 
-Valida el formulario, envía la petición de pago al backend y, si es exitosa,
-dispara el envío del correo de confirmación (fire-and-forget) antes de
+Valida el formulario, envia la peticion de pago al backend y, si es exitosa,
+dispara el envio del correo de confirmacion (fire-and-forget) antes de
 redirigir a la vista de Confirmacion.
 
-Returns **[Promise][23]\<void>**&#x20;
+Returns **[Promise][26]\<void>**&#x20;
 
 [1]: #ref
 
@@ -124,40 +146,46 @@ Returns **[Promise][23]\<void>**&#x20;
 
 [4]: #cd
 
-[5]: #tipoitem
+[5]: #porcentajedescuento
 
-[6]: #totaldisplay
+[6]: #mostrandocvv
 
-[7]: #mostrandocvv
+[7]: #focusfield
 
-[8]: #focusfield
+[8]: #formerror
 
-[9]: #formerror
+[9]: #pagoerror
 
-[10]: #pagoerror
+[10]: #pagando
 
-[11]: #pagando
+[11]: #pago
 
-[12]: #pago
+[12]: #tipoitem
 
-[13]: #tipotarjeta
+[13]: #subtotal
 
-[14]: #numerogrupos
+[14]: #montodescuento
 
-[15]: #formattarjeta
+[15]: #totaldisplay
 
-[16]: #parameters
+[16]: #tipotarjeta
 
-[17]: #formatvencimiento
+[17]: #numerogrupos
 
-[18]: #parameters-1
+[18]: #formattarjeta
 
-[19]: #onmounted
+[19]: #parameters
 
-[20]: #confirmarpago
+[20]: #formatvencimiento
 
-[21]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[21]: #parameters-1
 
-[22]: https://developer.mozilla.org/docs/Web/API/Event
+[22]: #onmounted
 
-[23]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[23]: #confirmarpago
+
+[24]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+
+[25]: https://developer.mozilla.org/docs/Web/API/Event
+
+[26]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise

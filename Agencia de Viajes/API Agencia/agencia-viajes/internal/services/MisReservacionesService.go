@@ -1,8 +1,3 @@
-// # Package services
-//
-// Servicios de negocio de la agencia de viajes. Este paquete contiene la logica
-// central para reservaciones, busquedas, autenticacion, catalogos y comunicacion
-// con proveedores externos (aerolineas y hoteleras).
 package services
 
 import (
@@ -40,7 +35,6 @@ func NewMisReservacionesService(repo *repositories.MisReservacionesRepository) *
 	return &MisReservacionesService{repo: repo}
 }
 
-<<<<<<< HEAD
 // ListarReservaciones
 //
 // Retorna el listado resumido de todas las reservaciones del usuario con sus
@@ -53,17 +47,12 @@ func NewMisReservacionesService(repo *repositories.MisReservacionesRepository) *
 // Retorna:
 //   - []dto.ReservacionResumenResponse: lista de reservaciones con detalles resumidos
 //   - error: si falla la consulta de reservaciones en BD
-=======
-// Ruta 1: Listar todas las reservaciones 
-
->>>>>>> 5276605026f8bcb6b2c075ecdacf6a477999f13d
 func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.ReservacionResumenResponse, error) {
 	filas, err := s.repo.ObtenerReservacionesDeUsuario(usuarioID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Agrupar filas por reservacion_id
 	orden := []int{}
 	mapa := map[int]*dto.ReservacionResumenResponse{}
 
@@ -103,7 +92,6 @@ func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.Rese
 	return resultado, nil
 }
 
-<<<<<<< HEAD
 // ObtenerDetalle
 //
 // Retorna el detalle completo de una reservacion especifica del usuario,
@@ -118,10 +106,6 @@ func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.Rese
 // Retorna:
 //   - *dto.ReservacionDetalladaResponse: reservacion con detalles completos y datos de proveedores
 //   - error: si la reservacion no existe o no pertenece al usuario
-=======
-//uta 2: Detalle completo llamando a proveedores 
-
->>>>>>> 5276605026f8bcb6b2c075ecdacf6a477999f13d
 func (s *MisReservacionesService) ObtenerDetalle(reservacionID, usuarioID int) (*dto.ReservacionDetalladaResponse, error) {
 	filas, err := s.repo.ObtenerReservacionPorID(reservacionID, usuarioID)
 	if err != nil {
@@ -184,9 +168,9 @@ func (s *MisReservacionesService) ObtenerDetalle(reservacionID, usuarioID int) (
 func (s *MisReservacionesService) consultarProveedor(tipoDetalleID int, idReservaProveedor, urlAPI, token string) (interface{}, error) {
 	var url string
 	switch tipoDetalleID {
-	case 1: // Aerolínea
+	case 1:
 		url = fmt.Sprintf("%s/api/reservaciones-agencia/gestion/%s", urlAPI, idReservaProveedor)
-	case 2: // Hotel
+	case 2:
 		url = fmt.Sprintf("%s/agencia/reservaciones/%s", urlAPI, idReservaProveedor)
 	default:
 		return nil, fmt.Errorf("tipo de detalle desconocido: %d", tipoDetalleID)

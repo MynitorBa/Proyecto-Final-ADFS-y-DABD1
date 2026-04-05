@@ -278,10 +278,20 @@
                   <strong>{{ fechaHoy }}</strong>
                 </div>
               </div>
+              <template v-if="tipoItem === 'paquete' && descuentoMonto > 0">
+                <div class="conf-resumen__row">
+                  <span>Subtotal</span>
+                  <strong>${{ subtotalPaquete.toFixed(2) }}</strong>
+                </div>
+                <div class="conf-resumen__row" style="color:#16a34a">
+                  <span style="color:#16a34a">Descuento paquete</span>
+                  <strong style="color:#16a34a">-${{ descuentoMonto.toFixed(2) }}</strong>
+                </div>
+              </template>
               <div class="conf-resumen__total">
                 <span>Total pagado</span>
                 <strong>{{ totalPagado !== '--' ? totalPagado : '—' }}</strong>
-              </div>
+              </div>  
             </div>
 
             <!-- Botones de navegación post-compra -->
@@ -375,6 +385,18 @@ const fechaHoy = computed(() => {
  * @type {import('vue').ComputedRef<Array>}
  */
 const boletos = computed(() => detalleVuelo.value?.detalle?.boletos || [])
+
+const subtotalPaquete = computed(() => {
+  const tv = detalleVuelo.value?.total_con_ganancia ?? 0
+  const th = detalleHotel.value?.total_con_ganancia ?? 0
+  return tv + th
+})
+
+const descuentoMonto = computed(() => {
+  if (tipoItem.value !== 'paquete') return 0
+  const total = parseFloat(totalPagado.value.replace('$', '')) || 0
+  return Math.max(0, Math.round((subtotalPaquete.value - total) * 100) / 100)
+})
 
 /**
  * Convierte una duración en minutos al formato "Xh Ym".

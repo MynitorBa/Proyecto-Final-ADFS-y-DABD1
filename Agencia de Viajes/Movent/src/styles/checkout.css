@@ -140,6 +140,7 @@
 .card-face--front {
   background: linear-gradient(135deg, #1a1714 0%, #2c2520 30%, #1a1714 60%, #221d18 100%);
 }
+
 /* Textura de ruido sobre la tarjeta */
 .card-noise {
   position: absolute; inset: 0;
@@ -160,6 +161,7 @@
   font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700;
   color: #fff; letter-spacing: .05em; text-shadow: 0 2px 8px rgba(0,0,0,.4);
 }
+
 /* Ícono de MasterCard con dos círculos superpuestos */
 .card-mc {
   display: flex; position: relative; width: 42px; height: 26px;
@@ -174,6 +176,7 @@
   font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700;
   color: rgba(255,255,255,.8); letter-spacing: .12em;
 }
+
 /* Chip dorado de la tarjeta */
 .card-chip {
   position: absolute; top: 68px; left: 24px;
@@ -186,6 +189,7 @@
 .card-chip__inner { position: absolute; inset: 6px; border: 1px solid rgba(0,0,0,.25); border-radius: 2px; }
 .card-chip__h { position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(0,0,0,.2); transform: translateY(-50%); }
 .card-chip__v { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(0,0,0,.2); transform: translateX(-50%); }
+
 /* Número de la tarjeta en monospace */
 .card-number {
   position: absolute; bottom: 60px; left: 24px; right: 24px;
@@ -195,6 +199,7 @@
   text-shadow: 0 2px 12px rgba(0,0,0,.5);
 }
 .card-number__group { flex: 1; text-align: center; }
+
 /* Pie de la tarjeta con nombre y expiración */
 .card-foot {
   position: absolute; bottom: 18px; left: 24px; right: 24px;
@@ -254,6 +259,7 @@
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .08em; color: #9a9089;
 }
+
 /* Wrapper del input con ícono e indicador de foco */
 .pago-form__input-wrap {
   display: flex; align-items: center; gap: 10px;
@@ -266,6 +272,7 @@
 }
 .pago-form__ico { color: #b0a898; flex-shrink: 0; }
 .pago-form__input-wrap--focus .pago-form__ico { color: #8B6B4A; }
+
 /* Input de pago en monospace para números de tarjeta */
 .pago-form__input {
   flex: 1; background: transparent; border: none; outline: none;
@@ -321,6 +328,7 @@
   background: #2d2b27; box-shadow: 0 8px 24px rgba(28,26,24,.4); transform: translateY(-1px);
 }
 .pago-btn-confirm:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
 /* Spinner inline mientras procesa el pago */
 .pago-btn-confirm__spin {
   display: inline-block; width: 16px; height: 16px;
@@ -345,6 +353,7 @@
   font-size: 12px; font-weight: 700; color: #1C1A18;
   font-family: 'Space Mono', monospace; letter-spacing: .04em;
 }
+
 /* Ítem del resumen con badge de tipo de servicio */
 .co-resumen__item {
   padding: 14px 18px; border-bottom: 1px solid #f0ebe3;
@@ -379,6 +388,33 @@
 }
 .co-resumen__pasajero-nombre { font-size: 13px; font-weight: 700; color: #1C1A18; margin: 0 0 2px; }
 .co-resumen__pasajero-meta   { font-size: 11px; color: #9a9089; margin: 0; line-height: 1.5; }
+
+/* Fila de subtotal visible solo en paquetes con descuento activo */
+.co-resumen__subtotal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 18px 0;
+  font-size: 12px;
+  color: #9a9089;
+}
+
+/* Fila de descuento de paquete con indicador verde */
+.co-resumen__descuento-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 18px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  border-bottom: 1px solid #f0ebe3;
+}
+.co-resumen__descuento-row span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
 /* Fila de precio total del resumen */
 .co-resumen__precio-row {

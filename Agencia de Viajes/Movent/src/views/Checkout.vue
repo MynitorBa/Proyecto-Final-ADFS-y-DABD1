@@ -4,7 +4,6 @@
     <div class="co-page">
       <div class="co-container">
 
-        <!-- Barra de progreso: paso 2 de 3 (Pago) -->
         <div class="co-header">
           <div class="co-steps">
             <div class="co-step co-step--done">
@@ -28,14 +27,11 @@
 
         <div class="co-layout">
 
-          <!-- Sección principal: formulario de pago con tarjeta 3D -->
           <div class="pago-stage">
 
-            <!-- Tarjeta 3D con efecto flip al enfocar el campo CVV -->
             <div class="card-scene">
               <div class="card-wrap" :class="{ 'card-wrap--flip': mostrandoCVV }">
 
-                <!-- Cara frontal de la tarjeta visual -->
                 <div class="card-face card-face--front">
                   <div class="card-noise"></div>
                   <div class="card-top">
@@ -43,7 +39,6 @@
                       <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z" fill="#FFCC00"/></svg>
                       <span>MOVENT</span>
                     </div>
-                    <!-- Icono de red según el tipo de tarjeta detectado -->
                     <div class="card-type-icon">
                       <div v-if="tipoTarjeta==='visa'" class="card-visa">VISA</div>
                       <div v-else-if="tipoTarjeta==='mastercard'" class="card-mc">
@@ -59,7 +54,6 @@
                       <div class="card-chip__v"></div>
                     </div>
                   </div>
-                  <!-- Número de tarjeta agrupado en bloques de 4 dígitos -->
                   <div class="card-number">
                     <span v-for="(g, i) in numeroGrupos" :key="i" class="card-number__group">{{ g }}</span>
                   </div>
@@ -75,7 +69,6 @@
                   </div>
                 </div>
 
-                <!-- Cara trasera de la tarjeta: muestra el CVV enmascarado -->
                 <div class="card-face card-face--back">
                   <div class="card-noise"></div>
                   <div class="card-stripe"></div>
@@ -92,10 +85,8 @@
               </div>
             </div>
 
-            <!-- Formulario de datos de la tarjeta -->
             <div class="pago-form">
 
-              <!-- Campo: número de tarjeta con detección automática de red -->
               <div class="pago-form__field pago-form__field--full">
                 <label class="pago-form__label">Número de tarjeta</label>
                 <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='tarjeta' }">
@@ -104,14 +95,13 @@
                     @input="formatTarjeta" @focus="focusField='tarjeta'" @blur="focusField=''"
                     placeholder="0000  0000  0000  0000" maxlength="19" type="text" inputmode="numeric"/>
                   <div class="pago-form__type-badge">
-                    <span v-if="tipoTarjeta==='visa'"       class="badge-visa">VISA</span>
+                    <span v-if="tipoTarjeta==='visa'"            class="badge-visa">VISA</span>
                     <span v-else-if="tipoTarjeta==='mastercard'" class="badge-mc">MC</span>
-                    <span v-else-if="tipoTarjeta==='amex'"  class="badge-amex">AMEX</span>
+                    <span v-else-if="tipoTarjeta==='amex'"       class="badge-amex">AMEX</span>
                   </div>
                 </div>
               </div>
 
-              <!-- Fila: vencimiento y CVV en paralelo -->
               <div class="pago-form__row">
                 <div class="pago-form__field">
                   <label class="pago-form__label">Vencimiento</label>
@@ -122,7 +112,6 @@
                       placeholder="MM/AA" maxlength="5" type="text" inputmode="numeric"/>
                   </div>
                 </div>
-                <!-- El foco en CVV activa el flip de la tarjeta hacia el reverso -->
                 <div class="pago-form__field">
                   <label class="pago-form__label">CVV</label>
                   <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='cvv' }">
@@ -136,7 +125,6 @@
                 </div>
               </div>
 
-              <!-- Campo: nombre del titular tal como aparece en la tarjeta -->
               <div class="pago-form__field pago-form__field--full">
                 <label class="pago-form__label">Nombre en la tarjeta</label>
                 <div class="pago-form__input-wrap" :class="{ 'pago-form__input-wrap--focus': focusField==='nombre' }">
@@ -147,7 +135,6 @@
                 </div>
               </div>
 
-              <!-- Sección: datos de facturación (NIT y código postal) -->
               <div class="pago-billing">
                 <div class="pago-billing__title">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -177,7 +164,6 @@
                 </div>
               </div>
 
-              <!-- Badges decorativos de seguridad del pago -->
               <div class="pago-badges">
                 <div class="pago-badge">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -190,11 +176,9 @@
                 </div>
               </div>
 
-              <!-- Mensajes de error de validación local y de la API -->
               <p v-if="formError" class="co-error">{{ formError }}</p>
               <p v-if="pagoError" class="co-error co-error--api">{{ pagoError }}</p>
 
-              <!-- Botón de pago: deshabilitado mientras se procesa la petición -->
               <div class="pago-actions">
                 <button class="pago-btn-confirm" @click="confirmarPago" :disabled="pagando" type="button">
                   <span v-if="pagando" class="pago-btn-confirm__spin"></span>
@@ -206,20 +190,17 @@
               </div>
             </div>
 
-          </div><!-- /pago-stage -->
+          </div>
 
-          <!-- Sidebar con el resumen de la reserva que se está pagando -->
           <aside class="co-sidebar">
             <div class="co-resumen">
               <div class="co-resumen__head">Resumen de reserva</div>
 
-              <!-- Número de reserva generado al crear la reservación -->
               <div class="co-resumen__nro">
                 <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="14" height="14"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
                 <span>{{ cd?.noReservacion || '—' }}</span>
               </div>
 
-              <!-- Resumen para vuelo de solo ida -->
               <template v-if="tipoItem === 'vuelo' && cd?.item?.tipoVuelo === 'ida'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--vuelo">
@@ -236,7 +217,6 @@
                 </div>
               </template>
 
-              <!-- Resumen para vuelo de ida y vuelta -->
               <template v-else-if="tipoItem === 'vuelo' && cd?.item?.tipoVuelo === 'idaVuelta'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--vuelo">
@@ -253,7 +233,6 @@
                 </div>
               </template>
 
-              <!-- Resumen para hospedaje -->
               <template v-else-if="tipoItem === 'hotel'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--hotel">
@@ -267,7 +246,6 @@
                 </div>
               </template>
 
-              <!-- Resumen para paquete combinado vuelo + hotel -->
               <template v-else-if="tipoItem === 'paquete'">
                 <div class="co-resumen__item">
                   <div class="co-resumen__item-badge co-resumen__item-badge--paquete">
@@ -286,7 +264,6 @@
                 </div>
               </template>
 
-              <!-- Datos del pasajero principal -->
               <div v-if="cd?.pasajero" class="co-resumen__pasajero">
                 <div class="co-resumen__pasajero-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="16" height="16"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -297,7 +274,20 @@
                 </div>
               </div>
 
-              <!-- Total a pagar calculado según el tipo de item -->
+              <template v-if="tipoItem === 'paquete' && porcentajeDescuento > 0">
+                <div class="co-resumen__subtotal-row">
+                  <span>Subtotal</span>
+                  <span>${{ subtotal.toFixed(2) }}</span>
+                </div>
+                <div class="co-resumen__descuento-row">
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+                    Descuento paquete ({{ porcentajeDescuento }}%)
+                  </span>
+                  <span>-${{ montoDescuento.toFixed(2) }}</span>
+                </div>
+              </template>
+
               <div class="co-resumen__precio-row">
                 <span>Total a pagar</span>
                 <strong>{{ totalDisplay }}</strong>
@@ -316,9 +306,10 @@
 /**
  * @file Checkout.vue
  * @description Vista del paso 2 del flujo de compra. Presenta el formulario de
- * pago con tarjeta de crédito/débito y una tarjeta 3D animada que refleja los
- * datos ingresados en tiempo real. Lee la reserva desde sessionStorage, valida
- * el formulario localmente, llama al endpoint de pago y redirige a Confirmacion.
+ * pago con tarjeta de credito/debito y una tarjeta 3D animada que refleja los
+ * datos ingresados en tiempo real. Lee la reserva desde sessionStorage, consulta
+ * el descuento de paquete si aplica, valida el formulario localmente, llama al
+ * endpoint de pago y redirige a Confirmacion.
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -333,46 +324,32 @@ const router = useRouter()
 const API = 'http://localhost:8080'
 
 /**
- * Datos del checkout leídos desde sessionStorage.
- * Contiene item, pasajero, detalles de precio y número de reservación.
+ * Datos del checkout leidos desde sessionStorage.
+ * Contiene item, pasajero, detalles de precio y numero de reservacion.
  * @type {import('vue').Ref<object|null>}
  */
 const cd = ref(null)
 
 /**
- * Tipo de item reservado: 'vuelo', 'hotel' o 'paquete'.
- * @type {import('vue').ComputedRef<string>}
+ * Porcentaje de descuento para paquetes leido desde el backend.
+ * Solo aplica cuando tipoItem === 'paquete'. Valor 0 si no hay descuento.
+ * @type {import('vue').Ref<number>}
  */
-const tipoItem = computed(() => cd.value?.tipoItem || '')
+const porcentajeDescuento = ref(0)
 
-/**
- * Total formateado con símbolo de dólar para mostrar en el botón y el resumen.
- * Suma vuelo y hotel si el item es un paquete.
- * @type {import('vue').ComputedRef<string>}
- */
-const totalDisplay = computed(() => {
-  if (!cd.value) return '--'
-  const tv = cd.value.detalleVuelo?.total_con_ganancia ?? 0
-  const th = cd.value.detalleHotel?.total_con_ganancia ?? 0
-  if (cd.value.tipoItem === 'vuelo')   return tv > 0 ? `$${tv.toFixed(2)}` : '--'
-  if (cd.value.tipoItem === 'hotel')   return th > 0 ? `$${th.toFixed(2)}` : '--'
-  if (cd.value.tipoItem === 'paquete') return (tv + th) > 0 ? `$${(tv + th).toFixed(2)}` : '--'
-  return '--'
-})
-
-/** Controla si la tarjeta 3D está volteada (true cuando el campo CVV tiene foco). @type {import('vue').Ref<boolean>} */
+/** Controla si la tarjeta 3D esta volteada (true cuando el campo CVV tiene foco). @type {import('vue').Ref<boolean>} */
 const mostrandoCVV = ref(false)
 
 /** Identificador del campo actualmente enfocado para aplicar el estilo de borde activo. @type {import('vue').Ref<string>} */
 const focusField = ref('')
 
-/** Mensaje de error de validación local del formulario. @type {import('vue').Ref<string>} */
+/** Mensaje de error de validacion local del formulario. @type {import('vue').Ref<string>} */
 const formError = ref('')
 
 /** Mensaje de error recibido de la API al intentar procesar el pago. @type {import('vue').Ref<string>} */
 const pagoError = ref('')
 
-/** Indica si hay una petición de pago en curso para deshabilitar el botón. @type {import('vue').Ref<boolean>} */
+/** Indica si hay una peticion de pago en curso para deshabilitar el boton. @type {import('vue').Ref<boolean>} */
 const pagando = ref(false)
 
 /**
@@ -389,7 +366,53 @@ const pago = ref({
 })
 
 /**
- * Detecta la red de la tarjeta según los primeros dígitos ingresados.
+ * Tipo de item reservado: 'vuelo', 'hotel' o 'paquete'.
+ * @type {import('vue').ComputedRef<string>}
+ */
+const tipoItem = computed(() => cd.value?.tipoItem || '')
+
+/**
+ * Suma del total de vuelo y hotel antes de aplicar el descuento de paquete.
+ * Para tipos distintos de paquete retorna el total correspondiente.
+ * @type {import('vue').ComputedRef<number>}
+ */
+const subtotal = computed(() => {
+  if (!cd.value) return 0
+  const tv = cd.value.detalleVuelo?.total_con_ganancia ?? 0
+  const th = cd.value.detalleHotel?.total_con_ganancia ?? 0
+  return tv + th
+})
+
+/**
+ * Monto del descuento calculado sobre el subtotal segun el porcentaje configurado.
+ * Retorna 0 si el tipo no es paquete o si el porcentaje es 0.
+ * @type {import('vue').ComputedRef<number>}
+ */
+const montoDescuento = computed(() => {
+  if (tipoItem.value !== 'paquete' || porcentajeDescuento.value <= 0) return 0
+  return Math.round(subtotal.value * (porcentajeDescuento.value / 100) * 100) / 100
+})
+
+/**
+ * Total formateado con simbolo de dolar para mostrar en el boton y el resumen.
+ * Para paquetes aplica el descuento sobre el subtotal.
+ * @type {import('vue').ComputedRef<string>}
+ */
+const totalDisplay = computed(() => {
+  if (!cd.value) return '--'
+  const tv = cd.value.detalleVuelo?.total_con_ganancia ?? 0
+  const th = cd.value.detalleHotel?.total_con_ganancia ?? 0
+  if (tipoItem.value === 'vuelo')   return tv > 0 ? `$${tv.toFixed(2)}` : '--'
+  if (tipoItem.value === 'hotel')   return th > 0 ? `$${th.toFixed(2)}` : '--'
+  if (tipoItem.value === 'paquete') {
+    const total = subtotal.value - montoDescuento.value
+    return total > 0 ? `$${total.toFixed(2)}` : '--'
+  }
+  return '--'
+})
+
+/**
+ * Detecta la red de la tarjeta segun los primeros digitos ingresados.
  * @type {import('vue').ComputedRef<'visa'|'mastercard'|'amex'|''>}
  */
 const tipoTarjeta = computed(() => {
@@ -401,8 +424,8 @@ const tipoTarjeta = computed(() => {
 })
 
 /**
- * Divide el número de tarjeta en cuatro grupos de 4 caracteres para la visualización
- * en la tarjeta 3D. Rellena con '·' si faltan dígitos.
+ * Divide el numero de tarjeta en cuatro grupos de 4 caracteres para la visualizacion
+ * en la tarjeta 3D. Rellena con '·' si faltan digitos.
  * @type {import('vue').ComputedRef<string[]>}
  */
 const numeroGrupos = computed(() => {
@@ -411,8 +434,8 @@ const numeroGrupos = computed(() => {
 })
 
 /**
- * Formatea el número de tarjeta añadiendo espacios cada 4 dígitos mientras el usuario escribe.
- * @param {Event} e - Evento input del campo de número de tarjeta.
+ * Formatea el numero de tarjeta añadiendo espacios cada 4 digitos mientras el usuario escribe.
+ * @param {Event} e - Evento input del campo de numero de tarjeta.
  */
 function formatTarjeta(e) {
   const val = e.target.value.replace(/\D/g,'').substring(0,16)
@@ -420,7 +443,7 @@ function formatTarjeta(e) {
 }
 
 /**
- * Formatea la fecha de vencimiento en el patrón MM/AA mientras el usuario escribe.
+ * Formatea la fecha de vencimiento en el patron MM/AA mientras el usuario escribe.
  * @param {Event} e - Evento input del campo de vencimiento.
  */
 function formatVencimiento(e) {
@@ -431,9 +454,11 @@ function formatVencimiento(e) {
 
 /**
  * Al montar la vista, lee los datos de la reserva desde sessionStorage.
- * Si no hay datos o falta el ID de reservación, redirige al inicio.
+ * Si el tipo de item es paquete, consulta el porcentaje de descuento al backend.
+ * Si no hay datos o falta el ID de reservacion, redirige al inicio.
+ * @returns {Promise<void>}
  */
-onMounted(() => {
+onMounted(async () => {
   const raw = sessionStorage.getItem('checkout_data')
   if (!raw) { router.push('/principal'); return }
   try {
@@ -441,12 +466,25 @@ onMounted(() => {
     if (!cd.value?.reservacionId) { router.push('/principal'); return }
   } catch {
     router.push('/principal')
+    return
+  }
+
+  if (cd.value?.tipoItem === 'paquete') {
+    try {
+      const res = await fetch(`${API}/api/configuracion/descuento`)
+      if (res.ok) {
+        const data = await res.json()
+        porcentajeDescuento.value = data.porcentaje_descuento ?? 0
+      }
+    } catch {
+      porcentajeDescuento.value = 0
+    }
   }
 })
 
 /**
- * Valida el formulario, envía la petición de pago al backend y, si es exitosa,
- * dispara el envío del correo de confirmación (fire-and-forget) antes de
+ * Valida el formulario, envia la peticion de pago al backend y, si es exitosa,
+ * dispara el envio del correo de confirmacion (fire-and-forget) antes de
  * redirigir a la vista de Confirmacion.
  * @returns {Promise<void>}
  */
@@ -480,7 +518,6 @@ async function confirmarPago() {
     formError.value = 'El código postal debe tener 5 dígitos.'
     return
   }
-
   if (!pago.value.nit.trim()) {
     formError.value = 'El NIT es requerido.'
     return
@@ -493,27 +530,25 @@ async function confirmarPago() {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        reservacion_id:  Number(cd.value.reservacionId),
-        tarjeta_numero:  numSinEspacios,
-        tarjeta_cvv:     pago.value.cvv,
-        tarjeta_mes:     mes,
-        tarjeta_anio:    `20${anio2}`,
-        nit:             pago.value.nit.trim(),
-        codigo_postal:   pago.value.codigoPostal,
+        reservacion_id: Number(cd.value.reservacionId),
+        tarjeta_numero: numSinEspacios,
+        tarjeta_cvv:    pago.value.cvv,
+        tarjeta_mes:    mes,
+        tarjeta_anio:   `20${anio2}`,
+        nit:            pago.value.nit.trim(),
+        codigo_postal:  pago.value.codigoPostal,
       }),
     })
 
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data.error || data.mensaje || `Error ${res.status}`)
 
-    // Correo automático post-pago (fire-and-forget)
     fetch(`${API}/api/reservaciones/${cd.value.reservacionId}/correo`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {})
 
-    // Pago exitoso → ir a confirmación
     router.push({
       path:  '/confirmacion',
       query: { noReservacion: cd.value.noReservacion },

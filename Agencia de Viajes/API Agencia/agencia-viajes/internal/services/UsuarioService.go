@@ -67,9 +67,9 @@ func (s *UsuarioService) ValidarDatosUnicos(req dto.RegistroUsuarioRequest) (dto
 		return response, err
 	}
 
-	response.Correo = existeCorreo
+	response.Correo    = existeCorreo
 	response.Pasaporte = existePasaporte
-	response.Username = existeUsername
+	response.Username  = existeUsername
 
 	return response, nil
 }
@@ -94,7 +94,6 @@ func (s *UsuarioService) Registrar(req dto.RegistroUsuarioRequest) (dto.Validaci
 		return validacion, err
 	}
 
-	// Si hay duplicados, devuelve la validación sin registrar
 	if validacion.Correo || validacion.Pasaporte || validacion.Username {
 		return validacion, nil
 	}
@@ -120,4 +119,17 @@ func (s *UsuarioService) Registrar(req dto.RegistroUsuarioRequest) (dto.Validaci
 	}
 
 	return validacion, s.repo.AsignarNacionalidades(usuarioID, nacionalidadIDs)
+}
+
+// ObtenerTodos
+//
+// Retorna la lista completa de usuarios registrados en el sistema
+// con sus datos basicos y rol asignado. Usado por el panel de
+// administracion para gestion de roles y asignacion de WebService.
+//
+// Retorna:
+//   - []dto.UsuarioResumen: lista de usuarios con id, nombre, apellido, correo y rol
+//   - error: error si falla la consulta a la base de datos
+func (s *UsuarioService) ObtenerTodos() ([]dto.UsuarioResumen, error) {
+	return s.repo.ObtenerTodos()
 }

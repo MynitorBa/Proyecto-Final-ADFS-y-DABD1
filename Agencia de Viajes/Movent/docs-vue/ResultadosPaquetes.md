@@ -25,90 +25,93 @@
 *   [ordenHoteles][21]
 *   [noches][22]
 *   [precioTotal][23]
-*   [fv][24]
-*   [fh][25]
-*   [clasesFilter][26]
-*   [escalasOpts][27]
-*   [duracionOpts][28]
-*   [horariosOpts][29]
-*   [cantFiltrosActivos][30]
-*   [resetFiltros][31]
-*   [form][32]
-*   [minCheckOut][33]
-*   [paisesCache][34]
-*   [getPaises][35]
-*   [getCiudades][36]
-    *   [Parameters][37]
-*   [blurClose][38]
-    *   [Parameters][39]
-*   [onOPaisInput][40]
-*   [selOPais][41]
+*   [porcentajeDescuento][24]
+*   [montoDescuento][25]
+*   [precioFinalConDescuento][26]
+*   [fv][27]
+*   [fh][28]
+*   [clasesFilter][29]
+*   [escalasOpts][30]
+*   [duracionOpts][31]
+*   [horariosOpts][32]
+*   [cantFiltrosActivos][33]
+*   [resetFiltros][34]
+*   [form][35]
+*   [minCheckOut][36]
+*   [paisesCache][37]
+*   [getPaises][38]
+*   [getCiudades][39]
+    *   [Parameters][40]
+*   [blurClose][41]
     *   [Parameters][42]
-*   [onOCiudadInput][43]
-*   [selOCiudad][44]
+*   [onOPaisInput][43]
+*   [selOPais][44]
     *   [Parameters][45]
-*   [onDPaisInput][46]
-*   [selDPais][47]
+*   [onOCiudadInput][46]
+*   [selOCiudad][47]
     *   [Parameters][48]
-*   [onDCiudadInput][49]
-*   [selDCiudad][50]
+*   [onDPaisInput][49]
+*   [selDPais][50]
     *   [Parameters][51]
-*   [toggleModificar][52]
-*   [tieneVuelos][53]
+*   [onDCiudadInput][52]
+*   [selDCiudad][53]
     *   [Parameters][54]
-*   [tieneHoteles][55]
-    *   [Parameters][56]
-*   [rebuscar][57]
-*   [formatHora][58]
+*   [toggleModificar][55]
+*   [tieneVuelos][56]
+    *   [Parameters][57]
+*   [tieneHoteles][58]
     *   [Parameters][59]
-*   [mapearVuelos][60]
-    *   [Parameters][61]
-*   [mapDirecto][62]
-    *   [Parameters][63]
-*   [mapEscala][64]
-    *   [Parameters][65]
-*   [mapearHoteles][66]
-    *   [Parameters][67]
-*   [aerolineasDisponibles][68]
-*   [vuelosFiltrados][69]
-*   [tiposHabitacionDisponibles][70]
-*   [hotelesDisponibles][71]
-*   [amenidadesDisponibles][72]
-*   [habitacionesFiltradas][73]
-*   [gruposPorHotel][74]
-*   [fmt][75]
-    *   [Parameters][76]
-*   [\_getComboHabs][77]
-    *   [Parameters][78]
-*   [\_getComboAproximado][79]
-    *   [Parameters][80]
-*   [\_getPersonaExtraMin][81]
-    *   [Parameters][82]
-*   [getHotelCombos][83]
-    *   [Parameters][84]
-*   [formatFecha][85]
-    *   [Parameters][86]
-*   [formatDuracion][87]
-    *   [Parameters][88]
-*   [parseVueloId][89]
-    *   [Parameters][90]
-*   [parseProveedorId][91]
-    *   [Parameters][92]
-*   [claseToId][93]
-    *   [Parameters][94]
-*   [precrearReservacion][95]
-    *   [Parameters][96]
-*   [seleccionarVuelo][97]
-    *   [Parameters][98]
-*   [seleccionarHotelHab][99]
-    *   [Parameters][100]
-*   [seleccionarHotelCombo][101]
-    *   [Parameters][102]
-*   [seleccionarHotelExtra][103]
-    *   [Parameters][104]
-*   [retroceder][105]
-*   [reservarPaquete][106]
-*   [onMounted][107]
+*   [rebuscar][60]
+*   [formatHora][61]
+    *   [Parameters][62]
+*   [mapearVuelos][63]
+    *   [Parameters][64]
+*   [mapDirecto][65]
+    *   [Parameters][66]
+*   [mapEscala][67]
+    *   [Parameters][68]
+*   [mapearHoteles][69]
+    *   [Parameters][70]
+*   [aerolineasDisponibles][71]
+*   [vuelosFiltrados][72]
+*   [tiposHabitacionDisponibles][73]
+*   [hotelesDisponibles][74]
+*   [amenidadesDisponibles][75]
+*   [habitacionesFiltradas][76]
+*   [gruposPorHotel][77]
+*   [fmt][78]
+    *   [Parameters][79]
+*   [\_getComboHabs][80]
+    *   [Parameters][81]
+*   [\_getComboAproximado][82]
+    *   [Parameters][83]
+*   [\_getPersonaExtraMin][84]
+    *   [Parameters][85]
+*   [getHotelCombos][86]
+    *   [Parameters][87]
+*   [formatFecha][88]
+    *   [Parameters][89]
+*   [formatDuracion][90]
+    *   [Parameters][91]
+*   [parseVueloId][92]
+    *   [Parameters][93]
+*   [parseProveedorId][94]
+    *   [Parameters][95]
+*   [claseToId][96]
+    *   [Parameters][97]
+*   [precrearReservacion][98]
+    *   [Parameters][99]
+*   [seleccionarVuelo][100]
+    *   [Parameters][101]
+*   [seleccionarHotelHab][102]
+    *   [Parameters][103]
+*   [seleccionarHotelCombo][104]
+    *   [Parameters][105]
+*   [seleccionarHotelExtra][106]
+    *   [Parameters][107]
+*   [retroceder][108]
+*   [reservarPaquete][109]
+*   [onMounted][110]
 
 ## ref
 
@@ -121,7 +124,7 @@ y pre-crea la reservación en background al confirmar el/los vuelo(s).
 
 URL base del backend. @type {string}
 
-Type: [string][108]
+Type: [string][111]
 
 ## hoy
 
@@ -209,6 +212,18 @@ Número de noches entre check-in y check-out del hotel.
 Precio total del paquete: vuelo ida + (vuelo regreso si aplica) + hotel.
 Solo tiene valor cuando todos los componentes están seleccionados.
 
+## porcentajeDescuento
+
+Porcentaje de descuento para paquetes leído del backend.
+
+## montoDescuento
+
+Monto del descuento aplicado al precio total del paquete.
+
+## precioFinalConDescuento
+
+Precio final del paquete después de aplicar el descuento.
+
 ## fv
 
 Filtros de vuelo (precio por persona, clases, escalas, duración, aerolínea, horario de salida).
@@ -233,7 +248,7 @@ Opciones del filtro de duración máxima en minutos. @type {{val: number, label:
 
 Opciones del filtro de horario de salida, con íconos SVG inline.
 
-Type: [Array][109]<{val: [string][108], icon: [string][108], label: [string][108], rango: [string][108]}>
+Type: [Array][112]<{val: [string][111], icon: [string][111], label: [string][111], rango: [string][111]}>
 
 ## cantFiltrosActivos
 
@@ -249,7 +264,7 @@ Reinicia los filtros del paso actual (vuelo o hotel) a sus valores predeterminad
 Estado reactivo del formulario de modificar búsqueda. Incluye campos con autocompletado
 para origen y destino (país/ciudad), fechas de vuelo, fechas del hotel, personas y tipo de viaje.
 
-Type: {oPaisQ: [string][108], oPaisSug: [Array][109]\<any>, oPaisSel: any, oCiudadQ: [string][108], oCiudadSug: [Array][109]<[string][108]>, oCiudadLoading: [boolean][110], oCiudades: [Array][109]<[string][108]>, oPais: [string][108], oCiudad: [string][108], dPaisQ: [string][108], dPaisSug: [Array][109]\<any>, dPaisSel: any, dCiudadQ: [string][108], dCiudadSug: [Array][109]<[string][108]>, dCiudadLoading: [boolean][110], dCiudades: [Array][109]<[string][108]>, dPais: [string][108], dCiudad: [string][108], fecha: [string][108], fechaRegreso: [string][108], checkIn: [string][108], checkOut: [string][108], cantidadPersonas: [number][111], tipoVuelo: [string][108]}
+Type: {oPaisQ: [string][111], oPaisSug: [Array][112]\<any>, oPaisSel: any, oCiudadQ: [string][111], oCiudadSug: [Array][112]<[string][111]>, oCiudadLoading: [boolean][113], oCiudades: [Array][112]<[string][111]>, oPais: [string][111], oCiudad: [string][111], dPaisQ: [string][111], dPaisSug: [Array][112]\<any>, dPaisSel: any, dCiudadQ: [string][111], dCiudadSug: [Array][112]<[string][111]>, dCiudadLoading: [boolean][113], dCiudades: [Array][112]<[string][111]>, dPais: [string][111], dCiudad: [string][111], fecha: [string][111], fechaRegreso: [string][111], checkIn: [string][111], checkOut: [string][111], cantidadPersonas: [number][114], tipoVuelo: [string][111]}
 
 ## minCheckOut
 
@@ -263,7 +278,7 @@ Caché en memoria de la lista de países de CountriesNow. @type {any\[]|null}
 
 Obtiene la lista de países desde CountriesNow, usando caché en memoria.
 
-Returns **[Promise][112]<[Array][109]\<any>>**&#x20;
+Returns **[Promise][115]<[Array][112]\<any>>**&#x20;
 
 ## getCiudades
 
@@ -271,9 +286,9 @@ Obtiene las ciudades de un país dado desde CountriesNow.
 
 ### Parameters
 
-*   `country` **[string][108]** Nombre del país en inglés
+*   `country` **[string][111]** Nombre del país en inglés
 
-Returns **[Promise][112]<[Array][109]<[string][108]>>**&#x20;
+Returns **[Promise][115]<[Array][112]<[string][111]>>**&#x20;
 
 ## blurClose
 
@@ -281,7 +296,7 @@ Cierra el dropdown de autocompletado con delay para que el click en la opción s
 
 ### Parameters
 
-*   `fn` **[Function][113]**&#x20;
+*   `fn` **[Function][116]**&#x20;
 
 ## onOPaisInput
 
@@ -293,7 +308,7 @@ Selecciona un país de origen y carga sus ciudades.
 
 ### Parameters
 
-*   `p` **{country: [string][108]}**&#x20;
+*   `p` **{country: [string][111]}**&#x20;
 
 ## onOCiudadInput
 
@@ -305,7 +320,7 @@ Selecciona una ciudad de origen del dropdown.
 
 ### Parameters
 
-*   `c` **[string][108]**&#x20;
+*   `c` **[string][111]**&#x20;
 
 ## onDPaisInput
 
@@ -317,7 +332,7 @@ Selecciona un país de destino y carga sus ciudades.
 
 ### Parameters
 
-*   `p` **{country: [string][108]}**&#x20;
+*   `p` **{country: [string][111]}**&#x20;
 
 ## onDCiudadInput
 
@@ -329,7 +344,7 @@ Selecciona una ciudad de destino del dropdown.
 
 ### Parameters
 
-*   `c` **[string][108]**&#x20;
+*   `c` **[string][111]**&#x20;
 
 ## toggleModificar
 
@@ -342,9 +357,9 @@ Verifica si la respuesta cruda de la API de vuelos contiene al menos un resultad
 
 ### Parameters
 
-*   `res` **[Array][109]\<any>**&#x20;
+*   `res` **[Array][112]\<any>**&#x20;
 
-Returns **[boolean][110]**&#x20;
+Returns **[boolean][113]**&#x20;
 
 ## tieneHoteles
 
@@ -352,9 +367,9 @@ Verifica si la respuesta cruda de la API de hoteles contiene al menos un resulta
 
 ### Parameters
 
-*   `res` **[Array][109]\<any>**&#x20;
+*   `res` **[Array][112]\<any>**&#x20;
 
-Returns **[boolean][110]**&#x20;
+Returns **[boolean][113]**&#x20;
 
 ## rebuscar
 
@@ -368,9 +383,9 @@ Recorta una cadena de hora HH:MM:SS a HH:MM para mostrarla en las tarjetas.
 
 ### Parameters
 
-*   `h` **[string][108]** Hora en formato HH:MM:SS
+*   `h` **[string][111]** Hora en formato HH:MM:SS
 
-Returns **[string][108]**&#x20;
+Returns **[string][111]**&#x20;
 
 ## mapearVuelos
 
@@ -379,9 +394,9 @@ incluyendo vuelos directos y con escala.
 
 ### Parameters
 
-*   `respuesta` **[Array][109]\<any>** Array de objetos proveedor retornado por el backend
+*   `respuesta` **[Array][112]\<any>** Array de objetos proveedor retornado por el backend
 
-Returns **[Array][109]<[object][114]>**&#x20;
+Returns **[Array][112]<[object][117]>**&#x20;
 
 ## mapDirecto
 
@@ -389,10 +404,10 @@ Normaliza un vuelo directo de la API al formato interno de la vista.
 
 ### Parameters
 
-*   `v` **[object][114]** Objeto vuelo directo del proveedor
-*   `b` **[object][114]** Objeto proveedor
+*   `v` **[object][117]** Objeto vuelo directo del proveedor
+*   `b` **[object][117]** Objeto proveedor
 
-Returns **[object][114]**&#x20;
+Returns **[object][117]**&#x20;
 
 ## mapEscala
 
@@ -401,10 +416,10 @@ Extrae origen del primer tramo y destino del último.
 
 ### Parameters
 
-*   `v` **[object][114]** Objeto vuelo con escala del proveedor
-*   `b` **[object][114]** Objeto proveedor
+*   `v` **[object][117]** Objeto vuelo con escala del proveedor
+*   `b` **[object][117]** Objeto proveedor
 
-Returns **[object][114]**&#x20;
+Returns **[object][117]**&#x20;
 
 ## mapearHoteles
 
@@ -413,9 +428,9 @@ normalizadas, incluyendo datos del hotel y metadata de combos por capacidad.
 
 ### Parameters
 
-*   `respuesta` **[Array][109]\<any>** Array de objetos proveedor retornado por el backend
+*   `respuesta` **[Array][112]\<any>** Array de objetos proveedor retornado por el backend
 
-Returns **[Array][109]<[object][114]>**&#x20;
+Returns **[Array][112]<[object][117]>**&#x20;
 
 ## aerolineasDisponibles
 
@@ -453,9 +468,9 @@ Formatea un monto en USD con separadores de miles.
 
 ### Parameters
 
-*   `p` **[number][111]**&#x20;
+*   `p` **[number][114]**&#x20;
 
-Returns **[string][108]**&#x20;
+Returns **[string][111]**&#x20;
 
 ## \_getComboHabs
 
@@ -464,9 +479,9 @@ usando la primera combinación numérica disponible del hotel.
 
 ### Parameters
 
-*   `hotel` **[object][114]**&#x20;
+*   `hotel` **[object][117]**&#x20;
 
-Returns **({habs: [Array][109]<[object][114]>, total: [number][111]} | null)**&#x20;
+Returns **({habs: [Array][112]<[object][117]>, total: [number][114]} | null)**&#x20;
 
 ## \_getComboAproximado
 
@@ -475,10 +490,10 @@ Solo acepta hasta 2 personas de exceso y requiere más de una habitación.
 
 ### Parameters
 
-*   `hotel` **[object][114]**&#x20;
-*   `personas` **[number][111]**&#x20;
+*   `hotel` **[object][117]**&#x20;
+*   `personas` **[number][114]**&#x20;
 
-Returns **({habs: [Array][109]<[object][114]>, capacidadTotal: [number][111], total: [number][111]} | null)**&#x20;
+Returns **({habs: [Array][112]<[object][117]>, capacidadTotal: [number][114], total: [number][114]} | null)**&#x20;
 
 ## \_getPersonaExtraMin
 
@@ -486,10 +501,10 @@ Busca la habitación de capacidad (personas-1) más económica que acepte person
 
 ### Parameters
 
-*   `hotel` **[object][114]**&#x20;
-*   `personas` **[number][111]**&#x20;
+*   `hotel` **[object][117]**&#x20;
+*   `personas` **[number][114]**&#x20;
 
-Returns **([object][114] | null)**&#x20;
+Returns **([object][117] | null)**&#x20;
 
 ## getHotelCombos
 
@@ -498,7 +513,7 @@ Devuelve null si ninguno aplica.
 
 ### Parameters
 
-*   `grupo` **[object][114]**&#x20;
+*   `grupo` **[object][117]**&#x20;
 
 ## formatFecha
 
@@ -506,9 +521,9 @@ Formatea una fecha ISO (YYYY-MM-DD) en formato legible en español guatemalteco.
 
 ### Parameters
 
-*   `f` **[string][108]**&#x20;
+*   `f` **[string][111]**&#x20;
 
-Returns **[string][108]**&#x20;
+Returns **[string][111]**&#x20;
 
 ## formatDuracion
 
@@ -516,9 +531,9 @@ Formatea una duración en minutos a formato legible (ej. "2h 30m").
 
 ### Parameters
 
-*   `min` **[number][111]**&#x20;
+*   `min` **[number][114]**&#x20;
 
-Returns **[string][108]**&#x20;
+Returns **[string][111]**&#x20;
 
 ## parseVueloId
 
@@ -526,9 +541,9 @@ Extrae el ID numérico del vuelo desde su ID compuesto (`proveedorId-tipo-vueloI
 
 ### Parameters
 
-*   `compositeId` **[string][108]**&#x20;
+*   `compositeId` **[string][111]**&#x20;
 
-Returns **([number][111] | null)**&#x20;
+Returns **([number][114] | null)**&#x20;
 
 ## parseProveedorId
 
@@ -536,9 +551,9 @@ Extrae el ID del proveedor desde el ID compuesto del vuelo.
 
 ### Parameters
 
-*   `compositeId` **[string][108]**&#x20;
+*   `compositeId` **[string][111]**&#x20;
 
-Returns **([number][111] | null)**&#x20;
+Returns **([number][114] | null)**&#x20;
 
 ## claseToId
 
@@ -546,9 +561,9 @@ Convierte el nombre de clase a su ID numérico para el payload de la API (1 = ec
 
 ### Parameters
 
-*   `clase` **[string][108]**&#x20;
+*   `clase` **[string][111]**&#x20;
 
-Returns **[number][111]**&#x20;
+Returns **[number][114]**&#x20;
 
 ## precrearReservacion
 
@@ -559,8 +574,8 @@ El resultado se asigna a `window.__reservaPromise` para ser consumido en Reserva
 
 ### Parameters
 
-*   `vueloData` **[object][114]** Datos del vuelo de ida seleccionado
-*   `vueloRegresoData` **([object][114] | null)** Datos del vuelo de regreso (solo en ida y vuelta)
+*   `vueloData` **[object][117]** Datos del vuelo de ida seleccionado
+*   `vueloRegresoData` **([object][117] | null)** Datos del vuelo de regreso (solo en ida y vuelta)
 
 ## seleccionarVuelo
 
@@ -570,7 +585,7 @@ disparando la pre-creación de reserva. En paso 2 (regreso): confirma el regreso
 
 ### Parameters
 
-*   `vuelo` **[object][114]** Objeto vuelo de la lista filtrada con claseSeleccionada
+*   `vuelo` **[object][117]** Objeto vuelo de la lista filtrada con claseSeleccionada
 
 ## seleccionarHotelHab
 
@@ -578,8 +593,8 @@ Establece una habitación individual como el hotel seleccionado para el paquete.
 
 ### Parameters
 
-*   `hab` **[object][114]** Habitación de la lista filtrada
-*   `grupo` **[object][114]** Grupo de hotel al que pertenece
+*   `hab` **[object][117]** Habitación de la lista filtrada
+*   `grupo` **[object][117]** Grupo de hotel al que pertenece
 
 ## seleccionarHotelCombo
 
@@ -587,8 +602,8 @@ Establece una combinación de habitaciones (exacta o aproximada) como el hotel d
 
 ### Parameters
 
-*   `comboInfo` **[object][114]** Resultado de \_getComboHabs o \_getComboAproximado
-*   `grupo` **[object][114]** Grupo de hotel
+*   `comboInfo` **[object][117]** Resultado de \_getComboHabs o \_getComboAproximado
+*   `grupo` **[object][117]** Grupo de hotel
 
 ## seleccionarHotelExtra
 
@@ -596,8 +611,8 @@ Establece una habitación con persona extra como el hotel del paquete.
 
 ### Parameters
 
-*   `extraInfo` **[object][114]** Resultado de \_getPersonaExtraMin
-*   `grupo` **[object][114]** Grupo de hotel
+*   `extraInfo` **[object][117]** Resultado de \_getPersonaExtraMin
+*   `grupo` **[object][117]** Grupo de hotel
 
 ## retroceder
 
@@ -613,6 +628,7 @@ La promesa de pre-creación ya fue disparada en seleccionarVuelo; Reserva.vue la
 
 Al montar: procesa los resultados de vuelos y hoteles desde history.state,
 los normaliza y actualiza los refs reactivos. Si faltan datos muestra un error.
+También carga el porcentaje de descuento para paquetes desde el backend.
 
 [1]: #ref
 
@@ -660,184 +676,190 @@ los normaliza y actualiza los refs reactivos. Si faltan datos muestra un error.
 
 [23]: #preciototal
 
-[24]: #fv
+[24]: #porcentajedescuento
 
-[25]: #fh
+[25]: #montodescuento
 
-[26]: #clasesfilter
+[26]: #preciofinalcondescuento
 
-[27]: #escalasopts
+[27]: #fv
 
-[28]: #duracionopts
+[28]: #fh
 
-[29]: #horariosopts
+[29]: #clasesfilter
 
-[30]: #cantfiltrosactivos
+[30]: #escalasopts
 
-[31]: #resetfiltros
+[31]: #duracionopts
 
-[32]: #form
+[32]: #horariosopts
 
-[33]: #mincheckout
+[33]: #cantfiltrosactivos
 
-[34]: #paisescache
+[34]: #resetfiltros
 
-[35]: #getpaises
+[35]: #form
 
-[36]: #getciudades
+[36]: #mincheckout
 
-[37]: #parameters
+[37]: #paisescache
 
-[38]: #blurclose
+[38]: #getpaises
 
-[39]: #parameters-1
+[39]: #getciudades
 
-[40]: #onopaisinput
+[40]: #parameters
 
-[41]: #selopais
+[41]: #blurclose
 
-[42]: #parameters-2
+[42]: #parameters-1
 
-[43]: #onociudadinput
+[43]: #onopaisinput
 
-[44]: #selociudad
+[44]: #selopais
 
-[45]: #parameters-3
+[45]: #parameters-2
 
-[46]: #ondpaisinput
+[46]: #onociudadinput
 
-[47]: #seldpais
+[47]: #selociudad
 
-[48]: #parameters-4
+[48]: #parameters-3
 
-[49]: #ondciudadinput
+[49]: #ondpaisinput
 
-[50]: #seldciudad
+[50]: #seldpais
 
-[51]: #parameters-5
+[51]: #parameters-4
 
-[52]: #togglemodificar
+[52]: #ondciudadinput
 
-[53]: #tienevuelos
+[53]: #seldciudad
 
-[54]: #parameters-6
+[54]: #parameters-5
 
-[55]: #tienehoteles
+[55]: #togglemodificar
 
-[56]: #parameters-7
+[56]: #tienevuelos
 
-[57]: #rebuscar
+[57]: #parameters-6
 
-[58]: #formathora
+[58]: #tienehoteles
 
-[59]: #parameters-8
+[59]: #parameters-7
 
-[60]: #mapearvuelos
+[60]: #rebuscar
 
-[61]: #parameters-9
+[61]: #formathora
 
-[62]: #mapdirecto
+[62]: #parameters-8
 
-[63]: #parameters-10
+[63]: #mapearvuelos
 
-[64]: #mapescala
+[64]: #parameters-9
 
-[65]: #parameters-11
+[65]: #mapdirecto
 
-[66]: #mapearhoteles
+[66]: #parameters-10
 
-[67]: #parameters-12
+[67]: #mapescala
 
-[68]: #aerolineasdisponibles
+[68]: #parameters-11
 
-[69]: #vuelosfiltrados
+[69]: #mapearhoteles
 
-[70]: #tiposhabitaciondisponibles
+[70]: #parameters-12
 
-[71]: #hotelesdisponibles
+[71]: #aerolineasdisponibles
 
-[72]: #amenidadesdisponibles
+[72]: #vuelosfiltrados
 
-[73]: #habitacionesfiltradas
+[73]: #tiposhabitaciondisponibles
 
-[74]: #gruposporhotel
+[74]: #hotelesdisponibles
 
-[75]: #fmt
+[75]: #amenidadesdisponibles
 
-[76]: #parameters-13
+[76]: #habitacionesfiltradas
 
-[77]: #_getcombohabs
+[77]: #gruposporhotel
 
-[78]: #parameters-14
+[78]: #fmt
 
-[79]: #_getcomboaproximado
+[79]: #parameters-13
 
-[80]: #parameters-15
+[80]: #_getcombohabs
 
-[81]: #_getpersonaextramin
+[81]: #parameters-14
 
-[82]: #parameters-16
+[82]: #_getcomboaproximado
 
-[83]: #gethotelcombos
+[83]: #parameters-15
 
-[84]: #parameters-17
+[84]: #_getpersonaextramin
 
-[85]: #formatfecha
+[85]: #parameters-16
 
-[86]: #parameters-18
+[86]: #gethotelcombos
 
-[87]: #formatduracion
+[87]: #parameters-17
 
-[88]: #parameters-19
+[88]: #formatfecha
 
-[89]: #parsevueloid
+[89]: #parameters-18
 
-[90]: #parameters-20
+[90]: #formatduracion
 
-[91]: #parseproveedorid
+[91]: #parameters-19
 
-[92]: #parameters-21
+[92]: #parsevueloid
 
-[93]: #clasetoid
+[93]: #parameters-20
 
-[94]: #parameters-22
+[94]: #parseproveedorid
 
-[95]: #precrearreservacion
+[95]: #parameters-21
 
-[96]: #parameters-23
+[96]: #clasetoid
 
-[97]: #seleccionarvuelo
+[97]: #parameters-22
 
-[98]: #parameters-24
+[98]: #precrearreservacion
 
-[99]: #seleccionarhotelhab
+[99]: #parameters-23
 
-[100]: #parameters-25
+[100]: #seleccionarvuelo
 
-[101]: #seleccionarhotelcombo
+[101]: #parameters-24
 
-[102]: #parameters-26
+[102]: #seleccionarhotelhab
 
-[103]: #seleccionarhotelextra
+[103]: #parameters-25
 
-[104]: #parameters-27
+[104]: #seleccionarhotelcombo
 
-[105]: #retroceder
+[105]: #parameters-26
 
-[106]: #reservarpaquete
+[106]: #seleccionarhotelextra
 
-[107]: #onmounted
+[107]: #parameters-27
 
-[108]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[108]: #retroceder
 
-[109]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[109]: #reservarpaquete
 
-[110]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[110]: #onmounted
 
-[111]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[111]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[112]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[112]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[113]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+[113]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
 
-[114]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[114]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+
+[115]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+[116]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function
+
+[117]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object

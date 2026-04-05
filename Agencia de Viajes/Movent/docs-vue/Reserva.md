@@ -58,31 +58,35 @@
 *   [claseToId][54]
     *   [Parameters][55]
 *   [totalPaquete][56]
-*   [formatTiempo][57]
-    *   [Parameters][58]
-*   [startTimer][59]
+*   [porcentajeDescuento][57]
+*   [montoDescuentoPaquete][58]
+*   [formatTiempo][59]
     *   [Parameters][60]
-*   [onUnmounted][61]
-*   [buildVuelosPayload][62]
-*   [buildPaqueteHotelPayload][63]
-    *   [Parameters][64]
-*   [crearReservacion][65]
-*   [onMounted][66]
-*   [onPaisInput][67]
-*   [seleccionarPais][68]
-    *   [Parameters][69]
-*   [validarPais][70]
-*   [onCiudadInput][71]
-*   [seleccionarCiudad][72]
+*   [startTimer][61]
+    *   [Parameters][62]
+*   [onUnmounted][63]
+*   [buildVuelosPayload][64]
+*   [buildPaqueteHotelPayload][65]
+    *   [Parameters][66]
+*   [buildHotelPayload][67]
+    *   [Parameters][68]
+*   [crearReservacion][69]
+*   [onMounted][70]
+*   [onPaisInput][71]
+*   [seleccionarPais][72]
     *   [Parameters][73]
-*   [validarCiudad][74]
-*   [telefonoDigitos][75]
-*   [phonePlaceholder][76]
-*   [onPhoneInput][77]
-    *   [Parameters][78]
-*   [formatDuracion][79]
-    *   [Parameters][80]
-*   [handleReservar][81]
+*   [validarPais][74]
+*   [onCiudadInput][75]
+*   [seleccionarCiudad][76]
+    *   [Parameters][77]
+*   [validarCiudad][78]
+*   [telefonoDigitos][79]
+*   [phonePlaceholder][80]
+*   [onPhoneInput][81]
+    *   [Parameters][82]
+*   [formatDuracion][83]
+    *   [Parameters][84]
+*   [handleReservar][85]
 
 ## ref
 
@@ -99,14 +103,14 @@ Instancia del router para navegar entre pasos del flujo de reserva.
 
 URL base del backend. @type {string}
 
-Type: [string][82]
+Type: [string][86]
 
 ## FLUJO\_RESERVA
 
 Rutas que forman parte del flujo de reserva.
 Al salir hacia cualquier otra ruta se limpia la sesión de reserva.
 
-Type: [Array][83]<[string][82]>
+Type: [Array][87]<[string][86]>
 
 ## limpiarSesionReserva
 
@@ -189,7 +193,7 @@ Se ejecuta de forma inmediata y reactiva cuando cambia `detalleVuelo`.
 
 Devuelve el array de países cargados en memoria.
 
-Returns **[Array][83]**&#x20;
+Returns **[Array][87]**&#x20;
 
 ## getCiudades
 
@@ -198,9 +202,9 @@ y si no tiene datos, hace un fetch a countriesnow como fallback.
 
 ### Parameters
 
-*   `country` **[string][82]** Nombre del país en inglés
+*   `country` **[string][86]** Nombre del país en inglés
 
-Returns **[Promise][84]<[Array][83]<[string][82]>>**&#x20;
+Returns **[Promise][88]<[Array][87]<[string][86]>>**&#x20;
 
 ## onPaxPaisInput
 
@@ -208,7 +212,7 @@ Filtra países para el autocompletado de un pasajero adicional y resetea ciudad/
 
 ### Parameters
 
-*   `idx` **[number][85]** Índice del pasajero adicional
+*   `idx` **[number][89]** Índice del pasajero adicional
 
 ## seleccionarPaxPais
 
@@ -216,8 +220,8 @@ Fija el país elegido para un pasajero adicional y carga sus ciudades y código 
 
 ### Parameters
 
-*   `idx` **[number][85]** Índice del pasajero
-*   `p` **[object][86]** Objeto de país seleccionado
+*   `idx` **[number][89]** Índice del pasajero
+*   `p` **[object][90]** Objeto de país seleccionado
 
 ## onPaxCiudadInput
 
@@ -225,7 +229,7 @@ Filtra las ciudades disponibles para el pasajero adicional según lo escrito.
 
 ### Parameters
 
-*   `idx` **[number][85]**&#x20;
+*   `idx` **[number][89]**&#x20;
 
 ## seleccionarPaxCiudad
 
@@ -233,8 +237,8 @@ Confirma la ciudad seleccionada para el pasajero adicional.
 
 ### Parameters
 
-*   `idx` **[number][85]**&#x20;
-*   `c` **[string][82]** Ciudad elegida
+*   `idx` **[number][89]**&#x20;
+*   `c` **[string][86]** Ciudad elegida
 
 ## onPaxPhoneInput
 
@@ -242,8 +246,8 @@ Formatea el número de teléfono del pasajero adicional según los dígitos requ
 
 ### Parameters
 
-*   `idx` **[number][85]** Índice del pasajero
-*   `e` **[Event][87]**&#x20;
+*   `idx` **[number][89]** Índice del pasajero
+*   `e` **[Event][91]**&#x20;
 
 ## form
 
@@ -298,7 +302,7 @@ Mapa de país → { code, digits } construido desde restcountries. @type {import
 Dígitos requeridos por código de marcación, usados como fallback cuando
 la API de restcountries no retorna sufijos únicos.
 
-Type: Record<[string][82], [number][85]>
+Type: Record<[string][86], [number][89]>
 
 ## parseVueloId
 
@@ -306,9 +310,9 @@ Extrae el ID numérico del vuelo desde un identificador compuesto (ej. '1-100').
 
 ### Parameters
 
-*   `id` **([string][82] | [number][85])**&#x20;
+*   `id` **([string][86] | [number][89])**&#x20;
 
-Returns **([number][85] | null)**&#x20;
+Returns **([number][89] | null)**&#x20;
 
 ## parseProveedorId
 
@@ -316,9 +320,9 @@ Extrae el ID de proveedor desde el identificador compuesto del vuelo.
 
 ### Parameters
 
-*   `id` **([string][82] | [number][85])**&#x20;
+*   `id` **([string][86] | [number][89])**&#x20;
 
-Returns **([number][85] | null)**&#x20;
+Returns **([number][89] | null)**&#x20;
 
 ## claseToId
 
@@ -326,14 +330,24 @@ Convierte el nombre de clase a su ID numérico del backend.
 
 ### Parameters
 
-*   `clase` **[string][82]** 'ejecutiva' o cualquier otro valor (económica)
+*   `clase` **[string][86]** 'ejecutiva' o cualquier otro valor (económica)
 
-Returns **[number][85]**&#x20;
+Returns **[number][89]**&#x20;
 
 ## totalPaquete
 
 Suma el total del paquete usando los precios con ganancia del servidor.
 Si aún no llegaron del servidor, usa el precio calculado del item.
+
+## porcentajeDescuento
+
+Porcentaje de descuento para paquetes leído desde el endpoint de configuración del backend.
+Se carga en onMounted solo cuando el tipo de item es paquete.
+
+## montoDescuentoPaquete
+
+Monto en dólares del descuento calculado sobre el total del paquete.
+Retorna 0 si el tipo no es paquete o si no hay porcentaje configurado.
 
 ## formatTiempo
 
@@ -341,9 +355,9 @@ Convierte segundos a formato mm:ss para mostrar en el temporizador.
 
 ### Parameters
 
-*   `s` **[number][85]**&#x20;
+*   `s` **[number][89]**&#x20;
 
-Returns **[string][82]**&#x20;
+Returns **[string][86]**&#x20;
 
 ## startTimer
 
@@ -352,8 +366,8 @@ Si se provee una fecha de expiración absoluta, calcula los segundos reales rest
 
 ### Parameters
 
-*   `seg` **[number][85]** Segundos de duración
-*   `expiresAt` **([number][85] | null)** Timestamp absoluto de expiración (ms)
+*   `seg` **[number][89]** Segundos de duración
+*   `expiresAt` **([number][89] | null)** Timestamp absoluto de expiración (ms)
 
 ## onUnmounted
 
@@ -371,9 +385,20 @@ Soporta habitaciones combinadas (combo) y habitaciones simples.
 
 ### Parameters
 
-*   `reservacionIdArg` **[number][85]** ID de la reservación ya creada
+*   `reservacionIdArg` **[number][89]** ID de la reservación ya creada
 
-Returns **([object][86] | null)**&#x20;
+Returns **([object][90] | null)**&#x20;
+
+## buildHotelPayload
+
+Construye el payload para el detalle de hotel en reservas de solo hotel.
+Lee las habitaciones disponibles directamente del item seleccionado.
+
+### Parameters
+
+*   `reservacionIdArg` **[number][89]** ID de la reservación ya creada
+
+Returns **([object][90] | null)**&#x20;
 
 ## crearReservacion
 
@@ -382,8 +407,8 @@ En caso de error, muestra el overlay de error con opción de reintentar.
 
 ## onMounted
 
-Al montar: carga países y dial codes, lee el item de sessionStorage y
-recupera una reservación previa si aún está vigente, evitando crear una nueva.
+Al montar: carga países y dial codes, lee el item de sessionStorage, carga el descuento
+de paquete si aplica y recupera una reservación previa si aún está vigente.
 
 ## onPaisInput
 
@@ -396,7 +421,7 @@ Confirma el país del pasajero principal y actualiza el prefijo telefónico y ci
 
 ### Parameters
 
-*   `pais` **[object][86]** País seleccionado de la lista
+*   `pais` **[object][90]** País seleccionado de la lista
 
 ## validarPais
 
@@ -412,7 +437,7 @@ Confirma la ciudad seleccionada del pasajero principal.
 
 ### Parameters
 
-*   `c` **[string][82]** Ciudad elegida
+*   `c` **[string][86]** Ciudad elegida
 
 ## validarCiudad
 
@@ -432,7 +457,7 @@ Limpia no numéricos, recorta y aplica formato visual al teléfono del pasajero 
 
 ### Parameters
 
-*   `e` **[Event][87]**&#x20;
+*   `e` **[Event][91]**&#x20;
 
 ## formatDuracion
 
@@ -440,17 +465,18 @@ Formatea minutos de duración de vuelo a texto legible (ej. '2h 30m').
 
 ### Parameters
 
-*   `min` **[number][85]**&#x20;
+*   `min` **[number][89]**&#x20;
 
-Returns **[string][82]**&#x20;
+Returns **[string][86]**&#x20;
 
 ## handleReservar
 
 Valida los formularios de todos los pasajeros y, si son correctos,
-guarda los datos de pasajeros en el backend y navega al siguiente paso:
+guarda los datos de pasajeros en el backend y navega al siguiente paso.
+Guarda la expiración absoluta en sessionStorage antes de ir a selección de asientos
+para que el timer se restaure correctamente en esa vista.
 
-*   Vuelo/Paquete: selección de asientos
-*   Hotel: checkout directo
+Returns **[Promise][88]\<void>**&#x20;
 
 [1]: #ref
 
@@ -564,64 +590,72 @@ guarda los datos de pasajeros en el backend y navega al siguiente paso:
 
 [56]: #totalpaquete
 
-[57]: #formattiempo
+[57]: #porcentajedescuento
 
-[58]: #parameters-9
+[58]: #montodescuentopaquete
 
-[59]: #starttimer
+[59]: #formattiempo
 
-[60]: #parameters-10
+[60]: #parameters-9
 
-[61]: #onunmounted
+[61]: #starttimer
 
-[62]: #buildvuelospayload
+[62]: #parameters-10
 
-[63]: #buildpaquetehotelpayload
+[63]: #onunmounted
 
-[64]: #parameters-11
+[64]: #buildvuelospayload
 
-[65]: #crearreservacion
+[65]: #buildpaquetehotelpayload
 
-[66]: #onmounted
+[66]: #parameters-11
 
-[67]: #onpaisinput
+[67]: #buildhotelpayload
 
-[68]: #seleccionarpais
+[68]: #parameters-12
 
-[69]: #parameters-12
+[69]: #crearreservacion
 
-[70]: #validarpais
+[70]: #onmounted
 
-[71]: #onciudadinput
+[71]: #onpaisinput
 
-[72]: #seleccionarciudad
+[72]: #seleccionarpais
 
 [73]: #parameters-13
 
-[74]: #validarciudad
+[74]: #validarpais
 
-[75]: #telefonodigitos
+[75]: #onciudadinput
 
-[76]: #phoneplaceholder
+[76]: #seleccionarciudad
 
-[77]: #onphoneinput
+[77]: #parameters-14
 
-[78]: #parameters-14
+[78]: #validarciudad
 
-[79]: #formatduracion
+[79]: #telefonodigitos
 
-[80]: #parameters-15
+[80]: #phoneplaceholder
 
-[81]: #handlereservar
+[81]: #onphoneinput
 
-[82]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[82]: #parameters-15
 
-[83]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[83]: #formatduracion
 
-[84]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[84]: #parameters-16
 
-[85]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[85]: #handlereservar
 
-[86]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[86]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[87]: https://developer.mozilla.org/docs/Web/API/Event
+[87]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+
+[88]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+[89]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+
+[90]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+
+[91]: https://developer.mozilla.org/docs/Web/API/Event

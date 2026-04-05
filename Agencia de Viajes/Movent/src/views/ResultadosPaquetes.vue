@@ -343,10 +343,12 @@
 
           <!-- Resumen de precio total del paquete: vuelo(s) + hotel, visible solo cuando todos los componentes están seleccionados -->
           <div v-if="vueloSel && (!esIdaVuelta || vueloRegresoSel) && hotelSel" class="rp-resumen">
+            <!-- Precio vuelo de ida multiplicado por cantidad de pasajeros -->
             <div class="rp-resumen__col">
               <span class="rp-resumen__lbl">✈ Ida</span>
               <span class="rp-resumen__val">${{ (vueloSel.precio * busqueda.cantidadPersonas).toFixed(2) }}</span>
             </div>
+            <!-- Precio vuelo de regreso: solo visible en viajes de ida y vuelta -->
             <template v-if="esIdaVuelta && vueloRegresoSel">
               <div class="rp-resumen__sep">+</div>
               <div class="rp-resumen__col">
@@ -354,16 +356,30 @@
                 <span class="rp-resumen__val">${{ (vueloRegresoSel.precio * busqueda.cantidadPersonas).toFixed(2) }}</span>
               </div>
             </template>
+            <!-- Precio del hotel calculado por cantidad de noches -->
             <div class="rp-resumen__sep">+</div>
             <div class="rp-resumen__col">
-              <span class="rp-resumen__lbl">🏨 Hotel ({{ noches }}n)</span>
+              <span class="rp-resumen__lbl">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:middle;margin-right:3px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Hotel ({{ noches }}n)
+              </span>
               <span class="rp-resumen__val">${{ (hotelSel.precioNoche * noches).toFixed(2) }}</span>
             </div>
             <div class="rp-resumen__sep">=</div>
+            <!-- Subtotal del paquete antes de aplicar descuento -->
             <div class="rp-resumen__col rp-resumen__col--total">
               <span class="rp-resumen__lbl">Paquete total</span>
               <span class="rp-resumen__total">${{ precioTotal.toFixed(2) }}</span>
             </div>
+            <!-- Descuento y precio final: solo visible cuando hay descuento configurado -->
+            <template v-if="porcentajeDescuento > 0 && montoDescuento > 0">
+              <div class="rp-resumen__sep" style="font-size:11px;color:#16a34a">-{{ porcentajeDescuento }}%</div>
+              <div class="rp-resumen__col rp-resumen__col--total">
+                <span class="rp-resumen__lbl" style="color:#16a34a">Con descuento</span>
+                <span class="rp-resumen__total" style="color:#16a34a">${{ precioFinalConDescuento.toFixed(2) }}</span>
+              </div>
+            </template>
+            <!-- Botón para confirmar y avanzar al flujo de reserva -->
             <button class="rp-btn rp-btn--yellow rp-resumen__cta" @click="reservarPaquete" type="button">
               Reservar paquete
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
@@ -796,6 +812,18 @@ const precioTotal = computed(() => {
   const photel   = hotelSel.value.precioNoche * noches.value
   return pflight + pregreso + photel
 })
+
+/** Porcentaje de descuento para paquetes leído del backend. */
+const porcentajeDescuento = ref(0)
+
+/** Monto del descuento aplicado al precio total del paquete. */
+const montoDescuento = computed(() => {
+  if (porcentajeDescuento.value <= 0) return 0
+  return Math.round(precioTotal.value * (porcentajeDescuento.value / 100) * 100) / 100
+})
+
+/** Precio final del paquete después de aplicar el descuento. */
+const precioFinalConDescuento = computed(() => precioTotal.value - montoDescuento.value)
 
 /**
  * Filtros de vuelo (precio por persona, clases, escalas, duración, aerolínea, horario de salida).
@@ -1653,8 +1681,9 @@ function reservarPaquete() {
 /**
  * Al montar: procesa los resultados de vuelos y hoteles desde history.state,
  * los normaliza y actualiza los refs reactivos. Si faltan datos muestra un error.
+ * También carga el porcentaje de descuento para paquetes desde el backend.
  */
-onMounted(() => {
+onMounted(async () => {
   const rawV = state.resultadosVuelos  || null
   const rawR = state.resultadosRegreso || null
   const rawH = state.resultadosHoteles || null
@@ -1672,6 +1701,16 @@ onMounted(() => {
   } else {
     error.value = 'No hay resultados. Modifica la búsqueda.'
   }
+
+  // Cargar porcentaje de descuento para paquetes desde el backend
+  try {
+    const rd = await fetch(`${API}/api/configuracion/descuento`)
+    if (rd.ok) {
+      const dd = await rd.json()
+      porcentajeDescuento.value = dd.porcentaje_descuento ?? 0
+    }
+  } catch { /**/ }
+
   loading.value = false
 })
 </script>

@@ -17,7 +17,8 @@ import (
 // UsuarioController
 //
 // Controlador que maneja los endpoints de gestion de usuarios,
-// incluyendo el registro de nuevas cuentas en la plataforma.
+// incluyendo el registro de nuevas cuentas y la consulta del listado
+// completo para el panel de administracion.
 type UsuarioController struct {
 	service *services.UsuarioService
 }
@@ -69,14 +70,11 @@ func (ctrl *UsuarioController) Registrar(c *gin.Context) {
 		return
 	}
 
-	// Si hubo duplicados devuelve la validación
 	if validacion.Correo || validacion.Pasaporte || validacion.Username {
 		c.JSON(http.StatusConflict, validacion)
 		return
 	}
 
-	// ── Correo de bienvenida (fire-and-forget) ────────────────────────────
-	// Se envía en background para no bloquear la respuesta al cliente.
 	go func() {
 		if err := helpers.EnviarBienvenida(
 			req.Correo,
@@ -94,4 +92,25 @@ func (ctrl *UsuarioController) Registrar(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusCreated, gin.H{"mensaje": "Usuario registrado exitosamente"})
+}
+
+// ObtenerTodos
+//
+// Retorna la lista completa de usuarios registrados en el sistema con sus
+// datos basicos y rol asignado. Usado por el panel de administracion para
+// gestion de roles y asignacion de usuarios WebService a proveedores.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con el listado de usuarios
+//   - HTTP 500 Internal Server Error: si ocurre un error al consultar la base de datos
+func (ctrl *UsuarioController) ObtenerTodos(c *gin.Context) {
+	lista, err := ctrl.service.ObtenerTodos()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al obtener usuarios"})
+		return
+	}
+	c.JSON(http.StatusOK, lista)
 }
