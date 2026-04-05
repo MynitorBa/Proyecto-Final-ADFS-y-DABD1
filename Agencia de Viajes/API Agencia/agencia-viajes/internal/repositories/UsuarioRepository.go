@@ -220,9 +220,48 @@ func (r *UsuarioRepository) ObtenerNombreYEmail(usuarioID int) (nombre, email st
 		return
 	}
 
-	// Concatenar en Go, no en SQL
 	if apellido != "" {
 		nombre = nombre + " " + apellido
 	}
 	return
+}
+
+// ObtenerTodos
+//
+// Recupera la lista completa de usuarios registrados en el sistema,
+// incluyendo su rol asignado mediante un JOIN con la tabla rol.
+// Usado por el panel de administracion para gestion de roles
+// y asignacion de usuarios WebService a proveedores.
+//
+// Retorna:
+//   - []dto.UsuarioResumen: lista de usuarios con id, nombre, apellido, correo y rol
+//   - error: error de base de datos, nil si la operacion fue exitosa
+func (r *UsuarioRepository) ObtenerTodos() ([]dto.UsuarioResumen, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	rows, err := conn.QueryContext(context.Background(), `
+		SELECT u.ID, u.Nombre, u.Apellido, u.Correo, u.RolID, r.RolNombre
+		FROM usuario u
+		JOIN rol r ON r.ID = u.RolID
+		ORDER BY u.ID
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var lista []dto.UsuarioResumen
+	for rows.Next() {
+		var u dto.UsuarioResumen
+		rows.Scan(&u.ID, &u.Nombre, &u.Apellido, &u.Correo, &u.RolID, &u.Rol)
+		lista = append(lista, u)
+	}
+	if lista == nil {
+		lista = []dto.UsuarioResumen{}
+	}
+	return lista, nil
 }

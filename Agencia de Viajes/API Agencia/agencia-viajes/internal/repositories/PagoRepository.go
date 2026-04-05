@@ -8,6 +8,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"math"
 )
 
 // PagoRepository
@@ -80,30 +81,41 @@ func (r *PagoRepository) ContarDetallesPorTipo(reservacionID int) (vuelos int, h
 
 // ConfirmarReservaYFacturar
 //
-// Ejecuta dentro de una transaccion atomica los tres pasos del proceso de confirmacion:
-// cambia el estado de la reservacion a confirmada (2), cambia el estado de todos sus
-// detalles a confirmados (2) y crea el registro de factura asociado.
+// Ejecuta dentro de una transaccion atomica los pasos del proceso de confirmacion:
+// aplica el descuento de paquete si corresponde, actualiza el total de la reservacion,
+// cambia el estado a confirmada (2), confirma todos sus detalles y crea la factura.
+// El descuento es absorbido por la agencia y se aplica unicamente a reservaciones
+// de tipo paquete (Tipo_Reserva_ID = 3).
 //
 // Parametros:
 //   - reservacionID: ID de la reservacion a confirmar
-//   - total: monto total a registrar en la factura
+//   - total: monto total original de la reservacion antes del descuento
 //   - nit: numero de identificacion tributaria del cliente para la factura
 //   - codigoPostal: codigo postal del cliente para la factura
+//   - porcentajeDescuento: porcentaje de descuento a aplicar (0 si no aplica)
 //
 // Retorna:
 //   - error: error si alguna operacion de la transaccion falla, nil si fue exitosa
 //
 // Notas:
 //   - Si cualquier paso falla, se realiza rollback automatico de toda la transaccion
-func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total float64, nit string, codigoPostal string) error {
+//   - El descuento se redondea a 2 decimales antes de aplicarse
+func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total float64, nit string, codigoPostal string, porcentajeDescuento float64) error {
+
+	// Aplicar descuento si corresponde
+	totalFinal := total
+	if porcentajeDescuento > 0 {
+		descuento := math.Round(total*(porcentajeDescuento/100)*100) / 100
+		totalFinal = math.Round((total-descuento)*100) / 100
+	}
 
 	tx, err := r.db.BeginTx(context.Background(), nil)
 	if err != nil {
 		return err
 	}
 
-	// 1. Cambiar estado a Confirmada (2)
-	_, err = tx.Exec("UPDATE Reservacion SET EstadoID = 2 WHERE ID = ?", reservacionID)
+	// 1. Actualizar el total de la reservacion con el descuento aplicado
+	_, err = tx.Exec("UPDATE Reservacion SET EstadoID = 2, Total = ? WHERE ID = ?", totalFinal, reservacionID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -116,11 +128,11 @@ func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total floa
 		return err
 	}
 
-	// 3. Crear Factura (Ajusta los nombres de columnas según tu tabla Factura)
+	// 3. Crear Factura con el total final ya descontado
 	_, err = tx.Exec(`
 		INSERT INTO Factura (Reservacion_ID, NIT, Total, Codigo_Postal)
 		VALUES (?, ?, ?, ?)`,
-		reservacionID, nit, total, codigoPostal)
+		reservacionID, nit, totalFinal, codigoPostal)
 	if err != nil {
 		tx.Rollback()
 		return err

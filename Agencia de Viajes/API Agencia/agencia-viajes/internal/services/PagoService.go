@@ -17,11 +17,12 @@ import (
 // PagoService
 //
 // Servicio encargado de gestionar el procesamiento de pagos de reservaciones,
-// incluyendo validacion de tarjetas, verificacion de integridad de detalles
-// y notificacion a proveedores externos.
+// incluyendo validacion de tarjetas, verificacion de integridad de detalles,
+// aplicacion de descuento por paquete y notificacion a proveedores externos.
 type PagoService struct {
 	repo        *repositories.PagoRepository
 	reservaRepo *repositories.ReservacionRepository
+	configRepo  *repositories.AgenciaConfiguracionRepository
 }
 
 // NewPagoService
@@ -31,11 +32,16 @@ type PagoService struct {
 // Parametros:
 //   - repo: repositorio de pagos para operaciones en base de datos
 //   - rr: repositorio de reservaciones para consultar detalles
+//   - cr: repositorio de configuracion de la agencia para leer el descuento de paquetes
 //
 // Retorna:
 //   - *PagoService: instancia inicializada del servicio de pagos
-func NewPagoService(repo *repositories.PagoRepository, rr *repositories.ReservacionRepository) *PagoService {
-	return &PagoService{repo: repo, reservaRepo: rr}
+func NewPagoService(
+	repo *repositories.PagoRepository,
+	rr *repositories.ReservacionRepository,
+	cr *repositories.AgenciaConfiguracionRepository,
+) *PagoService {
+	return &PagoService{repo: repo, reservaRepo: rr, configRepo: cr}
 }
 
 // ProcesarPago
@@ -43,7 +49,10 @@ func NewPagoService(repo *repositories.PagoRepository, rr *repositories.Reservac
 // Ejecuta el flujo completo de pago de una reservacion: valida los datos de la
 // tarjeta, verifica que la reserva pertenezca al usuario y este pendiente,
 // valida la integridad de los detalles segun el tipo de reserva,
-// notifica a cada proveedor externo y finalmente confirma la reserva en la base de datos.
+// notifica a cada proveedor externo y finalmente confirma la reserva en la
+// base de datos. Si el tipo de reserva es paquete (3), aplica el porcentaje
+// de descuento configurado en Agencia_Configuracion sobre el total final.
+// El descuento es absorbido por la agencia, no por los proveedores.
 //
 // Parametros:
 //   - usuarioID: identificador del usuario que realiza el pago
@@ -54,7 +63,7 @@ func NewPagoService(repo *repositories.PagoRepository, rr *repositories.Reservac
 //     si los detalles no cumplen la estructura del tipo de reserva,
 //     o si algun proveedor rechaza el pago
 func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest) error {
-	// 1. Validar Tarjeta 
+	// 1. Validar tarjeta
 	if len(req.TarjetaNumero) < 16 {
 		return errors.New("número de tarjeta inválido")
 	}
@@ -86,17 +95,26 @@ func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest
 		}
 	}
 
-	// 4. Notificar a Proveedores
+	// 4. Leer descuento de paquete si aplica (tipo 3)
+	var porcentajeDescuento float64
+	if tipoReserva == 3 {
+		porcentajeDescuento, err = s.configRepo.ObtenerPorcentajeDescuento()
+		if err != nil {
+			// Si falla la lectura del descuento, continuar sin descuento
+			porcentajeDescuento = 0
+		}
+	}
+
+	// 5. Notificar a proveedores
 	detalles, _ := s.reservaRepo.ObtenerDetallesDeReservacion(req.ReservacionID)
 	for _, d := range detalles {
-		err := s.notificarProveedor(d, req.Nit, req.CodigoPostal)
-		if err != nil {
+		if err := s.notificarProveedor(d, req.Nit, req.CodigoPostal); err != nil {
 			return fmt.Errorf("error al confirmar con proveedor: %w", err)
 		}
 	}
 
-	// 5. Finalizar en BD Agencia (Estado 2 y Factura)
-	return s.repo.ConfirmarReservaYFacturar(req.ReservacionID, total, req.Nit, req.CodigoPostal)
+	// 6. Finalizar en BD agencia (estado 2, descuento aplicado y factura)
+	return s.repo.ConfirmarReservaYFacturar(req.ReservacionID, total, req.Nit, req.CodigoPostal, porcentajeDescuento)
 }
 
 // notificarProveedor
@@ -116,9 +134,9 @@ func (s *PagoService) notificarProveedor(d dto.DetalleProveedor, nit, cp string)
 	body, _ := json.Marshal(dto.PagoProveedorBody{Nit: nit, CodigoPostal: cp})
 
 	var url string
-	if d.TipoDetalleID == 1 { // Aerolínea
+	if d.TipoDetalleID == 1 {
 		url = fmt.Sprintf("%s/api/reservaciones-agencia/%s/confirmar", d.URLAPI, d.IDReservaProveedor)
-	} else { // Hotelera
+	} else {
 		url = fmt.Sprintf("%s/agencia/reservaciones/%s/pago", d.URLAPI, d.IDReservaProveedor)
 	}
 

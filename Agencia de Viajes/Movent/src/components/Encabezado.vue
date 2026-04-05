@@ -697,7 +697,9 @@ function onStorageChange(e) { cargarSesion(); if (!e || e.key === 'checkout_data
 
 /** Registra los listeners globales al montar el componente. */
 onMounted(() => {
-  cargarSesion(); verificarReservaActiva()
+  cargarSesion()
+  // En confirmacion no se verifica: checkout_data aún no fue borrado por Confirmacion.vue
+  if (route.path !== '/confirmacion') verificarReservaActiva()
   window.addEventListener('scroll',  handleScroll)
   window.addEventListener('click',   handleGlobalClick)
   window.addEventListener('storage', onStorageChange)

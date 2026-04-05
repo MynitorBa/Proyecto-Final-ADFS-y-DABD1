@@ -517,7 +517,7 @@
                 </div>
               </template>
 
-              <!-- Resumen: paquete completo (vuelo + hotel) con desglose de precios -->
+              <!-- Resumen: paquete completo (vuelo + hotel) con desglose de precios y descuento -->
               <template v-else-if="tipoItem === 'paquete'">
                 <div class="res-summary__tag res-summary__tag--paquete">
                   <svg viewBox="0 0 24 24" fill="#FFCC00" width="13" height="13"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
@@ -551,7 +551,7 @@
                     <div class="res-boleto__left"><span class="res-boleto__no">{{ b.noBoleto }}</span><span class="res-boleto__asiento">Asiento {{ b.noAsiento }} · {{ b.clase }}</span></div>
                   </div>
                 </div>
-                <!-- Desglose de precio del paquete: vuelo + hotel por separado -->
+                <!-- Desglose de precio del paquete con descuento aplicado si corresponde -->
                 <div class="res-summary__precio-wrap res-summary__precio-wrap--desglose">
                   <div class="res-desglose">
                     <div class="res-desglose__row">
@@ -563,10 +563,22 @@
                       <span>${{ (detalleHotel?.total_con_ganancia ?? (item.hotel?.precioNoche || 0) * (item.noches || 1)).toFixed(2) }}</span>
                     </div>
                   </div>
+                  <!-- Subtotal antes del descuento -->
                   <div class="res-desglose__total">
-                    <span class="res-summary__precio-lbl">Total paquete</span>
-                    <span class="res-summary__precio">${{ totalPaquete.toFixed(2) }}</span>
+                    <span class="res-summary__precio-lbl">Subtotal</span>
+                    <span class="res-summary__precio" style="font-size:18px">${{ totalPaquete.toFixed(2) }}</span>
                   </div>
+                  <!-- Descuento y total final: solo visible cuando hay porcentaje configurado -->
+                  <template v-if="porcentajeDescuento > 0 && montoDescuentoPaquete > 0">
+                    <div class="res-desglose__row" style="color:#16a34a;font-weight:700;padding:4px 20px;">
+                      <span>✓ Descuento paquete ({{ porcentajeDescuento }}%)</span>
+                      <span>-${{ montoDescuentoPaquete.toFixed(2) }}</span>
+                    </div>
+                    <div class="res-desglose__row" style="padding:6px 20px 14px;font-weight:800;font-size:15px;color:#1C1A18;border-top:1px dashed #e8e3dc;margin-top:4px;">
+                      <span>Total con descuento</span>
+                      <span>${{ (totalPaquete - montoDescuentoPaquete).toFixed(2) }}</span>
+                    </div>
+                  </template>
                 </div>
               </template>
 
@@ -631,7 +643,7 @@ import '../styles/reserva.css'
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API    = 'http://localhost:8080'
+const API = 'http://localhost:8080'
 
 /**
  * Rutas que forman parte del flujo de reserva.
@@ -724,15 +736,15 @@ watch(detalleVuelo, (val) => {
     )
     erroresPasajeros.value = bols.slice(1).map(() => ({}))
     paxAcState.value = bols.slice(1).map(() => ({
-      paisQuery:        '',
-      paisesSugeridos:  [],
-      paisSel:          null,
-      ciudades:         [],
-      ciudadQuery:      '',
-      ciudadesSugeridas:[],
-      ciudadLoading:    false,
-      dialCode:         '',
-      phoneDigits:      8,
+      paisQuery:         '',
+      paisesSugeridos:   [],
+      paisSel:           null,
+      ciudades:          [],
+      ciudadQuery:       '',
+      ciudadesSugeridas: [],
+      ciudadLoading:     false,
+      dialCode:          '',
+      phoneDigits:       8,
     }))
   }
 }, { immediate: true })
@@ -945,6 +957,23 @@ const totalPaquete = computed(() => {
 })
 
 /**
+ * Porcentaje de descuento para paquetes leído desde el endpoint de configuración del backend.
+ * Se carga en onMounted solo cuando el tipo de item es paquete.
+ * @type {import('vue').Ref<number>}
+ */
+const porcentajeDescuento = ref(0)
+
+/**
+ * Monto en dólares del descuento calculado sobre el total del paquete.
+ * Retorna 0 si el tipo no es paquete o si no hay porcentaje configurado.
+ * @type {import('vue').ComputedRef<number>}
+ */
+const montoDescuentoPaquete = computed(() => {
+  if (tipoItem.value !== 'paquete' || porcentajeDescuento.value <= 0) return 0
+  return Math.round(totalPaquete.value * (porcentajeDescuento.value / 100) * 100) / 100
+})
+
+/**
  * Convierte segundos a formato mm:ss para mostrar en el temporizador.
  * @param {number} s
  * @returns {string}
@@ -1040,6 +1069,28 @@ function buildPaqueteHotelPayload(reservacionIdArg) {
 }
 
 /**
+ * Construye el payload para el detalle de hotel en reservas de solo hotel.
+ * Lee las habitaciones disponibles directamente del item seleccionado.
+ * @param {number} reservacionIdArg - ID de la reservación ya creada
+ * @returns {object|null}
+ */
+function buildHotelPayload(reservacionIdArg) {
+  if (!item.value) return null
+  const rooms = item.value.habitacionesDisponibles || []
+  if (!rooms.length) return null
+  return {
+    reservacionId: reservacionIdArg,
+    proveedorId:   item.value.proveedorId,
+    habitaciones:  [{
+      habitacionId:     rooms[0].id,
+      fechaCheckIn:     item.value.busqueda?.checkIn,
+      fechaCheckOut:    item.value.busqueda?.checkOut,
+      cantidadPersonas: item.value.busqueda?.cantidadPersonas || 1,
+    }],
+  }
+}
+
+/**
  * Crea la reservación en el backend y luego registra el detalle de vuelo o hotel según el tipo.
  * En caso de error, muestra el overlay de error con opción de reintentar.
  */
@@ -1126,18 +1177,16 @@ async function crearReservacion() {
 }
 
 /**
- * Al montar: carga países y dial codes, lee el item de sessionStorage y
- * recupera una reservación previa si aún está vigente, evitando crear una nueva.
+ * Al montar: carga países y dial codes, lee el item de sessionStorage, carga el descuento
+ * de paquete si aplica y recupera una reservación previa si aún está vigente.
  */
 onMounted(async () => {
-  // Cargar países desde countriesnow
   try {
     const r = await fetch('https://countriesnow.space/api/v0.1/countries')
     const d = await r.json()
     todosLosPaises.value = d.data || []
   } catch { /**/ }
 
-  // Cargar prefijos telefónicos desde restcountries
   try {
     const r = await fetch('https://restcountries.com/v3.1/all?fields=name,idd')
     const d = await r.json()
@@ -1153,7 +1202,6 @@ onMounted(async () => {
     })
   } catch { /**/ }
 
-  // Determinar qué tipo de item viene desde la búsqueda anterior
   const vuelo   = sessionStorage.getItem('vuelo_seleccionado')
   const hotel   = sessionStorage.getItem('hotel_seleccionado')
   const paquete = sessionStorage.getItem('paquete_seleccionado')
@@ -1164,8 +1212,18 @@ onMounted(async () => {
 
   if (!item.value) { creandoReserva.value = false; return }
 
-  // Recuperar reserva existente si la página se recargó y el tiempo no expiró
-  const savedExpiresAt    = sessionStorage.getItem('_reserva_expires_at')
+  // Cargar porcentaje de descuento desde el backend si el tipo es paquete
+  if (tipoItem.value === 'paquete') {
+    try {
+      const rd = await fetch(`${API}/api/configuracion/descuento`)
+      if (rd.ok) {
+        const dd = await rd.json()
+        porcentajeDescuento.value = dd.porcentaje_descuento ?? 0
+      }
+    } catch { /**/ }
+  }
+
+  const savedExpiresAt     = sessionStorage.getItem('_reserva_expires_at')
   const savedReservacionId = sessionStorage.getItem('_reserva_id')
   const savedNoReservacion = sessionStorage.getItem('_reserva_no')
 
@@ -1183,7 +1241,6 @@ onMounted(async () => {
     sessionStorage.removeItem('_reserva_no')
   }
 
-  // Usar promesa pre-disparada desde la página anterior para acelerar el proceso
   if (window.__reservaPromise) {
     try {
       const resultado = await window.__reservaPromise
@@ -1243,21 +1300,23 @@ function onPaisInput() {
  * @param {object} pais - País seleccionado de la lista
  */
 function seleccionarPais(pais) {
-  paisSeleccionado.value = pais
-  paisQuery.value        = pais.country
-  form.value.pais        = pais.country
-  paisesSugeridos.value  = []
-  ciudadQuery.value      = ''
-  form.value.ciudad      = ''
+  paisSeleccionado.value  = pais
+  paisQuery.value         = pais.country
+  form.value.pais         = pais.country
+  paisesSugeridos.value   = []
+  ciudadQuery.value       = ''
+  form.value.ciudad       = ''
   ciudadesSugeridas.value = []
   const info = dialCodesMap.value[pais.country.toLowerCase()]
-  dialCode.value    = info?.code   ?? ''
-  phoneDigits.value = info?.digits ?? 9
+  dialCode.value      = info?.code   ?? ''
+  phoneDigits.value   = info?.digits ?? 9
   form.value.telefono = ''
 }
 
 /** Limpia el campo de país si se escribe texto pero no se selecciona ninguno. */
-function validarPais()   { if (paisQuery.value  && !paisSeleccionado.value) { paisQuery.value  = ''; paisesSugeridos.value   = [] } }
+function validarPais() {
+  if (paisQuery.value && !paisSeleccionado.value) { paisQuery.value = ''; paisesSugeridos.value = [] }
+}
 
 /** Filtra ciudades del país seleccionado según lo escrito en el campo. */
 function onCiudadInput() {
@@ -1275,7 +1334,9 @@ function onCiudadInput() {
 function seleccionarCiudad(c) { ciudadQuery.value = c; form.value.ciudad = c; ciudadesSugeridas.value = [] }
 
 /** Limpia el campo de ciudad si se escribe texto pero no se selecciona ninguna. */
-function validarCiudad()      { if (ciudadQuery.value && !form.value.ciudad) { ciudadQuery.value = ''; ciudadesSugeridas.value = [] } }
+function validarCiudad() {
+  if (ciudadQuery.value && !form.value.ciudad) { ciudadQuery.value = ''; ciudadesSugeridas.value = [] }
+}
 
 /** Cantidad de dígitos numéricos ingresados en el teléfono del pasajero principal. @type {import('vue').ComputedRef<number>} */
 const telefonoDigitos  = computed(() => form.value.telefono.replace(/\D/g, '').length)
@@ -1316,15 +1377,15 @@ function formatDuracion(min) {
 
 /**
  * Valida los formularios de todos los pasajeros y, si son correctos,
- * guarda los datos de pasajeros en el backend y navega al siguiente paso:
- * - Vuelo/Paquete: selección de asientos
- * - Hotel: checkout directo
+ * guarda los datos de pasajeros en el backend y navega al siguiente paso.
+ * Guarda la expiración absoluta en sessionStorage antes de ir a selección de asientos
+ * para que el timer se restaure correctamente en esa vista.
+ * @returns {Promise<void>}
  */
 async function handleReservar() {
   errors.value = {}
   const f = form.value
 
-  // Hoteles no requieren datos de pasajero, solo validar tiempo
   if (tipoItem.value !== 'hotel') {
     if (!f.nombre)    errors.value.nombre   = 'Campo requerido'
     if (!f.apellido)  errors.value.apellido = 'Campo requerido'
@@ -1348,6 +1409,7 @@ async function handleReservar() {
 
     if (Object.keys(errors.value).length || !adicionalOk) return
   }
+
   if (tiempoRestante.value === 0) {
     errors.value.general = 'La reserva ha expirado. Realiza una nueva búsqueda.'
     return
@@ -1363,7 +1425,6 @@ async function handleReservar() {
       ? buildVuelosPayload()
       : { proveedorId: item.value?.proveedorId, vuelosArr: [] }
 
-    // Guardar datos de cada pasajero asociado a su boleto
     if ((tipoItem.value === 'vuelo' || tipoItem.value === 'paquete') && boletos.value.length > 0) {
       const pasajerosPayload = boletos.value.map((boleto, idx) => {
         if (idx === 0) {
@@ -1409,7 +1470,6 @@ async function handleReservar() {
       }
     }
 
-    // Persistir todos los datos relevantes en sessionStorage para los siguientes pasos
     sessionStorage.setItem('checkout_data', JSON.stringify({
       reservacionId:             reservacionId.value,
       noReservacion:             noReservacion.value,
@@ -1426,10 +1486,10 @@ async function handleReservar() {
     if (timerInterval.value) clearInterval(timerInterval.value)
 
     if (tipoItem.value === 'vuelo' || tipoItem.value === 'paquete') {
-      // El timer sigue vigente en sessionStorage para la vista de selección de asientos
+      // Guardar expiración absoluta para que SeleccionAsientos restaure el timer correctamente
+      sessionStorage.setItem('_reserva_expires_at', String(Date.now() + tiempoRestante.value * 1000))
       router.push('/seleccion-asientos')
     } else {
-      // Hotel: ir directo al checkout limpiando la sesión de reserva
       sessionStorage.removeItem('_reserva_expires_at')
       sessionStorage.removeItem('_reserva_id')
       sessionStorage.removeItem('_reserva_no')

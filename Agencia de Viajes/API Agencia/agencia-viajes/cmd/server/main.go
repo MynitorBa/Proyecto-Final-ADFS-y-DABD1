@@ -39,7 +39,7 @@ func main() {
 
 	router.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		c.Header("Access-Control-Allow-Credentials", "true")
 		if c.Request.Method == "OPTIONS" {
@@ -49,7 +49,6 @@ func main() {
 		c.Next()
 	})
 
-	// ── Servicios ──────────────────────────────────────────────────────────────
 	ubicacionService          := services.NewUbicacionService(db)
 	usuarioService            := services.NewUsuarioService(db, ubicacionService)
 	loginService              := services.NewLoginService(db)
@@ -62,28 +61,23 @@ func main() {
 	reservacionService        := services.NewReservacionService(db, expiracionService)
 	detalleReservacionService := services.NewDetalleReservacionService(db)
 	asientoVueloService       := services.NewAsientoVueloService(db)
+	perfilService             := services.NewPerfilService(db)
 
-	pagoRepo        := repositories.NewPagoRepository(db)
-	reservacionRepo := repositories.NewReservacionRepository(db)
-	pagoService     := services.NewPagoService(pagoRepo, reservacionRepo)
+	pagoRepo             := repositories.NewPagoRepository(db)
+	reservacionRepo      := repositories.NewReservacionRepository(db)
+	configRepo           := repositories.NewAgenciaConfiguracionRepository(db)
+	misReservacionesRepo := repositories.NewMisReservacionesRepository(db)
+	cancelacionRepo      := repositories.NewCancelacionRepository(db)
+	proveedorRepo        := repositories.NewProveedorRepository(db)
+	usuarioRepo          := repositories.NewUsuarioRepository(db)
 
-	misReservacionesRepo    := repositories.NewMisReservacionesRepository(db)
+	pagoService             := services.NewPagoService(pagoRepo, reservacionRepo, configRepo)
 	misReservacionesService := services.NewMisReservacionesService(misReservacionesRepo)
+	cancelacionService      := services.NewCancelacionService(cancelacionRepo)
+	comentarioService       := services.NewComentarioService(proveedorRepo)
+	pdfService              := services.NewPdfReservacionService(misReservacionesService, usuarioRepo)
+	emailService            := services.NewEmailReservacionService(misReservacionesService, pdfService, usuarioRepo)
 
-	cancelacionRepo    := repositories.NewCancelacionRepository(db)
-	cancelacionService := services.NewCancelacionService(cancelacionRepo)
-
-	proveedorRepo     := repositories.NewProveedorRepository(db)
-	comentarioService := services.NewComentarioService(proveedorRepo)
-
-	// ── PDF y correo ───────────────────────────────────────────────────────────
-	usuarioRepo  := repositories.NewUsuarioRepository(db)
-	pdfService   := services.NewPdfReservacionService(misReservacionesService, usuarioRepo)
-	emailService := services.NewEmailReservacionService(misReservacionesService, pdfService, usuarioRepo)
-
-	perfilService := services.NewPerfilService(db)
-
-	// ── Controllers ────────────────────────────────────────────────────────────
 	usuarioController            := controllers.NewUsuarioController(usuarioService)
 	loginController              := controllers.NewLoginController(loginService)
 	sesionController             := controllers.NewSesionController()
@@ -102,11 +96,11 @@ func main() {
 	statsController              := controllers.NewStatsController(db)
 	adminController              := controllers.NewAdminController(db)
 	perfilController             := controllers.NewPerfilController(perfilService)
+	configuracionController      := controllers.NewConfiguracionController(db)
 
 	expiracionService.Iniciar()
 	defer expiracionService.Detener()
 
-	// ── Rutas ──────────────────────────────────────────────────────────────────
 	api := router.Group("/api")
 	{
 		usuarios := api.Group("/usuarios")
@@ -121,9 +115,9 @@ func main() {
 
 		api.GET("/comentarios/vuelo/:proveedorId/:rutaId",  comentarioController.ObtenerComentariosVuelo)
 		api.GET("/comentarios/hotel/:proveedorId/:hotelId", comentarioController.ObtenerComentariosHotel)
-		api.GET("/stats", statsController.ObtenerStats)
+		api.GET("/stats",                   statsController.ObtenerStats)
+		api.GET("/configuracion/descuento", configuracionController.ObtenerDescuento)
 
-		// Formulario de contacto — público, sin auth
 		api.POST("/contacto", controllers.EnviarContacto)
 
 		protegido := api.Group("/")
@@ -131,10 +125,9 @@ func main() {
 		{
 			protegido.GET("/sesion", sesionController.ObtenerSesion)
 
-			// Perfil de usuario
-			protegido.GET("/perfil",              perfilController.ObtenerPerfil)
-			protegido.PUT("/perfil/telefono",     perfilController.ActualizarTelefono)
-			protegido.PUT("/perfil/contrasena",   perfilController.CambiarContrasena)
+			protegido.GET("/perfil",            perfilController.ObtenerPerfil)
+			protegido.PUT("/perfil/telefono",   perfilController.ActualizarTelefono)
+			protegido.PUT("/perfil/contrasena", perfilController.CambiarContrasena)
 
 			protegido.POST("/reservaciones",                         reservacionController.CrearReservacion)
 			protegido.POST("/reservaciones/detalle/vuelo",           detalleReservacionController.AgregarDetalleVuelo)
@@ -147,25 +140,24 @@ func main() {
 			protegido.GET("/reservaciones/mias/:id",                 misReservacionesController.Detalle)
 			protegido.GET("/reservaciones/:id/cancelar/verificar",   cancelacionController.Verificar)
 			protegido.POST("/reservaciones/:id/cancelar",            cancelacionController.Cancelar)
-
-			// PDF y correo
-			protegido.GET("/reservaciones/:id/pdf",     reservacionController.DescargarPDF)
-			protegido.POST("/reservaciones/:id/correo", reservacionController.EnviarCorreo)
+			protegido.GET("/reservaciones/:id/pdf",                  reservacionController.DescargarPDF)
+			protegido.POST("/reservaciones/:id/correo",              reservacionController.EnviarCorreo)
 
 			admin := protegido.Group("/")
 			admin.Use(middlewares.RolRequerido(2))
 			{
-				admin.GET("/usuarios",                             adminController.ListarUsuarios)
-				admin.PUT("/usuarios/:id/rol",                     adminController.ActualizarRol)
-				admin.GET("/proveedores",                          adminController.ListarProveedores)
-				admin.PATCH("/proveedores/:id/estado",             adminController.ToggleEstadoProveedor)
-				admin.PUT("/proveedores/:id",                      adminController.EditarProveedor)
-				admin.GET("/admin/reservaciones/recientes",        adminController.ReservacionesRecientes)
-				admin.GET("/admin/metricas",                       adminController.ObtenerMetricas)
-				admin.POST("/proveedores",                         proveedorController.CrearProveedor)
-				admin.POST("/catalogo/actualizar",                 catalogoController.ActualizarCatalogo)
-				admin.POST("/proveedores/:id/handshake",           handshakeController.IniciarHandshake)
-				admin.POST("/proveedores/:id/handshake-hotelera",  handshakeHoteleraController.IniciarHandshake)
+				admin.GET("/usuarios",                            adminController.ListarUsuarios)
+				admin.PUT("/usuarios/:id/rol",                    adminController.ActualizarRol)
+				admin.GET("/proveedores",                         adminController.ListarProveedores)
+				admin.PATCH("/proveedores/:id/estado",            adminController.ToggleEstadoProveedor)
+				admin.PUT("/proveedores/:id",                     adminController.EditarProveedor)
+				admin.GET("/admin/reservaciones/recientes",       adminController.ReservacionesRecientes)
+				admin.GET("/admin/metricas",                      adminController.ObtenerMetricas)
+				admin.POST("/proveedores",                        proveedorController.CrearProveedor)
+				admin.POST("/catalogo/actualizar",                catalogoController.ActualizarCatalogo)
+				admin.POST("/proveedores/:id/handshake",          handshakeController.IniciarHandshake)
+				admin.POST("/proveedores/:id/handshake-hotelera", handshakeHoteleraController.IniciarHandshake)
+				admin.GET("/admin/usuarios",                      usuarioController.ObtenerTodos)
 			}
 		}
 	}
