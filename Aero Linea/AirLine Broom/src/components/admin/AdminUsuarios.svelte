@@ -11,7 +11,8 @@
 
   const rolesDisponibles = [
     { id: 1, nombre: 'Usuario' },
-    { id: 2, nombre: 'Administrador' }
+    { id: 2, nombre: 'Administrador' },
+    { id: 3, nombre: 'Webservice' }
   ];
 
   onMount(() => { cargarUsuarios(); });
