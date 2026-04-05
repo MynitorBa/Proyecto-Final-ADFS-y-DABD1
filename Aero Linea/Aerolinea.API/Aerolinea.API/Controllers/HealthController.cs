@@ -3,17 +3,17 @@
 namespace Aerolinea.API.Controllers
 {
     [ApiController]
-    [Route("api/health")]
+    [Route("[controller]")]
     public class HealthController : ControllerBase
     {
         [HttpGet]
         public IActionResult Get()
-        { 
+        {
             return Ok(new
             {
                 status = "OK",
-                service = "Aerolinea.API",
-                time = DateTime.UtcNow
+                ambiente = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                hora = DateTime.UtcNow
             });
         }
     }

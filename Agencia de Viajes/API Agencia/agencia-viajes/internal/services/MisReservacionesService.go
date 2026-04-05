@@ -19,7 +19,7 @@ func NewMisReservacionesService(repo *repositories.MisReservacionesRepository) *
 	return &MisReservacionesService{repo: repo}
 }
 
-// ─── Ruta 1: Listar todas las reservaciones (solo datos locales) ──────────────
+// Ruta 1: Listar todas las reservaciones 
 
 func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.ReservacionResumenResponse, error) {
 	filas, err := s.repo.ObtenerReservacionesDeUsuario(usuarioID)
@@ -67,7 +67,7 @@ func (s *MisReservacionesService) ListarReservaciones(usuarioID int) ([]dto.Rese
 	return resultado, nil
 }
 
-// ─── Ruta 2: Detalle completo llamando a proveedores ─────────────────────────
+//uta 2: Detalle completo llamando a proveedores 
 
 func (s *MisReservacionesService) ObtenerDetalle(reservacionID, usuarioID int) (*dto.ReservacionDetalladaResponse, error) {
 	filas, err := s.repo.ObtenerReservacionPorID(reservacionID, usuarioID)

@@ -20,7 +20,7 @@ func NewPagoService(repo *repositories.PagoRepository, rr *repositories.Reservac
 }
 
 func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest) error {
-	// 1. Validar Tarjeta (Simulado)
+	// 1. Validar Tarjeta 
 	if len(req.TarjetaNumero) < 16 {
 		return errors.New("número de tarjeta inválido")
 	}

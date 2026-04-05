@@ -5,6 +5,8 @@ using Aerolinea.API.Services;
 using DinkToPdf;
 using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Runtime.InteropServices;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,9 @@ builder.Services.AddScoped<RutaRepository>();
 builder.Services.AddScoped<AsientoRepository>();
 builder.Services.AddScoped<AgenciaRepository>();
 builder.Services.AddScoped<RutaAgenciaRepository>();
+
+
+builder.Services.AddHealthChecks();
 
 builder.Services.AddScoped<AgenciaAuthMiddleware>();
 builder.Services.AddScoped<ReservacionAgenciaRepository>();
@@ -72,7 +77,27 @@ builder.Services.AddScoped<AsientoAgenciaService>();
 builder.Services.AddScoped<ConfirmarReservacionAgenciaService>();
 
 
+var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+    ? "linux-x64"
+    : "win-x64";
+
+var wkHtmlPath = Path.Combine(
+    Directory.GetCurrentDirectory(),
+    "native",
+    architectureFolder,
+    RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+        ? "libwkhtmltox.so"
+        : "libwkhtmltox.dll"
+);
+
+CustomAssemblyLoadContext context = new CustomAssemblyLoadContext();
+context.LoadUnmanagedLibrary(wkHtmlPath);
+
 builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+
+
+
+
 builder.Services.AddScoped<PdfService>();
 
 // Servicio de búsquedas temporales (Singleton)
@@ -110,8 +135,13 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
+        var corsOrigins = builder.Configuration
+            .GetSection("Cors:Origins")
+            .Get<string[]>()
+            ?? new[] { "http://localhost:5173", "http://localhost:4173" };
+
         policy
-            .WithOrigins("http://localhost:5173", "http://localhost:4173")
+            .WithOrigins(corsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -122,6 +152,9 @@ var app = builder.Build();
 
 app.UseCors();
 app.UseAuthentication();
+
+app.MapHealthChecks("/health");
+
 app.UseAuthorization();
 app.MapControllers();
 
