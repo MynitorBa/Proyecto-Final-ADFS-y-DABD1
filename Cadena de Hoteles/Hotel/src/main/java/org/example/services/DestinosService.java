@@ -11,7 +11,14 @@ import java.util.List;
  */
 public class DestinosService {
 
-    private final DestinosRepository destinosRepository = new DestinosRepository();
+    private final DestinosRepository destinosRepository;
+
+    /**
+     * Crea una instancia de DestinosService con sus dependencias inyectadas.
+     */
+    public DestinosService(DestinosRepository destinosRepository) {
+        this.destinosRepository = destinosRepository;
+    }
 
     /**
      * Obtiene todos los hoteles disponibles como destinos y les asigna sus imagenes.

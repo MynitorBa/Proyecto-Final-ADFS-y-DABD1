@@ -11,7 +11,14 @@ import java.util.Map;
  */
 public class AdminReservacionService {
 
-    private final AdminReservacionRepository repo = new AdminReservacionRepository();
+    private final AdminReservacionRepository repo;
+
+    /**
+     * Crea una instancia de AdminReservacionService con sus dependencias inyectadas.
+     */
+    public AdminReservacionService(AdminReservacionRepository repo) {
+        this.repo = repo;
+    }
 
     /**
      * Retorna todas las reservaciones registradas en el sistema.

@@ -12,7 +12,14 @@ import java.util.Map;
  */
 public class PagoController {
 
-    private final PagoService pagoService = new PagoService();
+    private final PagoService pagoService;
+
+    /**
+     * Crea una instancia de PagoController con sus dependencias inyectadas.
+     */
+    public PagoController(PagoService pagoService) {
+        this.pagoService = pagoService;
+    }
 
     /**
      * Registra la ruta de pago en la aplicacion Javalin.

@@ -11,7 +11,14 @@ import io.jsonwebtoken.Claims;
  */
 public class SesionController {
 
-    private final SesionService sesionService = new SesionService();
+    private final SesionService sesionService;
+
+    /**
+     * Crea una instancia de SesionController con sus dependencias inyectadas.
+     */
+    public SesionController(SesionService sesionService) {
+        this.sesionService = sesionService;
+    }
 
     /**
      * Registra la ruta de sesion en la aplicacion Javalin.

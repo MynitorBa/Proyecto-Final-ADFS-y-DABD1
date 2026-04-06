@@ -15,8 +15,17 @@ import java.util.Map;
  */
 public class HotelController {
 
-    private final HotelService            hotelService            = new HotelService();
-    private final AdminReservacionService adminReservacionService = new AdminReservacionService();
+    private final HotelService            hotelService;
+    private final AdminReservacionService adminReservacionService;
+
+    /**
+     * Crea una instancia de HotelController con sus dependencias inyectadas.
+     */
+    public HotelController(HotelService hotelService,
+                           AdminReservacionService adminReservacionService) {
+        this.hotelService            = hotelService;
+        this.adminReservacionService = adminReservacionService;
+    }
 
     /**
      * Registra todas las rutas administrativas en la aplicacion Javalin.

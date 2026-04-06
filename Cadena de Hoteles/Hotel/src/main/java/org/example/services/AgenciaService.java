@@ -13,7 +13,14 @@ import java.util.List;
  */
 public class AgenciaService {
 
-    private final AgenciaRepository repo = new AgenciaRepository();
+    private final AgenciaRepository repo;
+
+    /**
+     * Crea una instancia de AgenciaService con sus dependencias inyectadas.
+     */
+    public AgenciaService(AgenciaRepository repo) {
+        this.repo = repo;
+    }
 
     /**
      * Retorna las agencias asociadas a un usuario especifico.

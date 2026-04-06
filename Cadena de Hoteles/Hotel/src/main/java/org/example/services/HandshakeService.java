@@ -11,7 +11,14 @@ import org.example.repositories.AgenciaRepository;
  */
 public class HandshakeService {
 
-    private final AgenciaRepository repo = new AgenciaRepository();
+    private final AgenciaRepository repo;
+
+    /**
+     * Crea una instancia de HandshakeService con sus dependencias inyectadas.
+     */
+    public HandshakeService(AgenciaRepository repo) {
+        this.repo = repo;
+    }
 
     /**
      * Procesa el handshake de una agencia externa.

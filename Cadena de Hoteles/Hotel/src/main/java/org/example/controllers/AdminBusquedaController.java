@@ -12,7 +12,14 @@ import java.util.Map;
  */
 public class AdminBusquedaController {
 
-    private final AdminBusquedaService service = new AdminBusquedaService();
+    private final AdminBusquedaService service;
+
+    /**
+     * Crea una instancia de AdminBusquedaController con sus dependencias inyectadas.
+     */
+    public AdminBusquedaController(AdminBusquedaService service) {
+        this.service = service;
+    }
 
     /**
      * Registra las rutas del modulo de reportes de busquedas en la aplicacion Javalin.

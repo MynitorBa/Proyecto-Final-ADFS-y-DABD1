@@ -13,7 +13,14 @@ import java.util.Map;
  */
 public class PagoAgenciaController {
 
-    private final PagoAgenciaService pagoAgenciaService = new PagoAgenciaService();
+    private final PagoAgenciaService pagoAgenciaService;
+
+    /**
+     * Crea una instancia de PagoAgenciaController con sus dependencias inyectadas.
+     */
+    public PagoAgenciaController(PagoAgenciaService pagoAgenciaService) {
+        this.pagoAgenciaService = pagoAgenciaService;
+    }
 
     /**
      * Registra la ruta de pago de agencias en la aplicacion Javalin.

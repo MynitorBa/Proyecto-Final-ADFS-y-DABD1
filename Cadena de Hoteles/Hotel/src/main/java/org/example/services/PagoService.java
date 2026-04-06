@@ -11,7 +11,14 @@ import org.example.repositories.PagoRepository;
  */
 public class PagoService {
 
-    private final PagoRepository pagoRepository = new PagoRepository();
+    private final PagoRepository pagoRepository;
+
+    /**
+     * Crea una instancia de PagoService con sus dependencias inyectadas.
+     */
+    public PagoService(PagoRepository pagoRepository) {
+        this.pagoRepository = pagoRepository;
+    }
 
     /**
      * Procesa el pago de una reservacion de usuario web.

@@ -15,7 +15,14 @@ import java.util.Map;
  */
 public class AdminBusquedaService {
 
-    private final AdminBusquedaRepository repo = new AdminBusquedaRepository();
+    private final AdminBusquedaRepository repo;
+
+    /**
+     * Crea una instancia de AdminBusquedaService con sus dependencias inyectadas.
+     */
+    public AdminBusquedaService(AdminBusquedaRepository repo) {
+        this.repo = repo;
+    }
 
     /**
      * Retorna una pagina de busquedas aplicando los filtros dados.

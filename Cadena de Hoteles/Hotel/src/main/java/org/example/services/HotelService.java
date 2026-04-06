@@ -15,9 +15,20 @@ import java.util.Map;
  */
 public class HotelService {
 
-    private final HotelRepository  hotelRepository  = new HotelRepository();
-    private final CiudadRepository ciudadRepository = new CiudadRepository();
-    private final PaisRepository   paisRepository   = new PaisRepository();
+    private final HotelRepository  hotelRepository;
+    private final CiudadRepository ciudadRepository;
+    private final PaisRepository   paisRepository;
+
+    /**
+     * Crea una instancia de HotelService con sus dependencias inyectadas.
+     */
+    public HotelService(HotelRepository hotelRepository,
+                        CiudadRepository ciudadRepository,
+                        PaisRepository paisRepository) {
+        this.hotelRepository  = hotelRepository;
+        this.ciudadRepository = ciudadRepository;
+        this.paisRepository   = paisRepository;
+    }
 
     /**
      * Retorna todas las amenidades disponibles en el catalogo.

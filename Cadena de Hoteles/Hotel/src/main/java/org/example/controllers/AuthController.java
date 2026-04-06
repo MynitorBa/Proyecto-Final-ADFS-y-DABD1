@@ -18,7 +18,14 @@ public class AuthController {
     // Duracion de la cookie de sesion: 8 horas expresadas en segundos
     private static final int COOKIE_MAX_AGE = 8 * 60 * 60;
 
-    private final AuthService authService = new AuthService();
+    private final AuthService authService;
+
+    /**
+     * Crea una instancia de AuthController con sus dependencias inyectadas.
+     */
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     /**
      * Registra las rutas de autenticacion en la aplicacion Javalin.

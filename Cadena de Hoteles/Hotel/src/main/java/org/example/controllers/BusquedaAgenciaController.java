@@ -13,7 +13,14 @@ import java.util.Map;
  */
 public class BusquedaAgenciaController {
 
-    private final BusquedaAgenciaService busquedaAgenciaService = new BusquedaAgenciaService();
+    private final BusquedaAgenciaService busquedaAgenciaService;
+
+    /**
+     * Crea una instancia de BusquedaAgenciaController con sus dependencias inyectadas.
+     */
+    public BusquedaAgenciaController(BusquedaAgenciaService busquedaAgenciaService) {
+        this.busquedaAgenciaService = busquedaAgenciaService;
+    }
 
     /**
      * Registra la ruta de busqueda de agencias en la aplicacion Javalin.

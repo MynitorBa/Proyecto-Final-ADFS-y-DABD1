@@ -13,7 +13,14 @@ import java.util.Map;
  */
 public class ComentarioController {
 
-    private final ComentarioService comentarioService = new ComentarioService();
+    private final ComentarioService comentarioService;
+
+    /**
+     * Crea una instancia de ComentarioController con sus dependencias inyectadas.
+     */
+    public ComentarioController(ComentarioService comentarioService) {
+        this.comentarioService = comentarioService;
+    }
 
     /**
      * Registra todas las rutas de comentarios en la aplicacion Javalin.

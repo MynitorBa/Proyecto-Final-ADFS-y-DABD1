@@ -13,7 +13,14 @@ import java.util.List;
  */
 public class PdfReservacionService {
 
-    private final PdfReservacionRepository repository = new PdfReservacionRepository();
+    private final PdfReservacionRepository repository;
+
+    /**
+     * Crea una instancia de PdfReservacionService con sus dependencias inyectadas.
+     */
+    public PdfReservacionService(PdfReservacionRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Genera el PDF de una reservacion para un usuario especifico.

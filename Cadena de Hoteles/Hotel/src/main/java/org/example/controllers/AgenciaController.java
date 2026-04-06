@@ -17,8 +17,17 @@ import java.util.Map;
  */
 public class AgenciaController {
 
-    private final AgenciaService agenciaService = new AgenciaService();
-    private final HandshakeService handshakeService = new HandshakeService();
+    private final AgenciaService   agenciaService;
+    private final HandshakeService handshakeService;
+
+    /**
+     * Crea una instancia de AgenciaController con sus dependencias inyectadas.
+     */
+    public AgenciaController(AgenciaService agenciaService,
+                             HandshakeService handshakeService) {
+        this.agenciaService   = agenciaService;
+        this.handshakeService = handshakeService;
+    }
 
     /**
      * Registra todas las rutas de agencias en la aplicacion Javalin.

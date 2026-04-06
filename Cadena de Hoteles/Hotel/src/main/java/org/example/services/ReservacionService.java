@@ -21,7 +21,14 @@ import java.util.UUID;
  */
 public class ReservacionService {
 
-    private final ReservacionRepository reservacionRepository = new ReservacionRepository();
+    private final ReservacionRepository reservacionRepository;
+
+    /**
+     * Crea una instancia de ReservacionService con sus dependencias inyectadas.
+     */
+    public ReservacionService(ReservacionRepository reservacionRepository) {
+        this.reservacionRepository = reservacionRepository;
+    }
 
     /**
      * Crea una nueva reservacion para el usuario indicado.

@@ -13,7 +13,14 @@ import java.util.Map;
  */
 public class CancelacionAgenciaController {
 
-    private final CancelacionService cancelacionService = new CancelacionService();
+    private final CancelacionService cancelacionService;
+
+    /**
+     * Crea una instancia de CancelacionAgenciaController con sus dependencias inyectadas.
+     */
+    public CancelacionAgenciaController(CancelacionService cancelacionService) {
+        this.cancelacionService = cancelacionService;
+    }
 
     /**
      * Registra las rutas de cancelacion de agencias en la aplicacion Javalin.

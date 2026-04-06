@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miku Inn — Reporte de Pruebas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="test-report.css">
+</head>
+<body>
+
+<header>
+    <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    <h1>Miku Inn — Reporte de Pruebas</h1>
+    <p>Pruebas unitarias del backend &middot; Java + JUnit 5 + Mockito</p>
+    <div class="badges">
+        <span class="badge">JUnit 5</span>
+        <span class="badge">Mockito 5</span>
+        <span class="badge">Java 17</span>
+        <span class="badge">UNIS 2026</span>
+    </div>
+</header>
+
+<main>
+    <div class="summary">
+        <div class="summary-card">
+            <div class="num blue" id="total">0</div>
+            <div class="lbl">Total</div>
+        </div>
+        <div class="summary-card">
+            <div class="num green" id="passed">0</div>
+            <div class="lbl">Pasaron</div>
+        </div>
+        <div class="summary-card">
+            <div class="num red" id="failed">0</div>
+            <div class="lbl">Fallaron</div>
+        </div>
+        <div class="summary-card">
+            <div class="num blue" id="duration">0ms</div>
+            <div class="lbl">Duracion</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="pass">Pasaron</button>
+        <button class="filter-btn" data-filter="fail">Fallaron</button>
+        <div class="spacer"></div>
+        <span class="run-time" id="run-date"></span>
+    </div>
+
+    <div id="suites"></div>
+</main>
+
+<footer>Generado por Miku Inn Test Reporter &middot; UNIS 2026</footer>
+
+<script src="test-report.js"></script>
+</body>
+</html>

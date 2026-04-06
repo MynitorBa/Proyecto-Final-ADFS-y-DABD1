@@ -10,7 +10,14 @@ import org.example.services.HotelAgenciaService;
  */
 public class HotelAgenciaController {
 
-    private final HotelAgenciaService service = new HotelAgenciaService();
+    private final HotelAgenciaService service;
+
+    /**
+     * Crea una instancia de HotelAgenciaController con sus dependencias inyectadas.
+     */
+    public HotelAgenciaController(HotelAgenciaService service) {
+        this.service = service;
+    }
 
     /**
      * Registra la ruta de hoteles para agencias en la aplicacion Javalin.

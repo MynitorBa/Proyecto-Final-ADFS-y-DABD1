@@ -23,7 +23,14 @@ import java.util.UUID;
  */
 public class ReservacionAgenciaService {
 
-    private final ReservacionAgenciaRepository repository = new ReservacionAgenciaRepository();
+    private final ReservacionAgenciaRepository repository;
+
+    /**
+     * Crea una instancia de ReservacionAgenciaService con sus dependencias inyectadas.
+     */
+    public ReservacionAgenciaService(ReservacionAgenciaRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Crea una nueva reservacion para una agencia aplicando su descuento.

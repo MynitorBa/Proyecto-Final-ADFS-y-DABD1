@@ -14,7 +14,14 @@ import org.example.repositories.AuthRepository;
  */
 public class AuthService {
 
-    private final AuthRepository authRepository = new AuthRepository();
+    private final AuthRepository authRepository;
+
+    /**
+     * Crea una instancia de AuthService con sus dependencias inyectadas.
+     */
+    public AuthService(AuthRepository authRepository) {
+        this.authRepository = authRepository;
+    }
 
     /**
      * Agrupa el token JWT y los datos de respuesta tras un login exitoso.

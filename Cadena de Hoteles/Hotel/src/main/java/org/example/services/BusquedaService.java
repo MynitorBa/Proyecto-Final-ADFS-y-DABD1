@@ -18,7 +18,14 @@ import java.util.stream.Collectors;
  */
 public class BusquedaService {
 
-    private final BusquedaRepository busquedaRepository = new BusquedaRepository();
+    private final BusquedaRepository busquedaRepository;
+
+    /**
+     * Crea una instancia de BusquedaService con sus dependencias inyectadas.
+     */
+    public BusquedaService(BusquedaRepository busquedaRepository) {
+        this.busquedaRepository = busquedaRepository;
+    }
 
     /**
      * Busca hoteles disponibles segun los criterios del request.

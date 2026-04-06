@@ -14,7 +14,14 @@ import org.example.dtos.PuedeCancelarDTO;
  */
 public class CancelacionService {
 
-    private final CancelacionRepository cancelacionRepository = new CancelacionRepository();
+    private final CancelacionRepository cancelacionRepository;
+
+    /**
+     * Crea una instancia de CancelacionService con sus dependencias inyectadas.
+     */
+    public CancelacionService(CancelacionRepository cancelacionRepository) {
+        this.cancelacionRepository = cancelacionRepository;
+    }
 
     /**
      * Cancela una reservacion de un usuario web.

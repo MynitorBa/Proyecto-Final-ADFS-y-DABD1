@@ -18,7 +18,14 @@ import java.util.Map;
  */
 public class UsuarioController {
 
-    private final UsuarioService usuarioService = new UsuarioService();
+    private final UsuarioService usuarioService;
+
+    /**
+     * Crea una instancia de UsuarioController con sus dependencias inyectadas.
+     */
+    public UsuarioController(UsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
 
     /**
      * Registra todas las rutas de usuarios en la aplicacion Javalin.

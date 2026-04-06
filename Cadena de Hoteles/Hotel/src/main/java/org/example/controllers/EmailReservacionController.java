@@ -15,7 +15,14 @@ public class EmailReservacionController {
     // Correo destino para notificaciones administrativas
     private static final String ADMIN_EMAIL = "distribuidorapine@gmail.com";
 
-    private final EmailReservacionService emailService = new EmailReservacionService();
+    private final EmailReservacionService emailService;
+
+    /**
+     * Crea una instancia de EmailReservacionController con sus dependencias inyectadas.
+     */
+    public EmailReservacionController(EmailReservacionService emailService) {
+        this.emailService = emailService;
+    }
 
     /**
      * Registra todas las rutas de correo en la aplicacion Javalin.

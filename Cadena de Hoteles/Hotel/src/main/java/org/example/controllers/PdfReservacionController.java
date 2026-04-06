@@ -11,7 +11,14 @@ import java.util.Map;
  */
 public class PdfReservacionController {
 
-    private final PdfReservacionService pdfReservacionService = new PdfReservacionService();
+    private final PdfReservacionService pdfReservacionService;
+
+    /**
+     * Crea una instancia de PdfReservacionController con sus dependencias inyectadas.
+     */
+    public PdfReservacionController(PdfReservacionService pdfReservacionService) {
+        this.pdfReservacionService = pdfReservacionService;
+    }
 
     /**
      * Registra la ruta de descarga de PDF en la aplicacion Javalin.

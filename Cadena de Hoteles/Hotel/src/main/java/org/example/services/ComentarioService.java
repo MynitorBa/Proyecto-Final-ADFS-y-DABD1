@@ -12,7 +12,14 @@ import java.util.List;
  */
 public class ComentarioService {
 
-    private final ComentarioRepository comentarioRepository = new ComentarioRepository();
+    private final ComentarioRepository comentarioRepository;
+
+    /**
+     * Crea una instancia de ComentarioService con sus dependencias inyectadas.
+     */
+    public ComentarioService(ComentarioRepository comentarioRepository) {
+        this.comentarioRepository = comentarioRepository;
+    }
 
     /**
      * Agrega un comentario o respuesta segun el contenido del request.

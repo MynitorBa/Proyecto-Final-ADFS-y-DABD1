@@ -22,11 +22,26 @@ import java.util.List;
  */
 public class UsuarioService {
 
-    private final UsuarioRepository             usuarioRepository             = new UsuarioRepository();
-    private final PaisRepository                paisRepository                = new PaisRepository();
-    private final CiudadRepository              ciudadRepository              = new CiudadRepository();
-    private final NacionalidadRepository        nacionalidadRepository        = new NacionalidadRepository();
-    private final UsuarioNacionalidadRepository usuarioNacionalidadRepository = new UsuarioNacionalidadRepository();
+    private final UsuarioRepository             usuarioRepository;
+    private final PaisRepository                paisRepository;
+    private final CiudadRepository              ciudadRepository;
+    private final NacionalidadRepository        nacionalidadRepository;
+    private final UsuarioNacionalidadRepository usuarioNacionalidadRepository;
+
+    /**
+     * Crea una instancia de UsuarioService con sus dependencias inyectadas.
+     */
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          PaisRepository paisRepository,
+                          CiudadRepository ciudadRepository,
+                          NacionalidadRepository nacionalidadRepository,
+                          UsuarioNacionalidadRepository usuarioNacionalidadRepository) {
+        this.usuarioRepository             = usuarioRepository;
+        this.paisRepository                = paisRepository;
+        this.ciudadRepository              = ciudadRepository;
+        this.nacionalidadRepository        = nacionalidadRepository;
+        this.usuarioNacionalidadRepository = usuarioNacionalidadRepository;
+    }
 
     /**
      * Verifica si el username, correo o pasaporte ya estan registrados en el sistema.

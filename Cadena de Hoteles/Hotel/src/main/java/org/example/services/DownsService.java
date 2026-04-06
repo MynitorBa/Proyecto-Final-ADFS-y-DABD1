@@ -13,8 +13,17 @@ import java.util.List;
  */
 public class DownsService {
 
-    private final DownsRepository      downsRepository      = new DownsRepository();
-    private final ComentarioRepository comentarioRepository = new ComentarioRepository();
+    private final DownsRepository      downsRepository;
+    private final ComentarioRepository comentarioRepository;
+
+    /**
+     * Crea una instancia de DownsService con sus dependencias inyectadas.
+     */
+    public DownsService(DownsRepository downsRepository,
+                        ComentarioRepository comentarioRepository) {
+        this.downsRepository      = downsRepository;
+        this.comentarioRepository = comentarioRepository;
+    }
 
     /**
      * Agrega un down de un usuario a un comentario.

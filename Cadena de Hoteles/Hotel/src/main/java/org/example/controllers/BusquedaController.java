@@ -15,7 +15,14 @@ import java.util.Map;
  */
 public class BusquedaController {
 
-    private final BusquedaService busquedaService = new BusquedaService();
+    private final BusquedaService busquedaService;
+
+    /**
+     * Crea una instancia de BusquedaController con sus dependencias inyectadas.
+     */
+    public BusquedaController(BusquedaService busquedaService) {
+        this.busquedaService = busquedaService;
+    }
 
     /**
      * Registra la ruta de busqueda en la aplicacion Javalin.

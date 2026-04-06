@@ -12,7 +12,14 @@ import java.util.Map;
  */
 public class DownsController {
 
-    private final DownsService downsService = new DownsService();
+    private final DownsService downsService;
+
+    /**
+     * Crea una instancia de DownsController con sus dependencias inyectadas.
+     */
+    public DownsController(DownsService downsService) {
+        this.downsService = downsService;
+    }
 
     /**
      * Registra todas las rutas de downs en la aplicacion Javalin.

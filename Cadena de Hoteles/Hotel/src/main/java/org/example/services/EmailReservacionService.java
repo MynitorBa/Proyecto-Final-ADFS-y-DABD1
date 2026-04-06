@@ -12,7 +12,14 @@ import java.util.List;
  */
 public class EmailReservacionService {
 
-    private final PdfReservacionRepository repository = new PdfReservacionRepository();
+    private final PdfReservacionRepository repository;
+
+    /**
+     * Crea una instancia de EmailReservacionService con sus dependencias inyectadas.
+     */
+    public EmailReservacionService(PdfReservacionRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Envia el correo de confirmacion de una reservacion al usuario.

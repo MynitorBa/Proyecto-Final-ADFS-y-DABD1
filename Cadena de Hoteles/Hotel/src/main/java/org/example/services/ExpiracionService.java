@@ -13,7 +13,14 @@ import java.util.concurrent.TimeUnit;
 public class ExpiracionService {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private final ReservacionRepository reservacionRepository = new ReservacionRepository();
+    private final ReservacionRepository reservacionRepository;
+
+    /**
+     * Crea una instancia de ExpiracionService con sus dependencias inyectadas.
+     */
+    public ExpiracionService(ReservacionRepository reservacionRepository) {
+        this.reservacionRepository = reservacionRepository;
+    }
 
     /**
      * Arranca el hilo programado que revisa y expira reservaciones cada minuto.

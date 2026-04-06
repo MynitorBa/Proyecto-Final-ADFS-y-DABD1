@@ -12,7 +12,14 @@ import java.util.Map;
  */
 public class ReservacionController {
 
-    private final ReservacionService reservacionService = new ReservacionService();
+    private final ReservacionService reservacionService;
+
+    /**
+     * Crea una instancia de ReservacionController con sus dependencias inyectadas.
+     */
+    public ReservacionController(ReservacionService reservacionService) {
+        this.reservacionService = reservacionService;
+    }
 
     /**
      * Registra las rutas de reservaciones en la aplicacion Javalin.

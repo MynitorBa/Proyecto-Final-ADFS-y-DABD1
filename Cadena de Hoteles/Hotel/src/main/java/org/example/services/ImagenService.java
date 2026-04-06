@@ -8,7 +8,14 @@ import org.example.repositories.ImagenRepository;
  */
 public class ImagenService {
 
-    private final ImagenRepository imagenRepository = new ImagenRepository();
+    private final ImagenRepository imagenRepository;
+
+    /**
+     * Crea una instancia de ImagenService con sus dependencias inyectadas.
+     */
+    public ImagenService(ImagenRepository imagenRepository) {
+        this.imagenRepository = imagenRepository;
+    }
 
     /**
      * Retorna los bytes de una imagen de hotel.

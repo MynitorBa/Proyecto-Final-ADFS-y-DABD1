@@ -16,7 +16,14 @@ import java.util.stream.Collectors;
  */
 public class BusquedaAgenciaService {
 
-    private final BusquedaAgenciaRepository repository = new BusquedaAgenciaRepository();
+    private final BusquedaAgenciaRepository repository;
+
+    /**
+     * Crea una instancia de BusquedaAgenciaService con sus dependencias inyectadas.
+     */
+    public BusquedaAgenciaService(BusquedaAgenciaRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Busca hoteles disponibles para una agencia autenticada por sesion de usuario.

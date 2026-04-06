@@ -10,7 +10,14 @@ import java.util.List;
  */
 public class HotelAgenciaService {
 
-    private final HotelAgenciaRepository repository = new HotelAgenciaRepository();
+    private final HotelAgenciaRepository repository;
+
+    /**
+     * Crea una instancia de HotelAgenciaService con sus dependencias inyectadas.
+     */
+    public HotelAgenciaService(HotelAgenciaRepository repository) {
+        this.repository = repository;
+    }
 
     /**
      * Retorna la lista de hoteles disponibles para ser consultados por agencias.

@@ -9,7 +9,14 @@ import org.example.services.ImagenService;
  */
 public class ImagenController {
 
-    private final ImagenService imagenService = new ImagenService();
+    private final ImagenService imagenService;
+
+    /**
+     * Crea una instancia de ImagenController con sus dependencias inyectadas.
+     */
+    public ImagenController(ImagenService imagenService) {
+        this.imagenService = imagenService;
+    }
 
     /**
      * Registra las rutas de imagenes en la aplicacion Javalin.

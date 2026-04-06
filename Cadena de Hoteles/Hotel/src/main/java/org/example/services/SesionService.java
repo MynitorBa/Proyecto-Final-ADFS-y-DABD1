@@ -10,7 +10,14 @@ import org.example.repositories.SesionRepository;
  */
 public class SesionService {
 
-    private final SesionRepository sesionRepository = new SesionRepository();
+    private final SesionRepository sesionRepository;
+
+    /**
+     * Crea una instancia de SesionService con sus dependencias inyectadas.
+     */
+    public SesionService(SesionRepository sesionRepository) {
+        this.sesionRepository = sesionRepository;
+    }
 
     /**
      * Construye el DTO de sesion para un usuario autenticado.

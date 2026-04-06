@@ -9,7 +9,14 @@ import org.example.services.DestinosService;
  */
 public class DestinosController {
 
-    private final DestinosService destinosService = new DestinosService();
+    private final DestinosService destinosService;
+
+    /**
+     * Crea una instancia de DestinosController con sus dependencias inyectadas.
+     */
+    public DestinosController(DestinosService destinosService) {
+        this.destinosService = destinosService;
+    }
 
     /**
      * Registra la ruta de destinos en la aplicacion Javalin.
