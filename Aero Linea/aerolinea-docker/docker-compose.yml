@@ -1,5 +1,6 @@
 services:
 
+  # Base de datos SQL Server 2022 Express con healthcheck para garantizar disponibilidad antes del backend
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: ${COMPOSE_PROJECT_NAME}-db
@@ -23,6 +24,7 @@ services:
       retries: 10
       start_period: 30s
 
+  # Contenedor efimero que aplica el esquema y los datos iniciales una sola vez
   db-init:
     image: mcr.microsoft.com/mssql-tools
     container_name: ${COMPOSE_PROJECT_NAME}-db-init
@@ -41,6 +43,16 @@ services:
       "
     restart: "no"
 
+  # Backend ASP.NET Core expuesto en BACKEND_PORT.
+  # Cors__Origins__0: frontend propio de esta instancia de aerolinea.
+  # Cors__Origins__1: frontend de la agencia de viajes corriendo localmente,
+  #   necesario para que el boton "Probar" del panel de proveedores pueda
+  #   hacer peticiones cross-origin al backend de la aerolinea.
+  # HANDSHAKE_HOST_OVERRIDE: cuando el backend recibe una URL de handshake
+  #   que contiene 'localhost', sustituye el host por 'host.docker.internal'
+  #   para poder alcanzar procesos corriendo en la maquina anfitriona.
+  # extra_hosts registra host.docker.internal -> gateway del host para que
+  #   la resolucion DNS funcione en Linux sin configuracion adicional.
   backend:
     build:
       context: ../Aerolinea.API/Aerolinea.API
@@ -52,14 +64,17 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True
       - Cors__Origins__0=http://localhost:${FRONTEND_PORT}
+      - Cors__Origins__1=http://localhost:${AGENCY_PORT}
       - COOKIE_NAME=aerolinea_session_${COMPOSE_PROJECT_NAME}
+      - HANDSHAKE_HOST_OVERRIDE=host.docker.internal
     depends_on:
       db:
         condition: service_healthy
     extra_hosts:
-      - "host.docker.internal:host-gateway" 
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+  # Frontend Svelte/Vite servido en FRONTEND_PORT apuntando al backend de esta instancia
   frontend:
     build:
       context: "../AirLine Broom"
