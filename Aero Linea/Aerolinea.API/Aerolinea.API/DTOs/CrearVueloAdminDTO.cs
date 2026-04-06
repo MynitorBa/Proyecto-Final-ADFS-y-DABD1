@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models.DTOs
+namespace Aerolinea.API.Models.DTOs
 {
+    /// <summary>
+    /// DTO para la creacion de un nuevo vuelo desde el panel de administracion.
+    /// Contiene numero de vuelo, aeropuertos, avion, fecha, hora de salida local,
+    /// disponibilidad y precios por clase, y los tripulantes asignados.
+    /// </summary>
     public class CrearVueloAdminDTO
     {
         public string NumeroVuelo { get; set; }

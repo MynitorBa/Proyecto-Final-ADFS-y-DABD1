@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura con el detalle completo de una reservacion.
+    /// Incluye estado, usuario propietario, factura asociada, lista de boletos
+    /// y datos de cancelacion si aplica.
+    /// </summary>
     public class ReservacionDetalleDTO
     {
         public int ReservacionId { get; set; }
@@ -24,6 +29,10 @@
         public FacturaDTO? Factura { get; set; }
     }
 
+    /// <summary>
+    /// DTO con el detalle completo de un boleto dentro de una reservacion.
+    /// Incluye informacion del vuelo, ruta, avion y datos del pasajero asignado.
+    /// </summary>
     public class BoletoDetalleDTO
     {
         public int BoletoId { get; set; }
@@ -58,6 +67,9 @@
         public DatosPasajeroInfoDTO Pasajero { get; set; }
     }
 
+    /// <summary>
+    /// DTO con la informacion personal del pasajero asignado a un boleto especifico.
+    /// </summary>
     public class DatosPasajeroInfoDTO
     {
         public int Id { get; set; }
@@ -69,6 +81,10 @@
         public string Ciudad { get; set; }
     }
 
+    /// <summary>
+    /// DTO de resumen estadistico de las reservaciones de un usuario.
+    /// Muestra conteos por estado y el total gastado en todas las reservaciones confirmadas.
+    /// </summary>
     public class ResumenReservacionesDTO
     {
         public int TotalReservaciones { get; set; }

@@ -1,5 +1,6 @@
-/* footer.css - Broom AirLine (mantiene paleta original + estructura Miku Inn) */
+/* footer.css - Site-wide footer styles including brand column, navigation links, social icons, contact items, bottom bar with copyright, legal links, and responsive grid breakpoints */
 
+/* Reset margin, padding, and box-sizing for the footer and all its children */
 .broom-footer,
 .broom-footer * {
   margin: 0;
@@ -7,6 +8,7 @@
   box-sizing: border-box;
 }
 
+/* Dark charcoal footer background with cream text */
 .broom-footer {
   background-color: #1C1A18;
   color: #F2EFEA;
@@ -14,6 +16,7 @@
   margin-top: auto;
 }
 
+/* Four-column grid layout for the footer content, capped at 1400px */
 .broom-footer__container {
   max-width: 1400px;
   margin: 0 auto;
@@ -23,15 +26,17 @@
   gap: 3rem;
 }
 
-/* Marca */
+/* Brand column: wider than the nav columns, capped at 320px */
 .broom-footer__brand {
   max-width: 320px;
 }
 
+/* Logo wrapper with bottom margin */
 .broom-footer__logo {
   margin-bottom: 1.5rem;
 }
 
+/* Logo image inverted to white using a CSS filter chain */
 .broom-footer__logo-img {
   height: 45px;
   width: auto;
@@ -39,6 +44,7 @@
   filter: brightness(0) saturate(100%) invert(98%) sepia(3%) saturate(354%) hue-rotate(352deg) brightness(101%) contrast(92%);
 }
 
+/* Brand description in warm muted gold with relaxed line height */
 .broom-footer__description {
   font-size: 0.95rem;
   line-height: 1.8;
@@ -46,12 +52,13 @@
   margin-bottom: 2rem;
 }
 
-/* Social */
+/* Flex row of circular social icon buttons */
 .broom-footer__social {
   display: flex;
   gap: 1rem;
 }
 
+/* Social icon button: 40px circle with a dark border and a smooth hover transition */
 .broom-footer__social-link {
   width: 40px;
   height: 40px;
@@ -65,23 +72,26 @@
   transition: all 0.3s ease;
 }
 
+/* SVG icon inside the social button */
 .broom-footer__social-link svg {
   width: 18px;
   height: 18px;
 }
 
+/* Social button fills with warm brown and lifts on hover */
 .broom-footer__social-link:hover {
   background-color: #8B6B4A;
   border-color: #8B6B4A;
   transform: translateY(-3px);
 }
 
-/* Secciones */
+/* Each navigation column: flex column for stacking title and link list */
 .broom-footer__section {
   display: flex;
   flex-direction: column;
 }
 
+/* Column title: bold white uppercase with wide letter spacing */
 .broom-footer__title {
   font-size: 1rem;
   font-weight: 600;
@@ -92,7 +102,7 @@
   font-size: 0.85rem;
 }
 
-/* Links */
+/* Unstacked link list with vertical gaps */
 .broom-footer__links {
   list-style: none;
   display: flex;
@@ -100,6 +110,7 @@
   gap: 0.8rem;
 }
 
+/* Link button: borderless with warm gold color and a left-shift hover effect */
 .broom-footer__link {
   background: none;
   border: none;
@@ -112,18 +123,20 @@
   transition: all 0.25s ease;
 }
 
+/* Link turns fully cream and shifts 6px right on hover */
 .broom-footer__link:hover {
   color: #F2EFEA;
   padding-left: 6px;
 }
 
-/* Contacto */
+/* Vertical stack of contact detail rows */
 .broom-footer__contact-items {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* Each contact row: icon and text side by side in muted gold */
 .broom-footer__contact-item {
   display: flex;
   align-items: center;
@@ -132,17 +145,19 @@
   font-size: 0.88rem;
 }
 
+/* Contact icon in a slightly darker warm brown */
 .broom-footer__contact-item svg {
   flex-shrink: 0;
   color: #8B6B4A;
 }
 
-/* Bottom */
+/* Bottom bar: darker strip separated from the main footer by a dark border */
 .broom-footer__bottom {
   border-top: 1px solid #3A3531;
   background-color: #161412;
 }
 
+/* Centered bottom bar content: copyright and legal links on opposite ends */
 .broom-footer__bottom-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -154,22 +169,25 @@
   flex-wrap: wrap;
 }
 
+/* Copyright text in very muted grey */
 .broom-footer__copyright {
   font-size: 0.82rem;
   color: #6B6560;
 }
 
+/* Brand name within the copyright line is highlighted in warm gold */
 .broom-footer__copyright strong {
   color: #B89A7A;
 }
 
-/* Legal nav */
+/* Inline legal link row with small separators */
 .broom-footer__legal {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* Legal link button: borderless in muted grey, turns gold on hover */
 .broom-footer__legal-link {
   background: none;
   border: none;
@@ -185,12 +203,13 @@
   color: #B89A7A;
 }
 
+/* Vertical separator character between legal links */
 .broom-footer__separator {
   color: #3A3531;
   font-size: 0.7rem;
 }
 
-/* Responsive */
+/* At 1024px: footer collapses to two columns; brand spans full width */
 @media (max-width: 1024px) {
   .broom-footer__container {
     grid-template-columns: 1fr 1fr;
@@ -202,6 +221,7 @@
   }
 }
 
+/* At 576px: single-column layout, centered text alignment, centered social icons */
 @media (max-width: 576px) {
   .broom-footer__container {
     grid-template-columns: 1fr;
@@ -221,6 +241,7 @@
   .broom-footer__links {
     align-items: center;
   }
+  /* Remove the left-shift hover effect on centered links */
   .broom-footer__link:hover {
     padding-left: 0;
   }

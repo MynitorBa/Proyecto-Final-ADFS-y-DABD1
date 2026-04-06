@@ -1,31 +1,68 @@
 <script>
   // @ts-nocheck
+/**
+ * @file Confirmacion.svelte
+ * @description Post-payment confirmation page shown after a successful checkout. Receives the
+ * list of paid reservations and their corresponding invoice objects as props from the checkout
+ * page. Displays a success hero section followed by invoice cards that include billing details,
+ * per-ticket breakdown, and action buttons to download or email the PDF receipt for each
+ * reservation. Also handles the fallback case where facturas is empty by rendering basic
+ * reservation summary cards instead. Provides navigation actions to search for more flights
+ * or view the user's reservations. Redirects unauthenticated users to the login page on mount.
+ */
+
   import '../styles/confirmacion.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
+  /** Navigation function provided by the app router to switch pages. @type {Function} */
   export let navigateTo;
+
+  /** Array of reservation objects passed from the checkout page after successful payment. @type {Array} */
   export let reservaciones = [];
+
+  /** Array of invoice objects returned by the API after payment, one per reservation. @type {Array} */
   export let facturas      = [];
 
   import { API } from '../lib/api.js';
 
+  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
   let usuarioId = null;
+
+  /** Unsubscribe handle for the session store subscription. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
+  /**
+   * Lifecycle hook that runs after the component mounts.
+   * Redirects to login if no user session exists.
+   * Returns the unsubscribe function for session store cleanup.
+   * @returns {Function}
+   */
   onMount(() => {
     if (!usuarioId) { navigateTo('login'); return; }
     return () => unsubscribe();
   });
 
-  /* ── Toast ── */
+  /** Array of active toast notification objects, each containing id, msg, and tipo. @type {Array} */
   let toasts = [];
+
+  /**
+   * Adds a toast notification to the stack and auto-removes it after 4 seconds.
+   * @param {string} msg - The message text to display in the toast.
+   * @param {string} [tipo='success'] - Visual style: 'success' or 'error'.
+   */
   function addToast(msg, tipo = 'success') {
     const id = Date.now();
     toasts = [...toasts, { id, msg, tipo }];
     setTimeout(() => { toasts = toasts.filter(t => t.id !== id); }, 4000);
   }
 
+  /**
+   * Formats a date/time string into a localized long-form date with time using the es-GT locale.
+   * Returns an em dash if the input is falsy.
+   * @param {string|null} f - ISO date-time string to format.
+   * @returns {string} Formatted string such as "15 de enero de 2025, 10:30" or "—".
+   */
   function formatFecha(f) {
     if (!f) return '—';
     return new Date(f).toLocaleDateString('es-GT', {
@@ -34,13 +71,31 @@
     });
   }
 
+  /**
+   * Formats a numeric price into a USD string with two decimal places.
+   * @param {number} p - The price value to format.
+   * @returns {string} Formatted price string such as "$ 1,250.00".
+   */
   function formatPrecio(p) {
     return `$ ${Number(p).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   }
 
+  /** Map of reservacionId to boolean tracking which receipts are currently being downloaded. @type {object} */
   let descargando = {};
+
+  /** Map of reservacionId to boolean tracking which receipts are currently being emailed. @type {object} */
   let enviando = {};
 
+  /**
+   * Downloads the PDF receipt for a specific reservation by calling the comprobante endpoint.
+   * Guards against concurrent calls using the descargando map. Creates a temporary anchor element
+   * to trigger a browser file download, then revokes the object URL and shows a success or
+   * error toast depending on the outcome.
+   * @async
+   * @param {number} reservacionId - The ID of the reservation whose receipt to download.
+   * @param {string} noReservacion - The human-readable reservation number used as the filename.
+   * @returns {Promise<void>}
+   */
   async function descargarComprobante(reservacionId, noReservacion) {
     if (descargando[reservacionId]) return;
     descargando[reservacionId] = true;
@@ -71,6 +126,14 @@
     }
   }
 
+  /**
+   * Sends the PDF receipt for a specific reservation to the user's registered email by calling
+   * the enviar-comprobante endpoint. Guards against concurrent calls using the enviando map.
+   * Shows a success toast on 200 OK, or an error toast with the API message on failure.
+   * @async
+   * @param {number} reservacionId - The ID of the reservation whose receipt to email.
+   * @returns {Promise<void>}
+   */
   async function enviarComprobantePorCorreo(reservacionId) {
     if (enviando[reservacionId]) return;
     enviando[reservacionId] = true;
@@ -95,13 +158,19 @@
     }
   }
 
+  /**
+   * Finds a reservation in the reservaciones prop array by its ID and returns its boletos array.
+   * Returns an empty array if no matching reservation is found.
+   * @param {number} reservacionId - The ID of the reservation to look up.
+   * @returns {Array} The boletos array of the matching reservation, or an empty array.
+   */
   function getBoletos(reservacionId) {
     const reserva = reservaciones.find(r => r.reservacionId === reservacionId);
     return reserva?.boletos ?? [];
   }
 </script>
 
-<!-- Toasts -->
+<!-- Pila de notificaciones toast para confirmar descarga o envio de comprobante -->
 <div class="conf-toast-container">
   {#each toasts as t (t.id)}
     <div class="conf-toast conf-toast--{t.tipo}">
@@ -118,7 +187,7 @@
 <div class="confirmacion">
   <div class="confirmacion__container">
 
-    <!-- Hero -->
+    <!-- Hero de exito con icono de confirmacion y mensaje de compra realizada -->
     <div class="confirmacion__hero">
       <div class="confirmacion__icono-wrap">
         <div class="confirmacion__icono">
@@ -135,7 +204,7 @@
       <div class="confirmacion__linea-deco"></div>
     </div>
 
-    <!-- Facturas -->
+    <!-- Tarjetas de factura con detalle de boletos y acciones de descarga o envio por correo -->
     {#if facturas.length > 0}
       <div class="confirmacion__facturas">
         {#each facturas as factura}
@@ -286,7 +355,7 @@
       </div>
     {/if}
 
-    <!-- Acciones -->
+    <!-- Botones de navegacion para buscar mas vuelos o ver reservaciones -->
     <div class="confirmacion__acciones">
       <h2 class="confirmacion__acciones-titulo">Que deseas hacer ahora?</h2>
       <div class="confirmacion__btns">

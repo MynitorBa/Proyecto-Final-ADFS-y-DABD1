@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que representa un boleto de avion asignado a un vuelo especifico.
+    /// Contiene numero de boleto, asiento, precio, clase, estado y referencias
+    /// a la reservacion y datos del pasajero.
+    /// </summary>
     public class Boleto
     {
         public int Id { get; set; }

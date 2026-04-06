@@ -1,9 +1,15 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de gestion de reservaciones para usuarios. Permite consultar el
+    /// historial de reservaciones, obtener el detalle de una reservacion con sus boletos
+    /// y pasajeros, cancelar reservaciones y verificar si se puede cancelar segun
+    /// las reglas de tiempo antes del vuelo.
+    /// </summary>
     public class GestionReservacionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,6 +19,11 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Retorna el historial completo de reservaciones de un usuario con sus boletos
+        /// asociados. Incluye informacion de vuelo, ruta, avion y datos del pasajero
+        /// por cada boleto. Ordenadas por fecha de creacion descendente.
+        /// </summary>
         public async Task<List<ReservacionDetalleDTO>> ObtenerReservacionesPorUsuario(int usuarioId)
         {
             var reservaciones = new List<ReservacionDetalleDTO>();
@@ -21,7 +32,7 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             string queryReservaciones = @"
-                SELECT 
+                SELECT
                     r.ID,
                     r.NoReservacion,
                     r.FechaReservacion,
@@ -72,13 +83,18 @@ namespace Aerolinea.API.Repositories
             return reservaciones;
         }
 
+        /// <summary>
+        /// Retorna el detalle completo de una reservacion especifica del usuario,
+        /// incluyendo boletos con datos de vuelo, ruta, pasajeros y la factura si existe.
+        /// Retorna null si la reservacion no existe o no pertenece al usuario.
+        /// </summary>
         public async Task<ReservacionDetalleDTO> ObtenerReservacionPorId(int reservacionId, int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string queryReservacion = @"
-                SELECT 
+                SELECT
                     r.ID,
                     r.NoReservacion,
                     r.FechaReservacion,
@@ -128,13 +144,18 @@ namespace Aerolinea.API.Repositories
             return reservacion;
         }
 
+        /// <summary>
+        /// Retorna un resumen estadistico de las reservaciones del usuario: totales
+        /// por estado (pendiente, confirmada, cancelada, expirada, completada)
+        /// y el monto total gastado en reservaciones confirmadas y completadas.
+        /// </summary>
         public async Task<ResumenReservacionesDTO> ObtenerResumenReservaciones(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     COUNT(*) AS Total,
                     SUM(CASE WHEN EstadoReservaID = 1 THEN 1 ELSE 0 END) AS Pendientes,
                     SUM(CASE WHEN EstadoReservaID = 2 THEN 1 ELSE 0 END) AS Confirmadas,
@@ -166,6 +187,13 @@ namespace Aerolinea.API.Repositories
             return new ResumenReservacionesDTO();
         }
 
+        /// <summary>
+        /// Cancela una reservacion pendiente o confirmada del usuario. Valida que la
+        /// reservacion pertenezca al usuario, que este en estado cancelable, y para
+        /// reservaciones confirmadas que falten mas de 24 horas para el vuelo.
+        /// Libera los boletos, devuelve disponibilidad a los vuelos y actualiza
+        /// el estado de la reservacion con el motivo de cancelacion.
+        /// </summary>
         public async Task CancelarReservacion(int reservacionId, int usuarioId, string motivo)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -293,7 +321,7 @@ namespace Aerolinea.API.Repositories
         private async Task CargarBoletos(ReservacionDetalleDTO reservacion, SqlConnection connection)
         {
             string queryBoletos = @"
-                SELECT 
+                SELECT
                     b.ID,
                     b.NoBoleto,
                     b.NoAsiento,
@@ -377,7 +405,7 @@ namespace Aerolinea.API.Repositories
         private async Task<DatosPasajeroInfoDTO> ObtenerDatosPasajero(int pasajeroId, SqlConnection connection)
         {
             string query = @"
-                SELECT 
+                SELECT
                     dp.ID,
                     dp.Nombre,
                     dp.Apellido,
@@ -442,6 +470,10 @@ namespace Aerolinea.API.Repositories
 
 
         //agencias
+        /// <summary>
+        /// Obtiene el ID del usuario webservice asociado a la agencia indicada.
+        /// Se usa para operaciones de gestion que requieren conocer el propietario de la agencia.
+        /// </summary>
         public async Task<int> ObtenerUsuarioWebIdDeAgencia(int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -452,6 +484,12 @@ namespace Aerolinea.API.Repositories
             cmd.Parameters.AddWithValue("@agenciaId", agenciaId);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
+
+        /// <summary>
+        /// Verifica si una reservacion puede ser cancelada por el usuario. Evalua el
+        /// estado actual y, para reservaciones confirmadas, si faltan mas de 24 horas
+        /// para el vuelo. Retorna un DTO con el resultado y el motivo de la decision.
+        /// </summary>
         public async Task<PuedeCancelarDTO> PuedeCancelar(int reservacionId, int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();

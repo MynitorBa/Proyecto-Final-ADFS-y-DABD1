@@ -1,41 +1,92 @@
 <script>
+/**
+ * @file Home.svelte
+ * @description Main landing page of the Broom AirLine application. Renders a hero banner,
+ * a flight search form with origin/destination autocomplete, passenger count selector,
+ * dual interactive calendars that highlight available flight dates fetched from the API,
+ * and a grid of featured destinations sourced from airports that have a stored image.
+ * Submits a flight search to the API and navigates to the Vuelos page with the results.
+ */
   import '../styles/home.css';
   import logoHero from '../assets/BroomHero1.png';
   import { onMount } from 'svelte';
 
+  /** Function used to navigate between application pages. @type {function} */
   export let navigateTo;
 
+  /** Optional airport object pre-filled as the destination when arriving from a featured destination card or the flying plane animation. @type {object|null} */
   export let suggestedAeropuerto = null;
 
   import { API } from '../lib/api.js';
 
+  /** Trip type selection: 'roundtrip' for round trip or 'oneway' for one way. @type {string} */
   let tripType      = 'roundtrip';
+
+  /** Selected departure date in YYYY-MM-DD format. @type {string} */
   let departureDate = '';
+
+  /** Selected return date in YYYY-MM-DD format, only used when tripType is 'roundtrip'. @type {string} */
   let returnDate    = '';
+
+  /** Number of passengers selected by the user (1-9). @type {number} */
   let passengers    = 1;
 
+  /** Full list of airport objects fetched from the API on mount. @type {Array<object>} */
   let aeropuertos        = [];
+
+  /** True while the airport list is being fetched from the API. @type {boolean} */
   let loadingAeropuertos = true;
+
+  /** Current text value in the origin autocomplete input. @type {string} */
   let fromQuery          = '';
+
+  /** Filtered list of airports matching the origin query, limited to 5 results. @type {Array<object>} */
   let fromSugeridos      = [];
+
+  /** The airport object selected as the origin, or null if not yet chosen. @type {object|null} */
   let fromSeleccionado   = null;
+
+  /** Current text value in the destination autocomplete input. @type {string} */
   let toQuery            = '';
+
+  /** Filtered list of airports matching the destination query, limited to 5 results. @type {Array<object>} */
   let toSugeridos        = [];
+
+  /** The airport object selected as the destination, or null if not yet chosen. @type {object|null} */
   let toSeleccionado     = null;
 
+  /** Array of date strings (YYYY-MM-DD) with outbound flights available for the selected route. @type {Array<string>} */
   let fechasDisponiblesIda    = [];
+
+  /** Array of date strings (YYYY-MM-DD) with return flights available for the inverse route. @type {Array<string>} */
   let fechasDisponiblesVuelta = [];
+
+  /** True while available flight dates are being fetched from the API. @type {boolean} */
   let loadingFechas      = false;
+
+  /** True after both origin and destination are selected and dates have been fetched. @type {boolean} */
   let mostrarCalendarios = false;
+
+  /** Date object representing the currently displayed month in the outbound calendar. @type {Date} */
   let mesIda    = new Date();
+
+  /** Date object representing the currently displayed month in the return calendar. @type {Date} */
   let mesVuelta = new Date();
+
+  /** Validation or search error message shown below the search form. @type {string} */
   let searchError = '';
+
+  /** True while the flight search POST request is in progress, disables the submit button. @type {boolean} */
   let buscando    = false;
 
+  /** Abbreviated weekday labels used as column headers in the calendar grid. @type {Array<string>} */
   const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
+
+  /** Full month name list used to build calendar titles. @type {Array<string>} */
   const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+  // Airports that have a base64 image stored, used to populate the featured destinations grid.
   $: destinosConImagen = aeropuertos.filter(a => a.imagenBase64);
 
   onMount(async () => {
@@ -49,8 +100,8 @@
     }
   });
 
-  // Cuando llega un aeropuerto sugerido (del avión volador),
-  // hacemos la selección COMPLETA igual que si el usuario lo eligiera del autocomplete
+  // When a suggested airport arrives (e.g. from a flying plane animation), auto-select it as the destination
+  // and briefly highlight the destination input field with a CSS class.
   $: if (suggestedAeropuerto) {
     /** @type {any} */
     const ap = suggestedAeropuerto;
@@ -58,8 +109,7 @@
       toSeleccionado = ap;
       toQuery = `${ap.ciudad} (${ap.codigo})`;
       toSugeridos = [];
-    
-      // Highlight visual del campo
+
       setTimeout(() => {
         const f = document.getElementById('toCity');
         if (f) {
@@ -70,8 +120,13 @@
     }
   }
 
+  // Automatically reload available dates whenever passengers, origin, or destination change.
   $: if (passengers && fromSeleccionado && toSeleccionado) cargarFechasDisponibles();
 
+  /**
+   * Filters the airport list based on the current fromQuery text and updates fromSugeridos.
+   * Clears the selected origin and resets calendars if the user edits the field after a selection.
+   */
   function onFromInput() {
     const q = fromQuery.toLowerCase();
     fromSugeridos = q.length < 1 ? [] : aeropuertos.filter(a =>
@@ -83,6 +138,12 @@
       fromSeleccionado = null; resetCalendarios();
     }
   }
+
+  /**
+   * Confirms an airport as the selected origin, fills the input text, clears the suggestion
+   * dropdown, and triggers a date availability reload.
+   * @param {object} a - The airport object chosen from the autocomplete list.
+   */
   function seleccionarOrigen(a) {
     fromSeleccionado = a;
     fromQuery = `${a.ciudad} (${a.codigo})`;
@@ -90,6 +151,11 @@
     cargarFechasDisponibles();
   }
 
+  /**
+   * Filters the airport list based on the current toQuery text and updates toSugeridos,
+   * excluding the currently selected origin airport from suggestions.
+   * Clears the selected destination and resets calendars if the user edits the field.
+   */
   function onToInput() {
     const q = toQuery.toLowerCase();
     toSugeridos = q.length < 1 ? [] : aeropuertos.filter(a =>
@@ -102,6 +168,12 @@
       toSeleccionado = null; resetCalendarios();
     }
   }
+
+  /**
+   * Confirms an airport as the selected destination, fills the input text, clears the
+   * suggestion dropdown, and triggers a date availability reload.
+   * @param {object} a - The airport object chosen from the autocomplete list.
+   */
   function seleccionarDestino(a) {
     toSeleccionado = a;
     toQuery = `${a.ciudad} (${a.codigo})`;
@@ -109,12 +181,24 @@
     cargarFechasDisponibles();
   }
 
+  /**
+   * Resets all calendar-related state: clears available date arrays, clears selected dates,
+   * and hides the calendar panels.
+   */
   function resetCalendarios() {
     fechasDisponiblesIda = []; fechasDisponiblesVuelta = [];
     departureDate = ''; returnDate = '';
     mostrarCalendarios = false;
   }
 
+  /**
+   * Fetches available flight dates for both the outbound (origin→destination) and return
+   * (destination→origin) directions in parallel using the aeropuertos/fechas-disponibles endpoint.
+   * Parses the response dates and sets the calendar starting month to the first available date.
+   * Shows the calendar panels once data is loaded.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarFechasDisponibles() {
     if (!fromSeleccionado || !toSeleccionado) return;
     loadingFechas = true;
@@ -147,9 +231,26 @@
     }
   }
 
+  /**
+   * Returns true if the given YYYY-MM-DD date string is in the outbound available dates list.
+   * @param {string} f - Date string to check.
+   * @returns {boolean} True if the date has available outbound flights.
+   */
   function esFechaDisponibleIda(f)    { return fechasDisponiblesIda.includes(f); }
+
+  /**
+   * Returns true if the given YYYY-MM-DD date string is in the return available dates list.
+   * @param {string} f - Date string to check.
+   * @returns {boolean} True if the date has available return flights.
+   */
   function esFechaDisponibleVuelta(f) { return fechasDisponiblesVuelta.includes(f); }
 
+  /**
+   * Builds the array of day cells for a given month, prepending null placeholders for
+   * the weekday offset so the first day of the month falls in the correct column.
+   * @param {Date} fecha - A Date object set to any day within the target month.
+   * @returns {Array<null|{dia: number, fecha: string}>} Array of null or day descriptor objects.
+   */
   function getDias(fecha) {
     const y = fecha.getFullYear(), m = fecha.getMonth();
     let ini = new Date(y, m, 1).getDay() - 1;
@@ -162,26 +263,57 @@
     return dias;
   }
 
+  // Day cell arrays for the outbound and return calendars, rebuilt when the displayed month changes.
   $: diasIda    = getDias(mesIda);
   $: diasVuelta = getDias(mesVuelta);
+
+  // Title string shown above the outbound calendar, e.g. 'Abril 2026'.
   $: titIda     = `${mesesNombre[mesIda.getMonth()]} ${mesIda.getFullYear()}`;
+
+  // Title string shown above the return calendar.
   $: titVuelta  = `${mesesNombre[mesVuelta.getMonth()]} ${mesVuelta.getFullYear()}`;
 
+  /** Navigates the outbound calendar one month backward. */
   function prevIda()    { mesIda    = new Date(mesIda.getFullYear(),    mesIda.getMonth()    - 1, 1); }
+
+  /** Navigates the outbound calendar one month forward. */
   function nextIda()    { mesIda    = new Date(mesIda.getFullYear(),    mesIda.getMonth()    + 1, 1); }
+
+  /** Navigates the return calendar one month backward. */
   function prevVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() - 1, 1); }
+
+  /** Navigates the return calendar one month forward. */
   function nextVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() + 1, 1); }
 
+  /**
+   * Selects an outbound flight date if it is available; clears any existing search error.
+   * Does nothing if the clicked date is not in the available list.
+   * @param {string} f - Date string in YYYY-MM-DD format.
+   */
   function pickIda(f) {
     if (!esFechaDisponibleIda(f)) return;
     departureDate = f; searchError = '';
   }
+
+  /**
+   * Selects a return flight date if it is available and not earlier than the departure date.
+   * Does nothing if the date is blocked or unavailable.
+   * @param {string} f - Date string in YYYY-MM-DD format.
+   */
   function pickVuelta(f) {
     if (departureDate && f < departureDate) return;
     if (!esFechaDisponibleVuelta(f)) return;
     returnDate = f; searchError = '';
   }
 
+  /**
+   * Validates the search form fields, then posts the search to /api/vuelos/buscar for both
+   * outbound and (if roundtrip) return legs in sequence. On success, navigates to the 'vuelos'
+   * page passing the results and all search parameters. Sets searchError on validation failures
+   * or API errors.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleSearchFlight() {
     searchError = '';
     if (!fromSeleccionado) { searchError = 'Selecciona el aeropuerto de origen.';  return; }
@@ -231,7 +363,7 @@
         }
       });
     } catch (err) {
-      console.error('Error en búsqueda:', err);
+      console.error('Error en busqueda:', err);
       searchError = 'Error al buscar vuelos. Intenta nuevamente.';
     } finally {
       buscando = false;
@@ -241,16 +373,16 @@
 
 <div class="broom-home">
 
-  <!-- ── Hero ── -->
+  <!-- Banner hero con imagen de fondo y mensaje principal de la aerolinea -->
   <section class="broom-home__hero">
     <img src={logoHero} alt="Broom AirLine Hero">
     <div class="broom-home__hero-overlay">
-      <h1 class="broom-home__hero-title">Vuela a donde tus sueños te lleven</h1>
+      <h1 class="broom-home__hero-title">Vuela a donde tus suenos te lleven</h1>
       <p class="broom-home__hero-subtitle">Descubre el mundo con Broom AirLine</p>
     </div>
   </section>
 
-  <!-- ── Búsqueda ── -->
+  <!-- Formulario de busqueda de vuelos con selector de tipo de viaje, origen, destino y pasajeros -->
   <section class="broom-home__search-section">
     <div class="broom-home__search-container">
       <h2 class="broom-home__search-title">Encuentra tu vuelo</h2>
@@ -336,14 +468,14 @@
 
         </div>
 
-        <!-- Calendarios -->
+        <!-- Calendarios duales con fechas disponibles resaltadas para ida y regreso -->
         {#if loadingFechas}
           <div class="cal-loading">Cargando disponibilidad de vuelos...</div>
         {:else if mostrarCalendarios}
           <div class="cal-wrapper">
             <div class="cal-header-info">
               {#if fechasDisponiblesIda.length > 0 || fechasDisponiblesVuelta.length > 0}
-                <span class="cal-info-text">✈ Días con vuelo están marcados — selecciona tu fecha</span>
+                <span class="cal-info-text">✈ Dias con vuelo estan marcados — selecciona tu fecha</span>
               {:else}
                 <span class="cal-info-text cal-info-text--empty">
                   No hay vuelos disponibles en esta ruta para {passengers} {passengers === 1 ? 'pasajero' : 'pasajeros'}
@@ -437,7 +569,7 @@
     </div>
   </section>
 
-  <!-- ── Destinos desde la BD (aeropuertos con imagen) ── -->
+  <!-- Grilla de destinos destacados con imagen, ciudad, pais y nombre de aeropuerto -->
   {#if destinosConImagen.length > 0}
   <section class="broom-home__destinations">
     <div class="broom-home__destinations-container">
@@ -466,7 +598,7 @@
       </div>
       <div class="broom-home__destinations-actions">
         <button type="button" class="broom-home__destinations-btn" on:click={() => navigateTo('destinos-destacados')}>
-          Ver más destinos
+          Ver mas destinos
         </button>
       </div>
     </div>

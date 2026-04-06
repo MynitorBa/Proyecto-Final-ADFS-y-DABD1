@@ -1,7 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO para registrar o actualizar un miembro de la tripulacion en el sistema.
+    /// Requiere nombre, apellido y rol asignado. Acepta imagen en Base64 de forma opcional.
+    /// </summary>
     public class CrearTripulanteDTO
     {
         [Required]

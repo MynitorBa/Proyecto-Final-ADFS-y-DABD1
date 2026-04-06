@@ -1,13 +1,20 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
-    // Resultado completo de búsqueda 
+    /// <summary>
+    /// DTO de respuesta que agrupa los resultados de una busqueda de vuelos.
+    /// Separa los vuelos directos disponibles de los itinerarios con escala.
+    /// </summary>
     public class ResultadoBusquedaDTO
     {
         public List<VueloDetalleDTO> Directos { get; set; } = new();
         public List<VueloConEscalaDTO> ConEscala { get; set; } = new();
     }
 
-    // Un itinerario con escala
+    /// <summary>
+    /// DTO que representa un itinerario de vuelo con una o mas escalas.
+    /// Incluye duracion total, tiempo de espera en escala, precios y disponibilidad
+    /// calculados como el minimo entre los tramos del itinerario.
+    /// </summary>
     public class VueloConEscalaDTO
     {
         public int NumeroEscalas { get; set; }

@@ -1,8 +1,6 @@
-/* ══════════════════════════════════════════════════════════
-   HeaderSimple.css  —  Header fijo simple con logo y título
-   ══════════════════════════════════════════════════════════ */
+/* HeaderSimple.css - Fixed simple header with warm beige background, logo that fades on hover, a page title, a spacer element, and responsive padding reductions at 768px and 480px */
 
-/* ── Reset específico ── */
+/* Reset margin, padding, and box-sizing for the header and all its children */
 .simple-header,
 .simple-header * {
     margin: 0;
@@ -10,7 +8,7 @@
     box-sizing: border-box;
 }
 
-/* ── Header ── */
+/* Fixed header strip: beige background, subtle bottom border, and a soft shadow */
 .simple-header {
     background-color: #F2EFEA;
     box-shadow: 0 2px 8px rgba(28, 26, 24, 0.08);
@@ -23,6 +21,7 @@
     border-bottom: 1px solid #E6E1DA;
 }
 
+/* Centered container row with 0.8rem vertical padding, capped at 1400px */
 .simple-header__container {
     max-width: 1400px;
     margin: 0 auto;
@@ -32,11 +31,12 @@
     gap: 1.5rem;
 }
 
-/* ── Logo ── */
+/* Logo wrapper that does not shrink in the flex row */
 .simple-header__logo {
     flex-shrink: 0;
 }
 
+/* Logo image: 40px tall, clickable, fades to 80% opacity on hover */
 .simple-header__logo-img {
     height: 40px;
     width: auto;
@@ -50,7 +50,7 @@
     opacity: 0.8;
 }
 
-/* ── Título ── */
+/* Page title inside an h1: 1.3rem bold with tight letter spacing */
 .simple-header__title h1 {
     font-size: 1.3rem;
     font-weight: 600;
@@ -58,12 +58,12 @@
     letter-spacing: -0.02em;
 }
 
-/* ── Spacer ── */
+/* Spacer element matching the fixed header height to prevent content overlap */
 .simple-header-spacer {
     height: 65px;
 }
 
-/* ── Responsive ── */
+/* At 768px: horizontal padding reduces and logo shrinks to 35px */
 @media (max-width: 768px) {
     .simple-header__container {
         padding: 0.6rem 1.2rem;
@@ -82,6 +82,7 @@
     }
 }
 
+/* At 480px: title reduces further to 1rem */
 @media (max-width: 480px) {
     .simple-header__title h1 {
         font-size: 1rem;

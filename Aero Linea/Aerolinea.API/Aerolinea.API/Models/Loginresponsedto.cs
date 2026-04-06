@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de respuesta devuelto al cliente despues de un inicio de sesion exitoso.
+    /// Contiene identificacion del usuario, nombre, correo y datos del rol asignado.
+    /// </summary>
     public class LoginResponseDto
     {
         public int UsuarioId { get; set; }

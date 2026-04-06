@@ -1,8 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Aerolinea.API.DTOs
 {
-    /// DTO para subir una imagen en Base64 de forma independiente
+    /// <summary>
+    /// DTO para subir una imagen codificada en Base64 de forma independiente a cualquier entidad.
+    /// Se utiliza en endpoints de carga de imagenes para aeropuertos, aviones y tripulantes.
+    /// </summary>
     public class SubirImagenDTO
     {
         [Required]

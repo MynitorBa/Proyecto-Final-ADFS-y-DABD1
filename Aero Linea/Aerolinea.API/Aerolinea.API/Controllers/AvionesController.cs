@@ -1,22 +1,34 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de aviones. Expone endpoints REST para consultar, crear, actualizar, eliminar
+    /// aviones y gestionar sus imagenes. Los endpoints de lectura son publicos; los de escritura
+    /// requieren rol Administrador.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AvionesController : ControllerBase
     {
         private readonly AvionService _avionService;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de aviones.
+        /// </summary>
         public AvionesController(AvionService avionService)
         {
             _avionService = avionService;
         }
 
         // Público: necesario para cargar listas en formularios del panel
+        /// <summary>
+        /// Retorna la lista completa de aviones registrados. Endpoint publico, utilizado
+        /// para poblar selectores en el formulario de creacion de vuelos del panel de admin.
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<AvionDTO>>> ObtenerTodos()
         {
@@ -24,6 +36,10 @@ namespace Aerolinea.API.Controllers
             return Ok(aviones);
         }
 
+        /// <summary>
+        /// Retorna los datos de un avion especifico por su identificador.
+        /// Devuelve 404 si el avion no existe.
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<AvionDTO>> ObtenerPorId(int id)
         {
@@ -36,6 +52,9 @@ namespace Aerolinea.API.Controllers
         }
 
         // Solo administradores: operaciones de escritura
+        /// <summary>
+        /// Crea un nuevo avion con los datos del DTO. Requiere rol Administrador.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<ActionResult<AvionDTO>> Crear([FromBody] CrearAvionDTO crearAvionDto)
@@ -47,6 +66,10 @@ namespace Aerolinea.API.Controllers
             return CreatedAtAction(nameof(ObtenerPorId), new { id = avionCreado.Id }, avionCreado);
         }
 
+        /// <summary>
+        /// Actualiza los datos de un avion existente. Requiere rol Administrador.
+        /// Retorna 404 si el avion no existe.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPut("{id}")]
         public async Task<ActionResult> Actualizar(int id, [FromBody] CrearAvionDTO actualizarAvionDto)
@@ -62,6 +85,10 @@ namespace Aerolinea.API.Controllers
             return Ok(new { message = "Avión actualizado correctamente" });
         }
 
+        /// <summary>
+        /// Elimina un avion por su identificador. Requiere rol Administrador.
+        /// Retorna 404 si el avion no existe.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Eliminar(int id)
@@ -76,7 +103,10 @@ namespace Aerolinea.API.Controllers
 
         // ===== ENDPOINTS DE IMAGEN =====
 
-        /// POST api/aviones/{id}/imagen — sube o reemplaza la imagen del avión
+        /// <summary>
+        /// Sube o reemplaza la imagen de un avion enviada como cadena Base64.
+        /// Requiere rol Administrador. Retorna 404 si el avion no existe.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPost("{id}/imagen")]
         public async Task<ActionResult> SubirImagen(int id, [FromBody] SubirImagenDTO dto)
@@ -92,7 +122,10 @@ namespace Aerolinea.API.Controllers
             return Ok(new { message = "Imagen guardada correctamente" });
         }
 
-        /// DELETE api/aviones/{id}/imagen — elimina la imagen del avión
+        /// <summary>
+        /// Elimina la imagen asociada a un avion. Requiere rol Administrador.
+        /// Retorna 404 si el avion no existe.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}/imagen")]
         public async Task<ActionResult> EliminarImagen(int id)

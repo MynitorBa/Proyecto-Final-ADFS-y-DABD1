@@ -1,27 +1,49 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de aeropuertos. Gestiona la logica de negocio para consultar, crear,
+    /// actualizar y eliminar aeropuertos, incluyendo manejo de imagenes y fechas disponibles.
+    /// </summary>
     public class AeropuertoService
     {
         private readonly AeropuertoRepository _repository;
 
+        /// <summary>
+        /// Inicializa el servicio con el repositorio de aeropuertos.
+        /// </summary>
         public AeropuertoService(AeropuertoRepository repository)
         {
             _repository = repository;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de aeropuertos registrados en el sistema.
+        /// </summary>
         public async Task<List<AeropuertoDTO>> ObtenerAeropuertos()
             => await _repository.ObtenerTodos();
 
+        /// <summary>
+        /// Busca y retorna un aeropuerto por su identificador unico.
+        /// Retorna null si no existe.
+        /// </summary>
         public async Task<AeropuertoDTO?> ObtenerPorId(int id)
             => await _repository.ObtenerPorId(id);
 
+        /// <summary>
+        /// Retorna todas las fechas para las que existe al menos un vuelo programado,
+        /// sin importar la ruta.
+        /// </summary>
         public async Task<List<DateTime>> ObtenerFechasDisponibles()
             => await _repository.ObtenerFechasConVuelos();
 
+        /// <summary>
+        /// Retorna las fechas disponibles con vuelos para una ruta especifica definida por
+        /// aeropuerto de origen, destino, cantidad de personas y clase de vuelo.
+        /// </summary>
         public async Task<List<DateTime>> ObtenerFechasDisponiblesPorRuta(
             int? origenId,
             int? destinoId,
@@ -29,6 +51,11 @@ namespace Aerolinea.API.Services
             int? claseId = null)
             => await _repository.ObtenerFechasConVuelosPorRuta(origenId, destinoId, cantidadPersonas, claseId);
 
+        /// <summary>
+        /// Crea un nuevo aeropuerto a partir del DTO recibido. Resuelve o crea el pais,
+        /// ciudad y zona horaria correspondientes. Si ya existe un aeropuerto con el mismo
+        /// codigo IATA, lo actualiza en lugar de crear uno nuevo para evitar duplicados.
+        /// </summary>
         public async Task<AeropuertoDTO?> Crear(CrearAeropuertoDTO crearAeropuertoDTO)
         {
             var paisId = await _repository.ObtenerOCrearPais(crearAeropuertoDTO.Pais);
@@ -85,6 +112,11 @@ namespace Aerolinea.API.Services
             return await _repository.ObtenerPorId(nuevoId);
         }
 
+        /// <summary>
+        /// Actualiza los datos de un aeropuerto existente. Verifica que no existan duplicados
+        /// de nombre o codigo IATA con otros aeropuertos, y resuelve la zona horaria indicada.
+        /// Si se proporciona imagen nueva, la guarda junto con los demas cambios.
+        /// </summary>
         public async Task<bool> Actualizar(int id, CrearAeropuertoDTO actualizarAeropuertoDto)
         {
             var paisId = await _repository.ObtenerOCrearPais(actualizarAeropuertoDto.Pais);
@@ -120,12 +152,21 @@ namespace Aerolinea.API.Services
             return resultado;
         }
 
+        /// <summary>
+        /// Elimina el aeropuerto con el identificador indicado del sistema.
+        /// </summary>
         public async Task<bool> Eliminar(int id)
             => await _repository.Eliminar(id);
 
+        /// <summary>
+        /// Guarda o reemplaza la imagen en formato Base64 asociada al aeropuerto indicado.
+        /// </summary>
         public async Task GuardarImagen(int aeropuertoId, string imagenBase64)
             => await _repository.GuardarImagen(aeropuertoId, imagenBase64);
 
+        /// <summary>
+        /// Elimina la imagen asociada al aeropuerto indicado.
+        /// </summary>
         public async Task EliminarImagen(int aeropuertoId)
             => await _repository.EliminarImagen(aeropuertoId);
     }

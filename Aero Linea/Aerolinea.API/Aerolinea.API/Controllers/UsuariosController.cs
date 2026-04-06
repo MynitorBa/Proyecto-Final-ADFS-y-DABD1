@@ -1,22 +1,34 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de usuarios. Expone endpoints para el registro publico de nuevos usuarios,
+    /// la validacion de datos en tiempo real durante el registro, el cambio de rol por parte
+    /// del administrador y la consulta del listado completo de usuarios.
+    /// </summary>
     [ApiController]
     [Route("api/usuarios")]
     public class UsuariosController : ControllerBase
     {
         private readonly UsuarioService _service;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de usuarios.
+        /// </summary>
         public UsuariosController(UsuarioService service)
         {
             _service = service;
         }
 
         // Público: cualquiera puede registrarse
+        /// <summary>
+        /// Crea un nuevo usuario en el sistema tras verificar que el correo, nombre de usuario
+        /// y pasaporte no esten ya en uso. Endpoint publico, no requiere autenticacion.
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDTO dto)
         {
@@ -38,6 +50,11 @@ namespace Aerolinea.API.Controllers
         }
 
         // Público: validación en tiempo real durante el registro
+        /// <summary>
+        /// Verifica si el correo, nombre de usuario o pasaporte del DTO ya existen en el sistema.
+        /// Se usa para validacion en tiempo real mientras el usuario completa el formulario de registro.
+        /// Endpoint publico, no requiere autenticacion.
+        /// </summary>
         [HttpPost("verificar")]
         public async Task<IActionResult> VerificarConstraints([FromBody] CrearUsuarioDTO dto)
         {
@@ -46,6 +63,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // Solo administradores
+        /// <summary>
+        /// Cambia el rol de un usuario existente. Requiere rol Administrador.
+        /// Retorna el resultado de la operacion con un mensaje descriptivo del cambio realizado.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPost("cambiar-rol")]
         public async Task<IActionResult> CambiarRol([FromBody] CambiarRolDTO dto)
@@ -59,6 +80,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // Solo administradores
+        /// <summary>
+        /// Retorna el listado completo de usuarios registrados en el sistema.
+        /// Requiere rol Administrador.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> ObtenerTodos()

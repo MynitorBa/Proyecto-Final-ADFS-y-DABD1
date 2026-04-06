@@ -1,10 +1,15 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de aeropuertos. Gestiona consultas, creacion, actualizacion,
+    /// eliminacion e imagenes de aeropuertos, asi como la resolucion de zonas horarias,
+    /// ciudades y paises relacionados.
+    /// </summary>
     public class AeropuertoRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -18,6 +23,10 @@ namespace Aerolinea.API.Repositories
 
         // ── CONSULTAS ─────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Retorna la lista completa de aeropuertos con ciudad, pais, imagen
+        /// y zona horaria IANA. Ordenados alfabeticamente por nombre.
+        /// </summary>
         public async Task<List<AeropuertoDTO>> ObtenerTodos()
         {
             var aeropuertos = new List<AeropuertoDTO>();
@@ -27,7 +36,7 @@ namespace Aerolinea.API.Repositories
 
             // LEFT JOIN a ZonaHoraria para obtener el nombre IANA
             string query = @"
-                SELECT 
+                SELECT
                     a.ID, a.Nombre, a.Codigo,
                     c.Nombre AS Ciudad, p.Nombre AS Pais,
                     ia.Imagen,
@@ -63,13 +72,17 @@ namespace Aerolinea.API.Repositories
             return aeropuertos;
         }
 
+        /// <summary>
+        /// Retorna un aeropuerto especifico con todos sus datos de ciudad, pais,
+        /// imagen y zona horaria. Retorna null si no existe el ID dado.
+        /// </summary>
         public async Task<AeropuertoDTO?> ObtenerPorId(int id)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     a.ID, a.Nombre, a.Codigo,
                     c.Nombre AS Ciudad, p.Nombre AS Pais,
                     ia.Imagen,
@@ -111,6 +124,11 @@ namespace Aerolinea.API.Repositories
         // ── Verificar duplicados de nombre o código ──────────────────────
         // Devuelve qué campo está duplicado, o null si está libre.
         // excludeId: ignora el aeropuerto propio al editar.
+        /// <summary>
+        /// Verifica si ya existe un aeropuerto con el mismo nombre o codigo IATA.
+        /// Retorna el nombre del campo duplicado ('nombre' o 'codigo') o null si no hay conflicto.
+        /// El parametro excludeId permite ignorar el propio registro al editar.
+        /// </summary>
         public async Task<string?> VerificarDuplicado(string nombre, string codigo, int? excludeId = null)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -138,6 +156,9 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Buscar aeropuerto por código IATA ────────────────────────────
+        /// <summary>
+        /// Busca el ID de un aeropuerto por su codigo IATA. Retorna null si no existe.
+        /// </summary>
         public async Task<int?> ObtenerIdPorCodigo(string codigo)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -150,6 +171,10 @@ namespace Aerolinea.API.Repositories
             return result != null ? Convert.ToInt32(result) : (int?)null;
         }
 
+        /// <summary>
+        /// Inserta un nuevo aeropuerto en la base de datos. Si la columna ZonaHorariaID
+        /// ya existe en el esquema, la incluye en la insercion. Retorna el ID generado.
+        /// </summary>
         public async Task<int> Crear(Aeropuerto aeropuerto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -187,6 +212,10 @@ namespace Aerolinea.API.Repositories
             return nuevoId;
         }
 
+        /// <summary>
+        /// Actualiza los datos de un aeropuerto existente. Incluye ZonaHorariaID
+        /// si la columna existe en el esquema actual. Retorna true si se afecto al menos una fila.
+        /// </summary>
         public async Task<bool> Actualizar(Aeropuerto aeropuerto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -216,6 +245,10 @@ namespace Aerolinea.API.Repositories
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
+        /// <summary>
+        /// Elimina un aeropuerto y su imagen asociada de la base de datos.
+        /// Retorna true si se elimino correctamente.
+        /// </summary>
         public async Task<bool> Eliminar(int id)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -238,6 +271,10 @@ namespace Aerolinea.API.Repositories
         // Si no existe en la tabla ZonaHoraria la crea (patrón ObtenerOCrear).
         // Devuelve null si nombreIana es null o vacío.
 
+        /// <summary>
+        /// Busca una zona horaria IANA en el catalogo por nombre. Si no existe la crea.
+        /// Retorna null si el nombre proporcionado es nulo o vacio.
+        /// </summary>
         public async Task<int?> ObtenerOCrearZonaHoraria(string? nombreIana)
         {
             _logger.LogInformation("=== REPO ObtenerOCrearZonaHoraria: nombreIana={Val}", nombreIana ?? "(null)");
@@ -271,6 +308,10 @@ namespace Aerolinea.API.Repositories
 
         // ── IMAGEN ────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Guarda o actualiza la imagen en Base64 de un aeropuerto. Usa un patron
+        /// UPSERT: actualiza si ya existe registro, inserta si no.
+        /// </summary>
         public async Task GuardarImagen(int aeropuertoId, string imagenBase64)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -289,6 +330,9 @@ namespace Aerolinea.API.Repositories
             await command.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Elimina la imagen asociada a un aeropuerto segun su ID.
+        /// </summary>
         public async Task EliminarImagen(int aeropuertoId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -302,6 +346,10 @@ namespace Aerolinea.API.Repositories
 
         // ── FECHAS CON VUELOS ─────────────────────────────────────────────
 
+        /// <summary>
+        /// Retorna las fechas futuras que tienen al menos un vuelo programado,
+        /// ordenadas de forma ascendente. Se usa para resaltar dias disponibles en el calendario.
+        /// </summary>
         public async Task<List<DateTime>> ObtenerFechasConVuelos()
         {
             var fechas = new List<DateTime>();
@@ -310,8 +358,8 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             string query = @"
-                SELECT DISTINCT Fecha 
-                FROM Vuelo 
+                SELECT DISTINCT Fecha
+                FROM Vuelo
                 WHERE Fecha >= CAST(GETDATE() AS DATE)
                 ORDER BY Fecha";
 
@@ -324,6 +372,11 @@ namespace Aerolinea.API.Repositories
             return fechas;
         }
 
+        /// <summary>
+        /// Retorna las fechas con vuelos disponibles para una ruta especifica, considerando
+        /// cantidad de pasajeros, clase y numero maximo de escalas. Utiliza BFS por capas
+        /// para incluir fechas de itinerarios con conexiones, igual que VueloRepository.
+        /// </summary>
         public async Task<List<DateTime>> ObtenerFechasConVuelosPorRuta(
     int? origenId,
     int? destinoId,
@@ -542,6 +595,10 @@ namespace Aerolinea.API.Repositories
         }
         // ── CIUDADES / PAÍSES ─────────────────────────────────────────────
 
+        /// <summary>
+        /// Retorna la lista de ciudades con su pais, ordenadas por pais y ciudad.
+        /// Incluye un campo NombreCompleto con el formato "Ciudad, Pais".
+        /// </summary>
         public async Task<List<CiudadDTO>> ObtenerCiudades()
         {
             var ciudades = new List<CiudadDTO>();
@@ -550,7 +607,7 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     c.ID, c.Nombre, c.PaisID, p.Nombre AS NombrePais
                 FROM Ciudad c
                 INNER JOIN Pais p ON c.PaisID = p.ID
@@ -574,6 +631,10 @@ namespace Aerolinea.API.Repositories
             return ciudades;
         }
 
+        /// <summary>
+        /// Busca un pais por nombre. Si no existe lo crea y retorna su ID.
+        /// Se usa al registrar aeropuertos con paises nuevos.
+        /// </summary>
         public async Task<int> ObtenerOCrearPais(string nombrePais)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -596,13 +657,17 @@ namespace Aerolinea.API.Repositories
             return Convert.ToInt32(await commandCrear.ExecuteScalarAsync());
         }
 
+        /// <summary>
+        /// Busca una ciudad por nombre y pais. Si no existe la crea y retorna su ID.
+        /// Se usa al registrar aeropuertos con ciudades nuevas.
+        /// </summary>
         public async Task<int> ObtenerOCrearCiudad(string nombreCiudad, int paisId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var queryBuscar = @"
-                SELECT ID FROM Ciudad 
+                SELECT ID FROM Ciudad
                 WHERE LOWER(Nombre) = LOWER(@Nombre) AND PaisID = @PaisID";
 
             using var commandBuscar = new SqlCommand(queryBuscar, connection);
@@ -638,6 +703,10 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Obtiene el ID del primer aeropuerto registrado para una ciudad dada.
+        /// Lanza una excepcion si la ciudad no tiene aeropuertos configurados.
+        /// </summary>
         public async Task<int> ObtenerIdPorCiudad(int ciudadId, SqlConnection connection)
         {
             // Buscamos el primer aeropuerto registrado para esa ciudad

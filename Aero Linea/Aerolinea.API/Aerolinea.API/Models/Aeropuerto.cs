@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que representa un aeropuerto registrado en el sistema.
+    /// Contiene codigo IATA, nombre, ciudad asociada y zona horaria opcional.
+    /// </summary>
     public class Aeropuerto
     {
         public int Id { get; set; }

@@ -1,12 +1,25 @@
 <script>
+/**
+ * @file Footer.svelte
+ * @description Site-wide footer component for Broom AirLine. Renders four columns: brand info
+ * with social links, quick navigation links, support links, and contact details. Also renders a
+ * bottom bar with the copyright year and legal links. All navigation is handled by the parent
+ * through the navigateTo prop so the footer stays compatible with the SPA routing system.
+ */
   // @ts-nocheck
   import logoPath from '../assets/logBAL.png';
   import '../styles/footer.css';
 
+  /** Function provided by the parent to navigate to a named page within the SPA. @type {(page: string) => void} */
   export let navigateTo;
 
+  /** Current calendar year, computed once at module init and used in the copyright notice. @type {number} */
   const currentYear = new Date().getFullYear();
 
+  /**
+   * Array of primary navigation link descriptors shown in the "Broom AirLine" column.
+   * @type {{ name: string, page: string }[]}
+   */
   const quickLinks = [
     { name: 'Inicio',             page: 'home' },
     { name: 'Destinos',           page: 'destinos-destacados' },
@@ -14,19 +27,32 @@
     { name: 'Sobre Nosotros',     page: 'sobre-nosotros' },
   ];
 
+  /**
+   * Array of support-related link descriptors shown in the "Soporte" column.
+   * @type {{ name: string, page: string }[]}
+   */
   const support = [
     { name: 'Centro de Ayuda',         page: 'centro-ayuda' },
-    { name: 'Contáctanos',             page: 'contactanos' },
+    { name: 'Contactanos',             page: 'contactanos' },
     { name: 'Preguntas Frecuentes',    page: 'preguntas-frecuentes' },
-    { name: 'Política de Cancelación', page: 'politica-cancelacion' },
+    { name: 'Politica de Cancelacion', page: 'politica-cancelacion' },
   ];
 
+  /**
+   * Array of legal link descriptors shown in the bottom bar of the footer.
+   * @type {{ name: string, page: string }[]}
+   */
   const legalLinks = [
     { name: 'Privacidad', page: 'privacidad' },
-    { name: 'Términos',   page: 'terminos' },
+    { name: 'Terminos',   page: 'terminos' },
     { name: 'Cookies',    page: 'cookies' },
   ];
 
+  /**
+   * Array of social media link descriptors, each containing a name, an href URL and
+   * an inline SVG icon string rendered with {@html}.
+   * @type {{ name: string, href: string, icon: string }[]}
+   */
   const socialLinks = [
     {
       name: 'Facebook', href: 'https://facebook.com',
@@ -43,16 +69,17 @@
   ];
 </script>
 
+<!-- Pie de pagina con columnas de marca, navegacion, soporte y contacto -->
 <footer class="broom-footer">
   <div class="broom-footer__container">
 
-    <!-- Marca -->
+    <!-- Columna de marca: logo, descripcion y redes sociales -->
     <div class="broom-footer__section broom-footer__brand">
       <div class="broom-footer__logo">
         <img src={logoPath} alt="Broom AirLine" class="broom-footer__logo-img">
       </div>
       <p class="broom-footer__description">
-        Vuela a donde tus sueños te lleven. Reserva tus vuelos de forma fácil, segura y con atención personalizada.
+        Vuela a donde tus suenos te lleven. Reserva tus vuelos de forma facil, segura y con atencion personalizada.
       </p>
       <div class="broom-footer__social">
         {#each socialLinks as social}
@@ -63,7 +90,7 @@
       </div>
     </div>
 
-    <!-- Enlaces rápidos -->
+    <!-- Columna de navegacion principal -->
     <div class="broom-footer__section">
       <h3 class="broom-footer__title">Broom AirLine</h3>
       <ul class="broom-footer__links">
@@ -77,7 +104,7 @@
       </ul>
     </div>
 
-    <!-- Soporte -->
+    <!-- Columna de soporte y ayuda -->
     <div class="broom-footer__section">
       <h3 class="broom-footer__title">Soporte</h3>
       <ul class="broom-footer__links">
@@ -91,7 +118,7 @@
       </ul>
     </div>
 
-    <!-- Contacto -->
+    <!-- Columna de informacion de contacto -->
     <div class="broom-footer__section">
       <h3 class="broom-footer__title">Contacto</h3>
       <div class="broom-footer__contact-items">
@@ -112,6 +139,7 @@
 
   </div>
 
+  <!-- Barra inferior con copyright y enlaces legales -->
   <div class="broom-footer__bottom">
     <div class="broom-footer__bottom-container">
       <p class="broom-footer__copyright">© {currentYear} <strong>Broom AirLine</strong>. Todos los derechos reservados.</p>

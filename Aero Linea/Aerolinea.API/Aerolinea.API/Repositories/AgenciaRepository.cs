@@ -1,10 +1,15 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de agencias. Gestiona la creacion, consulta, actualizacion
+    /// y autenticacion de agencias de viaje, incluyendo la administracion de
+    /// tokens, descuentos, estados y usuarios webservice asociados.
+    /// </summary>
     public class AgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -17,6 +22,9 @@ namespace Aerolinea.API.Repositories
         }
 
         // Verifica rol del usuario
+        /// <summary>
+        /// Consulta el RolID del usuario especificado. Retorna 0 si el usuario no existe.
+        /// </summary>
         public async Task<int> ObtenerRolUsuario(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -31,6 +39,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // Verifica si el usuario webservice ya tiene agencia
+        /// <summary>
+        /// Verifica si el usuario webservice dado ya tiene una agencia asignada.
+        /// Retorna true si existe al menos una agencia para ese usuario.
+        /// </summary>
         public async Task<bool> UsuarioYaTieneAgencia(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -43,6 +55,10 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync() > 0;
         }
 
+        /// <summary>
+        /// Crea una nueva agencia en la base de datos con estado Activo.
+        /// Retorna el DTO con los datos de la agencia creada incluyendo su ID generado.
+        /// </summary>
         public async Task<AgenciaResponseDTO> CrearAgencia(CrearAgenciaDTO dto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -51,10 +67,10 @@ namespace Aerolinea.API.Repositories
             const int estadoActivo = 1;
 
             var query = @"
-                INSERT INTO Agencia 
+                INSERT INTO Agencia
                     (Nombre, Correo, UsuarioWebID, PorcentajeDescuento, EstadoAgenciaID, Token_HASH_Entrada, Token_HASH_Salida)
                 OUTPUT INSERTED.ID
-                VALUES 
+                VALUES
                     (@Nombre, @Correo, @UsuarioWebID, @PorcentajeDescuento, @EstadoAgenciaID, '', '')";
 
             using var command = new SqlCommand(query, connection);
@@ -77,13 +93,17 @@ namespace Aerolinea.API.Repositories
             };
         }
 
+        /// <summary>
+        /// Actualiza los tokens de autenticacion (entrada y salida) de una agencia.
+        /// Retorna true si se actualizo al menos una fila.
+        /// </summary>
         public async Task<bool> GuardarTokens(int agenciaId, string tokenEntrada, string tokenSalida)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-        UPDATE Agencia 
+        UPDATE Agencia
         SET Token_HASH_Entrada = @TokenEntrada,
             Token_HASH_Salida  = @TokenSalida
         WHERE ID = @AgenciaId";
@@ -97,6 +117,10 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Busca el ID de la agencia a partir de su token de entrada.
+        /// Retorna null si no se encuentra ninguna agencia con ese token.
+        /// </summary>
         public async Task<int?> ObtenerAgenciaIdPorTokenEntrada(string tokenEntrada)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -110,6 +134,9 @@ namespace Aerolinea.API.Repositories
             return result == null ? null : (int?)Convert.ToInt32(result);
         }
 
+        /// <summary>
+        /// Busca el ID de la agencia a partir de su URL. Retorna null si no existe.
+        /// </summary>
         public async Task<int?> ObtenerAgenciaIdPorURL(string urlAgencia)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -123,6 +150,10 @@ namespace Aerolinea.API.Repositories
             return result == null ? null : (int?)Convert.ToInt32(result);
         }
 
+        /// <summary>
+        /// Obtiene la identidad basica de una agencia (ID, nombre y URL) a partir de
+        /// su token de autenticacion de entrada. Retorna null si no existe.
+        /// </summary>
         public async Task<AgenciaIdentidad?> ObtenerAgenciaPorToken(string token)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -130,7 +161,7 @@ namespace Aerolinea.API.Repositories
 
             using var command = new SqlCommand(@"
         SELECT ID, Nombre, URL_Agencia
-        FROM Agencia 
+        FROM Agencia
         WHERE Token_HASH_Entrada = @Token", connection);
             command.Parameters.AddWithValue("@Token", token);
 
@@ -147,6 +178,10 @@ namespace Aerolinea.API.Repositories
             return null;
         }
 
+        /// <summary>
+        /// Retorna el porcentaje de descuento configurado para la agencia indicada.
+        /// Retorna 0 si no se encuentra la agencia.
+        /// </summary>
         public async Task<decimal> ObtenerDescuento(int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -161,6 +196,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // Devuelve la agencia asociada a un usuario Webservice, o null si no tiene ninguna.
+        /// <summary>
+        /// Retorna los datos de la agencia del usuario webservice indicado.
+        /// Retorna null si el usuario no tiene ninguna agencia asignada.
+        /// </summary>
         public async Task<MiAgenciaDTO?> ObtenerAgenciaPorUsuarioId(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -188,6 +227,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Admin: listado completo con datos del usuario asignado ────────────
+        /// <summary>
+        /// Retorna el listado completo de agencias con los datos del usuario webservice
+        /// asignado. Destinado al uso exclusivo del panel de administracion.
+        /// </summary>
         public async Task<List<AgenciaAdminDTO>> ObtenerTodasAdmin()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -222,6 +265,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Admin: usuarios Webservice que aún no tienen agencia ─────────────
+        /// <summary>
+        /// Retorna la lista de usuarios con rol Webservice que todavia no tienen
+        /// una agencia asignada. Se usa en el panel de administracion para asignar agencias.
+        /// </summary>
         public async Task<List<UsuarioWebserviceDTO>> ObtenerWebserviceSinAgencia()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -252,6 +299,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Admin: asignar o reasignar usuario a una agencia ─────────────────
+        /// <summary>
+        /// Asigna o reasigna un usuario webservice a una agencia existente.
+        /// Retorna true si la actualizacion fue exitosa.
+        /// </summary>
         public async Task<bool> AsignarUsuarioAAgencia(int agenciaId, int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -265,6 +316,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Admin: actualizar descuento ───────────────────────────────────────
+        /// <summary>
+        /// Actualiza el porcentaje de descuento de una agencia.
+        /// Retorna true si la actualizacion fue exitosa.
+        /// </summary>
         public async Task<bool> ActualizarDescuento(int agenciaId, decimal descuento)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -278,6 +333,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Admin: actualizar estado ──────────────────────────────────────────
+        /// <summary>
+        /// Actualiza el estado de una agencia (activa, suspendida, etc.).
+        /// Retorna true si la actualizacion fue exitosa.
+        /// </summary>
         public async Task<bool> ActualizarEstado(int agenciaId, int estadoId)
         {
             using var connection = _connectionFactory.CreateConnection();

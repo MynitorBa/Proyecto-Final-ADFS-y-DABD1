@@ -1,48 +1,108 @@
 <script>
+/**
+ * @file AdminAgencias.svelte
+ * @description Admin panel section for managing travel agencies. Displays a summary stats bar
+ * (total, active, inactive, without assigned user) and a table of all agencies. Provides three
+ * modal dialogs: one to create a new agency (with name, email, webservice user and initial
+ * discount), one to assign an available webservice user to an existing agency, and one to edit
+ * an agency's discount percentage. Agency status can also be changed inline through a select
+ * element in the table row. All mutations call the backend API and refresh the local state on
+ * success.
+ */
 // @ts-nocheck
   import { onMount } from 'svelte';
 
+  /** Base API URL used for all backend requests. @type {string} */
   export let API;
+
+  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
+
+  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
-  // ── Estado principal ──────────────────────────────────────────
+  /** List of agencies loaded from the backend. @type {any[]} */
   let agencias          = [];
-  let usuariosDisponibles = []; // webservice sin agencia
+
+  /** Webservice-role users that have no agency assigned yet, used to populate the user selectors. @type {any[]} */
+  let usuariosDisponibles = [];
+
+  /** Whether the main data fetch is in progress. @type {boolean} */
   let cargando          = false;
 
-  // ── Modal crear agencia ───────────────────────────────────────
+  /** Controls visibility of the create-agency modal. @type {boolean} */
   let modalCrear        = false;
+
+  /** Whether the create-agency API request is in flight. @type {boolean} */
   let creando           = false;
+
+  /** Agency name field value for the create form. @type {string} */
   let crearNombre       = '';
+
+  /** Agency email field value for the create form. @type {string} */
   let crearCorreo       = '';
+
+  /** Selected webservice user ID for the create form. @type {string} */
   let crearUsuarioId    = '';
+
+  /** Initial discount percentage value for the create form. @type {number} */
   let crearDescuento    = 0;
+
+  /** Field-level validation errors for the create form. @type {Record<string, string>} */
   let crearErrores      = {};
 
-  // ── Modal asignar usuario ─────────────────────────────────────
+  /** Controls visibility of the assign-user modal. @type {boolean} */
   let modalAsignar      = false;
+
+  /** Whether the assign-user API request is in flight. @type {boolean} */
   let asignando         = false;
+
+  /** The agency row currently selected for user assignment. @type {any} */
   let agenciaSeleccionada = null;
+
+  /** Selected webservice user ID in the assign-user modal. @type {string} */
   let asignarUsuarioId  = '';
 
-  // ── Modal editar descuento ────────────────────────────────────
+  /** Controls visibility of the edit-discount modal. @type {boolean} */
   let modalDescuento    = false;
+
+  /** Whether the save-discount API request is in flight. @type {boolean} */
   let guardandoDescuento = false;
+
+  /** Current discount percentage value being edited in the discount modal. @type {number} */
   let descuentoEditando = 0;
+
+  /** The agency row currently being edited in the discount modal. @type {any} */
   let agenciaDescuento  = null;
 
-  // ── Helpers ───────────────────────────────────────────────────
+  /**
+   * Status option definitions used to render the inline status select and badge styles.
+   * @type {{ id: number, label: string, class: string }[]}
+   */
   const estadoOpciones = [
     { id: 1, label: 'Activa',     class: 'badge--active'    },
     { id: 2, label: 'Inactiva',   class: 'badge--inactive'  },
     { id: 3, label: 'Suspendida', class: 'badge--suspended' },
   ];
+
+  /**
+   * Returns the status option object matching the given status ID, or a default unknown object.
+   * @param {number} id - The estadoAgenciaID value from an agency record.
+   * @returns {{ id: number, label: string, class: string }} The matching status option.
+   */
   const estadoInfo = (id) => estadoOpciones.find(e => e.id === id) ?? { label: 'Desconocido', class: '' };
 
-  // ── Carga de datos ────────────────────────────────────────────
+  /**
+   * On mount: loads agencies and available webservice users in parallel.
+   */
   onMount(() => { cargarTodo(); });
 
+  /**
+   * Fetches the full agency list and the list of unassigned webservice users in parallel.
+   * Updates agencias and usuariosDisponibles on success. Shows toasts on errors.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarTodo() {
     cargando = true;
     try {
@@ -53,10 +113,16 @@
       if (rAgencias.ok)  agencias           = await rAgencias.json();
       else mostrarToast('error', 'Error al cargar agencias.');
       if (rUsuarios.ok)  usuariosDisponibles = await rUsuarios.json();
-    } catch { mostrarToast('error', 'Error de conexión.'); }
+    } catch { mostrarToast('error', 'Error de conexion.'); }
     finally  { cargando = false; }
   }
 
+  /**
+   * Refreshes only the list of available webservice users without reloading the full agency list.
+   * Used after operations that may change user availability.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function recargarUsuariosDisponibles() {
     try {
       const r = await fetch(`${API}/api/agencias/webservice-disponibles`, { credentials: 'include' });
@@ -64,23 +130,36 @@
     } catch {}
   }
 
-  // ── Crear agencia ─────────────────────────────────────────────
+  /**
+   * Resets the create-agency form fields and errors, then opens the create modal.
+   */
   function abrirModalCrear() {
     crearNombre = ''; crearCorreo = ''; crearUsuarioId = ''; crearDescuento = 0;
     crearErrores = {};
     modalCrear = true;
   }
 
+  /**
+   * Validates all fields in the create-agency form. Populates crearErrores with any
+   * field-level messages and returns false if validation fails.
+   * @returns {boolean} True when all fields are valid.
+   */
   function validarCrear() {
     crearErrores = {};
     if (!crearNombre.trim()) crearErrores.nombre = 'Requerido.';
     if (!crearCorreo.trim()) crearErrores.correo = 'Requerido.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(crearCorreo)) crearErrores.correo = 'Correo inválido.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(crearCorreo)) crearErrores.correo = 'Correo invalido.';
     if (!crearUsuarioId) crearErrores.usuario = 'Debes seleccionar un usuario Webservice.';
     if (crearDescuento < 0 || crearDescuento > 100) crearErrores.descuento = 'Entre 0 y 100.';
     return Object.keys(crearErrores).length === 0;
   }
 
+  /**
+   * Validates the create form and, if valid, POSTs the new agency to the backend.
+   * On success closes the modal and reloads all data. On failure shows an error toast.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleCrearAgencia() {
     if (!validarCrear()) return;
     creando = true;
@@ -103,17 +182,26 @@
       } else {
         mostrarToast('error', data.message || 'Error al crear la agencia.');
       }
-    } catch { mostrarToast('error', 'Error de conexión.'); }
+    } catch { mostrarToast('error', 'Error de conexion.'); }
     finally { creando = false; }
   }
 
-  // ── Asignar usuario ───────────────────────────────────────────
+  /**
+   * Sets the selected agency and resets the user selector, then opens the assign-user modal.
+   * @param {any} agencia - The agency row object from the table.
+   */
   function abrirModalAsignar(agencia) {
     agenciaSeleccionada = agencia;
     asignarUsuarioId    = '';
     modalAsignar        = true;
   }
 
+  /**
+   * Validates that a user is selected and PUTs the assignment to the backend. On success
+   * closes the modal and reloads all data. Shows validation or error toasts as needed.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleAsignarUsuario() {
     if (!asignarUsuarioId) { mostrarToast('error', 'Selecciona un usuario.'); return; }
     asignando = true;
@@ -131,17 +219,27 @@
       } else {
         mostrarToast('error', data.message || 'Error al asignar usuario.');
       }
-    } catch { mostrarToast('error', 'Error de conexión.'); }
+    } catch { mostrarToast('error', 'Error de conexion.'); }
     finally { asignando = false; }
   }
 
-  // ── Editar descuento ──────────────────────────────────────────
+  /**
+   * Pre-fills the discount modal with the agency's current discount and opens it.
+   * @param {any} agencia - The agency row object from the table.
+   */
   function abrirModalDescuento(agencia) {
     agenciaDescuento  = agencia;
     descuentoEditando = agencia.porcentajeDescuento;
     modalDescuento    = true;
   }
 
+  /**
+   * Validates the discount value (0–100) and PUTs the updated discount to the backend.
+   * On success closes the modal and reloads all data. Shows error toasts on validation or
+   * API failure.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleGuardarDescuento() {
     if (descuentoEditando < 0 || descuentoEditando > 100) {
       mostrarToast('error', 'El descuento debe estar entre 0 y 100.'); return;
@@ -161,11 +259,19 @@
       } else {
         mostrarToast('error', data.message || 'Error al actualizar descuento.');
       }
-    } catch { mostrarToast('error', 'Error de conexión.'); }
+    } catch { mostrarToast('error', 'Error de conexion.'); }
     finally { guardandoDescuento = false; }
   }
 
-  // ── Cambiar estado (inline select) ───────────────────────────
+  /**
+   * Sends a PUT request to change an agency's status. On success updates the local agencias
+   * array optimistically without a full reload. On failure reloads the full list to revert
+   * the inline select to the server state.
+   * @async
+   * @param {any} agencia - The agency row object whose status is being changed.
+   * @param {string|number} nuevoEstadoId - The new status ID to apply.
+   * @returns {Promise<void>}
+   */
   async function handleCambiarEstado(agencia, nuevoEstadoId) {
     try {
       const r = await fetch(`${API}/api/agencias/${agencia.id}/estado`, {
@@ -181,17 +287,23 @@
         mostrarToast('error', data.message || 'Error al cambiar estado.');
         await cargarTodo();
       }
-    } catch { mostrarToast('error', 'Error de conexión.'); }
+    } catch { mostrarToast('error', 'Error de conexion.'); }
   }
 
-  // ── Stats ─────────────────────────────────────────────────────
+  // Total number of agencies currently loaded.
   $: totalAgencias  = agencias.length;
+
+  // Number of agencies with estadoAgenciaID === 1 (active).
   $: totalActivas   = agencias.filter(a => a.estadoAgenciaID === 1).length;
+
+  // Number of agencies that are not active (inactive or suspended).
   $: totalInactivas = agencias.filter(a => a.estadoAgenciaID !== 1).length;
+
+  // Number of agencies with no webservice user assigned.
   $: sinUsuario     = agencias.filter(a => !a.usuarioWebID).length;
 </script>
 
-<!-- ══════════════════ MODAL CREAR AGENCIA ══════════════════ -->
+<!-- Modal de creacion de nueva agencia con nombre, correo, usuario webservice y descuento -->
 {#if modalCrear}
   <div class="ag-overlay" on:click={() => modalCrear = false} role="dialog" aria-modal="true">
     <div class="ag-modal" on:click|stopPropagation>
@@ -255,7 +367,7 @@
   </div>
 {/if}
 
-<!-- ══════════════════ MODAL ASIGNAR USUARIO ════════════════ -->
+<!-- Modal para asignar un usuario webservice disponible a una agencia existente -->
 {#if modalAsignar}
   <div class="ag-overlay" on:click={() => modalAsignar = false} role="dialog" aria-modal="true">
     <div class="ag-modal ag-modal--sm" on:click|stopPropagation>
@@ -296,7 +408,7 @@
   </div>
 {/if}
 
-<!-- ══════════════════ MODAL DESCUENTO ══════════════════════ -->
+<!-- Modal para editar el porcentaje de descuento de una agencia -->
 {#if modalDescuento}
   <div class="ag-overlay" on:click={() => modalDescuento = false} role="dialog" aria-modal="true">
     <div class="ag-modal ag-modal--sm" on:click|stopPropagation>
@@ -324,10 +436,10 @@
   </div>
 {/if}
 
-<!-- ══════════════════ CONTENIDO PRINCIPAL ══════════════════ -->
+<!-- Seccion principal de gestion de agencias con estadisticas y tabla -->
 <section class="admin-section">
 
-  <!-- Header de sección -->
+  <!-- Encabezado de seccion con titulo y botones de actualizar y crear agencia -->
   <div class="section-header">
     <div>
       <h2 class="admin-section__title">Agencias</h2>
@@ -343,7 +455,7 @@
     </div>
   </div>
 
-  <!-- Stats -->
+  <!-- Barra de estadisticas: total, activas, inactivas y sin usuario asignado -->
   <div class="ag-stats">
     <div class="ag-stat">
       <span class="ag-stat__num">{totalAgencias}</span>
@@ -363,15 +475,15 @@
     </div>
   </div>
 
-  <!-- Tabla -->
   {#if cargando}
     <p class="loading-text">Cargando agencias...</p>
 
   {:else if agencias.length === 0}
     <div class="placeholder-card">
-      <p class="placeholder-card__text">No hay agencias registradas todavía.</p>
+      <p class="placeholder-card__text">No hay agencias registradas todavia.</p>
     </div>
 
+  <!-- Tabla de agencias con usuario asignado, descuento editable y selector de estado -->
   {:else}
     <div class="vuelos-table">
       <table class="table">

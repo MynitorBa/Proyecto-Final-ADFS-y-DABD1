@@ -1,10 +1,16 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de reservaciones para usuarios. Gestiona la creacion de reservaciones
+    /// con asignacion automatica de asientos, la liberacion de reservaciones expiradas,
+    /// la asignacion de pasajeros a boletos, la confirmacion y el completado automatico
+    /// de reservaciones cuyos vuelos ya aterrizaron.
+    /// </summary>
     public class ReservacionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -21,6 +27,13 @@ namespace Aerolinea.API.Repositories
             _ciudadRepository = ciudadRepository;
         }
 
+        /// <summary>
+        /// Crea una nueva reservacion para el usuario indicado. Si el usuario ya tiene
+        /// reservaciones pendientes, las expira liberando sus asientos antes de continuar.
+        /// Verifica disponibilidad con UPDLOCK/ROWLOCK, descuenta boletos del vuelo,
+        /// asigna asientos secuenciales y retorna el DTO con todos los boletos reservados.
+        /// La transaccion usa nivel Serializable para evitar condiciones de carrera.
+        /// </summary>
         public async Task<ReservacionCreadaDTO> CrearReservacion(int? usuarioId, List<SeleccionVueloDTO> vuelos)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -263,6 +276,12 @@ namespace Aerolinea.API.Repositories
             }
         }
 
+        /// <summary>
+        /// Busca todas las reservaciones en estado pendiente cuya fecha de expiracion ya
+        /// paso, libera sus boletos devolviendo disponibilidad a los vuelos y cambia el
+        /// estado de cada reservacion a expirado (4).
+        /// Retorna la cantidad de reservaciones procesadas.
+        /// </summary>
         public async Task<int> LiberarReservasExpiradas()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -345,6 +364,11 @@ namespace Aerolinea.API.Repositories
             }
         }
 
+        /// <summary>
+        /// Asigna o actualiza los datos de pasajero para cada boleto de una reservacion de usuario.
+        /// Verifica que la reservacion exista, este pendiente y no haya expirado.
+        /// Crea o actualiza registros en DatosPasajero y los vincula al boleto correspondiente.
+        /// </summary>
         public async Task AgregarPasajerosAReservacion(int reservacionId, List<DatosPasajeroDTO> pasajeros)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -450,6 +474,11 @@ namespace Aerolinea.API.Repositories
             }
         }
 
+        /// <summary>
+        /// Confirma una reservacion pendiente cambiando el estado de todos sus boletos
+        /// a Vendido (3) y el estado de la reservacion a Confirmada (2). Verifica que
+        /// todos los boletos tengan pasajero asignado antes de confirmar.
+        /// </summary>
         public async Task ConfirmarReservacion(int reservacionId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -516,6 +545,12 @@ namespace Aerolinea.API.Repositories
             }
         }
 
+        /// <summary>
+        /// Busca reservaciones confirmadas (estado 2) cuyos vuelos ya aterrizaron
+        /// y las marca como completadas (estado 5). Solo completa reservaciones donde
+        /// todos los vuelos asociados tienen estado 3 (finalizado).
+        /// Retorna la cantidad de reservaciones completadas.
+        /// </summary>
         public async Task<int> CompletarReservaciones()
         {
             using var connection = _connectionFactory.CreateConnection();

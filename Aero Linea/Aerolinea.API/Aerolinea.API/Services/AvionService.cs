@@ -1,18 +1,29 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de aviones. Gestiona la logica de negocio para registrar, consultar,
+    /// actualizar y eliminar aviones de la flota, incluyendo el manejo de imagenes.
+    /// </summary>
     public class AvionService
     {
         private readonly AvionRepository _avionRepository;
 
+        /// <summary>
+        /// Inicializa el servicio con el repositorio de aviones.
+        /// </summary>
         public AvionService(AvionRepository avionRepository)
         {
             _avionRepository = avionRepository;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de aviones registrados en el sistema,
+        /// incluyendo marca, modelo, capacidad e imagen en Base64.
+        /// </summary>
         public async Task<List<AvionDTO>> ObtenerTodos()
         {
             var aviones = await _avionRepository.ObtenerTodos();
@@ -28,6 +39,10 @@ namespace Aerolinea.API.Services
             }).ToList();
         }
 
+        /// <summary>
+        /// Busca y retorna un avion por su identificador unico.
+        /// Retorna null si el avion no existe en el sistema.
+        /// </summary>
         public async Task<AvionDTO?> ObtenerPorId(int id)
         {
             var avion = await _avionRepository.ObtenerPorId(id);
@@ -46,6 +61,11 @@ namespace Aerolinea.API.Services
             };
         }
 
+        /// <summary>
+        /// Crea un nuevo avion en el sistema a partir del DTO recibido.
+        /// Si se incluye imagen en Base64, la guarda de manera independiente en el repositorio.
+        /// Retorna el DTO del avion recien creado con su ID asignado.
+        /// </summary>
         public async Task<AvionDTO> Crear(CrearAvionDTO crearAvionDto)
         {
             var avion = new Avion
@@ -76,6 +96,10 @@ namespace Aerolinea.API.Services
             };
         }
 
+        /// <summary>
+        /// Actualiza los datos de un avion existente. Si se proporciona una nueva imagen
+        /// en Base64, tambien la actualiza en el repositorio.
+        /// </summary>
         public async Task<bool> Actualizar(int id, CrearAvionDTO actualizarAvionDto)
         {
             var avion = new Avion
@@ -97,16 +121,25 @@ namespace Aerolinea.API.Services
             return resultado;
         }
 
+        /// <summary>
+        /// Elimina el avion con el identificador indicado del sistema.
+        /// </summary>
         public async Task<bool> Eliminar(int id)
         {
             return await _avionRepository.Eliminar(id);
         }
 
+        /// <summary>
+        /// Guarda o reemplaza la imagen en formato Base64 asociada al avion indicado.
+        /// </summary>
         public async Task GuardarImagen(int avionId, string imagenBase64)
         {
             await _avionRepository.GuardarImagen(avionId, imagenBase64);
         }
 
+        /// <summary>
+        /// Elimina la imagen asociada al avion indicado.
+        /// </summary>
         public async Task EliminarImagen(int avionId)
         {
             await _avionRepository.EliminarImagen(avionId);

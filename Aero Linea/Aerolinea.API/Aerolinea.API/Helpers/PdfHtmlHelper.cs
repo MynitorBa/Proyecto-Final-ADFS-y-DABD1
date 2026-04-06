@@ -1,7 +1,13 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 
 namespace Aerolinea.API.Helpers
 {
+    /// <summary>
+    /// Clase estatica que genera el HTML utilizado para producir el comprobante
+    /// de reservacion en formato PDF. Construye un documento HTML completo con
+    /// el detalle de boletos, datos del pasajero, informacion fiscal si aplica,
+    /// subtotales por vuelo y los terminos y condiciones del servicio.
+    /// </summary>
     public static class PdfHtmlHelper
     {
         private static string E(string? t) => EmailHelper.Esc(t ?? "");
@@ -9,6 +15,13 @@ namespace Aerolinea.API.Helpers
         private static string Hm(TimeSpan t) =>
             t == default ? "—" : $"{(int)t.TotalHours:D2}:{t.Minutes:D2}";
 
+        /// <summary>
+        /// Genera el HTML completo del comprobante de reservacion optimizado para
+        /// impresion en formato A5 horizontal. Incluye encabezado con numero y estado
+        /// de la reservacion, tabla de boletos con subtotales por vuelo, seccion de
+        /// datos de pasajeros, datos fiscales si la reservacion tiene factura asociada,
+        /// y pie de pagina institucional.
+        /// </summary>
         public static string GenerarComprobante(ReservacionDetalleDTO reservacion)
         {
             string ec = reservacion.EstadoReserva?.ToLower() switch

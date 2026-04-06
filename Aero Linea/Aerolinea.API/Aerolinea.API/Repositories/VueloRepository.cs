@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio principal de vuelos. Soporta busqueda por termino libre, busqueda
+    /// directa por ruta y fecha, y busqueda con escalas mediante BFS por capas.
+    /// Tambien registra cada busqueda realizada para alimentar las metricas del sistema.
+    /// </summary>
     public class VueloRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,7 +18,10 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        // Representa un camino parcial durante el BFS
+        /// <summary>
+        /// Representa un camino parcial durante el recorrido BFS de vuelos con escalas.
+        /// Acumula los tramos, precios, disponibilidad y tiempo de vuelo hasta el momento.
+        /// </summary>
         private class CaminoParcial
         {
             public List<VueloDetalleDTO> Tramos { get; set; } = new();
@@ -28,7 +36,11 @@ namespace Aerolinea.API.Repositories
             public int? BoletosDisponiblesEjecutiva { get; set; }
         }
 
-        //  BÚSQUEDA GENERAL — busca vuelos por cualquier término
+        /// <summary>
+        /// Realiza una busqueda libre de vuelos activos que coincidan con el termino
+        /// ingresado contra ciudad, pais, aeropuerto o numero de vuelo. Retorna hasta
+        /// 50 resultados futuros con disponibilidad, ordenados por fecha y hora de salida.
+        /// </summary>
         public async Task<List<VueloDetalleDTO>> BusquedaGeneral(string query)
         {
             var vuelos = new List<VueloDetalleDTO>();
@@ -91,7 +103,12 @@ namespace Aerolinea.API.Repositories
             return vuelos;
         }
 
-        //  BÚSQUEDA DIRECTA
+        /// <summary>
+        /// Busca vuelos directos entre dos aeropuertos en una fecha especifica con la
+        /// cantidad de pasajeros indicada. Permite filtrar por clase (Turista o Ejecutivo).
+        /// Retorna los vuelos disponibles ordenados por hora de salida, cada uno con su
+        /// lista de tripulantes asignados.
+        /// </summary>
         public async Task<List<VueloDetalleDTO>> BuscarVuelos(
             int origenId, int destinoId, DateTime fecha,
             int cantidadPasajeros, int? claseId = null)
@@ -104,7 +121,7 @@ namespace Aerolinea.API.Repositories
             string filtroClase = BuildFiltroClase(claseId);
 
             string query = $@"
-                SELECT 
+                SELECT
                     v.ID, v.NumeroVuelo, v.Fecha, v.HoraSalida, v.HoraLlegada,
                     e.ID AS EstadoId, e.Estatus,
                     a.ID AS AvionId, a.Modelo, a.Marca, a.CapacidadPasajeros,
@@ -149,7 +166,13 @@ namespace Aerolinea.API.Repositories
             return vuelos;
         }
 
-        //  BÚSQUEDA CON ESCALAS — soporta de 1 a maxEscalas (default 3) usando BFS por capas
+        /// <summary>
+        /// Busca combinaciones de vuelos con escalas entre dos aeropuertos usando BFS por capas.
+        /// Aplica reglas de escala entre 1h y 12h, limita la duracion total de vuelo al 1.5x
+        /// de la ruta directa y evita ciclos en aeropuertos intermedios.
+        /// Admite hasta maxEscalas (default 3) y filtra por clase y disponibilidad.
+        /// Retorna los resultados ordenados por duracion total incluyendo tiempo de espera.
+        /// </summary>
         public async Task<List<VueloConEscalaDTO>> BuscarVuelosConEscalas(
             int origenId, int destinoId, DateTime fecha,
             int cantidadPasajeros, int? claseId = null,
@@ -336,7 +359,6 @@ namespace Aerolinea.API.Repositories
             return resultados.OrderBy(r => r.DuracionTotalMinutos).ToList();
         }
 
-        //  TRAER TRAMOS DESDE UNA LISTA DE ORÍGENES — query única con IN (...)
         private async Task<List<VueloDetalleDTO>> BuscarTramosDesdeLista(
             SqlConnection connection,
             List<int> origenIds,
@@ -363,7 +385,7 @@ namespace Aerolinea.API.Repositories
 
             // Buscamos en un rango amplio de fechas para cubrir escalas que cruzan días
             string query = $@"
-                SELECT 
+                SELECT
                     v.ID, v.NumeroVuelo, v.Fecha, v.HoraSalida, v.HoraLlegada,
                     e.ID AS EstadoId, e.Estatus,
                     a.ID AS AvionId, a.Modelo, a.Marca, a.CapacidadPasajeros,
@@ -408,7 +430,6 @@ namespace Aerolinea.API.Repositories
             return lista;
         }
 
-        //  OBTENER LÍMITE DE TIEMPO DE VUELO — 1.5x la ruta directa (solo tiempo en aire)
         private async Task<int> ObtenerLimiteVuelo(
             SqlConnection connection,
             int origenId, int destinoId,
@@ -430,7 +451,10 @@ namespace Aerolinea.API.Repositories
             return maxEscalas * 8 * 60;
         }
 
-        //  GUARDAR BÚSQUEDA
+        /// <summary>
+        /// Registra una busqueda de vuelos en la tabla Busqueda para uso en metricas.
+        /// Solo inserta el registro si existe una ruta directa entre los aeropuertos indicados.
+        /// </summary>
         public async Task GuardarBusqueda(
             int origenId, int destinoId, DateTime fechaSalida,
             int cantidadPersonas, int? usuarioId)
@@ -463,56 +487,18 @@ namespace Aerolinea.API.Repositories
             await cmdInsert.ExecuteNonQueryAsync();
         }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Genera el filtro SQL de clase para reutilizarlo en todas las queries
         private static string BuildFiltroClase(int? claseId) => claseId == 1
             ? "AND v.BoletosTurista   >= @cantidadPasajeros"
             : claseId == 2
                 ? "AND v.BoletosEjecutivo >= @cantidadPasajeros"
                 : "AND (v.BoletosTurista >= @cantidadPasajeros OR v.BoletosEjecutivo >= @cantidadPasajeros)";
 
-        // Toma el mínimo de disponibilidad entre dos tramos (null si alguno es null)
         private static int? MinDisponible(int? a, int? b) =>
             a.HasValue && b.HasValue ? Math.Min(a.Value, b.Value) : null;
 
-        // Suma dos precios, retorna null si alguno es null
         private static decimal? SumarPrecios(decimal? a, decimal? b) =>
             a.HasValue && b.HasValue ? a + b : null;
 
-        // Valida que haya disponibilidad según la clase pedida
         private static bool TieneDisponibilidad(
             int? claseId, int? dispTurista, int? dispEjecutiva, int cantidadPasajeros)
         {
@@ -525,7 +511,6 @@ namespace Aerolinea.API.Repositories
             return okTurista || okEjecutiva;
         }
 
-        // Calcula el tiempo total de espera en aeropuertos sumando todas las escalas de un camino
         private static int CalcularTiempoTotalEscalas(List<VueloDetalleDTO> tramos)
         {
             int totalEscalas = 0;

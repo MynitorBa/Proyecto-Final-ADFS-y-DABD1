@@ -1,10 +1,15 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Models.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de rutas. Permite listar, crear, buscar y actualizar rutas entre
+    /// aeropuertos. Incluye introspeccion de esquema para soportar instalaciones con
+    /// o sin la tabla ZonaHoraria, adaptando las consultas segun la estructura disponible.
+    /// </summary>
     public class RutaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -14,7 +19,11 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        // ── Listar todas las rutas con info de timezone ───────────────────
+        /// <summary>
+        /// Retorna todas las rutas con informacion de aeropuertos y zonas horarias.
+        /// Si la tabla ZonaHoraria o la columna ZonaHorariaID no existen en el esquema
+        /// actual, omite los JOINs correspondientes y retorna null en esos campos.
+        /// </summary>
         public async Task<List<RutaDTO>> ObtenerTodas()
         {
             var rutas = new List<RutaDTO>();
@@ -74,7 +83,10 @@ namespace Aerolinea.API.Repositories
             return rutas;
         }
 
-        // ── Actualizar solo la duración estimada de una ruta ──────────────
+        /// <summary>
+        /// Actualiza la duracion estimada en minutos de una ruta existente.
+        /// Retorna true si la actualizacion afecto al menos una fila.
+        /// </summary>
         public async Task<bool> ActualizarDuracion(int rutaId, int minutos)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -89,9 +101,12 @@ namespace Aerolinea.API.Repositories
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
-        // ── Obtener duración + timezones para calcular llegada ────────────
-        // Recibe origenId + destinoId; busca la ruta por esos aeropuertos.
-        // Devuelve (120, null, null) si la ruta aún no existe.
+        /// <summary>
+        /// Obtiene la duracion estimada y las zonas horarias de origen y destino para
+        /// calcular la hora de llegada de un vuelo dado el par de aeropuertos.
+        /// Si la tabla ZonaHoraria no existe en el esquema, retorna null en las zonas horarias.
+        /// Retorna (120, null, null) como fallback si la ruta no existe.
+        /// </summary>
         public async Task<(int duracion, string? tzOrigen, string? tzDestino)> ObtenerInfoRuta(
             int origenId, int destinoId)
         {
@@ -133,7 +148,11 @@ namespace Aerolinea.API.Repositories
 
             return (120, null, null);
         }
-        // ── Verificar si existe una ruta ──────────────────────────────────
+
+        /// <summary>
+        /// Verifica si existe una ruta directa entre los aeropuertos de origen y destino indicados.
+        /// Retorna true si existe al menos una ruta con ese par exacto origen-destino.
+        /// </summary>
         public async Task<bool> ExisteRuta(int origenId, int destinoId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -150,7 +169,10 @@ namespace Aerolinea.API.Repositories
             return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
         }
 
-        // ── Crear ruta manualmente ─────────────────────────────────────────
+        /// <summary>
+        /// Crea una nueva ruta entre los aeropuertos indicados con la duracion estimada dada.
+        /// Si ya existe una ruta con el mismo par origen-destino, retorna su ID sin duplicar.
+        /// </summary>
         public async Task<int> CrearRuta(int origenId, int destinoId, int duracionEstimada = 120)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -177,7 +199,6 @@ namespace Aerolinea.API.Repositories
             return Convert.ToInt32(await cmdCrear.ExecuteScalarAsync());
         }
 
-        // ── Helpers de introspección ──────────────────────────────────────
         private static async Task<bool> TablaExiste(SqlConnection connection, string tabla)
         {
             var q = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME=@T";

@@ -1,12 +1,23 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 
 namespace Aerolinea.API.Helpers
 {
+    /// <summary>
+    /// Clase estatica que centraliza todas las plantillas HTML de correos electronicos
+    /// enviados por la aplicacion. Cada metodo genera y retorna el HTML completo
+    /// listo para ser usado como cuerpo del mensaje en EmailHelper.
+    /// </summary>
     public static class EmailTemplates
     {
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE BIENVENIDA — enviado al usuario al crear su cuenta
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de bienvenida que se envia al usuario
+        /// inmediatamente despues de crear su cuenta en el sistema.
+        /// Incluye los datos personales registrados, credenciales de acceso
+        /// y una nota de seguridad sobre el manejo de la contrasena.
+        /// </summary>
         public static string CorreoBienvenida(
             string nombre,
             string apellido,
@@ -122,6 +133,11 @@ namespace Aerolinea.API.Helpers
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE RESERVACIÓN — enviado al usuario con detalle de boletos
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de detalle de reservacion que se envia al usuario
+        /// con el comprobante completo. Incluye la tabla de boletos, datos de pasajeros
+        /// si los hay, el total de la reservacion y los terminos y condiciones del viaje.
+        /// </summary>
         public static string CorreoReservacion(ReservacionDetalleDTO reservacion)
         {
             var e = EmailHelper.Esc;
@@ -291,6 +307,12 @@ namespace Aerolinea.API.Helpers
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE CONTACTO — enviado al admin
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de notificacion que se envia al administrador
+        /// cuando un usuario envia un mensaje a traves del formulario de contacto.
+        /// Incluye el nombre, correo, asunto y cuerpo del mensaje del remitente,
+        /// junto con un boton para responder directamente.
+        /// </summary>
         public static string CorreoContacto(string nombre, string correo, string asunto, string mensaje)
         {
             var e = EmailHelper.Esc;
@@ -353,6 +375,11 @@ namespace Aerolinea.API.Helpers
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE NEWSLETTER — enviado al admin
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de notificacion al administrador cuando
+        /// un nuevo usuario se suscribe al boletin informativo de Broom AirLine.
+        /// Muestra el correo del suscriptor y un boton para contactarlo directamente.
+        /// </summary>
         public static string CorreoNewsletter(string correo)
         {
             var e = EmailHelper.Esc;
@@ -394,6 +421,11 @@ namespace Aerolinea.API.Helpers
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE CONFIRMACIÓN — enviado al usuario tras confirmar
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de confirmacion de reservacion que se envia al usuario
+        /// una vez que el pago y la confirmacion han sido procesados exitosamente.
+        /// Muestra el numero de reservacion y el total cobrado.
+        /// </summary>
         public static string CorreoConfirmacion(string nombreUsuario, string noReservacion, decimal total)
         {
             var e = EmailHelper.Esc;
@@ -414,7 +446,7 @@ namespace Aerolinea.API.Helpers
     <div style='padding:30px 20px;text-align:center;background:#ffffff;'>
         <p style='font-size:16px;color:#1C1A18;margin:0 0 8px;'>Hola <strong>{e(nombreUsuario)}</strong></p>
         <p style='font-size:14px;color:#3A3531;margin:0 0 24px;'>Tu reservacion ha sido confirmada exitosamente.</p>
-        
+
         <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.3);border-radius:4px 16px 4px 16px;padding:20px;display:inline-block;border-left:4px solid #8B6B4A;'>
             <p style='margin:0 0 8px;font-size:12px;color:#8B6B4A;text-transform:uppercase;letter-spacing:1px;'>Nro. Reservacion</p>
             <p style='margin:0 0 16px;font-size:22px;color:#1C1A18;font-weight:800;letter-spacing:1px;'>{e(noReservacion)}</p>
@@ -439,6 +471,11 @@ namespace Aerolinea.API.Helpers
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE CANCELACIÓN — enviado al usuario
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de aviso de cancelacion que se envia al usuario
+        /// cuando su reservacion ha sido cancelada, ya sea por el propio usuario o
+        /// por el sistema. Indica el numero de reservacion afectado y datos de contacto.
+        /// </summary>
         public static string CorreoCancelacion(string nombreUsuario, string noReservacion)
         {
             var e = EmailHelper.Esc;
@@ -459,7 +496,7 @@ namespace Aerolinea.API.Helpers
     <div style='padding:30px 20px;text-align:center;background:#ffffff;'>
         <p style='font-size:16px;color:#1C1A18;margin:0 0 8px;'>Hola <strong>{e(nombreUsuario)}</strong>,</p>
         <p style='font-size:14px;color:#3A3531;margin:0 0 24px;'>Tu reservacion ha sido cancelada.</p>
-        
+
         <div style='background:#F2EFEA;border:1px solid rgba(239,68,68,0.25);border-radius:4px 16px 4px 16px;padding:20px;display:inline-block;border-left:4px solid #ef4444;'>
             <p style='margin:0 0 8px;font-size:12px;color:#8B6B4A;text-transform:uppercase;letter-spacing:1px;'>Nro. Reservacion</p>
             <p style='margin:0;font-size:22px;color:#ef4444;font-weight:800;letter-spacing:1px;'>{e(noReservacion)}</p>

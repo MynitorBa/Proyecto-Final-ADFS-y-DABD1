@@ -1,5 +1,6 @@
-/* --- Estilos para Datos de Pasajeros --- */
+/* pasajeros.css - Passenger data entry page styles including header with gold left border, notice callout, passenger tab selector, per-flight section headers, passenger form cards with fields, phone prefix input, prev/next navigation buttons, sticky booking recap sidebar, loading/empty states, autocomplete dropdown, and responsive breakpoints */
 
+/* Full-page wrapper with the brand beige background and generous bottom padding */
 .datos-pasajeros {
     width: 100%;
     min-height: 100vh;
@@ -7,18 +8,20 @@
     padding: 2rem 1rem 8rem;
 }
 
+/* Centered content column capped at 1200px */
 .datos-pasajeros__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* --- Header --- */
+/* Page header with a thick gold left border accent */
 .datos-pasajeros__header {
     margin-bottom: 3rem;
     border-left: 6px solid var(--primary-color);
     padding-left: 2rem;
 }
 
+/* Transparent back button that shifts 5px left on hover */
 .datos-pasajeros__back {
     background: transparent;
     border: none;
@@ -36,6 +39,7 @@
     transform: translateX(-5px);
 }
 
+/* Fluid page title from 2rem to 2.5rem, light weight */
 .datos-pasajeros__title {
     font-size: clamp(2rem, 5vw, 2.5rem);
     font-weight: 300;
@@ -43,12 +47,13 @@
     margin: 0;
 }
 
+/* Muted subtitle below the title */
 .datos-pasajeros__subtitle {
     color: var(--text-muted);
     margin-top: 0.5rem;
 }
 
-/* --- Layout --- */
+/* Two-column layout: form on the left, 350px recap sidebar on the right */
 .datos-pasajeros__content {
     display: grid;
     grid-template-columns: 1fr 350px;
@@ -56,7 +61,7 @@
     align-items: start;
 }
 
-/* --- Cuadro de Notas/Avisos --- */
+/* Yellow-tinted notice callout with an asymmetric border-radius */
 .datos-pasajeros__notice {
     background: #fdfaf0;
     border: 1px solid #faeecb;
@@ -65,6 +70,7 @@
     margin-bottom: 3rem;
 }
 
+/* Bold amber notice title in all caps with letter spacing */
 .notice__title {
     font-size: 1rem;
     color: #856404;
@@ -74,6 +80,7 @@
     font-weight: 700;
 }
 
+/* Standard bulleted notice list in a muted amber-brown color */
 .notice__list {
     margin: 0;
     padding-left: 1.2rem;
@@ -81,11 +88,12 @@
     font-size: 0.9rem;
 }
 
+/* Each notice list item with bottom margin */
 .notice__item {
     margin-bottom: 0.5rem;
 }
 
-/* --- Pestañas de Pasajeros --- */
+/* Passenger tab strip: white card with asymmetric radius containing tab buttons */
 .passenger-tabs {
     display: flex;
     gap: 0.5rem;
@@ -97,6 +105,7 @@
     box-shadow: 0 10px 30px rgba(28, 26, 24, 0.05);
 }
 
+/* Individual passenger tab: asymmetric button that lifts on hover */
 .passenger-tab {
     display: flex;
     flex-direction: column;
@@ -117,6 +126,7 @@
     transform: translateY(-2px);
 }
 
+/* Active tab: dark secondary-color background with white text */
 .passenger-tab--active {
     background: var(--secondary-color);
     border-color: var(--secondary-color);
@@ -127,6 +137,7 @@
     color: var(--white);
 }
 
+/* Completed tab: gold primary-color background */
 .passenger-tab--completed {
     background: var(--primary-color);
     border-color: var(--primary-color);
@@ -137,6 +148,7 @@
     color: var(--white);
 }
 
+/* Bold large passenger number inside the tab */
 .passenger-tab__number {
     font-size: 1.5rem;
     font-weight: 700;
@@ -144,6 +156,7 @@
     transition: var(--transition);
 }
 
+/* Small all-caps label below the number */
 .passenger-tab__label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -153,30 +166,33 @@
     transition: var(--transition);
 }
 
-/* --- Secciones de Vuelo --- */
+/* Per-flight section block with bottom margin */
 .flight-passengers-section {
     margin-bottom: 2rem;
 }
 
+/* Section header with a dark bottom border separator */
 .flight-passengers-section__header {
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid var(--secondary-color);
 }
 
+/* Flight section title at 1.5rem in the secondary color */
 .flight-passengers-section__title {
     font-size: 1.5rem;
     color: var(--secondary-color);
     font-weight: 400;
 }
 
+/* Flight info line in the primary gold color */
 .flight-passengers-section__info {
     font-size: 0.9rem;
     color: var(--primary-color);
     font-weight: 600;
 }
 
-/* --- Tarjeta de Pasajero Individual --- */
+/* Individual passenger form card: white, asymmetric radius, slides up on load */
 .passenger-form-card {
     background: var(--white);
     padding: 2.5rem;
@@ -186,6 +202,7 @@
     animation: slideUp 0.5s ease-out;
 }
 
+/* Card title: dark pill label that bleeds slightly outside the card */
 .passenger-form-card__title {
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -199,7 +216,7 @@
     margin-left: -2.5rem;
 }
 
-/* Form Grid */
+/* Two-column form row grid with a gap and bottom margin */
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -207,11 +224,13 @@
     margin-bottom: 1.5rem;
 }
 
+/* Individual form field: label stacked above the input */
 .form-field {
     display: flex;
     flex-direction: column;
 }
 
+/* Small all-caps bold field label in the muted text color */
 .form-field__label {
     font-size: 0.75rem;
     font-weight: 700;
@@ -221,6 +240,7 @@
     letter-spacing: 1px;
 }
 
+/* Optional hint appended to the label in smaller non-uppercase text */
 .form-field__label-hint {
     font-weight: 400;
     color: var(--text-muted);
@@ -229,6 +249,7 @@
     text-transform: none;
 }
 
+/* Form field input: asymmetric radius (0 10px 0 10px) with a warm beige background */
 .form-field__input {
     padding: 0.9rem 1.2rem;
     background: #fcfbf9;
@@ -239,43 +260,47 @@
     transition: var(--transition);
 }
 
+/* Input border turns gold and background turns white on focus */
 .form-field__input:focus {
     outline: none;
     border-color: var(--primary-color);
     background: var(--white);
 }
 
+/* Disabled input is faded with a not-allowed cursor */
 .form-field__input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
+/* Error state: red border and light red background */
 .form-field__input--error {
     border-color: #e53e3e;
     background-color: #fff5f5;
 }
 
+/* Inline field error message in red */
 .form-field__error {
     font-size: 0.78rem;
     color: #c53030;
     margin-top: 0.3rem;
 }
 
+/* Inline field success message in green */
 .form-field__ok {
     font-size: 0.78rem;
     color: #38a169;
     margin-top: 0.3rem;
 }
 
+/* Inline field hint in amber */
 .form-field__hint {
     font-size: 0.78rem;
     color: #e65100;
     margin-top: 0.3rem;
 }
 
-/* ══════════════════════════════════════════
-   PHONE FIELD CON PREFIJO (dial code)
-══════════════════════════════════════════ */
+/* Phone input wrapper: flex row combining the prefix and number input */
 .phone-field {
     display: flex;
     align-items: center;
@@ -286,17 +311,20 @@
     overflow: hidden;
 }
 
+/* Phone field turns gold border with a glow when any child is focused */
 .phone-field:focus-within {
     border-color: var(--primary-color);
     background-color: var(--white);
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.08);
 }
 
+/* Error state for the phone field wrapper */
 .phone-field--error {
     border-color: #e53e3e;
     background-color: #fff5f5;
 }
 
+/* Dial code prefix: gold bold text with a separator border on the right */
 .phone-field__prefix {
     padding: 0.9rem 0.7rem 0.9rem 1.2rem;
     color: var(--primary-color);
@@ -308,6 +336,7 @@
     background: rgba(139,107,74,0.04);
 }
 
+/* Number input inside the phone field: borderless and transparent */
 .phone-field .form-field__input {
     border: none;
     border-radius: 0;
@@ -316,12 +345,13 @@
     flex: 1;
 }
 
+/* Focus on the inner input removes any residual box-shadow or border */
 .phone-field .form-field__input:focus {
     box-shadow: none;
     border: none;
 }
 
-/* Navegación de Formulario */
+/* Prev/next navigation row: space-between with a top margin */
 .passengers-form__navigation {
     display: flex;
     justify-content: space-between;
@@ -330,6 +360,7 @@
     gap: 1rem;
 }
 
+/* Shared styles for the prev and next navigation buttons: outlined asymmetric button */
 .passengers-form__btn-prev,
 .passengers-form__btn-next {
     padding: 1.2rem 3rem;
@@ -345,6 +376,7 @@
     transition: var(--transition);
 }
 
+/* Nav buttons fill on hover and lift 3px */
 .passengers-form__btn-prev:hover:not(:disabled),
 .passengers-form__btn-next:hover {
     background: var(--secondary-color);
@@ -353,11 +385,13 @@
     box-shadow: 0 8px 20px rgba(28, 26, 24, 0.15);
 }
 
+/* Disabled prev button is semi-transparent */
 .passengers-form__btn-prev:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
+/* Submit button: gold background, wider asymmetric radius, lifts on hover */
 .passengers-form__btn-submit {
     padding: 1.2rem 3rem;
     background: var(--primary-color);
@@ -379,7 +413,7 @@
     background: var(--secondary-color);
 }
 
-/* --- Barra Lateral --- */
+/* Sticky booking recap sidebar: white card with inverted asymmetric radius */
 .booking-recap {
     background: var(--white);
     padding: 2rem;
@@ -389,6 +423,7 @@
     top: 2rem;
 }
 
+/* Recap section title: light weight at 1.2rem */
 .booking-recap__title {
     font-size: 1.2rem;
     color: var(--secondary-color);
@@ -396,6 +431,7 @@
     font-weight: 300;
 }
 
+/* Individual recap reservation block: light grey background */
 .recap-reservation {
     padding: 1rem;
     background-color: #f9f9f9;
@@ -403,11 +439,13 @@
     margin-bottom: 1rem;
 }
 
+/* Recap reservation header text at 0.875rem */
 .recap-reservation__header {
     font-size: 0.875rem;
     margin-bottom: 0.5rem;
 }
 
+/* Bold gold total price at 1.125rem */
 .recap-reservation__total {
     font-size: 1.125rem;
     font-weight: 700;
@@ -415,35 +453,40 @@
     margin: 0.5rem 0;
 }
 
+/* Muted ticket count at 0.875rem */
 .recap-reservation__boletos {
     font-size: 0.875rem;
     color: var(--text-muted);
 }
 
+/* Thin horizontal divider inside the recap sidebar */
 .booking-recap__divider {
     height: 1px;
     background: var(--perla-dark);
     margin: 2rem 0;
 }
 
+/* Help section at the bottom of the recap sidebar: light grey rounded block */
 .booking-recap__help {
     background: #f8f9fa;
     padding: 1.5rem;
     border-radius: 15px;
 }
 
+/* Help section heading at 0.85rem */
 .booking-recap__help-title {
     font-size: 0.85rem;
     margin-bottom: 0.5rem;
 }
 
+/* Muted help text at 0.75rem with compact line height */
 .booking-recap__help-text {
     font-size: 0.75rem;
     color: var(--text-muted);
     line-height: 1.4;
 }
 
-/* --- Estados de carga/error/vacío --- */
+/* Centered loading, error, and empty state blocks */
 .datos-pasajeros__loading,
 .datos-pasajeros__error,
 .datos-pasajeros__empty {
@@ -453,8 +496,10 @@
     color: #666;
 }
 
+/* Error state text in red */
 .datos-pasajeros__error { color: #dc2626; }
 
+/* Empty state: centered column with a gap between items */
 .datos-pasajeros__empty {
     display: flex;
     flex-direction: column;
@@ -462,6 +507,7 @@
     gap: 1.5rem;
 }
 
+/* Generic action button for the empty state: rounded with a transition */
 .action-btn {
     padding: 0.75rem 1.5rem;
     border: none;
@@ -471,12 +517,14 @@
     transition: all 0.2s;
 }
 
+/* Primary action button: gold background, darkens on hover */
 .action-btn--primary { background-color: var(--primary-color); color: white; }
 .action-btn--primary:hover { background-color: #b89860; }
 
-/* --- Autocomplete --- */
+/* Autocomplete field wrapper: relative for the absolute dropdown */
 .autocomplete { position: relative; }
 
+/* Autocomplete dropdown list: absolute, scrollable, with a subtle shadow */
 .autocomplete__list {
     position: absolute;
     top: 100%;
@@ -494,8 +542,10 @@
     padding: 0;
 }
 
+/* Autocomplete list item with no list-style */
 .autocomplete__item { list-style: none; }
 
+/* Full-width autocomplete option button: left-aligned, hover turns grey */
 .autocomplete__btn {
     width: 100%;
     text-align: left;
@@ -510,13 +560,13 @@
 .autocomplete__btn:hover  { background-color: #f3f4f6; }
 .autocomplete__btn:focus  { background-color: #e5e7eb; outline: none; }
 
-/* --- Animaciones --- */
+/* Card entry animation: slides up 20px while fading in */
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Responsive --- */
+/* At 992px: single-column layout; recap sidebar leaves sticky positioning */
 @media (max-width: 992px) {
     .datos-pasajeros__content { grid-template-columns: 1fr; }
     .booking-recap { position: relative; top: 0; margin-top: 3rem; }
@@ -524,6 +574,7 @@
     .passenger-tab { min-width: 90px; }
 }
 
+/* At 768px: padding reduces, tab strip shrinks, nav buttons stack */
 @media (max-width: 768px) {
     .datos-pasajeros { padding: 2rem 1rem 6rem; }
     .datos-pasajeros__header { margin-bottom: 2rem; padding-left: 1rem; }
@@ -540,6 +591,7 @@
     .passengers-form__btn-submit { width: 100%; padding: 1rem 2rem; }
 }
 
+/* At 600px: form rows collapse to single column, card padding tightens */
 @media (max-width: 600px) {
     .datos-pasajeros { padding: 1.5rem 0.5rem 5rem; }
     .datos-pasajeros__header { padding-left: 0.5rem; }
@@ -553,6 +605,7 @@
     .form-field__input { padding: 0.8rem 1rem; font-size: 0.95rem; }
 }
 
+/* At 480px: tabs and numbers reduce further */
 @media (max-width: 480px) {
     .passenger-tab { min-width: 60px; padding: 0.6rem 0.5rem; }
     .passenger-tab__number { font-size: 1rem; }

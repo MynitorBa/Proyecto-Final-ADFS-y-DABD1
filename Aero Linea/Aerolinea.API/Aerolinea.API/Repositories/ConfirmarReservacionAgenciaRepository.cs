@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de confirmacion de reservaciones para agencias. Gestiona el proceso
+    /// transaccional de confirmar una reservacion pendiente: validaciones, creacion de
+    /// factura y actualizacion de estados de boletos y reservacion.
+    /// </summary>
     public class ConfirmarReservacionAgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,6 +18,13 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Confirma una reservacion pendiente de una agencia. Verifica pertenencia a la
+        /// agencia, estado y expiracion de la reservacion, que todos los boletos tengan
+        /// pasajero asignado, crea la factura y actualiza estados de boletos y reservacion
+        /// dentro de una transaccion atomica.
+        /// Retorna el DTO con los datos de la confirmacion realizada.
+        /// </summary>
         public async Task<ConfirmacionAgenciaDTO> ConfirmarReservacion(
             int reservacionId,
             int agenciaId,

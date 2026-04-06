@@ -1,10 +1,15 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de gestion de reservaciones existentes para agencias de viaje. Permite a
+    /// una agencia autenticada consultar el detalle de una reservacion, cancelarla y verificar
+    /// si es posible cancelarla. Todos los endpoints requieren autenticacion de agencia.
+    /// </summary>
     [ApiController]
     [Route("api/reservaciones-agencia/gestion")]
     [ServiceFilter(typeof(AgenciaAuthMiddleware))]
@@ -12,29 +17,19 @@ namespace Aerolinea.API.Controllers
     {
         private readonly GestionReservacionService _service;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de gestion de reservaciones.
+        /// </summary>
         public ReservacionesAgenciaController(GestionReservacionService service)
         {
             _service = service;
         }
 
-        // GET api/reservaciones-agencia
-        /*
-        [HttpGet]
-        public async Task<IActionResult> ObtenerReservaciones()
-        {
-            try
-            {
-                int usuarioId = await ObtenerUsuarioWebId();
-                var reservaciones = await _service.ObtenerMisReservaciones(usuarioId);
-                return Ok(reservaciones);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }*/
-
-        // GET api/reservaciones-agencia/{reservacionId}
+        // GET api/reservaciones-agencia/gestion/{reservacionId}
+        /// <summary>
+        /// Retorna el detalle completo de una reservacion especifica de la agencia autenticada,
+        /// incluyendo boletos, pasajeros, vuelos y estado actual.
+        /// </summary>
         [HttpGet("{reservacionId}")]
         public async Task<IActionResult> ObtenerDetalle(int reservacionId)
         {
@@ -52,11 +47,11 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-
-
-
-
         // POST api/reservaciones-agencia/gestion/{reservacionId}/cancelar
+        /// <summary>
+        /// Cancela una reservacion activa de la agencia autenticada. El motivo de cancelacion
+        /// es opcional. Solo se pueden cancelar reservaciones que aun no hayan sido completadas.
+        /// </summary>
         [HttpPost("{reservacionId}/cancelar")]
         public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
         {
@@ -71,6 +66,11 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Verifica si una reservacion de la agencia puede ser cancelada segun las reglas de negocio
+        /// (estado actual, tiempo antes del vuelo, etc.). Retorna un objeto con el resultado de la validacion.
+        /// </summary>
         [HttpGet("{reservacionId}/puede-cancelar")]
         public async Task<IActionResult> PuedeCancelar(int reservacionId)
         {
@@ -85,9 +85,6 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
-
-
 
         private async Task<int> ObtenerUsuarioWebId()
         {

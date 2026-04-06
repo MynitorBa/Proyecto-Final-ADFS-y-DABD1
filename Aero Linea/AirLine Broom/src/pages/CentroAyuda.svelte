@@ -1,9 +1,22 @@
 <script>
   // @ts-nocheck
+/**
+ * @file CentroAyuda.svelte
+ * @description Static help center page for Broom AirLine. Displays contact information
+ * (phone, email, and office location), a grid of frequently asked help topics covering
+ * reservations, payments, luggage, and cancellations, and a call-to-action section
+ * that redirects the user to the Contactanos page. No API calls are made; all content
+ * is static. Appears in the user flow as an informational support resource accessible
+ * from the main navigation or the footer.
+ */
+
   import '../styles/info-pages.css';
+
+  /** Navigation function provided by the app router to change the current page. @type {Function} */
   export let navigateTo;
 </script>
 
+<!-- Hero con titulo e icono introductorio del centro de ayuda -->
 <div class="info-page">
   <div class="info-hero">
     <div class="info-hero__content">
@@ -28,6 +41,7 @@
       Volver al inicio
     </button>
 
+    <!-- Grilla de canales de contacto: telefono, correo y direccion de oficina -->
     <div class="info-contact-grid">
       <div class="info-contact-item">
         <div class="info-contact-item__icon">
@@ -69,6 +83,7 @@
       </div>
     </div>
 
+    <!-- Tarjetas de temas frecuentes: reservas, pagos, equipaje y cancelaciones -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">Temas frecuentes de ayuda</h2>
       <div class="info-cards-grid">
@@ -120,6 +135,7 @@
       </div>
     </div>
 
+    <!-- Llamado a la accion para contactar soporte si no se encontro respuesta -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">No encontraste lo que buscabas?</h2>
       <p class="info-prose">Nuestro equipo de soporte esta disponible los 7 dias de la semana, las 24 horas del dia, para ayudarte con cualquier consulta relacionada con vuelos, reservas o tu cuenta.</p>

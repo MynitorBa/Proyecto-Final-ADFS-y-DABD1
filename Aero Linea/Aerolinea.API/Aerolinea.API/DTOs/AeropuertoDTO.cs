@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura que expone la informacion publica de un aeropuerto.
+    /// Incluye codigo IATA, ciudad, pais, imagen opcional y zona horaria configurada.
+    /// </summary>
     public class AeropuertoDTO
     {
         public int Id { get; set; }

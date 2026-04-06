@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,17 +9,29 @@ using Aerolinea.API.Services;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de autenticacion. Gestiona el inicio de sesion, la consulta de sesion activa
+    /// y el cierre de sesion mediante cookies cifradas de ASP.NET Core.
+    /// </summary>
     [ApiController]
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
         private readonly AuthService _service;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de autenticacion.
+        /// </summary>
         public AuthController(AuthService service)
         {
             _service = service;
         }
 
+        /// <summary>
+        /// Valida las credenciales del usuario y, si son correctas, emite una cookie de sesion
+        /// cifrada con los claims del usuario (id, nombre, correo, rol). La cookie tiene una
+        /// duracion de 8 horas y es persistente entre pestanas del navegador.
+        /// </summary>
         // POST api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
@@ -48,7 +60,7 @@ namespace Aerolinea.API.Controllers
                 principal,
                 new AuthenticationProperties
                 {
-                    IsPersistent = true,                       
+                    IsPersistent = true,
                     ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
                 });
 
@@ -58,6 +70,10 @@ namespace Aerolinea.API.Controllers
 
         // GET api/auth/sesion
         // Devuelve la información de la sesión activa.
+        /// <summary>
+        /// Retorna los datos del usuario autenticado extraidos de la cookie de sesion activa,
+        /// incluyendo id, nombre, correo, id de rol y nombre de rol. Requiere sesion activa.
+        /// </summary>
         [Authorize]
         [HttpGet("sesion")]
         public IActionResult ObtenerSesion()
@@ -74,6 +90,10 @@ namespace Aerolinea.API.Controllers
 
         // POST api/auth/logout
         // Destruye la cookie de sesión
+        /// <summary>
+        /// Cierra la sesion del usuario eliminando la cookie de autenticacion del navegador.
+        /// Requiere sesion activa.
+        /// </summary>
         [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()

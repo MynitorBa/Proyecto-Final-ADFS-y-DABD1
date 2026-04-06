@@ -1,4 +1,4 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de perfil de usuario. Permite al usuario autenticado consultar sus datos,
+    /// actualizar su numero de telefono y cambiar su contrasena. Aplica verificacion de
+    /// propiedad para garantizar que cada usuario solo pueda modificar su propio perfil.
+    /// Todos los endpoints requieren sesion activa.
+    /// </summary>
     [ApiController]
     [Route("api/perfil")]
     [Authorize]   // Todas las rutas de perfil requieren sesión activa
@@ -13,6 +19,9 @@ namespace Aerolinea.API.Controllers
     {
         private readonly PerfilService _service;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de perfil de usuario.
+        /// </summary>
         public PerfilController(PerfilService service)
         {
             _service = service;
@@ -25,6 +34,10 @@ namespace Aerolinea.API.Controllers
             return sesionId.HasValue && sesionId.Value == routeUsuarioId;
         }
 
+        /// <summary>
+        /// Retorna los datos del perfil de un usuario especifico. Solo el propio usuario
+        /// puede consultar su perfil; retorna 403 si el id de ruta no coincide con la sesion.
+        /// </summary>
         [HttpGet("{usuarioId}")]
         public async Task<IActionResult> ObtenerPerfil(int usuarioId)
         {
@@ -38,6 +51,10 @@ namespace Aerolinea.API.Controllers
             return Ok(perfil);
         }
 
+        /// <summary>
+        /// Actualiza el numero de telefono del usuario especificado. Solo el propio usuario
+        /// puede modificar su telefono; retorna 403 si el id de ruta no coincide con la sesion.
+        /// </summary>
         [HttpPatch("{usuarioId}/telefono")]
         public async Task<IActionResult> ActualizarTelefono(
             int usuarioId,
@@ -50,6 +67,11 @@ namespace Aerolinea.API.Controllers
             return exito ? Ok(new { message = mensaje }) : BadRequest(new { message = mensaje });
         }
 
+        /// <summary>
+        /// Cambia la contrasena del usuario especificado tras validar la contrasena actual.
+        /// Solo el propio usuario puede cambiar su contrasena; retorna 403 si el id de ruta
+        /// no coincide con la sesion activa.
+        /// </summary>
         [HttpPatch("{usuarioId}/contrasena")]
         public async Task<IActionResult> CambiarContrasena(
             int usuarioId,

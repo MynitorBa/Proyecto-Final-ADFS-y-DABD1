@@ -1,22 +1,34 @@
-﻿using Aerolinea.API.Models.DTOs;
+using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de rutas de vuelo. Expone endpoints para que el administrador consulte,
+    /// cree y actualice rutas origen-destino, asi como calcule el tiempo estimado de llegada
+    /// teniendo en cuenta las zonas horarias de los aeropuertos involucrados.
+    /// Todos los endpoints requieren rol Administrador.
+    /// </summary>
     [ApiController]
     [Route("api/rutas")]
     public class RutasController : ControllerBase
     {
         private readonly RutaService _service;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de rutas.
+        /// </summary>
         public RutasController(RutaService service)
         {
             _service = service;
         }
 
         // GET /api/rutas
+        /// <summary>
+        /// Retorna el listado completo de rutas registradas en el sistema. Requiere rol Administrador.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> ObtenerTodas()
@@ -26,6 +38,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // PUT /api/rutas/{id}/duracion
+        /// <summary>
+        /// Actualiza la duracion estimada de vuelo de una ruta existente. Requiere rol Administrador.
+        /// Retorna 404 si la ruta no existe y 400 si la duracion proporcionada no es valida.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/duracion")]
         public async Task<IActionResult> ActualizarDuracion(int id, [FromBody] EditarDuracionRutaDTO dto)
@@ -45,6 +61,12 @@ namespace Aerolinea.API.Controllers
         }
 
         // POST /api/rutas/calcular-llegada
+        /// <summary>
+        /// Calcula la fecha y hora de llegada estimada a partir del aeropuerto origen, destino,
+        /// fecha y hora de salida. Considera las zonas horarias de ambos aeropuertos. Retorna
+        /// null si faltan datos en lugar de retornar error, para no bloquear el formulario del admin.
+        /// Requiere rol Administrador.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPost("calcular-llegada")]
         public async Task<IActionResult> CalcularLlegada([FromBody] CalculoLlegadaRequestDTO request)
@@ -69,6 +91,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // POST /api/rutas
+        /// <summary>
+        /// Crea una nueva ruta entre dos aeropuertos con la duracion estimada indicada.
+        /// Si la ruta ya existe retorna el mensaje correspondiente. Requiere rol Administrador.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> CrearRuta([FromBody] CrearRutaDTO dto)
@@ -83,6 +109,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET /api/rutas/existe?origenId=1&destinoId=2
+        /// <summary>
+        /// Verifica si ya existe una ruta entre dos aeropuertos. Se usa en el formulario
+        /// de creacion de rutas para validar en tiempo real. Requiere rol Administrador.
+        /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpGet("existe")]
         public async Task<IActionResult> ExisteRuta(

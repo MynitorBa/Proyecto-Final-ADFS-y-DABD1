@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.Models.DTOs
+namespace Aerolinea.API.Models.DTOs
 {
+    /// <summary>
+    /// DTO de lectura que expone el historial de un vuelo para reportes administrativos.
+    /// Incluye numero de vuelo, ruta, horarios, estado, capacidad, boletos vendidos y precios.
+    /// </summary>
     public class VueloHistorialDTO
     {
         public int Id { get; set; }

@@ -1,9 +1,24 @@
 <script>
+/**
+ * @file Register.svelte
+ * @description Full user registration page for Broom AirLine. On mount it clears the form and
+ * loads country/city data from countriesnow.space and nationality demonyms plus international
+ * dial codes from restcountries.com. Provides autocomplete inputs for country (which also sets
+ * the dial code and digit count), city (dependent on selected country), and one or more
+ * nationalities with add/remove controls. The phone input uses a dial-code prefix and formats
+ * digits based on the selected country's expected count. Password strength is shown live with
+ * three requirements (length, uppercase, digit). Before registration, the form calls
+ * POST /api/usuarios/verificar to check for duplicate email, username, or passport. On passing,
+ * it submits to POST /api/usuarios and redirects to login after 2 seconds.
+ */
   import '../styles/Register.css';
   import { onMount } from 'svelte';
   import { API } from '../lib/api.js';
+
+  /** Function used to navigate between application pages. @type {function} */
   export let navigateTo;
 
+  /** Registration form data object bound to all form inputs. @type {{correo: string, contrasena: string, confirmPassword: string, pasaporte: string, username: string, nombre: string, apellido: string, telefono: string, fechaNacimiento: string, ciudad: string, pais: string}} */
   let registerData = {
     correo: '',
     contrasena: '',
@@ -18,47 +33,84 @@
     pais: ''
   };
 
+  /** True when the user has checked the terms and conditions checkbox. @type {boolean} */
   let acceptTerms = false;
+
+  /** True when the user has checked the receive promotions checkbox. @type {boolean} */
   let receivePromotions = false;
+
+  /** True when the user has checked the CAPTCHA checkbox. @type {boolean} */
   let captchaVerified = false;
+
+  /** Global submission error message shown below the form. @type {string} */
   let submitError = '';
+
+  /** True after the registration API call succeeds, triggers the success message and redirect. @type {boolean} */
   let submitSuccess = false;
+
+  /** True while the registration API call is in progress. @type {boolean} */
   let submitting = false;
 
+  /** Field-level validation error messages keyed by field name. @type {{correo: string, username: string, pasaporte: string, contrasena: string, pais: string, ciudad: string, nacionalidad: string, telefono: string}} */
   let errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '', telefono: '' };
 
-  // Validación contraseña
+  // Computed password strength flags for the contrasena field.
   $: ps = {
     length:    registerData.contrasena.length >= 8,
     uppercase: /[A-Z]/.test(registerData.contrasena),
     number:    /[0-9]/.test(registerData.contrasena)
   };
+
+  // True when all three password strength requirements are satisfied.
   $: passwordValid = ps.length && ps.uppercase && ps.number;
 
-  // País autocomplete
+  /** All countries with their city lists loaded from countriesnow.space. @type {Array<{country: string, cities: string[]}>} */
   let todosLosPaises = [];
+
+  /** Current text in the country autocomplete input. @type {string} */
   let paisQuery = '';
+
+  /** Country suggestions filtered from todosLosPaises by paisQuery. @type {Array<object>} */
   let paisesSugeridos = [];
+
+  /** The selected country object from todosLosPaises, or null if none selected yet. @type {object|null} */
   let paisSeleccionado = null;
 
-  // Ciudad autocomplete
+  /** Current text in the city autocomplete input. @type {string} */
   let ciudadQuery = '';
+
+  /** City name suggestions filtered from paisSeleccionado.cities by ciudadQuery. @type {string[]} */
   let ciudadesSugeridas = [];
+
+  /** True once the user has clicked a city suggestion from the dropdown. @type {boolean} */
   let ciudadSeleccionada = false;
 
-  // Nacionalidades múltiples
+  /** Array of nationality text values, one per nationality row (at least one). @type {string[]} */
   let nacionalidades = [''];
+
+  /** Array of suggestion arrays for each nationality input, indexed parallel to nacionalidades. @type {Array<Array<{pais: string, demonym: string}>>} */
   let sugerenciasNac = [[]];
+
+  /** All nationality demonym entries loaded from restcountries.com. @type {Array<{pais: string, demonym: string}>} */
   let todosNacionalidades = [];
+
+  /** Array of booleans indicating whether each nationality has been selected from the suggestions. @type {boolean[]} */
   let nacionalidadesSeleccionadas = [false];
 
-  // ══════════════════════════════════════════════════════════════════
-  // TELÉFONO — código de marcado por país (hardcoded ITU)
-  // ══════════════════════════════════════════════════════════════════
+  /** International dial code prefix for the selected country, e.g. '+502'. @type {string} */
   let dialCode = '';
+
+  /** Map of country name (lowercased) to dial code and digit count. @type {Object.<string, {code: string, digits: number}>} */
   let dialCodesMap = {};
+
+  /** Number of local digits required for phone numbers in the selected country. @type {number} */
   let phoneDigitCount = 8;
 
+  /**
+   * Static lookup map of international dial codes to expected local digit counts.
+   * Keys are dial code strings (e.g. '+502'), values are digit counts.
+   * @type {Object.<string, number>}
+   */
   const knownDigits = {
     '+1':10,'+7':10,'+20':10,'+27':9,'+30':10,
     '+31':9,'+32':9,'+33':9,'+34':9,'+36':9,
@@ -103,6 +155,13 @@
     '+994':9,'+995':9,'+996':9,'+998':9,
   };
 
+  /**
+   * Formats a raw digit string into a human-readable local phone number using space-separated
+   * groups whose sizes depend on the total expected digit count for the country.
+   * @param {string} digits - Raw digit string to format.
+   * @param {number} total - Total expected digit count for the country.
+   * @returns {string} Formatted phone string with spaces between digit groups.
+   */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
     if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
@@ -111,6 +170,11 @@
     return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
   }
 
+  /**
+   * Handles the phone input event by stripping non-digits, capping to phoneDigitCount, formatting
+   * with formatLocalPhone, and assigning the result to registerData.telefono. Clears errores.telefono.
+   * @param {Event} e - The input event from the phone text field.
+   */
   function onPhoneInput(e) {
     const raw = e.target.value.replace(/\D/g, '');
     const capped = raw.slice(0, phoneDigitCount);
@@ -118,30 +182,31 @@
     errores.telefono = '';
   }
 
+  /**
+   * Generates a sample placeholder phone number string by formatting a repeated '5' digit string
+   * to show the expected format for the current country.
+   * @param {number} digits - Total digit count expected for the country.
+   * @returns {string} A formatted placeholder string.
+   */
   function getPhonePlaceholder(digits) {
     const sample = '5'.repeat(digits);
     return formatLocalPhone(sample, digits);
   }
 
-  // ══════════════════════════════════════════════════════════════════
-
   onMount(async () => {
     sessionStorage.clear();
     limpiarFormulario();
 
-    // Países y ciudades
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
       const data = await res.json();
       todosLosPaises = data.data;
-    } catch { console.error('Error cargando países'); }
+    } catch { console.error('Error cargando paises'); }
 
-    // Nacionalidades (demonyms) + dial codes
     try {
       const res = await fetch('https://restcountries.com/v3.1/all?fields=name,demonyms,idd');
       const data = await res.json();
 
-      // Construir mapa de dial codes
       data.forEach(p => {
         if (p.idd?.root) {
           const suffixes = p.idd.suffixes ?? [''];
@@ -162,6 +227,10 @@
     } catch { console.error('Error cargando nacionalidades / dial codes'); }
   });
 
+  /**
+   * Resets all form fields, error messages, autocomplete state, and nationality rows to their
+   * initial empty state. Called on mount to ensure a clean form even if the component is reused.
+   */
   function limpiarFormulario() {
     registerData = {
       correo: '', contrasena: '', confirmPassword: '', pasaporte: '',
@@ -187,15 +256,26 @@
     phoneDigitCount = 8;
   }
 
+  /**
+   * Handles the correo input event by forcing the value to lowercase before assignment.
+   * @param {Event} e - The input event from the correo text field.
+   */
   function onCorreoInput(e) {
     registerData.correo = e.target.value.toLowerCase();
   }
 
+  /**
+   * Handles the pasaporte input event by stripping all non-numeric characters from the value.
+   * @param {Event} e - The input event from the pasaporte text field.
+   */
   function onPasaporteInput(e) {
     registerData.pasaporte = e.target.value.replace(/[^0-9]/g, '');
   }
 
-  // País
+  /**
+   * Filters todosLosPaises by the current paisQuery (minimum 2 characters) to populate
+   * paisesSugeridos. Clears registerData.pais if the query has changed and no country is selected.
+   */
   function onPaisInput() {
     const q = paisQuery.toLowerCase();
     paisesSugeridos = q.length < 2 ? [] : todosLosPaises.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
@@ -205,6 +285,11 @@
     }
   }
 
+  /**
+   * Sets the selected country, updates registerData.pais, resets city state, and resolves the
+   * dial code and digit count for the selected country from dialCodesMap.
+   * @param {{country: string, cities: string[]}} p - The selected country object.
+   */
   function seleccionarPais(p) {
     paisSeleccionado = p;
     paisQuery = p.country;
@@ -216,7 +301,6 @@
     ciudadSeleccionada = false;
     errores.pais = '';
 
-    // Dial code del país seleccionado
     const info = dialCodesMap[p.country.toLowerCase()];
     dialCode = info?.code ?? '';
     phoneDigitCount = info?.digits ?? 9;
@@ -224,14 +308,22 @@
     errores.telefono = '';
   }
 
+  /**
+   * On blur of the country input, if text was typed but no country was selected from the list,
+   * sets errores.pais and clears paisQuery to force a valid selection.
+   */
   function validarPaisSeleccionado() {
     if (paisQuery && !paisSeleccionado) {
-      errores.pais = 'Debes seleccionar un país de la lista';
+      errores.pais = 'Debes seleccionar un pais de la lista';
       paisQuery = '';
     }
   }
 
-  // Ciudad
+  /**
+   * Filters the selected country's city list by ciudadQuery (minimum 2 characters) to populate
+   * ciudadesSugeridas. Clears registerData.ciudad if the query has changed and no city is selected.
+   * Does nothing if no country has been selected yet.
+   */
   function onCiudadInput() {
     if (!paisSeleccionado) return;
     const q = ciudadQuery.toLowerCase();
@@ -242,6 +334,11 @@
     }
   }
 
+  /**
+   * Sets the selected city string into ciudadQuery and registerData.ciudad, marks ciudadSeleccionada
+   * as true, clears ciudadesSugeridas, and clears errores.ciudad.
+   * @param {string} c - The city name selected from the dropdown.
+   */
   function seleccionarCiudad(c) {
     ciudadQuery = c;
     registerData.ciudad = c;
@@ -250,6 +347,10 @@
     errores.ciudad = '';
   }
 
+  /**
+   * On blur of the city input, if text was typed but no city was selected from the list, sets
+   * errores.ciudad and clears ciudadQuery to force a valid selection.
+   */
   function validarCiudadSeleccionada() {
     if (ciudadQuery && !ciudadSeleccionada) {
       errores.ciudad = 'Debes seleccionar una ciudad de la lista';
@@ -257,7 +358,12 @@
     }
   }
 
-  // Nacionalidades
+  /**
+   * Filters todosNacionalidades by the text at index i in the nacionalidades array (matching
+   * country name or demonym) to populate sugerenciasNac[i]. Clears errores.nacionalidad if
+   * text is typed without a confirmed selection.
+   * @param {number} i - The index of the nationality row to filter suggestions for.
+   */
   function onNacInput(i) {
     const q = nacionalidades[i].toLowerCase();
     sugerenciasNac[i] = q.length < 2 ? [] : todosNacionalidades
@@ -269,6 +375,12 @@
     }
   }
 
+  /**
+   * Assigns the chosen demonym string to nacionalidades[i], marks it as selected, clears its
+   * suggestion list, and clears errores.nacionalidad.
+   * @param {number} i - The index of the nationality row.
+   * @param {string} demonym - The demonym string from the selected suggestion.
+   */
   function seleccionarNac(i, demonym) {
     nacionalidades[i] = demonym;
     nacionalidades = [...nacionalidades];
@@ -279,6 +391,11 @@
     errores.nacionalidad = '';
   }
 
+  /**
+   * On blur of a nationality input, if text was typed at index i but no suggestion was selected,
+   * sets errores.nacionalidad and clears the text at that index to force a valid selection.
+   * @param {number} i - The index of the nationality row to validate.
+   */
   function validarNacionalidadSeleccionada(i) {
     if (nacionalidades[i] && !nacionalidadesSeleccionadas[i]) {
       errores.nacionalidad = 'Debes seleccionar una nacionalidad de la lista';
@@ -287,29 +404,45 @@
     }
   }
 
+  /**
+   * Appends a new empty nationality row with an empty suggestion list and an unselected flag
+   * to the parallel nacionalidades, sugerenciasNac, and nacionalidadesSeleccionadas arrays.
+   */
   function agregarNac() {
     nacionalidades = [...nacionalidades, ''];
     sugerenciasNac = [...sugerenciasNac, []];
     nacionalidadesSeleccionadas = [...nacionalidadesSeleccionadas, false];
   }
 
+  /**
+   * Removes the nationality row at index i from all three parallel arrays by filtering out that index.
+   * @param {number} i - The index of the nationality row to remove.
+   */
   function quitarNac(i) {
     nacionalidades = nacionalidades.filter((_, idx) => idx !== i);
     sugerenciasNac = sugerenciasNac.filter((_, idx) => idx !== i);
     nacionalidadesSeleccionadas = nacionalidadesSeleccionadas.filter((_, idx) => idx !== i);
   }
 
+  /**
+   * Validates all form fields, checks for duplicate email/username/passport via
+   * POST /api/usuarios/verificar, then submits the registration to POST /api/usuarios.
+   * On success sets submitSuccess and schedules navigation to 'login' after 2 seconds.
+   * On validation or API failure sets the appropriate errores or submitError messages.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleRegister() {
     submitError = '';
     errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '', telefono: '' };
 
-    if (!passwordValid) { errores.contrasena = 'Mínimo 8 caracteres, 1 mayúscula y 1 número.'; return; }
-    if (registerData.contrasena !== registerData.confirmPassword) { submitError = 'Las contraseñas no coinciden.'; return; }
-    if (!acceptTerms) { submitError = 'Debes aceptar los términos y condiciones.'; return; }
+    if (!passwordValid) { errores.contrasena = 'Minimo 8 caracteres, 1 mayuscula y 1 numero.'; return; }
+    if (registerData.contrasena !== registerData.confirmPassword) { submitError = 'Las contrasenas no coinciden.'; return; }
+    if (!acceptTerms) { submitError = 'Debes aceptar los terminos y condiciones.'; return; }
     if (!captchaVerified) { submitError = 'Confirma que no eres un robot.'; return; }
 
     if (!paisSeleccionado || !registerData.pais) {
-      errores.pais = 'Debes seleccionar un país de la lista.';
+      errores.pais = 'Debes seleccionar un pais de la lista.';
       return;
     }
     if (!ciudadSeleccionada || !registerData.ciudad) {
@@ -317,15 +450,14 @@
       return;
     }
 
-    // Validar teléfono completo
     if (dialCode) {
       const digitosIngresados = registerData.telefono.replace(/\D/g, '').length;
       if (digitosIngresados !== phoneDigitCount) {
-        errores.telefono = `Se requieren ${phoneDigitCount} dígitos para ${registerData.pais} (ingresaste ${digitosIngresados}).`;
+        errores.telefono = `Se requieren ${phoneDigitCount} digitos para ${registerData.pais} (ingresaste ${digitosIngresados}).`;
         return;
       }
     } else if (!registerData.telefono.trim()) {
-      errores.telefono = 'Ingresa tu número de teléfono.';
+      errores.telefono = 'Ingresa tu numero de telefono.';
       return;
     }
 
@@ -337,7 +469,6 @@
 
     submitting = true;
 
-    // Construir teléfono completo con dial code
     const telefonoCompleto = dialCode
       ? dialCode + ' ' + registerData.telefono.replace(/\s/g, '')
       : registerData.telefono;
@@ -362,9 +493,9 @@
       });
       const c = await vRes.json();
 
-      if (c.correoExiste)    errores.correo    = 'Este correo ya está registrado.';
-      if (c.usernameExiste)  errores.username  = 'Este username ya está en uso.';
-      if (c.pasaporteExiste) errores.pasaporte = 'Este pasaporte ya está registrado.';
+      if (c.correoExiste)    errores.correo    = 'Este correo ya esta registrado.';
+      if (c.usernameExiste)  errores.username  = 'Este username ya esta en uso.';
+      if (c.pasaporteExiste) errores.pasaporte = 'Este pasaporte ya esta registrado.';
       if (c.correoExiste || c.usernameExiste || c.pasaporteExiste) { submitting = false; return; }
 
       const res = await fetch(`${API}/api/usuarios`, {
@@ -382,10 +513,12 @@
   }
 </script>
 
+<!-- Contenedor principal de la pagina de registro con layout de dos paneles -->
 <div class="register">
   <div class="register__container">
     <div class="register__content">
 
+      <!-- Panel decorativo izquierdo con beneficios de la cuenta Broom AirLine -->
       <div class="register__image-section">
         <div class="register__image-overlay">
           <h2 class="register__image-title">Unete a Broom AirLine</h2>
@@ -399,21 +532,24 @@
         </div>
       </div>
 
+      <!-- Panel derecho con formulario de registro de nueva cuenta -->
       <div class="register__form-section">
         <div class="register__form-container">
           <button class="register__back" on:click={() => navigateTo('home')}>Volver al inicio</button>
 
+          <!-- Encabezado del formulario con titulo y subtitulo -->
           <div class="register__header">
             <h1 class="register__title">Crear cuenta</h1>
             <p class="register__subtitle">Completa tus datos para registrarte</p>
           </div>
 
+          <!-- Mensaje de exito post-registro o formulario de registro completo -->
           {#if submitSuccess}
-            <div class="register-form__success">¡Cuenta creada exitosamente! Redirigiendo al login...</div>
+            <div class="register-form__success">Cuenta creada exitosamente! Redirigiendo al login...</div>
           {:else}
             <form class="register-form" on:submit|preventDefault={handleRegister}>
 
-              <!-- Nombre y Apellido -->
+              <!-- Campos de datos personales basicos del nuevo usuario -->
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="nombre" class="register-form__label">Nombre</label>
@@ -425,7 +561,6 @@
                 </div>
               </div>
 
-              <!-- Username -->
               <div class="register-form__row">
                 <div class="register-form__field">
                   <label for="reg-username" class="register-form__label">Username</label>
@@ -438,28 +573,26 @@
                 </div>
               </div>
 
-              <!-- Correo -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
-                  <label for="reg-correo" class="register-form__label">Correo electrónico</label>
+                  <label for="reg-correo" class="register-form__label">Correo electronico</label>
                   <input type="email" id="reg-correo" name="reg-correo" class="register-form__input {errores.correo ? 'register-form__input--error' : ''}" value={registerData.correo} on:input={onCorreoInput} placeholder="correo@ejemplo.com" autocomplete="new-password" required />
                   {#if errores.correo}<span class="register-form__field-error">{errores.correo}</span>{/if}
                 </div>
               </div>
 
-              <!-- Pasaporte -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
-                  <label for="pasaporte" class="register-form__label">Pasaporte (solo números)</label>
+                  <label for="pasaporte" class="register-form__label">Pasaporte (solo numeros)</label>
                   <input type="text" id="pasaporte" class="register-form__input {errores.pasaporte ? 'register-form__input--error' : ''}" value={registerData.pasaporte} on:input={onPasaporteInput} placeholder="12345678" autocomplete="off" required />
                   {#if errores.pasaporte}<span class="register-form__field-error">{errores.pasaporte}</span>{/if}
                 </div>
               </div>
 
-              <!-- País autocomplete -->
+              <!-- Autocomplete de pais con lista desplegable de sugerencias -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
-                  <label for="paisInput" class="register-form__label">País</label>
+                  <label for="paisInput" class="register-form__label">Pais</label>
                   <div class="autocomplete">
                     <input
                       type="text"
@@ -468,7 +601,7 @@
                       bind:value={paisQuery}
                       on:input={onPaisInput}
                       on:blur={validarPaisSeleccionado}
-                      placeholder="Escribe tu país..."
+                      placeholder="Escribe tu pais..."
                       autocomplete="off"
                     />
                     {#if paisesSugeridos.length > 0}
@@ -485,13 +618,13 @@
                 </div>
               </div>
 
-              <!-- Teléfono con dial code -->
+              <!-- Campo de telefono con prefijo internacional determinado por el pais -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="telefono" class="register-form__label">
-                    Teléfono
+                    Telefono
                     {#if dialCode}
-                      <span class="register-form__label-hint">— {phoneDigitCount} dígitos requeridos</span>
+                      <span class="register-form__label-hint">— {phoneDigitCount} digitos requeridos</span>
                     {/if}
                   </label>
                   <div class="phone-field" class:phone-field--error={errores.telefono}>
@@ -504,7 +637,7 @@
                       class="register-form__input"
                       bind:value={registerData.telefono}
                       on:input={onPhoneInput}
-                      placeholder={dialCode ? getPhonePlaceholder(phoneDigitCount) : 'Selecciona un país primero'}
+                      placeholder={dialCode ? getPhonePlaceholder(phoneDigitCount) : 'Selecciona un pais primero'}
                       disabled={!dialCode}
                       autocomplete="off"
                     />
@@ -512,16 +645,16 @@
                   {#if registerData.telefono && !errores.telefono && dialCode}
                     {@const d = registerData.telefono.replace(/\D/g, '').length}
                     {#if d === phoneDigitCount}
-                      <span class="register-form__field-ok">✓ Número completo</span>
+                      <span class="register-form__field-ok">Numero completo</span>
                     {:else}
-                      <span class="register-form__field-hint">{d}/{phoneDigitCount} dígitos</span>
+                      <span class="register-form__field-hint">{d}/{phoneDigitCount} digitos</span>
                     {/if}
                   {/if}
                   {#if errores.telefono}<span class="register-form__field-error">{errores.telefono}</span>{/if}
                 </div>
               </div>
 
-              <!-- Ciudad autocomplete -->
+              <!-- Autocomplete de ciudad dependiente del pais seleccionado -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <label for="ciudadInput" class="register-form__label">Ciudad</label>
@@ -533,7 +666,7 @@
                       bind:value={ciudadQuery}
                       on:input={onCiudadInput}
                       on:blur={validarCiudadSeleccionada}
-                      placeholder={paisSeleccionado ? 'Escribe tu ciudad...' : 'Primero selecciona un país'}
+                      placeholder={paisSeleccionado ? 'Escribe tu ciudad...' : 'Primero selecciona un pais'}
                       disabled={!paisSeleccionado}
                       autocomplete="off"
                     />
@@ -551,7 +684,7 @@
                 </div>
               </div>
 
-              <!-- Nacionalidades múltiples -->
+              <!-- Campo de nacionalidades con soporte para multiples entradas y autocomplete -->
               <div class="register-form__row">
                 <div class="register-form__field register-form__field--full">
                   <span class="register-form__label">Nacionalidad(es)</span>
@@ -595,42 +728,42 @@
                 </div>
               </div>
 
-              <!-- Contraseñas -->
+              <!-- Campos de contrasena con indicadores de fortaleza en tiempo real -->
               <div class="register-form__row">
                 <div class="register-form__field">
-                  <label for="reg-contrasena" class="register-form__label">Contraseña</label>
-                  <input type="password" id="reg-contrasena" name="reg-contrasena" class="register-form__input {errores.contrasena ? 'register-form__input--error' : ''}" bind:value={registerData.contrasena} placeholder="Mínimo 8 caracteres" autocomplete="new-password" required />
+                  <label for="reg-contrasena" class="register-form__label">Contrasena</label>
+                  <input type="password" id="reg-contrasena" name="reg-contrasena" class="register-form__input {errores.contrasena ? 'register-form__input--error' : ''}" bind:value={registerData.contrasena} placeholder="Minimo 8 caracteres" autocomplete="new-password" required />
                   {#if registerData.contrasena.length > 0}
                     <div class="password-strength">
-                      <span class="password-strength__item" class:ok={ps.length}>{ps.length ? '✓' : '✗'} 8 caracteres mínimo</span>
-                      <span class="password-strength__item" class:ok={ps.uppercase}>{ps.uppercase ? '✓' : '✗'} 1 mayúscula</span>
-                      <span class="password-strength__item" class:ok={ps.number}>{ps.number ? '✓' : '✗'} 1 número</span>
+                      <span class="password-strength__item" class:ok={ps.length}>{ps.length ? '✓' : '✗'} 8 caracteres minimo</span>
+                      <span class="password-strength__item" class:ok={ps.uppercase}>{ps.uppercase ? '✓' : '✗'} 1 mayuscula</span>
+                      <span class="password-strength__item" class:ok={ps.number}>{ps.number ? '✓' : '✗'} 1 numero</span>
                     </div>
                   {/if}
                   {#if errores.contrasena}<span class="register-form__field-error">{errores.contrasena}</span>{/if}
                 </div>
                 <div class="register-form__field">
-                  <label for="reg-confirmPassword" class="register-form__label">Confirmar contraseña</label>
-                  <input type="password" id="reg-confirmPassword" name="reg-confirmPassword" class="register-form__input" bind:value={registerData.confirmPassword} placeholder="Repite tu contraseña" autocomplete="new-password" required />
+                  <label for="reg-confirmPassword" class="register-form__label">Confirmar contrasena</label>
+                  <input type="password" id="reg-confirmPassword" name="reg-confirmPassword" class="register-form__input" bind:value={registerData.confirmPassword} placeholder="Repite tu contrasena" autocomplete="new-password" required />
                   {#if registerData.confirmPassword.length > 0 && registerData.contrasena !== registerData.confirmPassword}
-                    <span class="register-form__field-error">Las contraseñas no coinciden.</span>
+                    <span class="register-form__field-error">Las contrasenas no coinciden.</span>
                   {/if}
                 </div>
               </div>
 
-              <!-- Checkboxes -->
+              <!-- Checkboxes de aceptacion de terminos y preferencia de promociones -->
               <div class="register-form__checkboxes">
                 <label class="register-form__checkbox">
                   <input type="checkbox" bind:checked={acceptTerms} class="register-form__checkbox-input" />
-                  <span class="register-form__checkbox-label">Acepto los términos y condiciones y la política de privacidad</span>
+                  <span class="register-form__checkbox-label">Acepto los terminos y condiciones y la politica de privacidad</span>
                 </label>
                 <label class="register-form__checkbox">
                   <input type="checkbox" bind:checked={receivePromotions} class="register-form__checkbox-input" />
-                  <span class="register-form__checkbox-label">Deseo recibir promociones y ofertas por correo electrónico</span>
+                  <span class="register-form__checkbox-label">Deseo recibir promociones y ofertas por correo electronico</span>
                 </label>
               </div>
 
-              <!-- CAPTCHA -->
+              <!-- Widget de verificacion CAPTCHA de no soy un robot -->
               <div class="register-form__captcha">
                 <div class="captcha-box">
                   <label class="captcha-box__checkbox">
@@ -648,6 +781,7 @@
                 </div>
               </div>
 
+              <!-- Mensaje de error global y boton de envio del formulario -->
               {#if submitError}
                 <div class="register-form__error">{submitError}</div>
               {/if}
@@ -659,10 +793,11 @@
             </form>
           {/if}
 
+          <!-- Enlace de navegacion para usuarios que ya tienen cuenta -->
           <div class="register__login">
             <p class="register__login-text">
-              ¿Ya tienes una cuenta?
-              <button type="button" class="register__login-link" on:click={() => navigateTo('login')}>Inicia sesión</button>
+              Ya tienes una cuenta?
+              <button type="button" class="register__login-link" on:click={() => navigateTo('login')}>Inicia sesion</button>
             </p>
           </div>
 

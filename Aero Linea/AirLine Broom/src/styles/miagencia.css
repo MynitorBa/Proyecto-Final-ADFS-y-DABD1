@@ -1,8 +1,6 @@
-/* ============================================================
-   miagencia.css — Panel Webservice · Mi Agencia · Broom AirLine
-   ============================================================ */
+/* miagencia.css - Agency panel styles including a fixed top toast with entry animation, a circular spinner, an error alert, status badges, info cards grid, a notice box, and a form with labeled fields and error states */
 
-/* ── Toast ───────────────────────────────────────────────────── */
+/* Fixed top-right toast: flex row with icon, asymmetric radius, box shadow, and slide-in animation */
 .mi-agencia-toast {
   position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;
   display: flex; align-items: center; gap: .75rem;
@@ -10,43 +8,58 @@
   font-size: .88rem; font-weight: 600; box-shadow: 0 8px 30px rgba(0,0,0,.15);
   animation: toastIn .3s ease-out;
 }
+
+/* Success toast: dark green background with light green text */
 .mi-agencia-toast--success { background: #065f46; color: #d1fae5; }
+/* Error toast: dark red background with light red text */
 .mi-agencia-toast--error   { background: #7f1d1d; color: #fee2e2; }
+/* Icon within the toast at 1.1rem */
 .mi-agencia-toast__icon    { font-size: 1.1rem; }
+
+/* Toast entry animation: slides down 12px while fading in */
 @keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
 
-/* ── Spinner ─────────────────────────────────────────────────── */
+/* Circular spinner: 44px with a partial gold border rotating at 0.8s */
 .mi-agencia-spinner {
   width: 44px; height: 44px; border: 3px solid var(--perla-dark);
   border-top-color: var(--primary-color); border-radius: 50%;
   margin: 0 auto; animation: spin .8s linear infinite;
 }
+
+/* Full rotation keyframe for the spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Alert ───────────────────────────────────────────────────── */
+/* Alert row: flex with icon, padded, rounded with a light red theme for errors */
 .mi-agencia-alert {
   display: flex; align-items: center; gap: .75rem;
   padding: 1rem 1.25rem; border-radius: 8px; font-size: .9rem;
 }
+/* Error alert: light red background, dark red text, and a red border */
 .mi-agencia-alert--error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
-/* ── Badge de estado ─────────────────────────────────────────── */
+/* Status badge: small pill with asymmetric radius and all-caps bold text */
 .mi-agencia-badge {
   display: inline-block; padding: .35rem .9rem;
   border-radius: 0 20px 0 20px; font-size: .72rem;
   font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
 }
+
+/* Active badge: green tones */
 .badge--active    { background: #d1fae5; color: #065f46; }
+/* Inactive badge: grey tones */
 .badge--inactive  { background: #f3f4f6; color: #6b7280; }
+/* Suspended badge: amber tones */
 .badge--suspended { background: #fef3c7; color: #92400e; }
 
-/* ── Cards de información ────────────────────────────────────── */
+/* Auto-fit grid of info cards, minimum 220px wide, with bottom margin */
 .mi-agencia-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
 }
+
+/* Individual info card: flex row with icon, asymmetric border-radius, and a warm border */
 .mi-agencia-card {
   display: flex; align-items: flex-start; gap: 1rem;
   padding: 1.25rem 1.5rem;
@@ -54,35 +67,53 @@
   border: 1px solid rgba(235,230,224,.7);
   border-radius: 4px 16px 4px 16px;
 }
+
+/* Large icon column that does not shrink */
 .mi-agencia-card__icon { font-size: 1.5rem; flex-shrink: 0; }
+
+/* Small all-caps muted label above the card value */
 .mi-agencia-card__label {
   font-size: .72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .8px; color: var(--text-muted); margin: 0 0 .35rem;
 }
+
+/* Regular card value in the secondary color */
 .mi-agencia-card__value {
   font-size: 1rem; color: var(--secondary-color); margin: 0; font-weight: 500;
 }
+
+/* Highlighted card value: larger, bolder, and in the primary color */
 .mi-agencia-card__value--highlight {
   font-size: 1.3rem; font-weight: 700; color: var(--primary-color);
 }
 
-/* ── Notice ──────────────────────────────────────────────────── */
+/* Notice box: blue tones with a left-to-right flex row layout */
 .mi-agencia-notice {
   display: flex; align-items: flex-start; gap: .75rem;
   padding: 1rem 1.25rem; border-radius: 8px;
   background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;
   font-size: .85rem; line-height: 1.5;
 }
+
+/* Paragraph inside the notice resets its default margin */
 .mi-agencia-notice p { margin: 0; }
 
-/* ── Formulario ──────────────────────────────────────────────── */
+/* Form column capped at 560px with a vertical flex layout */
 .mi-agencia-form { max-width: 560px; display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* Individual form field: label stacked above the input */
 .mi-agencia-field { display: flex; flex-direction: column; gap: .45rem; }
+
+/* Small all-caps bold field label in the secondary color */
 .mi-agencia-field__label {
   font-size: .82rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .8px; color: var(--secondary-color);
 }
+
+/* Required asterisk in the primary color */
 .mi-agencia-field__required { color: var(--primary-color); }
+
+/* Field input: asymmetric radius (0 10px 0 10px) with a gold focus ring */
 .mi-agencia-field__input {
   padding: .875rem 1.25rem; border: 1.5px solid #e5e7eb;
   border-radius: 0 10px 0 10px; font-size: .95rem;
@@ -90,12 +121,21 @@
   transition: border-color .2s, box-shadow .2s;
   outline: none; font-family: inherit;
 }
+
+/* Input border turns gold with a translucent ring on focus */
 .mi-agencia-field__input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 180,140,100),.15);
 }
+
+/* Error state: red border */
 .mi-agencia-field__input--error  { border-color: #f87171; }
+/* Disabled state: faded with a not-allowed cursor */
 .mi-agencia-field__input:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Inline field-level error message in red */
 .mi-agencia-field__error { font-size: .78rem; color: #dc2626; margin: 0; }
+
+/* Form action row: flex row with a gap, primary button capped at 260px */
 .mi-agencia-form__actions { display: flex; gap: 1rem; padding-top: .5rem; }
 .mi-agencia-form__actions .btn-primary { max-width: 260px; }

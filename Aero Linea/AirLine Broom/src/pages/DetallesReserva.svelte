@@ -1,16 +1,34 @@
 <script>
+/**
+ * @file DetallesReserva.svelte
+ * @description Modal component that displays full details of a single reservation.
+ * Shows flight segments grouped by route, passenger information, payment summary,
+ * and a rating/comment form for completed reservations. Appears as an overlay on top
+ * of the MisReservas page when the user clicks a reservation card.
+ */
   import '../styles/detallereserva.css';
   import { onMount } from 'svelte';
   import { API } from '../lib/api.js';
 
+  /** The reservation object to display, containing boletos, estado, total and metadata. @type {object} */
   export let reservation;
+
+  /** Callback function invoked when the modal should be closed. @type {function} */
   export let onClose;
 
+  /** ID of the currently authenticated user, read from sessionStorage on mount. @type {number|null} */
   let usuarioId = null;
+
+  /** Existing comment object for the route if the user already commented, otherwise null. @type {object|null} */
   let comentarioExistente = null;
+
+  /** True while the existing comment is being fetched from the API. @type {boolean} */
   let cargandoComentario = false;
+
+  /** True while a new comment POST request is in progress. @type {boolean} */
   let enviandoComentario = false;
-  
+
+  /** Draft state for a new comment being composed by the user. @type {{cantidadEstrellas: number, contenido: string}} */
   let nuevoComentario = {
     cantidadEstrellas: 5,
     contenido: ''
@@ -18,31 +36,38 @@
 
   onMount(async () => {
     usuarioId = parseInt(sessionStorage.getItem('usuarioId'));
-    
+
     if (reservation.estadoReservaId === 2 && reservation.boletos.length > 0) {
       await verificarComentarioExistente();
     }
   });
 
+  /**
+   * Fetches all comments for the route of the first boleto and checks whether
+   * the current user has already posted one. Sets comentarioExistente if found.
+   * Requires at least one boleto in the reservation to extract the rutaId.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function verificarComentarioExistente() {
     cargandoComentario = true;
-    
+
     try {
       if (!reservation.boletos || reservation.boletos.length === 0) {
-        console.log('No hay boletos en la reservación');
+        console.log('No hay boletos en la reservacion');
         return;
       }
-      
+
       const rutaId = reservation.boletos[0].rutaId;
       console.log('Verificando comentarios para ruta:', rutaId);
-      
+
       const response = await fetch(`${API}/api/comentarios/ruta/${rutaId}`);
-      
+
       if (response.ok) {
         const comentarios = await response.json();
         console.log('Comentarios obtenidos:', comentarios);
         comentarioExistente = comentarios.find(c => c.usuarioId === usuarioId);
-        
+
         if (comentarioExistente) {
           console.log('Ya existe un comentario de este usuario');
         }
@@ -54,20 +79,27 @@
     }
   }
 
+  /**
+   * Submits the new comment composed in nuevoComentario to the API endpoint POST /api/comentarios.
+   * Validates that the contenido field is not empty before sending. On success, sets
+   * comentarioExistente to the newly created comment and resets the draft form.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function enviarComentario() {
     if (!nuevoComentario.contenido.trim()) {
       return;
     }
 
     enviandoComentario = true;
-    
+
     try {
       if (!reservation.boletos || reservation.boletos.length === 0) {
-        throw new Error('No hay boletos en la reservación');
+        throw new Error('No hay boletos en la reservacion');
       }
-      
+
       const rutaId = reservation.boletos[0].rutaId;
-      
+
       const response = await fetch('${API}/api/comentarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,12 +118,12 @@
 
       const comentarioCreado = await response.json();
       comentarioExistente = comentarioCreado;
-      
+
       nuevoComentario = {
         cantidadEstrellas: 5,
         contenido: ''
       };
-      
+
     } catch (error) {
       console.error('Error enviando comentario:', error);
     } finally {
@@ -99,6 +131,12 @@
     }
   }
 
+  /**
+   * Maps a reservation status string to its corresponding CSS modifier class
+   * used to style the status badge.
+   * @param {string} estadoReserva - The status label such as 'Pendiente', 'Confirmada', etc.
+   * @returns {string} A CSS class string like 'status--confirmed', or empty string if unknown.
+   */
   function getStatusClass(estadoReserva) {
     const statusMap = {
       'Pendiente': 'status--pending',
@@ -109,36 +147,60 @@
     return statusMap[estadoReserva] || '';
   }
 
+  /**
+   * Formats an ISO date string into a localized DD/MM/YYYY string using the es-ES locale.
+   * Returns an empty string if the input is falsy.
+   * @param {string} dateString - ISO date string to format.
+   * @returns {string} Formatted date or empty string.
+   */
   function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     });
   }
 
+  /**
+   * Extracts the HH:MM portion from a time span string formatted as HH:MM:SS.
+   * Returns an empty string if the input is falsy.
+   * @param {string} timeSpan - Time string in HH:MM:SS format.
+   * @returns {string} Time in HH:MM format or empty string.
+   */
   function formatTime(timeSpan) {
     if (!timeSpan) return '';
     const parts = timeSpan.split(':');
     return `${parts[0]}:${parts[1]}`;
   }
 
+  /**
+   * Converts a duration expressed in total minutes to a human-readable Xh Ym string.
+   * @param {number} minutes - Total duration in minutes.
+   * @returns {string} Formatted duration string such as '2h 30m'.
+   */
   function formatDuration(minutes) {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   }
 
+  /**
+   * Groups individual boleto objects by their unique flight key (vueloId + origin + destination).
+   * Each group accumulates seat numbers from all boletos belonging to the same flight segment.
+   * Returns an array of flight objects each containing route, schedule, aircraft and seat information.
+   * @param {Array<object>} boletos - Array of boleto objects from the reservation.
+   * @returns {Array<object>} Array of grouped flight objects with an asientos array.
+   */
   function agruparVuelosPorRuta(boletos) {
     if (!boletos || boletos.length === 0) return [];
-    
+
     const vuelos = {};
-    
+
     boletos.forEach(boleto => {
       const key = `${boleto.vueloId}-${boleto.origenCodigo}-${boleto.destinoCodigo}`;
-      
+
       if (!vuelos[key]) {
         vuelos[key] = {
           vueloId: boleto.vueloId,
@@ -159,18 +221,24 @@
           asientos: []
         };
       }
-      
+
       vuelos[key].asientos.push(boleto.noAsiento);
     });
-    
+
     return Object.values(vuelos);
   }
 
+  /**
+   * Deduplicates passengers across all boletos using a Map keyed by passenger ID.
+   * Returns each unique passenger object only once, even if they appear in multiple boletos.
+   * @param {Array<object>} boletos - Array of boleto objects, each potentially containing a pasajero sub-object.
+   * @returns {Array<object>} Array of unique passenger objects.
+   */
   function obtenerPasajerosUnicos(boletos) {
     if (!boletos || boletos.length === 0) return [];
-    
+
     const pasajerosMap = new Map();
-    
+
     boletos.forEach(boleto => {
       if (boleto.pasajero && boleto.pasajero.id) {
         if (!pasajerosMap.has(boleto.pasajero.id)) {
@@ -178,30 +246,46 @@
         }
       }
     });
-    
+
     return Array.from(pasajerosMap.values());
   }
 
+  /**
+   * Handles clicks on the semi-transparent modal backdrop. Invokes onClose only when
+   * the click target is the backdrop element itself, not a child element inside the modal.
+   * @param {MouseEvent} event - The DOM click event from the backdrop div.
+   */
   function handleBackdropClick(event) {
     if (event.target === event.currentTarget) {
       onClose();
     }
   }
 
+  /**
+   * Placeholder handler for the ticket download button. Currently logs a message
+   * indicating the feature is not yet implemented.
+   */
   function handleDownloadTicket() {
     console.log('Descargar boleto - proximamente');
   }
 
+  // Groups boletos by flight route to display each flight segment once.
   $: vuelos = agruparVuelosPorRuta(reservation.boletos);
+
+  // Produces a deduplicated list of passenger objects from all boletos.
   $: pasajeros = obtenerPasajerosUnicos(reservation.boletos);
+
+  // True when the reservation is in confirmed state (id 2) and has at least one flight, enabling the comment section.
   $: puedeComentarYCalificar = reservation.estadoReservaId === 2 && vuelos.length > 0;
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- Modal backdrop: clic fuera del modal lo cierra -->
 <div class="modal-backdrop" on:click={handleBackdropClick}>
   <div class="detalle-reserva-modal">
     <div class="detalle-reserva__container">
+      <!-- Encabezado del modal con numero de reserva y estado -->
       <div class="detalle-reserva__header">
         <button class="detalle-reserva__close" on:click={onClose}>
           Cerrar
@@ -217,6 +301,7 @@
 
       <div class="detalle-reserva__content">
         <div class="detalle-reserva__main">
+          <!-- Tarjeta con codigo de confirmacion para el check-in -->
           <section class="confirmation-card">
             <div class="confirmation-card__content">
               <h2 class="confirmation-card__title">Codigo de Confirmacion</h2>
@@ -227,9 +312,10 @@
             </div>
           </section>
 
+          <!-- Detalle de segmentos de vuelo agrupados por ruta -->
           <section class="flight-details-section">
             <h2 class="section-title">Detalles de Vuelo</h2>
-            
+
             {#each vuelos as vuelo}
               <article class="flight-detail-card">
                 <div class="flight-detail-card__header">
@@ -302,17 +388,18 @@
             {/each}
           </section>
 
+          <!-- Informacion de pasajeros unicos asociados a la reserva -->
           {#if pasajeros.length > 0}
             <section class="passengers-section">
               <h2 class="section-title">Informacion de Pasajeros</h2>
-              
+
               <div class="passengers-grid">
                 {#each pasajeros as pasajero, index}
                   <article class="passenger-detail-card">
                     <div class="passenger-detail-card__header">
                       <h3 class="passenger-detail-card__title">Pasajero {index + 1}</h3>
                     </div>
-                    
+
                     <div class="passenger-detail-card__content">
                       <div class="passenger-info-row">
                         <div class="passenger-info-item">
@@ -349,9 +436,10 @@
             </section>
           {/if}
 
+          <!-- Resumen de fechas, expiracion y total pagado de la reserva -->
           <section class="payment-section">
             <h2 class="section-title">Informacion de Reserva</h2>
-            
+
             <div class="payment-card">
               <div class="payment-detail">
                 <span class="payment-detail__label">Fecha de Reserva</span>
@@ -370,10 +458,11 @@
             </div>
           </section>
 
+          <!-- Seccion de calificacion y comentario disponible para reservas confirmadas -->
           {#if puedeComentarYCalificar}
             <section class="review-section">
               <h2 class="section-title">Califica tu Experiencia</h2>
-              
+
               {#if cargandoComentario}
                 <div class="review-loading">
                   <p>Verificando si ya has comentado...</p>
@@ -398,7 +487,7 @@
                     <label class="review-form__label">Calificacion</label>
                     <div class="review-stars">
                       {#each Array(5) as _, i}
-                        <button 
+                        <button
                           type="button"
                           class="review-star {i < nuevoComentario.cantidadEstrellas ? 'review-star--filled' : ''}"
                           on:click={() => nuevoComentario.cantidadEstrellas = i + 1}>
@@ -411,7 +500,7 @@
                   <div class="review-form__field">
                     <!-- svelte-ignore a11y_label_has_associated_control -->
                     <label class="review-form__label">Tu comentario</label>
-                    <textarea 
+                    <textarea
                       class="review-form__textarea"
                       bind:value={nuevoComentario.contenido}
                       placeholder="Cuentanos sobre tu experiencia en este vuelo..."
@@ -420,7 +509,7 @@
                     <span class="review-form__counter">{nuevoComentario.contenido.length}/500</span>
                   </div>
 
-                  <button 
+                  <button
                     type="button"
                     class="review-form__submit"
                     on:click={enviarComentario}

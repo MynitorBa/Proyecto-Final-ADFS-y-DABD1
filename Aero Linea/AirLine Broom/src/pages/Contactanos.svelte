@@ -1,14 +1,41 @@
 <script>
   // @ts-nocheck
+/**
+ * @file Contactanos.svelte
+ * @description Contact form page for Broom AirLine. Displays the company's phone, email,
+ * and office address alongside a form that lets any visitor send a support message. The
+ * form collects nombre, correo, asunto (optional), and mensaje fields. Client-side
+ * validation checks for required fields, a valid email format, and a minimum 10-character
+ * message length. On successful submission, posts the data to the /api/contacto endpoint
+ * and replaces the form with a success confirmation panel. On API error, displays the
+ * server message inline. Accessible from the main navigation and the CentroAyuda page.
+ */
+
   import '../styles/info-pages.css';
+
+  /** Navigation function provided by the app router to change the current page. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
+
+  /** Object holding the current values of all contact form fields. @type {{nombre: string, correo: string, asunto: string, mensaje: string}} */
   let formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
+
+  /** Current submission status: '' (idle), 'sending', 'success', or 'error'. @type {string} */
   let status = '';
+
+  /** Error message returned by the server when status is 'error'. @type {string} */
   let statusMsg = '';
+
+  /** Object mapping field names to their validation error strings. @type {object} */
   let errors = {};
 
+  /**
+   * Validates all required contact form fields. Checks that nombre and mensaje are non-empty,
+   * that correo matches a basic email pattern, and that mensaje has at least 10 characters.
+   * Populates the errors object with specific messages for each invalid field.
+   * @returns {boolean} True if all validations pass (errors object is empty), false otherwise.
+   */
   function validate() {
     errors = {};
     if (!formData.nombre.trim()) errors.nombre = 'Nombre requerido';
@@ -19,6 +46,14 @@
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Validates the form and then POSTs the trimmed form data to the /api/contacto endpoint.
+   * Sets status to 'sending' while the request is in flight. On success, sets status to
+   * 'success' and resets formData to empty strings, revealing the success panel. On API
+   * or network error, sets status to 'error' and populates statusMsg with the error detail.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleSubmit() {
     if (!validate()) return;
     status = 'sending'; statusMsg = '';
@@ -49,6 +84,7 @@
   }
 </script>
 
+<!-- Hero con titulo e icono de la pagina de contacto -->
 <div class="info-page">
   <div class="info-hero">
     <div class="info-hero__content">
@@ -72,6 +108,7 @@
       Volver al inicio
     </button>
 
+    <!-- Grilla de canales de contacto: telefono, correo y ubicacion de oficina -->
     <div class="info-contact-grid">
       <div class="info-contact-item">
         <div class="info-contact-item__icon">
@@ -113,6 +150,7 @@
       </div>
     </div>
 
+    <!-- Panel de exito post-envio o formulario de contacto segun el estado -->
     {#if status === 'success'}
       <div class="info-card">
         <div class="info-contacto-success">
@@ -183,6 +221,7 @@
       </div>
     {/if}
 
+    <!-- Resaltado con numero de telefono para consultas urgentes -->
     <div class="info-highlight">
       Para consultas urgentes sobre reservas o vuelos, llamanos al <strong>+502 2000-0000</strong> disponible las 24 horas, los 7 dias de la semana.
     </div>

@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de facturacion. Gestiona el proceso transaccional de compra
+    /// de una reservacion por parte de un usuario: validaciones, creacion de factura
+    /// y actualizacion de estados de boletos y reservacion.
+    /// </summary>
     public class FacturaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,6 +18,13 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Procesa el pago de una reservacion pendiente del usuario autenticado.
+        /// Verifica propiedad, estado y expiracion de la reservacion, que todos
+        /// los boletos tengan pasajero asignado, crea la factura y actualiza
+        /// estados de boletos y reservacion dentro de una transaccion atomica.
+        /// Retorna el DTO con los datos de la compra realizada.
+        /// </summary>
         public async Task<CompraRealizadaDTO> ComprarReservacion(
             int reservacionId,
             int usuarioId,

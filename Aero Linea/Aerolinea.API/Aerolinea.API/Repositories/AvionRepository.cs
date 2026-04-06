@@ -1,9 +1,13 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de aviones. Gestiona el CRUD completo de aviones e imagenes
+    /// asociadas. Permite consultar la flota disponible para la asignacion de vuelos.
+    /// </summary>
     public class AvionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,6 +17,10 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de aviones con su imagen asociada, ordenados
+        /// por marca y modelo.
+        /// </summary>
         public async Task<List<Avion>> ObtenerTodos()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -45,6 +53,9 @@ namespace Aerolinea.API.Repositories
             return aviones;
         }
 
+        /// <summary>
+        /// Retorna un avion especifico con su imagen. Retorna null si no existe el ID dado.
+        /// </summary>
         public async Task<Avion?> ObtenerPorId(int id)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -77,6 +88,9 @@ namespace Aerolinea.API.Repositories
             return null;
         }
 
+        /// <summary>
+        /// Inserta un nuevo avion en la base de datos y retorna el ID generado.
+        /// </summary>
         public async Task<int> Crear(Avion avion)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -96,13 +110,17 @@ namespace Aerolinea.API.Repositories
             return Convert.ToInt32(nuevoId);
         }
 
+        /// <summary>
+        /// Actualiza el modelo, marca y capacidad de un avion existente.
+        /// Retorna true si se modifico al menos una fila.
+        /// </summary>
         public async Task<bool> Actualizar(Avion avion)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-                UPDATE Avion 
+                UPDATE Avion
                 SET Modelo = @Modelo,
                     Marca = @Marca,
                     CapacidadPasajeros = @CapacidadPasajeros
@@ -118,6 +136,10 @@ namespace Aerolinea.API.Repositories
             return filasAfectadas > 0;
         }
 
+        /// <summary>
+        /// Elimina un avion y su imagen asociada de la base de datos.
+        /// Retorna true si la eliminacion fue exitosa.
+        /// </summary>
         public async Task<bool> Eliminar(int id)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -140,6 +162,10 @@ namespace Aerolinea.API.Repositories
 
         // ===== IMAGEN =====
 
+        /// <summary>
+        /// Guarda o actualiza la imagen en Base64 de un avion. Si ya existe un registro
+        /// de imagen lo actualiza; si no, lo inserta.
+        /// </summary>
         public async Task GuardarImagen(int avionId, string imagenBase64)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -159,6 +185,9 @@ namespace Aerolinea.API.Repositories
             await command.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Elimina la imagen asociada a un avion segun su ID.
+        /// </summary>
         public async Task EliminarImagen(int avionId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -170,6 +199,9 @@ namespace Aerolinea.API.Repositories
             await command.ExecuteNonQueryAsync();
         }
 
+        /// <summary>
+        /// Retorna la imagen en Base64 de un avion. Retorna null si no tiene imagen.
+        /// </summary>
         public async Task<string?> ObtenerImagen(int avionId)
         {
             using var connection = _connectionFactory.CreateConnection();

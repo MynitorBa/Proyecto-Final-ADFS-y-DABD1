@@ -1,5 +1,6 @@
-/* --- Estilos para el Carrito de Compras --- */
+/* carrito.css - Shopping cart page styles including header, cart item cards, passenger count selector, price breakdown, sticky summary panel, empty-state, and responsive layout */
 
+/* Full-page wrapper with project background color and generous bottom padding */
 .carrito {
     width: 100%;
     min-height: 100vh;
@@ -8,18 +9,20 @@
     font-family: inherit;
 }
 
+/* Centered content column capped at 1200px */
 .carrito__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* --- Header con la línea de acento del sistema --- */
+/* Page header with a thick gold left border as the design accent line */
 .carrito__header {
     margin-bottom: 3rem;
     border-left: 6px solid var(--primary-color);
     padding-left: 2rem;
 }
 
+/* Borderless transparent back button with muted uppercase text */
 .carrito__back {
     background: transparent;
     border: none;
@@ -32,11 +35,13 @@
     transition: var(--transition);
 }
 
+/* Back button shifts left and turns gold on hover */
 .carrito__back:hover {
     color: var(--primary-color);
     transform: translateX(-5px);
 }
 
+/* Fluid page title from 2rem to 3rem, light weight */
 .carrito__title {
     font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 300;
@@ -44,13 +49,14 @@
     margin: 0;
 }
 
+/* Muted subtitle line below the title */
 .carrito__subtitle {
     color: var(--text-muted);
     font-size: 1rem;
     margin-top: 0.5rem;
 }
 
-/* --- Layout Principal --- */
+/* Two-column grid: item list on the left, summary panel on the right */
 .carrito__content {
     display: grid;
     grid-template-columns: 1fr 380px;
@@ -58,22 +64,24 @@
     align-items: start;
 }
 
-/* --- Lista de Ítems --- */
+/* Vertical stack of cart item cards with 2rem gap */
 .carrito__items {
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
+/* Individual cart item: white card with large asymmetric radius and fade-in animation */
 .cart-item {
     background: var(--white);
-    border-radius: 4px 40px 4px 40px; /* Asimetría del perfil */
+    border-radius: 4px 40px 4px 40px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.03);
     padding: 2rem;
     border: 1px solid rgba(235, 230, 224, 0.5);
     animation: fadeIn 0.5s ease-out;
 }
 
+/* Card header: badge and remove button in a space-between row with dashed bottom border */
 .cart-item__header {
     display: flex;
     justify-content: space-between;
@@ -83,6 +91,7 @@
     border-bottom: 1px dashed var(--perla-dark);
 }
 
+/* Gold-tinted badge identifying the flight as outbound */
 .cart-item__type-badge {
     background: rgba(212, 175, 55, 0.1);
     color: var(--primary-color);
@@ -94,11 +103,13 @@
     border-radius: 0 10px 0 10px;
 }
 
+/* Neutral dark badge variant for return flights */
 .cart-item__type-badge--return {
     background: rgba(43, 45, 66, 0.05);
     color: var(--secondary-color);
 }
 
+/* Transparent red remove button, semi-transparent by default */
 .cart-item__remove {
     background: transparent;
     border: none;
@@ -111,12 +122,13 @@
     opacity: 0.6;
 }
 
+/* Remove button becomes fully opaque and slightly scales up on hover */
 .cart-item__remove:hover {
     opacity: 1;
     transform: scale(1.05);
 }
 
-/* Info del Vuelo */
+/* Flight number displayed in medium-weight secondary color */
 .cart-item__flight-number {
     font-size: 1.2rem;
     color: var(--secondary-color);
@@ -124,6 +136,7 @@
     font-weight: 400;
 }
 
+/* Route label (origin to destination) in bold gold text */
 .cart-item__route {
     font-size: 1.1rem;
     color: var(--primary-color);
@@ -131,7 +144,7 @@
     margin-bottom: 2rem;
 }
 
-/* Detalles Grid */
+/* Auto-fit grid of flight detail cells (date, duration, class, etc.) */
 .cart-item__details {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -139,6 +152,7 @@
     margin-bottom: 2.5rem;
 }
 
+/* Small all-caps muted label above each detail value */
 .cart-item__detail-label {
     display: block;
     font-size: 0.7rem;
@@ -148,18 +162,20 @@
     letter-spacing: 1px;
 }
 
+/* Bold secondary color value for each detail cell */
 .cart-item__detail-value {
     font-weight: 600;
     color: var(--secondary-color);
     font-size: 0.95rem;
 }
 
+/* Class value colored gold for visual emphasis */
 .cart-item__detail-value--class {
     text-transform: capitalize;
     color: var(--primary-color);
 }
 
-/* Precios e Inputs */
+/* Pricing row: beige background with passenger selector on left and price on right */
 .cart-item__pricing {
     display: flex;
     justify-content: space-between;
@@ -169,6 +185,7 @@
     border-radius: 20px 4px 20px 4px;
 }
 
+/* Small bold label above the passenger count selector */
 .cart-item__passengers-label {
     display: block;
     font-size: 0.75rem;
@@ -177,6 +194,7 @@
     color: var(--secondary-color);
 }
 
+/* Passenger count select with an asymmetric radius matching the card's style */
 .cart-item__passengers-select {
     padding: 0.6rem 1rem;
     border: 1px solid var(--perla-dark);
@@ -186,47 +204,54 @@
     font-weight: 600;
 }
 
+/* Right-aligned price breakdown column */
 .cart-item__price-breakdown {
     text-align: right;
 }
 
+/* Stacked label and value pair for price lines */
 .price-row {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
 }
 
+/* Tiny muted label above the price value */
 .price-row__label {
     font-size: 0.7rem;
     color: var(--text-muted);
 }
 
+/* Light-weight price value in secondary color */
 .price-row__value {
     font-size: 1.1rem;
     font-weight: 300;
     color: var(--secondary-color);
 }
 
+/* Total row: larger bold gold value */
 .price-row--total .price-row__value {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary-color);
 }
 
-/* --- Resumen (Summary) --- */
+/* Sticky summary container pinned 2rem from the top */
 .carrito__summary {
     position: sticky;
     top: 2rem;
 }
 
+/* Dark summary panel: inverted asymmetric radius, white text */
 .cart-summary {
     background: var(--secondary-color);
     color: var(--white);
     padding: 3rem 2rem;
-    border-radius: 40px 4px 40px 4px; /* Asimetría invertida respecto al ítem */
+    border-radius: 40px 4px 40px 4px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
 }
 
+/* Light-weight summary title with a faint white bottom border */
 .cart-summary__title {
     font-size: 1.5rem;
     font-weight: 300;
@@ -235,6 +260,7 @@
     padding-bottom: 1rem;
 }
 
+/* Individual summary line item: space-between flex row, semi-transparent */
 .summary-item {
     display: flex;
     justify-content: space-between;
@@ -243,12 +269,14 @@
     opacity: 0.8;
 }
 
+/* Faint horizontal divider within the summary panel */
 .cart-summary__divider {
     height: 1px;
     background: rgba(255,255,255,0.1);
     margin: 1.5rem 0;
 }
 
+/* Tax line item row with space-between layout */
 .tax-row {
     display: flex;
     justify-content: space-between;
@@ -256,6 +284,7 @@
     margin-bottom: 0.5rem;
 }
 
+/* Grand total row: label and value on opposite ends */
 .cart-summary__total {
     display: flex;
     justify-content: space-between;
@@ -263,17 +292,20 @@
     margin-top: 2rem;
 }
 
+/* Light-weight total label */
 .cart-summary__total-label {
     font-size: 1.2rem;
     font-weight: 300;
 }
 
+/* Large bold gold total amount */
 .cart-summary__total-value {
     font-size: 2rem;
     font-weight: 700;
     color: var(--primary-color);
 }
 
+/* Full-width gold checkout button with asymmetric radius */
 .cart-summary__btn-checkout {
     width: 100%;
     margin-top: 2.5rem;
@@ -289,12 +321,14 @@
     transition: var(--transition);
 }
 
+/* Checkout button inverts to white background with dark text and lifts on hover */
 .cart-summary__btn-checkout:hover {
     background: var(--white);
     color: var(--secondary-color);
     transform: translateY(-3px);
 }
 
+/* Small semi-transparent disclaimer note below the checkout button */
 .cart-summary__note {
     font-size: 0.7rem;
     text-align: center;
@@ -302,7 +336,7 @@
     opacity: 0.5;
 }
 
-/* --- Estado Vacío --- */
+/* Centered empty-state panel with a simple white card */
 .carrito__empty {
     text-align: center;
     padding: 5rem 2rem;
@@ -310,12 +344,14 @@
     border-radius: 20px;
 }
 
+/* Muted empty cart message in medium-weight text */
 .carrito__empty-message {
     font-size: 1.5rem;
     color: var(--text-muted);
     margin-bottom: 2rem;
 }
 
+/* Dark CTA button to navigate back to flight search from the empty cart */
 .carrito__empty-btn {
     padding: 1rem 2.5rem;
     background: var(--secondary-color);
@@ -325,29 +361,30 @@
     cursor: pointer;
 }
 
-/* --- Responsive --- */
+/* At 992px: single-column layout; summary panel loses sticky positioning */
 @media (max-width: 992px) {
     .carrito__content {
         grid-template-columns: 1fr;
     }
-    
+
     .carrito__summary {
         position: relative;
         top: 0;
     }
 }
 
+/* At 600px: card padding reduces; pricing section stacks vertically */
 @media (max-width: 600px) {
     .cart-item {
         padding: 1.5rem;
     }
-    
+
     .cart-item__pricing {
         flex-direction: column;
         align-items: flex-start;
         gap: 1.5rem;
     }
-    
+
     .cart-item__price-breakdown {
         text-align: left;
         width: 100%;

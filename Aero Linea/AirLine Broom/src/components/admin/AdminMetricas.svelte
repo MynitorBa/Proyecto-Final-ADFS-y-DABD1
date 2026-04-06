@@ -1,44 +1,98 @@
 <script>
+/**
+ * @file AdminMetricas.svelte
+ * @description Admin panel analytics and reporting section. Fetches two data sets from the
+ * backend on mount: a summary (KPI banner, daily search volume chart, top routes bar chart,
+ * income-by-class donut chart, and Web vs REST channel split) and a paginated search log.
+ * All data is filtered by date range, channel type and username. The admin can apply or reset
+ * filters and paginate through the search log. A modal allows exporting the current filtered
+ * list to an email address via the backend exportar-correo endpoint. All SVG charts are
+ * rendered inline using Svelte template math without external chart libraries.
+ */
 // @ts-nocheck
   import { onMount } from 'svelte';
 
+  /** Base API URL used for all backend requests. @type {string} */
   export let API;
+
+  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
+  /** Summary metrics object returned by the resumen endpoint; null while loading. @type {any} */
   let metricasResumen = null;
+
+  /** Paginated search log object returned by the listado endpoint; null while loading. @type {any} */
   let metricasListado = null;
+
+  /** Whether the summary metrics fetch is in progress. @type {boolean} */
   let loadingMetricas = false;
+
+  /** Whether the search log fetch is in progress. @type {boolean} */
   let loadingListado  = false;
 
+  /**
+   * Start date filter initialized to 30 days before today in YYYY-MM-DD format.
+   * @type {string}
+   */
   let metFechaDesde = (() => {
     const d = new Date(); d.setDate(d.getDate() - 30);
     return d.toISOString().split('T')[0];
   })();
+
+  /** End date filter initialized to today in YYYY-MM-DD format. @type {string} */
   let metFechaHasta = new Date().toISOString().split('T')[0];
+
+  /** Channel filter value: '' (all), 'Web', or 'REST'. @type {string} */
   let metTipo       = '';
+
+  /** Username text filter applied to the search log query. @type {string} */
   let metUsuario    = '';
+
+  /** Current page number for the paginated search log. @type {number} */
   let metPagina     = 1;
 
+  /** Email address entered in the export modal. @type {string} */
   let correoExportar       = '';
+
+  /** Whether the email export modal is visible. @type {boolean} */
   let mostrarModalExportar = false;
+
+  /** Whether the email export API request is in progress. @type {boolean} */
   let enviandoCorreo       = false;
 
+  /**
+   * On mount: loads summary metrics and the first page of the search log in parallel.
+   */
   onMount(() => {
     cargarMetricas();
     cargarListadoBusquedas(1);
   });
 
+  /**
+   * Fetches the summary metrics (KPIs, daily chart data, top routes, class distribution,
+   * channel split) from the backend using the current date and channel filters. Updates
+   * metricasResumen on success and shows a toast on error.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarMetricas() {
     loadingMetricas = true;
     try {
       const params = new URLSearchParams({ fechaDesde: metFechaDesde, fechaHasta: metFechaHasta });
       const r = await fetch(`${API}/api/metricas/resumen?${params}`, { credentials: 'include' });
       if (r.ok) metricasResumen = await r.json();
-      else mostrarToast('error', 'Error al cargar métricas');
-    } catch { mostrarToast('error', 'Error de conexión con métricas'); }
+      else mostrarToast('error', 'Error al cargar metricas');
+    } catch { mostrarToast('error', 'Error de conexion con metricas'); }
     finally { loadingMetricas = false; }
   }
 
+  /**
+   * Fetches a specific page of the paginated search log from the backend using the current
+   * filters (date range, channel, username, page size 25). Updates metricasListado on success.
+   * @async
+   * @param {number} pagina - The 1-based page number to load.
+   * @returns {Promise<void>}
+   */
   async function cargarListadoBusquedas(pagina = 1) {
     loadingListado = true;
     metPagina = pagina;
@@ -52,24 +106,39 @@
           tipo:         metTipo    || null,
           usuario:      metUsuario || null,
           pagina,
-          tamañoPagina: 25
+          tamanoPagina: 25
         })
       });
       if (r.ok) metricasListado = await r.json();
       else mostrarToast('error', 'Error al cargar listado');
-    } catch { mostrarToast('error', 'Error de conexión'); }
+    } catch { mostrarToast('error', 'Error de conexion'); }
     finally { loadingListado = false; }
   }
 
+  /**
+   * Re-applies all current filters by reloading both the summary metrics and page 1 of the
+   * search log simultaneously.
+   */
   function aplicarFiltros() {
     cargarMetricas();
     cargarListadoBusquedas(1);
   }
 
+  /**
+   * Navigates to the given page in the search log by calling cargarListadoBusquedas.
+   * @param {number} pagina - The page number to navigate to.
+   */
   function cambiarPagina(pagina) {
     cargarListadoBusquedas(pagina);
   }
 
+  /**
+   * POSTs an export request to the backend with the current filters and the provided email
+   * address. The backend will send the filtered search log as an email attachment. Shows
+   * a success or error toast and closes the modal on completion.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleExportarCorreo() {
     if (!correoExportar) return;
     enviandoCorreo = true;
@@ -90,24 +159,27 @@
         mostrarModalExportar = false;
         correoExportar = '';
       } else { mostrarToast('error', 'No se pudo enviar el correo'); }
-    } catch { mostrarToast('error', 'Error de conexión'); }
+    } catch { mostrarToast('error', 'Error de conexion'); }
     finally { enviandoCorreo = false; }
   }
 
+  // Conversion rate: total reservations divided by total searches, expressed as a percentage.
+  // Evaluates to '0.0' when there are no searches or no summary data yet.
   $: tasaConversion = (metricasResumen && metricasResumen.totalBusquedas > 0)
     ? ((metricasResumen.ingresosKpi.totalReservaciones / metricasResumen.totalBusquedas) * 100).toFixed(1)
     : '0.0';
 </script>
 
+<!-- Seccion de analiticos con KPIs, graficas SVG, registro de busquedas y exportacion -->
 <section class="admin-section met-section">
   <div class="met-header">
     <div>
-      <h2 class="admin-section__title">Analíticos y Reportes</h2>
-      <p class="admin-section__subtitle">Búsquedas, ingresos y conversión del sistema</p>
+      <h2 class="admin-section__title">Analiticos y Reportes</h2>
+      <p class="admin-section__subtitle">Busquedas, ingresos y conversion del sistema</p>
     </div>
   </div>
 
-  <!-- ── Filtros ── -->
+  <!-- Controles de filtro por rango de fechas, canal y usuario -->
   <div class="met-filtros">
     <div class="met-filtro-grupo">
       <label for="mf-desde" class="met-label">Desde</label>
@@ -136,10 +208,10 @@
   </div>
 
   {#if loadingMetricas}
-    <div class="met-loading"><div class="met-spinner"></div><p>Cargando analíticos...</p></div>
+    <div class="met-loading"><div class="met-spinner"></div><p>Cargando analiticos...</p></div>
   {:else if metricasResumen}
 
-    <!-- ── Banner ingresos ── -->
+    <!-- Banner de KPIs de ingresos: total, por clase, ticket promedio y tasa de conversion -->
     {#each [metricasResumen.ingresosKpi ?? {ingresosTotales:0,ingresosTurista:0,ingresosEjecutivo:0,totalBoletos:0,totalReservaciones:0,ticketPromedio:0}] as kpi}
       <div class="met-ingresos-banner">
         <div class="met-ing-main">
@@ -174,14 +246,14 @@
           <div class="met-ing-stat">
             <span class="met-ing-stat__dot met-ing-stat__dot--busq"></span>
             <div>
-              <span class="met-ing-stat__label">Búsquedas totales</span>
+              <span class="met-ing-stat__label">Busquedas totales</span>
               <span class="met-ing-stat__val">{metricasResumen.totalBusquedas.toLocaleString()}</span>
             </div>
           </div>
           <div class="met-ing-stat">
             <span class="met-ing-stat__dot" style="background:#a78bfa"></span>
             <div>
-              <span class="met-ing-stat__label">Tasa conversión</span>
+              <span class="met-ing-stat__label">Tasa conversion</span>
               <span class="met-ing-stat__val">{tasaConversion}%</span>
             </div>
           </div>
@@ -189,13 +261,12 @@
       </div>
     {/each}
 
-    <!-- ── Gráficas ── -->
+    <!-- Graficas SVG: busquedas diarias, top rutas por demanda e ingresos por clase -->
     <div class="met-graficas">
 
-      <!-- Gráfica 1: Búsquedas por día -->
       <div class="met-grafica met-grafica--wide">
-        <h3 class="met-grafica__titulo">Búsquedas diarias</h3>
-        <p class="met-grafica__subtitulo">Volumen de búsquedas por día en el periodo seleccionado</p>
+        <h3 class="met-grafica__titulo">Busquedas diarias</h3>
+        <p class="met-grafica__subtitulo">Volumen de busquedas por dia en el periodo seleccionado</p>
         {#if metricasResumen.busquedasPorDia.length === 0}
           <div class="met-empty">Sin datos en el periodo seleccionado</div>
         {:else}
@@ -229,7 +300,7 @@
                   {@const x=PAD.l+(i/(datos.length-1))*gW}
                   {@const y=PAD.t+gH-(d.total/maxVal)*gH}
                   <circle cx={x} cy={y} r="3.5" fill="#D4AF37" stroke="white" stroke-width="1.5">
-                    <title>{d.fecha}: {d.total} búsquedas</title>
+                    <title>{d.fecha}: {d.total} busquedas</title>
                   </circle>
                 {/each}
               {:else}
@@ -244,15 +315,14 @@
             </svg>
           </div>
           <div class="met-grafica__leyenda">
-            <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Búsquedas diarias</span>
+            <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Busquedas diarias</span>
           </div>
         {/if}
       </div>
 
-      <!-- Gráfica 2: Top rutas — solo búsquedas (backend no devuelve ingresos por ruta) -->
       <div class="met-grafica">
         <h3 class="met-grafica__titulo">Top rutas por demanda</h3>
-        <p class="met-grafica__subtitulo">Rutas más buscadas en el periodo seleccionado</p>
+        <p class="met-grafica__subtitulo">Rutas mas buscadas en el periodo seleccionado</p>
         {#if metricasResumen.rutasMasBuscadas.length === 0}
           <div class="met-empty">Sin datos en el periodo seleccionado</div>
         {:else}
@@ -268,22 +338,21 @@
                   <div class="met-barra-doble-track">
                     <div class="met-barra-fill met-barra-fill--gold"
                       style="width:{(ruta.total/maxBusc)*100}%"></div>
-                    <span class="met-barra-val">{ruta.total} búsq.</span>
+                    <span class="met-barra-val">{ruta.total} busq.</span>
                   </div>
                 </div>
               </div>
             {/each}
           </div>
           <div class="met-grafica__leyenda">
-            <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Búsquedas</span>
+            <span><span class="met-leyenda-dot" style="background:#D4AF37"></span> Busquedas</span>
           </div>
         {/if}
       </div>
 
-      <!-- Gráfica 3: Donut ingresos por clase -->
       <div class="met-grafica met-grafica--donut">
         <h3 class="met-grafica__titulo">Ingresos por clase</h3>
-        <p class="met-grafica__subtitulo">Contribución de Turista vs Ejecutivo al revenue total</p>
+        <p class="met-grafica__subtitulo">Contribucion de Turista vs Ejecutivo al revenue total</p>
         {#if !metricasResumen.distribucionClase || metricasResumen.distribucionClase.length === 0}
           <div class="met-empty">Sin boletos vendidos en el periodo</div>
         {:else}
@@ -349,11 +418,11 @@
 
     </div>
 
-    <!-- ── Canal Web vs REST ── -->
+    <!-- Desglose de busquedas por canal: Web vs REST con barras de porcentaje -->
     {#if metricasResumen.busquedasPorTipo && metricasResumen.busquedasPorTipo.length > 0}
       {@const totalTipo = metricasResumen.totalBusquedas || 1}
       <div class="met-canal-wrap">
-        <h3 class="met-canal__titulo">Canal de búsqueda: Web vs REST</h3>
+        <h3 class="met-canal__titulo">Canal de busqueda: Web vs REST</h3>
         <div class="met-canal-pills">
           {#each metricasResumen.busquedasPorTipo as tipo}
             {@const pct   = ((tipo.total/totalTipo)*100).toFixed(1)}
@@ -370,10 +439,10 @@
 
   {/if}
 
-  <!-- ── Listado paginado ── -->
+  <!-- Tabla paginada del registro de busquedas con opcion de exportacion por correo -->
   <div class="met-listado">
     <div class="met-listado__header">
-      <h3 class="met-listado__titulo">Registro de búsquedas</h3>
+      <h3 class="met-listado__titulo">Registro de busquedas</h3>
       <button class="met-btn-exportar" on:click={() => mostrarModalExportar = true}>
         Exportar por correo
       </button>
@@ -392,7 +461,7 @@
               <th class="table__header">Pasajeros</th>
               <th class="table__header">Usuario</th>
               <th class="table__header">Canal</th>
-              <th class="table__header">Fecha Búsqueda</th>
+              <th class="table__header">Fecha Busqueda</th>
             </tr>
           </thead>
           <tbody>
@@ -425,7 +494,7 @@
             ← Anterior
           </button>
           <span class="met-pag-info">
-            Página {metricasListado.paginaActual} de {metricasListado.totalPaginas}
+            Pagina {metricasListado.paginaActual} de {metricasListado.totalPaginas}
             &nbsp;·&nbsp; {metricasListado.totalRegistros.toLocaleString()} registros
           </span>
           <button class="met-pag-btn"
@@ -446,7 +515,7 @@
 
 </section>
 
-<!-- ── Modal exportar ── -->
+<!-- Modal de exportacion del listado filtrado a un correo electronico -->
 {#if mostrarModalExportar}
   <div class="modal-overlay" on:click={() => mostrarModalExportar = false}
     role="dialog" aria-modal="true">
@@ -457,10 +526,10 @@
       </div>
       <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
         <p style="color:var(--text-muted);font-size:0.9rem">
-          El listado filtrado actual se enviará como archivo adjunto al correo indicado.
+          El listado filtrado actual se enviara como archivo adjunto al correo indicado.
         </p>
         <div class="form-field">
-          <label for="met-correo" class="met-label">Correo electrónico</label>
+          <label for="met-correo" class="met-label">Correo electronico</label>
           <input id="met-correo" type="email" class="met-input"
             placeholder="correo@ejemplo.com"
             bind:value={correoExportar} />

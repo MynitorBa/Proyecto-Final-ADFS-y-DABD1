@@ -1,9 +1,13 @@
-﻿using Aerolinea.API.Models;
+using Aerolinea.API.Models;
 using Aerolinea.API.Data;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de nacionalidades. Permite consultar el catalogo completo
+    /// y buscar o crear registros de nacionalidad segun su nombre.
+    /// </summary>
     public class NacionalidadRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,6 +17,9 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de nacionalidades ordenadas alfabeticamente.
+        /// </summary>
         public async Task<List<Nacionalidad>> ObtenerTodas()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -28,7 +35,10 @@ namespace Aerolinea.API.Repositories
             return lista;
         }
 
-        // Busca o crea la nacionalidad y devuelve su Id
+        /// <summary>
+        /// Busca una nacionalidad por nombre usando la conexion dada. Si no existe la crea
+        /// y retorna su ID. Se usa al registrar usuarios con nacionalidades nuevas.
+        /// </summary>
         public async Task<int> ObtenerOCrearId(string nombre, SqlConnection connection)
         {
             // Buscar si ya existe

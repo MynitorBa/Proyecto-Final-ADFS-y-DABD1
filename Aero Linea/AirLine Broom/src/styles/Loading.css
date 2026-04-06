@@ -1,8 +1,6 @@
-/* ══════════════════════════════════════════════════════════
-   Loading.css  —  Loading overlay con animación de avión
-   ══════════════════════════════════════════════════════════ */
+/* Loading.css - Full-screen loading overlay with a floating airplane animation, a soft elliptical shadow that pulses beneath it, a muted loading message, and a sliding progress bar */
 
-/* ── Overlay ── */
+/* Full-screen fixed overlay: white background, top z-index, wait cursor */
 .broom-loader__overlay {
     position: fixed;
     inset: 0;
@@ -15,7 +13,7 @@
     cursor: wait;
 }
 
-/* ── Contenido central ── */
+/* Centered column containing the plane, text, and progress bar */
 .broom-loader__content {
     position: relative;
     display: flex;
@@ -24,7 +22,7 @@
     z-index: 10;
 }
 
-/* ── Avión ── */
+/* Plane image container: 140px wide, continuously floating via broom-fly animation */
 .broom-loader__plane-container {
     width: 140px;
     position: relative;
@@ -32,9 +30,11 @@
     animation: broom-fly 2.5s ease-in-out infinite;
 }
 
+/* Size modifiers: small (90px) and large (200px) plane variants */
 .broom-loader__plane-container--small { width: 90px;  }
 .broom-loader__plane-container--large { width: 200px; }
 
+/* Plane image: full width with a subtle drop shadow */
 .broom-loader__plane-img {
     width: 100%;
     height: auto;
@@ -42,7 +42,7 @@
     filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.05));
 }
 
-/* ── Sombra dinámica ── */
+/* Elliptical shadow beneath the plane: blurred and animated to pulse with broom-shadow */
 .broom-loader__plane-shadow {
     width: 60%;
     height: 6px;
@@ -53,11 +53,12 @@
     animation: broom-shadow 2.5s ease-in-out infinite;
 }
 
-/* ── Texto ── */
+/* Text info block centered below the plane */
 .broom-loader__info {
     text-align: center;
 }
 
+/* All-caps loading message in warm dark brown */
 .broom-loader__message {
     color: #6b5744;
     font-size: 1rem;
@@ -67,7 +68,7 @@
     margin-bottom: 1rem;
 }
 
-/* ── Barra de progreso ── */
+/* Progress bar track: 180px wide, 2px tall, light grey */
 .broom-loader__track {
     width: 180px;
     height: 2px;
@@ -77,6 +78,7 @@
     overflow: hidden;
 }
 
+/* Progress bar fill: 60px wide dark brown block sliding from left to right infinitely */
 .broom-loader__progress {
     position: absolute;
     height: 100%;
@@ -85,7 +87,7 @@
     animation: broom-progress 1.5s infinite linear;
 }
 
-/* ── Nubes decorativas ── */
+/* Decorative blurred cloud blobs positioned in the background */
 .broom-loader__cloud {
     position: absolute;
     background-color: #4d2e2e;
@@ -94,20 +96,24 @@
     z-index: 1;
 }
 
+/* Cloud variant 1: wide blob top-left at 50% opacity */
 .broom-loader__cloud--1 { width: 300px; height: 100px; top: 15%;    left: -10%; opacity: 0.5; }
+/* Cloud variant 2: larger blob bottom-right at 30% opacity */
 .broom-loader__cloud--2 { width: 400px; height: 150px; bottom: 10%; right: -5%; opacity: 0.3; }
 
-/* ── Animaciones ── */
+/* Plane float: oscillates 25px up while tilting from -1deg to 3deg */
 @keyframes broom-fly {
     0%, 100% { transform: translateY(0)    rotate(-1deg); }
     50%       { transform: translateY(-25px) rotate(3deg); }
 }
 
+/* Shadow pulse: shrinks to 70% and fades to 40% opacity at mid-cycle */
 @keyframes broom-shadow {
     0%, 100% { transform: scale(1);   opacity: 1;   }
     50%       { transform: scale(0.7); opacity: 0.4; }
 }
 
+/* Progress bar slides from -100% to 150% horizontally */
 @keyframes broom-progress {
     from { left: -100%; }
     to   { left:  150%; }

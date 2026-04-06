@@ -1,9 +1,23 @@
 <script>
   // @ts-nocheck
+/**
+ * @file Cookies.svelte
+ * @description Static informational page that explains Broom AirLine's cookie policy.
+ * Describes what cookies are, the three categories used by the platform (session cookies
+ * that maintain authentication and role state, functional cookies that remember search
+ * preferences, and analytics cookies that record route statistics for admins), the CAPTCHA
+ * security mechanism applied to registration and login forms, and instructions for managing
+ * or disabling cookies in the browser. No API calls or reactive state is used; the entire
+ * page is static content. Accessible from the footer and informational navigation links.
+ */
+
   import '../styles/info-pages.css';
+
+  /** Navigation function provided by the app router to change the current page. @type {Function} */
   export let navigateTo;
 </script>
 
+<!-- Hero con titulo e icono de la pagina de politica de cookies -->
 <div class="info-page">
   <div class="info-hero">
     <div class="info-hero__content">
@@ -27,6 +41,7 @@
       Volver al inicio
     </button>
 
+    <!-- Contenido estatico de la politica: definicion, tipos, seguridad y gestion de cookies -->
     <div class="info-card">
       <span class="info-badge">Vigente desde febrero 2026</span>
 
@@ -35,6 +50,7 @@
 
       <h2 class="info-section-title">Tipos de cookies que usamos</h2>
 
+      <!-- Grilla de los tres tipos de cookies: sesion, funcionales y analiticas -->
       <div class="info-cards-grid" style="margin-top:1rem">
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">

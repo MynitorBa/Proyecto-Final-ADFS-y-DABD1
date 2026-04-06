@@ -1,7 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO para registrar o actualizar una aeronave en el sistema.
+    /// Requiere marca, modelo y capacidad de pasajeros. Acepta imagen en Base64 de forma opcional.
+    /// </summary>
     public class CrearAvionDTO
     {
         [Required]

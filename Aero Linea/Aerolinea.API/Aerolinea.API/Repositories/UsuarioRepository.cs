@@ -1,10 +1,15 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de usuarios. Gestiona la creacion, consulta y actualizacion de usuarios,
+    /// incluyendo la asignacion de nacionalidades, verificacion de duplicados en registro,
+    /// busqueda por credenciales para autenticacion y administracion de roles.
+    /// </summary>
     public class UsuarioRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -21,16 +26,21 @@ namespace Aerolinea.API.Repositories
             _ciudadRepository = ciudadRepository;
         }
 
+        /// <summary>
+        /// Inserta un nuevo usuario en la base de datos y retorna el ID generado.
+        /// Los campos opcionales como telefono, fecha de nacimiento y ciudad aceptan
+        /// null o valor por defecto y se almacenan como DBNull en la base de datos.
+        /// </summary>
         public async Task<int> CrearUsuario(Usuario usuario)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-                INSERT INTO Usuario (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, 
+                INSERT INTO Usuario (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido,
                                     Telefono, FechaNacimiento, CiudadId, RolID)
                 OUTPUT INSERTED.Id
-                VALUES (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido, 
+                VALUES (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido,
                         @Telefono, @FechaNacimiento, @CiudadId, @RolID)";
 
             using var command = new SqlCommand(query, connection);
@@ -48,6 +58,11 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync();
         }
 
+        /// <summary>
+        /// Asocia una lista de nacionalidades a un usuario recien creado.
+        /// Por cada nacionalidad obtiene o crea el registro en la tabla Nacionalidad
+        /// y luego inserta el vinculo en UsuarioNacionalidad.
+        /// </summary>
         public async Task AgregarNacionalidades(int usuarioId, List<string> nacionalidades)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -66,6 +81,11 @@ namespace Aerolinea.API.Repositories
             }
         }
 
+        /// <summary>
+        /// Verifica si ya existe un usuario con el correo, username o pasaporte indicados.
+        /// Retorna un objeto RegisterConstraint con las flags correspondientes a cada campo
+        /// que ya este en uso, para informar al cliente que datos causan conflicto.
+        /// </summary>
         public async Task<RegisterConstraint> VerificarExistencia(string correo, string username, string pasaporte)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -91,15 +111,20 @@ namespace Aerolinea.API.Repositories
             return constraint;
         }
 
+        /// <summary>
+        /// Busca un usuario por correo electronico o username para el proceso de autenticacion.
+        /// Retorna el objeto Usuario completo con su hash de contrasena y rol, o null si
+        /// no existe ningun usuario con esas credenciales.
+        /// </summary>
         public async Task<Usuario?> ObtenerPorCorreoOUsername(string correoOUsername)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-                SELECT Id, Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido, 
+                SELECT Id, Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido,
                        Telefono, FechaNacimiento, CiudadId, RolID
-                FROM Usuario 
+                FROM Usuario
                 WHERE Correo = @CorreoOUsername OR Username = @CorreoOUsername";
 
             using var command = new SqlCommand(query, connection);
@@ -128,6 +153,10 @@ namespace Aerolinea.API.Repositories
             return null;
         }
 
+        /// <summary>
+        /// Retorna el nombre del rol asociado al ID indicado.
+        /// Retorna null si el rol no existe en la tabla Rol.
+        /// </summary>
         public async Task<string?> ObtenerNombreRol(int rolId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -141,6 +170,10 @@ namespace Aerolinea.API.Repositories
             return result?.ToString();
         }
 
+        /// <summary>
+        /// Actualiza el rol de un usuario al nuevo rol indicado.
+        /// Retorna true si la actualizacion afecto al menos una fila.
+        /// </summary>
         public async Task<bool> ActualizarRol(int usuarioId, int nuevoRolId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -155,6 +188,10 @@ namespace Aerolinea.API.Repositories
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
+        /// <summary>
+        /// Verifica si existe un usuario con el ID indicado.
+        /// Retorna true si se encuentra al menos un registro con ese ID.
+        /// </summary>
         public async Task<bool> UsuarioExiste(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -167,6 +204,10 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync() > 0;
         }
 
+        /// <summary>
+        /// Verifica si existe un rol con el ID indicado en la tabla Rol.
+        /// Retorna true si se encuentra al menos un registro con ese ID.
+        /// </summary>
         public async Task<bool> RolExiste(int rolId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -179,6 +220,10 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync() > 0;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de usuarios registrados en el sistema, ordenados por ID.
+        /// Incluye todos los campos del perfil pero no incluye las nacionalidades asociadas.
+        /// </summary>
         public async Task<List<Usuario>> ObtenerTodos()
         {
             using var connection = _connectionFactory.CreateConnection();

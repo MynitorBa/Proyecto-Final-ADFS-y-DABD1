@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que representa una aeronave registrada en la flota de la aerolinea.
+    /// Almacena marca, modelo, capacidad de pasajeros e imagen opcional en Base64.
+    /// </summary>
     public class Avion
     {
         public int Id { get; set; }

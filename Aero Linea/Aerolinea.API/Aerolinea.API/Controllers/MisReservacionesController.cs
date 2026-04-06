@@ -1,4 +1,4 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de reservaciones del usuario autenticado. Permite consultar el listado
+    /// y detalle de sus reservaciones, descargar o enviar comprobantes, obtener un resumen
+    /// estadistico y cancelar reservaciones activas. Todos los endpoints requieren sesion activa.
+    /// </summary>
     [ApiController]
     [Route("api/mis-reservaciones")]
     [Authorize] // Todas las rutas requieren sesión
@@ -14,7 +19,9 @@ namespace Aerolinea.API.Controllers
         private readonly GestionReservacionService _service;
         private readonly PdfService _pdfService;
 
-
+        /// <summary>
+        /// Inicializa el controlador con el servicio de gestion de reservaciones y el servicio PDF.
+        /// </summary>
         public MisReservacionesController(GestionReservacionService service, PdfService pdfService)
         {
             _service = service;
@@ -22,6 +29,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/mis-reservaciones
+        /// <summary>
+        /// Retorna el listado de todas las reservaciones del usuario autenticado,
+        /// incluyendo estado, vuelos y monto total de cada una.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> ObtenerMisReservaciones()
         {
@@ -38,6 +49,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/mis-reservaciones/{reservacionId}
+        /// <summary>
+        /// Retorna el detalle completo de una reservacion especifica del usuario autenticado,
+        /// incluyendo boletos, pasajeros, vuelos y datos de facturacion.
+        /// </summary>
         [HttpGet("{reservacionId}")]
         public async Task<IActionResult> ObtenerDetalleReservacion(int reservacionId)
         {
@@ -54,6 +69,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/mis-reservaciones/{reservacionId}/comprobante
+        /// <summary>
+        /// Genera y descarga el comprobante de una reservacion en formato PDF.
+        /// El archivo se nombra con el numero de reservacion para facilitar su identificacion.
+        /// </summary>
         [HttpGet("{reservacionId}/comprobante")]
         public async Task<IActionResult> DescargarComprobante(int reservacionId)
         {
@@ -72,6 +91,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/mis-reservaciones/resumen
+        /// <summary>
+        /// Retorna un resumen estadistico de las reservaciones del usuario autenticado,
+        /// como totales por estado, monto gastado y proximos vuelos.
+        /// </summary>
         [HttpGet("resumen")]
         public async Task<IActionResult> ObtenerResumen()
         {
@@ -89,6 +112,10 @@ namespace Aerolinea.API.Controllers
 
         // POST api/mis-reservaciones/{reservacionId}/cancelar
         // Body: { "motivo": "Cambio de planes" }  (opcional)
+        /// <summary>
+        /// Cancela una reservacion activa del usuario autenticado. El motivo de cancelacion
+        /// es opcional. Solo se pueden cancelar reservaciones que aun no hayan sido completadas.
+        /// </summary>
         [HttpPost("{reservacionId}/cancelar")]
         public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
         {
@@ -104,8 +131,11 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-
         // POST api/mis-reservaciones/{reservacionId}/enviar-comprobante
+        /// <summary>
+        /// Envia el comprobante de una reservacion al correo electronico registrado del usuario.
+        /// Genera el PDF en memoria y lo adjunta al correo antes de enviarlo.
+        /// </summary>
         [HttpPost("{reservacionId}/enviar-comprobante")]
         public async Task<IActionResult> EnviarComprobanteEmail(int reservacionId)
         {
@@ -120,7 +150,6 @@ namespace Aerolinea.API.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
 
         private int ObtenerUsuarioId()
         {

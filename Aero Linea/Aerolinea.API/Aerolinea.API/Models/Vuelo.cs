@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que representa un vuelo programado en el sistema.
+    /// Contiene numero de vuelo, fecha, horarios de salida y llegada, avion asignado,
+    /// ruta, disponibilidad de boletos por clase y precios de cada clase.
+    /// </summary>
     public class Vuelo
     {
         public int Id { get; set; }

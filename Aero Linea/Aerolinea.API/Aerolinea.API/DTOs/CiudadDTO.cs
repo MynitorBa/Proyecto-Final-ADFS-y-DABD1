@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura que expone la informacion de una ciudad junto con su pais de pertenencia.
+    /// Incluye nombre completo con formato "Ciudad, Pais" para uso en listas desplegables.
+    /// </summary>
     public class CiudadDTO
     {
         public int Id { get; set; }

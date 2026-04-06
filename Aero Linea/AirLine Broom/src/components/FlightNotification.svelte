@@ -1,24 +1,51 @@
 <script lang="ts">
+/**
+ * @file FlightNotification.svelte
+ * @description Animated floating notification that periodically appears in the corner of the
+ * screen suggesting a random destination to the user. It fetches the full list of airports
+ * from the API on mount, then cycles through them on a timer. Clicking the notification
+ * bubble triggers the parent-supplied callback with the full airport object, allowing the
+ * parent page to navigate to a flight search for that destination.
+ */
   import '../styles/flight-notification.css';
   import avionPath from '../assets/AvionB.png';
   import { onMount } from 'svelte';
   import { API } from '../lib/api.js';
 
-  // CORREGIDO: el callback ahora pasa el objeto aeropuerto completo
+  /**
+   * Callback invoked when the user clicks the destination bubble.
+   * Receives the full airport object (id, ciudad, codigo, nombre, pais, etc.).
+   * @type {(aeropuertoObj: any) => void}
+   */
   export let onDestinationClick = (aeropuertoObj: any) => {};
 
+  /** Mapped list of destinations built from the airport API response. @type {any[]} */
   let destinations = [];
+
+  /** Whether the initial airport fetch is still in progress. @type {boolean} */
   let loadingDestinations = true;
+
+  /** Controls whether the notification element is present in the DOM. @type {boolean} */
   let showNotification = false;
+
+  /** The destination object currently being displayed in the bubble. @type {any} */
   let currentDestination = null;
+
+  /** Controls the CSS visibility/opacity transition of the notification bubble. @type {boolean} */
   let isVisible = false;
 
+  /**
+   * Fetches all airports from the API, maps them into destination objects and starts the
+   * animation cycle. Shows the first notification after 3 seconds and repeats every 15 seconds
+   * if no notification is currently visible.
+   * @async
+   * @returns {Promise<void>}
+   */
   onMount(async () => {
     try {
       const res = await fetch(`${API}/api/aeropuertos`);
       const aeropuertos = await res.json();
-      
-      // CORREGIDO: guardamos el aeropuerto original completo para pasarlo después
+
       destinations = aeropuertos.map(a => ({
         city: `${a.ciudad} (${a.codigo})`,
         country: a.pais || 'Destino internacional',
@@ -26,9 +53,9 @@
         id: a.id,
         aeropuertoOriginal: a
       }));
-      
+
       console.log('Destinos cargados para notificaciones:', destinations.length);
-      
+
       if (destinations.length > 0) {
         setTimeout(() => {
           startAnimation();
@@ -40,7 +67,7 @@
           }
         }, 15000);
       }
-      
+
     } catch (err) {
       console.error('Error cargando destinos:', err);
     } finally {
@@ -48,18 +75,28 @@
     }
   });
 
+  /**
+   * Returns a randomly selected destination object from the destinations array.
+   * Returns null if the array is empty.
+   * @returns {any} A destination object or null.
+   */
   function getRandomDestination() {
     if (destinations.length === 0) return null;
     const randomIndex = Math.floor(Math.random() * destinations.length);
     return destinations[randomIndex];
   }
 
+  /**
+   * Picks a random destination and shows the notification bubble with a slide-in animation.
+   * After 6 seconds the bubble fades out; after the fade (500ms) it is removed from the DOM.
+   * Does nothing if the destinations list is empty.
+   */
   function startAnimation() {
     if (destinations.length === 0) return;
-    
+
     currentDestination = getRandomDestination();
     if (!currentDestination) return;
-    
+
     showNotification = true;
     isVisible = true;
 
@@ -71,9 +108,12 @@
     }, 6000);
   }
 
+  /**
+   * Handles a click on the destination bubble. Passes the original airport object to the
+   * parent callback, then hides and removes the notification.
+   */
   function handleDestinationClick() {
     if (currentDestination) {
-      // CORREGIDO: pasamos el objeto aeropuerto completo (con id, ciudad, codigo, nombre, pais, etc.)
       onDestinationClick(currentDestination.aeropuertoOriginal);
       isVisible = false;
       setTimeout(() => {
@@ -83,21 +123,24 @@
   }
 </script>
 
+<!-- Notificacion flotante de destino sugerido con animacion de avion -->
 {#if showNotification && currentDestination}
-  <div 
-    class="broom-flight-notification" 
+  <div
+    class="broom-flight-notification"
     class:broom-flight-notification--visible={isVisible}
   >
+    <!-- Icono animado del avion -->
     <div class="broom-flight-notification__plane">
-      <img 
-        src={avionPath} 
-        alt="Avión" 
+      <img
+        src={avionPath}
+        alt="Avion"
         class="broom-flight-notification__plane-img"
       >
     </div>
 
+    <!-- Burbuja interactiva con el destino sugerido -->
     <div class="broom-flight-notification__bubble">
-      <button 
+      <button
         class="broom-flight-notification__bubble-content"
         on:click={handleDestinationClick}
         type="button"
@@ -110,14 +153,15 @@
           {currentDestination.country}
         </span>
       </button>
-      
+
       <div class="broom-flight-notification__bubble-tail"></div>
     </div>
 
-    <button 
+    <!-- Boton para cerrar la notificacion manualmente -->
+    <button
       class="broom-flight-notification__close"
       on:click={() => { isVisible = false; setTimeout(() => showNotification = false, 500); }}
-      aria-label="Cerrar notificación"
+      aria-label="Cerrar notificacion"
       type="button"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="broom-flight-notification__close-icon">

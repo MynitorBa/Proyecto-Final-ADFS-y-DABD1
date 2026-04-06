@@ -1,4 +1,4 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de correos electronicos. Gestiona el envio de comprobantes de reservacion,
+    /// mensajes de contacto desde el formulario publico y suscripciones al boletin informativo.
+    /// </summary>
     [ApiController]
     [Route("api")]
     public class EmailController : ControllerBase
@@ -14,6 +18,10 @@ namespace Aerolinea.API.Controllers
 
         private readonly GestionReservacionRepository _reservacionRepo;
 
+        /// <summary>
+        /// Inicializa el controlador con el repositorio de reservaciones necesario para
+        /// obtener los datos del comprobante antes de enviarlo por correo.
+        /// </summary>
         public EmailController(GestionReservacionRepository reservacionRepo)
         {
             _reservacionRepo = reservacionRepo;
@@ -23,6 +31,11 @@ namespace Aerolinea.API.Controllers
         //  GET /api/reservaciones/{id}/correo — envía correo de reservación al usuario
         //  Solo roles 1 (Admin) y 2 (Cliente/Usuario registrado)
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Envia al correo del usuario el comprobante de una reservacion especifica.
+        /// Solo accesible para roles Administrador (1) y Cliente (2). Verifica que la reservacion
+        /// pertenezca al usuario autenticado antes de enviar el correo.
+        /// </summary>
         [HttpGet("reservaciones/{id}/correo")]
         [Authorize]
         public async Task<IActionResult> EnviarCorreoReservacion(int id)
@@ -62,6 +75,10 @@ namespace Aerolinea.API.Controllers
         // ══════════════════════════════════════════════════════════════════
         //  POST /api/contacto — formulario de contacto (público)
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Recibe un mensaje del formulario de contacto publico y lo reenvía al correo
+        /// del administrador. Requiere nombre, correo y mensaje como campos obligatorios.
+        /// </summary>
         [HttpPost("contacto")]
         [AllowAnonymous]
         public async Task<IActionResult> Contacto([FromBody] ContactoDTO dto)
@@ -92,6 +109,10 @@ namespace Aerolinea.API.Controllers
         // ══════════════════════════════════════════════════════════════════
         //  POST /api/newsletter — suscripción al boletín (público)
         // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Registra una suscripcion al boletin informativo y notifica al administrador por correo.
+        /// Endpoint publico, valida que el correo tenga formato valido antes de procesar.
+        /// </summary>
         [HttpPost("newsletter")]
         [AllowAnonymous]
         public async Task<IActionResult> Newsletter([FromBody] NewsletterDTO dto)
@@ -120,6 +141,9 @@ namespace Aerolinea.API.Controllers
     // ══════════════════════════════════════════════════════════════════
     //  DTOs para los endpoints de contacto y newsletter
     // ══════════════════════════════════════════════════════════════════
+    /// <summary>
+    /// DTO para el formulario de contacto. Contiene los datos del remitente y el mensaje.
+    /// </summary>
     public class ContactoDTO
     {
         public string Nombre { get; set; }
@@ -128,6 +152,9 @@ namespace Aerolinea.API.Controllers
         public string Mensaje { get; set; }
     }
 
+    /// <summary>
+    /// DTO para la suscripcion al boletin informativo. Contiene el correo del suscriptor.
+    /// </summary>
     public class NewsletterDTO
     {
         public string Correo { get; set; }

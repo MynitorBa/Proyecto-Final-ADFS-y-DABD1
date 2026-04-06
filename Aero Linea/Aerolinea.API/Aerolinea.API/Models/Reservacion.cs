@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que representa una reservacion de vuelo realizada por un usuario.
+    /// Contiene numero unico de reserva, fechas de creacion y expiracion, total
+    /// a pagar y estado actual del proceso de reserva.
+    /// </summary>
     public class Reservacion
     {
         public int Id { get; set; }

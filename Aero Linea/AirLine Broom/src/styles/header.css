@@ -1,5 +1,9 @@
+/* header.css - Main site header styles including logo, inline navigation links with underline animation, right-side action icons, cart badge, hamburger menu, dropdown nav, desktop and mobile search bar with autocomplete dropdown, and admin link variants */
+
+/* Reset margin, padding, and box-sizing for the header and all descendants */
 .broom-header, .broom-header * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Cream-background sticky header strip with a subtle bottom border and shadow */
 .broom-header {
     background-color: #F2EFEA;
     box-shadow: 0 2px 10px rgba(28,26,24,.05);
@@ -10,6 +14,7 @@
     border-bottom: 1px solid #E6E1DA;
 }
 
+/* Centered container row sized to exactly 66px tall */
 .broom-header__container {
     max-width: 1400px;
     margin: 0 auto;
@@ -20,7 +25,7 @@
     gap: 1.5rem;
 }
 
-/* Logo */
+/* Logo image sized to 45px height, non-shrinking */
 .broom-header__logo-img {
     height: 45px;
     width: auto;
@@ -29,9 +34,7 @@
     flex-shrink: 0;
 }
 
-/* ══════════════════════════════════════════
-   LINKS INLINE
-══════════════════════════════════════════ */
+/* Horizontal navigation link strip matching the header height */
 .broom-header__inline-nav {
     display: flex;
     align-items: center;
@@ -40,6 +43,7 @@
     gap: 0;
 }
 
+/* Inline nav link: no underline, dark muted text with a sliding bottom bar on hover */
 .broom-header__inline-link {
     position: relative;
     text-decoration: none;
@@ -54,6 +58,7 @@
     transition: color 0.2s;
     letter-spacing: 0.1px;
 }
+/* Brown underline bar that scales in from zero on hover or active state */
 .broom-header__inline-link::after {
     content: '';
     position: absolute;
@@ -64,14 +69,15 @@
     transform: scaleX(0);
     transition: transform 0.2s ease;
 }
+/* Link text darkens on hover */
 .broom-header__inline-link:hover { color: #1C1A18; }
+/* Underline bar scales to full width on hover */
 .broom-header__inline-link:hover::after { transform: scaleX(1); }
+/* Active link: gold text with the underline bar always visible */
 .broom-header__inline-link--active { color: #8B6B4A; font-weight: 600; }
 .broom-header__inline-link--active::after { transform: scaleX(1); }
 
-/* ══════════════════════════════════════════
-   ACCIONES DERECHA
-══════════════════════════════════════════ */
+/* Right-side action icons row pushed to the far right via margin-left auto */
 .broom-header__actions {
     display: flex;
     align-items: center;
@@ -80,6 +86,7 @@
     margin-left: auto;
 }
 
+/* Circular icon button: no border, beige hover background */
 .broom-header__action-btn {
     background: none;
     border: none;
@@ -93,9 +100,12 @@
     position: relative;
     color: #1C1A18;
 }
+/* Button background turns beige on hover */
 .broom-header__action-btn:hover { background-color: #E6E1DA; }
+/* 24px SVG icon using currentColor for stroke */
 .broom-header__action-icon { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; }
 
+/* Brown circular cart counter badge pinned to the top-right of the cart button */
 .broom-header__cart-count {
     position: absolute;
     top: 0; right: 0;
@@ -112,7 +122,7 @@
     border: 2px solid #F2EFEA;
 }
 
-/* ── Hamburguesa ── */
+/* Hamburger toggle button: stacked bar button, higher z-index to stay above the nav panel */
 .broom-header__menu-toggle {
     background: none;
     border: none;
@@ -123,6 +133,7 @@
     gap: 5px;
     z-index: 1001;
 }
+/* Each hamburger bar: thin dark rectangle */
 .broom-header__hamburger {
     width: 22px; height: 2px;
     background-color: #1C1A18;
@@ -130,13 +141,14 @@
     transition: all 0.3s ease;
     border-radius: 1px;
 }
+/* Active state: top bar rotates +45deg and drops down to cross */
 .broom-header__menu-toggle--active .broom-header__hamburger:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+/* Active state: middle bar fades out */
 .broom-header__menu-toggle--active .broom-header__hamburger:nth-child(2) { opacity: 0; }
+/* Active state: bottom bar rotates -45deg and rises to cross */
 .broom-header__menu-toggle--active .broom-header__hamburger:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-/* ══════════════════════════════════════════
-   NAV DESPLEGABLE (hamburguesa)
-══════════════════════════════════════════ */
+/* Dropdown nav panel: starts collapsed, expands to max 600px on active */
 .broom-header__nav {
     background-color: #EAE4DB;
     max-height: 0;
@@ -152,13 +164,12 @@
     box-shadow: -4px 8px 24px rgba(28,26,24,.12);
     z-index: 999;
 }
+/* Expanded state allows content to grow up to 600px */
 .broom-header__nav--active {
     max-height: 600px;
 }
 
-/* ══════════════════════════════════════════
-   BUSCADOR
-══════════════════════════════════════════ */
+/* Desktop search bar: flex-grows up to 420px, pushed left by margin-left auto */
 .broom-header__search--desktop {
     flex: 1;
     max-width: 420px;
@@ -168,6 +179,7 @@
     margin-left: auto;
 }
 
+/* Mobile search bar: hidden by default, shown below the header on mobile */
 .broom-header__search--mobile {
     display: none;
     padding: 1.5rem 2rem 1rem;
@@ -176,6 +188,7 @@
     background: #EAE4DB;
 }
 
+/* Pill-shaped search input with a warm brown border and gold focus ring */
 .broom-header__search-input {
     width: 100%;
     padding: 0.75rem 3.5rem 0.75rem 1.25rem;
@@ -188,14 +201,17 @@
     font-family: inherit;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
+/* Input border turns darker brown with a translucent ring on focus */
 .broom-header__search-input:focus {
     border-color: #8B6B4A;
     box-shadow: 0 0 0 3px rgba(139,107,74,.1);
 }
+/* Placeholder text in warm muted grey */
 .broom-header__search-input::placeholder {
     color: #a09888;
 }
 
+/* Brown circular search submit button inside the pill input on the right */
 .broom-header__search-btn {
     position: absolute;
     right: 5px;
@@ -208,14 +224,14 @@
     cursor: pointer;
     transition: background 0.2s;
 }
+/* Search button darkens on hover */
 .broom-header__search-btn:hover {
     background: #6b5238;
 }
+/* White search icon inside the button */
 .broom-header__search-icon { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; }
 
-/* ══════════════════════════════════════════
-   RESULTADOS DE BÚSQUEDA (DROPDOWN)
-══════════════════════════════════════════ */
+/* Autocomplete dropdown list: positioned below the search input */
 .broom-header__search-results {
     position: absolute;
     top: calc(100% + 4px);
@@ -232,13 +248,16 @@
     overflow-y: auto;
 }
 
+/* Each autocomplete result row with a bottom separator */
 .broom-header__search-result-item {
     border-bottom: 1px solid #f0ece6;
 }
+/* Last item removes the separator */
 .broom-header__search-result-item:last-child {
     border-bottom: none;
 }
 
+/* Result button: full-width flex row with icon, code, and destination info */
 .broom-header__search-result-btn {
     width: 100%;
     background: none;
@@ -252,10 +271,12 @@
     transition: background 0.15s;
     font-family: inherit;
 }
+/* Result row lightens to beige on hover */
 .broom-header__search-result-btn:hover {
     background: #fcfbf9;
 }
 
+/* Bold gold IATA code at the left of each result row */
 .broom-header__search-result-code {
     font-weight: 700;
     font-size: 0.78rem;
@@ -265,6 +286,7 @@
     flex-shrink: 0;
 }
 
+/* Stacked city name and detail text in the result row */
 .broom-header__search-result-info {
     display: flex;
     flex-direction: column;
@@ -274,6 +296,7 @@
     flex: 1;
 }
 
+/* Bold city name with text overflow ellipsis */
 .broom-header__search-result-city {
     font-size: 0.88rem;
     color: #1C1A18;
@@ -283,6 +306,7 @@
     text-overflow: ellipsis;
 }
 
+/* Smaller muted airport or country detail with ellipsis */
 .broom-header__search-result-detail {
     font-size: 0.72rem;
     color: #8a8070;
@@ -291,6 +315,7 @@
     text-overflow: ellipsis;
 }
 
+/* Gold arrow at the right of each result row, hidden and shifted left by default */
 .broom-header__search-result-arrow {
     color: #8B6B4A;
     font-size: 1rem;
@@ -299,17 +324,18 @@
     transform: translateX(-4px);
     transition: opacity 0.2s, transform 0.2s;
 }
+/* Arrow slides in and becomes visible on result row hover */
 .broom-header__search-result-btn:hover .broom-header__search-result-arrow {
     opacity: 1;
     transform: translateX(0);
 }
 
-/* ══════════════════════════════════════════
-   NAV LINKS
-══════════════════════════════════════════ */
+/* Dropdown nav link list: padded inside the hamburger panel */
 .broom-header__nav-list { list-style: none; padding: 0.5rem 1.5rem 1.5rem; }
+/* Each nav item has a thin bottom separator */
 .broom-header__nav-item { border-bottom: 1px solid #D8D1C5; }
 
+/* Dropdown nav link: block element with padding, shifts right on hover */
 .broom-header__nav-link {
     display: block;
     padding: 1rem 0;
@@ -318,21 +344,23 @@
     font-size: 0.95rem;
     transition: color 0.2s, padding-left 0.2s;
 }
+/* Link turns brown and shifts right on hover */
 .broom-header__nav-link:hover { color: #8B6B4A; padding-left: 0.4rem; }
+/* Active and register links are already gold-colored */
 .broom-header__nav-link--active { color: #8B6B4A; font-weight: 600; }
 .broom-header__nav-link--register { color: #8B6B4A; font-weight: 600; }
+/* Logout link is red */
 .broom-header__nav-link--logout { color: #9a3a2a; }
 
-/* ── Spacer ── */
+/* Spacer element below the fixed header to prevent content overlap */
 .broom-header-spacer { height: 66px; }
 
-/* ══════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════ */
+/* At 768px: hide inline nav and desktop search; show mobile search in the dropdown */
 @media (max-width: 768px) {
     .broom-header__inline-nav { display: none; }
     .broom-header__search--desktop { display: none; }
     .broom-header__search--mobile { display: flex; flex-wrap: wrap; }
+    /* Mobile search results are positioned statically in the dropdown panel */
     .broom-header__search--mobile .broom-header__search-results {
         position: relative;
         top: 0;
@@ -341,30 +369,35 @@
         border-radius: 12px;
     }
     .broom-header__container { padding: 0 1.2rem; }
+    /* Shorter spacer for the slightly taller mobile nav bar */
     .broom-header-spacer { height: 58px; }
+    /* Search button offset accounts for horizontal padding in the mobile panel */
     .broom-header__search--mobile .broom-header__search-btn {
         right: calc(2rem + 5px);
     }
 }
 
-/* ── Ajustes mobile ── */
+/* Mobile search input uses a warm beige background */
 .broom-header__search-input {
     background: #F5F1EB;
 }
+/* Dropdown nav links are always left-aligned */
 .broom-header__nav-link {
     text-align: left;
 }
 
-/* ── Panel Admin link ── */
+/* Admin panel inline link: gold text, bolder weight, slightly wider tracking */
 .broom-header__inline-link--admin {
   color: #8B6B4A;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
+/* Admin inline link underline bar is gold */
 .broom-header__inline-link--admin::after {
   background: #8B6B4A;
 }
 
+/* Admin panel dropdown link: gold text and bold */
 .broom-header__nav-link--admin {
   color: #8B6B4A;
   font-weight: 700;

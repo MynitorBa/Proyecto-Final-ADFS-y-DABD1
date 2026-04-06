@@ -1,27 +1,26 @@
-/* ══════════════════════════════════════════════════════════
-   asientos.css  —  Selección de asientos
-   Mismas variables CSS del proyecto (--primary-color, etc.)
-   ══════════════════════════════════════════════════════════ */
+/* asientos.css - Seat-selection page styles including airplane map, seat states, sticky sidebar, passenger list, legend, and multi-flight progress stepper */
 
-/* ── Página ── */
+/* Full-page wrapper with project background color and bottom padding for the continue button */
 .asientos-page {
     width: 100%;
     min-height: 100vh;
     background-color: var(--bg-color);
     padding: 2rem 1rem 8rem;
 }
+/* Centered content column capped at 1300px */
 .asientos-page__container {
     max-width: 1300px;
     margin: 0 auto;
 }
 
-/* ── Header ── */
+/* Flex row holding the back button and page title block */
 .asientos-page__header {
     display: flex;
     align-items: flex-start;
     gap: 1.5rem;
     margin-bottom: 3rem;
 }
+/* Transparent back button with asymmetric border-radius and muted uppercase label */
 .asientos-page__back {
     background: transparent;
     border: 1px solid var(--perla-dark);
@@ -36,10 +35,12 @@
     font-family: inherit;
     white-space: nowrap;
 }
+/* Back button border and text shift to primary color on hover */
 .asientos-page__back:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
 }
+/* Large light-weight main heading for the page title */
 .asientos-titulo__main {
     font-size: 2rem;
     font-weight: 300;
@@ -47,6 +48,7 @@
     margin: 0 0 0.3rem;
     letter-spacing: -0.3px;
 }
+/* Small all-caps subtitle with wide letter spacing below the heading */
 .asientos-titulo__sub {
     font-size: 0.75rem;
     color: var(--text-muted);
@@ -55,7 +57,7 @@
     margin: 0;
 }
 
-/* ── Layout principal ── */
+/* Two-column grid: airplane map on the left, sidebar on the right */
 .asientos-page__body {
     display: grid;
     grid-template-columns: 1fr 300px;
@@ -63,27 +65,26 @@
     align-items: start;
 }
 
-/* ══════════════════════════════════════════════════════════
-   AVION
-   ══════════════════════════════════════════════════════════ */
+/* Centered column container for the airplane nose, body, and tail */
 .asientos-page__mapa-wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* Nariz */
+/* Nose SVG wrapper capped at 500px */
 .avion-nariz {
     width: 100%;
     max-width: 500px;
 }
+/* Responsive inline SVG for the airplane nose graphic */
 .avion-nariz__svg {
     width: 100%;
     height: auto;
     display: block;
 }
 
-/* Cuerpo */
+/* Dark fuselage body with gold side borders, capped at 500px */
 .avion-cuerpo {
     width: 100%;
     max-width: 500px;
@@ -96,7 +97,7 @@
     gap: 0;
 }
 
-/* Cabecera de columnas */
+/* Centered flex row of column letter labels above the seat grid */
 .avion-cols-header {
     display: flex;
     align-items: center;
@@ -104,6 +105,7 @@
     padding: 0.5rem 0 0.3rem;
     justify-content: center;
 }
+/* Individual column letter label in gold with wide tracking */
 .avion-col-label {
     width: 36px;
     text-align: center;
@@ -115,12 +117,13 @@
     flex-shrink: 0;
 }
 
-/* Zona label */
+/* Centered pill label identifying a cabin zone (ejecutiva or turista) */
 .zona-label {
     display: flex;
     justify-content: center;
     padding: 0.5rem 0 0.3rem;
 }
+/* Pill text: tiny, all-caps, bold, with wide letter spacing */
 .zona-label span {
     font-size: 0.58rem;
     text-transform: uppercase;
@@ -129,30 +132,34 @@
     padding: 0.2rem 1rem;
     border-radius: 20px;
 }
+/* Gold-toned pill for the executive cabin zone */
 .zona-label--ejecutiva span {
     color: #c9a96e;
     background: rgba(201,169,110,0.12);
     border: 1px solid rgba(201,169,110,0.25);
 }
+/* Blue-toned pill for the economy cabin zone */
 .zona-label--turista span {
     color: #8fa8c8;
     background: rgba(59,79,107,0.15);
     border: 1px solid rgba(59,79,107,0.25);
 }
 
-/* Separador de cabina */
+/* Horizontal cabin separator with a faint gold line and small text label */
 .zona-separador {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 0.6rem 0;
 }
+/* Thin gold horizontal rule on each side of the separator label */
 .zona-separador__line {
     flex: 1;
     height: 1px;
     background: #B89A7A;
     opacity: 0.3;
 }
+/* Tiny all-caps muted text at the center of the separator */
 .zona-separador__label {
     font-size: 0.55rem;
     text-transform: uppercase;
@@ -162,7 +169,7 @@
     white-space: nowrap;
 }
 
-/* Fila del avión */
+/* Centered flex row for one row of seats plus row number */
 .avion-fila {
     display: flex;
     align-items: center;
@@ -170,9 +177,11 @@
     padding: 0.18rem 0;
     justify-content: center;
 }
+/* Executive rows have slightly more vertical padding */
 .avion-fila--ejecutiva {
     padding: 0.28rem 0;
 }
+/* Right-aligned row number in faint gold beside the seats */
 .avion-fila__num {
     width: 22px;
     text-align: right;
@@ -184,26 +193,25 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Pasillo */
+/* Fixed-width invisible spacer representing the aircraft aisle */
 .avion-pasillo {
     width: 22px;
     flex-shrink: 0;
 }
 
-/* Cola */
+/* Tail SVG wrapper capped at 500px */
 .avion-cola {
     width: 100%;
     max-width: 500px;
 }
+/* Responsive inline SVG for the airplane tail graphic */
 .avion-cola__svg {
     width: 100%;
     height: auto;
     display: block;
 }
 
-/* ══════════════════════════════════════════════════════════
-   ASIENTOS
-   ══════════════════════════════════════════════════════════ */
+/* Base seat button: fixed 36x32px with rounded-top corners and centered content */
 .asiento {
     width: 36px;
     height: 32px;
@@ -219,18 +227,19 @@
     font-family: inherit;
 }
 
-/* Ejecutiva: más grande */
+/* Executive seats are larger: 42x38px with slightly more rounded top corners */
 .avion-fila--ejecutiva .asiento {
     width: 42px;
     height: 38px;
     border-radius: 6px 6px 3px 3px;
 }
 
-/* Libre */
+/* Free seat: dark green background with a slightly lighter green border */
 .asiento--libre {
     background: #2c3a2c;
     border: 1px solid #3d5c3d;
 }
+/* Free seat lifts slightly and shows a green glow on hover */
 .asiento--libre:hover {
     background: #3d5c3d;
     border-color: #5c8c5c;
@@ -238,16 +247,18 @@
     box-shadow: 0 4px 10px rgba(60,100,60,0.4);
 }
 
-/* Seleccionado */
+/* Selected seat: primary gold color with a glowing gold ring and slight lift */
 .asiento--seleccionado {
     background: var(--primary-color) !important;
     border: 1px solid #d4aa55 !important;
     box-shadow: 0 0 0 2px rgba(201,169,97,0.35);
     transform: translateY(-2px);
 }
+/* Selected seat darkens to a deeper gold on hover */
 .asiento--seleccionado:hover {
     background: #b07d2e !important;
 }
+/* White seat number label centered inside the seat button */
 .asiento__num {
     font-size: 0.65rem;
     font-weight: 700;
@@ -255,7 +266,7 @@
     line-height: 1;
 }
 
-/* Ocupado */
+/* Occupied seat: dark red-tinged background, no cursor interaction, semi-transparent */
 .asiento--ocupado {
     background: #2a1e1e;
     border: 1px solid #4a2c2c;
@@ -263,7 +274,7 @@
     opacity: 0.7;
 }
 
-/* Bloqueado */
+/* Blocked seat: near-black with a dark border, heavily faded */
 .asiento--bloqueado {
     background: #1e1e1e;
     border: 1px solid #333;
@@ -271,7 +282,7 @@
     opacity: 0.4;
 }
 
-/* Clase incorrecta */
+/* Wrong-class seat: very dark warm tone, not selectable, heavily faded */
 .asiento--clase-incorrecta {
     background: #1e1c18;
     border: 1px solid #2c2a22;
@@ -279,12 +290,12 @@
     opacity: 0.35;
 }
 
-/* Vacio (espacio ficticio) */
+/* Empty placeholder seat: invisible but occupies grid space */
 .asiento--vacio {
     visibility: hidden;
 }
 
-/* Muestra en leyenda */
+/* Legend sample seat: smaller fixed size, no pointer events or transform effects */
 .asiento--muestra {
     width: 24px !important;
     height: 20px !important;
@@ -295,9 +306,7 @@
     pointer-events: none;
 }
 
-/* ══════════════════════════════════════════════════════════
-   SIDEBAR
-   ══════════════════════════════════════════════════════════ */
+/* Sticky sidebar column at 7rem from the top, stacked with 1.5rem gap */
 .asientos-sidebar {
     position: sticky;
     top: 7rem;
@@ -306,7 +315,7 @@
     gap: 1.5rem;
 }
 
-/* Progreso */
+/* Progress card: white panel with asymmetric radius and a gold top accent border */
 .seleccion-progreso {
     background: var(--white);
     border-radius: 4px 20px 4px 20px;
@@ -314,12 +323,14 @@
     box-shadow: 0 4px 20px rgba(28,26,24,0.06);
     border-top: 3px solid var(--primary-color);
 }
+/* Header row of the progress card: title on left, count on right */
 .seleccion-progreso__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.75rem;
 }
+/* Small all-caps muted label "Seleccion" */
 .seleccion-progreso__titulo {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -327,17 +338,20 @@
     font-weight: 700;
     color: var(--text-muted);
 }
+/* Bold count showing selected vs required passengers */
 .seleccion-progreso__conteo {
     font-size: 1rem;
     font-weight: 700;
     color: var(--secondary-color);
 }
+/* Thin background track for the progress bar */
 .seleccion-progreso__barra {
     height: 4px;
     background: var(--perla-dark);
     border-radius: 2px;
     overflow: hidden;
 }
+/* Gold fill that grows width with a smooth transition as seats are chosen */
 .seleccion-progreso__fill {
     height: 100%;
     background: var(--primary-color);
@@ -345,7 +359,7 @@
     transition: width 0.3s ease;
 }
 
-/* Lista de pasajeros */
+/* White card listing all passengers with their assigned seat slots */
 .pasajeros-lista {
     background: var(--white);
     border-radius: 4px 20px 4px 20px;
@@ -355,6 +369,7 @@
     flex-direction: column;
     gap: 0.75rem;
 }
+/* Individual passenger row: flex row with avatar circle, info column, and remove button */
 .pasajero-item {
     display: flex;
     align-items: center;
@@ -365,14 +380,17 @@
     background: #fcfbf9;
     transition: all 0.2s ease;
 }
+/* Active passenger row: gold border with a faint gold background */
 .pasajero-item--activo {
     border-color: var(--primary-color);
     background: rgba(201,169,97,0.05);
 }
+/* Completed passenger row: green border with a faint green background */
 .pasajero-item--completo {
     border-color: #3d5c3d;
     background: rgba(60,100,60,0.04);
 }
+/* Circular number avatar sized 28px with background color indicating state */
 .pasajero-item__numero {
     width: 28px;
     height: 28px;
@@ -387,14 +405,18 @@
     flex-shrink: 0;
     transition: background 0.2s;
 }
+/* Active passenger: gold avatar with white number */
 .pasajero-item--activo  .pasajero-item__numero { background: var(--primary-color); color: #fff; }
+/* Completed passenger: green avatar with white number */
 .pasajero-item--completo .pasajero-item__numero { background: #3d5c3d; color: #fff; }
+/* Info column: stacked label and seat value */
 .pasajero-item__info {
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
 }
+/* Tiny all-caps label above the seat identifier */
 .pasajero-item__label {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -402,12 +424,15 @@
     color: var(--text-muted);
     font-weight: 600;
 }
+/* Seat identifier displayed in medium-weight secondary color text */
 .pasajero-item__asiento {
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--secondary-color);
 }
+/* Completed state shows the seat value in green */
 .pasajero-item--completo .pasajero-item__asiento { color: #3d7a3d; }
+/* Small circular remove button with a light border; turns red on hover */
 .pasajero-item__quitar {
     background: transparent;
     border: 1px solid #e0d0c0;
@@ -424,19 +449,21 @@
     font-family: inherit;
     flex-shrink: 0;
 }
+/* Remove button turns red background with red border and red icon on hover */
 .pasajero-item__quitar:hover {
     background: #fef2f2;
     border-color: #fca5a5;
     color: #dc2626;
 }
 
-/* Leyenda */
+/* Legend card: white panel listing seat state color samples */
 .leyenda {
     background: var(--white);
     border-radius: 4px 20px 4px 20px;
     padding: 1.25rem 1.5rem;
     box-shadow: 0 4px 20px rgba(28,26,24,0.06);
 }
+/* Tiny all-caps heading above the legend items */
 .leyenda__titulo {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -445,11 +472,13 @@
     color: var(--text-muted);
     margin: 0 0 0.85rem;
 }
+/* Vertical stack of legend entries */
 .leyenda__items {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
 }
+/* Each legend entry: small seat sample beside a descriptive text label */
 .leyenda__item {
     display: flex;
     align-items: center;
@@ -457,11 +486,12 @@
     font-size: 0.78rem;
     color: var(--secondary-color);
 }
+/* Flex-shrink container holding the miniature seat sample */
 .leyenda__muestra {
     flex-shrink: 0;
 }
 
-/* Botón continuar */
+/* Continue button: full-width, disabled-state uses muted background and not-allowed cursor */
 .asientos-continuar {
     width: 100%;
     padding: 1.1rem 1.5rem;
@@ -477,19 +507,21 @@
     cursor: not-allowed;
     transition: all 0.3s ease;
 }
+/* Continue button activates with dark background and pointer cursor when all seats assigned */
 .asientos-continuar--listo {
     background: var(--secondary-color);
     color: var(--white);
     cursor: pointer;
     box-shadow: 0 10px 30px rgba(28,26,24,0.2);
 }
+/* Active continue button lifts and glows gold on hover */
 .asientos-continuar--listo:hover {
     background: var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 16px 40px rgba(201,169,97,0.35);
 }
 
-/* ── Estado carga / error ── */
+/* Centered loading or error placeholder with uppercase tracking and dashed border */
 .asientos-estado {
     text-align: center;
     padding: 4rem 2rem;
@@ -502,6 +534,7 @@
     background: #fcfbf9;
     margin-top: 2rem;
 }
+/* Error variant: solid red border with red text on a light red background */
 .asientos-estado--error {
     border-color: #fca5a5;
     border-style: solid;
@@ -510,6 +543,7 @@
     text-transform: none;
     letter-spacing: 0;
 }
+/* Small inline saving indicator below the progress bar in gold uppercase */
 .seleccion-progreso__guardando {
     font-size: 0.7rem;
     color: var(--primary-color);
@@ -518,6 +552,7 @@
     margin: 0.5rem 0 0;
     text-align: center;
 }
+/* Small inline error message below the progress bar in red */
 .seleccion-progreso__error {
     font-size: 0.75rem;
     color: #dc2626;
@@ -525,9 +560,7 @@
     text-align: center;
 }
 
-/* ══════════════════════════════════════════════════════════
-   PROGRESO MULTI-VUELO
-   ══════════════════════════════════════════════════════════ */
+/* Centered horizontal stepper strip for multi-flight booking progress */
 .vuelos-progreso {
     display: flex;
     align-items: center;
@@ -536,6 +569,7 @@
     background: #f5f3ef;
     border-bottom: 1px solid #e8e0d4;
 }
+/* Each flight step: flex row with a numbered circle and a label */
 .vuelos-progreso__item {
     display: flex;
     align-items: center;
@@ -545,8 +579,11 @@
     font-weight: 500;
     letter-spacing: 0.5px;
 }
+/* Active step text turns gold */
 .vuelos-progreso__item--activo     { color: #c9a96e; }
+/* Completed step text turns green */
 .vuelos-progreso__item--completado { color: #7a9e7e; }
+/* Numbered circle badge sized 22px with a light beige background by default */
 .vuelos-progreso__numero {
     width: 22px;
     height: 22px;
@@ -558,17 +595,21 @@
     font-size: 0.7rem;
     font-weight: 700;
 }
+/* Active step badge: gold background with white number */
 .vuelos-progreso__item--activo .vuelos-progreso__numero     { background: #c9a96e; color: #fff; }
+/* Completed step badge: green background with white number */
 .vuelos-progreso__item--completado .vuelos-progreso__numero { background: #7a9e7e; color: #fff; }
+/* Thin horizontal connector line between steps */
 .vuelos-progreso__linea {
     width: 3rem;
     height: 2px;
     background: #e8e0d4;
     margin: 0 0.5rem;
 }
+/* Connector line turns green once the step to its left is completed */
 .vuelos-progreso__linea--completada { background: #7a9e7e; }
 
-/* ── Responsive ── */
+/* At 1024px: single-column layout; sidebar becomes a two-column grid */
 @media (max-width: 1024px) {
     .asientos-page__body {
         grid-template-columns: 1fr;
@@ -584,6 +625,7 @@
         grid-column: 1 / -1;
     }
 }
+/* At 600px: sidebar collapses to single column; airplane seats and labels shrink */
 @media (max-width: 600px) {
     .asientos-sidebar {
         grid-template-columns: 1fr;

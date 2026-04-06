@@ -1,10 +1,22 @@
 <script>
-  // @ts-nocheck
+/**
+ * @file PoliticaCancelacion.svelte
+ * @description Static informational page describing the cancellation policy for Broom AirLine
+ * reservations. Covers client-initiated cancellations (steps and conditions), airline-initiated
+ * cancellations with automatic passenger notification, and a numbered step-by-step guide for
+ * cancelling a reservation via the Mis Reservas section. Accessible from the main navigation
+ * with a back button that returns to the home page.
+ */
+// @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Function used to navigate to another page in the application. @type {function} */
   export let navigateTo;
 </script>
 
+<!-- Contenedor principal de la pagina de politica de cancelacion -->
 <div class="info-page">
+  <!-- Hero con icono, titulo y descripcion general de la politica -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">
@@ -22,6 +34,7 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton de regreso a la pagina de inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
@@ -29,9 +42,11 @@
       Volver al inicio
     </button>
 
+    <!-- Tarjeta de contenido con las tres secciones de la politica -->
     <div class="info-card">
       <span class="info-badge">Politica vigente 2026</span>
 
+      <!-- Politica de cancelacion iniciada por el cliente con condiciones y efectos -->
       <h2 class="info-section-title">Cancelacion por parte del cliente</h2>
       <p class="info-prose">Como cliente registrado puedes cancelar tus reservas activas directamente desde tu cuenta. El sistema mantiene un registro historico de todas las cancelaciones realizadas con fecha, codigo de reserva y motivo opcional.</p>
       <ul class="info-list">
@@ -43,6 +58,7 @@
         <li>Las condiciones de reembolso dependen del tipo de tarifa adquirida al momento de la compra</li>
       </ul>
 
+      <!-- Politica de cancelacion de vuelos iniciada por la aerolinea -->
       <h2 class="info-section-title">Cancelacion de vuelos por parte de Broom AirLine</h2>
       <p class="info-prose">En casos operativos o de fuerza mayor, Broom AirLine puede cancelar vuelos completos. En ese escenario:</p>
       <ul class="info-list">
@@ -52,6 +68,7 @@
         <li>Los asientos se liberan inmediatamente del inventario</li>
       </ul>
 
+      <!-- Guia paso a paso para que el usuario cancele su reserva -->
       <h2 class="info-section-title">Como cancelar tu reserva paso a paso</h2>
       <div class="info-steps">
         <div class="info-step">
@@ -91,6 +108,7 @@
         </div>
       </div>
 
+      <!-- Bloque de contacto para asistencia en cancelaciones especiales -->
       <div class="info-highlight">
         Para casos especiales o si necesitas asistencia con la cancelacion, contactanos en <strong>info@broomairline.com</strong> o al <strong>+502 2000-0000</strong> disponible 24/7.
       </div>

@@ -1,9 +1,24 @@
 <script>
+/**
+ * @file DetalleVueloAdmin.svelte
+ * @description Admin-only modal that displays read-only details of a base flight record.
+ * Shows general information (ID, flight number, aircraft), route with origin and destination,
+ * seat capacity broken down by cabin class, pricing per class, and usage statistics.
+ * Rendered as an overlay on the admin flight management panel when an admin clicks a flight row.
+ */
   import '../styles/DetalleVueloAdmin.css';
 
+  /** The base flight object to display, containing all flight fields from the admin API. @type {object} */
   export let vuelo;
+
+  /** Callback invoked to dismiss this modal from the parent component. @type {function} */
   export let onClose;
 
+  /**
+   * Closes the modal when the user clicks directly on the semi-transparent backdrop
+   * rather than on the modal content itself.
+   * @param {MouseEvent} event - The DOM click event from the backdrop element.
+   */
   function handleBackdropClick(event) {
     if (event.target === event.currentTarget) {
       onClose();
@@ -13,8 +28,10 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- Modal de solo lectura con detalles del vuelo base seleccionado por el administrador -->
 <div class="modal-backdrop-admin" on:click={handleBackdropClick}>
   <div class="detalle-vuelo-admin">
+    <!-- Encabezado del modal con titulo y boton de cierre -->
     <div class="detalle-vuelo-admin__header">
       <h2 class="detalle-vuelo-admin__title">Detalles del Vuelo Base</h2>
       <button class="detalle-vuelo-admin__close" on:click={onClose}>
@@ -22,6 +39,7 @@
       </button>
     </div>
 
+    <!-- Contenido del modal dividido en secciones: general, ruta, capacidad, precios y estadisticas -->
     <div class="detalle-vuelo-admin__content">
       <div class="info-section">
         <h3 class="info-section__title">Informacion General</h3>

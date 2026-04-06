@@ -1,7 +1,6 @@
-/* ========================================
-   REGISTER — Broom AirLine
-   ======================================== */
+/* Register.css - Registration page styles including full-viewport two-column layout with cover image and form section, benefits list, entry animation, form fields with asymmetric radius, phone prefix input, password strength indicator, checkboxes, a captcha box, error/success messages, submit button, nationality grid with add/remove controls, autocomplete dropdown, and responsive breakpoints */
 
+/* Full-viewport flex wrapper centered horizontally and vertically */
 .register {
     width: 100%;
     min-height: 100vh;
@@ -13,11 +12,13 @@
     overflow-x: hidden;
 }
 
+/* Full-viewport container holding both columns */
 .register__container {
     width: 100%;
     height: 100vh;
 }
 
+/* Two-column grid: narrower image column on the left, wider form column on the right */
 .register__content {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
@@ -25,7 +26,7 @@
     width: 100%;
 }
 
-/* --- Imagen --- */
+/* Left image section: beach cover photo with content aligned to the bottom */
 .register__image-section {
     position: relative;
     background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80');
@@ -38,6 +39,7 @@
     overflow: hidden;
 }
 
+/* Dark gradient overlay darkening from bottom to transparent top */
 .register__image-overlay {
     position: absolute;
     inset: 0;
@@ -55,6 +57,7 @@
     z-index: 2;
 }
 
+/* Large light-weight image title at 3.5rem */
 .register__image-title {
     font-size: 3.5rem;
     font-weight: 300;
@@ -63,6 +66,7 @@
     color: white;
 }
 
+/* Pearl-toned subtitle capped at 450px */
 .register__image-subtitle {
     font-size: 1.1rem;
     color: var(--perla);
@@ -71,6 +75,7 @@
     margin-bottom: 2rem;
 }
 
+/* Unstacked benefits list with row gaps */
 .register__benefits {
     list-style: none;
     padding: 0;
@@ -79,6 +84,7 @@
     gap: 0.8rem;
 }
 
+/* Individual benefit row: flex with an arrow pseudo-element */
 .register__benefit {
     display: flex;
     align-items: center;
@@ -87,12 +93,13 @@
     color: white;
 }
 
+/* Arrow bullet before each benefit item */
 .register__benefit::before {
     content: '→';
     font-weight: bold;
 }
 
-/* --- Formulario --- */
+/* Right form section: white background, starts at the top, scrollable */
 .register__form-section {
     background-color: var(--white);
     display: flex;
@@ -104,17 +111,20 @@
     overflow-y: auto;
 }
 
+/* Form content column capped at 560px, slides in from the right on load */
 .register__form-container {
     width: 100%;
     max-width: 560px;
     animation: regFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Entry animation: form slides in 30px from the right while fading in */
 @keyframes regFadeIn {
     from { opacity: 0; transform: translateX(30px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
+/* Transparent back button that shifts 5px left and turns gold on hover */
 .register__back {
     background: transparent;
     border: none;
@@ -135,10 +145,12 @@
     transform: translateX(-5px);
 }
 
+/* Header block with bottom margin */
 .register__header {
     margin-bottom: 1.5rem;
 }
 
+/* Light-weight page title at 2rem */
 .register__title {
     font-size: 2rem;
     color: var(--secondary-color);
@@ -146,34 +158,39 @@
     margin-bottom: 0.5rem;
 }
 
+/* Muted subtitle at 1rem */
 .register__subtitle {
     color: var(--text-muted);
     font-size: 1rem;
 }
 
-/* --- Form --- */
+/* Vertical flex form with tighter gaps than the login form */
 .register-form {
     display: flex;
     flex-direction: column;
     gap: 0.9rem;
 }
 
+/* Two-column form row with a 1rem gap */
 .register-form__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
 }
 
+/* Full-width field spanning both columns */
 .register-form__field--full {
     grid-column: span 2;
 }
 
+/* Individual form field: label stacked above the input */
 .register-form__field {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
 }
 
+/* Small all-caps bold field label in the secondary color */
 .register-form__label {
     font-size: 0.7rem;
     font-weight: 700;
@@ -182,6 +199,7 @@
     color: var(--secondary-color);
 }
 
+/* Optional hint appended to the label in smaller non-uppercase text */
 .register-form__label-hint {
     font-weight: 400;
     color: var(--text-muted);
@@ -190,6 +208,7 @@
     text-transform: none;
 }
 
+/* Text input: asymmetric radius (0 12px 0 12px) with a gold focus ring */
 .register-form__input {
     padding: 0.75rem 1rem;
     background-color: #f9f8f6;
@@ -199,6 +218,7 @@
     transition: var(--transition);
 }
 
+/* Input border turns gold, background turns white with a glow on focus */
 .register-form__input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -206,35 +226,40 @@
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.08);
 }
 
+/* Disabled input is faded with a not-allowed cursor */
 .register-form__input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
+/* Error state: red border and light red background */
 .register-form__input--error {
     border-color: #e53e3e;
     background-color: #fff5f5;
 }
 
+/* Inline field error message in red */
 .register-form__field-error {
     font-size: 0.78rem;
     color: #c53030;
     margin-top: 0.2rem;
 }
 
+/* Inline field success message in green */
 .register-form__field-ok {
     font-size: 0.78rem;
     color: #38a169;
     margin-top: 0.2rem;
 }
 
+/* Inline field hint in amber */
 .register-form__field-hint {
     font-size: 0.78rem;
     color: #e65100;
     margin-top: 0.2rem;
 }
 
-/* --- Phone field con prefijo --- */
+/* Phone input wrapper: flex row with asymmetric radius matching the input */
 .phone-field {
     display: flex;
     align-items: center;
@@ -245,17 +270,20 @@
     overflow: hidden;
 }
 
+/* Phone wrapper turns gold with a glow when any child is focused */
 .phone-field:focus-within {
     border-color: var(--primary-color);
     background-color: var(--white);
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.08);
 }
 
+/* Error state for the phone field wrapper */
 .phone-field--error {
     border-color: #e53e3e;
     background-color: #fff5f5;
 }
 
+/* Dial code prefix: gold bold text separated by a right border */
 .phone-field__prefix {
     padding: 0.75rem 0.7rem 0.75rem 1rem;
     color: var(--primary-color);
@@ -267,6 +295,7 @@
     background: rgba(139,107,74,0.04);
 }
 
+/* Number input inside the phone field: borderless and transparent */
 .phone-field .register-form__input {
     border: none;
     border-radius: 0;
@@ -280,7 +309,7 @@
     border: none;
 }
 
-/* --- Password strength --- */
+/* Password strength indicator: stacked list of requirement items */
 .password-strength {
     display: flex;
     flex-direction: column;
@@ -288,17 +317,19 @@
     margin-top: 0.3rem;
 }
 
+/* Each requirement starts red and transitions to green when met */
 .password-strength__item {
     font-size: 0.75rem;
     color: #e53e3e;
     transition: color 0.2s;
 }
 
+/* Met requirement turns green */
 .password-strength__item.ok {
     color: #38a169;
 }
 
-/* --- Checkboxes --- */
+/* Checkbox group: vertical stack */
 .register-form__checkboxes {
     display: flex;
     flex-direction: column;
@@ -306,6 +337,7 @@
     margin: 0.5rem 0;
 }
 
+/* Individual checkbox row: flex with icon and label */
 .register-form__checkbox {
     display: flex;
     align-items: center;
@@ -313,22 +345,25 @@
     cursor: pointer;
 }
 
+/* 18px checkbox styled with accent-color to match the brand gold */
 .register-form__checkbox-input {
     width: 18px;
     height: 18px;
     accent-color: var(--primary-color);
 }
 
+/* Muted checkbox label text */
 .register-form__checkbox-label {
     font-size: 0.85rem;
     color: var(--text-muted);
 }
 
-/* --- Captcha --- */
+/* Captcha wrapper block with top and bottom margin */
 .register-form__captcha {
     margin: 0.8rem 0;
 }
 
+/* Captcha box: light grey rounded container that warms on hover */
 .captcha-box {
     display: flex;
     align-items: center;
@@ -345,6 +380,7 @@
     background-color: var(--white);
 }
 
+/* Captcha checkbox and label row */
 .captcha-box__checkbox {
     display: flex;
     align-items: center;
@@ -352,6 +388,7 @@
     cursor: pointer;
 }
 
+/* Larger 24px captcha checkbox with gold accent */
 .captcha-box__input {
     width: 24px;
     height: 24px;
@@ -359,6 +396,7 @@
     accent-color: var(--primary-color);
 }
 
+/* Captcha label text at 0.95rem */
 .captcha-box__label {
     font-size: 0.95rem;
     color: var(--secondary-color);
@@ -366,6 +404,7 @@
     user-select: none;
 }
 
+/* Captcha logo column: stacked icon and small text */
 .captcha-box__logo {
     display: flex;
     flex-direction: column;
@@ -373,6 +412,7 @@
     gap: 0.3rem;
 }
 
+/* Tiny captcha branding text in grey */
 .captcha-box__text {
     font-size: 0.65rem;
     color: #888;
@@ -380,7 +420,7 @@
     letter-spacing: 0.5px;
 }
 
-/* --- Messages --- */
+/* Error callout box: light red background with a red border */
 .register-form__error {
     background-color: #fff5f5;
     border: 1px solid #feb2b2;
@@ -391,6 +431,7 @@
     margin-bottom: 1rem;
 }
 
+/* Success callout box: light green background with a green border */
 .register-form__success {
     background-color: #f0fff4;
     border: 1px solid #9ae6b4;
@@ -402,7 +443,7 @@
     margin: 1rem 0;
 }
 
-/* --- Submit --- */
+/* Full-width submit button: dark background, asymmetric radius, turns gold on hover */
 .register-form__submit {
     width: 100%;
     padding: 1rem;
@@ -418,12 +459,14 @@
     margin-top: 0.5rem;
 }
 
+/* Submit button turns gold, lifts, and gains a warm shadow on hover */
 .register-form__submit:hover {
     background-color: var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
 }
 
+/* Disabled submit button is semi-transparent with no hover effects */
 .register-form__submit:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -431,17 +474,19 @@
     box-shadow: none;
 }
 
-/* --- Switch to Login --- */
+/* Centered login switch prompt below the form */
 .register__login {
     text-align: center;
     margin-top: 1.5rem;
 }
 
+/* Muted prompt text at 0.95rem */
 .register__login-text {
     color: var(--text-muted);
     font-size: 0.95rem;
 }
 
+/* Gold underlined login link button that darkens on hover */
 .register__login-link {
     background: transparent;
     border: none;
@@ -457,11 +502,12 @@
     color: var(--secondary-color);
 }
 
-/* --- Autocomplete --- */
+/* Autocomplete field wrapper: relative positioning for the dropdown */
 .autocomplete {
     position: relative;
 }
 
+/* Autocomplete dropdown list: absolute, scrollable, with a shadow */
 .autocomplete__list {
     position: absolute;
     top: 100%;
@@ -479,11 +525,13 @@
     overflow-y: auto;
 }
 
+/* Autocomplete list item: clickable */
 .autocomplete__item {
     padding: 0;
     cursor: pointer;
 }
 
+/* Full-width autocomplete option button: left-aligned, turns grey on hover */
 .autocomplete__btn {
     width: 100%;
     background: none;
@@ -500,7 +548,7 @@
     background-color: #f7fafc;
 }
 
-/* --- Nacionalidades grid --- */
+/* Two-column grid for multiple nationality entries */
 .nacionalidades-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -508,12 +556,14 @@
     margin-bottom: 0.8rem;
 }
 
+/* Individual nationality entry: stacked number label and input row */
 .nacionalidad-item {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
 }
 
+/* Small all-caps entry number label */
 .nacionalidad-number {
     font-size: 0.7rem;
     font-weight: 600;
@@ -522,16 +572,19 @@
     letter-spacing: 0.5px;
 }
 
+/* Input and remove button in a flex row */
 .nacionalidad-input-wrapper {
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
 }
 
+/* Autocomplete inside the wrapper takes the remaining width */
 .nacionalidad-input-wrapper .autocomplete {
     flex: 1;
 }
 
+/* Small circular red remove button */
 .nacionalidad-remove {
     background: none;
     border: 1px solid #e53e3e;
@@ -545,11 +598,13 @@
     transition: all 0.2s;
 }
 
+/* Remove button gets a light red background and scales up on hover */
 .nacionalidad-remove:hover {
     background: #fff5f5;
     transform: scale(1.05);
 }
 
+/* Gold full-width add-nationality button with a + prefix and uppercase text */
 .nacionalidad-add {
     background: var(--primary-color);
     border: none;
@@ -569,12 +624,14 @@
     justify-content: center;
 }
 
+/* Add button turns dark and lifts on hover */
 .nacionalidad-add:hover {
     background: var(--secondary-color);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
 }
 
+/* Bold + symbol before the add button label */
 .nacionalidad-add::before {
     content: '+';
     font-size: 1.3rem;
@@ -582,19 +639,21 @@
     line-height: 1;
 }
 
-/* --- Responsive --- */
+/* At 1100px: image column narrows to 0.8fr; overlay padding reduces */
 @media (max-width: 1100px) {
     .register__content { grid-template-columns: 0.8fr 1.2fr; }
     .register__image-overlay { padding: 2rem; }
     .register__image-title { font-size: 2.8rem; }
 }
 
+/* At 900px: single-column layout; image column is hidden, form takes full width */
 @media (max-width: 900px) {
     .register__content { grid-template-columns: 1fr; }
     .register__image-section { display: none; }
     .register__form-section { padding: 2rem; }
 }
 
+/* At 500px: form rows collapse to single column, nationality grid collapses, captcha stacks */
 @media (max-width: 500px) {
     .register-form__row { grid-template-columns: 1fr; }
     .register-form__field--full { grid-column: span 1; }

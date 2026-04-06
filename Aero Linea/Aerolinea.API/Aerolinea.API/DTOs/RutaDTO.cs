@@ -1,8 +1,8 @@
-﻿namespace Aerolinea.API.Models.DTOs
+namespace Aerolinea.API.Models.DTOs
 {
     /// <summary>
-    /// DTO para mostrar una ruta en el panel de administración.
-    /// Incluye aeropuertos, zonas horarias y duración editable.
+    /// DTO para mostrar una ruta en el panel de administracion.
+    /// Incluye aeropuertos, zonas horarias y duracion editable.
     /// </summary>
     public class RutaDTO
     {

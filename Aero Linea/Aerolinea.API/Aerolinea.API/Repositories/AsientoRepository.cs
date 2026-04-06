@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Controllers;
+using Aerolinea.API.Controllers;
 using Aerolinea.API.Data;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de asientos para usuarios. Gestiona la consulta del mapa de asientos
+    /// de un vuelo y el cambio de asiento de un boleto pendiente, verificando propiedad,
+    /// disponibilidad con bloqueo pesimista y reglas de clase.
+    /// </summary>
     public class AsientoRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -17,6 +22,11 @@ namespace Aerolinea.API.Repositories
         }
 
         // GET: mapa completo de asientos de un vuelo
+        /// <summary>
+        /// Retorna el mapa completo de asientos de un vuelo para un usuario especifico.
+        /// Calcula el layout dinamico por clase, identifica los asientos ocupados por otros
+        /// pasajeros y lista los boletos del usuario en su reservacion activa.
+        /// </summary>
         public async Task<AsientosVueloDTO> ObtenerAsientosVuelo(int vueloId, int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -139,6 +149,12 @@ namespace Aerolinea.API.Repositories
         }
 
         // PUT: cambiar asiento de un boleto
+        /// <summary>
+        /// Cambia el asiento de un boleto del usuario autenticado. Verifica que el boleto
+        /// pertenezca al usuario, que la reservacion este pendiente y no expirada,
+        /// que el asiento sea valido en el layout del vuelo, que este disponible con
+        /// bloqueo pesimista y que corresponda a la clase del boleto.
+        /// </summary>
         public async Task CambiarAsiento(int boletoId, string nuevoAsiento, int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();

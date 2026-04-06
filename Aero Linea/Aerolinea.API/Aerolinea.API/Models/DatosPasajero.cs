@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que almacena la informacion personal de un pasajero asociado a un boleto.
+    /// Incluye nombre, apellido, numero de pasaporte, telefono y ubicacion geografica.
+    /// </summary>
     public class DatosPasajero
     {
         public int Id { get; set; }

@@ -1,17 +1,29 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de metricas del sistema. Provee datos estadisticos sobre busquedas de vuelos,
+    /// rutas mas solicitadas y distribucion por tipo, con soporte para filtros de fecha.
+    /// Tambien permite exportar el listado completo sin paginacion.
+    /// </summary>
     public class MetricasService
     {
         private readonly MetricasRepository _repository;
 
+        /// <summary>
+        /// Inicializa el servicio con el repositorio de metricas.
+        /// </summary>
         public MetricasService(MetricasRepository repository)
         {
             _repository = repository;
         }
 
+        /// <summary>
+        /// Retorna un resumen de las metricas del sistema en el rango de fechas indicado.
+        /// Incluye totales de busquedas, usuarios activos y reservaciones generadas.
+        /// </summary>
         public async Task<MetricasResumenDTO> ObtenerResumen(string? fechaDesde, string? fechaHasta)
         {
             DateTime? desde = fechaDesde != null ? DateTime.Parse(fechaDesde) : null;
@@ -19,6 +31,10 @@ namespace Aerolinea.API.Services
             return await _repository.ObtenerResumen(desde, hasta);
         }
 
+        /// <summary>
+        /// Retorna la cantidad de busquedas realizadas por dia en el rango de fechas indicado.
+        /// Util para graficar la evolucion de la demanda a lo largo del tiempo.
+        /// </summary>
         public async Task<List<BusquedasPorDiaDTO>> ObtenerBusquedasPorDia(
             string? fechaDesde, string? fechaHasta)
         {
@@ -27,6 +43,10 @@ namespace Aerolinea.API.Services
             return await _repository.ObtenerBusquedasPorDia(desde, hasta);
         }
 
+        /// <summary>
+        /// Retorna el listado de rutas con mayor cantidad de busquedas en el rango de fechas,
+        /// filtrado opcionalmente por tipo de busqueda (directo, con escala, etc.).
+        /// </summary>
         public async Task<List<RutaMasBuscadaDTO>> ObtenerRutasMasBuscadas(
             string? fechaDesde, string? fechaHasta, string? tipo)
         {
@@ -35,6 +55,10 @@ namespace Aerolinea.API.Services
             return await _repository.ObtenerRutasMasBuscadas(desde, hasta, tipo);
         }
 
+        /// <summary>
+        /// Retorna la distribucion de busquedas agrupadas por tipo en el rango de fechas indicado.
+        /// Permite identificar que tipo de viaje es mas demandado por los usuarios.
+        /// </summary>
         public async Task<List<BusquedasPorTipoDTO>> ObtenerBusquedasPorTipo(
             string? fechaDesde, string? fechaHasta)
         {
@@ -43,12 +67,19 @@ namespace Aerolinea.API.Services
             return await _repository.ObtenerBusquedasPorTipo(desde, hasta);
         }
 
+        /// <summary>
+        /// Retorna un listado paginado de busquedas aplicando los filtros del objeto de filtro recibido.
+        /// Incluye informacion de usuario, fechas y parametros de cada busqueda.
+        /// </summary>
         public async Task<ListadoBusquedasDTO> ObtenerListado(MetricasFiltroDTO filtro)
         {
             return await _repository.ObtenerListado(filtro);
         }
 
-        // Obtiene TODO el listado sin paginado (para exportar)
+        /// <summary>
+        /// Retorna el listado completo de busquedas sin paginacion, aplicando solo los filtros
+        /// de fecha, tipo y usuario. Pensado para exportacion de datos en reportes.
+        /// </summary>
         public async Task<ListadoBusquedasDTO> ObtenerListadoCompleto(MetricasFiltroDTO filtro)
         {
             var sinPaginado = new MetricasFiltroDTO

@@ -1,7 +1,13 @@
-﻿using Aerolinea.API.Repositories;
+using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio en segundo plano para el mantenimiento automatico de reservaciones y vuelos.
+    /// Se ejecuta como BackgroundService y realiza tres tareas periodicas: liberar reservas
+    /// expiradas, completar reservaciones cuyo vuelo ya paso, y actualizar el estado de los
+    /// vuelos (en transcurso y finalizados) cada 30 ciclos de ejecucion (30 minutos).
+    /// </summary>
     public class ReservasCleanupService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
@@ -10,6 +16,9 @@ namespace Aerolinea.API.Services
         private int _ciclos = 0;
         private const int CiclosParaActualizarVuelos = 30; // cada 30 min
 
+        /// <summary>
+        /// Inicializa el servicio con el proveedor de servicios y el logger de la aplicacion.
+        /// </summary>
         public ReservasCleanupService(
             IServiceProvider serviceProvider,
             ILogger<ReservasCleanupService> logger)
@@ -18,6 +27,11 @@ namespace Aerolinea.API.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Ejecuta el servicio en segundo plano de forma continua.
+        /// Libera reservas expiradas, completa reservaciones cuyo vuelo ya paso
+        /// y actualiza el estado de los vuelos cada 30 ciclos (30 minutos).
+        /// </summary>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Servicio de limpieza de reservas iniciado.");
@@ -49,6 +63,10 @@ namespace Aerolinea.API.Services
             _logger.LogInformation("Servicio de limpieza de reservas detenido.");
         }
 
+        /// <summary>
+        /// Crea un scope de dependencias y llama al repositorio para liberar todas las
+        /// reservas cuyo tiempo de espera ha expirado, devolviendo asientos al inventario.
+        /// </summary>
         private async Task LiberarReservasExpiradas()
         {
             using var scope = _serviceProvider.CreateScope();
@@ -59,6 +77,10 @@ namespace Aerolinea.API.Services
                 _logger.LogInformation("Se liberaron {Count} reservas expiradas.", reservasLiberadas);
         }
 
+        /// <summary>
+        /// Crea un scope de dependencias y llama al repositorio para marcar como completadas
+        /// todas las reservaciones asociadas a vuelos que ya han concluido.
+        /// </summary>
         private async Task CompletarReservaciones()
         {
             using var scope = _serviceProvider.CreateScope();
@@ -69,6 +91,11 @@ namespace Aerolinea.API.Services
                 _logger.LogInformation("{Count} reservación(es) pasaron a estado Completada.", completadas);
         }
 
+        /// <summary>
+        /// Crea un scope de dependencias y llama al repositorio interno de vuelos para
+        /// actualizar los estados de vuelos que deben pasar a En Transcurso o Finalizado
+        /// segun la hora actual comparada con su horario programado.
+        /// </summary>
         private async Task ActualizarEstadosVuelos()
         {
             using var scope = _serviceProvider.CreateScope();

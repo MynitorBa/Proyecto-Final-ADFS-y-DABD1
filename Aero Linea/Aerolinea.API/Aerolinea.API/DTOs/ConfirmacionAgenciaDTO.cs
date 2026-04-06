@@ -1,6 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
-    // Body que recibe el endpoint
+    /// <summary>
+    /// DTO de peticion para que una agencia confirme y pague una reservacion pendiente.
+    /// Contiene los datos de facturacion requeridos para generar la factura.
+    /// </summary>
     public class ConfirmarReservacionAgenciaDTO
     {
         public string NIT { get; set; }
@@ -8,7 +11,10 @@
     }
 
 
-    // Response que devuelve el endpoint
+    /// <summary>
+    /// DTO de respuesta devuelto tras confirmar exitosamente una reservacion desde una agencia.
+    /// Incluye identificadores de factura y reservacion, total cobrado y fecha de confirmacion.
+    /// </summary>
     public class ConfirmacionAgenciaDTO
     {
         public int FacturaId { get; set; }

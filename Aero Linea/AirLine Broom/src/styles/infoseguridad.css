@@ -1,4 +1,6 @@
-/* --- Página de Información de Seguridad --- */
+/* infoseguridad.css - Security information page styles including header with left border accent, section cards with icon and title header, baggage subsections, check-in steps with gradient number badges, boarding groups grid, rules list, entry animation, and responsive breakpoints */
+
+/* Full-page wrapper with warm beige background and generous bottom padding */
 .info-seguridad {
     width: 100%;
     min-height: 100vh;
@@ -6,18 +8,20 @@
     padding: 3rem 1rem 6rem;
 }
 
+/* Centered content column capped at 1200px */
 .info-seguridad__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* --- Header con asimetría --- */
+/* Page header with a thick warm-gold left border accent */
 .info-seguridad__header {
     margin-bottom: 4rem;
     border-left: 6px solid #B89A7A;
     padding-left: 2rem;
 }
 
+/* Transparent back button with muted brown text that shifts left on hover */
 .info-seguridad__back {
     background: transparent;
     border: none;
@@ -34,11 +38,13 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Back button darkens and slides 5px left on hover */
 .info-seguridad__back:hover {
     color: #1C1A18;
     transform: translateX(-5px);
 }
 
+/* Fluid page title from 2rem to 3rem, light weight */
 .info-seguridad__title {
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 300;
@@ -47,6 +53,7 @@
     line-height: 1.1;
 }
 
+/* Muted subtitle capped at 650px with relaxed line height */
 .info-seguridad__subtitle {
     color: #6B5D52;
     letter-spacing: 0.5px;
@@ -56,14 +63,14 @@
     line-height: 1.6;
 }
 
-/* --- Container de Secciones --- */
+/* Vertical stack of section cards with gaps between them */
 .secciones-container {
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
 }
 
-/* --- Tarjeta de Sección --- */
+/* Section card: white, asymmetric border-radius, fades in and slides up on load */
 .seccion-card {
     background: #FFFFFF;
     border-radius: 4px 32px 4px 32px;
@@ -75,12 +82,13 @@
     opacity: 0;
 }
 
+/* Card lifts 5px and deepens shadow on hover */
 .seccion-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 45px rgba(28, 26, 24, 0.1);
 }
 
-/* --- Header de Sección --- */
+/* Card header: gradient beige background with icon and title in a flex row */
 .seccion-card__header {
     padding: 2rem 2.5rem;
     background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
@@ -90,11 +98,13 @@
     gap: 1.2rem;
 }
 
+/* Large emoji icon at 2.5rem with a 1 line-height reset */
 .seccion-card__icon {
     font-size: 2.5rem;
     line-height: 1;
 }
 
+/* Light-weight section title at 2rem with tight letter-spacing */
 .seccion-card__title {
     font-size: 2rem;
     font-weight: 300;
@@ -103,21 +113,22 @@
     letter-spacing: -0.5px;
 }
 
-/* --- Contenido de Sección --- */
+/* Section body with comfortable padding and extra bottom space */
 .seccion-card__content {
     padding: 2.5rem 2.5rem 3rem;
 }
 
-/* ========== SECCIÓN: EQUIPAJE ========== */
-
+/* Baggage subsection block with bottom margin separating it from siblings */
 .equipaje-subsection {
     margin-bottom: 2rem;
 }
 
+/* Last baggage subsection gets slightly more bottom margin */
 .equipaje-subsection:last-of-type {
     margin-bottom: 2.5rem;
 }
 
+/* Baggage type name: medium weight, underlined with a gold 2px border */
 .equipaje-subsection__name {
     font-size: 1.3rem;
     font-weight: 500;
@@ -127,12 +138,14 @@
     border-bottom: 2px solid #B89A7A;
 }
 
+/* Vertical stack of baggage detail items */
 .equipaje-details {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
+/* Individual baggage detail row: warm off-white background with a gold left accent border */
 .equipaje-item {
     display: flex;
     flex-direction: column;
@@ -143,6 +156,7 @@
     border-left: 3px solid #B89A7A;
 }
 
+/* Small all-caps muted label above the baggage value */
 .equipaje-item__label {
     font-size: 0.75rem;
     color: #6B5D52;
@@ -152,6 +166,7 @@
     margin: 0;
 }
 
+/* Baggage value text in regular dark text with relaxed line height */
 .equipaje-item__value {
     font-size: 0.95rem;
     color: #1C1A18;
@@ -160,6 +175,7 @@
     margin: 0;
 }
 
+/* Note callout box: warm yellow background with a gold left border */
 .seccion-note {
     background: #FFF9E6;
     border-left: 4px solid #B89A7A;
@@ -170,26 +186,28 @@
     line-height: 1.7;
 }
 
+/* Note heading displayed as a block with bottom margin */
 .seccion-note strong {
     color: #1C1A18;
     display: block;
     margin-bottom: 0.5rem;
 }
 
-/* ========== SECCIÓN: CHECK-IN ========== */
-
+/* Vertical stack of check-in step rows */
 .steps-container {
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
+/* Each check-in step: flex row with number badge on the left */
 .step-item {
     display: flex;
     gap: 1.5rem;
     align-items: flex-start;
 }
 
+/* Circular step number: 50px gradient brown badge with a warm drop shadow */
 .step-item__number {
     flex-shrink: 0;
     width: 50px;
@@ -205,11 +223,13 @@
     box-shadow: 0 4px 12px rgba(139, 107, 74, 0.3);
 }
 
+/* Step content column with a small top offset to align with the badge center */
 .step-item__content {
     flex: 1;
     padding-top: 0.3rem;
 }
 
+/* Bold step title at 1.2rem with bottom margin */
 .step-item__title {
     font-size: 1.2rem;
     font-weight: 600;
@@ -217,6 +237,7 @@
     margin: 0 0 0.5rem 0;
 }
 
+/* Muted step description at 0.95rem with relaxed line height */
 .step-item__description {
     font-size: 0.95rem;
     color: #6B5D52;
@@ -224,8 +245,7 @@
     margin: 0;
 }
 
-/* ========== SECCIÓN: ABORDAJE ========== */
-
+/* Boarding section block with bottom margin; last child removes it */
 .abordaje-section {
     margin-bottom: 2.5rem;
 }
@@ -234,6 +254,7 @@
     margin-bottom: 0;
 }
 
+/* Small all-caps boarding subtitle with 1px letter spacing */
 .abordaje-section__subtitle {
     font-size: 1.1rem;
     font-weight: 600;
@@ -244,6 +265,7 @@
     font-size: 0.85rem;
 }
 
+/* Auto-fit grid of boarding group cards, minimum 250px wide */
 .abordaje-groups {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -251,6 +273,7 @@
     margin-bottom: 2rem;
 }
 
+/* Individual boarding group card: off-white with a gold left border accent */
 .abordaje-group {
     background: #fcfbf9;
     padding: 1.5rem;
@@ -258,6 +281,7 @@
     border-left: 3px solid #B89A7A;
 }
 
+/* Bold boarding priority heading at 1.1rem */
 .abordaje-group__priority {
     font-size: 1.1rem;
     font-weight: 600;
@@ -265,6 +289,7 @@
     margin: 0 0 0.8rem 0;
 }
 
+/* Muted boarding group description at 0.9rem with relaxed line height */
 .abordaje-group__description {
     font-size: 0.9rem;
     color: #6B5D52;
@@ -272,6 +297,7 @@
     margin: 0;
 }
 
+/* Vertical stack of rule items with gaps */
 .reglas-list {
     list-style: none;
     padding: 0;
@@ -281,6 +307,7 @@
     gap: 1rem;
 }
 
+/* Rule row: off-white background with a gold checkmark bullet and relaxed line height */
 .reglas-list__item {
     color: #1C1A18;
     font-size: 0.95rem;
@@ -293,6 +320,7 @@
     border-radius: 4px;
 }
 
+/* Gold checkmark bullet before each rule item */
 .reglas-list__item::before {
     content: '✓';
     color: #B89A7A;
@@ -302,7 +330,7 @@
     line-height: 1;
 }
 
-/* --- Animación de Entrada --- */
+/* Card entry animation: slides up 30px while fading in */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -314,7 +342,7 @@
     }
 }
 
-/* --- Responsive --- */
+/* At 1024px: page padding and section gap reduce */
 @media (max-width: 1024px) {
     .info-seguridad {
         padding: 2.5rem 1rem 5rem;
@@ -325,6 +353,7 @@
     }
 }
 
+/* At 768px: tighter page padding, smaller header and title, boarding grid goes single column */
 @media (max-width: 768px) {
     .info-seguridad {
         padding: 2rem 1rem 4rem;
@@ -374,6 +403,7 @@
     }
 }
 
+/* At 480px: minimal padding, card icon stacks above title, step items stack vertically */
 @media (max-width: 480px) {
     .info-seguridad {
         padding: 1.5rem 0.5rem 3rem;
@@ -444,6 +474,7 @@
     }
 }
 
+/* At 380px: card header and content tighten padding further */
 @media (max-width: 380px) {
     .seccion-card__header {
         padding: 1.25rem 1.25rem;

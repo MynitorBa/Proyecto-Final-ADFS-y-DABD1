@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de comentarios y resenas. Gestiona la creacion de resenas de ruta,
+    /// respuestas a comentarios, consultas por ruta o usuario, y la inclusion del
+    /// voto del usuario autenticado en los resultados.
+    /// </summary>
     public class ComentarioRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -14,6 +19,12 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Crea una resena con calificacion de estrellas para una ruta. Verifica que
+        /// la ruta exista, que el usuario haya viajado en ella con una reservacion
+        /// completada y que no haya dejado ya una resena en esa ruta.
+        /// Retorna el DTO del comentario creado.
+        /// </summary>
         public async Task<ComentarioDTO> CrearComentarioRuta(int usuarioId, CrearComentarioRutaDTO dto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -95,6 +106,12 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Crea una respuesta a un comentario existente. Verifica que el comentario
+        /// padre exista y obtiene la ruta asociada para vincular la respuesta.
+        /// Las respuestas no incluyen calificacion de estrellas.
+        /// Retorna el DTO del comentario creado.
+        /// </summary>
         public async Task<ComentarioDTO> CrearRespuesta(int usuarioId, CrearRespuestaDTO dto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -150,13 +167,18 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Retorna todos los comentarios y respuestas de una ruta especifica,
+        /// agrupados para que las respuestas aparezcan junto a su comentario padre,
+        /// ordenados cronologicamente.
+        /// </summary>
         public async Task<List<ComentarioDTO>> ObtenerComentariosPorRuta(int rutaId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     c.ID,
                     c.UsuarioID,
                     u.Username,
@@ -194,13 +216,17 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Retorna todos los comentarios del sistema incluyendo el voto del usuario
+        /// autenticado en cada comentario. Ordenados por fecha descendente.
+        /// </summary>
         public async Task<List<ComentarioConVotoDTO>> ObtenerTodosConVoto(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     c.ID,
                     c.UsuarioID,
                     u.Username,
@@ -234,13 +260,17 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Retorna todos los comentarios realizados por un usuario especifico,
+        /// ordenados por fecha descendente. Incluye resenas y respuestas.
+        /// </summary>
         public async Task<List<ComentarioDTO>> ObtenerComentariosPorUsuario(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     c.ID,
                     c.UsuarioID,
                     u.Username,
@@ -273,13 +303,17 @@ namespace Aerolinea.API.Repositories
         }
 
 
+        /// <summary>
+        /// Retorna los comentarios de una ruta incluyendo el voto del usuario autenticado
+        /// en cada comentario. Agrupa respuestas junto a su padre y ordena cronologicamente.
+        /// </summary>
         public async Task<List<ComentarioConVotoDTO>> ObtenerComentariosRutaConVoto(int rutaId, int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     c.ID,
                     c.UsuarioID,
                     u.Username,
@@ -324,7 +358,7 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     c.ID,
                     c.UsuarioID,
                     u.Username,

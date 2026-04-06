@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de peticion para registrar un nuevo usuario en el sistema.
+    /// Contiene credenciales de acceso, datos personales, ubicacion geografica
+    /// y lista de nacionalidades. El rol por defecto es usuario regular (RolID = 2).
+    /// </summary>
     public class CrearUsuarioDTO
     {
         public string Correo { get; set; }

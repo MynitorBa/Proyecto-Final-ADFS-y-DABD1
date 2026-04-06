@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de metricas del sistema. Provee datos estadisticos sobre busquedas
+    /// de vuelos, rutas mas buscadas, distribucion por tipo de acceso (Web/REST),
+    /// ingresos reales desde facturas y listados paginados para exportacion o analisis.
+    /// </summary>
     public class MetricasRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -14,6 +19,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Gráfica 1: Búsquedas por día (últimos N días) ────────────────────
+        /// <summary>
+        /// Retorna el conteo de busquedas agrupadas por dia dentro del rango de fechas
+        /// indicado. Si no se indica rango se usan los ultimos 30 dias. Ordenado ascendente.
+        /// </summary>
         public async Task<List<BusquedasPorDiaDTO>> ObtenerBusquedasPorDia(
             DateTime? desde, DateTime? hasta)
         {
@@ -24,7 +33,7 @@ namespace Aerolinea.API.Repositories
             await conn.OpenAsync();
 
             string query = @"
-                SELECT 
+                SELECT
                     CONVERT(varchar(10), b.Fecha, 23) AS Fecha,
                     COUNT(*) AS Total
                 FROM Busqueda b
@@ -50,6 +59,11 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Gráfica 2: Top 10 rutas más buscadas ─────────────────────────────
+        /// <summary>
+        /// Retorna las 10 rutas mas buscadas en el rango de fechas indicado.
+        /// Opcionalmente filtra por tipo de acceso (Web o REST).
+        /// Incluye codigos y nombres de ciudad de origen y destino.
+        /// </summary>
         public async Task<List<RutaMasBuscadaDTO>> ObtenerRutasMasBuscadas(
             DateTime? desde, DateTime? hasta, string? tipo)
         {
@@ -104,6 +118,10 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Gráfica 3: Proporción Web vs REST ────────────────────────────────
+        /// <summary>
+        /// Retorna la cantidad de busquedas agrupadas por tipo (Web y REST) en el
+        /// rango de fechas indicado. Se usa para graficar la proporcion de cada canal.
+        /// </summary>
         public async Task<List<BusquedasPorTipoDTO>> ObtenerBusquedasPorTipo(
             DateTime? desde, DateTime? hasta)
         {
@@ -141,6 +159,11 @@ namespace Aerolinea.API.Repositories
         // ── Ingresos reales desde Factura ────────────────────────────────────
         // Factura.Total = lo que el usuario realmente pagó en checkout.
         // Filtra por fecha de la factura (fecha de compra), no por fecha del vuelo.
+        /// <summary>
+        /// Calcula los ingresos reales del periodo a partir de las facturas emitidas.
+        /// Retorna un KPI con totales y ticket promedio, y una distribucion de ingresos
+        /// y boletos por clase (Turista y Ejecutiva). Excluye reservaciones canceladas.
+        /// </summary>
         public async Task<(IngresosKpiDTO kpi, List<DistribucionClaseDTO> dist)> ObtenerIngresos(
             DateTime? desde, DateTime? hasta)
         {
@@ -229,6 +252,11 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Resumen general (KPIs) ────────────────────────────────────────────
+        /// <summary>
+        /// Construye el resumen general de metricas del sistema combinando busquedas por
+        /// dia, rutas mas buscadas, distribucion por tipo y datos de ingresos para el
+        /// rango de fechas indicado.
+        /// </summary>
         public async Task<MetricasResumenDTO> ObtenerResumen(DateTime? desde, DateTime? hasta)
         {
             var porDia = await ObtenerBusquedasPorDia(desde, hasta);
@@ -254,6 +282,11 @@ namespace Aerolinea.API.Repositories
         }
 
         // ── Listado paginado con filtros (para exportar / ver tabla) ──────────
+        /// <summary>
+        /// Retorna un listado paginado de busquedas con filtros por fecha, tipo de acceso
+        /// y usuario. Incluye conteo total para calcular paginas. Se usa para la tabla
+        /// de detalle del panel de metricas y para exportaciones.
+        /// </summary>
         public async Task<ListadoBusquedasDTO> ObtenerListado(MetricasFiltroDTO filtro)
         {
             var fechaDesde = filtro.FechaDesde != null
@@ -302,7 +335,7 @@ namespace Aerolinea.API.Repositories
 
             // Datos paginados
             string queryData = $@"
-                SELECT 
+                SELECT
                     b.ID,
                     ao.Nombre AS Origen, ao.Codigo AS OrigenCodigo,
                     ad.Nombre AS Destino, ad.Codigo AS DestinoCodigo,

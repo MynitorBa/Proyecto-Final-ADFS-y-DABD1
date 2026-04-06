@@ -1,4 +1,6 @@
-/* --- Página de Resultados de Búsqueda --- */
+/* busqueda.css - Flight search results page styles including header, search bar, search info panel, results list, flight cards with image and route, price options, and responsive breakpoints */
+
+/* Full-page wrapper using the project background color with bottom padding */
 .resultados-busqueda {
     width: 100%;
     min-height: 100vh;
@@ -6,18 +8,20 @@
     padding: 3rem 1rem 6rem;
 }
 
+/* Centered content column capped at 1200px */
 .resultados-busqueda__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* --- Header con asimetría --- */
+/* Page header with a thick gold left border as the asymmetric accent */
 .resultados-busqueda__header {
     margin-bottom: 3rem;
     border-left: 6px solid var(--primary-color);
     padding-left: 2rem;
 }
 
+/* Borderless transparent back button with muted uppercase text */
 .resultados-busqueda__back {
     background: transparent;
     border: none;
@@ -31,11 +35,13 @@
     display: block;
 }
 
+/* Back button shifts left and turns gold on hover */
 .resultados-busqueda__back:hover {
     color: var(--primary-color);
     transform: translateX(-5px);
 }
 
+/* Fluid heading from 2rem to 3rem using clamp, light weight */
 .resultados-busqueda__title {
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 300;
@@ -43,7 +49,7 @@
     margin-bottom: 1.5rem;
 }
 
-/* --- Barra de Búsqueda por Palabra Clave --- */
+/* Flex row keyword search bar capped at 700px with a gap between input and button */
 .search-bar {
     display: flex;
     gap: 1rem;
@@ -51,6 +57,7 @@
     max-width: 700px;
 }
 
+/* Search input: flex-grows to fill the bar, asymmetric radius, gold border on focus */
 .search-bar__input {
     flex: 1;
     padding: 1rem 1.5rem;
@@ -63,17 +70,20 @@
     transition: var(--transition);
 }
 
+/* Input border turns gold with a faint gold glow on focus */
 .search-bar__input:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 4px 12px rgba(201, 169, 97, 0.1);
 }
 
+/* Placeholder text in muted color, slightly smaller than input text */
 .search-bar__input::placeholder {
     color: var(--text-muted);
     font-size: 0.9rem;
 }
 
+/* Search button: dark secondary background, asymmetric radius, uppercase label */
 .search-bar__btn {
     padding: 1rem 2rem;
     background: var(--secondary-color);
@@ -89,12 +99,13 @@
     white-space: nowrap;
 }
 
+/* Button turns gold and lifts 2px on hover */
 .search-bar__btn:hover {
     background: var(--primary-color);
     transform: translateY(-2px);
 }
 
-/* --- Información de búsqueda --- */
+/* White panel summarizing origin, destination, date, and passenger info */
 .resultados-busqueda__search-info {
     display: flex;
     flex-wrap: wrap;
@@ -106,6 +117,7 @@
     border: 1px solid var(--perla-dark);
 }
 
+/* Each search parameter displayed as a stacked label-value pair */
 .search-info-item {
     display: flex;
     flex-direction: column;
@@ -113,6 +125,7 @@
     margin: 0;
 }
 
+/* Tiny all-caps muted label above each search parameter value */
 .search-info-item__label {
     font-size: 0.65rem;
     color: var(--text-muted);
@@ -120,17 +133,19 @@
     letter-spacing: 1px;
 }
 
+/* Medium-weight secondary color value for each search parameter */
 .search-info-item__value {
     font-size: 0.95rem;
     font-weight: 500;
     color: var(--secondary-color);
 }
 
-/* --- Header de resultados --- */
+/* Margin-top separator above the results list area */
 .resultados-busqueda__content {
     margin-top: 2.5rem;
 }
 
+/* Results count and sort controls in a space-between flex row */
 .results-header {
     display: flex;
     justify-content: space-between;
@@ -140,6 +155,7 @@
     border-bottom: 1px solid var(--perla-dark);
 }
 
+/* Result count paragraph in medium-weight secondary color */
 .results-header__count {
     font-size: 1rem;
     color: var(--secondary-color);
@@ -147,12 +163,14 @@
     margin: 0;
 }
 
+/* Flex row container for the sort label and select dropdown */
 .results-header__sort {
     display: flex;
     align-items: center;
     gap: 1rem;
 }
 
+/* Tiny all-caps muted label for the sort control */
 .results-header__sort-label {
     font-size: 0.75rem;
     color: var(--text-muted);
@@ -160,6 +178,7 @@
     letter-spacing: 1px;
 }
 
+/* Sort select dropdown with a plain border and beige background */
 .results-header__sort-select {
     padding: 0.7rem 1rem;
     border: 1px solid var(--perla-dark);
@@ -172,13 +191,14 @@
     font-family: inherit;
 }
 
+/* Sort select turns gold border and white background on focus */
 .results-header__sort-select:focus {
     outline: none;
     border-color: var(--primary-color);
     background: var(--white);
 }
 
-/* --- Mensaje de Sin Resultados --- */
+/* Centered empty-state panel with large asymmetric radius */
 .no-results {
     text-align: center;
     padding: 4rem 2rem;
@@ -187,6 +207,7 @@
     box-shadow: 0 10px 30px rgba(28, 26, 24, 0.05);
 }
 
+/* Light-weight heading for the no-results message */
 .no-results__message {
     font-size: 1.5rem;
     font-weight: 300;
@@ -194,6 +215,7 @@
     margin: 0 0 1rem 0;
 }
 
+/* Muted suggestion text with relaxed line height below the no-results heading */
 .no-results__suggestion {
     font-size: 0.95rem;
     color: var(--text-muted);
@@ -201,14 +223,14 @@
     line-height: 1.6;
 }
 
-/* --- Lista de resultados --- */
+/* Vertical stack of flight result cards with 2rem gap */
 .flights-results-list {
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
-/* --- Tarjeta de resultado de vuelo --- */
+/* Flight card: two-column grid (image left, content right) with animated entry */
 .flight-result-card {
     background: var(--white);
     border-radius: 4px 32px 4px 32px;
@@ -221,11 +243,13 @@
     animation: fadeInUp 0.6s ease-out forwards;
 }
 
+/* Card lifts and deepens its shadow on hover */
 .flight-result-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(28, 26, 24, 0.1);
 }
 
+/* Left image column: full height cover photo with overflow hidden */
 .flight-result-card__image {
     width: 100%;
     height: 100%;
@@ -235,6 +259,7 @@
     background: var(--perla-dark);
 }
 
+/* Destination photo fills the column with object-fit cover */
 .flight-result-card__image img {
     width: 100%;
     height: 100%;
@@ -242,11 +267,12 @@
     transition: transform 0.8s ease;
 }
 
+/* Destination image scales to 110% on card hover for a zoom effect */
 .flight-result-card:hover .flight-result-card__image img {
     transform: scale(1.1);
 }
 
-/* Contenido de la tarjeta */
+/* Right content column: flex column with 2rem gap between sections */
 .flight-result-card__content {
     padding: 2.5rem;
     display: flex;
@@ -254,6 +280,7 @@
     gap: 2rem;
 }
 
+/* Card header: destination name and airline in a space-between row */
 .flight-result-card__header {
     display: flex;
     justify-content: space-between;
@@ -262,6 +289,7 @@
     border-bottom: 1px solid var(--perla-dark);
 }
 
+/* Large light-weight destination city name */
 .flight-destination__name {
     font-size: 1.8rem;
     font-weight: 300;
@@ -269,6 +297,7 @@
     margin: 0 0 0.3rem 0;
 }
 
+/* Destination country in small gold uppercase text */
 .flight-destination__country {
     font-size: 0.75rem;
     color: var(--primary-color);
@@ -277,6 +306,7 @@
     margin: 0;
 }
 
+/* Airline name in small muted uppercase text on the right */
 .flight-airline__name {
     font-size: 0.85rem;
     color: var(--text-muted);
@@ -285,7 +315,7 @@
     margin: 0;
 }
 
-/* --- Ruta del vuelo --- */
+/* Route section: three-column grid (origin, duration, destination) */
 .flight-result-card__route {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -293,23 +323,27 @@
     align-items: center;
 }
 
+/* Route endpoint: stacked time, location, and date */
 .route-point {
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
 }
 
+/* Destination route point aligns content to the right */
 .route-point:last-child {
     align-items: flex-end;
     text-align: right;
 }
 
+/* Large time display in medium weight secondary color */
 .route-point__time {
     font-size: 1.5rem;
     font-weight: 500;
     color: var(--secondary-color);
 }
 
+/* Airport code or city name in small muted uppercase */
 .route-point__location {
     font-size: 0.85rem;
     color: var(--text-muted);
@@ -317,11 +351,13 @@
     letter-spacing: 0.5px;
 }
 
+/* Small muted date label below the location */
 .route-point__date {
     font-size: 0.75rem;
     color: var(--text-muted);
 }
 
+/* Center duration block: stacked duration text and arrow line */
 .route-duration {
     display: flex;
     flex-direction: column;
@@ -330,6 +366,7 @@
     position: relative;
 }
 
+/* Thin horizontal line connecting origin and destination */
 .route-duration__line {
     width: 100%;
     height: 2px;
@@ -337,6 +374,7 @@
     position: relative;
 }
 
+/* Arrow character appended after the duration line in gold */
 .route-duration__line::after {
     content: '→';
     position: absolute;
@@ -347,6 +385,7 @@
     font-size: 1.2rem;
 }
 
+/* Flight duration text in small muted uppercase below the line */
 .route-duration__text {
     font-size: 0.75rem;
     color: var(--text-muted);
@@ -354,7 +393,7 @@
     letter-spacing: 1px;
 }
 
-/* --- Precios compactos --- */
+/* Compact price section: flex row with beige background and equal-width columns */
 .flight-result-card__prices {
     display: flex;
     gap: 1.5rem;
@@ -363,6 +402,7 @@
     border-radius: 4px;
 }
 
+/* Each price option: centered stacked label and value */
 .price-option-compact {
     display: flex;
     flex-direction: column;
@@ -371,6 +411,7 @@
     text-align: center;
 }
 
+/* Tiny all-caps muted class label above the price */
 .price-option-compact__label {
     font-size: 0.65rem;
     color: var(--text-muted);
@@ -378,13 +419,14 @@
     letter-spacing: 1px;
 }
 
+/* Price in large light-weight secondary color text */
 .price-option-compact__value {
     font-size: 1.4rem;
     font-weight: 300;
     color: var(--secondary-color);
 }
 
-/* --- Botón de detalles --- */
+/* Full-width outline button for viewing flight details, asymmetric radius */
 .flight-result-card__btn-details {
     width: 100%;
     background: transparent;
@@ -400,13 +442,14 @@
     font-size: 0.85rem;
 }
 
+/* Details button fills dark and turns white text on hover with a slight lift */
 .flight-result-card__btn-details:hover {
     background: var(--secondary-color);
     color: var(--white);
     transform: translateY(-2px);
 }
 
-/* --- Animación de entrada --- */
+/* Entrance animation: cards fade in while sliding up 30px */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -418,7 +461,7 @@
     }
 }
 
-/* --- Responsive --- */
+/* At 1024px: image column narrows to 240px and content padding reduces */
 @media (max-width: 1024px) {
     .resultados-busqueda__search-info {
         gap: 1.5rem;
@@ -441,6 +484,7 @@
     }
 }
 
+/* At 768px: single-column card layout; search bar stacks vertically */
 @media (max-width: 768px) {
     .resultados-busqueda {
         padding: 2rem 1rem 4rem;
@@ -455,12 +499,12 @@
         flex-direction: column;
         gap: 0.8rem;
     }
-    
+
     .search-bar__input {
         padding: 0.9rem 1.2rem;
         font-size: 0.9rem;
     }
-    
+
     .search-bar__btn {
         padding: 0.9rem 1.5rem;
     }
@@ -489,19 +533,20 @@
     .results-header__sort-select {
         width: 100%;
     }
-    
+
     .no-results {
         padding: 3rem 1.5rem;
     }
-    
+
     .no-results__message {
         font-size: 1.2rem;
     }
-    
+
     .no-results__suggestion {
         font-size: 0.85rem;
     }
 
+    /* Card becomes single-column with image on top */
     .flight-result-card {
         grid-template-columns: 1fr;
     }
@@ -526,25 +571,30 @@
         font-size: 1.5rem;
     }
 
+    /* Route becomes a vertical single column on small screens */
     .flight-result-card__route {
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
 
+    /* Destination route point reverts to left alignment on mobile */
     .route-point:last-child {
         align-items: flex-start;
         text-align: left;
     }
 
+    /* Duration block moves to the top of the stacked route */
     .route-duration {
         order: -1;
     }
 
+    /* Duration line becomes vertical on mobile */
     .route-duration__line {
         height: 60px;
         width: 2px;
     }
 
+    /* Arrow rotates to point downward on the vertical duration line */
     .route-duration__line::after {
         content: '↓';
         right: 50%;
@@ -559,6 +609,7 @@
         padding: 1.25rem;
     }
 
+    /* Price option becomes a horizontal row on mobile */
     .price-option-compact {
         flex-direction: row;
         justify-content: space-between;
@@ -574,6 +625,7 @@
     }
 }
 
+/* At 480px: tighter padding and smaller typography throughout */
 @media (max-width: 480px) {
     .resultados-busqueda {
         padding: 1.5rem 0.5rem 3rem;
@@ -583,13 +635,13 @@
         padding-left: 0.5rem;
         margin-bottom: 2rem;
     }
-    
+
     .search-bar__input {
         padding: 0.8rem 1rem;
         font-size: 0.85rem;
         border-radius: 4px 16px 4px 16px;
     }
-    
+
     .search-bar__btn {
         padding: 0.8rem 1.2rem;
         font-size: 0.85rem;

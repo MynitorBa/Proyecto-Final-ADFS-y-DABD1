@@ -1,8 +1,13 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 
 namespace Aerolinea.API.Helpers
 {
+    /// <summary>
+    /// Clase estatica de utilidad para el envio de correos electronicos mediante SMTP.
+    /// Encapsula la configuracion del servidor de correo y expone metodos para enviar
+    /// mensajes HTML simples, con copia oculta, y para escapar texto en HTML.
+    /// </summary>
     public static class EmailHelper
     {
         private static readonly string SmtpHost = "smtp.gmail.com";
@@ -11,7 +16,8 @@ namespace Aerolinea.API.Helpers
         private static readonly string SmtpPass = "axvv hnkv gylv gupb";
 
         /// <summary>
-        /// Envía un correo HTML a un destinatario.
+        /// Envia un correo electronico con cuerpo HTML al destinatario especificado.
+        /// Utiliza el servidor SMTP configurado con SSL en el puerto 587.
         /// </summary>
         public static async Task Enviar(string destinatario, string asunto, string cuerpoHtml)
         {
@@ -30,7 +36,8 @@ namespace Aerolinea.API.Helpers
         }
 
         /// <summary>
-        /// Envía un correo con copia oculta al admin.
+        /// Envia un correo electronico con cuerpo HTML al destinatario e incluye una copia
+        /// oculta (BCC) a la direccion indicada, si esta no esta vacia.
         /// </summary>
         public static async Task EnviarConCopia(string destinatario, string asunto, string cuerpoHtml, string copiaOculta)
         {
@@ -52,7 +59,9 @@ namespace Aerolinea.API.Helpers
         }
 
         /// <summary>
-        /// Escapa caracteres HTML.
+        /// Escapa los caracteres especiales de HTML en el texto recibido para evitar
+        /// inyeccion de etiquetas al incrustar contenido dinamico en plantillas HTML.
+        /// Retorna cadena vacia si el texto es nulo o vacio.
         /// </summary>
         public static string Esc(string texto)
         {

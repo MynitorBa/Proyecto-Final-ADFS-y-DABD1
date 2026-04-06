@@ -1,5 +1,6 @@
-/* --- Estilos para la Página de Perfil --- */
+/* profile.css - User profile page styles including header with gold left border, two-column layout with sticky sidebar, avatar card with asymmetric border and gold ring, section navigation with active left border, logout button, main form section with fadeIn animation, two-column form grid, security tips list, and responsive breakpoints */
 
+/* Full-page wrapper with the brand beige background and generous bottom padding */
 .profile {
     width: 100%;
     min-height: 100vh;
@@ -8,18 +9,20 @@
     font-family: inherit;
 }
 
+/* Centered content column capped at 1200px */
 .profile__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* --- Header --- */
+/* Page header with a thick gold left border accent */
 .profile__header {
     margin-bottom: 3rem;
     border-left: 6px solid var(--primary-color);
     padding-left: 2rem;
 }
 
+/* Transparent back button that shifts 5px left on hover */
 .profile__back {
     background: transparent;
     border: none;
@@ -37,6 +40,7 @@
     transform: translateX(-5px);
 }
 
+/* Fluid page title from 2rem to 3rem, light weight */
 .profile__title {
     font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 300;
@@ -44,7 +48,7 @@
     margin: 0;
 }
 
-/* --- Layout Principal --- */
+/* Two-column layout: 320px sidebar on the left, main content on the right */
 .profile__content {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -52,12 +56,13 @@
     align-items: start;
 }
 
-/* --- Sidebar (Perfil e Icono) --- */
+/* Sticky sidebar that stays 2rem from the top when scrolling */
 .profile__sidebar {
     position: sticky;
     top: 2rem;
 }
 
+/* Avatar card: white, asymmetric radius (4px 40px 4px 40px), centered text */
 .profile-card {
     background: var(--white);
     padding: 3rem 2rem;
@@ -68,6 +73,7 @@
     border: 1px solid rgba(235, 230, 224, 0.5);
 }
 
+/* Avatar container: 100px dark square with an asymmetric radius (0 35px 0 35px) */
 .profile-card__avatar {
     width: 100px;
     height: 100px;
@@ -79,10 +85,11 @@
     justify-content: center;
     font-size: 2rem;
     font-weight: 300;
-    border-radius: 0 35px 0 35px; /* Asimetría en el avatar */
+    border-radius: 0 35px 0 35px;
     position: relative;
 }
 
+/* Gold ring pseudo-element inset 5px outside the avatar border */
 .profile-card__avatar::after {
     content: '';
     position: absolute;
@@ -92,18 +99,20 @@
     z-index: -1;
 }
 
+/* User full name at 1.4rem below the avatar */
 .profile-card__name {
     font-size: 1.4rem;
     color: var(--secondary-color);
     margin-bottom: 0.5rem;
 }
 
+/* Muted email address below the name */
 .profile-card__email {
     font-size: 0.9rem;
     color: var(--text-muted);
 }
 
-/* --- Navegación del Perfil --- */
+/* Vertical stack of navigation buttons below the avatar card */
 .profile-nav {
     display: flex;
     flex-direction: column;
@@ -111,6 +120,7 @@
     margin-bottom: 2rem;
 }
 
+/* Nav item: transparent button with a left border that fills on active/hover */
 .profile-nav__item {
     background: transparent;
     border: none;
@@ -126,17 +136,20 @@
     letter-spacing: 1px;
 }
 
+/* Nav item darkens text and shows a faint background on hover */
 .profile-nav__item:hover {
     color: var(--secondary-color);
     background: rgba(235, 230, 224, 0.2);
 }
 
+/* Active nav item: dark text, white background, gold left border */
 .profile-nav__item--active {
     color: var(--secondary-color);
     border-left-color: var(--primary-color);
     background: var(--white);
 }
 
+/* Logout button: full-width, red text with a red border, warms on hover */
 .profile-logout {
     width: 100%;
     padding: 1rem;
@@ -153,49 +166,55 @@
     background: #ffebee;
 }
 
-/* --- Contenido Principal y Formularios --- */
+/* Main content section: white, inverted asymmetric radius (40px 4px 40px 4px), fades in on load */
 .profile-section {
     background: var(--white);
     padding: 3rem;
-    border-radius: 40px 4px 40px 4px; /* Asimetría invertida */
+    border-radius: 40px 4px 40px 4px;
     box-shadow: 0 20px 60px rgba(28, 26, 24, 0.05);
     animation: fadeIn 0.5s ease-out;
 }
 
+/* Section fade-in entry animation: slides up 10px while fading in */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* Section heading at 1.8rem in the secondary color */
 .profile-section__title {
     font-size: 1.8rem;
     color: var(--secondary-color);
     margin-bottom: 0.5rem;
 }
 
+/* Muted subtitle below the section title */
 .profile-section__subtitle {
     color: var(--text-muted);
     margin-bottom: 3rem;
     font-size: 1rem;
 }
 
-/* Form Grid */
+/* Vertical flex form with 2rem gaps between rows */
 .profile-form {
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
+/* Two-column form row with a 2rem gap */
 .profile-form__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
 }
 
+/* Full-width field spanning both columns */
 .profile-form__field--full {
     grid-column: span 2;
 }
 
+/* Small all-caps bold field label */
 .profile-form__label {
     display: block;
     font-size: 0.75rem;
@@ -206,6 +225,7 @@
     font-weight: 700;
 }
 
+/* Text input: asymmetric radius (0 12px 0 12px), warm beige background, gold focus ring */
 .profile-form__input {
     width: 100%;
     padding: 1rem 1.2rem;
@@ -217,6 +237,7 @@
     transition: var(--transition);
 }
 
+/* Input turns white with a gold border and subtle glow on focus */
 .profile-form__input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -224,6 +245,7 @@
     box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1);
 }
 
+/* Submit button: left-aligned, dark background, asymmetric radius, lifts on hover */
 .profile-form__submit {
     align-self: flex-start;
     padding: 1.2rem 3rem;
@@ -239,25 +261,28 @@
     margin-top: 1rem;
 }
 
+/* Submit button turns gold with a warm shadow on hover */
 .profile-form__submit:hover {
     background: var(--primary-color);
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
 }
 
-/* --- Seguridad y Tips --- */
+/* Security tips section separated from the form by a dashed divider */
 .security-info {
     margin-top: 4rem;
     padding-top: 2rem;
     border-top: 1px dashed var(--perla-dark);
 }
 
+/* Security tips heading at 1rem */
 .security-info__title {
     font-size: 1rem;
     color: var(--secondary-color);
     margin-bottom: 1.5rem;
 }
 
+/* Two-column grid of security tip items */
 .security-info__list {
     list-style: none;
     padding: 0;
@@ -266,6 +291,7 @@
     gap: 1rem;
 }
 
+/* Individual tip: flex row with a gold checkmark pseudo-element */
 .security-info__item {
     font-size: 0.85rem;
     color: var(--text-muted);
@@ -274,24 +300,26 @@
     gap: 0.8rem;
 }
 
+/* Gold checkmark bullet before each security tip */
 .security-info__item::before {
     content: '✓';
     color: var(--primary-color);
     font-weight: bold;
 }
 
-/* --- Responsive --- */
+/* At 992px: single-column layout; sidebar leaves sticky mode */
 @media (max-width: 992px) {
     .profile__content {
         grid-template-columns: 1fr;
     }
-    
+
     .profile__sidebar {
         position: relative;
         top: 0;
     }
 }
 
+/* At 600px: form rows collapse to single column, security tips stack, section padding halves */
 @media (max-width: 600px) {
     .profile-form__row {
         grid-template-columns: 1fr;

@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de votos (downs) en comentarios. Permite votar a favor o en contra
+    /// de un comentario, cambiar un voto existente, quitarlo y consultar el voto
+    /// actual de un usuario en un comentario especifico.
+    /// </summary>
     public class DownRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -14,6 +19,12 @@ namespace Aerolinea.API.Repositories
         }
 
         //  VOTAR  (crear o actualizar voto)
+        /// <summary>
+        /// Registra o actualiza el voto de un usuario en un comentario. Si es nuevo
+        /// crea el registro; si ya voto igual lanza excepcion; si cambio de voto
+        /// actualiza el registro. Actualiza el contador de downs en el comentario.
+        /// Retorna el resultado con el nuevo conteo y la accion realizada.
+        /// </summary>
         public async Task<ResultadoVotoDTO> VotarComentario(int usuarioId, VotarComentarioDTO dto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -122,6 +133,11 @@ namespace Aerolinea.API.Repositories
         }
 
         //  QUITAR VOTO
+        /// <summary>
+        /// Elimina el voto de un usuario en un comentario y actualiza el contador de downs.
+        /// Lanza excepcion si el usuario no habia votado en ese comentario.
+        /// Retorna el resultado con el nuevo conteo y la accion 'voto_eliminado'.
+        /// </summary>
         public async Task<ResultadoVotoDTO> QuitarVoto(int usuarioId, int comentarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -187,6 +203,10 @@ namespace Aerolinea.API.Repositories
         }
 
         //  OBTENER VOTO DE UN USUARIO EN UN COMENTARIO
+        /// <summary>
+        /// Retorna el valor del voto del usuario en el comentario indicado.
+        /// Retorna null si el usuario no ha votado en ese comentario.
+        /// </summary>
         public async Task<int?> ObtenerVotoUsuario(int usuarioId, int comentarioId)
         {
             using var connection = _connectionFactory.CreateConnection();

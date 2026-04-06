@@ -1,10 +1,9 @@
-/* ═══════════════════════════════════════════
-   MIS RESERVACIONES - Broom AirLine
-   #F2EFEA bg · #8B6B4A accent · #1C1A18 text
-═══════════════════════════════════════════ */
+/* Misreservas.css - My reservations page styles including summary stat cards, status filter pills, reservation grid cards with animated top gradient bar and route display, detail modal with boleto cards, review form with star rating, cancellation section, toast notifications, and responsive layout */
 
+/* Reset margin, padding, and box-sizing for the page and all descendants */
 .mr-page, .mr-page * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* Full-page wrapper with warm off-white background and bottom padding */
 .mr-page {
   min-height: 100vh;
   background: #F5F1EB;
@@ -13,15 +12,14 @@
   padding-bottom: 3rem;
 }
 
+/* Centered content column capped at 1200px */
 .mr-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
 
-/* ═══════════════════════════════════════════
-   HEADER
-═══════════════════════════════════════════ */
+/* Page header: space-between flex row with title and action controls */
 .mr-header {
   display: flex;
   align-items: flex-start;
@@ -31,6 +29,7 @@
   flex-wrap: wrap;
 }
 
+/* Bold dark page title at 1.8rem with tight letter spacing */
 .mr-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -38,15 +37,14 @@
   letter-spacing: -0.5px;
 }
 
+/* Muted subtitle line below the title */
 .mr-subtitle {
   font-size: 0.95rem;
   color: #7a7067;
   margin-top: 0.25rem;
 }
 
-/* ═══════════════════════════════════════════
-   BOTONES
-═══════════════════════════════════════════ */
+/* Base button: inline-flex with icon, rounded corners, and a transition */
 .mr-btn {
   display: inline-flex;
   align-items: center;
@@ -63,24 +61,31 @@
   line-height: 1.3;
 }
 
+/* Primary button: dark brown background, darkens on hover */
 .mr-btn--primary { background: #8B6B4A; color: #fff; }
 .mr-btn--primary:hover { background: #7a5c3d; }
 
+/* Secondary button: light beige background with a brown border */
 .mr-btn--secondary { background: #EDE7DD; color: #8B6B4A; border: 1px solid #D4C4B0; }
 .mr-btn--secondary:hover { background: #E2D9CC; }
 
+/* Outline button: transparent with a brown border, fills on hover */
 .mr-btn--outline { background: transparent; color: #8B6B4A; border: 1.5px solid #8B6B4A; }
 .mr-btn--outline:hover { background: #8B6B4A; color: #fff; }
 
+/* Ghost button: transparent with a light grey border, warms on hover */
 .mr-btn--ghost { background: transparent; color: #7a7067; border: 1px solid #D8D1C5; }
 .mr-btn--ghost:hover { background: #EDE7DD; color: #1C1A18; }
 
+/* Danger button: red background, darkens on hover */
 .mr-btn--danger { background: #c0392b; color: #fff; }
 .mr-btn--danger:hover { background: #a93226; }
 
+/* Danger outline button: transparent with red border, fills red on hover */
 .mr-btn--danger-outline { background: transparent; color: #c0392b; border: 1.5px solid #c0392b; }
 .mr-btn--danger-outline:hover { background: #c0392b; color: #fff; }
 
+/* Back button: white background, grey border, turns gold on hover */
 .mr-btn--back {
   background: #fff;
   color: #4a4035;
@@ -90,8 +95,10 @@
 }
 .mr-btn--back:hover { background: #F2EFEA; border-color: #8B6B4A; color: #8B6B4A; }
 
+/* Disabled state for all button variants: semi-transparent, not-allowed cursor */
 .mr-btn:disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
 
+/* Inline spinner for button loading states: 15px white spinning circle */
 .mr-btn__spinner {
   width: 15px; height: 15px;
   border: 2px solid rgba(255,255,255,0.35);
@@ -101,14 +108,14 @@
   display: inline-block;
   flex-shrink: 0;
 }
+
+/* Dark-themed spinner variant for buttons on light backgrounds */
 .mr-btn__spinner--dark {
   border-color: rgba(139,107,74,0.25);
   border-top-color: #8B6B4A;
 }
 
-/* ═══════════════════════════════════════════
-   RESUMEN
-═══════════════════════════════════════════ */
+/* Auto-fit summary stats grid, minimum 145px per card */
 .mr-resumen {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
@@ -116,6 +123,7 @@
   margin-bottom: 1.5rem;
 }
 
+/* Individual stat card: white background, rounded corners, lifts 2px on hover */
 .mr-resumen__card {
   background: #fff;
   border: 1px solid #E6E1DA;
@@ -132,6 +140,7 @@
   box-shadow: 0 6px 20px rgba(139,107,74,0.07);
 }
 
+/* Large bold stat value at 1.45rem */
 .mr-resumen__val {
   font-size: 1.45rem;
   font-weight: 700;
@@ -140,6 +149,7 @@
   margin-top: 0.35rem;
 }
 
+/* Small all-caps muted label beneath the stat value */
 .mr-resumen__label {
   font-size: 0.72rem;
   color: #7a7067;
@@ -148,9 +158,7 @@
   letter-spacing: 0.6px;
 }
 
-/* ═══════════════════════════════════════════
-   FILTROS
-═══════════════════════════════════════════ */
+/* Filter pill row: wraps, separated from the card grid by a bottom border */
 .mr-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -160,6 +168,7 @@
   border-bottom: 1px solid #E6E1DA;
 }
 
+/* Filter pill button: white pill with a light border, turns brown-text on hover */
 .mr-filtro {
   display: inline-flex;
   align-items: center;
@@ -177,9 +186,11 @@
 }
 .mr-filtro:hover { border-color: #8B6B4A; color: #8B6B4A; }
 
+/* Active filter pill: filled brown background */
 .mr-filtro--active { background: #8B6B4A; color: #fff; border-color: #8B6B4A; }
 .mr-filtro--active:hover { background: #7a5c3d; }
 
+/* Count badge inside the filter pill */
 .mr-filtro__count {
   background: rgba(0,0,0,0.08);
   padding: 0.05rem 0.4rem;
@@ -189,11 +200,10 @@
   min-width: 20px;
   text-align: center;
 }
+/* Active pill count uses a semi-transparent white badge */
 .mr-filtro--active .mr-filtro__count { background: rgba(255,255,255,0.22); }
 
-/* ═══════════════════════════════════════════
-   BADGES
-═══════════════════════════════════════════ */
+/* Inline status badge with an icon gap and all-caps text */
 .mr-badge {
   display: inline-flex;
   align-items: center;
@@ -206,23 +216,24 @@
   text-transform: uppercase;
   flex-shrink: 0;
 }
+/* Small badge variant */
 .mr-badge--sm { font-size: 0.7rem; padding: 0.18rem 0.5rem; }
 
+/* Status badge color themes */
 .mr-badge--confirmada { background: #e8f5e9; color: #2e7d32; }
 .mr-badge--cancelada  { background: #fdecea; color: #c0392b; }
 .mr-badge--completada { background: #e3f2fd; color: #1565c0; }
 .mr-badge--expirada   { background: #f3e5f5; color: #7b1fa2; }
 .mr-badge--pendiente  { background: #fff8e1; color: #e65100; }
 
-/* ═══════════════════════════════════════════
-   GRID DE CARDS
-═══════════════════════════════════════════ */
+/* Auto-fill card grid, minimum 355px per card */
 .mr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(355px, 1fr));
   gap: 1rem;
 }
 
+/* Reservation card: white, rounded, clickable, with a hidden gradient top bar */
 .mr-card {
   background: #fff;
   border: 1px solid #E6E1DA;
@@ -236,6 +247,8 @@
   position: relative;
   overflow: hidden;
 }
+
+/* Hidden brown-to-gold gradient top bar that appears on hover */
 .mr-card::before {
   content: '';
   position: absolute;
@@ -245,6 +258,8 @@
   opacity: 0;
   transition: opacity 0.3s;
 }
+
+/* Card lifts, deepens shadow, and shows the top bar on hover */
 .mr-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 28px rgba(139,107,74,0.11);
@@ -252,6 +267,7 @@
 }
 .mr-card:hover::before { opacity: 1; }
 
+/* Card top row: reservation number on the left, badge on the right */
 .mr-card__top {
   display: flex;
   align-items: center;
@@ -259,6 +275,7 @@
   gap: 0.5rem;
 }
 
+/* Monospaced reservation number truncated with ellipsis */
 .mr-card__noreserva {
   font-size: 0.73rem;
   color: #9a9089;
@@ -270,7 +287,7 @@
   max-width: 210px;
 }
 
-/* Card ruta */
+/* Route row: flex with origin point, animated track line, and destination point */
 .mr-card__ruta {
   display: flex;
   align-items: center;
@@ -278,14 +295,17 @@
   padding: 0.4rem 0;
 }
 
+/* Origin point column aligned to the left */
 .mr-card__punto {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   min-width: 55px;
 }
+/* Destination point column aligned to the right */
 .mr-card__punto--right { align-items: flex-end; }
 
+/* Bold airport IATA code at 1.3rem */
 .mr-card__code {
   font-size: 1.3rem;
   font-weight: 700;
@@ -294,6 +314,7 @@
   line-height: 1;
 }
 
+/* Small muted city name below the code, truncated with ellipsis */
 .mr-card__city {
   font-size: 0.7rem;
   color: #9a9089;
@@ -303,6 +324,7 @@
   white-space: nowrap;
 }
 
+/* Flex connector between origin and destination containing the track and plane icon */
 .mr-card__line {
   flex: 1;
   display: flex;
@@ -312,6 +334,7 @@
   min-width: 55px;
 }
 
+/* Brown-to-grey gradient track line behind the plane icon */
 .mr-card__line-track {
   position: absolute;
   top: 50%; left: 0; right: 0;
@@ -320,6 +343,7 @@
   transform: translateY(-50%);
 }
 
+/* Plane icon on a white circular background sitting above the track line */
 .mr-card__plane-icon {
   position: relative;
   z-index: 1;
@@ -328,12 +352,14 @@
   padding: 2px;
 }
 
+/* Flex-wrapped row of meta items below the route */
 .mr-card__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
 }
 
+/* Individual meta item: small flex row with an icon and text */
 .mr-card__meta-item {
   display: inline-flex;
   align-items: center;
@@ -343,6 +369,7 @@
 }
 .mr-card__meta-item svg { flex-shrink: 0; }
 
+/* Bottom row of the card: ticket count and total price separated by a top border */
 .mr-card__bottom {
   display: flex;
   justify-content: space-between;
@@ -351,9 +378,12 @@
   border-top: 1px solid #F0EBE3;
 }
 
+/* Small muted ticket count text */
 .mr-card__boletos { font-size: 0.82rem; color: #7a7067; }
+/* Bold brown total price at 1.1rem */
 .mr-card__total { font-size: 1.1rem; font-weight: 700; color: #8B6B4A; }
 
+/* "View details" CTA row: hidden by default, fades in on card hover */
 .mr-card__cta {
   display: flex;
   align-items: center;
@@ -368,9 +398,7 @@
 }
 .mr-card:hover .mr-card__cta { opacity: 1; }
 
-/* ═══════════════════════════════════════════
-   EMPTY STATE / SPINNER
-═══════════════════════════════════════════ */
+/* Empty state centered column with title and descriptive text */
 .mr-empty-state {
   display: flex;
   flex-direction: column;
@@ -384,6 +412,7 @@
 .mr-empty-state__title { font-size: 1.15rem; font-weight: 600; color: #4a4035; }
 .mr-empty-state__text { font-size: 0.92rem; color: #7a7067; }
 
+/* 32px circular spinner with a brown top-border accent */
 .mr-spinner {
   width: 32px; height: 32px;
   border: 3px solid #E6E1DA;
@@ -391,13 +420,13 @@
   border-radius: 50%;
   animation: mr-spin 0.7s linear infinite;
 }
+/* Large spinner variant at 44px */
 .mr-spinner--lg { width: 44px; height: 44px; border-width: 4px; }
 
+/* Full rotation keyframe shared by spinners */
 @keyframes mr-spin { to { transform: rotate(360deg); } }
 
-/* ═══════════════════════════════════════════
-   OVERLAY
-═══════════════════════════════════════════ */
+/* Full-screen modal backdrop: semi-transparent dark blur layer */
 .mr-overlay {
   position: fixed;
   inset: 0;
@@ -412,11 +441,10 @@
   animation: mr-fadeIn 0.2s ease;
 }
 
+/* Backdrop fade-in keyframe */
 @keyframes mr-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* ═══════════════════════════════════════════
-   MODAL DETALLE UNICO
-═══════════════════════════════════════════ */
+/* Detail modal panel: white, max 720px wide, slides up on open */
 .mr-detail-modal {
   background: #fff;
   border-radius: 16px;
@@ -430,11 +458,13 @@
   animation: mr-slideUp 0.3s ease;
 }
 
+/* Modal slide-up entry animation */
 @keyframes mr-slideUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Circular close button pinned to the top-right of the modal */
 .mr-modal__close-btn {
   position: absolute;
   top: 1rem; right: 1rem;
@@ -452,6 +482,7 @@
 }
 .mr-modal__close-btn:hover { background: #E6E1DA; }
 
+/* Centered loading/error state inside the detail modal */
 .mr-detail-modal__center {
   display: flex;
   flex-direction: column;
@@ -463,7 +494,7 @@
   text-align: center;
 }
 
-/* ── Detail top ── */
+/* Top section of the detail modal: reservation info on the left, space for close on the right */
 .mr-detail__top {
   display: flex;
   align-items: flex-start;
@@ -473,12 +504,14 @@
   padding-right: 2.5rem;
 }
 
+/* Left column in the detail top: stacks reservation number and total price */
 .mr-detail__top-left {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
 }
 
+/* Monospaced reservation number with word-break for long IDs */
 .mr-detail__noreserva {
   font-size: 0.8rem;
   color: #9a9089;
@@ -486,6 +519,7 @@
   word-break: break-all;
 }
 
+/* Large bold total in the primary brown color */
 .mr-detail__total {
   font-size: 1.55rem;
   font-weight: 700;
@@ -493,7 +527,7 @@
   line-height: 1;
 }
 
-/* ── Info row ── */
+/* Compact warm-beige info row with flex-wrapped items */
 .mr-detail__info-row {
   display: flex;
   flex-wrap: wrap;
@@ -505,6 +539,7 @@
   margin-bottom: 1.2rem;
 }
 
+/* Individual info item: small flex row with an icon and text */
 .mr-detail__info-item {
   display: inline-flex;
   align-items: center;
@@ -513,9 +548,10 @@
   color: #5a5249;
 }
 .mr-detail__info-item svg { flex-shrink: 0; }
+/* Cancellation info item is red */
 .mr-detail__info-item--cancel { color: #c0392b; }
 
-/* ── Section title ── */
+/* Section title inside the modal: flex row with icon and label */
 .mr-detail__section-title {
   display: flex;
   align-items: center;
@@ -527,9 +563,7 @@
   margin-top: 0.3rem;
 }
 
-/* ═══════════════════════════════════════════
-   BOLETOS DENTRO DEL MODAL
-═══════════════════════════════════════════ */
+/* Vertical stack of boleto (ticket) cards inside the modal */
 .mr-detail__boletos {
   display: flex;
   flex-direction: column;
@@ -537,6 +571,7 @@
   margin-bottom: 1.3rem;
 }
 
+/* Individual ticket card: warm off-white background with a light border */
 .mr-boleto {
   background: #FAF8F5;
   border: 1px solid #E6E1DA;
@@ -547,6 +582,7 @@
   gap: 0.65rem;
 }
 
+/* Ticket header: flight info on the left, badge on the right */
 .mr-boleto__header {
   display: flex;
   align-items: center;
@@ -554,6 +590,7 @@
   gap: 0.5rem;
 }
 
+/* Flex row showing a plane icon and flight number */
 .mr-boleto__flight-info {
   display: flex;
   align-items: center;
@@ -561,19 +598,21 @@
 }
 .mr-boleto__flight-info svg { flex-shrink: 0; }
 
+/* Bold flight number at 0.92rem */
 .mr-boleto__vuelo-num {
   font-weight: 700;
   font-size: 0.92rem;
   color: #1C1A18;
 }
 
+/* Small muted aircraft type text */
 .mr-boleto__avion {
   font-size: 0.78rem;
   color: #9a9089;
   margin-left: 0.15rem;
 }
 
-/* Boleto ruta */
+/* Ticket route row identical to the card route pattern */
 .mr-boleto__ruta {
   display: flex;
   align-items: center;
@@ -581,14 +620,17 @@
   padding: 0.2rem 0;
 }
 
+/* Origin point column in the ticket */
 .mr-boleto__punto {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   min-width: 48px;
 }
+/* Destination point column in the ticket */
 .mr-boleto__punto--right { align-items: flex-end; }
 
+/* Bold IATA code at 1.1rem in the ticket */
 .mr-boleto__code {
   font-size: 1.1rem;
   font-weight: 700;
@@ -597,6 +639,7 @@
   line-height: 1;
 }
 
+/* Small muted city name in the ticket */
 .mr-boleto__city {
   font-size: 0.68rem;
   color: #9a9089;
@@ -606,6 +649,7 @@
   white-space: nowrap;
 }
 
+/* Bold departure/arrival time in the ticket */
 .mr-boleto__time {
   font-size: 0.82rem;
   font-weight: 600;
@@ -613,6 +657,7 @@
   margin-top: 0.1rem;
 }
 
+/* Flex connector in the ticket holding the track line and duration */
 .mr-boleto__line {
   flex: 1;
   display: flex;
@@ -623,31 +668,36 @@
   min-width: 50px;
 }
 
+/* Brown gradient track line in the ticket connector */
 .mr-boleto__line-track {
   width: 100%;
   height: 1.5px;
   background: linear-gradient(90deg, #D8D1C5, #8B6B4A, #D8D1C5);
 }
 
+/* Small plane SVG icon in the ticket connector */
 .mr-boleto__plane-svg { margin-top: -1px; }
 
+/* Small muted flight duration text */
 .mr-boleto__duration {
   font-size: 0.68rem;
   color: #9a9089;
   font-weight: 500;
 }
 
-/* Boleto grid */
+/* Three-column detail grid inside the ticket card */
 .mr-boleto__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem 0.6rem;
 }
 
+/* Individual detail cell: stacked label and value */
 .mr-boleto__cell { display: flex; flex-direction: column; }
-
+/* Wide cell spans two columns */
 .mr-boleto__cell--wide { grid-column: span 2; }
 
+/* Small all-caps muted detail label */
 .mr-boleto__cell-label {
   font-size: 0.66rem;
   color: #9a9089;
@@ -657,14 +707,15 @@
   line-height: 1.3;
 }
 
+/* Bold detail value at 0.85rem */
 .mr-boleto__cell-val {
   font-size: 0.85rem;
   font-weight: 600;
   color: #1C1A18;
 }
-
+/* Price value in brown */
 .mr-boleto__cell-val--price { color: #8B6B4A; }
-
+/* Monospaced value for IDs and codes */
 .mr-boleto__cell-val--mono {
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.72rem;
@@ -672,7 +723,7 @@
   color: #5a5249;
 }
 
-/* Pasajero */
+/* Passenger row inside the ticket: white background with a subtle border */
 .mr-boleto__pasajero {
   display: flex;
   align-items: center;
@@ -684,20 +735,24 @@
 }
 .mr-boleto__pasajero svg { flex-shrink: 0; }
 
+/* Italic empty passenger placeholder */
 .mr-boleto__pasajero--empty {
   color: #9a9089;
   font-size: 0.82rem;
   font-style: italic;
 }
 
+/* Passenger data column: stacked name and info */
 .mr-boleto__pasajero-data { display: flex; flex-direction: column; min-width: 0; }
 
+/* Bold passenger name */
 .mr-boleto__pasajero-name {
   font-weight: 600;
   font-size: 0.88rem;
   color: #1C1A18;
 }
 
+/* Small muted passenger info line with ellipsis overflow */
 .mr-boleto__pasajero-info {
   font-size: 0.73rem;
   color: #7a7067;
@@ -706,9 +761,7 @@
   white-space: nowrap;
 }
 
-/* ═══════════════════════════════════════════
-   SECCION CALIFICAR - YA COMENTO
-═══════════════════════════════════════════ */
+/* Existing review box: warm beige background with a bottom margin */
 .mr-ya-comento {
   background: #FAF8F5;
   border: 1px solid #E6E1DA;
@@ -717,6 +770,7 @@
   margin-bottom: 1.2rem;
 }
 
+/* Review top row: stars and date spaced apart */
 .mr-ya-comento__top {
   display: flex;
   align-items: center;
@@ -726,12 +780,14 @@
   flex-wrap: wrap;
 }
 
+/* Star icon row */
 .mr-ya-comento__stars {
   display: flex;
   align-items: center;
   gap: 0.15rem;
 }
 
+/* Bold gold rating number */
 .mr-ya-comento__rating {
   font-size: 0.85rem;
   font-weight: 700;
@@ -739,11 +795,13 @@
   margin-left: 0.4rem;
 }
 
+/* Small muted review date */
 .mr-ya-comento__date {
   font-size: 0.75rem;
   color: #9a9089;
 }
 
+/* Review text at 0.9rem with comfortable line height */
 .mr-ya-comento__text {
   font-size: 0.9rem;
   color: #4a4035;
@@ -751,6 +809,7 @@
   margin-bottom: 0.7rem;
 }
 
+/* Green "verified review" badge */
 .mr-ya-comento__badge {
   display: inline-flex;
   align-items: center;
@@ -763,9 +822,7 @@
   border-radius: 6px;
 }
 
-/* ═══════════════════════════════════════════
-   SECCION CALIFICAR - FORMULARIO
-═══════════════════════════════════════════ */
+/* Review submission form: warm beige card with stacked flex layout */
 .mr-comentar-form {
   background: #FAF8F5;
   border: 1px solid #E6E1DA;
@@ -777,12 +834,14 @@
   gap: 0.7rem;
 }
 
+/* Star rating row */
 .mr-stars {
   display: flex;
   align-items: center;
   gap: 0.2rem;
 }
 
+/* Individual star button: no border, scales up 18% on hover */
 .mr-star {
   background: none;
   border: none;
@@ -793,8 +852,10 @@
   line-height: 0;
 }
 .mr-star:hover { transform: scale(1.18); }
+/* 28px star SVG with a fill/stroke transition */
 .mr-star svg { width: 28px; height: 28px; transition: fill 0.15s, stroke 0.15s; }
 
+/* Small muted label text next to the star row */
 .mr-stars__label {
   font-size: 0.82rem;
   color: #7a7067;
@@ -802,6 +863,7 @@
   font-weight: 500;
 }
 
+/* Review textarea: full width, vertically resizable, with a gold focus ring */
 .mr-comentar-form__textarea {
   width: 100%;
   padding: 0.7rem 0.85rem;
@@ -821,30 +883,31 @@
   box-shadow: 0 0 0 3px rgba(139,107,74,0.08);
 }
 
+/* Submit button inside the review form aligned to the start */
 .mr-comentar-form .mr-btn { align-self: flex-start; }
 
-/* Form messages */
+/* Inline form error message in red */
 .mr-form-error {
   font-size: 0.82rem;
   color: #c0392b;
   font-weight: 500;
 }
 
+/* Inline form success message in green */
 .mr-form-exito {
   font-size: 0.82rem;
   color: #27ae60;
   font-weight: 500;
 }
 
-/* ═══════════════════════════════════════════
-   SECCION CANCELAR (inline en modal)
-═══════════════════════════════════════════ */
+/* Cancellation trigger row with a top trigger button */
 .mr-detail__cancel-trigger {
   padding: 0.8rem 0;
   display: flex;
   justify-content: flex-start;
 }
 
+/* Cancellation form section: light red background, animated via mr-fadeIn */
 .mr-cancel-section {
   background: #fef8f7;
   border: 1.5px solid #f5c6c0;
@@ -857,6 +920,7 @@
   animation: mr-fadeIn 0.25s ease;
 }
 
+/* Cancellation header: warning icon and title in a flex row */
 .mr-cancel-section__header {
   display: flex;
   align-items: flex-start;
@@ -864,6 +928,7 @@
 }
 .mr-cancel-section__header svg { flex-shrink: 0; margin-top: 0.1rem; }
 
+/* Bold cancellation warning title */
 .mr-cancel-section__title {
   font-size: 1rem;
   font-weight: 700;
@@ -871,6 +936,7 @@
   margin: 0;
 }
 
+/* Muted supporting subtitle below the warning title */
 .mr-cancel-section__sub {
   font-size: 0.84rem;
   color: #7a7067;
@@ -878,12 +944,14 @@
   margin: 0;
 }
 
+/* Label for the cancellation reason textarea */
 .mr-cancel-section__label {
   font-size: 0.82rem;
   font-weight: 600;
   color: #4a4035;
 }
 
+/* Cancellation reason textarea with a red border and focus-to-red transition */
 .mr-cancel-section__textarea {
   width: 100%;
   padding: 0.7rem 0.85rem;
@@ -900,6 +968,7 @@
 }
 .mr-cancel-section__textarea:focus { border-color: #c0392b; }
 
+/* Confirm and cancel button row aligned to the right */
 .mr-cancel-section__actions {
   display: flex;
   justify-content: flex-end;
@@ -907,9 +976,7 @@
   margin-top: 0.2rem;
 }
 
-/* ═══════════════════════════════════════════
-   FOOTER ACCIONES DEL MODAL
-═══════════════════════════════════════════ */
+/* Bottom modal action row: flex-wrapped buttons separated by a top border */
 .mr-detail__footer-actions {
   display: flex;
   align-items: center;
@@ -920,9 +987,7 @@
   border-top: 1px solid #E6E1DA;
 }
 
-/* ═══════════════════════════════════════════
-   TOASTS
-═══════════════════════════════════════════ */
+/* Fixed bottom-right toast stack: pointer-events none on the container */
 .mr-toast-container {
   position: fixed;
   bottom: 1.5rem;
@@ -934,6 +999,7 @@
   pointer-events: none;
 }
 
+/* Individual toast: colored pill that slides in from the right */
 .mr-toast {
   display: flex;
   align-items: center;
@@ -948,19 +1014,20 @@
   pointer-events: auto;
 }
 
+/* Toast color variants */
 .mr-toast--success { background: #27ae60; }
 .mr-toast--error   { background: #c0392b; }
 
+/* 18px icon inside the toast */
 .mr-toast__icon { width: 18px; height: 18px; flex-shrink: 0; }
 
+/* Toast slides in from the right */
 @keyframes mr-toastIn {
   from { opacity: 0; transform: translateX(30px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* ═══════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════ */
+/* At 768px: single-column grid, detail modal fills more height, action rows stack vertically */
 @media (max-width: 768px) {
   .mr-container { padding: 1.2rem 1rem; }
   .mr-title { font-size: 1.4rem; }
@@ -999,6 +1066,7 @@
   .mr-toast-container { bottom: 1rem; right: 0.5rem; left: 0.5rem; }
 }
 
+/* At 480px: summary grid narrows to 2 columns, header stacks, code and number reduce */
 @media (max-width: 480px) {
   .mr-resumen { grid-template-columns: repeat(2, 1fr); }
   .mr-header { flex-direction: column; }
@@ -1008,9 +1076,7 @@
   .mr-star svg { width: 24px; height: 24px; }
 }
 
-/* ═══════════════════════════════════════════
-   SCROLLBAR
-═══════════════════════════════════════════ */
+/* Custom scrollbar for the detail modal: thin, brown thumb */
 .mr-detail-modal::-webkit-scrollbar { width: 5px; }
 .mr-detail-modal::-webkit-scrollbar-track { background: transparent; }
 .mr-detail-modal::-webkit-scrollbar-thumb { background: #D8D1C5; border-radius: 3px; }

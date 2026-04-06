@@ -1,5 +1,6 @@
-/* ─── Confirmacion.css ─────────────────────────────────────────────── */
+/* confirmacion.css - Booking confirmation page styles including hero section with animated icon, invoice cards, PDF and email buttons, action panel, and toast notifications */
 
+/* Full-page wrapper with project background color and generous bottom padding */
 .confirmacion {
     width: 100%;
     min-height: 100vh;
@@ -7,12 +8,13 @@
     padding: 2rem 1rem 8rem;
 }
 
+/* Centered content column capped at 860px */
 .confirmacion__container {
     max-width: 860px;
     margin: 0 auto;
 }
 
-/* ─── Hero ─────────────────────────────────────────────────────────── */
+/* Centered hero banner: white card with large asymmetric radius and deep padding */
 .confirmacion__hero {
     text-align: center;
     padding: 4rem 2rem 3rem;
@@ -23,12 +25,14 @@
     margin-bottom: 2.5rem;
 }
 
+/* Centered flex container for the confirmation success icon */
 .confirmacion__icono-wrap {
     display: flex;
     justify-content: center;
     margin-bottom: 1.75rem;
 }
 
+/* Gold gradient circular icon badge with a pop-in spring animation */
 .confirmacion__icono {
     width: 80px;
     height: 80px;
@@ -42,11 +46,13 @@
     animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* Spring-loaded scale animation for the confirmation icon */
 @keyframes popIn {
     from { transform: scale(0) rotate(-10deg); opacity: 0; }
     to   { transform: scale(1) rotate(0deg);   opacity: 1; }
 }
 
+/* Fluid confirmation title from 1.8rem to 2.5rem, light weight */
 .confirmacion__titulo {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 300;
@@ -54,6 +60,7 @@
     margin: 0 0 0.75rem;
 }
 
+/* Muted subtitle capped at 520px with relaxed line height */
 .confirmacion__subtitulo {
     font-size: 0.95rem;
     color: var(--text-muted);
@@ -62,6 +69,7 @@
     line-height: 1.7;
 }
 
+/* Short gold horizontal rule centered below the subtitle */
 .confirmacion__linea-deco {
     width: 60px;
     height: 2px;
@@ -70,7 +78,7 @@
     border-radius: 2px;
 }
 
-/* ─── Facturas ─────────────────────────────────────────────────────── */
+/* Vertical stack of invoice cards with 1.5rem gap */
 .confirmacion__facturas {
     display: flex;
     flex-direction: column;
@@ -78,6 +86,7 @@
     margin-bottom: 2.5rem;
 }
 
+/* Invoice card: white card with asymmetric radius and a slide-up entry animation */
 .factura-card {
     background: var(--white);
     border: 1px solid rgba(235,230,224,0.8);
@@ -87,11 +96,13 @@
     animation: slideUp 0.45s ease-out both;
 }
 
+/* Entrance animation: card slides up 18px while fading in */
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Dark gradient header bar of the invoice card */
 .factura-card__header {
     background: linear-gradient(135deg, #1C1A18 0%, #3A3531 100%);
     color: #F2EFEA;
@@ -102,12 +113,14 @@
     gap: 1rem;
 }
 
+/* Left column of the header: stacked etiqueta and invoice number */
 .factura-card__header-left {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
 }
 
+/* Tiny semi-transparent label above the invoice number */
 .factura-card__etiqueta {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -115,6 +128,7 @@
     color: rgba(242,239,234,0.5);
 }
 
+/* Bold gold invoice number */
 .factura-card__nro {
     font-size: 1rem;
     font-weight: 700;
@@ -122,8 +136,10 @@
     letter-spacing: 0.5px;
 }
 
+/* Right-aligned header column for the status badge */
 .factura-card__header-right { flex-shrink: 0; }
 
+/* Status pill: translucent gold background with gold border and text */
 .factura-card__estado {
     background: rgba(201,169,110,0.15);
     color: var(--primary-color);
@@ -136,10 +152,12 @@
     letter-spacing: 1px;
 }
 
+/* White body section of the invoice card with comfortable padding */
 .factura-card__body {
     padding: 1.75rem 2rem;
 }
 
+/* Auto-fit grid of invoice data cells */
 .factura-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -147,12 +165,14 @@
     margin-bottom: 1.25rem;
 }
 
+/* Each invoice datum: stacked label and value */
 .factura-dato {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
 }
 
+/* Tiny all-caps bold muted label */
 .factura-dato__label {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -161,24 +181,28 @@
     font-weight: 700;
 }
 
+/* Medium-weight secondary color value */
 .factura-dato__valor {
     font-size: 0.9rem;
     color: var(--secondary-color);
     font-weight: 600;
 }
 
+/* Larger bold gold value for price/total fields */
 .factura-dato__valor--gold {
     color: var(--primary-color);
     font-size: 1.15rem;
     font-weight: 700;
 }
 
+/* Thin warm-toned horizontal separator within the invoice body */
 .factura-card__separador {
     height: 1px;
     background: #f0e8da;
     margin: 1.25rem 0;
 }
 
+/* Small all-caps section heading inside the invoice body */
 .factura-card__subtitulo {
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -188,12 +212,14 @@
     margin-bottom: 0.75rem;
 }
 
+/* Vertical stack of individual ticket rows */
 .factura-boletos {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
+/* Single ticket row: space-between flex with seat number, passenger name, and price */
 .factura-boleto {
     display: flex;
     justify-content: space-between;
@@ -204,28 +230,33 @@
     gap: 1rem;
 }
 
+/* Left info column inside a ticket row */
 .factura-boleto__col {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
 }
 
+/* Bold seat code in secondary color */
 .factura-boleto__asiento {
     font-size: 0.88rem;
     font-weight: 700;
     color: var(--secondary-color);
 }
 
+/* Passenger name in regular secondary color */
 .factura-boleto__pasajero {
     font-size: 0.82rem;
     color: var(--secondary-color);
 }
 
+/* Flight identifier in small muted text */
 .factura-boleto__vuelo {
     font-size: 0.75rem;
     color: var(--text-muted);
 }
 
+/* Right-aligned bold gold ticket price */
 .factura-boleto__precio {
     font-size: 0.9rem;
     font-weight: 700;
@@ -234,7 +265,7 @@
     flex-shrink: 0;
 }
 
-/* Footer con botones */
+/* Footer row of invoice action buttons aligned to the right */
 .factura-card__footer {
     margin-top: 1.5rem;
     display: flex;
@@ -243,6 +274,7 @@
     flex-wrap: wrap;
 }
 
+/* Dark gradient PDF download button with asymmetric radius */
 .btn-pdf {
     display: inline-flex;
     align-items: center;
@@ -260,11 +292,13 @@
     transition: all 0.2s ease;
 }
 
+/* PDF button lifts and deepens shadow on hover */
 .btn-pdf:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
+/* Transparent outline email button with asymmetric radius */
 .btn-correo {
     display: inline-flex;
     align-items: center;
@@ -282,6 +316,7 @@
     transition: all 0.2s ease;
 }
 
+/* Email button fills dark and lifts on hover */
 .btn-correo:hover {
     background: var(--secondary-color);
     color: var(--white);
@@ -289,21 +324,24 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
+/* Both buttons reduce opacity and block cursor when disabled */
 .btn-correo:disabled,
 .btn-pdf:disabled {
     opacity: 0.7;
     cursor: not-allowed;
 }
 
+/* Email button loading state: faint dark background */
 .btn-correo--loading {
     background: rgba(28,26,24,0.05);
 }
 
+/* PDF button loading state: slightly lighter dark gradient */
 .btn-pdf--loading {
     background: linear-gradient(135deg, #3A3531, #2a2520);
 }
 
-/* ─── Acciones finales ─────────────────────────────────────────────── */
+/* Centered CTA card below the invoices with asymmetric radius */
 .confirmacion__acciones {
     background: var(--white);
     border: 1px solid rgba(235,230,224,0.6);
@@ -313,6 +351,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.02);
 }
 
+/* Light-weight heading inside the action card */
 .confirmacion__acciones-titulo {
     font-size: 1.3rem;
     font-weight: 300;
@@ -320,6 +359,7 @@
     margin-bottom: 1.75rem;
 }
 
+/* Centered flex row of CTA buttons with wrapping */
 .confirmacion__btns {
     display: flex;
     gap: 1rem;
@@ -327,6 +367,7 @@
     flex-wrap: wrap;
 }
 
+/* Gold primary CTA button with asymmetric radius */
 .btn-primary {
     padding: 1rem 2.5rem;
     background: var(--primary-color);
@@ -341,12 +382,14 @@
     font-size: 0.9rem;
 }
 
+/* Primary button turns dark and lifts on hover */
 .btn-primary:hover {
     background: var(--secondary-color);
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
+/* Transparent outline secondary CTA button */
 .btn-secondary {
     padding: 1rem 2.5rem;
     background: transparent;
@@ -361,13 +404,14 @@
     font-size: 0.9rem;
 }
 
+/* Secondary button fills dark and lifts on hover */
 .btn-secondary:hover {
     background: var(--secondary-color);
     color: var(--white);
     transform: translateY(-3px);
 }
 
-/* ─── Toasts ───────────────────────────────────────────────────────── */
+/* Fixed toast container at the bottom-right corner */
 .conf-toast-container {
     position: fixed;
     bottom: 1.5rem;
@@ -379,6 +423,7 @@
     pointer-events: none;
 }
 
+/* Individual toast notification: icon plus message in a rounded pill */
 .conf-toast {
     display: flex;
     align-items: center;
@@ -393,17 +438,21 @@
     pointer-events: auto;
 }
 
+/* Success toast: green background */
 .conf-toast--success { background: #27ae60; }
+/* Error toast: red background */
 .conf-toast--error   { background: #c0392b; }
 
+/* Fixed-size icon inside the toast */
 .conf-toast__icon { width: 18px; height: 18px; flex-shrink: 0; }
 
+/* Toast slides in from the right while fading in */
 @keyframes confToastIn {
     from { opacity: 0; transform: translateX(30px); }
     to   { opacity: 1; transform: translateX(0); }
 }
 
-/* ─── Responsive ───────────────────────────────────────────────────── */
+/* At 600px: tighter hero, stacked invoice header, full-width buttons */
 @media (max-width: 600px) {
     .confirmacion__hero { padding: 3rem 1.25rem 2rem; }
     .factura-card__header { flex-direction: column; align-items: flex-start; }

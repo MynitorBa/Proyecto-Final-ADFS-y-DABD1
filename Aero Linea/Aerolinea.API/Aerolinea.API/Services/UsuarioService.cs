@@ -1,4 +1,4 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Models;
@@ -6,6 +6,11 @@ using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de usuarios. Gestiona el registro de nuevos usuarios con validaciones de formato,
+    /// la verificacion de campos unicos, el cambio de rol por parte del administrador
+    /// y la consulta del listado completo de usuarios del sistema.
+    /// </summary>
     public class UsuarioService
     {
         private readonly UsuarioRepository _repository;
@@ -13,6 +18,9 @@ namespace Aerolinea.API.Services
         private readonly CiudadRepository _ciudadRepository;
         private readonly DbConnectionFactory _connectionFactory;
 
+        /// <summary>
+        /// Inicializa el servicio con los repositorios de usuario, pais, ciudad y la fabrica de conexiones.
+        /// </summary>
         public UsuarioService(
             UsuarioRepository repository,
             PaisRepository paisRepository,
@@ -25,6 +33,12 @@ namespace Aerolinea.API.Services
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Registra un nuevo usuario en el sistema. Valida formato de pasaporte y telefono,
+        /// resuelve o crea el pais y ciudad correspondientes, hashea la contrasena y asigna
+        /// el rol de cliente por defecto. Tambien guarda las nacionalidades si se proveen
+        /// y envia un correo de bienvenida de forma no bloqueante.
+        /// </summary>
         public async Task CrearUsuario(CrearUsuarioDTO dto)
         {
             // ══════════════════════════════════════════════════════════════
@@ -102,11 +116,19 @@ namespace Aerolinea.API.Services
             }
         }
 
+        /// <summary>
+        /// Verifica si ya existe algun usuario con el mismo correo, nombre de usuario o pasaporte.
+        /// Retorna un objeto con los campos que generarian conflicto de unicidad.
+        /// </summary>
         public async Task<RegisterConstraint> VerificarConstraints(CrearUsuarioDTO dto)
         {
             return await _repository.VerificarExistencia(dto.Correo, dto.Username, dto.Pasaporte);
         }
 
+        /// <summary>
+        /// Cambia el rol de un usuario existente. Verifica que tanto el usuario como el rol
+        /// indicados existan antes de aplicar el cambio. Retorna una tupla con resultado y mensaje.
+        /// </summary>
         public async Task<(bool exito, string mensaje)> CambiarRol(CambiarRolDTO dto)
         {
             bool usuarioExiste = await _repository.UsuarioExiste(dto.UsuarioId);
@@ -123,6 +145,10 @@ namespace Aerolinea.API.Services
                 : (false, "No se pudo actualizar el rol");
         }
 
+        /// <summary>
+        /// Retorna la lista de todos los usuarios registrados en el sistema como objetos anonimos,
+        /// incluyendo ID, nombre, apellido, correo, username, ID de rol y nombre del rol.
+        /// </summary>
         public async Task<List<object>> ObtenerTodos()
         {
             var usuarios = await _repository.ObtenerTodos();

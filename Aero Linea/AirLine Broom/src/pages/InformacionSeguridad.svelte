@@ -1,8 +1,23 @@
 <script>
+/**
+ * @file InformacionSeguridad.svelte
+ * @description Static informational page covering security and travel process guidelines
+ * for Broom AirLine passengers. Organized into three sections: allowed baggage (carry-on
+ * and checked luggage with weight limits and prohibited items), the check-in process as a
+ * numbered step list, and boarding order rules including priority groups and general regulations.
+ * Accessible from the main navigation with a back button that returns to the home page.
+ */
   import '../styles/infoseguridad.css';
-  
+
+  /** Function used to navigate to another page in the application. @type {function} */
   export let navigateTo;
-  
+
+  /**
+   * Static content sections array. Each section has an id, title, and type-specific data:
+   * the baggage section has subsections with item arrays and a note, the check-in section
+   * has a steps array, and the boarding section has orderGroups and rules arrays.
+   * @type {Array<object>}
+   */
   const sections = [
     {
       id: 'equipaje',
@@ -12,18 +27,18 @@
           name: 'Equipaje de mano',
           items: [
             { label: 'Dimensiones generales', value: '55 x 40 x 23 cm (22 x 16 x 9 pulgadas)' },
-            { label: 'Peso máximo', value: '10 kg (22 libras)' }
+            { label: 'Peso maximo', value: '10 kg (22 libras)' }
           ]
         },
         {
           name: 'Equipaje documentado',
           items: [
-            { label: 'Cantidad permitida', value: '1-2 maletas según clase de servicio' },
-            { label: 'Peso máximo', value: '23 kg (50 libras) por maleta en clase turista, 32 kg (70 libras) en business' }
+            { label: 'Cantidad permitida', value: '1-2 maletas segun clase de servicio' },
+            { label: 'Peso maximo', value: '23 kg (50 libras) por maleta en clase turista, 32 kg (70 libras) en business' }
           ]
         }
       ],
-      note: 'Objetos prohibidos incluyen: armas, líquidos en envases mayores a 100ml (en equipaje de mano), sustancias inflamables, explosivos y materiales peligrosos. Consulta la lista completa en el aeropuerto.'
+      note: 'Objetos prohibidos incluyen: armas, liquidos en envases mayores a 100ml (en equipaje de mano), sustancias inflamables, explosivos y materiales peligrosos. Consulta la lista completa en el aeropuerto.'
     },
     {
       id: 'checkin',
@@ -31,13 +46,13 @@
       steps: [
         {
           number: 1,
-          title: 'Llegar con anticipación',
+          title: 'Llegar con anticipacion',
           description: 'Se recomienda llegar 3 horas antes para vuelos internacionales y 2 horas para vuelos nacionales'
         },
         {
           number: 2,
           title: 'Presentar documentos',
-          description: 'Ten a la mano tu pasaporte/identificación oficial y confirmación de reserva'
+          description: 'Ten a la mano tu pasaporte/identificacion oficial y confirmacion de reserva'
         },
         {
           number: 3,
@@ -47,7 +62,7 @@
         {
           number: 4,
           title: 'Recibir pase de abordar',
-          description: 'Obtendrás tu pase de abordar impreso o digital con tu número de asiento y puerta de embarque'
+          description: 'Obtendras tu pase de abordar impreso o digital con tu numero de asiento y puerta de embarque'
         }
       ]
     },
@@ -62,25 +77,26 @@
         },
         {
           priority: 'Grupos generales',
-          description: 'Abordaje por zonas o números de asiento según indicaciones del personal'
+          description: 'Abordaje por zonas o numeros de asiento segun indicaciones del personal'
         }
       ],
       rules: [
-        'Mantén tu pase de abordar y documento de identidad a la mano',
+        'Manten tu pase de abordar y documento de identidad a la mano',
         'Respeta las instrucciones del personal de vuelo en todo momento',
-        'Asegúrate de abordar por la puerta correcta según tu pase'
+        'Asegurate de abordar por la puerta correcta segun tu pase'
       ]
     }
   ];
 </script>
 
+<!-- Contenedor principal de la pagina de informacion de seguridad -->
 <div class="info-seguridad">
   <div class="info-seguridad__container">
-    
-    <!-- Header -->
+
+    <!-- Encabezado de pagina con boton de regreso y titulo -->
     <header class="info-seguridad__header">
-      <button 
-        class="info-seguridad__back" 
+      <button
+        class="info-seguridad__back"
         on:click={() => navigateTo('home')}
         aria-label="Volver al inicio"
       >
@@ -88,14 +104,14 @@
       </button>
       <h1 class="info-seguridad__title">Seguridad y procesos</h1>
       <p class="info-seguridad__subtitle">
-        Todo lo que necesitas saber sobre normas y pasos básicos para tu viaje
+        Todo lo que necesitas saber sobre normas y pasos basicos para tu viaje
       </p>
     </header>
 
-    <!-- Secciones -->
+    <!-- Grid de tarjetas de secciones informativas -->
     <div class="secciones-container">
-      
-      <!-- SECCIÓN: EQUIPAJE -->
+
+      <!-- Seccion de equipaje permitido con subsecciones y nota de objetos prohibidos -->
       <section class="seccion-card" style="animation-delay: 0.1s">
         <div class="seccion-card__header">
           <h2 class="seccion-card__title">{sections[0].title}</h2>
@@ -122,7 +138,7 @@
         </div>
       </section>
 
-      <!-- SECCIÓN: CHECK-IN -->
+      <!-- Seccion de proceso de check-in con pasos numerados -->
       <section class="seccion-card" style="animation-delay: 0.2s">
         <div class="seccion-card__header">
           <h2 class="seccion-card__title">{sections[1].title}</h2>
@@ -143,14 +159,13 @@
         </div>
       </section>
 
-      <!-- SECCIÓN: ABORDAJE -->
+      <!-- Seccion de abordaje con grupos de orden y reglas basicas -->
       <section class="seccion-card" style="animation-delay: 0.3s">
         <div class="seccion-card__header">
           <h2 class="seccion-card__title">{sections[2].title}</h2>
         </div>
 
         <div class="seccion-card__content">
-          <!-- Orden de abordaje -->
           <div class="abordaje-section">
             <h3 class="abordaje-section__subtitle">Orden general</h3>
             <div class="abordaje-groups">
@@ -163,9 +178,8 @@
             </div>
           </div>
 
-          <!-- Reglas básicas -->
           <div class="abordaje-section">
-            <h3 class="abordaje-section__subtitle">Reglas básicas</h3>
+            <h3 class="abordaje-section__subtitle">Reglas basicas</h3>
             <ul class="reglas-list">
               {#each sections[2].rules as rule}
                 <li class="reglas-list__item">{rule}</li>

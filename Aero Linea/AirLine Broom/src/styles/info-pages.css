@@ -1,6 +1,6 @@
-/* info-pages.css - Broom AirLine (paleta original mantenida) */
+/* info-pages.css - Shared styles for informational pages (about, security, contact, FAQ) including hero section, content cards, prose, lists, highlight boxes, badges, contact grid, contact form, FAQ accordion, and numbered steps */
 
-/* ===================== BASE ===================== */
+/* Full-viewport page wrapper with warm off-white background */
 .info-page {
   min-height: 100vh;
   background-color: #F2EFEA;
@@ -8,7 +8,7 @@
   color: #1C1A18;
 }
 
-/* ===================== HERO ===================== */
+/* Dark diagonal gradient hero with an SVG dot pattern overlay */
 .info-hero {
   background: linear-gradient(135deg, #1C1A18 0%, #3A3531 50%, #8B6B4A 100%);
   padding: 5rem 2rem 4rem;
@@ -17,6 +17,7 @@
   overflow: hidden;
 }
 
+/* Translucent cross-hatch pattern overlay on the hero background */
 .info-hero::before {
   content: '';
   position: absolute;
@@ -24,6 +25,7 @@
   background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
+/* Hero content column centered and capped at 700px, above the pattern overlay */
 .info-hero__content {
   position: relative;
   z-index: 1;
@@ -31,6 +33,7 @@
   margin: 0 auto;
 }
 
+/* Centered warm-gold icon with a subtle drop shadow */
 .info-hero__icon {
   margin-bottom: 1.25rem;
   display: flex;
@@ -39,10 +42,12 @@
   color: #B89A7A;
 }
 
+/* SVG icon gets a dark drop shadow for depth against the hero background */
 .info-hero__icon svg {
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
 }
 
+/* Small uppercase eyebrow label in muted gold above the title */
 .info-hero__eyebrow {
   font-size: 0.78rem;
   letter-spacing: 3px;
@@ -52,6 +57,7 @@
   margin-bottom: 0.75rem;
 }
 
+/* Fluid hero title from 2rem to 3rem, light weight in white */
 .info-hero__title {
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 300;
@@ -61,6 +67,7 @@
   line-height: 1.2;
 }
 
+/* Hero subtitle in near-white with relaxed line height */
 .info-hero__subtitle {
   font-size: 1rem;
   color: #E6E1DA;
@@ -68,14 +75,14 @@
   opacity: 0.9;
 }
 
-/* ===================== CONTAINER ===================== */
+/* Centered content container capped at 860px with comfortable padding */
 .info-container {
   max-width: 860px;
   margin: 0 auto;
   padding: 3rem 2rem 5rem;
 }
 
-/* ===================== BACK BUTTON ===================== */
+/* Inline-flex back button with brown text and a gap-increasing hover effect */
 .info-back {
   display: inline-flex;
   align-items: center;
@@ -92,12 +99,13 @@
   transition: color 0.2s, gap 0.2s;
 }
 
+/* Back button turns dark and increases the gap to the arrow icon on hover */
 .info-back:hover {
   color: #1C1A18;
   gap: 0.75rem;
 }
 
-/* ===================== CARDS ===================== */
+/* White info card with asymmetric radius and a brown left border accent */
 .info-card {
   background: #ffffff;
   border-radius: 4px 16px 4px 16px;
@@ -107,6 +115,7 @@
   border-left: 4px solid #8B6B4A;
 }
 
+/* Auto-fit grid of info cards, minimum 220px wide */
 .info-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -114,6 +123,7 @@
   margin-top: 1.25rem;
 }
 
+/* Icon badge inside an info card: 52px square with a translucent brown background */
 .info-card__icon {
   display: flex;
   align-items: center;
@@ -126,6 +136,7 @@
   color: #8B6B4A;
 }
 
+/* Bold card title in dark color */
 .info-card__title {
   font-size: 1rem;
   font-weight: 600;
@@ -133,13 +144,14 @@
   margin-bottom: 0.5rem;
 }
 
+/* Card descriptive text in muted dark color with comfortable line height */
 .info-card__text {
   font-size: 0.88rem;
   color: #5C5752;
   line-height: 1.6;
 }
 
-/* ===================== SECTION TITLE ===================== */
+/* Section heading with a thick bottom border separator */
 .info-section-title {
   font-size: 1.2rem;
   font-weight: 600;
@@ -149,7 +161,7 @@
   border-bottom: 2px solid #E6E1DA;
 }
 
-/* ===================== PROSE ===================== */
+/* Body prose paragraph in dark warm color with relaxed line height */
 .info-prose {
   font-size: 0.95rem;
   color: #3A3531;
@@ -157,7 +169,7 @@
   margin-bottom: 1rem;
 }
 
-/* ===================== LIST ===================== */
+/* Unstacked list with a plane bullet character added via pseudo-element */
 .info-list {
   list-style: none;
   padding: 0;
@@ -167,6 +179,7 @@
   margin: 0.75rem 0;
 }
 
+/* Each list item in a flex row with the bullet and text side by side */
 .info-list li {
   display: flex;
   align-items: flex-start;
@@ -176,6 +189,7 @@
   line-height: 1.6;
 }
 
+/* Brown airplane emoji bullet before each list item */
 .info-list li::before {
   content: '✈';
   color: #8B6B4A;
@@ -184,7 +198,7 @@
   font-size: 0.8rem;
 }
 
-/* ===================== HIGHLIGHT ===================== */
+/* Brown-tinted highlight block with a solid brown left border */
 .info-highlight {
   background: rgba(139, 107, 74, 0.08);
   border-left: 4px solid #8B6B4A;
@@ -196,7 +210,7 @@
   line-height: 1.6;
 }
 
-/* ===================== BADGE ===================== */
+/* Brown pill badge for labeling categories or statuses */
 .info-badge {
   display: inline-block;
   background: #8B6B4A;
@@ -209,7 +223,7 @@
   letter-spacing: 0.5px;
 }
 
-/* ===================== CONTACT GRID ===================== */
+/* Auto-fit contact info grid, minimum 200px wide */
 .info-contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -217,6 +231,7 @@
   margin-bottom: 2rem;
 }
 
+/* White contact card with a brown top border and an icon beside the text */
 .info-contact-item {
   background: #ffffff;
   border-radius: 4px 12px 4px 12px;
@@ -228,6 +243,7 @@
   border-top: 3px solid #8B6B4A;
 }
 
+/* Rounded-square icon container inside the contact card */
 .info-contact-item__icon {
   display: flex;
   align-items: center;
@@ -240,6 +256,7 @@
   color: #8B6B4A;
 }
 
+/* Tiny bold uppercase label above the contact value */
 .info-contact-item__label {
   font-size: 0.72rem;
   font-weight: 700;
@@ -249,6 +266,7 @@
   margin-bottom: 0.2rem;
 }
 
+/* Primary contact value in bold dark color */
 .info-contact-item__value {
   font-size: 0.95rem;
   font-weight: 600;
@@ -256,30 +274,34 @@
   margin-bottom: 0.1rem;
 }
 
+/* Secondary sub-label in muted tone below the primary value */
 .info-contact-item__sub {
   font-size: 0.78rem;
   color: #8B7E76;
 }
 
-/* ===================== CONTACT FORM ===================== */
+/* Flex column contact form with a gap between fields */
 .info-contacto-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
+/* Two-column field grid for name/email pairs */
 .info-contacto-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
 }
 
+/* Stacked label-input pair */
 .info-contacto-field {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
+/* Small bold label above each contact form field */
 .info-contacto-label {
   font-size: 0.82rem;
   font-weight: 600;
@@ -287,10 +309,12 @@
   letter-spacing: 0.3px;
 }
 
+/* Required field asterisk in brown */
 .info-contacto-req {
   color: #8B6B4A;
 }
 
+/* Text input with asymmetric radius, beige background, and a brown focus ring */
 .info-contacto-input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -304,32 +328,38 @@
   outline: none;
 }
 
+/* Input turns brown border with a soft brown glow on focus */
 .info-contacto-input:focus {
   border-color: #8B6B4A;
   box-shadow: 0 0 0 3px rgba(139,107,74,0.12);
   background: #ffffff;
 }
 
+/* Error state: red border */
 .info-contacto-input--error {
   border-color: #ef4444;
 }
 
+/* Textarea variant: resizable vertically with minimum height */
 .info-contacto-textarea {
   resize: vertical;
   min-height: 120px;
 }
 
+/* Small red inline error message below the field */
 .info-contacto-error {
   font-size: 0.78rem;
   color: #ef4444;
 }
 
+/* Small muted right-aligned character counter for the textarea */
 .info-contacto-helper {
   font-size: 0.75rem;
   color: #8B7E76;
   text-align: right;
 }
 
+/* Dark submit button with asymmetric radius, turns brown and lifts on hover */
 .info-contacto-submit {
   display: inline-flex;
   align-items: center;
@@ -348,32 +378,37 @@
   align-self: flex-start;
 }
 
+/* Submit button turns brown and lifts on hover when enabled */
 .info-contacto-submit:hover:not(:disabled) {
   background: #8B6B4A;
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(139,107,74,0.3);
 }
 
+/* Disabled submit: faded and not-allowed cursor */
 .info-contacto-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
+/* Spinning loading icon inside the submit button */
 .info-contacto-spinner {
   animation: spin 1s linear infinite;
 }
 
+/* Full 360-degree rotation keyframes for the spinner */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 
-/* ===================== SUCCESS ===================== */
+/* Centered success message area shown after form submission */
 .info-contacto-success {
   text-align: center;
   padding: 1.5rem;
 }
 
+/* Centered success checkmark icon container */
 .info-contacto-success__icon {
   display: flex;
   align-items: center;
@@ -381,7 +416,7 @@
   margin: 0 auto 1rem;
 }
 
-/* ===================== FAQ ===================== */
+/* FAQ accordion card: white with asymmetric radius and a subtle shadow */
 .info-faq {
   background: #ffffff;
   border-radius: 4px 12px 4px 12px;
@@ -390,6 +425,7 @@
   overflow: hidden;
 }
 
+/* FAQ question button: full-width with space-between layout for chevron */
 .info-faq__q {
   width: 100%;
   background: none;
@@ -408,21 +444,25 @@
   transition: background 0.2s;
 }
 
+/* FAQ question button turns brown-tinted on hover or when open */
 .info-faq__q:hover,
 .info-faq__q.open {
   background: rgba(139,107,74,0.06);
   color: #8B6B4A;
 }
 
+/* Chevron icon that rotates 180deg when the accordion is open */
 .info-faq__chevron {
   flex-shrink: 0;
   transition: transform 0.25s;
 }
 
+/* Chevron flips when the FAQ item is expanded */
 .info-faq__q.open .info-faq__chevron {
   transform: rotate(180deg);
 }
 
+/* FAQ answer body with a top border separator and comfortable padding */
 .info-faq__a {
   padding: 0 1.5rem 1.1rem;
   font-size: 0.9rem;
@@ -432,7 +472,7 @@
   padding-top: 0.75rem;
 }
 
-/* ===================== RESPONSIVE ===================== */
+/* At 640px: container padding reduces, cards tighten, form grid collapses */
 @media (max-width: 640px) {
   .info-container {
     padding: 2rem 1.25rem 4rem;
@@ -440,18 +480,21 @@
   .info-card {
     padding: 1.5rem;
   }
+  /* Contact form field grid becomes single-column */
   .info-contacto-grid {
     grid-template-columns: 1fr;
   }
+  /* Submit button stretches full-width on mobile */
   .info-contacto-submit {
     align-self: stretch;
   }
+  /* Contact info grid becomes single-column */
   .info-contact-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* ===================== STEPS ===================== */
+/* Vertical stack of numbered process steps */
 .info-steps {
   display: flex;
   flex-direction: column;
@@ -459,6 +502,7 @@
   margin: 1.25rem 0;
 }
 
+/* Individual step row: brown-tinted background with a brown left border and numbered badge */
 .info-step {
   display: flex;
   align-items: flex-start;
@@ -469,6 +513,7 @@
   border-left: 3px solid #8B6B4A;
 }
 
+/* Circular brown number badge for the step */
 .info-step__num {
   min-width: 32px;
   height: 32px;
@@ -483,6 +528,7 @@
   flex-shrink: 0;
 }
 
+/* Step description text in muted dark color with comfortable line height */
 .info-step p {
   margin: 0.25rem 0 0;
   color: #3A3531;

@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura con la informacion del perfil del usuario autenticado.
+    /// Incluye datos personales, credenciales de contacto y ubicacion geografica.
+    /// </summary>
     public class PerfilDTO
     {
         public int Id { get; set; }
@@ -14,11 +18,18 @@
         public string Ciudad { get; set; } = "";
     }
 
+    /// <summary>
+    /// DTO de peticion para que el usuario actualice su numero de telefono.
+    /// </summary>
     public class ActualizarTelefonoDTO
     {
         public string Telefono { get; set; } = "";
     }
 
+    /// <summary>
+    /// DTO de peticion para que el usuario cambie su contrasena actual.
+    /// Requiere la contrasena vigente y la nueva contrasena deseada.
+    /// </summary>
     public class CambiarContrasenaDTO
     {
         public string ContrasenaActual { get; set; } = "";

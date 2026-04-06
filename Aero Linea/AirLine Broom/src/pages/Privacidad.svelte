@@ -1,10 +1,25 @@
 <script>
-  // @ts-nocheck
+/**
+ * @file Privacidad.svelte
+ * @description Static privacy policy page for Broom AirLine. Describes what personal data is
+ * collected at registration (name, email, phone, birth date, country, city, password hash) and
+ * at purchase (passenger info, payment data processed with SSL, reservation code, transaction
+ * record). Explains how data is used (authentication, reservation processing, email notifications,
+ * history display, anonymized statistics, legal compliance). Lists security measures (SSL,
+ * password hashing, role-based access control, server-side permission checks, API operation logs)
+ * and user rights (access, correction, history consultation, deletion request). Accessible from
+ * the main navigation with a back button that returns to the home page.
+ */
+// @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Function used to navigate to another page in the application. @type {function} */
   export let navigateTo;
 </script>
 
+<!-- Contenedor principal de la pagina de politica de privacidad -->
 <div class="info-page">
+  <!-- Hero con icono de escudo, titulo y descripcion general de la politica -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">
@@ -19,6 +34,7 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton de regreso a la pagina de inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
@@ -26,9 +42,11 @@
       Volver al inicio
     </button>
 
+    <!-- Tarjeta de contenido con las cinco secciones de la politica de privacidad -->
     <div class="info-card">
       <span class="info-badge">Vigente desde febrero 2026</span>
 
+      <!-- Datos personales recopilados durante el registro de cuenta -->
       <h2 class="info-section-title">Datos que recopilamos al registrarte</h2>
       <p class="info-prose">Para crear tu cuenta en Broom AirLine, el sistema solicita la siguiente informacion personal:</p>
       <ul class="info-list">
@@ -40,6 +58,7 @@
         <li>Contrasena (almacenada con hash, nunca en texto plano)</li>
       </ul>
 
+      <!-- Datos de transaccion y pasajero recopilados en cada compra de boleto -->
       <h2 class="info-section-title">Datos que recopilamos al comprar</h2>
       <p class="info-prose">Al realizar una reserva o compra de boleto, el sistema registra:</p>
       <ul class="info-list">
@@ -50,6 +69,7 @@
         <li>Registro de la transaccion: fecha, hora, monto y numero de transaccion unico</li>
       </ul>
 
+      <!-- Finalidades para las que se utiliza la informacion recopilada -->
       <h2 class="info-section-title">Uso de tu informacion</h2>
       <p class="info-prose">Utilizamos tus datos exclusivamente para:</p>
       <ul class="info-list">
@@ -62,6 +82,7 @@
         <li>Cumplir con obligaciones legales y regulatorias del sector aereo</li>
       </ul>
 
+      <!-- Medidas tecnicas de seguridad aplicadas para proteger los datos -->
       <h2 class="info-section-title">Seguridad de tus datos</h2>
       <p class="info-prose">Broom AirLine implementa las siguientes medidas de seguridad:</p>
       <ul class="info-list">
@@ -73,6 +94,7 @@
         <li>Registro de logs de todas las operaciones realizadas via API con identificacion del sistema</li>
       </ul>
 
+      <!-- Derechos del usuario sobre sus datos con bloque de contacto -->
       <h2 class="info-section-title">Tus derechos como usuario</h2>
       <ul class="info-list">
         <li>Acceder a los datos de tu cuenta desde tu perfil en cualquier momento</li>

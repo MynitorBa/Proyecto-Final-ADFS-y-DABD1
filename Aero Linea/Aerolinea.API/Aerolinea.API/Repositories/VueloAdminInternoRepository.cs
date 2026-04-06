@@ -1,8 +1,13 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio interno de actualizacion de estados de vuelos. Ejecuta el proceso
+    /// automatico que transiciona vuelos de 'A tiempo' (1) a 'En transcurso' (2) o
+    /// 'Finalizado' (3) segun la hora actual en relacion con sus horas de salida y llegada.
+    /// </summary>
     public class VueloAdminInternoRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -11,6 +16,13 @@ namespace Aerolinea.API.Repositories
         {
             _connectionFactory = connectionFactory;
         }
+
+        /// <summary>
+        /// Actualiza el estado de todos los vuelos cuya hora de salida o llegada ya ocurrio.
+        /// Pasa a estado 2 (en transcurso) los vuelos que ya salieron pero no aterrizaron,
+        /// y a estado 3 (finalizado) los vuelos cuya hora de llegada ya paso.
+        /// Retorna una tupla con la cantidad de vuelos pasados a cada estado.
+        /// </summary>
         public async Task<(int enTranscurso, int finalizados)> ActualizarEstadosVuelos()
         {
             using var connection = _connectionFactory.CreateConnection();

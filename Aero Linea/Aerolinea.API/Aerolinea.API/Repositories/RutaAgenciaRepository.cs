@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de rutas para agencias. Proporciona acceso de solo lectura
+    /// al catalogo completo de rutas disponibles con informacion de ciudad, pais
+    /// y duracion estimada de cada trayecto.
+    /// </summary>
     public class RutaAgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -13,13 +18,17 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de rutas con ciudad y pais de origen y destino
+        /// obtenidos a traves de los aeropuertos asociados a cada ruta.
+        /// </summary>
         public async Task<List<RutaAgenciaDTO>> ObtenerTodasLasRutas()
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-                SELECT 
+                SELECT
                     r.ID,
                     co.Nombre          AS CiudadOrigen,
                     po.Nombre          AS PaisOrigen,

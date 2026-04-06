@@ -1,20 +1,33 @@
+// Configuracion global de Docsify para Miku Inn Docs.
+// Define el sidebar, busqueda, paginacion y el hero header inyectado por plugin.
 window.$docsify = {
   name: '',
   repo: '',
+
+  // Carga el sidebar desde _sidebar.md y no expande subniveles automaticamente
   loadSidebar: true,
   subMaxLevel: 0,
   coverpage: false,
+
+  // Sube al tope de la pagina al navegar entre secciones
   auto2top: true,
+
+  // Configuracion del plugin de busqueda
   search: {
     placeholder: 'Buscar...',
     noData: 'Sin resultados'
   },
+
   plugins: [
     function(hook) {
+      // Se ejecuta cada vez que Docsify termina de renderizar una pagina
       hook.doneEach(function() {
+
+        // Elimina el hero previo para evitar duplicados al navegar
         var existing = document.querySelector('.hero-header');
         if (existing) existing.remove();
 
+        // Crea el hero header con icono SVG de casa, titulo y badges de tecnologia
         var hero = document.createElement('div');
         hero.className = 'hero-header';
         hero.innerHTML = `
@@ -33,6 +46,7 @@ window.$docsify = {
           </div>
         `;
 
+        // Inserta el hero al inicio del area de contenido principal
         var content = document.querySelector('.content');
         if (content) content.prepend(hero);
       });

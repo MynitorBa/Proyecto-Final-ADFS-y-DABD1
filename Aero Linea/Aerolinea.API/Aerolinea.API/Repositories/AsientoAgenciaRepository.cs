@@ -1,9 +1,14 @@
-﻿using Aerolinea.API.Data;
-using Aerolinea.API.DTOs.Agencia; 
+using Aerolinea.API.Data;
+using Aerolinea.API.DTOs.Agencia;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de asientos para agencias de viaje. Permite consultar el mapa
+    /// de asientos de una reservacion y cambiar asientos de boletos dentro
+    /// del contexto de una agencia autenticada.
+    /// </summary>
     public class AsientoAgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -15,6 +20,12 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Retorna el mapa de asientos de todos los vuelos de una reservacion de agencia.
+        /// Incluye asientos ocupados, boletos propios de la agencia y el layout dinamico
+        /// calculado segun la cantidad de boletos por clase en cada vuelo.
+        /// Lanza una excepcion si la reservacion no pertenece a la agencia.
+        /// </summary>
         public async Task<List<AsientosVueloAgenciaDTO>> ObtenerAsientosPorReservacion(int reservacionId, int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -118,6 +129,11 @@ namespace Aerolinea.API.Repositories
         }
 
         // PUT: cambiar asiento de un boleto (vista agencia)
+        /// <summary>
+        /// Cambia el asiento de un boleto perteneciente a una reservacion de agencia.
+        /// Verifica propiedad, validez del asiento en el layout del vuelo, disponibilidad
+        /// con bloqueo pesimista y regla de clase antes de aplicar el cambio.
+        /// </summary>
         public async Task CambiarAsiento(int boletoId, string nuevoAsiento, int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();

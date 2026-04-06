@@ -1,46 +1,87 @@
 <script>
+/**
+ * @file MisReservas.svelte
+ * @description Full reservations management page for authenticated users. Loads all
+ * reservations and a summary widget on mount, then displays them in a filterable card grid.
+ * Clicking a card opens a detail modal that shows all boletos with flight route, passenger
+ * data, seat and class info. From the modal the user can: rate completed routes with a
+ * 1-5 star comment, cancel confirmed reservations with a mandatory reason field, download
+ * the reservation PDF comprobante, or send the comprobante to their registered email.
+ * Toast notifications confirm successful actions. Redirects to login if no session is found.
+ */
   import '../styles/Misreservas.css';
   import { sesion } from '../stores/sesion.js';
   import { onMount } from 'svelte';
 
+  /** Function used to navigate between application pages. @type {function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  /* ── Estado general ── */
+  /** List of all reservation objects fetched for the current user. @type {Array<object>} */
   let reservas       = [];
+
+  /** Summary statistics object containing totals by status and total amount spent. @type {object|null} */
   let resumen        = null;
+
+  /** True while the reservations list is being fetched. @type {boolean} */
   let loading        = true;
+
+  /** Error message shown when the reservations fetch fails. @type {string} */
   let error          = '';
+
+  /** Currently active filter key applied to the reservations list. @type {string} */
   let filtroActivo   = 'todas';
 
-  /* ── Comentarios del usuario ── */
+  /** Array of comment objects posted by the current user, used to check if a route was already rated. @type {Array<object>} */
   let misComentarios = [];
 
-  /* ── Modal detalle ── */
+  /** The reservation object currently shown in the detail modal, null when modal is closed. @type {object|null} */
   let reservaDetalle    = null;
+
+  /** True while the full reservation detail is being fetched from the API. @type {boolean} */
   let detalleLoading    = false;
+
+  /** Error message shown inside the detail modal when the detail fetch fails. @type {string} */
   let detalleError      = '';
 
-  /* ── Cancelar ── */
+  /** Whether the cancellation form panel is visible inside the detail modal. @type {boolean} */
   let cancelarAbierto   = false;
+
+  /** Reason text entered by the user in the cancellation form. @type {string} */
   let cancelMotivo      = '';
+
+  /** True while the cancellation POST request is in progress. @type {boolean} */
   let cancelLoading     = false;
+
+  /** Validation or API error message shown inside the cancellation form. @type {string} */
   let cancelError       = '';
 
-  /* ── Comentar ruta ── */
+  /** Star rating selected by hovering or clicking in the comment form (1-5). @type {number} */
   let comentarEstrellas = 0;
+
+  /** Star count currently highlighted due to mouse hover in the rating widget. @type {number} */
   let comentarHover     = 0;
+
+  /** Text content of the comment being drafted by the user. @type {string} */
   let comentarContenido = '';
+
+  /** True while the comment POST request is in progress. @type {boolean} */
   let comentarLoading   = false;
+
+  /** Error message shown when comment submission fails validation or the API returns an error. @type {string} */
   let comentarError     = '';
+
+  /** Success message shown when a comment is submitted successfully. @type {string} */
   let comentarExito     = '';
 
-  /* ── Comprobante ── */
+  /** True while the PDF comprobante is being downloaded. @type {boolean} */
   let comprobanteLoading = false;
+
+  /** True while the comprobante email send request is in progress. @type {boolean} */
   let enviarCorreoLoading = false;
 
-  /* ── Toast ── */
+  /** Array of active toast notification objects, each with id, msg, and tipo fields. @type {Array<{id: number, msg: string, tipo: string}>} */
   let toasts = [];
 
   onMount(async () => {
@@ -48,15 +89,23 @@
     await Promise.all([cargarReservas(), cargarResumen(), cargarMisComentarios()]);
   });
 
-  /* ═══════════════════════════════════════════
-     HELPERS
-  ═══════════════════════════════════════════ */
+  /**
+   * Creates a new toast notification and automatically removes it after 4 seconds.
+   * @param {string} msg - The message text to display in the toast.
+   * @param {'success'|'error'} tipo - Visual style of the toast.
+   */
   function addToast(msg, tipo = 'success') {
     const id = Date.now();
     toasts = [...toasts, { id, msg, tipo }];
     setTimeout(() => { toasts = toasts.filter(t => t.id !== id); }, 4000);
   }
 
+  /**
+   * Maps a reservation or boleto status string to its corresponding CSS badge modifier class.
+   * Handles Confirmada, Cancelada, Completada, Expirada, and defaults to Pendiente.
+   * @param {string} estado - The status label string from the API.
+   * @returns {string} The CSS badge class string.
+   */
   function estadoClase(estado) {
     if (!estado) return 'mr-badge--pendiente';
     const e = estado.toLowerCase();
@@ -67,6 +116,12 @@
     return 'mr-badge--pendiente';
   }
 
+  /**
+   * Formats an ISO date-time string into a localized date + time string using es-GT locale.
+   * Returns '--' if the input is falsy.
+   * @param {string} f - ISO date-time string from the API.
+   * @returns {string} Formatted date and time string such as '06 abr 2026 14:30'.
+   */
   function formatFechaHora(f) {
     if (!f) return '--';
     const d = new Date(f);
@@ -74,16 +129,33 @@
       + ' ' + d.toLocaleTimeString('es-GT', { hour:'2-digit', minute:'2-digit' });
   }
 
+  /**
+   * Formats an ISO date string into a short localized date using es-GT locale.
+   * Returns '--' if the input is falsy.
+   * @param {string} f - ISO date string.
+   * @returns {string} Formatted date string such as '06 abr 2026'.
+   */
   function formatFecha(f) {
     if (!f) return '--';
     return new Date(f).toLocaleDateString('es-GT', { day:'2-digit', month:'short', year:'numeric' });
   }
 
+  /**
+   * Extracts the HH:MM portion from a time string, returning '--' if the input is falsy.
+   * @param {string} h - Time string in HH:MM:SS or HH:MM format.
+   * @returns {string} The first 5 characters of the time string, or '--'.
+   */
   function formatHora(h) {
     if (!h) return '--';
     return h.substring(0, 5);
   }
 
+  /**
+   * Converts a flight duration in total minutes to a human-readable Xh Ym string.
+   * Returns '--' if the input is falsy.
+   * @param {number} min - Duration in minutes.
+   * @returns {string} Formatted duration such as '2h 30m'.
+   */
   function formatDuracion(min) {
     if (!min) return '--';
     const hrs = Math.floor(min / 60);
@@ -91,17 +163,31 @@
     return `${hrs}h${m > 0 ? ' ' + m + 'm' : ''}`;
   }
 
+  /**
+   * Checks whether the current user has already posted a root-level rating comment for a route.
+   * Only considers comments with a non-null cantidadEstrellas and no parent (root level).
+   * @param {number} rutaId - The route ID to check against misComentarios.
+   * @returns {boolean} True if a matching comment exists.
+   */
   function yaComentaRuta(rutaId) {
     return misComentarios.some(c => c.rutaId === rutaId && c.comentarioPadreId === null && c.cantidadEstrellas !== null);
   }
 
+  /**
+   * Returns the first root-level rating comment posted by the user for a given route.
+   * @param {number} rutaId - The route ID to look up.
+   * @returns {object|undefined} The matching comment object, or undefined if not found.
+   */
   function obtenerComentarioRuta(rutaId) {
     return misComentarios.find(c => c.rutaId === rutaId && c.comentarioPadreId === null && c.cantidadEstrellas !== null);
   }
 
-  /* ═══════════════════════════════════════════
-     CARGAR DATOS
-  ═══════════════════════════════════════════ */
+  /**
+   * Fetches the authenticated user's reservations list from GET /api/mis-reservaciones.
+   * Updates the reservas array on success or sets an error message on failure.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservas() {
     loading = true; error = '';
     try {
@@ -112,6 +198,12 @@
     finally { loading = false; }
   }
 
+  /**
+   * Fetches the reservations summary statistics from GET /api/mis-reservaciones/resumen.
+   * Sets resumen on success; silently ignores errors since it is supplementary data.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarResumen() {
     try {
       const r = await fetch(`${API}/api/mis-reservaciones/resumen`, { credentials: 'include' });
@@ -119,6 +211,12 @@
     } catch {}
   }
 
+  /**
+   * Fetches all comments posted by the current user from GET /api/comentarios/usuario.
+   * Sets misComentarios on success; used to determine if a route has already been rated.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarMisComentarios() {
     try {
       const r = await fetch(`${API}/api/comentarios/usuario`, { credentials: 'include' });
@@ -126,9 +224,14 @@
     } catch {}
   }
 
-  /* ═══════════════════════════════════════════
-     DETALLE
-  ═══════════════════════════════════════════ */
+  /**
+   * Opens the reservation detail modal for the given reservation. Fetches the full detail
+   * from GET /api/mis-reservaciones/:id and updates reservaDetalle with the response.
+   * Resets the comment and cancellation form state before loading.
+   * @async
+   * @param {object} reserva - The reservation summary object from the list.
+   * @returns {Promise<void>}
+   */
   async function abrirDetalle(reserva) {
     detalleLoading = true;
     detalleError = '';
@@ -145,6 +248,10 @@
     finally { detalleLoading = false; }
   }
 
+  /**
+   * Closes the detail modal by clearing reservaDetalle and resetting related state
+   * including the cancellation panel and comment form.
+   */
   function cerrarDetalle() {
     reservaDetalle = null;
     detalleError = '';
@@ -152,15 +259,23 @@
     resetComentarForm();
   }
 
-  /* ═══════════════════════════════════════════
-     CANCELAR
-  ═══════════════════════════════════════════ */
+  /**
+   * Toggles the cancellation form panel open or closed, clearing the motivo and error
+   * whenever the panel is toggled.
+   */
   function toggleCancelar() {
     cancelarAbierto = !cancelarAbierto;
     cancelMotivo = '';
     cancelError = '';
   }
 
+  /**
+   * Submits the cancellation request for the currently open reservation via
+   * POST /api/mis-reservaciones/:id/cancelar with the typed motivo. On success,
+   * shows a toast, reloads both the list and summary, and refreshes the detail view.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function confirmarCancelar() {
     if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo de cancelacion.'; return; }
     cancelLoading = true; cancelError = '';
@@ -185,9 +300,14 @@
     finally { cancelLoading = false; }
   }
 
-  /* ═══════════════════════════════════════════
-     COMPROBANTE - DESCARGAR PDF
-  ═══════════════════════════════════════════ */
+  /**
+   * Downloads the PDF comprobante for a reservation from GET /api/mis-reservaciones/:id/comprobante.
+   * Creates a temporary anchor element to trigger the browser download, then revokes the object URL.
+   * Shows a success or error toast depending on the result.
+   * @async
+   * @param {number} reservaId - The reservation ID whose comprobante should be downloaded.
+   * @returns {Promise<void>}
+   */
   async function descargarComprobante(reservaId) {
     comprobanteLoading = true;
     try {
@@ -210,9 +330,13 @@
     finally { comprobanteLoading = false; }
   }
 
-  /* ═══════════════════════════════════════════
-     COMPROBANTE - ENVIAR POR CORREO
-  ═══════════════════════════════════════════ */
+  /**
+   * Sends the comprobante PDF to the user's registered email via
+   * POST /api/mis-reservaciones/:id/enviar-comprobante. Shows a toast with the result.
+   * @async
+   * @param {number} reservaId - The reservation ID whose comprobante should be emailed.
+   * @returns {Promise<void>}
+   */
   async function enviarComprobantePorCorreo(reservaId) {
     enviarCorreoLoading = true;
     try {
@@ -230,9 +354,9 @@
     finally { enviarCorreoLoading = false; }
   }
 
-  /* ═══════════════════════════════════════════
-     COMENTAR RUTA
-  ═══════════════════════════════════════════ */
+  /**
+   * Resets all comment form fields to their initial empty/zero state.
+   */
   function resetComentarForm() {
     comentarEstrellas = 0;
     comentarHover = 0;
@@ -241,6 +365,15 @@
     comentarExito = '';
   }
 
+  /**
+   * Submits a new route rating comment via POST /api/comentarios/ruta. Validates that at
+   * least one star is selected and the comment text is non-empty before sending. On success,
+   * shows a success message, shows a toast, and reloads misComentarios so the rating is
+   * reflected immediately without reopening the modal.
+   * @async
+   * @param {number} rutaId - The route ID being rated.
+   * @returns {Promise<void>}
+   */
   async function enviarComentario(rutaId) {
     if (comentarEstrellas < 1) { comentarError = 'Selecciona al menos 1 estrella.'; return; }
     if (!comentarContenido.trim()) { comentarError = 'Escribe tu comentario.'; return; }
@@ -268,9 +401,11 @@
     finally { comentarLoading = false; }
   }
 
-  /* ═══════════════════════════════════════════
-     FILTROS
-  ═══════════════════════════════════════════ */
+  /**
+   * Filter configuration array defining each tab label and its filter key.
+   * The key is matched against the estadoReserva field (lowercased) of each reservation.
+   * @type {Array<{key: string, label: string}>}
+   */
   const filtros = [
     { key: 'todas',      label: 'Todas' },
     { key: 'confirmada', label: 'Confirmadas' },
@@ -280,12 +415,13 @@
     { key: 'pendiente',  label: 'Pendientes' },
   ];
 
+  // Filtered subset of reservas matching the currently active status filter tab.
   $: reservasFiltradas = filtroActivo === 'todas'
     ? reservas
     : reservas.filter(r => r.estadoReserva?.toLowerCase() === filtroActivo);
 </script>
 
-<!-- ═══════════════════ TOASTS ═══════════════════ -->
+<!-- Contenedor de notificaciones toast apiladas en pantalla -->
 <div class="mr-toast-container">
   {#each toasts as t (t.id)}
     <div class="mr-toast mr-toast--{t.tipo}">
@@ -299,7 +435,7 @@
   {/each}
 </div>
 
-<!-- ═══════════════════ MODAL UNICO ═══════════════════ -->
+<!-- Modal de detalle de reservacion con boletos, calificacion y acciones -->
 {#if reservaDetalle}
   <div class="mr-overlay" on:click={cerrarDetalle} role="dialog" aria-modal="true">
     <div class="mr-detail-modal" on:click|stopPropagation>
@@ -308,6 +444,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
 
+      <!-- Estado de carga o error del detalle de la reservacion -->
       {#if detalleLoading}
         <div class="mr-detail-modal__center">
           <div class="mr-spinner"></div>
@@ -320,7 +457,7 @@
         </div>
       {:else}
 
-        <!-- ENCABEZADO -->
+        <!-- Cabecera del modal con codigo, estado y total de la reservacion -->
         <div class="mr-detail__top">
           <div class="mr-detail__top-left">
             <span class="mr-detail__noreserva">{reservaDetalle.noReservacion}</span>
@@ -329,7 +466,7 @@
           <span class="mr-detail__total">${reservaDetalle.total?.toFixed(2)}</span>
         </div>
 
-        <!-- Info general -->
+        <!-- Fila de metadatos de la reservacion con fechas, cancelacion y usuario -->
         <div class="mr-detail__info-row">
           <div class="mr-detail__info-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -359,12 +496,12 @@
           </div>
         </div>
 
-        <!-- BOLETOS -->
         <div class="mr-detail__section-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="#8B6B4A" stroke-width="2" width="18" height="18"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           <span>Boletos ({reservaDetalle.boletos?.length ?? 0})</span>
         </div>
 
+        <!-- Listado de boletos de la reservacion con ruta, asiento y datos del pasajero -->
         <div class="mr-detail__boletos">
           {#each reservaDetalle.boletos ?? [] as boleto}
             <div class="mr-boleto">
@@ -436,7 +573,7 @@
           {/each}
         </div>
 
-        <!-- CALIFICAR RUTA (solo completadas) -->
+        <!-- Seccion de calificacion de ruta disponible para reservaciones completadas -->
         {#if reservaDetalle.estadoReserva?.toLowerCase() === 'completada'}
           {@const primerBoleto = reservaDetalle.boletos?.[0]}
           {#if primerBoleto}
@@ -467,6 +604,7 @@
                 </div>
               </div>
             {:else}
+              <!-- Formulario de estrellas y comentario para calificar la ruta -->
               <div class="mr-comentar-form">
                 <div class="mr-stars">
                   {#each [1,2,3,4,5] as n}
@@ -496,7 +634,7 @@
           {/if}
         {/if}
 
-        <!-- CANCELAR (solo confirmadas) -->
+        <!-- Formulario de cancelacion disponible para reservaciones confirmadas -->
         {#if reservaDetalle.estadoReserva?.toLowerCase() === 'confirmada'}
           {#if !cancelarAbierto}
             <div class="mr-detail__cancel-trigger">
@@ -531,7 +669,7 @@
           {/if}
         {/if}
 
-        <!-- FOOTER ACCIONES -->
+        <!-- Acciones del pie del modal para cerrar, descargar o enviar comprobante -->
         <div class="mr-detail__footer-actions">
           <button class="mr-btn mr-btn--ghost" on:click={cerrarDetalle} type="button">Cerrar</button>
           {#if reservaDetalle.estadoReserva?.toLowerCase() === 'confirmada' || reservaDetalle.estadoReserva?.toLowerCase() === 'completada'}
@@ -559,10 +697,11 @@
   </div>
 {/if}
 
-<!-- ═══════════════════ PAGINA ═══════════════════ -->
+<!-- Pagina principal de listado de reservaciones con encabezado, resumen y filtros -->
 <div class="mr-page">
   <div class="mr-container">
 
+    <!-- Encabezado de pagina con titulo y boton de regreso al inicio -->
     <div class="mr-header">
       <div>
         <h1 class="mr-title">Mis Reservaciones</h1>
@@ -574,6 +713,7 @@
       </button>
     </div>
 
+    <!-- Widget de resumen con totales por estado y monto gastado -->
     {#if resumen}
       <div class="mr-resumen">
         <div class="mr-resumen__card">
@@ -609,6 +749,7 @@
       </div>
     {/if}
 
+    <!-- Barra de filtros por estado de reservacion con contadores -->
     <div class="mr-filtros">
       {#each filtros as f}
         <button class="mr-filtro" class:mr-filtro--active={filtroActivo === f.key} on:click={() => filtroActivo = f.key} type="button">
@@ -626,6 +767,7 @@
       {/each}
     </div>
 
+    <!-- Grid de tarjetas de reservaciones o estado vacio segun el filtro activo -->
     {#if loading}
       <div class="mr-empty-state">
         <div class="mr-spinner mr-spinner--lg"></div>

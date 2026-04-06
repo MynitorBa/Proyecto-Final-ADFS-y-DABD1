@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que registra el voto de un usuario sobre un comentario.
+    /// El campo Valor indica el tipo de voto: 1 para positivo y -1 para negativo.
+    /// Garantiza que cada usuario solo pueda votar una vez por comentario.
+    /// </summary>
     public class Down
     {
         public int Id { get; set; }

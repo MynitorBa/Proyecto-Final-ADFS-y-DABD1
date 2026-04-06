@@ -1,8 +1,23 @@
 <script>
+/**
+ * @file InformacionAsientos.svelte
+ * @description Informational page that explains the two available seat classes offered by
+ * Broom AirLine: Turista and Business. For each class it renders a photo gallery with
+ * three images, a brief description list, and a detailed specs table covering legroom,
+ * baggage allowance, and on-board services. Accessible from the main navigation and
+ * contains a back button that returns the user to the home page.
+ */
   import '../styles/infoasiento.css';
-  
+
+  /** Function used to navigate to another page in the application. @type {function} */
   export let navigateTo;
-  
+
+  /**
+   * Static data array describing each seat class. Each entry contains the class name,
+   * an array of image URLs for the gallery, a short description list, and a details
+   * array with labeled specification rows.
+   * @type {Array<{name: string, images: Array<string>, description: Array<string>, details: Array<{label: string, value: string}>}>}
+   */
   const seatTypes = [
     {
       name: 'Turista',
@@ -12,13 +27,13 @@
         'https://th.bing.com/th/id/R.583cbc0ac1c1527bfcb78e1974240fad?rik=KHm07Fw1p%2bVYag&pid=ImgRaw&r=0'
       ],
       description: [
-        'Espacio estándar',
-        'Servicio básico'
+        'Espacio estandar',
+        'Servicio basico'
       ],
       details: [
         { label: 'Espacio entre asientos', value: '76-81 cm (30-32 pulgadas)' },
         { label: 'Equipaje incluido', value: '1 maleta de 23 kg + 1 equipaje de mano' },
-        { label: 'Servicios a bordo', value: 'Bebidas básicas y snacks' }
+        { label: 'Servicios a bordo', value: 'Bebidas basicas y snacks' }
       ]
     },
     {
@@ -35,19 +50,20 @@
       details: [
         { label: 'Mayor espacio', value: '127-152 cm (50-60 pulgadas) - Asientos reclinables' },
         { label: 'Prioridad de abordaje', value: 'Acceso prioritario y salas VIP' },
-        { label: 'Servicios a bordo mejorados', value: 'Menú gourmet, entretenimiento premium y amenities' }
+        { label: 'Servicios a bordo mejorados', value: 'Menu gourmet, entretenimiento premium y amenities' }
       ]
     }
   ];
 </script>
 
+<!-- Contenedor principal de la pagina de informacion de tipos de asiento -->
 <div class="info-asientos">
   <div class="info-asientos__container">
-    
-    <!-- Header -->
+
+    <!-- Encabezado con titulo y descripcion de la seccion de tipos de asiento -->
     <header class="info-asientos__header">
-      <button 
-        class="info-asientos__back" 
+      <button
+        class="info-asientos__back"
         on:click={() => navigateTo('home')}
         aria-label="Volver al inicio"
       >
@@ -55,26 +71,24 @@
       </button>
       <h1 class="info-asientos__title">Tipos de asiento</h1>
       <p class="info-asientos__subtitle">
-        Conoce las características de cada clase para elegir la mejor opción para tu viaje
+        Conoce las caracteristicas de cada clase para elegir la mejor opcion para tu viaje
       </p>
     </header>
 
-    <!-- Grid de Tipos de Asiento -->
+    <!-- Grilla de tarjetas por clase de asiento con galeria, descripcion y especificaciones -->
     <div class="asientos-grid">
       {#each seatTypes as seat, index}
         <article class="asiento-card" style="animation-delay: {index * 0.15}s">
-          
-          <!-- Nombre del Asiento -->
+
           <div class="asiento-card__header">
             <h2 class="asiento-card__name">{seat.name}</h2>
           </div>
 
-          <!-- Galería de Imágenes -->
           <div class="asiento-card__gallery">
             {#each seat.images as image, imgIndex}
               <div class="gallery-item">
-                <img 
-                  src={image} 
+                <img
+                  src={image}
                   alt="{seat.name} - Vista {imgIndex + 1}"
                   class="gallery-item__image"
                   loading="lazy"
@@ -83,7 +97,6 @@
             {/each}
           </div>
 
-          <!-- Descripción Breve -->
           <div class="asiento-card__description">
             <ul class="description-list">
               {#each seat.description as desc}
@@ -92,9 +105,8 @@
             </ul>
           </div>
 
-          <!-- Información Detallada -->
           <div class="asiento-card__details">
-            <h3 class="asiento-card__details-title">Información puntual</h3>
+            <h3 class="asiento-card__details-title">Informacion puntual</h3>
             <div class="details-list">
               {#each seat.details as detail}
                 <div class="detail-item">

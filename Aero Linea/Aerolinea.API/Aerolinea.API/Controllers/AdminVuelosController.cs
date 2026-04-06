@@ -1,4 +1,4 @@
-﻿using Aerolinea.API.Models.DTOs;
+using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +6,10 @@ using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de administracion de vuelos. Expone endpoints REST para crear, cancelar y consultar
+    /// vuelos desde el panel de administrador. Todos los endpoints requieren rol Administrador.
+    /// </summary>
     [ApiController]
     [Route("api/admin/vuelos")]
     [Authorize(Roles = "Administrador")]
@@ -13,11 +17,18 @@ namespace Aerolinea.API.Controllers
     {
         private readonly AdminVueloService _adminVueloService;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de administracion de vuelos.
+        /// </summary>
         public AdminVuelosController(AdminVueloService adminVueloService)
         {
             _adminVueloService = adminVueloService;
         }
 
+        /// <summary>
+        /// Crea un nuevo vuelo con los datos provistos por el administrador.
+        /// Traduce errores de base de datos a mensajes legibles para el usuario.
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> CrearVuelo([FromBody] CrearVueloAdminDTO dto)
         {
@@ -48,6 +59,10 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Retorna el historial completo de vuelos registrados en el sistema, incluyendo
+        /// vuelos pasados, activos y cancelados.
+        /// </summary>
         [HttpGet("historial")]
         public async Task<IActionResult> ObtenerHistorialVuelos()
         {
@@ -62,6 +77,10 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Cancela un vuelo activo por su identificador. Si el vuelo ya esta cancelado
+        /// o no existe, retorna un error 404.
+        /// </summary>
         [HttpPut("{id}/cancelar")]
         public async Task<IActionResult> CancelarVuelo(int id)
         {
@@ -95,6 +114,11 @@ namespace Aerolinea.API.Controllers
         // horaSalida y aeropuertoOrigenId son opcionales:
         //   - si no viene horaSalida se usa 00:00 (bloquea todo el día)
         //   - si no viene aeropuertoOrigenId se usa 0 (sin filtro de aeropuerto)
+        /// <summary>
+        /// Devuelve los identificadores de aviones que ya tienen vuelo asignado en la fecha y hora indicadas.
+        /// Permite filtrar adicionalmente por aeropuerto de origen. Se usa en el formulario de creacion
+        /// de vuelo para deshabilitar aviones no disponibles.
+        /// </summary>
         [HttpGet("aviones-ocupados")]
         public async Task<IActionResult> AvionesOcupados(
             [FromQuery] string fecha,
@@ -115,6 +139,10 @@ namespace Aerolinea.API.Controllers
 
         // ── GET /api/admin/vuelos/tripulantes-ocupados ───────────────────────
         // horaSalida es opcional — si no viene se usa 00:00
+        /// <summary>
+        /// Devuelve los identificadores de tripulantes que ya tienen vuelo asignado en la fecha y hora indicadas.
+        /// Se usa en el formulario de creacion de vuelo para deshabilitar tripulantes no disponibles.
+        /// </summary>
         [HttpGet("tripulantes-ocupados")]
         public async Task<IActionResult> TripulantesOcupados(
             [FromQuery] string fecha,

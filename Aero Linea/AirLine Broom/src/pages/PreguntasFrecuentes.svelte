@@ -1,8 +1,22 @@
 <script>
-  // @ts-nocheck
+/**
+ * @file PreguntasFrecuentes.svelte
+ * @description FAQ accordion page for Broom AirLine. Renders a list of ten frequently asked
+ * questions covering the reservation flow, seat classes, group purchases, seat blocking,
+ * reservation codes, cancellation steps, PDF ticket download, layovers, and payment methods.
+ * Each question can be expanded or collapsed individually. A second card provides contact
+ * info and a button to navigate to the Contactanos page.
+ */
+// @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Function used to navigate to another page in the application. @type {function} */
   export let navigateTo;
 
+  /**
+   * Static FAQ data array. Each entry has a question string (q) and an answer string (a).
+   * @type {Array<{q: string, a: string}>}
+   */
   const faqs = [
     {
       q: 'Como realizo una reserva de vuelo?',
@@ -46,11 +60,19 @@
     },
   ];
 
+  /** Array of open/closed states for each FAQ item, indexed parallel to faqs. @type {boolean[]} */
   let open = faqs.map(() => false);
+
+  /**
+   * Toggles the expanded state of the FAQ item at the given index and triggers Svelte reactivity.
+   * @param {number} i - The index of the FAQ item to toggle.
+   */
   function toggle(i) { open[i] = !open[i]; open = [...open]; }
 </script>
 
+<!-- Contenedor principal de la pagina de preguntas frecuentes -->
 <div class="info-page">
+  <!-- Hero con icono, titulo y descripcion de la seccion FAQ -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">
@@ -67,6 +89,7 @@
   </div>
 
   <div class="info-container">
+    <!-- Boton de regreso a la pagina de inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
@@ -74,6 +97,7 @@
       Volver al inicio
     </button>
 
+    <!-- Acordeon de preguntas y respuestas frecuentes con toggle individual -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">Preguntas frecuentes</h2>
       <div class="info-faq">
@@ -93,6 +117,7 @@
       </div>
     </div>
 
+    <!-- Tarjeta de contacto para dudas no resueltas con enlace a Contactanos -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">No encontraste tu respuesta?</h2>
       <p class="info-prose">Nuestro equipo de soporte esta disponible las 24 horas para atenderte. Tambien puedes consultar nuestro centro de ayuda o escribirnos directamente.</p>

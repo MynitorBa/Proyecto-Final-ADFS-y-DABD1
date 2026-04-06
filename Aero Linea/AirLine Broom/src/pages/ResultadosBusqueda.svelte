@@ -1,11 +1,29 @@
 <script>
+/**
+ * @file ResultadosBusqueda.svelte
+ * @description Legacy static search results page for Broom AirLine. Contains a hardcoded
+ * allFlights array with six sample flights between Guatemala City, Paris, and London with
+ * prices for economico, normal, and ejecutivo seat classes. Supports keyword-based filtering
+ * against origin, destination, country, airline, and departure/arrival dates. Results can be
+ * sorted by lowest price, highest price, duration, or departure time. Renders a flight card
+ * grid with route, schedule, duration, and price information. Each card has a details button
+ * that navigates to the 'detalle-vuelo' page. A search bar allows re-filtering in real time.
+ */
 // @ts-nocheck
   import '../styles/busqueda.css';
 
+  /** Function used to navigate between application pages. @type {function} */
   export let navigateTo;
+
+  /** Search parameters passed from the home page, may contain a keyword property. @type {object|null} */
   export let searchParams = null;
 
-  // Todos los vuelos disponibles en el sistema
+  /**
+   * Hardcoded sample flight data array used by this legacy page. Each entry has id, image URL,
+   * origin, destination, country, departure and arrival date/time strings, duration, airline, and
+   * a prices object with economico, normal, and ejecutivo numeric values.
+   * @type {Array<{id: number, image: string, origin: string, destination: string, country: string, departureDate: string, departureTime: string, arrivalDate: string, arrivalTime: string, duration: string, airline: string, prices: {economico: number, normal: number, ejecutivo: number}}>}
+   */
   const allFlights = [
     {
       id: 1,
@@ -117,17 +135,23 @@
     }
   ];
 
-  // Palabra clave de búsqueda (viene de searchParams o vacía por defecto)
+  /** Current keyword string used to filter flights; initialized from searchParams.keyword or empty. @type {string} */
   let searchKeyword = searchParams?.keyword || '';
 
-  // Filtrar vuelos basándose en la palabra clave
+  /**
+   * Filters allFlights against a keyword by checking whether any of origin, destination, country,
+   * airline, departureDate, or arrivalDate includes the lowercased search term. Returns all flights
+   * if keyword is empty or whitespace-only.
+   * @param {string} keyword - The search term to filter by.
+   * @returns {Array<object>} Array of matching flight objects from allFlights.
+   */
   function filterFlights(keyword) {
     if (!keyword || keyword.trim() === '') {
       return allFlights;
     }
 
     const searchTerm = keyword.toLowerCase().trim();
-    
+
     return allFlights.filter(flight => {
       return (
         flight.origin.toLowerCase().includes(searchTerm) ||
@@ -140,15 +164,16 @@
     });
   }
 
-  // Resultados filtrados
+  // Array of flight objects matching the current keyword filter.
   $: searchResults = filterFlights(searchKeyword);
 
-  // Función de ordenamiento
+  /** Current sort criterion for the results list. @type {string} */
   let sortBy = 'price-low';
-  
+
+  // Sorted copy of searchResults according to the selected sortBy criterion.
   $: sortedResults = (() => {
     const results = [...searchResults];
-    
+
     switch(sortBy) {
       case 'price-low':
         return results.sort((a, b) => a.prices.economico - b.prices.economico);
@@ -167,27 +192,37 @@
     }
   })();
 
+  /**
+   * Navigates to the 'detalle-vuelo' page passing the flight ID as the second argument.
+   * @param {number} flightId - The ID of the flight to view.
+   */
   function viewFlightDetails(flightId) {
     navigateTo('detalle-vuelo', flightId);
   }
 
+  /**
+   * Re-runs filterFlights with the current searchKeyword and assigns the result to searchResults.
+   */
   function handleSearch() {
     searchResults = filterFlights(searchKeyword);
   }
 </script>
 
+<!-- Contenedor principal de la pagina de resultados de busqueda -->
 <div class="resultados-busqueda">
   <div class="resultados-busqueda__container">
+
+    <!-- Cabecera con boton de regreso, titulo y barra de busqueda por palabra clave -->
     <div class="resultados-busqueda__header">
       <button class="resultados-busqueda__back" on:click={() => navigateTo('home')}>
         Volver a busqueda
       </button>
       <h1 class="resultados-busqueda__title">Resultados de busqueda</h1>
-      
-      <!-- Barra de búsqueda por palabra clave -->
+
+      <!-- Barra de busqueda en tiempo real por destino, origen, aerolinea o fecha -->
       <div class="search-bar">
-        <input 
-          type="text" 
+        <input
+          type="text"
           class="search-bar__input"
           placeholder="Buscar por destino, origen, aerolinea, fecha..."
           bind:value={searchKeyword}
@@ -198,6 +233,7 @@
         </button>
       </div>
 
+      <!-- Indicador del termino de busqueda activo, visible solo cuando hay un filtro aplicado -->
       {#if searchKeyword}
         <div class="resultados-busqueda__search-info">
           <p class="search-info-item">
@@ -209,6 +245,8 @@
     </div>
 
     <div class="resultados-busqueda__content">
+
+      <!-- Barra de conteo de resultados y selector de criterio de ordenamiento -->
       <div class="results-header">
         <p class="results-header__count">
           {sortedResults.length} {sortedResults.length === 1 ? 'vuelo encontrado' : 'vuelos encontrados'}
@@ -224,12 +262,14 @@
         </div>
       </div>
 
+      <!-- Mensaje de sin resultados o grilla de tarjetas de vuelos encontrados -->
       {#if sortedResults.length === 0}
         <div class="no-results">
           <p class="no-results__message">No se encontraron vuelos para "{searchKeyword}"</p>
           <p class="no-results__suggestion">Intenta con otra palabra clave como: Paris, Londres, Guatemala, Air France, etc.</p>
         </div>
       {:else}
+        <!-- Grilla de tarjetas de resultados de vuelos con imagen, ruta, horarios y precios por clase -->
         <div class="flights-results-list">
           {#each sortedResults as flight}
             <article class="flight-result-card">
@@ -248,6 +288,7 @@
                   </div>
                 </div>
 
+                <!-- Linea de ruta con origen, duracion y destino del vuelo -->
                 <div class="flight-result-card__route">
                   <div class="route-point">
                     <span class="route-point__time">{flight.departureTime}</span>
@@ -267,6 +308,7 @@
                   </div>
                 </div>
 
+                <!-- Precios por clase: economico, normal y ejecutivo -->
                 <div class="flight-result-card__prices">
                   <div class="price-option-compact">
                     <span class="price-option-compact__label">Economico</span>
@@ -282,7 +324,8 @@
                   </div>
                 </div>
 
-                <button 
+                <!-- Boton de navegacion al detalle del vuelo seleccionado -->
+                <button
                   class="flight-result-card__btn-details"
                   on:click={() => viewFlightDetails(flight.id)}
                 >

@@ -1,13 +1,21 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace Aerolinea.API.Helpers
 {
+    /// <summary>
+    /// Clase estatica de utilidad para la validacion y deteccion de tarjetas de credito o debito.
+    /// Realiza comprobaciones de formato superficiales sobre los datos de la tarjeta
+    /// sin realizar ningun cargo ni verificacion con entidades bancarias externas.
+    /// </summary>
     public static class TarjetaHelper
     {
-        /// Valida el formato superficial de los datos de tarjeta.
-        /// NO verifica si la tarjeta es real ni hace cobros.
-        /// Lanza Exception con mensaje descriptivo si algo falla.
-
+        /// <summary>
+        /// Valida el formato de los datos de una tarjeta de pago: numero de 16 digitos,
+        /// nombre del titular con caracteres validos, fecha de expiracion en formato MM/YY
+        /// no vencida, y CVV de 3 o 4 digitos.
+        /// Lanza una excepcion con mensaje descriptivo si alguno de los campos no cumple el formato esperado.
+        /// No verifica si la tarjeta es real ni realiza cargos.
+        /// </summary>
         public static void ValidarFormato(
             string numeroTarjeta,
             string nombreTitular,
@@ -54,7 +62,11 @@ namespace Aerolinea.API.Helpers
                 throw new Exception("El CVV debe tener 3 o 4 dígitos.");
         }
 
-        /// Devuelve el tipo de tarjeta según el número (solo informativo).
+        /// <summary>
+        /// Detecta el tipo de red de la tarjeta (Visa, Mastercard, American Express, Discover)
+        /// a partir del prefijo del numero de tarjeta. Solo tiene caracter informativo y
+        /// no garantiza que la tarjeta pertenezca realmente a esa red.
+        /// </summary>
         public static string DetectarTipo(string numeroTarjeta)
         {
             string n = Regex.Replace(numeroTarjeta, @"[\s\-]", "");

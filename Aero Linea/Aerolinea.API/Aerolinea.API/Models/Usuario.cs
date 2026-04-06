@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad principal que representa a un usuario registrado en el sistema.
+    /// Almacena credenciales de acceso, datos personales, ubicacion geografica
+    /// y el rol asignado que determina los permisos dentro de la plataforma.
+    /// </summary>
     public class Usuario
     {
         public int Id { get; set; }

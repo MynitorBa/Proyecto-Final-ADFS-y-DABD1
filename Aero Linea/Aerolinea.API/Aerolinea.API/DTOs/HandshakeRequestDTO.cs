@@ -1,7 +1,11 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de peticion para iniciar el proceso de autenticacion por handshake con una agencia externa.
+    /// Contiene el token de entrada proporcionado por la agencia y su URL de origen.
+    /// </summary>
     public class HandshakeRequestDTO
     {
         [JsonPropertyName("token_entrada")]
@@ -11,6 +15,10 @@ namespace Aerolinea.API.DTOs
         public string UrlAgencia { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// DTO de respuesta devuelto al completar el handshake con una agencia externa.
+    /// Contiene el token de salida que la agencia debe utilizar en las siguientes peticiones.
+    /// </summary>
     public class HandshakeResponseDTO
     {
         [JsonPropertyName("token_salida")]

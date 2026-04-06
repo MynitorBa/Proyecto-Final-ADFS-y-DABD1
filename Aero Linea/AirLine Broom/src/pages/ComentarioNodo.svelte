@@ -1,23 +1,59 @@
 <script>
   // @ts-nocheck
-  // ComentarioNodo.svelte — comentario recursivo con votos estilo Reddit
+/**
+ * @file ComentarioNodo.svelte
+ * @description Recursive comment node component that renders a single comment and all its
+ * nested replies in a Reddit-style threaded layout. Each node displays the author avatar
+ * (first letter of their name), username, post date, an optional star rating, and the
+ * comment body. Authenticated users can upvote or downvote the comment (+1 / -1) and
+ * submit text replies. Child comments are revealed or hidden via a toggle button. The
+ * component uses svelte:self to recursively render child nodes at increasing profundidad
+ * levels. All interactive callbacks (votar, toggleForm, toggleExpandido, enviarRespuesta,
+ * onTextoChange) are passed in as props from the parent page so state is managed centrally.
+ */
 
+  /** The comment object to render, including id, nombreCompleto, username, fecha, contenido, cantidadEstrellas, and downs. @type {object} */
   export let comentario;
+
+  /** Function that returns an array of child comment objects for a given comment id. @type {Function} */
   export let getHijos;
+
+  /** Map of per-comment UI state objects keyed by comment id, each containing expandido, mostrandoForm, textoRespuesta, enviando, and votoActual. @type {object} */
   export let estadoNodos;
+
+  /** Whether the current user has an active session, controls visibility of voting and reply actions. @type {boolean} */
   export let haySession;
+
+  /** Function that formats a date value into a localized display string. @type {Function} */
   export let formatFecha;
+
+  /** Function that returns an array of boolean values (true = filled star) for a given star count. @type {Function} */
   export let getEstrellas;
+
+  /** Function called when the user clicks an upvote or downvote arrow, receives commentId and value (+1 or -1). @type {Function} */
   export let votar;
+
+  /** Function that toggles the reply form visibility for a given comment id. @type {Function} */
   export let toggleForm;
+
+  /** Function that toggles the expanded state (show/hide children) for a given comment id. @type {Function} */
   export let toggleExpandido;
+
+  /** Async function that submits the reply text for a given comment id. @type {Function} */
   export let enviarRespuesta;
+
+  /** Function called on textarea input, receives commentId and the new text value. @type {Function} */
   export let onTextoChange;
+
+  /** Current nesting depth of this node, incremented by 1 for each recursive child render. @type {number} */
   export let profundidad = 0;
 
   import ComentarioNodo from './ComentarioNodo.svelte';
 
+  // Reactively retrieves the array of direct child comments for this node whenever comentario.id changes.
   $: hijos  = getHijos(comentario.id);
+
+  // Reactively retrieves this comment's UI state from estadoNodos, falling back to a default empty state object.
   $: estado = estadoNodos[comentario.id] ?? {
     expandido: false,
     mostrandoForm: false,
@@ -25,13 +61,18 @@
     enviando: false,
     votoActual: null
   };
+
+  // Tracks the user's current vote for this comment (+1, -1, or null) for active arrow styling.
   $: votoActual = estado.votoActual;
 
-  // `downs` en la API es el score neto. Se envía +1 / -1 al votar.
+  // The API field `downs` stores the net score; a positive value shows +score, negative shows -score.
   $: score = comentario.downs ?? 0;
+
+  // Determines the CSS class applied to the score display based on whether it is positive, negative, or zero.
   $: scoreClass = score > 0 ? 'score-pos' : score < 0 ? 'score-neg' : 'score-zero';
 </script>
 
+<!-- Nodo de comentario individual con columna de votos y cuerpo de contenido -->
 <div class="dv-comentario-nodo">
   <div class="dv-comentario-card">
 
@@ -132,6 +173,7 @@
           {/if}
         </div>
 
+        <!-- Formulario inline para escribir una respuesta al comentario -->
         {#if estado.mostrandoForm}
           <div class="dv-reply-form">
             <textarea
@@ -156,7 +198,7 @@
       </div>
     </div>
 
-    <!-- Hijos recursivos -->
+    <!-- Respuestas anidadas renderizadas recursivamente cuando el nodo esta expandido -->
     {#if hijos.length > 0 && estado.expandido}
       <div class="dv-comentario-hilo">
         <div class="dv-hilo-linea"></div>

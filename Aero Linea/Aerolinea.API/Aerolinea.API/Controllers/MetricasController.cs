@@ -1,4 +1,4 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
+    /// <summary>
+    /// Controlador de metricas y analiticos del sistema. Expone endpoints para que el administrador
+    /// consulte resumenes, graficas de busquedas por dia, rutas mas buscadas, busquedas por tipo
+    /// de canal, listados con filtros paginados y exportacion de reportes por correo.
+    /// Todos los endpoints requieren rol Administrador.
+    /// </summary>
     [ApiController]
     [Route("api/metricas")]
     [Authorize(Roles = "Administrador")]
@@ -13,12 +19,19 @@ namespace Aerolinea.API.Controllers
     {
         private readonly MetricasService _service;
 
+        /// <summary>
+        /// Inicializa el controlador con el servicio de metricas.
+        /// </summary>
         public MetricasController(MetricasService service)
         {
             _service = service;
         }
 
         // GET api/metricas/resumen?fechaDesde=2025-01-01&fechaHasta=2025-01-31
+        /// <summary>
+        /// Retorna un resumen de metricas clave del sistema (totales, conversiones, etc.)
+        /// para el rango de fechas indicado. Si no se especifican fechas se usa el periodo completo.
+        /// </summary>
         [HttpGet("resumen")]
         public async Task<IActionResult> ObtenerResumen(
             [FromQuery] string? fechaDesde,
@@ -36,6 +49,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/metricas/busquedas-por-dia
+        /// <summary>
+        /// Retorna la cantidad de busquedas realizadas por dia dentro del rango de fechas indicado.
+        /// Se usa para renderizar la grafica de linea en el panel de analiticos del administrador.
+        /// </summary>
         [HttpGet("busquedas-por-dia")]
         public async Task<IActionResult> BusquedasPorDia(
             [FromQuery] string? fechaDesde,
@@ -53,6 +70,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/metricas/rutas-mas-buscadas
+        /// <summary>
+        /// Retorna las rutas origen-destino mas frecuentes en el periodo indicado, con opcion de
+        /// filtrar por tipo de canal (Web o REST). Se usa para la grafica de barras del panel.
+        /// </summary>
         [HttpGet("rutas-mas-buscadas")]
         public async Task<IActionResult> RutasMasBuscadas(
             [FromQuery] string? fechaDesde,
@@ -71,6 +92,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // GET api/metricas/busquedas-por-tipo
+        /// <summary>
+        /// Retorna el desglose de busquedas por tipo de canal (Web vs REST) en el periodo indicado.
+        /// Se usa para la grafica de dona del panel de analiticos.
+        /// </summary>
         [HttpGet("busquedas-por-tipo")]
         public async Task<IActionResult> BusquedasPorTipo(
             [FromQuery] string? fechaDesde,
@@ -88,6 +113,10 @@ namespace Aerolinea.API.Controllers
         }
 
         // POST api/metricas/listado  (con filtros en body)
+        /// <summary>
+        /// Retorna un listado paginado de registros de busqueda con los filtros especificados
+        /// en el cuerpo de la solicitud (fechas, tipo de canal, usuario y tamano de pagina).
+        /// </summary>
         [HttpPost("listado")]
         public async Task<IActionResult> ObtenerListado([FromBody] MetricasFiltroDTO filtro)
         {
@@ -103,6 +132,11 @@ namespace Aerolinea.API.Controllers
         }
 
         // POST api/metricas/exportar-correo
+        /// <summary>
+        /// Genera un reporte HTML con todos los registros de busqueda segun los filtros indicados
+        /// y lo envia por correo electronico a la direccion especificada. No aplica paginacion
+        /// al exportar, incluye hasta 9999 registros.
+        /// </summary>
         [HttpPost("exportar-correo")]
         public async Task<IActionResult> ExportarPorCorreo([FromBody] ExportarMetricasDTO dto)
         {
@@ -262,6 +296,9 @@ namespace Aerolinea.API.Controllers
     }
 
     // ── DTO para exportar ─────────────────────────────────────────────────────
+    /// <summary>
+    /// DTO con los filtros y el correo destino para la exportacion del reporte de metricas.
+    /// </summary>
     public class ExportarMetricasDTO
     {
         public string Correo { get; set; } = "";

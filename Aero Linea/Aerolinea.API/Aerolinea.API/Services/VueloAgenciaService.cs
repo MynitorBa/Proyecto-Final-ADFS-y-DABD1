@@ -1,8 +1,13 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de busqueda de vuelos para agencias. Resuelve la ciudad y aeropuerto
+    /// a partir del nombre de pais y ciudad provistos por la agencia, aplica el descuento
+    /// configurado para la agencia y retorna vuelos directos y con escala con precios ajustados.
+    /// </summary>
     public class VueloAgenciaService
     {
         private readonly VueloRepository _vueloRepository;
@@ -11,12 +16,16 @@ namespace Aerolinea.API.Services
         private readonly AgenciaRepository _agenciaRepository;
         private readonly AeropuertoRepository _aeropuertoRepository;
 
+        /// <summary>
+        /// Inicializa el servicio con los repositorios necesarios para resolver ubicaciones,
+        /// obtener el descuento de la agencia y consultar vuelos disponibles.
+        /// </summary>
         public VueloAgenciaService(
             VueloRepository vueloRepository,
             PaisRepository paisRepository,
             CiudadRepository ciudadRepository,
             AgenciaRepository agenciaRepository,
-            AeropuertoRepository aeropuertoRepository) 
+            AeropuertoRepository aeropuertoRepository)
         {
             _vueloRepository = vueloRepository;
             _paisRepository = paisRepository;
@@ -25,6 +34,12 @@ namespace Aerolinea.API.Services
             _aeropuertoRepository = aeropuertoRepository;
         }
 
+        /// <summary>
+        /// Busca vuelos disponibles para una agencia resolviendo primero los aeropuertos de origen
+        /// y destino a partir de los nombres de pais y ciudad. Obtiene el descuento de la agencia,
+        /// busca vuelos directos y con escala, y aplica el factor de descuento a todos los precios
+        /// antes de retornar los resultados.
+        /// </summary>
         public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloAgenciaDTO dto, int agenciaId)
         {
             // 1. Obtener descuento de la agencia
@@ -38,7 +53,7 @@ namespace Aerolinea.API.Services
             int paisOrigenId = await _paisRepository.ObtenerOCrearId(dto.OrigenPais, connection);
             int paisDestinoId = await _paisRepository.ObtenerOCrearId(dto.DestinoPais, connection);
 
-            // CORRECCIÓN 3: ¡ESTAS LÍNEAS SON LAS QUE FALTABAN! 
+            // CORRECCIÓN 3: ¡ESTAS LÍNEAS SON LAS QUE FALTABAN!
             // Primero obtienes el ID de la Ciudad...
             int ciudadOrigenId = await _ciudadRepository.ObtenerOCrearId(dto.Origen, paisOrigenId, connection);
             int ciudadDestinoId = await _ciudadRepository.ObtenerOCrearId(dto.Destino, paisDestinoId, connection);
@@ -94,6 +109,10 @@ namespace Aerolinea.API.Services
             };
         }
 
+        /// <summary>
+        /// Aplica el factor de descuento a un precio nullable y retorna el resultado
+        /// redondeado a dos decimales. Retorna null si el precio original es null.
+        /// </summary>
         private static decimal? AplicarDescuento(decimal? precio, decimal factor)
             => precio.HasValue ? Math.Round(precio.Value * factor, 2) : null;
     }

@@ -1,14 +1,18 @@
-﻿namespace Aerolinea.API.Controllers
+namespace Aerolinea.API.Controllers
 {
-    // Request
-
+    /// <summary>
+    /// DTO de peticion para cambiar el asiento asignado a un boleto de la reservacion activa.
+    /// Contiene unicamente el nuevo asiento solicitado por el usuario.
+    /// </summary>
     public class CambiarAsientoRequestDTO
     {
         public string NuevoAsiento { get; set; }
     }
 
-    // Response 
-
+    /// <summary>
+    /// DTO de respuesta que devuelve el mapa completo de asientos de un vuelo.
+    /// Incluye configuracion del avion, asientos ocupados y boletos pendientes del usuario activo.
+    /// </summary>
     public class AsientosVueloDTO
     {
         /// >Capacidad total del avión asignado al vuelo.
@@ -34,7 +38,11 @@
         public List<BoletoAsientoDTO> BoletosUsuario { get; set; }
     }
 
- 
+
+    /// <summary>
+    /// DTO que representa un boleto con su asiento asignado dentro del mapa de vuelo del usuario.
+    /// Contiene identificacion del boleto, numero, asiento y clase correspondiente.
+    /// </summary>
     public class BoletoAsientoDTO
     {
         public int BoletoId { get; set; }

@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de peticion para confirmar la compra de una reservacion pendiente.
+    /// Contiene datos de facturacion y datos de tarjeta para validacion de formato.
+    /// Los datos de la tarjeta nunca se persisten en el sistema.
+    /// </summary>
     public class ComprarReservacionDTO
     {
         // Datos de factura
@@ -13,6 +18,10 @@
         public string CVV { get; set; }   // 3-4 dígitos
     }
 
+    /// <summary>
+    /// DTO de respuesta devuelto tras completar exitosamente la compra de una reservacion.
+    /// Contiene los datos de la factura generada y el resumen de la transaccion.
+    /// </summary>
     public class CompraRealizadaDTO
     {
         public int FacturaId { get; set; }

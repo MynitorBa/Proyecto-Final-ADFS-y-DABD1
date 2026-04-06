@@ -1,6 +1,6 @@
-﻿# Documentacion Svelte - Miku Inn
+﻿# Documentacion Svelte - AirLine Broom
 
-Documentacion autogenerada de los componentes Svelte del proyecto Miku Inn.
+Documentacion autogenerada de los componentes Svelte del proyecto AirLine Broom.
 
 ## Requisitos
 
@@ -12,7 +12,3 @@ Documentacion autogenerada de los componentes Svelte del proyecto Miku Inn.
 Ejecutar desde la raiz del proyecto:
 
 ./generar-docs-svelte.ps1
-
-## Estructura
-
-Cada archivo .svelte en src/ genera un .md correspondiente en docs-svelte/

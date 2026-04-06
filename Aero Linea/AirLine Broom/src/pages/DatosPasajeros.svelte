@@ -1,38 +1,97 @@
 <script>
   // @ts-nocheck
+/**
+ * @file DatosPasajeros.svelte
+ * @description Passenger data entry page shown after a user creates a reservation with pending
+ * tickets that have no passenger assigned. On mount it fetches the user's pending reservations,
+ * flattens all tickets into a single list, and checks whether all tickets already have a
+ * passenger — if so it redirects directly to the seat-selection page. Otherwise it presents
+ * a stepped form (one tab per ticket) that collects nombre, apellido, pasaporte (digits only),
+ * pais, ciudad, and telefono for each passenger. Country and city fields use autocomplete
+ * dropdowns powered by the countriesnow.space API. The phone field dynamically sets the
+ * expected digit count and dial code prefix based on the selected country using the
+ * restcountries.com API combined with a local knownDigits lookup table. On final submission,
+ * all passenger records are sent in parallel PUT requests to the API grouped by reservationId,
+ * then the user is forwarded to the seat-selection page with the flight grouping data.
+ */
+
   import '../styles/pasajeros.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
+  /** Navigation function provided by the app router to switch pages. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
+  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
   let usuarioId = null;
+
+  /** Unsubscribe handle for the session store subscription. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
+  /** Indicates whether the initial reservation data is still being loaded. @type {boolean} */
   let loading = true;
+
+  /** Error message set when the reservation fetch fails. @type {string|null} */
   let error = null;
+
+  /** Array of pending reservations fetched from the API, filtered to estadoReservaId === 1. @type {Array} */
   let reservacionesPendientes = [];
+
+  /** Flat array of all ticket objects across all pending reservations, each augmented with reservacionId and noReservacion. @type {Array} */
   let todosLosBoletos = [];
+
+  /** Map of boletoId to passenger form data objects containing nombre, apellido, pasaporte, telefono, pais, and ciudad. @type {object} */
   let passengerData = {};
+
+  /** Zero-based index of the ticket currently shown in the stepped form UI. @type {number} */
   let currentPassengerIndex = 0;
+
+  /** Indicates whether the passenger data submission is in progress. @type {boolean} */
   let submitting = false;
 
+  /** Full list of countries fetched from countriesnow.space, each entry containing country name and cities array. @type {Array} */
   let todosLosPaises = [];
+
+  /** Map of boletoId to the current text typed in the country autocomplete input. @type {object} */
   let paisQueries = {};
+
+  /** Map of boletoId to the filtered country suggestion list shown in the dropdown. @type {object} */
   let paisesSugeridos = {};
+
+  /** Map of boletoId to the selected country object (with country name and cities), or null if not yet selected. @type {object} */
   let paisesSeleccionados = {};
+
+  /** Map of boletoId to the current text typed in the city autocomplete input. @type {object} */
   let ciudadQueries = {};
+
+  /** Map of boletoId to the filtered city suggestion list shown in the dropdown. @type {object} */
   let ciudadesSugeridas = {};
+
+  /** Map of boletoId to a boolean indicating whether a city has been confirmed from the suggestion list. @type {object} */
   let ciudadesSeleccionadas = {};
 
+  /** Map of boletoId to the international dial code string (e.g. '+502') for the selected country. @type {object} */
   let dialCodes = {};
+
+  /** Map of boletoId to the expected number of local phone digits for the selected country. @type {object} */
   let phoneDigitCounts = {};
+
+  /** Map of boletoId to phone validation error strings displayed below the phone input. @type {object} */
   let phoneErrors = {};
+
+  /** Map of boletoId to passport validation error strings displayed below the passport input. @type {object} */
   let pasaporteErrors = {};
+
+  /** Map of lowercase country name to its dial code and expected digit count, populated from restcountries.com. @type {object} */
   let dialCodesMap = {};
 
+  /**
+   * Lookup table of international dial codes to their standard local digit counts.
+   * Used as a fallback when the restcountries API does not provide digit information.
+   * @type {object}
+   */
   const knownDigits = {
     '+1':10,'+7':10,'+20':10,'+27':9,'+30':10,
     '+31':9,'+32':9,'+33':9,'+34':9,'+36':9,
@@ -77,6 +136,14 @@
     '+994':9,'+995':9,'+996':9,'+998':9,
   };
 
+  /**
+   * Formats a string of raw phone digits into a localized display format based on the expected
+   * digit count. Groups of digits are separated by spaces using different patterns per length
+   * (e.g. 8 digits → XXXX XXXX, 9 digits → XXX XXX XXX, 10 digits → XXX XXX XXXX).
+   * @param {string} digits - Raw digit string without spaces.
+   * @param {number} total - Expected total number of digits for the selected country.
+   * @returns {string} Formatted phone string with spaces inserted.
+   */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
     if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
@@ -85,6 +152,13 @@
     return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
   }
 
+  /**
+   * Handles phone field input for a specific ticket. Strips non-digits, caps at the expected
+   * digit count for the selected country, formats the value using formatLocalPhone, updates
+   * passengerData and clears the phone error for that ticket.
+   * @param {Event} e - The input event from the phone field.
+   * @param {number} boletoId - The ticket ID this phone input belongs to.
+   */
   function onPhoneInput(e, boletoId) {
     const raw = e.target.value.replace(/\D/g, '');
     const maxDigits = phoneDigitCounts[boletoId] || 8;
@@ -95,12 +169,23 @@
     phoneErrors = { ...phoneErrors };
   }
 
+  /**
+   * Generates a placeholder phone number string by repeating '5' to the expected digit count
+   * and then formatting it with formatLocalPhone to show the spacing pattern.
+   * @param {number} digits - The expected number of digits for the selected country.
+   * @returns {string} A formatted sample phone placeholder such as "5555 5555".
+   */
   function getPhonePlaceholder(digits) {
     const sample = '5'.repeat(digits);
     return formatLocalPhone(sample, digits);
   }
 
-  // Agrupa boletos por vueloId para pasarle a SeleccionAsientos
+  /**
+   * Groups a flat array of ticket objects by vueloId to produce the flight grouping structure
+   * required by the seat-selection page. Each group contains flight metadata and a boletos array.
+   * @param {Array} boletos - Flat array of ticket objects, each with a vueloId field.
+   * @returns {Array<{vueloId: number, numeroVuelo: string, avionModelo: string, avionMarca: string, clase: string, boletos: Array}>}
+   */
   function construirGruposVuelo(boletos) {
     const mapa = {};
     boletos.forEach(b => {
@@ -119,6 +204,14 @@
     return Object.values(mapa);
   }
 
+  /**
+   * Lifecycle hook that runs after the component mounts. Redirects to login if unauthenticated.
+   * Fetches the country list from countriesnow.space and builds the dialCodesMap from
+   * restcountries.com, combining the root and suffix fields with the knownDigits fallback.
+   * Then loads pending reservations. Returns the session unsubscribe function for cleanup.
+   * @async
+   * @returns {Promise<Function>}
+   */
   onMount(async () => {
     if (!usuarioId) {
       navigateTo('login');
@@ -154,6 +247,14 @@
     return () => unsubscribe();
   });
 
+  /**
+   * Fetches all of the user's reservations, filters to pending ones, flattens all tickets,
+   * and checks if all tickets already have a passenger assigned. If so, redirects immediately
+   * to the seat-selection page with the grouped flight data. Otherwise, initializes the
+   * passengerData, autocomplete, dial code, and error maps for each ticket and renders the form.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservacionesPendientes() {
     loading = true;
     error = null;
@@ -187,13 +288,11 @@
       }
 
       if (todosTienenPasajero) {
-        // ── Todos tienen pasajero → saltar a selección de asientos ──────────
         const grupos = construirGruposVuelo(todosLosBoletos);
         navigateTo('seleccion-asientos', grupos);
         return;
       }
 
-      // ── No tienen pasajero → preparar formulario ─────────────────────────
       todosLosBoletos.forEach(boleto => {
         passengerData[boleto.boletoId] = {
           boletoId:  boleto.boletoId,
@@ -224,6 +323,12 @@
     }
   }
 
+  /**
+   * Handles input changes in the country autocomplete field for a specific ticket.
+   * Filters todosLosPaises by case-insensitive match (minimum 2 characters) and shows
+   * up to 6 suggestions. Clears passengerData.pais if the user types without selecting.
+   * @param {number} boletoId - The ticket ID whose country field changed.
+   */
   function onPaisInput(boletoId) {
     const q = paisQueries[boletoId].toLowerCase();
     paisesSugeridos[boletoId] = q.length < 2 ? [] :
@@ -233,6 +338,14 @@
       passengerData[boletoId].pais = '';
   }
 
+  /**
+   * Confirms a country selection for a specific ticket. Updates paisesSeleccionados,
+   * paisQueries, and passengerData.pais; clears city fields; and resolves the dial code and
+   * expected digit count from dialCodesMap, resetting the phone field in the process.
+   * Triggers reactive updates by spreading all affected maps.
+   * @param {number} boletoId - The ticket ID whose country is being selected.
+   * @param {object} pais - The selected country object from todosLosPaises, with country and cities.
+   */
   function seleccionarPais(boletoId, pais) {
     paisesSeleccionados[boletoId]   = pais;
     paisQueries[boletoId]           = pais.country;
@@ -256,6 +369,11 @@
     passengerData = { ...passengerData }; phoneErrors = { ...phoneErrors };
   }
 
+  /**
+   * Blur handler for the country input. If the user has typed but has not selected a country
+   * from the list, resets the query string to empty so no invalid value is stored.
+   * @param {number} boletoId - The ticket ID whose country field lost focus.
+   */
   function validarPaisSeleccionado(boletoId) {
     if (paisQueries[boletoId] && !paisesSeleccionados[boletoId]) {
       paisQueries[boletoId] = '';
@@ -263,6 +381,13 @@
     }
   }
 
+  /**
+   * Handles input changes in the city autocomplete field for a specific ticket.
+   * Only runs if a country has been selected. Filters the selected country's cities array
+   * by case-insensitive match (minimum 2 characters), shows up to 6 suggestions, and
+   * clears passengerData.ciudad if the user types without selecting.
+   * @param {number} boletoId - The ticket ID whose city field changed.
+   */
   function onCiudadInput(boletoId) {
     if (!paisesSeleccionados[boletoId]) return;
     const q = ciudadQueries[boletoId].toLowerCase();
@@ -273,6 +398,12 @@
       passengerData[boletoId].ciudad = '';
   }
 
+  /**
+   * Confirms a city selection for a specific ticket. Updates ciudadQueries, passengerData.ciudad,
+   * and marks ciudadesSeleccionadas as true, then clears the suggestion list.
+   * @param {number} boletoId - The ticket ID whose city is being selected.
+   * @param {string} ciudad - The city name string that was clicked in the dropdown.
+   */
   function seleccionarCiudad(boletoId, ciudad) {
     ciudadQueries[boletoId]         = ciudad;
     passengerData[boletoId].ciudad  = ciudad;
@@ -282,6 +413,11 @@
     ciudadesSeleccionadas = { ...ciudadesSeleccionadas };
   }
 
+  /**
+   * Blur handler for the city input. If the user has typed but has not selected a city
+   * from the list, resets the query string to empty so no invalid value is stored.
+   * @param {number} boletoId - The ticket ID whose city field lost focus.
+   */
   function validarCiudadSeleccionada(boletoId) {
     if (ciudadQueries[boletoId] && !ciudadesSeleccionadas[boletoId]) {
       ciudadQueries[boletoId] = '';
@@ -289,9 +425,26 @@
     }
   }
 
+  /**
+   * Advances the stepped form to the next ticket if not already on the last one.
+   */
   function handleNext()     { if (currentPassengerIndex < todosLosBoletos.length - 1) currentPassengerIndex++; }
+
+  /**
+   * Returns the stepped form to the previous ticket if not already on the first one.
+   */
   function handlePrevious() { if (currentPassengerIndex > 0) currentPassengerIndex--; }
 
+  /**
+   * Validates and submits all passenger data. Groups tickets by reservacionId, checks that all
+   * required fields are filled, validates that pasaporte contains only digits, and verifies that
+   * the phone digit count matches the expected count for the selected country. On successful
+   * validation, sends parallel PUT requests to /api/reservaciones/:id/pasajeros for each
+   * reservation. On full success, builds the flight groups and navigates to 'seleccion-asientos'.
+   * On validation or API failure, surfaces an alert and/or focuses the offending passenger tab.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handleSubmit() {
     submitting = true;
     try {
@@ -350,7 +503,6 @@
       const allSuccess = responses.every(r => r.ok);
 
       if (allSuccess) {
-        // ── Datos guardados → ir a selección de asientos ─────────────────
         const grupos = construirGruposVuelo(todosLosBoletos);
         navigateTo('seleccion-asientos', grupos);
       } else {
@@ -374,24 +526,43 @@
     }
   }
 
+  /**
+   * Formats a date string into a localized date using es-ES locale with two-digit day, month, and year.
+   * Returns an empty string if the input is falsy.
+   * @param {string|null} d - ISO date string to format.
+   * @returns {string} Formatted date such as "15/01/2025" or "".
+   */
   function formatDate(d) {
     if (!d) return '';
     return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
   }
 
+  /**
+   * Extracts and returns the HH:MM portion from a time string in HH:MM:SS format.
+   * Returns an empty string if the input is falsy.
+   * @param {string|null} t - Time string to shorten.
+   * @returns {string} The HH:MM portion or "".
+   */
   function formatTime(t) {
     if (!t) return '';
     const p = t.split(':');
     return `${p[0]}:${p[1]}`;
   }
 
+  // Reactively resolves the ticket object currently displayed in the stepped form.
   $: currentBoleto    = todosLosBoletos[currentPassengerIndex];
+
+  // True when the user is viewing the first ticket, disables the Previous button.
   $: isFirstPassenger = currentPassengerIndex === 0;
+
+  // True when the user is viewing the last ticket, switches the Next button to the Submit button.
   $: isLastPassenger  = currentPassengerIndex === todosLosBoletos.length - 1;
 </script>
 
+<!-- Contenedor principal del formulario de datos de pasajeros -->
 <div class="datos-pasajeros">
   <div class="datos-pasajeros__container">
+    <!-- Encabezado con titulo y descripcion del paso de datos de pasajeros -->
     <div class="datos-pasajeros__header">
       <button class="datos-pasajeros__back" on:click={() => navigateTo('home')}>
         Volver al inicio
@@ -402,6 +573,7 @@
       </p>
     </div>
 
+    <!-- Area de contenido: carga, error, carrito vacio o formulario por pasos -->
     <div class="datos-pasajeros__content">
       {#if loading}
         <div class="datos-pasajeros__loading">Cargando reservaciones pendientes...</div>
@@ -428,6 +600,7 @@
             </ul>
           </div>
 
+          <!-- Pestanas de navegacion entre boletos del formulario por pasos -->
           <div class="passenger-tabs">
             {#each todosLosBoletos as boleto, index}
               <button
@@ -442,6 +615,7 @@
             {/each}
           </div>
 
+          <!-- Formulario escalonado con datos del pasajero actual y controles de navegacion -->
           <form class="passengers-form" on:submit|preventDefault={handleSubmit}>
             <section class="flight-passengers-section">
               <div class="flight-passengers-section__header">
@@ -601,6 +775,7 @@
           </form>
         </div>
 
+        <!-- Sidebar con resumen de reservaciones pendientes y datos de contacto de soporte -->
         <aside class="datos-pasajeros__sidebar">
           <div class="booking-recap">
             <h2 class="booking-recap__title">Resumen de reservaciones pendientes</h2>

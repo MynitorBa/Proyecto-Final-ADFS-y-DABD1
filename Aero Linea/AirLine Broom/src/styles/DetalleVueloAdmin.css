@@ -1,7 +1,6 @@
-/* ══════════════════════════════════════════════════════════
-   DetalleVueloAdmin.css  —  Modal detalle de vuelo (admin)
-   ══════════════════════════════════════════════════════════ */
+/* DetalleVueloAdmin.css - Admin flight detail modal styles including animated backdrop, info grid, route display, stats card, and responsive breakpoints */
 
+/* Semi-transparent dark overlay centered in the viewport with a fade-in animation */
 .modal-backdrop-admin {
     position: fixed;
     top: 0;
@@ -17,11 +16,13 @@
     animation: fadeIn 0.3s ease-in-out;
 }
 
+/* Backdrop fades in from transparent */
 @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
 
+/* Modal panel: white with asymmetric radius, capped at 800px, slides up on enter */
 .detalle-vuelo-admin {
     background: var(--white);
     border-radius: 4px 30px 4px 30px;
@@ -33,6 +34,7 @@
     animation: slideUp 0.4s ease-out;
 }
 
+/* Modal slides up 50px while fading in */
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -44,7 +46,7 @@
     }
 }
 
-/* ── Header ── */
+/* Beige header strip with title and close button in a space-between row */
 .detalle-vuelo-admin__header {
     background: #fcfbf9;
     padding: 2rem 2.5rem;
@@ -54,6 +56,7 @@
     align-items: center;
 }
 
+/* Light-weight modal title in secondary color */
 .detalle-vuelo-admin__title {
     font-size: 1.5rem;
     font-weight: 300;
@@ -61,6 +64,7 @@
     margin: 0;
 }
 
+/* Transparent close button with muted border and uppercase text */
 .detalle-vuelo-admin__close {
     background: transparent;
     border: 2px solid var(--text-muted);
@@ -74,13 +78,14 @@
     transition: all 0.3s ease;
 }
 
+/* Close button border and text turn gold with a slight scale on hover */
 .detalle-vuelo-admin__close:hover {
     color: var(--primary-color);
     border-color: var(--primary-color);
     transform: scale(1.05);
 }
 
-/* ── Content ── */
+/* Modal body: flex column with 2.5rem gap between sections */
 .detalle-vuelo-admin__content {
     padding: 2.5rem;
     display: flex;
@@ -88,17 +93,19 @@
     gap: 2.5rem;
 }
 
-/* ── Secciones ── */
+/* Section container with a beige bottom separator */
 .info-section {
     border-bottom: 1px solid var(--perla-dark);
     padding-bottom: 2rem;
 }
 
+/* Last section removes the bottom border and padding */
 .info-section:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }
 
+/* Uppercase gold section heading with wide letter spacing */
 .info-section__title {
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -108,19 +115,21 @@
     font-weight: 600;
 }
 
-/* ── Grid de info ── */
+/* Auto-fit grid of labeled data items, minimum 200px per column */
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
 }
 
+/* Individual info datum: stacked label and value */
 .info-item {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
+/* Tiny all-caps muted label above the value */
 .info-item__label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -129,19 +138,21 @@
     font-weight: 600;
 }
 
+/* Medium-weight value in secondary color */
 .info-item__value {
     font-size: 1.1rem;
     color: var(--secondary-color);
     font-weight: 500;
 }
 
+/* Gold and larger price variant of the info value */
 .info-item__value--price {
     font-size: 1.3rem;
     color: var(--primary-color);
     font-weight: 600;
 }
 
-/* ── Ruta ── */
+/* Beige banner displaying origin and destination in a space-between row */
 .ruta-display {
     display: flex;
     justify-content: space-between;
@@ -152,12 +163,14 @@
     margin-bottom: 1.5rem;
 }
 
+/* Route endpoint: stacked label and IATA/city value */
 .ruta-point {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
+/* Tiny all-caps muted label above the route value */
 .ruta-label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -165,19 +178,21 @@
     letter-spacing: 1px;
 }
 
+/* Bold secondary color route value (IATA code or city name) */
 .ruta-value {
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--secondary-color);
 }
 
+/* Large gold arrow between origin and destination */
 .ruta-arrow {
     font-size: 2rem;
     color: var(--primary-color);
     margin: 0 1rem;
 }
 
-/* ── Stats ── */
+/* Gold-tinted stats card with a large centered occupancy percentage */
 .stats-card {
     background: linear-gradient(135deg, rgba(139, 107, 74, 0.08), rgba(139, 107, 74, 0.03));
     padding: 2rem;
@@ -185,12 +200,14 @@
     text-align: center;
 }
 
+/* Stacked label and value for the stats card */
 .stat-item {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
+/* Small all-caps muted label above the stat value */
 .stat-label {
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -198,13 +215,14 @@
     letter-spacing: 1.5px;
 }
 
+/* Very large light-weight gold percentage or count */
 .stat-value {
     font-size: 2.5rem;
     font-weight: 300;
     color: var(--primary-color);
 }
 
-/* ── Responsive ── */
+/* At 768px: modal padding reduces, header stacks, route goes vertical */
 @media (max-width: 768px) {
     .modal-backdrop-admin {
         padding: 1rem;
@@ -230,17 +248,20 @@
         gap: 2rem;
     }
 
+    /* Info grid collapses to a single column on mobile */
     .info-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
 
+    /* Route banner becomes vertical on mobile */
     .ruta-display {
         flex-direction: column;
         gap: 1rem;
         padding: 1.5rem;
     }
 
+    /* Arrow rotates 90deg to point downward in the vertical route layout */
     .ruta-arrow {
         transform: rotate(90deg);
         margin: 0;

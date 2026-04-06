@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura que expone la informacion de un tripulante registrado en el sistema.
+    /// Incluye nombre completo, rol de tripulacion e imagen opcional en Base64.
+    /// </summary>
     public class TripulanteDTO
     {
         public int Id { get; set; }

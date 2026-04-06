@@ -1,7 +1,6 @@
-/* ========================================
-   LOGIN — Broom AirLine
-   ======================================== */
+/* login.css - Login page styles including full-viewport two-column layout with cover image and form section, entry animation, form fields with asymmetric radius, checkbox, error box, submit button, and responsive breakpoints */
 
+/* Full-viewport flex wrapper centered horizontally and vertically with beige background */
 .login {
     width: 100%;
     min-height: 100vh;
@@ -13,11 +12,13 @@
     overflow-x: hidden;
 }
 
+/* Full-viewport container holding both columns */
 .login__container {
     width: 100%;
     height: 100vh;
 }
 
+/* Two-column grid: narrower image column on the left, wider form column on the right */
 .login__content {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
@@ -25,7 +26,7 @@
     width: 100%;
 }
 
-/* --- Imagen --- */
+/* Left image section: cover photo from external URL with content aligned to the bottom */
 .login__image-section {
     position: relative;
     background-image: url('https://cdn.pixabay.com/photo/2017/01/11/10/19/guatemala-1971376_1280.jpg');
@@ -38,6 +39,7 @@
     overflow: hidden;
 }
 
+/* Dark gradient overlay darkening from bottom to transparent top, contains title text */
 .login__image-overlay {
     position: absolute;
     inset: 0;
@@ -55,6 +57,7 @@
     z-index: 2;
 }
 
+/* Large light-weight image title at 3.5rem */
 .login__image-title {
     font-size: 3.5rem;
     font-weight: 300;
@@ -63,6 +66,7 @@
     color: white;
 }
 
+/* Muted pearl-toned subtitle capped at 450px with relaxed line height */
 .login__image-subtitle {
     font-size: 1.1rem;
     color: var(--perla);
@@ -71,7 +75,7 @@
     margin-bottom: 2rem;
 }
 
-/* --- Formulario --- */
+/* Right form section: white background, vertically and horizontally centered, scrollable */
 .login__form-section {
     background-color: var(--white);
     display: flex;
@@ -83,17 +87,20 @@
     overflow-y: auto;
 }
 
+/* Form content column capped at 480px, slides in from the right on load */
 .login__form-container {
     width: 100%;
     max-width: 480px;
     animation: loginFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Entry animation: form slides in 30px from the right while fading in */
 @keyframes loginFadeIn {
     from { opacity: 0; transform: translateX(30px); }
     to { opacity: 1; transform: translateX(0); }
 }
 
+/* Transparent back button with muted text that shifts left on hover */
 .login__back {
     background: transparent;
     border: none;
@@ -109,15 +116,18 @@
     gap: 0.5rem;
 }
 
+/* Back button turns gold and slides 5px left on hover */
 .login__back:hover {
     color: var(--primary-color);
     transform: translateX(-5px);
 }
 
+/* Header block with bottom margin before the form */
 .login__header {
     margin-bottom: 3rem;
 }
 
+/* Light-weight page title at 2.5rem using secondary color */
 .login__title {
     font-size: 2.5rem;
     color: var(--secondary-color);
@@ -125,24 +135,27 @@
     margin-bottom: 0.5rem;
 }
 
+/* Muted subtitle at 1rem */
 .login__subtitle {
     color: var(--text-muted);
     font-size: 1rem;
 }
 
-/* --- Form fields --- */
+/* Vertical flex form stack with gaps between fields */
 .login-form {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
+/* Individual form field: label stacked above the input */
 .login-form__field {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
 }
 
+/* Small all-caps bold field label using secondary color */
 .login-form__label {
     font-size: 0.75rem;
     font-weight: 700;
@@ -151,6 +164,7 @@
     color: var(--secondary-color);
 }
 
+/* Text input with asymmetric border-radius (0 12px 0 12px) and a gold focus ring */
 .login-form__input {
     padding: 1rem 1.2rem;
     background-color: #f9f8f6;
@@ -160,6 +174,7 @@
     transition: var(--transition);
 }
 
+/* Input border turns gold, background turns white, and a subtle glow appears on focus */
 .login-form__input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -167,7 +182,7 @@
     box-shadow: 0 8px 20px rgba(212, 175, 55, 0.08);
 }
 
-/* --- Options --- */
+/* Options row with remember-me checkbox and additional link spaced apart */
 .login-form__options {
     display: flex;
     justify-content: space-between;
@@ -175,6 +190,7 @@
     margin-top: 0.5rem;
 }
 
+/* Checkbox wrapper: flex row with an icon and label */
 .login-form__checkbox {
     display: flex;
     align-items: center;
@@ -182,18 +198,20 @@
     cursor: pointer;
 }
 
+/* 18px checkbox styled with accent-color to match the brand gold */
 .login-form__checkbox-input {
     width: 18px;
     height: 18px;
     accent-color: var(--primary-color);
 }
 
+/* Muted small text for the checkbox label */
 .login-form__checkbox-label {
     font-size: 0.85rem;
     color: var(--text-muted);
 }
 
-/* --- Error --- */
+/* Error callout box: light red background with a red border and text */
 .login-form__error {
     background-color: #fff5f5;
     border: 1px solid #feb2b2;
@@ -204,7 +222,7 @@
     margin-bottom: 1rem;
 }
 
-/* --- Submit --- */
+/* Full-width submit button with asymmetric radius (0 15px 0 15px) and dark background */
 .login-form__submit {
     width: 100%;
     padding: 1.2rem;
@@ -220,12 +238,14 @@
     margin-top: 1rem;
 }
 
+/* Submit button turns gold, lifts 2px, and gains a golden shadow on hover */
 .login-form__submit:hover {
     background-color: var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
 }
 
+/* Disabled submit button is semi-transparent with no hover effects */
 .login-form__submit:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -233,17 +253,19 @@
     box-shadow: none;
 }
 
-/* --- Switch to Register --- */
+/* Centered register prompt below the form */
 .login__register {
     text-align: center;
     margin-top: 2rem;
 }
 
+/* Muted prompt text at 0.95rem */
 .login__register-text {
     color: var(--text-muted);
     font-size: 0.95rem;
 }
 
+/* Gold underlined register link button that darkens on hover */
 .login__register-link {
     background: transparent;
     border: none;
@@ -259,13 +281,14 @@
     color: var(--secondary-color);
 }
 
-/* --- Responsive --- */
+/* At 1100px: image column narrows to 0.8fr; overlay padding reduces */
 @media (max-width: 1100px) {
     .login__content { grid-template-columns: 0.8fr 1.2fr; }
     .login__image-overlay { padding: 2rem; }
     .login__image-title { font-size: 2.8rem; }
 }
 
+/* At 900px: single-column layout; image column is hidden, form takes full width */
 @media (max-width: 900px) {
     .login__content { grid-template-columns: 1fr; }
     .login__image-section { display: none; }

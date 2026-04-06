@@ -1,10 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de perfil de usuario. Permite consultar y actualizar datos personales
+    /// del usuario autenticado, incluyendo telefono y contrasena.
+    /// </summary>
     public class PerfilRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -14,13 +18,18 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
+        /// <summary>
+        /// Retorna el perfil completo del usuario incluyendo nombre, apellido, correo,
+        /// telefono, pasaporte, fecha de nacimiento, ciudad y pais.
+        /// Retorna null si el usuario no existe.
+        /// </summary>
         public async Task<PerfilDTO?> ObtenerPerfil(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             var query = @"
-                SELECT 
+                SELECT
                     u.Id, u.Nombre, u.Apellido, u.Correo, u.Username,
                     u.Telefono, u.Pasaporte, u.FechaNacimiento,
                     p.Nombre AS Pais,
@@ -52,6 +61,10 @@ namespace Aerolinea.API.Repositories
             };
         }
 
+        /// <summary>
+        /// Actualiza el numero de telefono del usuario indicado.
+        /// Retorna true si la actualizacion afecto al menos una fila.
+        /// </summary>
         public async Task<bool> ActualizarTelefono(int usuarioId, string telefono)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -64,6 +77,10 @@ namespace Aerolinea.API.Repositories
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
+        /// <summary>
+        /// Retorna el hash de la contrasena almacenada para el usuario indicado.
+        /// Retorna null si el usuario no existe.
+        /// </summary>
         public async Task<string?> ObtenerHashContrasena(int usuarioId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -76,6 +93,10 @@ namespace Aerolinea.API.Repositories
             return result?.ToString();
         }
 
+        /// <summary>
+        /// Actualiza el hash de contrasena del usuario con el nuevo valor proporcionado.
+        /// Retorna true si la actualizacion afecto al menos una fila.
+        /// </summary>
         public async Task<bool> ActualizarContrasena(int usuarioId, string nuevoHash)
         {
             using var connection = _connectionFactory.CreateConnection();

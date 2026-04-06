@@ -1,4 +1,6 @@
-/* --- Página de Información de Asientos --- */
+/* infoasiento.css - Seat class information page styles including header with left border accent, seat type cards with image gallery, feature list, detail items, entry animation, and responsive breakpoints */
+
+/* Full-page wrapper with warm beige background and generous bottom padding */
 .info-asientos {
     width: 100%;
     min-height: 100vh;
@@ -6,18 +8,20 @@
     padding: 3rem 1rem 6rem;
 }
 
+/* Centered content column capped at 1400px */
 .info-asientos__container {
     max-width: 1400px;
     margin: 0 auto;
 }
 
-/* --- Header con asimetría --- */
+/* Page header with a thick warm-gold left border accent */
 .info-asientos__header {
     margin-bottom: 4rem;
     border-left: 6px solid #B89A7A;
     padding-left: 2rem;
 }
 
+/* Transparent back button with muted brown text that shifts left on hover */
 .info-asientos__back {
     background: transparent;
     border: none;
@@ -34,11 +38,13 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Back button darkens and slides 5px left on hover */
 .info-asientos__back:hover {
     color: #1C1A18;
     transform: translateX(-5px);
 }
 
+/* Fluid page title from 2rem to 3rem, light weight */
 .info-asientos__title {
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 300;
@@ -47,6 +53,7 @@
     line-height: 1.1;
 }
 
+/* Muted subtitle capped at 600px with relaxed line height */
 .info-asientos__subtitle {
     color: #6B5D52;
     letter-spacing: 0.5px;
@@ -56,14 +63,14 @@
     line-height: 1.6;
 }
 
-/* --- Grid de Asientos --- */
+/* Auto-fit grid of seat class cards, minimum 500px wide */
 .asientos-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
     gap: 3rem;
 }
 
-/* --- Tarjeta de Asiento --- */
+/* Seat class card: white, large asymmetric radius, fades in and slides up on load */
 .asiento-card {
     background: #FFFFFF;
     border-radius: 4px 32px 4px 32px;
@@ -77,18 +84,20 @@
     opacity: 0;
 }
 
+/* Card lifts and deepens shadow on hover */
 .asiento-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 25px 50px rgba(28, 26, 24, 0.12);
 }
 
-/* --- Header de la Tarjeta --- */
+/* Card header section: gradient beige background with a bottom separator */
 .asiento-card__header {
     padding: 2rem 2.5rem 1.5rem;
     border-bottom: 1px solid #E6E1DA;
     background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
 }
 
+/* Large light-weight class name heading */
 .asiento-card__name {
     font-size: 2.2rem;
     font-weight: 300;
@@ -97,7 +106,7 @@
     letter-spacing: -0.5px;
 }
 
-/* --- Galería de Imágenes --- */
+/* Three-column image gallery fixed at 260px height */
 .asiento-card__gallery {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -105,12 +114,14 @@
     height: 260px;
 }
 
+/* Individual gallery cell: positioned for overflow control */
 .gallery-item {
     position: relative;
     overflow: hidden;
     height: 100%;
 }
 
+/* Gallery image fills its cell with cover fit and scales on card hover */
 .gallery-item__image {
     width: 100%;
     height: 100%;
@@ -118,16 +129,18 @@
     transition: transform 0.6s ease;
 }
 
+/* All gallery images scale to 110% when the parent card is hovered */
 .asiento-card:hover .gallery-item__image {
     transform: scale(1.1);
 }
 
-/* --- Descripción Breve --- */
+/* White description section below the gallery */
 .asiento-card__description {
     padding: 2rem 2.5rem;
     background: #FFFFFF;
 }
 
+/* Unstacked feature list with checkmark bullets */
 .description-list {
     list-style: none;
     padding: 0;
@@ -137,6 +150,7 @@
     gap: 0.8rem;
 }
 
+/* Feature item: flex row with a checkmark bullet on the left */
 .description-list__item {
     color: #1C1A18;
     font-size: 1.05rem;
@@ -146,6 +160,7 @@
     font-weight: 500;
 }
 
+/* Gold checkmark bullet before each feature item */
 .description-list__item::before {
     content: '✓';
     color: #B89A7A;
@@ -154,13 +169,14 @@
     flex-shrink: 0;
 }
 
-/* --- Detalles del Asiento --- */
+/* Gradient beige details section at the bottom of the card with a top separator */
 .asiento-card__details {
     padding: 2rem 2.5rem 2.5rem;
     background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
     border-top: 1px solid #E6E1DA;
 }
 
+/* Small all-caps heading above the detail items */
 .asiento-card__details-title {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -170,12 +186,14 @@
     margin: 0 0 1.5rem 0;
 }
 
+/* Vertical stack of detail rows with a separator below each */
 .details-list {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
+/* Each detail item: stacked label and value with a bottom separator */
 .detail-item {
     display: flex;
     flex-direction: column;
@@ -184,11 +202,13 @@
     border-bottom: 1px solid #E6E1DA;
 }
 
+/* Last detail item removes the bottom border and padding */
 .detail-item:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }
 
+/* Small all-caps muted label above the detail value */
 .detail-item__label {
     font-size: 0.75rem;
     color: #6B5D52;
@@ -198,6 +218,7 @@
     margin: 0;
 }
 
+/* Detail value in regular dark text with comfortable line height */
 .detail-item__value {
     font-size: 0.95rem;
     color: #1C1A18;
@@ -206,7 +227,7 @@
     margin: 0;
 }
 
-/* --- Animación de Entrada --- */
+/* Card entry animation: slides up 30px while fading in */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -218,7 +239,7 @@
     }
 }
 
-/* --- Responsive --- */
+/* At 1200px: card minimum column width reduces to 450px */
 @media (max-width: 1200px) {
     .asientos-grid {
         grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -226,6 +247,7 @@
     }
 }
 
+/* At 1024px: single-column layout; gallery height reduces to 240px */
 @media (max-width: 1024px) {
     .info-asientos {
         padding: 2.5rem 1rem 5rem;
@@ -241,6 +263,7 @@
     }
 }
 
+/* At 768px: page padding and header reduce; title shrinks */
 @media (max-width: 768px) {
     .info-asientos {
         padding: 2rem 1rem 4rem;
@@ -280,18 +303,21 @@
     }
 }
 
+/* At 600px: gallery collapses to single image by hiding the 2nd and 3rd items */
 @media (max-width: 600px) {
     .asiento-card__gallery {
         grid-template-columns: 1fr;
         height: 220px;
     }
 
+    /* Second and third gallery images hidden on small screens */
     .gallery-item:nth-child(2),
     .gallery-item:nth-child(3) {
         display: none;
     }
 }
 
+/* At 480px: tighter padding throughout */
 @media (max-width: 480px) {
     .info-asientos {
         padding: 1.5rem 0.5rem 3rem;
@@ -335,6 +361,7 @@
     }
 }
 
+/* At 380px: all card sections tighten their padding further */
 @media (max-width: 380px) {
     .asiento-card__header {
         padding: 1.25rem 1.25rem 1rem;

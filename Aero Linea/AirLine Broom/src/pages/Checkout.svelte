@@ -1,21 +1,45 @@
 <script>
   // @ts-nocheck
+/**
+ * @file Checkout.svelte
+ * @description Payment checkout page that allows an authenticated user to pay for all their
+ * pending reservations in a single transaction. Fetches pending reservations on mount and
+ * redirects to home if none exist. Renders an interactive card visual that updates in real
+ * time as the user fills in the card number, cardholder name, and expiry date fields.
+ * Performs client-side validation on all payment fields before submitting. On submission,
+ * sends parallel POST requests to the API for each pending reservation and navigates to
+ * the confirmacion page with reservation and invoice data on success, or surfaces inline
+ * error messages on failure.
+ */
+
   import '../styles/checkout.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
+  /** Navigation function provided by the app router to switch pages. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
+  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
   let usuarioId = null;
+
+  /** Unsubscribe handle for the session store subscription. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
+  /** Indicates whether the initial reservation data is being loaded. @type {boolean} */
   let loading    = true;
+
+  /** Error message set when the initial reservation fetch fails. @type {string|null} */
   let error      = null;
+
+  /** Indicates whether a payment submission is currently in progress. @type {boolean} */
   let submitting = false;
+
+  /** Array of pending reservations fetched from the API, used to build the order summary. @type {Array} */
   let reservacionesPendientes = [];
 
+  /** Object holding per-field validation error messages for the payment form. @type {object} */
   let errores = {
     numeroTarjeta:   '',
     nombreTitular:   '',
@@ -25,6 +49,7 @@
     codigoPostal:    ''
   };
 
+  /** Object holding the current values entered by the user in the payment form fields. @type {object} */
   let cardInfo = {
     nit:             '',
     codigoPostal:    '',
@@ -34,18 +59,33 @@
     cvv:             ''
   };
 
+  // Derives display-friendly values for the card visual from cardInfo; shows placeholders when fields are empty.
   $: cardDisplay = {
     numero:  cardInfo.numeroTarjeta || '•••• •••• •••• ••••',
     titular: cardInfo.nombreTitular  || 'NOMBRE TITULAR',
     expira:  cardInfo.fechaExpiracion || 'MM/AA'
   };
 
+  /**
+   * Lifecycle hook that runs after the component mounts.
+   * Redirects to login if no user session exists, otherwise loads pending reservations.
+   * Returns the unsubscribe function for cleanup.
+   * @async
+   * @returns {Promise<Function>}
+   */
   onMount(async () => {
     if (!usuarioId) { navigateTo('login'); return; }
     await cargarReservacionesPendientes();
     return () => unsubscribe();
   });
 
+  /**
+   * Fetches the user's reservations from the API and filters to only those with
+   * estadoReservaId === 1 (Pending). If no pending reservations are found, redirects
+   * to the home page immediately. Sets loading and error as side effects.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservacionesPendientes() {
     loading = true; error = null;
     try {
@@ -61,12 +101,23 @@
     }
   }
 
+  /**
+   * Handles input on the card number field. Strips non-digits, enforces a 16-digit maximum,
+   * formats the value into groups of four separated by spaces, and clears the field error.
+   * @param {Event} e - The input event from the card number field.
+   */
   function onNumeroInput(e) {
     let v = e.target.value.replace(/\D/g, '').substring(0, 16);
     cardInfo.numeroTarjeta = v.replace(/(.{4})/g, '$1 ').trim();
     errores.numeroTarjeta = '';
   }
 
+  /**
+   * Handles input on the expiry date field. Strips non-digits, enforces a 4-digit maximum,
+   * and automatically inserts a slash after the second digit to produce MM/YY format.
+   * Clears the field error on each input event.
+   * @param {Event} e - The input event from the expiry date field.
+   */
   function onExpiryInput(e) {
     let v = e.target.value.replace(/[^\d]/g, '').substring(0, 4);
     if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
@@ -74,11 +125,22 @@
     errores.fechaExpiracion = '';
   }
 
+  /**
+   * Handles input on the CVV field. Strips non-digits and enforces a 4-digit maximum.
+   * Clears the CVV error on each input event.
+   * @param {Event} e - The input event from the CVV field.
+   */
   function onCvvInput(e) {
     cardInfo.cvv = e.target.value.replace(/\D/g, '').substring(0, 4);
     errores.cvv = '';
   }
 
+  /**
+   * Handles input on the NIT field. Converts to uppercase and allows the special values
+   * "C" and "CF" (consumer final), or strips all non-numeric characters up to 12 digits.
+   * Clears the NIT error on each input event.
+   * @param {Event} e - The input event from the NIT field.
+   */
   function onNitInput(e) {
     let v = e.target.value.toUpperCase();
     if (v === 'C' || v === 'CF') {
@@ -89,11 +151,23 @@
     errores.nit = '';
   }
 
+  /**
+   * Handles input on the postal code field. Strips non-digits and enforces a 10-digit maximum.
+   * Clears the postal code error on each input event.
+   * @param {Event} e - The input event from the postal code field.
+   */
   function onCodigoPostalInput(e) {
     cardInfo.codigoPostal = e.target.value.replace(/\D/g, '').substring(0, 10);
     errores.codigoPostal = '';
   }
 
+  /**
+   * Validates all required payment form fields and populates the errores object with
+   * specific messages for each invalid field. Checks that the card number is exactly
+   * 16 digits, the cardholder name contains only letters and is at least 3 characters,
+   * the expiry date matches MM/AA format and has not passed, and the CVV is 3 or 4 digits.
+   * @returns {boolean} True if all validations pass, false if any field has an error.
+   */
   function validar() {
     let ok = true;
     errores = { numeroTarjeta: '', nombreTitular: '', fechaExpiracion: '', cvv: '', nit: '', codigoPostal: '' };
@@ -132,6 +206,15 @@
     return ok;
   }
 
+  /**
+   * Validates the form and then submits payment for all pending reservations in parallel.
+   * For each reservation, sends a POST to the /api/reservaciones/:id/comprar endpoint with
+   * the card details. If all requests succeed, navigates to the confirmacion page passing
+   * the reservation list and the array of returned invoice objects. On partial or total
+   * failure, surfaces the API error message in the card number field error slot.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function handlePayment() {
     if (!validar()) return;
 
@@ -176,6 +259,12 @@
     }
   }
 
+  /**
+   * Groups the flat boletos array of a reservation by flight (vueloId) and computes
+   * the passenger count and total price per flight group.
+   * @param {Array} boletos - Array of ticket objects from a single reservation.
+   * @returns {Array<{numeroVuelo: string, origenCodigo: string, destinoCodigo: string, origenCiudad: string, destinoCiudad: string, fecha: string, clase: string, cantidadPasajeros: number, precioTotal: number}>}
+   */
   function agruparVuelosPorRuta(boletos) {
     if (!boletos?.length) return [];
     const m = {};
@@ -192,17 +281,26 @@
     return Object.values(m);
   }
 
+  /**
+   * Formats a date string using the es-ES locale with full month name.
+   * Returns an empty string if the input is falsy.
+   * @param {string|null} d - ISO date string to format.
+   * @returns {string} Formatted date such as "15 de enero de 2025" or "".
+   */
   function formatDate(d) {
     if (!d) return '';
     return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
+  // Computes the sum of all pending reservation totals for the order summary grand total display.
   $: totalGeneral = reservacionesPendientes.reduce((s, r) => s + r.total, 0);
 </script>
 
+<!-- Contenedor principal de la pagina de pago -->
 <div class="checkout">
   <div class="checkout__container">
 
+    <!-- Encabezado con titulo y boton de regreso al carrito -->
     <div class="checkout__header">
       <button class="checkout__back" on:click={() => navigateTo('carrito')}>
         &larr; Volver al carrito
@@ -212,10 +310,12 @@
 
     <div class="checkout__content">
 
+      <!-- Formulario de pago con visual de tarjeta y campos de datos -->
       <div class="checkout__main">
         <section class="checkout-section">
           <h2 class="checkout-section__title">Datos de la tarjeta</h2>
 
+          <!-- Visual interactivo de la tarjeta que refleja los datos ingresados -->
           <div class="card-visual">
             <div class="card-visual__chip">
               <svg viewBox="0 0 40 30" width="40" height="30">
@@ -377,6 +477,7 @@
         </section>
       </div>
 
+      <!-- Sidebar con resumen del pedido, total y boton de pago -->
       <aside class="checkout__sidebar">
         {#if loading}
           <div class="order-summary"><p class="checkout-loading">Cargando...</p></div>

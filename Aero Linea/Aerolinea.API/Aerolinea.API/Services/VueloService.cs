@@ -1,23 +1,38 @@
-﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de vuelos para usuarios. Gestiona la busqueda de vuelos directos y con escala,
+    /// el registro de busquedas para metricas y la aplicacion de filtros de precio en memoria.
+    /// </summary>
     public class VueloService
     {
         private readonly VueloRepository _repository;
 
+        /// <summary>
+        /// Inicializa el servicio con el repositorio de vuelos.
+        /// </summary>
         public VueloService(VueloRepository repository)
         {
             _repository = repository;
         }
 
+        /// <summary>
+        /// Realiza una busqueda general de vuelos por texto libre.
+        /// Retorna una lista de vuelos cuyo numero, origen o destino coincidan con la consulta.
+        /// </summary>
         public async Task<List<VueloDetalleDTO>> BusquedaGeneral(string query)
         {
             return await _repository.BusquedaGeneral(query);
         }
 
-
+        /// <summary>
+        /// Busca vuelos disponibles entre dos aeropuertos en una fecha y con los filtros indicados.
+        /// Registra la busqueda en la base de datos para metricas. Retorna vuelos directos
+        /// y con escala, ambos filtrados por rango de precio si se especifica.
+        /// </summary>
         public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
         {
             // Guardar búsqueda
@@ -29,7 +44,7 @@ namespace Aerolinea.API.Services
                 usuarioId: usuarioId
             );
 
-            //  Vuelos directos 
+            //  Vuelos directos
             var directos = await _repository.BuscarVuelos(
                 dto.OrigenId, dto.DestinoId,
                 dto.Fecha, dto.CantidadPasajeros, dto.ClaseId);
@@ -37,7 +52,7 @@ namespace Aerolinea.API.Services
             // Filtro de precio en memoria para directos
             directos = AplicarFiltroPrecio(directos, dto);
 
-            // Vuelos con escala 
+            // Vuelos con escala
             var conEscala = await _repository.BuscarVuelosConEscalas(
                 dto.OrigenId, dto.DestinoId,
                 dto.Fecha, dto.CantidadPasajeros, dto.ClaseId);
@@ -67,7 +82,11 @@ namespace Aerolinea.API.Services
             };
         }
 
-
+        /// <summary>
+        /// Filtra en memoria la lista de vuelos directos aplicando el rango de precio minimo
+        /// y maximo del DTO. Selecciona el precio de la clase indicada o el menor precio disponible
+        /// si no se especifica clase. Retorna la lista sin modificar si no hay filtros de precio.
+        /// </summary>
         private List<VueloDetalleDTO> AplicarFiltroPrecio(List<VueloDetalleDTO> vuelos, BuscarVueloDTO dto)
         {
             if (!dto.PrecioMinimo.HasValue && !dto.PrecioMaximo.HasValue)

@@ -1,8 +1,12 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de ciudades. Permite buscar o crear ciudades asociadas a un pais
+    /// dentro de la base de datos, reutilizando registros existentes cuando sea posible.
+    /// </summary>
     public class CiudadRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -12,7 +16,10 @@ namespace Aerolinea.API.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        // Busca o crea la ciudad y devuelve su Id
+        /// <summary>
+        /// Busca una ciudad por nombre y pais. Si no existe la crea y retorna su ID.
+        /// Acepta una conexion y transaccion opcionales para participar en operaciones mayores.
+        /// </summary>
         public async Task<int> ObtenerOCrearId(string nombre, int paisId, SqlConnection connection, SqlTransaction transaction = null)
         {
             // Buscar si ya existe en ese país

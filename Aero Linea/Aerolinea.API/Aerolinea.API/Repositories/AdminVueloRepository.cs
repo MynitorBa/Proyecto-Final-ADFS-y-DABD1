@@ -1,10 +1,14 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de administracion de vuelos. Gestiona la creacion, cancelacion,
+    /// historial y disponibilidad de aviones y tripulacion en la base de datos.
+    /// </summary>
     public class AdminVueloRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -17,6 +21,12 @@ namespace Aerolinea.API.Repositories
         // ─────────────────────────────────────────────────────────────────
         //  CREAR VUELO
         // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Crea un nuevo vuelo en la base de datos dentro de una transaccion.
+        /// Verifica o crea la ruta, calcula la hora de llegada segun zonas horarias,
+        /// valida la capacidad del avion y asigna la tripulacion indicada.
+        /// Retorna el ID del vuelo creado.
+        /// </summary>
         public async Task<int> CrearVuelo(CrearVueloAdminDTO dto)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -183,6 +193,11 @@ namespace Aerolinea.API.Repositories
         //  HISTORIAL
         //  JOIN con ZonaHoraria para resolver los identificadores IANA.
         // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Obtiene el historial completo de vuelos con informacion de ruta, avion,
+        /// estado, boletos vendidos y zonas horarias. Los resultados se ordenan
+        /// por fecha descendente.
+        /// </summary>
         public async Task<List<VueloHistorialDTO>> ObtenerHistorialVuelos()
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -264,6 +279,11 @@ namespace Aerolinea.API.Repositories
         // ─────────────────────────────────────────────────────────────────
         //  CANCELAR VUELO
         // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Cancela un vuelo activo o en curso. Marca el vuelo con estado Cancelado,
+        /// cancela todos los boletos activos y actualiza las reservaciones relacionadas
+        /// al estado Cancelado dentro de una transaccion atomica.
+        /// </summary>
         public async Task<bool> CancelarVuelo(int vueloId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -344,15 +364,12 @@ namespace Aerolinea.API.Repositories
         // ─────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Devuelve los IDs de aviones que NO están disponibles para un vuelo
-        /// que parte de @aeropuertoOrigenId en la fecha/hora indicada.
-        ///
-        /// Un avión NO está disponible si:
-        ///   a) Todavía está en vuelo al momento de la nueva salida, O
-        ///   b) Aterrizó en el mismo aeropuerto de origen y hace menos de 24 h, O
-        ///   c) Aterrizó en un aeropuerto diferente y hace menos de 48 h.
-        ///
-        /// FechaLlegada + HoraLlegada = momento real de aterrizaje.
+        /// Devuelve los IDs de aviones que no estan disponibles para un vuelo nuevo.
+        /// Un avion no esta disponible si:
+        /// a) Todavia esta en vuelo al momento de la nueva salida.
+        /// b) Aterrizo en el mismo aeropuerto de origen hace menos de 24 horas.
+        /// c) Aterrizo en un aeropuerto diferente hace menos de 48 horas.
+        /// FechaLlegada + HoraLlegada define el momento real de aterrizaje.
         /// </summary>
         public async Task<HashSet<int>> ObtenerAvionesOcupados(
             DateTime fecha, TimeSpan horaSalida, int aeropuertoOrigenId)
@@ -431,15 +448,11 @@ namespace Aerolinea.API.Repositories
         }
 
         /// <summary>
-        /// Devuelve los IDs de tripulantes que NO están disponibles para
-        /// la fecha/hora indicada.
-        ///
-        /// Un tripulante NO está disponible si:
-        ///   a) Tiene un vuelo asignado el mismo día (EstadoID != 4), O
-        ///   b) Su vuelo más reciente finaliza menos de 24h antes de la
-        ///      fecha/hora de salida solicitada.
-        ///
-        /// FechaLlegada + HoraLlegada = momento real de fin del vuelo.
+        /// Devuelve los IDs de tripulantes que no estan disponibles para la fecha y hora indicada.
+        /// Un tripulante no esta disponible si:
+        /// a) Tiene un vuelo asignado el mismo dia con estado activo.
+        /// b) Su vuelo mas reciente finaliza menos de 24 horas antes de la salida solicitada.
+        /// FechaLlegada + HoraLlegada define el momento real de fin del vuelo.
         /// </summary>
         public async Task<HashSet<int>> ObtenerTripulantesOcupados(DateTime fecha, TimeSpan horaSalida)
         {

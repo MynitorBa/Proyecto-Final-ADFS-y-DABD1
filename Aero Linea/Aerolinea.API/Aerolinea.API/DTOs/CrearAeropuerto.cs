@@ -1,7 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO para registrar o actualizar un aeropuerto desde el panel de administracion.
+    /// Requiere nombre, codigo IATA, ciudad y pais. Acepta imagen en Base64 y zona
+    /// horaria IANA de forma opcional.
+    /// </summary>
     public class CrearAeropuertoDTO
     {
         [Required]

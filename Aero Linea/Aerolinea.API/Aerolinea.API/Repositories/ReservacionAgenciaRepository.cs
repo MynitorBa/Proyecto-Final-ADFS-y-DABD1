@@ -1,10 +1,15 @@
-﻿using Aerolinea.API.Data;
+using Aerolinea.API.Data;
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
 namespace Aerolinea.API.Repositories
 {
+    /// <summary>
+    /// Repositorio de reservaciones para agencias. Gestiona la creacion de reservaciones
+    /// con descuento aplicado, la expiracion manual de reservaciones pendientes y la
+    /// asignacion de pasajeros a boletos de una reservacion existente.
+    /// </summary>
     public class ReservacionAgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
@@ -21,6 +26,12 @@ namespace Aerolinea.API.Repositories
             _ciudadRepository = ciudadRepository;
         }
 
+        /// <summary>
+        /// Crea una reservacion para la agencia indicada aplicando el descuento configurado.
+        /// Verifica disponibilidad de boletos con UPDLOCK/ROWLOCK, descuenta asientos del vuelo,
+        /// asigna asientos secuenciales y retorna el DTO con todos los boletos reservados.
+        /// La transaccion usa nivel Serializable para evitar condiciones de carrera.
+        /// </summary>
         public async Task<ReservacionCreadaDTO> CrearReservacion(List<SeleccionVueloDTO> vuelos, decimal descuento, int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -229,6 +240,11 @@ namespace Aerolinea.API.Repositories
             return "A" + new string(letras);
         }
 
+        /// <summary>
+        /// Marca como expirada una reservacion pendiente de la agencia. Libera los boletos
+        /// reservados devolviendo disponibilidad al vuelo correspondiente y cambia el estado
+        /// de la reservacion a expirado (4). Lanza excepcion si la reservacion no esta pendiente.
+        /// </summary>
         public async Task ExpirarReservacion(int reservacionId)
         {
             using var connection = _connectionFactory.CreateConnection();
@@ -302,6 +318,10 @@ namespace Aerolinea.API.Repositories
             }
         }
 
+        /// <summary>
+        /// Verifica si una reservacion pertenece a la agencia indicada y se encuentra
+        /// en estado pendiente (1). Retorna true si se cumplen ambas condiciones.
+        /// </summary>
         public async Task<bool> PerteneceAAgenciaYEstaPendiente(int reservacionId, int agenciaId)
         {
                     using var connection = _connectionFactory.CreateConnection();
@@ -312,7 +332,7 @@ namespace Aerolinea.API.Repositories
                 JOIN Agencia a ON r.UsuarioID = a.UsuarioWebID
                 WHERE r.ID = @reservacionId
                 AND a.ID = @agenciaId
-                AND r.EstadoReservaID = 1"; 
+                AND r.EstadoReservaID = 1";
 
             using var cmd = new SqlCommand(sql, connection);
                     cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
@@ -322,13 +342,11 @@ namespace Aerolinea.API.Repositories
                     return count > 0;
         }
 
-
-
-
-
-
-
-
+        /// <summary>
+        /// Asigna o actualiza los datos de pasajero para cada boleto de una reservacion de agencia.
+        /// Verifica que la reservacion pertenezca a la agencia, este pendiente y no haya expirado.
+        /// Crea o actualiza registros en DatosPasajero y los vincula al boleto correspondiente.
+        /// </summary>
         public async Task AgregarPasajerosAReservacion(int reservacionId, List<DatosPasajeroDTO> pasajeros, int agenciaId)
         {
             using var connection = _connectionFactory.CreateConnection();

@@ -1,93 +1,111 @@
-/* ============================================================
-   admin.css — Panel de Administración · Broom AirLine
-   ============================================================ */
+/* admin.css - Full administration panel styles including layout, navigation, tables, modals, forms, metrics, toasts, and agency management */
 
-/* ── Layout ─────────────────────────────────────────────────── */
+/* Full-width page with variable background color and generous bottom padding */
 .admin { width:100%; min-height:100vh; background-color:var(--bg-color); padding:2rem 1rem 8rem; font-family:inherit; }
 .admin__container { max-width:1400px; margin:0 auto; }
 
-/* ── Header ─────────────────────────────────────────────────── */
+/* Header accented with a 6px left border in the primary color */
 .admin__header { margin-bottom:3rem; border-left:6px solid var(--primary-color); padding-left:2rem; }
+/* Small uppercase back button that slides left on hover */
 .admin__back { background:transparent; border:none; color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:2px; cursor:pointer; margin-bottom:1rem; transition:var(--transition); display:block; padding:0; }
 .admin__back:hover { color:var(--primary-color); transform:translateX(-5px); }
+/* Fluid page title using clamp for responsive sizing */
 .admin__title { font-size:clamp(2rem,5vw,3rem); font-weight:300; color:var(--secondary-color); margin:0 0 .5rem; }
 .admin__subtitle { font-size:1rem; color:var(--text-muted); margin:0; }
 
-/* ── Grid ────────────────────────────────────────────────────── */
+/* Two-column grid: 260px fixed sidebar + flexible main area */
 .admin__content { display:grid; grid-template-columns:260px 1fr; gap:3rem; align-items:start; }
+/* Sidebar sticks at the top while the user scrolls the main content */
 .admin__sidebar { position:sticky; top:2rem; }
 .admin__main { width:100%; }
 
-/* ── Sidebar nav ─────────────────────────────────────────────── */
+/* Sidebar navigation card with asymmetric border-radius */
 .admin-nav { display:flex; flex-direction:column; gap:.25rem; background:var(--white); padding:1.25rem .75rem; border-radius:4px 30px 4px 30px; box-shadow:0 20px 40px rgba(0,0,0,.03); border:1px solid rgba(235,230,224,.5); }
+/* Individual nav item with left accent border indicating active state */
 .admin-nav__item { display:flex; align-items:center; gap:.65rem; background:transparent; border:none; padding:.85rem 1.25rem; text-align:left; font-size:.8rem; font-weight:600; color:var(--text-muted); cursor:pointer; border-left:3px solid transparent; border-radius:0 8px 8px 0; transition:var(--transition); text-transform:uppercase; letter-spacing:.8px; width:100%; }
 .admin-nav__item svg { flex-shrink:0; opacity:.6; }
 .admin-nav__item:hover { color:var(--secondary-color); background:rgba(235,230,224,.2); }
+/* Active item gets full opacity icon and gold left border */
 .admin-nav__item--active { color:var(--secondary-color); border-left-color:var(--primary-color); background:rgba(235,230,224,.3); }
 .admin-nav__item--active svg { opacity:1; }
 
-/* ── Sección ─────────────────────────────────────────────────── */
+/* Content section card with fade-in entry animation */
 .admin-section { background:var(--white); padding:2.5rem; border-radius:30px 4px 30px 4px; box-shadow:0 20px 60px rgba(28,26,24,.05); animation:sectionFadeIn .35s ease-out; }
 @keyframes sectionFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 .admin-section__title { font-size:1.8rem; color:var(--secondary-color); margin:0 0 .5rem; }
 .admin-section__subtitle { color:var(--text-muted); margin:0 0 2rem; font-size:.9rem; line-height:1.5; }
+/* Row that places section title and the add-button side by side */
 .section-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; gap:1.5rem; }
 
-/* ── Botones ─────────────────────────────────────────────────── */
+/* Primary add-record button with asymmetric corners */
 .btn-add { display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1.4rem; background:var(--secondary-color); color:white; border:none; border-radius:0 12px 0 12px; font-size:.82rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); white-space:nowrap; }
 .btn-add:hover { background:var(--primary-color); transform:translateY(-2px); }
 .btn-add:active { transform:translateY(0); }
 .btn-add__icon { font-size:1.2rem; font-weight:700; line-height:1; }
+/* Full-width primary submit button used inside modals and forms */
 .btn-primary { flex:1; padding:.875rem 1.5rem; background:var(--secondary-color); color:white; border:none; border-radius:0 10px 0 10px; font-size:.9rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); }
 .btn-primary:hover:not(:disabled) { background:var(--primary-color); transform:translateY(-2px); }
 .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+/* Ghost secondary button with light border */
 .btn-secondary { flex:1; padding:.875rem 1.5rem; background:transparent; color:#6b7280; border:2px solid #e5e7eb; border-radius:0 10px 0 10px; font-size:.9rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:all .2s; }
 .btn-secondary:hover { border-color:#d1d5db; background:#f9fafb; color:var(--secondary-color); }
 
-/* ── Tablas ──────────────────────────────────────────────────── */
+/* Horizontally scrollable table wrapper */
 .vuelos-table { margin-top:1rem; overflow-x:auto; }
 .table { width:100%; border-collapse:collapse; }
 .table__head { border-bottom:2px solid var(--perla-dark); }
 .table__row { transition:var(--transition); }
 .table__row:hover { background:rgba(235,230,224,.15); }
+/* Tiny uppercase column headers */
 .table__header { text-align:left; padding:.85rem .75rem; font-size:.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:700; white-space:nowrap; }
 .table__body .table__row { border-bottom:1px solid rgba(235,230,224,.5); }
 .table__cell { padding:1.1rem .75rem; color:var(--secondary-color); font-size:.88rem; }
+/* Cell that holds action buttons in a wrapping flex row */
 .table__actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+/* Small pill-shaped row action buttons */
 .table__action-btn { padding:.5rem .9rem; border:none; border-radius:0 8px 0 8px; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); }
 .table__action-btn--view { background:var(--secondary-color); color:var(--white); }
 .table__action-btn--view:hover { background:var(--primary-color); transform:translateY(-1px); }
+/* Cancel variant uses red text on transparent background */
 .table__action-btn--cancel { background:transparent; border:1px solid #ffcdd2; color:#c62828; }
 .table__action-btn--cancel:hover { background:#ffebee; }
 .table__action-btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; }
 
-/* ── Badges ──────────────────────────────────────────────────── */
+/* Pill-shaped status badges in green/blue/red */
 .status-badge { display:inline-block; padding:.35rem .75rem; border-radius:0 8px 0 8px; font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; }
 .status-badge--activo     { background:#e8f5e9; color:#2e7d32; }
 .status-badge--completado { background:#e3f2fd; color:#1565c0; }
 .status-badge--cancelado  { background:#ffebee; color:#c62828; }
+/* Blue crew role badge used inside crew tables */
 .rol-badge--tripulacion { display:inline-block; padding:.25rem .75rem; border-radius:12px; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; background:#dbeafe; color:#1e40af; }
+/* Role selector dropdown with branded border */
 .rol-select { padding:.45rem .9rem; background:#fcfbf9; border:1px solid var(--perla-dark); border-radius:0 8px 0 8px; font-size:.85rem; color:var(--secondary-color); cursor:pointer; transition:var(--transition); }
 .rol-select:focus { outline:none; border-color:var(--primary-color); }
 
-/* ── Placeholder / loading ───────────────────────────────────── */
+/* Dashed placeholder card shown when a list section is empty */
 .placeholder-card { padding:3rem; text-align:center; background:rgba(235,230,224,.15); border-radius:12px; border:2px dashed var(--perla-dark); }
 .placeholder-card__text { color:var(--text-muted); font-size:.95rem; }
+/* Italic muted text shown while data is loading */
 .loading-text { color:var(--text-muted); font-style:italic; font-size:.9rem; }
 
-/* ── Imágenes ────────────────────────────────────────────────── */
+/* Small thumbnail image for entity rows in tables */
 .entity-thumb { width:48px; height:48px; object-fit:cover; border-radius:6px; border:2px solid var(--perla-dark); }
 .entity-thumb--circle { border-radius:50%; }
+/* Smaller thumbnail for dropdown option rows */
 .dropdown-thumb { width:32px; height:32px; object-fit:cover; border-radius:4px; flex-shrink:0; }
 .dropdown-thumb--circle { border-radius:50%; }
+/* Full-width image preview above file inputs in forms */
 .img-preview { width:100%; max-height:200px; object-fit:contain; border-radius:8px; border:2px solid var(--perla-dark); margin-bottom:.75rem; display:block; }
 .img-preview--circle { width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto .75rem; }
+/* Small hint text below image inputs */
 .img-hint { color:var(--text-muted); font-size:.78rem; display:block; margin-top:.25rem; }
 
-/* ── Formulario crear vuelo ──────────────────────────────────── */
+/* Stacked form layout with animated group entries */
 .admin-form { display:flex; flex-direction:column; gap:2rem; }
+/* Each group is separated by a dashed bottom border and animates in */
 .admin-form__group { border-bottom:1px dashed var(--perla-dark); padding-bottom:2rem; animation:formGroupIn .35s ease-out backwards; }
 .admin-form__group:last-of-type { border-bottom:none; }
+/* Staggered animation delays per group child index */
 .admin-form__group:nth-child(1) { animation-delay:.04s; }
 .admin-form__group:nth-child(2) { animation-delay:.08s; }
 .admin-form__group:nth-child(3) { animation-delay:.12s; }
@@ -95,238 +113,312 @@
 .admin-form__group:nth-child(5) { animation-delay:.20s; }
 .admin-form__group:nth-child(6) { animation-delay:.24s; }
 @keyframes formGroupIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+/* Tiny uppercase label for form group sections */
 .admin-form__group-title { font-size:.85rem; color:var(--secondary-color); margin:0 0 1.25rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+/* Two-column row inside a form group */
 .admin-form__row { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+/* Column-stacked field that raises its z-index while focused to avoid dropdown clipping */
 .admin-form__field { display:flex; flex-direction:column; gap:.5rem; position:relative; z-index:1; }
 .admin-form__field:focus-within { z-index:10; }
+/* Field that spans both grid columns */
 .admin-form__field--full { grid-column:1/-1; }
+/* Small bold uppercase field label */
 .admin-form__label { font-size:.78rem; font-weight:700; color:var(--secondary-color); text-transform:uppercase; letter-spacing:.5px; display:block; margin:0; }
+/* Styled text/select/date input with gold focus ring */
 .admin-form__input { padding:.85rem 1.1rem; border:2px solid var(--perla-dark); border-radius:0 12px 0 12px; font-size:.92rem; font-family:inherit; color:var(--secondary-color); background:#fcfbf9; transition:var(--transition); width:100%; box-sizing:border-box; }
 .admin-form__input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(212,175,55,.12); background:var(--white); }
 .admin-form__input::placeholder { color:#b8b0a5; }
+/* Row that holds submit and cancel buttons at the bottom of the form */
 .admin-form__actions { display:flex; gap:1.25rem; padding-top:.5rem; }
+/* Dark submit button with wide letter-spacing */
 .admin-form__submit { padding:.95rem 2.5rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 15px 0 15px; font-size:.88rem; font-weight:600; text-transform:uppercase; letter-spacing:2px; cursor:pointer; transition:var(--transition); }
 .admin-form__submit:hover { background:var(--primary-color); transform:translateY(-2px); }
+/* Ghost cancel button that darkens border on hover */
 .admin-form__cancel { padding:.95rem 2rem; background:transparent; border:2px solid var(--perla-dark); border-radius:0 15px 0 15px; font-size:.88rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); cursor:pointer; transition:var(--transition); }
 .admin-form__cancel:hover { border-color:var(--secondary-color); color:var(--secondary-color); }
 
-/* ── Capacidad ───────────────────────────────────────────────── */
+/* Bar showing seat capacity usage with labels and a progress track */
 .capacidad-bar { background:rgba(235,230,224,.25); border:1px solid var(--perla-dark); border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.25rem; }
 .capacidad-bar__labels { display:flex; justify-content:space-between; align-items:center; font-size:.85rem; color:var(--secondary-color); margin-bottom:.6rem; }
 .capacidad-bar__count { font-weight:600; color:var(--text-muted); }
+/* Green count when within capacity, red when over */
 .capacidad-bar__count--ok    { color:#2e7d32; }
 .capacidad-bar__count--error { color:#c62828; }
 .capacidad-bar__track { width:100%; height:8px; background:rgba(235,230,224,.6); border-radius:4px; overflow:hidden; }
+/* Gold fill that transitions width smoothly; turns red when over capacity */
 .capacidad-bar__fill { height:100%; background:var(--primary-color); border-radius:4px; transition:width .3s ease, background .2s; }
 .capacidad-bar__fill--error { background:#ef4444; }
 
-/* ── Searchable select ───────────────────────────────────────── */
+/* Relative wrapper for searchable dropdown inputs */
 .searchable-select { position:relative; }
+/* Floating dropdown list below the input with gold top border */
 .searchable-select__dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--white); border:2px solid var(--primary-color); border-radius:0 0 12px 12px; max-height:280px; overflow-y:auto; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,.12); }
+/* Each selectable option row with a bottom divider */
 .searchable-select__option { display:flex; align-items:center; gap:.75rem; width:100%; padding:.8rem 1rem; background:transparent; border:none; border-bottom:1px solid rgba(235,230,224,.5); text-align:left; cursor:pointer; transition:background .15s; }
 .searchable-select__option:last-child { border-bottom:none; }
 .searchable-select__option:hover { background:rgba(235,230,224,.3); }
+/* IATA code shown bold in primary color */
 .searchable-select__option-code   { font-weight:700; color:var(--primary-color); font-size:.82rem; min-width:38px; }
 .searchable-select__option-name   { color:var(--secondary-color); font-size:.88rem; flex:1; }
+/* Secondary muted text for city or role info */
 .searchable-select__option-city   { color:var(--text-muted); font-size:.78rem; }
 .searchable-select__option-role   { color:var(--text-muted); font-size:.78rem; margin-left:auto; }
 .searchable-select__option-detail { color:var(--text-muted); font-size:.78rem; margin-left:auto; }
+/* Shown when no options match the typed query */
 .searchable-select__empty { padding:.75rem 1rem; color:#6b7280; font-size:.82rem; text-align:center; line-height:1.5; }
+/* Italic hint row at the top of the dropdown */
 .searchable-select__hint { padding:.45rem 1rem; font-size:.72rem; color:var(--text-muted); background:#fafaf8; border-bottom:1px solid rgba(235,230,224,.5); font-style:italic; }
+/* Green confirmation text shown below a select when an item is chosen */
 .selected-item { margin-top:.4rem; font-size:.82rem; color:#2e7d32; font-weight:600; }
 
-/* ── Tripulantes ─────────────────────────────────────────────── */
+/* Panel listing crew members selected for the flight */
 .tripulantes-seleccionados { margin-top:1rem; background:rgba(235,230,224,.2); border-radius:10px; padding:1.1rem; border:1px solid var(--perla-dark); }
 .tripulantes-seleccionados__title { font-size:.78rem; font-weight:700; color:var(--secondary-color); text-transform:uppercase; letter-spacing:.5px; margin:0 0 .6rem; }
 .tripulantes-seleccionados__list { display:flex; flex-direction:column; gap:.4rem; }
+/* Single crew row with name, role and remove button */
 .tripulante-item { display:flex; align-items:center; justify-content:space-between; background:var(--white); border:1px solid var(--perla-dark); border-radius:8px; padding:.65rem .9rem; }
 .tripulante-item__info { display:flex; flex-direction:column; gap:.15rem; }
 .tripulante-item__name { font-size:.88rem; font-weight:600; color:var(--secondary-color); }
 .tripulante-item__rol  { font-size:.75rem; color:var(--text-muted); }
+/* Small circular remove button that fills red on hover */
 .tripulante-item__remove { width:26px; height:26px; display:flex; align-items:center; justify-content:center; background:#ffebee; border:1px solid #ffcdd2; border-radius:50%; color:#c62828; font-size:1.1rem; cursor:pointer; transition:var(--transition); flex-shrink:0; }
 .tripulante-item__remove:hover { background:#c62828; color:white; }
 
-/* ── Disponibilidad hints ────────────────────────────────────── */
+/* Inline hint block with left-border color coding: yellow=warn, green=ok, blue=info */
 .disponibilidad-hint { display:block; margin-bottom:.4rem; font-size:.75rem; padding:.3rem .6rem; border-radius:4px; }
 .disponibilidad-hint--warn { background:#fef3c7; color:#92400e; border-left:3px solid #f59e0b; }
 .disponibilidad-hint--ok   { background:#ecfdf5; color:#065f46; border-left:3px solid #34d399; }
 .disponibilidad-hint--info { background:#eff6ff; color:#1e40af; border-left:3px solid #3b82f6; }
 
-/* ── Autocomplete ────────────────────────────────────────────── */
+/* Relative wrapper for autocomplete inputs in admin forms */
 .autocomplete { position:relative; }
+/* Absolute dropdown list below the autocomplete input */
 .autocomplete__list { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--white); border:2px solid var(--primary-color); border-radius:0 0 12px 12px; max-height:200px; overflow-y:auto; z-index:100; list-style:none; margin:0; padding:0; box-shadow:0 8px 24px rgba(0,0,0,.1); }
 .autocomplete__item { border-bottom:1px solid rgba(235,230,224,.5); }
 .autocomplete__item:last-child { border-bottom:none; }
+/* Full-width option button that highlights on hover */
 .autocomplete__btn { width:100%; padding:.7rem 1rem; background:transparent; border:none; text-align:left; cursor:pointer; font-size:.88rem; color:var(--secondary-color); transition:background .15s; }
 .autocomplete__btn:hover { background:rgba(235,230,224,.3); }
 
-/* ── IATA readonly ───────────────────────────────────────────── */
+/* Disabled input state for standard form inputs */
 .form-input:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; border-color:#e5e7eb; opacity:1; }
+/* Read-only IATA code field shown in gray; turns green when a valid code is set */
 .iata-readonly { background:#f3f4f6 !important; color:#6b7280 !important; cursor:not-allowed !important; border-color:#e5e7eb !important; opacity:1; pointer-events:none !important; }
 .iata-readonly:not([value=""]) { background:#f0fdf4 !important; color:#15803d !important; font-weight:600 !important; border-color:#86efac !important; }
 
-/* ── Panel Admin header links ────────────────────────────────── */
+/* Admin-panel header link styled in brown to stand out from regular nav links */
 .broom-header__inline-link--admin { color:#8B6B4A; font-weight:700; letter-spacing:.3px; }
 .broom-header__inline-link--admin::after { background:#8B6B4A; }
 .broom-header__nav-link--admin { color:#8B6B4A; font-weight:700; }
 
-/* ── Modal ───────────────────────────────────────────────────── */
+/* Fixed full-screen modal backdrop with blur and fade-in */
 .modal-overlay { position:fixed; inset:0; background:rgba(28,26,24,.65); display:flex; align-items:center; justify-content:center; z-index:9999; animation:overlayIn .2s ease-out; backdrop-filter:blur(2px); }
 @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
+/* Modal dialog with spring entry animation and internal scroll */
 .modal { background:white; border-radius:4px 24px 4px 24px; box-shadow:0 25px 60px rgba(0,0,0,.25); width:90%; max-width:500px; max-height:90vh; overflow-y:auto; animation:modalIn .3s cubic-bezier(.34,1.56,.64,1); }
 @keyframes modalIn { from { opacity:0; transform:translateY(30px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+/* Sticky header row inside the modal with title and close button */
 .modal__header { display:flex; justify-content:space-between; align-items:center; padding:1.4rem 1.75rem; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:white; z-index:1; }
 .modal__title { margin:0; font-size:1.3rem; font-weight:600; color:var(--secondary-color); }
+/* X close button that changes background on hover */
 .modal__close { width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:none; border:none; font-size:1.7rem; color:#9ca3af; cursor:pointer; border-radius:8px; transition:all .2s; }
 .modal__close:hover { background:#f3f4f6; color:var(--secondary-color); }
+/* Padded flex form inside the modal */
 .modal__form { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
 .modal__actions { display:flex; gap:1rem; margin-top:.5rem; }
+/* Custom thin scrollbar for the modal */
 .modal::-webkit-scrollbar { width:5px; }
 .modal::-webkit-scrollbar-track { background:#f3f4f6; }
 .modal::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
 .modal::-webkit-scrollbar-thumb:hover { background:#9ca3af; }
+/* Prevent page scroll when a modal is open */
 body:has(.modal-overlay) { overflow:hidden; }
 
-/* ── Form fields modal ───────────────────────────────────────── */
+/* Column-stacked form field with label and input */
 .form-field { display:flex; flex-direction:column; gap:.45rem; }
 .form-label { font-weight:700; color:var(--secondary-color); font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; }
+/* Modal form input with gold focus ring */
 .form-input { padding:.75rem 1rem; border:2px solid #e5e7eb; border-radius:0 10px 0 10px; font-size:.92rem; font-family:inherit; transition:all .2s; background:white; color:var(--secondary-color); width:100%; box-sizing:border-box; }
 .form-input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(212,175,55,.1); }
 .form-input::placeholder { color:#9ca3af; }
 
-/* ── Toasts ──────────────────────────────────────────────────── */
+/* Fixed bottom-right toast stack, max 360px wide */
 .toast-stack { position:fixed; bottom:2rem; right:2rem; display:flex; flex-direction:column; gap:.65rem; z-index:10000; pointer-events:none; max-width:360px; width:calc(100vw - 2rem); }
+/* Individual toast with slide-in animation and left border color coding */
 .toast { display:flex; align-items:center; gap:.7rem; padding:.9rem 1.1rem; border-radius:0 14px 0 14px; box-shadow:0 8px 32px rgba(0,0,0,.18); pointer-events:all; animation:toastIn .35s cubic-bezier(.34,1.56,.64,1); border-left:4px solid transparent; font-size:.88rem; font-weight:500; }
 @keyframes toastIn { from { opacity:0; transform:translateX(60px) scale(.9); } to { opacity:1; transform:translateX(0) scale(1); } }
+/* Green success, red error, yellow warning toast backgrounds */
 .toast--success { background:#f0fdf4; border-left-color:#22c55e; color:#14532d; }
 .toast--error   { background:#fff1f2; border-left-color:#ef4444; color:#7f1d1d; }
 .toast--warning { background:#fffbeb; border-left-color:#f59e0b; color:#78350f; }
+/* Circular icon badge inside the toast */
 .toast__icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:.8rem; font-weight:700; flex-shrink:0; }
 .toast--success .toast__icon { background:#22c55e; color:white; }
 .toast--error   .toast__icon { background:#ef4444; color:white; }
 .toast--warning .toast__icon { background:#f59e0b; color:white; }
 .toast__msg { flex:1; line-height:1.4; }
+/* Semi-transparent close button that becomes fully opaque on hover */
 .toast__close { background:none; border:none; font-size:1.2rem; line-height:1; cursor:pointer; padding:0 .2rem; opacity:.5; transition:opacity .15s; color:inherit; }
 .toast__close:hover { opacity:1; }
 
-/* ── Confirm ─────────────────────────────────────────────────── */
+/* Centered confirmation dialog with spring-scale entry */
 .confirm-dialog { background:white; border-radius:8px 24px 8px 24px; box-shadow:0 30px 80px rgba(0,0,0,.3); width:90%; max-width:400px; padding:2.25rem 1.75rem 1.75rem; text-align:center; animation:confirmIn .3s cubic-bezier(.34,1.56,.64,1); }
 @keyframes confirmIn { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:scale(1); } }
+/* Circular icon badge at the top of the dialog */
 .confirm-dialog__icon { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.1rem; }
 .confirm-dialog__icon svg { width:28px; height:28px; }
+/* Red danger and yellow warning icon color sets */
 .confirm-dialog__icon--danger  { background:#fef2f2; color:#ef4444; }
 .confirm-dialog__icon--warning { background:#fffbeb; color:#f59e0b; }
 .confirm-dialog__title { font-size:1.15rem; font-weight:600; color:var(--secondary-color); margin:0 0 .5rem; line-height:1.4; }
 .confirm-dialog__sub   { font-size:.88rem; color:var(--text-muted); margin:0 0 1.5rem; line-height:1.5; }
+/* Row of confirm/cancel buttons centered horizontally */
 .confirm-dialog__actions { display:flex; gap:.75rem; justify-content:center; }
+/* Shared base style for all confirm dialog buttons */
 .confirm-dialog__btn { padding:.7rem 1.6rem; border:none; border-radius:0 10px 0 10px; font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); min-width:120px; }
 .confirm-dialog__btn--cancel  { background:#f3f4f6; color:#6b7280; border:2px solid #e5e7eb; }
 .confirm-dialog__btn--cancel:hover  { background:#e5e7eb; color:var(--secondary-color); }
+/* Red destructive confirm button */
 .confirm-dialog__btn--danger  { background:#ef4444; color:white; }
 .confirm-dialog__btn--danger:hover  { background:#dc2626; transform:translateY(-2px); }
+/* Yellow warning confirm button */
 .confirm-dialog__btn--warning { background:#f59e0b; color:white; }
 .confirm-dialog__btn--warning:hover { background:#d97706; transform:translateY(-2px); }
 
-/* ── Rutas ───────────────────────────────────────────────────── */
+/* Informational timezone note bar shown above route fields */
 .rutas-tz-note { display:flex; gap:.75rem; align-items:flex-start; padding:.8rem 1.1rem; background:var(--perla-dark); border:1px solid var(--marron-light,#d4c5a9); border-radius:8px; margin-bottom:1.25rem; font-size:.83rem; color:var(--text-muted); line-height:1.5; }
+/* Monospace badge showing the IATA code in a dark pill */
 .ruta-code { display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-family:monospace; background:var(--secondary-color); color:var(--white); border-radius:4px; padding:.15rem .45rem; font-size:.75rem; margin-right:.35rem; letter-spacing:.5px; }
+/* Route name shown as a small block below the IATA code */
 .ruta-name { color:var(--secondary-color); font-size:.85rem; display:block; margin-top:.15rem; }
+/* Small timezone badge: green when detected, yellow when missing */
 .tz-badge { display:inline-block; font-size:.7rem; padding:.2rem .55rem; border-radius:4px; font-weight:600; letter-spacing:.3px; }
 .tz-badge--ok      { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
 .tz-badge--missing { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+/* Static display of calculated flight duration */
 .duracion-display { color:var(--secondary-color); font-size:.88rem; }
+/* Edit mode wrapper that aligns hour and minute inputs side by side */
 .duracion-edit    { display:flex; gap:.4rem; align-items:center; }
+/* Small inline input for entering duration hours or minutes */
 .duracion-input { width:88px !important; padding:.4rem .6rem !important; font-size:.85rem !important; border:2px solid var(--marron-light,#d4c5a9) !important; border-radius:4px !important; background:var(--white) !important; color:var(--secondary-color) !important; box-sizing:border-box !important; }
 .duracion-input:focus { outline:none !important; border-color:var(--primary-color) !important; }
 
-/* ── Preview llegada ─────────────────────────────────────────── */
+/* Preview box showing the calculated arrival time; switches style based on state */
 .llegada-preview { border:2px solid var(--perla-dark); border-radius:0 10px 0 10px; padding:.85rem 1rem; background:var(--perla-dark); min-height:72px; display:flex; flex-direction:column; gap:.3rem; }
+/* Green tint when a valid timezone is resolved */
 .llegada-preview--tz      { border-color:#6ee7b7; background:#ecfdf5; }
+/* Light amber tint while the timezone is loading */
 .llegada-preview--loading { background:#fdf9ef; border-color:#f0e6c0; opacity:1; justify-content:center; align-items:center; }
+/* Dashed border shown when no departure data is set yet */
 .llegada-preview--empty   { color:var(--text-muted); font-size:.82rem; justify-content:center; border-style:dashed; }
+/* Large bold arrival time digits */
 .llegada-preview__time    { font-size:1.35rem; font-weight:700; color:var(--secondary-color); line-height:1; }
+/* Small gold tag shown when arrival is the next calendar day */
 .llegada-preview__nextday { font-size:.75rem; color:var(--primary-color); font-weight:600; margin-left:.4rem; }
 .llegada-preview__meta    { font-size:.75rem; color:var(--text-muted); margin-top:.1rem; }
 .llegada-preview__nota    { font-size:.7rem; color:var(--text-muted); font-style:italic; margin-top:.15rem; line-height:1.4; }
 
-/* ── Animaciones barra ───────────────────────────────────────── */
+/* Sliding bar animation used in loading indicators */
 @keyframes barSlide {
   0%   { transform:translateX(-100%); }
   100% { transform:translateX(300%); }
 }
 
+/* Oscillating plane animation used in loading spinners */
 @keyframes planeFly {
   0%   { transform:translateX(-6px) rotate(-5deg); opacity:.6; }
   50%  { transform:translateX(6px)  rotate(5deg);  opacity:1; }
   100% { transform:translateX(-6px) rotate(-5deg); opacity:.6; }
 }
 
-/* ── Loading avión (verificando / calculando) ────────────────── */
+/* Animated plane + progress bar loader shown while arrival time is being calculated */
 .llegada-loader { display:flex; flex-direction:column; align-items:center; gap:.5rem; padding:.5rem 0; width:100%; }
+/* Plane emoji that oscillates left/right */
 .llegada-loader__plane { font-size:1.4rem; animation:planeFly 1.4s ease-in-out infinite; display:block; }
+/* Thin progress bar track */
 .llegada-loader__bar { width:100%; height:5px; background:rgba(212,175,55,.15); border-radius:3px; overflow:hidden; }
+/* Sweeping gold fill on the progress bar */
 .llegada-loader__fill { height:100%; background:linear-gradient(90deg, transparent, #D4AF37, transparent); border-radius:3px; animation:barSlide 1.2s ease-in-out infinite; width:50%; }
 .llegada-loader__text { font-size:.78rem; color:var(--text-muted); font-style:italic; letter-spacing:.3px; }
 
-/* ── Barra sutil estado vacío ────────────────────────────────── */
+/* Very subtle empty-state bar animation under the arrival preview when no data is entered */
 .llegada-empty-bar { width:100%; height:3px; background:rgba(212,175,55,.12); border-radius:3px; overflow:hidden; margin-top:.6rem; }
 .llegada-empty-bar__fill { height:100%; width:40%; background:linear-gradient(90deg, transparent, #D4AF37, transparent); border-radius:3px; animation:barSlide 2.5s ease-in-out infinite; }
 
-/* ── No ruta ─────────────────────────────────────────────────── */
+/* Red-tinted arrival preview shown when the selected route has no timezone configured */
 .llegada-preview--no-ruta { border:2px solid #fca5a5; border-radius:0 10px 0 10px; padding:.85rem 1rem; background:#fff5f5; display:flex; flex-direction:column; gap:.3rem; min-height:60px; }
 .llegada-preview__no-ruta-icon  { font-size:1.05rem; line-height:1; }
 .llegada-preview__no-ruta-title { font-size:.92rem; font-weight:700; color:#b91c1c; }
 .llegada-preview__no-ruta-msg   { font-size:.75rem; color:#7f1d1d; line-height:1.5; }
+/* Small inline button to navigate to route configuration */
 .llegada-preview__no-ruta-btn { margin-top:.3rem; align-self:flex-start; padding:.28rem .7rem; background:#b91c1c; color:#fff; border:none; border-radius:0 6px 0 6px; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); }
 .llegada-preview__no-ruta-btn:hover { background:var(--primary-color); transform:translateY(-1px); }
 
-/* ── TZ display ──────────────────────────────────────────────── */
+/* Display box showing the auto-detected timezone for origin or destination */
 .tz-detected-display { display:flex; align-items:center; gap:.7rem; padding:.7rem 1rem; background:var(--perla-dark); border:2px solid var(--marron-light,#d4c5a9); border-radius:0 10px 0 10px; color:var(--secondary-color); font-size:.88rem; font-weight:500; min-height:46px; }
+/* Italic muted style when no timezone is detected yet */
 .tz-detected-display--empty { color:var(--text-muted); font-style:italic; font-weight:400; }
 .tz-detected-display__icon  { font-size:1.05rem; flex-shrink:0; }
+/* Button that triggers timezone auto-detection from the route data */
 .tz-detect-btn { padding:.55rem 1rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 8px 0 8px; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); white-space:nowrap; flex-shrink:0; }
 .tz-detect-btn:hover:not(:disabled) { background:var(--primary-color); transform:translateY(-2px); }
 .tz-detect-btn:disabled { opacity:.45; cursor:not-allowed; }
 
-/* ── Historial ───────────────────────────────────────────────── */
+/* Wrapper for a date cell that can show a next-day tag beside the date */
 .fecha-llegada-distinta { display:flex; align-items:center; gap:.35rem; white-space:nowrap; }
+/* Amber pill shown when the arrival date differs from the departure date */
 .nextday-tag { display:inline-block; background:#fef3c7; color:#92400e; font-size:.62rem; font-weight:700; padding:.12rem .38rem; border-radius:4px; text-transform:uppercase; letter-spacing:.5px; border:1px solid #fde68a; }
+/* Filter area above reservation/flight history lists */
 .historial-filtros { display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem; }
+/* Tab row for switching between history categories */
 .historial-tabs { display:flex; gap:.5rem; flex-wrap:wrap; }
+/* Individual tab button with color set via --tab-color custom property */
 .historial-tab { display:flex; align-items:center; gap:.5rem; padding:.55rem 1.1rem; border:2px solid #e5e7eb; border-radius:0 8px 0 8px; background:transparent; font-size:.78rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; cursor:pointer; transition:var(--transition); }
 .historial-tab:hover { border-color:var(--tab-color); color:var(--tab-color); }
+/* Active tab fills with the tab color */
 .historial-tab--active { background:var(--tab-color); border-color:var(--tab-color); color:white; }
+/* Small rounded count badge inside the tab */
 .historial-tab__count { background:rgba(255,255,255,.25); padding:.1rem .4rem; border-radius:10px; font-size:.7rem; }
 .historial-tab:not(.historial-tab--active) .historial-tab__count { background:#f3f4f6; color:#6b7280; }
+/* Search input inside the history filter area */
 .historial-search { padding:.75rem 1rem; border:2px solid #e5e7eb; border-radius:0 10px 0 10px; font-size:.88rem; font-family:inherit; width:100%; box-sizing:border-box; transition:var(--transition); }
 .historial-search:focus { outline:none; border-color:var(--primary-color); }
+/* Result count label above the history list */
 .historial-count { font-size:.82rem; color:var(--text-muted); margin-bottom:.75rem; }
 
-/* ══════════════════════════════════════════════════════════════
-   MÉTRICAS
-   ══════════════════════════════════════════════════════════════ */
+/* Metrics section container */
 .met-section { padding:2.25rem; }
 .met-header  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.75rem; }
+/* Filter bar with date inputs and an apply button */
 .met-filtros { display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end; background:#fcfbf9; border:1px solid var(--perla-dark); border-radius:0 16px 0 16px; padding:1.25rem; margin-bottom:1.75rem; }
 .met-filtro-grupo { display:flex; flex-direction:column; gap:.35rem; min-width:130px; }
 .met-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); }
+/* Date/select input inside the metrics filter bar */
 .met-input { padding:.65rem .9rem; border:2px solid var(--perla-dark); border-radius:0 10px 0 10px; font-size:.85rem; font-family:inherit; color:var(--secondary-color); background:var(--white); transition:var(--transition); }
 .met-input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(212,175,55,.12); }
+/* Apply filters button aligned to the bottom of the filter bar */
 .met-btn-aplicar { padding:.7rem 1.75rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 12px 0 12px; font-size:.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); align-self:flex-end; }
 .met-btn-aplicar:hover:not(:disabled) { background:var(--primary-color); transform:translateY(-2px); }
 .met-btn-aplicar:disabled { opacity:.6; cursor:not-allowed; }
+/* Centered loading state for metrics section */
 .met-loading { display:flex; flex-direction:column; align-items:center; gap:1rem; padding:4rem; color:var(--text-muted); }
 .met-loading--sm { padding:2rem; }
+/* Spinning circle loader using gold top border */
 .met-spinner { width:34px; height:34px; border:3px solid var(--perla-dark); border-top-color:var(--primary-color); border-radius:50%; animation:metSpin .8s linear infinite; }
 @keyframes metSpin { to { transform:rotate(360deg); } }
 
+/* Dark gradient revenue banner with large gold amount and breakdown stats */
 .met-ingresos-banner { display:flex; align-items:center; gap:2rem; background:linear-gradient(135deg,#1C1A18 0%,#2d2a26 100%); border-radius:14px; padding:1.5rem 1.75rem; margin-bottom:1.5rem; color:white; flex-wrap:wrap; }
+/* Left column showing the primary revenue figure */
 .met-ing-main { display:flex; flex-direction:column; min-width:190px; border-right:1px solid rgba(255,255,255,.15); padding-right:2rem; flex-shrink:0; }
 .met-ing-label { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:.3rem; }
+/* Large gold revenue number */
 .met-ing-valor { font-size:1.9rem; font-weight:800; color:#D4AF37; line-height:1.1; }
 .met-ing-sub   { font-size:.75rem; color:rgba(255,255,255,.45); margin-top:.35rem; }
+/* Flex row of revenue breakdown items */
 .met-ing-stats { display:flex; gap:1.5rem; flex-wrap:wrap; flex:1; }
 .met-ing-stat  { display:flex; align-items:flex-start; gap:.5rem; }
+/* Small colored dot identifying each revenue category */
 .met-ing-stat__dot { width:9px; height:9px; border-radius:50%; margin-top:4px; flex-shrink:0; }
 .met-ing-stat__dot--turista   { background:#D4AF37; }
 .met-ing-stat__dot--ejecutivo { background:#10b981; }
@@ -335,119 +427,160 @@ body:has(.modal-overlay) { overflow:hidden; }
 .met-ing-stat__label { display:block; font-size:.68rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.05em; }
 .met-ing-stat__val   { display:block; font-size:.92rem; font-weight:700; color:white; }
 
+/* Two-column grid for chart cards; stacks to one column on tablet */
 .met-graficas { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.75rem; }
+/* Chart card with light shadow and asymmetric corners */
 .met-grafica { background:var(--white); border:1px solid var(--perla-dark); border-radius:4px 20px 4px 20px; padding:1.5rem; box-shadow:0 8px 24px rgba(28,26,24,.04); }
+/* Wide card spans both grid columns */
 .met-grafica--wide  { grid-column:1/-1; }
 .met-grafica--donut { display:flex; flex-direction:column; }
 .met-grafica__titulo    { font-size:1rem; font-weight:700; color:var(--secondary-color); margin:0 0 .2rem; }
 .met-grafica__subtitulo { font-size:.75rem; color:var(--text-muted); margin:0 0 1.1rem; }
+/* Scrollable SVG wrapper */
 .met-svg-wrap { width:100%; overflow-x:auto; }
 .met-svg { width:100%; height:auto; max-height:200px; display:block; }
+/* Legend row below a chart */
 .met-grafica__leyenda { display:flex; align-items:center; gap:.5rem; font-size:.75rem; color:var(--text-muted); margin-top:.9rem; flex-wrap:wrap; }
+/* Small circle dot for chart legend items */
 .met-leyenda-dot { display:inline-block; width:11px; height:11px; border-radius:50%; flex-shrink:0; }
 
+/* Stacked double bar chart rows */
 .met-barras-dobles { display:flex; flex-direction:column; gap:.55rem; }
+/* Two-column layout: label on left, stacked bars on right */
 .met-barra-doble-row    { display:grid; grid-template-columns:90px 1fr; align-items:center; gap:.5rem; }
 .met-barra-doble-label  { display:flex; flex-direction:column; gap:.1rem; }
 .met-barra-doble-tracks { display:flex; flex-direction:column; gap:.2rem; }
 .met-barra-doble-track  { display:flex; align-items:center; gap:.4rem; height:11px; }
+/* Proportional fill bar that transitions width */
 .met-barra-fill { height:100%; border-radius:3px; min-width:2px; transition:width .4s ease; }
+/* Gold bar for tourist class, green for executive */
 .met-barra-fill--gold  { background:#D4AF37; }
 .met-barra-fill--green { background:#10b981; }
+/* Tiny rank number beside the bar */
 .met-barra-rank { font-size:.66rem; color:var(--text-muted); font-weight:700; min-width:20px; }
 .met-barra-ruta { font-size:.78rem; font-weight:600; color:var(--secondary-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .met-barra-val  { font-size:.7rem; color:var(--text-muted); white-space:nowrap; }
 
+/* Donut chart wrapper with flex layout for chart + legend side by side */
 .met-donut-wrap    { display:flex; align-items:center; gap:1.75rem; flex:1; }
 .met-donut-svg     { width:155px; height:155px; flex-shrink:0; }
+/* Vertical legend list for the donut chart */
 .met-donut-leyenda { display:flex; flex-direction:column; gap:.65rem; }
 .met-ley-item { display:flex; align-items:flex-start; gap:.45rem; }
 .met-ley-tipo { font-size:.82rem; font-weight:600; color:var(--secondary-color); display:block; }
 .met-ley-num  { font-size:.82rem; color:var(--secondary-color); display:block; }
+/* Muted sub-text inside the legend number cell */
 .met-ley-num em { font-style:normal; color:var(--text-muted); font-size:.72rem; margin-left:.2rem; }
 .met-ley-sub  { display:block; font-size:.7rem; color:var(--text-muted); }
 
+/* Sales channel breakdown card with horizontal bar per channel */
 .met-canal-wrap   { background:#f7f4f0; border:1px solid #EBE6E0; border-radius:12px; padding:1.1rem 1.4rem; margin-bottom:1.5rem; }
 .met-canal__titulo { font-size:.88rem; font-weight:700; color:var(--secondary-color); margin:0 0 .85rem; }
 .met-canal-pills  { display:flex; gap:1.5rem; flex-wrap:wrap; }
+/* Individual channel pill with a percentage fill bar */
 .met-canal-pill   { flex:1; min-width:150px; display:flex; flex-direction:column; gap:.28rem; }
+/* CSS gradient bar showing fill percentage via --pct custom property */
 .met-canal-bar    { height:7px; border-radius:4px; background:linear-gradient(to right, var(--color,#D4AF37) var(--pct,0%), #EBE6E0 var(--pct,0%)); }
 .met-canal-tipo   { font-size:.78rem; font-weight:600; color:var(--secondary-color); }
 .met-canal-num    { font-size:.75rem; color:var(--text-muted); }
 
+/* Detailed metrics table card */
 .met-listado { background:var(--white); border:1px solid var(--perla-dark); border-radius:4px 20px 4px 20px; padding:1.75rem; box-shadow:0 8px 24px rgba(28,26,24,.04); }
 .met-listado__header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; }
 .met-listado__titulo { font-size:1rem; font-weight:700; color:var(--secondary-color); margin:0; }
+/* Ghost export button that fills dark on hover */
 .met-btn-exportar { padding:.55rem 1.25rem; background:transparent; border:2px solid var(--secondary-color); border-radius:0 10px 0 10px; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); color:var(--secondary-color); }
 .met-btn-exportar:hover { background:var(--secondary-color); color:var(--white); }
 .met-tabla-wrap { overflow-x:auto; }
+/* Small route code badge inside the metrics table */
 .met-ruta-tag { display:inline-block; background:#EBE6E0; border-radius:4px; padding:.1rem .35rem; font-size:.75rem; font-weight:600; color:var(--secondary-color); }
+/* Pill-shaped type badge distinguishing web vs REST API sales */
 .met-tipo-badge { display:inline-block; padding:.15rem .5rem; border-radius:999px; font-size:.7rem; font-weight:600; }
 .met-tipo-badge--web  { background:#fef9e7; color:#92400e; border:1px solid #D4AF37; }
 .met-tipo-badge--rest { background:#f0fdf4; color:#065f46; border:1px solid #10b981; }
+/* Pagination row below the metrics table */
 .met-paginado { display:flex; align-items:center; justify-content:center; gap:1.25rem; padding:1.25rem 0 0; border-top:1px solid var(--perla-dark); margin-top:1rem; }
 .met-pag-btn { padding:.55rem 1.1rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 8px 0 8px; font-size:.78rem; font-weight:600; cursor:pointer; transition:var(--transition); }
 .met-pag-btn:hover:not(:disabled) { background:var(--primary-color); }
 .met-pag-btn:disabled { opacity:.35; cursor:not-allowed; }
 .met-pag-info { font-size:.8rem; color:var(--text-muted); }
+/* Centered empty-state message for metrics with no data */
 .met-empty { text-align:center; padding:2.5rem; color:var(--text-muted); font-size:.88rem; }
 
-/* ══════════════════════════════════════════════════════════════
-   RESPONSIVE
-   ══════════════════════════════════════════════════════════════ */
+/* Responsive adjustments: sidebar collapses to 220px, charts stack on 1024px */
 @media (max-width:1024px) {
   .admin__content { grid-template-columns:220px 1fr; gap:2rem; }
   .met-graficas { grid-template-columns:1fr; }
   .met-grafica--wide { grid-column:1; }
 }
 
-/* ── AdminAgencias ───────────────────────────────────────────── */
+/* Summary cards row for the agencies panel */
 .ag-stats { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:2rem; }
+/* Individual stat card with large count and label */
 .ag-stat { flex:1; min-width:100px; padding:1rem 1.25rem; background:var(--bg-color); border:1px solid rgba(235,230,224,.7); border-radius:4px 14px 4px 14px; text-align:center; }
 .ag-stat__num { display:block; font-size:1.8rem; font-weight:700; color:var(--secondary-color); }
 .ag-stat__lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); }
+/* Color variants for the stat count: green for active, gray for inactive, amber for warnings */
 .ag-stat--green .ag-stat__num { color:#065f46; }
 .ag-stat--gray  .ag-stat__num { color:#6b7280; }
 .ag-stat--warn  .ag-stat__num { color:#92400e; }
 
+/* Table cell showing user name stacked above username */
 .ag-user-cell       { display:flex; flex-direction:column; gap:.1rem; }
 .ag-user-cell__name { font-size:.88rem; font-weight:600; color:var(--secondary-color); }
 .ag-user-cell__user { font-size:.75rem; color:var(--text-muted); }
+/* Amber pill shown when no user is assigned to an agency */
 .ag-sin-usuario     { font-size:.78rem; background:#fef3c7; color:#92400e; padding:.2rem .6rem; border-radius:20px; font-weight:600; }
 
+/* Blue button to set or edit the agency discount percentage */
 .ag-discount-btn { display:inline-flex; align-items:center; gap:.35rem; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:0 8px 0 8px; padding:.3rem .7rem; font-size:.82rem; font-weight:700; cursor:pointer; transition:background .2s; }
 .ag-discount-btn:hover { background:#dbeafe; }
 
+/* Status select dropdown with color-coded states */
 .ag-estado-select { padding:.3rem .6rem; border-radius:0 8px 0 8px; font-size:.78rem; font-weight:700; border:none; cursor:pointer; text-transform:uppercase; letter-spacing:.5px; }
+/* Green = active, gray = inactive, amber = suspended */
 .ag-estado--1 { background:#d1fae5; color:#065f46; }
 .ag-estado--2 { background:#f3f4f6; color:#6b7280; }
 .ag-estado--3 { background:#fef3c7; color:#92400e; }
 
+/* Button that assigns a user to an agency record */
 .ag-btn-asignar { background:var(--secondary-color); color:white; padding:.45rem .85rem; border:none; border-radius:0 8px 0 8px; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:background .2s, transform .2s; }
 .ag-btn-asignar:hover { background:var(--primary-color); transform:translateY(-1px); }
 
+/* Full-screen overlay for agency modals */
 .ag-overlay { position:fixed; inset:0; background:rgba(28,26,24,.55); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem; }
+/* Agency modal dialog with asymmetric corners */
 .ag-modal { background:var(--white); border-radius:4px 24px 4px 24px; box-shadow:0 25px 60px rgba(0,0,0,.18); width:100%; max-width:540px; display:flex; flex-direction:column; }
 .ag-modal--sm { max-width:400px; }
+/* Sticky modal header with title and close button */
 .ag-modal__header { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem 1rem; border-bottom:1px solid rgba(235,230,224,.6); }
 .ag-modal__title { font-size:1.2rem; font-weight:700; color:var(--secondary-color); margin:0; }
 .ag-modal__close { background:none; border:none; font-size:1.5rem; color:var(--text-muted); cursor:pointer; line-height:1; padding:0 .25rem; }
 .ag-modal__close:hover { color:var(--secondary-color); }
+/* Padded body area of the agency modal */
 .ag-modal__body  { padding:1.5rem 2rem; display:flex; flex-direction:column; gap:1.1rem; }
 .ag-modal__desc  { margin:0 0 .5rem; font-size:.9rem; color:var(--text-muted); }
+/* Footer with action buttons aligned to the right */
 .ag-modal__footer { display:flex; justify-content:flex-end; gap:.75rem; padding:1rem 2rem 1.5rem; border-top:1px solid rgba(235,230,224,.6); }
 
+/* Field wrapper with stacked label and input */
 .ag-field        { display:flex; flex-direction:column; gap:.4rem; }
 .ag-field__label { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--secondary-color); }
+/* Required asterisk colored in primary gold */
 .ag-required     { color:var(--primary-color); }
+/* Text/select inputs in the agency form */
 .ag-field__input, .ag-field__select { padding:.8rem 1rem; border:1.5px solid #e5e7eb; border-radius:0 8px 0 8px; font-size:.92rem; color:var(--secondary-color); background:var(--white); font-family:inherit; outline:none; transition:border-color .2s; }
 .ag-field__input:focus, .ag-field__select:focus { border-color:var(--primary-color); }
+/* Red border on input validation error */
 .ag-field__input--err { border-color:#f87171; }
+/* Small red error message below the field */
 .ag-field__err   { font-size:.75rem; color:#dc2626; margin:0; }
 
+/* Informational notice box inside the agency modal */
 .ag-notice       { padding:.75rem 1rem; border-radius:6px; font-size:.83rem; line-height:1.5; }
 .ag-notice--warn { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
 
+/* Mobile: agency stats wrap tighter, modal uses simpler radius */
 @media (max-width:768px) {
   .ag-stats { gap:.75rem; }
   .ag-modal { border-radius:12px; }
@@ -455,10 +588,12 @@ body:has(.modal-overlay) { overflow:hidden; }
   .ag-modal__header { padding-left:1.25rem; padding-right:1.25rem; }
 }
 
+/* Mobile: sidebar becomes a horizontal tab bar, main takes full width */
 @media (max-width:768px) {
   .admin__content { grid-template-columns:1fr; }
   .admin__sidebar { position:static; }
   .admin-nav { flex-direction:row; flex-wrap:wrap; padding:.75rem; border-radius:12px; gap:.25rem; }
+  /* Nav items switch from left border to bottom border indicator */
   .admin-nav__item { padding:.55rem .85rem; border-left:none; border-bottom:3px solid transparent; font-size:.7rem; border-radius:8px; }
   .admin-nav__item--active { border-left:none; border-bottom-color:var(--primary-color); }
   .admin-section { padding:1.5rem; border-radius:12px; }
@@ -473,8 +608,10 @@ body:has(.modal-overlay) { overflow:hidden; }
   .confirm-dialog__actions { flex-direction:column; }
   .confirm-dialog__btn { width:100%; }
   .toast-stack { bottom:1rem; right:1rem; max-width:calc(100vw - 2rem); }
+  /* Crew items stack their info and remove button vertically */
   .tripulante-item { flex-direction:column; align-items:flex-start; gap:.6rem; }
   .tripulante-item__remove { align-self:flex-end; }
+  /* Metrics banner stacks vertically with a bottom border separator */
   .met-ingresos-banner { flex-direction:column; align-items:flex-start; }
   .met-ing-main { border-right:none; border-bottom:1px solid rgba(255,255,255,.15); padding-right:0; padding-bottom:1rem; }
   .met-filtros { flex-direction:column; }
@@ -482,6 +619,7 @@ body:has(.modal-overlay) { overflow:hidden; }
   .met-donut-wrap { flex-direction:column; align-items:flex-start; }
 }
 
+/* Extra-small screens: reduce padding on the header and metrics sections */
 @media (max-width:480px) {
   .admin__header { padding-left:1rem; }
   .admin-section { padding:1.25rem; }

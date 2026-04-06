@@ -1,10 +1,25 @@
 <script>
-  // @ts-nocheck
+/**
+ * @file SobreNosotros.svelte
+ * @description Static "About Us" page for Broom AirLine. Presents the company's background
+ * as a Guatemalan airline entering the tourism market in 2026, its vision as an integrated
+ * operational platform, and six feature cards covering flight management, secure payments,
+ * role-based access control, the admin dashboard with metrics, robust security (CAPTCHA, email
+ * verification), and REST API integration for travel agencies and hotels. Includes a contact
+ * section with a button to navigate to the Contactanos page. Accessible from the main navigation
+ * with a back button that returns to the home page.
+ */
+// @ts-nocheck
   import '../styles/info-pages.css';
+
+  /** Function used to navigate to another page in the application. @type {function} */
   export let navigateTo;
 </script>
 
+<!-- Contenedor principal de la pagina Sobre Nosotros -->
 <div class="info-page">
+
+  <!-- Seccion hero con icono, nombre de la aerolinea y subtitulo introductorio -->
   <div class="info-hero">
     <div class="info-hero__content">
       <div class="info-hero__icon">
@@ -19,6 +34,8 @@
   </div>
 
   <div class="info-container">
+
+    <!-- Boton de regreso a la pagina de inicio -->
     <button class="info-back" on:click={() => navigateTo('home')}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
@@ -26,22 +43,26 @@
       Volver al inicio
     </button>
 
+    <!-- Descripcion de la empresa: quienes somos y nuestro rol en el mercado aereo guatemalteco -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">Quienes somos</h2>
       <p class="info-prose">Broom AirLine es una aerolinea guatemalteca que, tras un proceso de consolidacion interna, ingresa al mercado turistico en 2026 respaldada por un sistema tecnologico que actua como la columna vertebral de su operacion aerea y comercial.</p>
       <p class="info-prose">Nuestro sistema no se limita a un portal de ventas: integra la gestion operativa de vuelos, el control de inventarios de asientos, la administracion de usuarios por roles, la trazabilidad de cada transaccion y la generacion de metricas para la toma de decisiones. A traves de una interfaz web intuitiva, la plataforma permite a la aerolinea operar de manera eficiente mientras ofrece a los pasajeros una experiencia de compra clara y confiable.</p>
     </div>
 
+    <!-- Vision del proyecto: objetivo estrategico de la plataforma a largo plazo -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">Vision del proyecto</h2>
       <p class="info-prose">La vision de Broom AirLine es consolidarse como un referente dentro de la industria aerea, apoyandose en un sistema integral que unifique operacion, tecnologia y experiencia de usuario en una sola plataforma.</p>
       <p class="info-prose">El sistema esta disenado para ser el nucleo operativo que permita la planificacion de vuelos, la administracion de inventarios, la atencion al cliente y la integracion con socios comerciales como agencias de viajes y hoteles mediante servicios REST. La plataforma evolucionara conforme crezcan las necesidades del negocio, manteniendo altos estandares de disponibilidad y seguridad.</p>
     </div>
 
+    <!-- Grilla de seis tarjetas de caracteristicas principales de la plataforma -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">Lo que ofrece nuestra plataforma</h2>
       <div class="info-cards-grid">
 
+        <!-- Tarjeta: gestion integral de vuelos con disponibilidad en tiempo real -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -54,6 +75,7 @@
           <p class="info-card__text">Planificacion de vuelos con origen, destino, escalas, duracion, terminal, puerta, fecha, hora, precio por tipo de asiento y control de disponibilidad en tiempo real.</p>
         </div>
 
+        <!-- Tarjeta: pagos con cifrado SSL y boleto PDF por correo -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -65,6 +87,7 @@
           <p class="info-card__text">Procesamiento de pagos con tarjeta de credito y debito bajo cifrado SSL. Registro permanente de cada transaccion con fecha, hora, monto y numero unico. Boleto electronico en PDF enviado por correo automaticamente.</p>
         </div>
 
+        <!-- Tarjeta: sistema de roles con tres tipos de usuario y permisos especificos -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -78,6 +101,7 @@
           <p class="info-card__text">Tres tipos de usuario: Cliente Registrado, Administrador y WebService. Cada rol tiene permisos especificos verificados en cada peticion al servidor. Solo administradores acceden al panel de gestion de vuelos, usuarios y metricas.</p>
         </div>
 
+        <!-- Tarjeta: dashboard administrativo con graficos y metricas de ventas -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -88,6 +112,7 @@
           <p class="info-card__text">Panel administrativo con graficos visuales de ventas del mes, numero de reservas y vuelos mas vendidos. Filtrado por rango de fechas y actualizacion en tiempo real para la toma de decisiones.</p>
         </div>
 
+        <!-- Tarjeta: seguridad con CAPTCHA, verificacion de correo y compatibilidad Linux -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -98,6 +123,7 @@
           <p class="info-card__text">CAPTCHA en formularios de registro y login (despues de 2 intentos fallidos). Verificacion de correo electronico obligatoria para activar la cuenta. Compatibilidad completa con servidores Linux para un despliegue seguro y estable.</p>
         </div>
 
+        <!-- Tarjeta: API REST para agencias de viajes y hoteles con autenticacion por API Key -->
         <div class="info-card" style="margin:0">
           <span class="info-card__icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -112,6 +138,7 @@
       </div>
     </div>
 
+    <!-- Seccion de contacto con datos de comunicacion y boton hacia la pagina Contactanos -->
     <div class="info-card">
       <h2 class="info-section-title" style="margin-top:0">Contacto</h2>
       <p class="info-prose">Tienes alguna pregunta sobre nuestra empresa o quieres saber mas de nuestros servicios? Estamos aqui para ayudarte.</p>

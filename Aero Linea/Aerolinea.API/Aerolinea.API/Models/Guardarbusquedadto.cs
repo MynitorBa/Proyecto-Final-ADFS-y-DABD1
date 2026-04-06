@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO utilizado para persistir los parametros de una busqueda de vuelo realizada por el usuario.
+    /// Contiene origen, destino, fechas, numero de pasajeros y tipo de viaje.
+    /// </summary>
     public class GuardarBusquedaDto
     {
         public int OrigenId { get; set; }

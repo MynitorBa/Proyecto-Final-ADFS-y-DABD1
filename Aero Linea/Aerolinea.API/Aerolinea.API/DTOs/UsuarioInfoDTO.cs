@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura con la informacion completa de un usuario para uso administrativo.
+    /// Incluye datos personales, ubicacion, rol asignado y lista de nacionalidades registradas.
+    /// </summary>
     public class UsuarioInfoDTO
     {
         public int Id { get; set; }

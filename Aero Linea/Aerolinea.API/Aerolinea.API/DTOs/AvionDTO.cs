@@ -1,5 +1,9 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura que expone la informacion de una aeronave registrada en la flota.
+    /// Incluye marca, modelo, capacidad, nombre completo e imagen opcional en Base64.
+    /// </summary>
     public class AvionDTO
     {
         public int Id { get; set; }

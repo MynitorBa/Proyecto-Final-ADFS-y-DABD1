@@ -1,27 +1,57 @@
 <script>
   // @ts-nocheck
+/**
+ * @file Carrito.svelte
+ * @description Shopping cart page that displays all pending reservations (estadoReservaId === 1)
+ * for the authenticated user. Fetches reservations from the API on mount, groups each
+ * reservation's tickets by flight for display, and shows a summary sidebar with individual
+ * reservation totals and the combined grand total. Redirects unauthenticated users to the
+ * login page and provides a button to proceed to the checkout page.
+ */
+
   import '../styles/carrito.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
+  /** Navigation function provided by the app router to change the current page. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  // ── misma lógica de acceso que Profile ──
+  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
   let usuarioId = null;
+
+  /** Unsubscribe handle for the session store subscription. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
+  /** Indicates whether the reservations are currently being loaded from the API. @type {boolean} */
   let cargando    = true;
-  let errorMsg    = '';
-  let reservas    = [];   // solo las Pendientes (estadoReservaId === 1)
 
+  /** Error message string set when the API request fails. @type {string} */
+  let errorMsg    = '';
+
+  /** Array of pending reservations (estadoReservaId === 1) fetched from the API. @type {Array} */
+  let reservas    = [];
+
+  /**
+   * Lifecycle hook that runs after the component mounts.
+   * Redirects to login if no user session exists, otherwise fetches pending reservations.
+   * Returns the session store unsubscribe function for cleanup.
+   * @async
+   * @returns {Promise<Function>}
+   */
   onMount(async () => {
     if (!usuarioId) { navigateTo('login'); return; }
     await cargarReservasPendientes();
     return () => unsubscribe();
   });
 
+  /**
+   * Fetches the authenticated user's reservations from the API and filters to keep only
+   * those with estadoReservaId === 1 (Pending). Sets cargando and errorMsg as side effects.
+   * @async
+   * @returns {Promise<void>}
+   */
   async function cargarReservasPendientes() {
     cargando = true; errorMsg = '';
     try {
@@ -30,7 +60,6 @@
       });
       if (!res.ok) throw new Error('Error al cargar reservaciones.');
       const todas = await res.json();
-      // Filtrar solo las Pendientes
       reservas = todas.filter(r => r.estadoReservaId === 1);
     } catch (e) {
       errorMsg = e.message ?? 'Error de conexión.';
@@ -39,18 +68,41 @@
     }
   }
 
+  /**
+   * Formats a date string into a localized short date using the es-GT locale.
+   * Returns an em dash if the input is falsy.
+   * @param {string|null} f - ISO date string to format.
+   * @returns {string} Formatted date such as "15 ene. 2025" or "—".
+   */
   function formatFecha(f) {
     if (!f) return '—';
     return new Date(f).toLocaleDateString('es-GT', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
+  /**
+   * Extracts and returns the HH:MM portion of a time string.
+   * Returns an em dash if the input is falsy.
+   * @param {string|null} h - Time string in HH:MM:SS format.
+   * @returns {string} The first five characters (HH:MM) or "—".
+   */
   function formatHora(h) { return h ? h.substring(0, 5) : '—'; }
 
+  /**
+   * Formats a numeric price into a USD string with two decimal places.
+   * @param {number} p - The price value to format.
+   * @returns {string} Formatted price string such as "$ 1,250.00".
+   */
   function formatPrecio(p) {
     return `$ ${Number(p).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   }
 
-  // Agrupar boletos de una reserva por vuelo
+  /**
+   * Groups a flat array of ticket objects by their vueloId.
+   * Returns an array of objects, each containing the first ticket as the flight reference
+   * and a boletos array with all tickets for that flight.
+   * @param {Array} boletos - Array of ticket objects each containing a vueloId property.
+   * @returns {Array<{vuelo: object, boletos: Array}>} Grouped flight entries.
+   */
   function agruparPorVuelo(boletos) {
     const map = {};
     for (const b of boletos) {
@@ -60,18 +112,28 @@
     return Object.values(map);
   }
 
+  /**
+   * Calculates the total price of all tickets within a single reservation.
+   * @param {object} reserva - Reservation object containing a boletos array with precio fields.
+   * @returns {number} Sum of all ticket prices in the reservation.
+   */
   function calcularTotal(reserva) {
     return reserva.boletos.reduce((s, b) => s + b.precio, 0);
   }
 
+  /**
+   * Navigates the user to the checkout page to complete payment for pending reservations.
+   */
   function goToCheckout() {
     navigateTo('checkout');
   }
 </script>
 
+<!-- Contenedor principal del carrito de pasajeros -->
 <div class="carrito">
   <div class="carrito__container">
 
+    <!-- Encabezado del carrito con titulo y contador de reservaciones pendientes -->
     <div class="carrito__header">
       <button class="carrito__back" on:click={() => navigateTo('home')}>
         Continuar comprando
@@ -82,6 +144,7 @@
       {/if}
     </div>
 
+    <!-- Estado de carga, error o carrito vacio -->
     {#if cargando}
       <div style="text-align:center; padding: 3rem; color: #9c8a78;">Cargando reservaciones...</div>
 
@@ -97,6 +160,7 @@
       </div>
 
     {:else}
+      <!-- Listado de reservaciones pendientes agrupadas por vuelo -->
       <div class="carrito__content">
         <div class="carrito__items">
 
@@ -168,7 +232,7 @@
 
         </div>
 
-        <!-- Sidebar resumen -->
+        <!-- Sidebar con resumen de costos y boton para proceder al pago -->
         <aside class="carrito__summary">
           <div class="cart-summary">
             <h2 class="cart-summary__title">Resumen</h2>

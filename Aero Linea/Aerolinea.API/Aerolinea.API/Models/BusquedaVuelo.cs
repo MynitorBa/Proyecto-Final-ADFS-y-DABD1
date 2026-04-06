@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.Models
+namespace Aerolinea.API.Models
 {
+    /// <summary>
+    /// Entidad que registra una busqueda de vuelo realizada por un usuario o agencia.
+    /// Almacena origen, destino, fechas, cantidad de pasajeros y tipo de viaje
+    /// para fines de analisis y metricas del sistema.
+    /// </summary>
     public class BusquedaVuelo
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();

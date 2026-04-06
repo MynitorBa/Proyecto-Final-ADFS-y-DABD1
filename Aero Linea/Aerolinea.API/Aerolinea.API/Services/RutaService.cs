@@ -1,20 +1,35 @@
-﻿using Aerolinea.API.Models.DTOs;
+using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Repositories;
 
 namespace Aerolinea.API.Services
 {
+    /// <summary>
+    /// Servicio de rutas aereas. Gestiona la logica de negocio para consultar, crear
+    /// y actualizar rutas entre aeropuertos, incluyendo el calculo de hora de llegada
+    /// con conversion de zonas horarias IANA y Windows.
+    /// </summary>
     public class RutaService
     {
         private readonly RutaRepository _repository;
 
+        /// <summary>
+        /// Inicializa el servicio con el repositorio de rutas.
+        /// </summary>
         public RutaService(RutaRepository repository)
         {
             _repository = repository;
         }
 
+        /// <summary>
+        /// Retorna la lista completa de rutas registradas en el sistema.
+        /// </summary>
         public async Task<List<RutaDTO>> ObtenerTodas()
             => await _repository.ObtenerTodas();
 
+        /// <summary>
+        /// Actualiza la duracion estimada en minutos de una ruta existente.
+        /// Valida que el valor sea mayor a 0 y no supere los 10,000 minutos.
+        /// </summary>
         public async Task<bool> ActualizarDuracion(int id, int duracionMinutos)
         {
             if (duracionMinutos <= 0)
@@ -25,6 +40,11 @@ namespace Aerolinea.API.Services
             return await _repository.ActualizarDuracion(id, duracionMinutos);
         }
 
+        /// <summary>
+        /// Calcula la hora y fecha de llegada estimadas dado el aeropuerto de origen, destino,
+        /// fecha y hora de salida. Aplica conversion de zonas horarias si ambos aeropuertos
+        /// tienen zona configurada; de lo contrario usa calculo directo sin conversion.
+        /// </summary>
         public async Task<CalculoLlegadaResponseDTO> CalcularLlegada(CalculoLlegadaRequestDTO request)
         {
             if (request.AeropuertoOrigenId <= 0 || request.AeropuertoDestinoId <= 0)
@@ -56,6 +76,12 @@ namespace Aerolinea.API.Services
             };
         }
 
+        /// <summary>
+        /// Calcula la hora y fecha de llegada local en destino aplicando la duracion del vuelo
+        /// y la diferencia de zonas horarias entre origen y destino. Si alguna zona no esta
+        /// configurada o no puede resolverse, realiza el calculo sin conversion e incluye una
+        /// nota explicativa en el resultado.
+        /// </summary>
         public static (TimeSpan horaLlegada, DateTime fechaLlegada, bool usoZonas, string nota)
             CalcularLlegadaConZonas(
                 DateTime fechaSalida,
@@ -124,9 +150,17 @@ namespace Aerolinea.API.Services
             throw new TimeZoneNotFoundException($"No se pudo resolver la zona horaria: {tzId}");
         }
 
+        /// <summary>
+        /// Verifica si ya existe una ruta registrada entre los aeropuertos de origen y destino indicados.
+        /// </summary>
         public async Task<bool> ExisteRuta(int origenId, int destinoId)
             => await _repository.ExisteRuta(origenId, destinoId);
 
+        /// <summary>
+        /// Crea una nueva ruta entre dos aeropuertos con la duracion estimada en minutos.
+        /// Valida que origen y destino sean distintos, que la duracion sea valida y que
+        /// la ruta no exista previamente. Retorna una tupla con el resultado, el ID y un mensaje.
+        /// </summary>
         public async Task<(bool creada, int rutaId, string mensaje)> CrearRuta(
             int origenId, int destinoId, int duracionEstimada)
         {

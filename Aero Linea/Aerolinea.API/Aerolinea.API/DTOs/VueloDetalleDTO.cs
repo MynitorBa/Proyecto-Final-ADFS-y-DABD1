@@ -1,5 +1,10 @@
-﻿namespace Aerolinea.API.DTOs
+namespace Aerolinea.API.DTOs
 {
+    /// <summary>
+    /// DTO de lectura con el detalle completo de un vuelo para mostrar en resultados de busqueda
+    /// y paneles de administracion. Incluye estado, avion, aeropuertos de origen y destino,
+    /// precios, disponibilidad por clase y lista de tripulantes asignados.
+    /// </summary>
     public class VueloDetalleDTO
     {
         public int Id { get; set; }
