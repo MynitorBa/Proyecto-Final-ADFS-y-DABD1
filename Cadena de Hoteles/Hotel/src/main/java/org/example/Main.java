@@ -25,6 +25,7 @@ import org.example.controllers.AdminBusquedaController;
 import org.example.controllers.EmailReservacionController;
 import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.BusquedaAgenciaController;
+import org.example.controllers.BusquedaAerolineaController;
 import org.example.controllers.ReservacionAgenciaController;
 import org.example.controllers.PagoAgenciaController;
 
@@ -67,6 +68,8 @@ public class Main {
         UsuarioNacionalidadRepository  usuarioNacionalidadRepository  = new UsuarioNacionalidadRepository();
         UsuarioRepository              usuarioRepository              = new UsuarioRepository();
 
+        AerolineaAliadaRepository aerolineaAliadaRepository = new AerolineaAliadaRepository();
+
         // Services
         AdminBusquedaService      adminBusquedaService      = new AdminBusquedaService(adminBusquedaRepository);
         AdminReservacionService   adminReservacionService   = new AdminReservacionService(adminReservacionRepository);
@@ -91,6 +94,8 @@ public class Main {
         ReservacionService        reservacionService        = new ReservacionService(reservacionRepository);
         SesionService             sesionService             = new SesionService(sesionRepository);
         UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository);
+
+        BusquedaAerolineaService busquedaAerolineaService = new BusquedaAerolineaService(aerolineaAliadaRepository);
 
         // Hilo de expiracion de reservaciones pendientes
         expiracionService.iniciar();
@@ -133,6 +138,9 @@ public class Main {
         new ReservacionAgenciaController(reservacionAgenciaService).registerRoutes(app);
         new BusquedaAgenciaController(busquedaAgenciaService).registerRoutes(app);
         new PagoAgenciaController(pagoAgenciaService).registerRoutes(app);
+
+        // Controllers de aerolineas
+        new BusquedaAerolineaController(busquedaAerolineaService).registerRoutes(app);
 
         // Controllers adicionales
         new DestinosController(destinosService).registerRoutes(app);
