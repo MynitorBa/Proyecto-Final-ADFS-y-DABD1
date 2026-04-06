@@ -38,7 +38,7 @@ public class AuthMiddleware {
      * Se ejecuta antes de cada peticion. Si la ruta es publica o pertenece
      * al prefijo /agencia/, la deja pasar sin validar. De lo contrario,
      * exige un cookie auth_token valido y extrae los claims del usuario
-     * para inyectarlos en el contexto.
+     * para inyectarlos en el contexto. (misma situación para /aerolinea/)
      *
      * @param app instancia de Javalin donde se registra el middleware.
      */
@@ -48,6 +48,8 @@ public class AuthMiddleware {
 
             // Las rutas de agencia usan su propio middleware de token
             if (ctx.path().startsWith("/agencia/")) return;
+            // Las rutas de Aerolineas usan su propio middleware de token
+            if (ctx.path().startsWith("/aerolinea/")) return;
 
             String token = ctx.cookie("auth_token");
 
