@@ -50,6 +50,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input v-model="busqueda" type="text" placeholder="Buscar proveedor..." class="adm-search__input" />
               </div>
+              <!-- Botón para actualizar el catálogo manualmente desde el panel de administración -->
+              <button class="adm-btn adm-btn--outline" @click="actualizarCatalogo" :disabled="actualizando" type="button">
+                <div v-if="actualizando" class="adm-spinner adm-spinner--sm"></div>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Actualizar catálogo
+              </button>
               <button class="adm-btn adm-btn--yellow" @click="abrirFormNuevo" type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Agregar proveedor
@@ -235,8 +241,8 @@
 /**
  * @file GestionProveedores.vue
  * @description Vista del panel de administración para gestionar los proveedores externos
- * (aerolíneas y hoteles). Permite agregar, editar, activar/desactivar, probar la conexión
- * y ejecutar handshake con cada proveedor conectado.
+ * (aerolíneas y hoteles). Permite agregar, editar, activar/desactivar, probar la conexión,
+ * ejecutar handshake con cada proveedor conectado y actualizar el catálogo manualmente.
  */
 import { ref, computed, onMounted } from 'vue'
 import Encabezado from '../../components/Encabezado.vue'
@@ -278,6 +284,9 @@ const toggling       = ref(null)
 
 /** ID del proveedor que está ejecutando el handshake. @type {import('vue').Ref<number|null>} */
 const handshaking    = ref(null)
+
+/** Indica si la actualización manual del catálogo está en proceso. @type {import('vue').Ref<boolean>} */
+const actualizando   = ref(false)
 
 /** Lista de usuarios conectados o disponibles en el WebSocket. @type {import('vue').Ref<any[]>} */
 const usuariosWS = ref([])
@@ -541,6 +550,27 @@ async function iniciarHandshake(p) {
     mostrarToast('err', 'Error en el handshake.')
   } finally {
     handshaking.value = null
+  }
+}
+
+/**
+ * Dispara la actualización manual del catálogo llamando al endpoint dedicado.
+ * Bloquea el botón mientras la petición está en curso y notifica el resultado.
+ * @returns {Promise<void>}
+ */
+async function actualizarCatalogo() {
+  actualizando.value = true
+  try {
+    const res = await fetch(`${API}/api/catalogo/actualizar`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+    if (!res.ok) throw new Error(`Error ${res.status}`)
+    mostrarToast('ok', 'Catálogo actualizado correctamente.')
+  } catch {
+    mostrarToast('err', 'Error al actualizar el catálogo.')
+  } finally {
+    actualizando.value = false
   }
 }
 
