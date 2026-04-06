@@ -102,24 +102,10 @@
     descargando = { ...descargando };
 
     try {
-      const res = await fetch(`${API}/api/mis-reservaciones/${reservacionId}/comprobante`, {
-        credentials: 'include'
-      });
-      if (!res.ok) throw new Error();
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `comprobante_${noReservacion}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      addToast('Comprobante descargado');
-
+      window.open(`${API}/api/mis-reservaciones/${reservacionId}/comprobante`, '_blank');
+      addToast('Comprobante abierto en nueva pestana');
     } catch {
-      addToast('No se pudo descargar el comprobante', 'error');
+      addToast('No se pudo abrir el comprobante', 'error');
     } finally {
       descargando[reservacionId] = false;
       descargando = { ...descargando };

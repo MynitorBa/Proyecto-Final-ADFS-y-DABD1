@@ -2,10 +2,10 @@ using Aerolinea.API.Data;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
-using DinkToPdf;
-using DinkToPdf.Contracts;
+// using DinkToPdf;
+// using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Runtime.InteropServices;
+// using System.Runtime.InteropServices;
 
 /// <summary>
 /// Inicializa el WebApplication builder con la configuracion del host.
@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 /// <summary>
-/// Conexion a Oracle como Singleton: una sola instancia para toda la aplicacion.
+/// Conexion a SQL Server como Singleton: una sola instancia para toda la aplicacion.
 /// </summary>
 builder.Services.AddSingleton<DbConnectionFactory>();
 
@@ -218,7 +218,13 @@ builder.Services.AddScoped<AdminVueloService>();
 builder.Services.AddScoped<PerfilService>();
 
 /// <summary>
-/// Servicios de pagos - Generacion de facturas en PDF con DinkToPdf.
+/// Servicios de pagos - Generacion de facturas. PDF deshabilitado temporalmente
+/// mientras la libreria nativa wkhtmltopdf no este disponible en el entorno.
+/// </summary>
+builder.Services.AddScoped<PdfService>();
+
+/// <summary>
+/// Servicios de pagos - Generacion y consulta de facturas por reservacion.
 /// </summary>
 builder.Services.AddScoped<FacturaService>();
 
@@ -277,43 +283,12 @@ builder.Services.AddScoped<AsientoAgenciaService>();
 /// </summary>
 builder.Services.AddScoped<ConfirmarReservacionAgenciaService>();
 
-/// <summary>
-/// Carpeta de la libreria nativa segun el sistema operativo: linux-x64 o win-x64.
-/// </summary>
-var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-    ? "linux-x64"
-    : "win-x64";
-
-/// <summary>
-/// Ruta absoluta a la libreria nativa wkhtmltopdf para generacion de PDF.
-/// </summary>
-var wkHtmlPath = Path.Combine(
-    Directory.GetCurrentDirectory(),
-    "native",
-    architectureFolder,
-    RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-        ? "libwkhtmltox.so"
-        : "libwkhtmltox.dll"
-);
-
-/// <summary>
-/// Carga la libreria nativa wkhtmltopdf en un contexto de ensamblaje personalizado.
-/// </summary>
-var context = new CustomAssemblyLoadContext();
-/// <summary>
-/// Carga la libreria nativa en memoria para habilitar la conversion de HTML a PDF.
-/// </summary>
-context.LoadUnmanagedLibrary(wkHtmlPath);
-
-/// <summary>
-/// Convertidor HTML a PDF como Singleton - una sola instancia, thread-safe.
-/// </summary>
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-
-/// <summary>
-/// Servicio de generacion de PDF para facturas.
-/// </summary>
-builder.Services.AddScoped<PdfService>();
+// --- wkhtmltopdf comentado: DLL nativa no disponible en este entorno ---
+// var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux-x64" : "win-x64";
+// var wkHtmlPath = Path.Combine(Directory.GetCurrentDirectory(), "native", architectureFolder, ...);
+// var context = new CustomAssemblyLoadContext();
+// context.LoadUnmanagedLibrary(wkHtmlPath);
+// builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 /// <summary>
 /// Almacena busquedas temporales en memoria - no persiste en base de datos.
@@ -363,9 +338,6 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        /// <summary>
-        /// Lee los origenes permitidos desde appsettings.json o usa los puertos de Vite por defecto.
-        /// </summary>
         var corsOrigins = builder.Configuration
             .GetSection("Cors:Origins")
             .Get<string[]>()
