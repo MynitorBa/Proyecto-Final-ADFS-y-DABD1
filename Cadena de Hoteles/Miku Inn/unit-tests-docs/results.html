@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados de Tests - Miku Inn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal-dark: #0f2027;
+      --teal-mid:  #134e4a;
+      --teal:      #0f766e;
+      --pass:      #16a34a;
+      --pass-bg:   #dcfce7;
+      --fail:      #dc2626;
+      --fail-bg:   #fee2e2;
+      --border:    #ccfbf1;
+      --bg:        #f8fffe;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: #1a202c; min-height: 100vh; }
+
+    .hero {
+      background: linear-gradient(135deg, var(--teal-dark) 0%, var(--teal-mid) 50%, var(--teal) 100%);
+      padding: 3rem 2rem; text-align: center; color: white; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 70% 20%, rgba(45,212,191,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.35rem; }
+    .hero p  { opacity: 0.7; font-size: 0.95rem; }
+    .hero-badges { margin-top: 1.1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .hero-badge {
+      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22);
+      padding: 0.25rem 0.8rem; border-radius: 20px; font-size: 0.78rem; font-weight: 500;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .card {
+      background: white; border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .card-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #718096; }
+    .card-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .card.status .card-value { color: #16a34a; }
+    .card.pass   .card-value { color: var(--pass); }
+    .card.fail   .card-value { color: #718096; }
+    .card.time   .card-value { color: var(--teal); font-size: 1.5rem; }
+
+    .table-wrap { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+    .table-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; color: var(--teal-dark); background: #f0fdfa; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--teal); color: white; font-size: 0.8rem; font-weight: 600; text-align: left; padding: 0.7rem 1rem; }
+    td { padding: 0.7rem 1rem; font-size: 0.875rem; border-bottom: 1px solid #f0fdfa; vertical-align: middle; }
+    .icon-cell { font-size: 0.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .row-pass .icon-cell { color: var(--pass); }
+    .row-fail .icon-cell { color: var(--fail); }
+    .row-pass:hover td { background: #f0fdf4; }
+    .row-fail td       { background: #fff5f5; }
+    .row-fail:hover td { background: #fee2e2; }
+    .row-error td      { background: #fff8f8; padding: 0; }
+    .suite-name { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #4a5568; }
+    .dur        { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #718096; }
+    .badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; }
+    .badge.pass { background: var(--pass-bg); color: var(--pass); }
+    .badge.fail { background: var(--fail-bg); color: var(--fail); }
+    .error-msg {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+      background: #fff0f0; color: #c53030; padding: 0.75rem 1rem;
+      border-left: 3px solid var(--fail); white-space: pre-wrap; word-break: break-word;
+    }
+    .footer { margin-top: 2.5rem; text-align: center; font-size: 0.8rem; color: #a0aec0; }
+    .status-bar {
+      padding: 0.6rem 1.5rem; text-align: center; font-weight: 600; font-size: 0.875rem;
+      background: #dcfce7; color: #16a34a; border-bottom: 2px solid #16a34a;
+    }
+
+    /* Banner de cierre */
+    .close-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--teal-dark); color: rgba(255,255,255,0.85);
+      padding: 0.6rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.82rem; z-index: 999;
+      border-top: 1px solid rgba(45,212,191,0.3);
+    }
+    .close-banner span { opacity: 0.7; }
+    .btn-close {
+      background: var(--fail); color: white; border: none; border-radius: 6px;
+      padding: 0.35rem 1rem; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .btn-close:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <h1>Pruebas Unitarias - Frontend</h1>
+    <p>Miku Inn &middot; Svelte &middot; validarFechas.js</p>
+    <div class="hero-badges">
+      <span class="hero-badge">Jest</span>
+      <span class="hero-badge">Babel</span>
+      <span class="hero-badge">Svelte</span>
+      <span class="hero-badge">DABD1 2026</span>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    Todos los tests pasaron correctamente
+    &nbsp;&middot;&nbsp; Ejecutado el 5/4/2026, 7:26:29 p. m.
+  </div>
+
+  <div class="container">
+    <div class="summary">
+      <div class="card status">
+        <span class="card-label">Estado</span>
+        <span class="card-value">PASS</span>
+      </div>
+      <div class="card pass">
+        <span class="card-label">Pasaron</span>
+        <span class="card-value">2</span>
+      </div>
+      <div class="card fail">
+        <span class="card-label">Fallaron</span>
+        <span class="card-value">0</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Total</span>
+        <span class="card-value" style="color:var(--teal-dark)">2</span>
+      </div>
+      <div class="card time">
+        <span class="card-label">Duracion</span>
+        <span class="card-value">0.000s</span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">Detalle de pruebas</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">Estado</th>
+            <th>Archivo</th>
+            <th>Prueba</th>
+            <th style="width:90px">Resultado</th>
+            <th style="width:90px">Tiempo</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+      <tr class="row-pass">
+        <td class="icon-cell">OK</td>
+        <td class="suite-name">validarFechas.test.js</td>
+        <td>retorna valido:true cuando check-out es después del check-in</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="dur">21 ms</td>
+      </tr>
+      
+      <tr class="row-pass">
+        <td class="icon-cell">OK</td>
+        <td class="suite-name">validarFechas.test.js</td>
+        <td>retorna error cuando check-out es anterior al check-in</td>
+        <td><span class="badge pass">PASS</span></td>
+        <td class="dur">2 ms</td>
+      </tr>
+      
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      Generado automaticamente &middot; Miku Inn Unit Tests &middot; DABD1 2026
+    </div>
+  </div>
+
+  <!-- Banner fijo en la parte inferior -->
+  <div class="close-banner">
+    <span>Servidor activo en http://localhost:3399 &mdash; Cierra esta pestana para detenerlo, o usa el boton.</span>
+    <button class="btn-close" onclick="fetch('/shutdown').then(() => window.close())">Cerrar servidor</button>
+  </div>
+
+</body>
+</html>
