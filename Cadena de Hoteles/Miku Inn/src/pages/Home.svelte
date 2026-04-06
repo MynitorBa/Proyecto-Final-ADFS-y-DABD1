@@ -10,6 +10,8 @@
   import { onMount } from 'svelte';
   import '../styles/home.css';
 
+  import { validarFechas } from '../utils/validarFechas.js';
+
   /**
    * Funcion de navegacion inyectada por el router.
    * @type {Function}
@@ -220,10 +222,9 @@
 
     if (!paisSeleccionado) { searchError = 'Por favor selecciona un país de la lista.'; return; }
     if (!ciudadSeleccionada) { searchError = 'Por favor selecciona una ciudad de la lista.'; return; }
-    if (!checkIn) { searchError = 'Selecciona la fecha de check-in.'; return; }
-    if (!checkOut) { searchError = 'Selecciona la fecha de check-out.'; return; }
-    if (new Date(checkOut) <= new Date(checkIn)) { searchError = 'El check-out debe ser al menos un día después del check-in.'; return; }
-    if (checkIn < today) { searchError = 'El check-in no puede ser una fecha pasada.'; return; }
+    
+    const validacion = validarFechas(checkIn, checkOut, today);
+    if (!validacion.valido) { searchError = validacion.error; return; }
 
     isSearching = true;
     try {

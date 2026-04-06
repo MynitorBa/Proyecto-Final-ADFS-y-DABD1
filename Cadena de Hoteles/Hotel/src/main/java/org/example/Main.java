@@ -85,7 +85,7 @@ public class Main {
 
         // Controllers adicionales
         new DestinosController().registerRoutes(app);
-        new EmailReservacionController().registerRoutes(app);
+        new EmailReservacionController().registerRouteds(app);
         new AdminBusquedaController().registerRoutes(app);
 
         // Rutas base de salud del servidor
