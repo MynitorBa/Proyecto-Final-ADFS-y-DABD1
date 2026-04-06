@@ -1,0 +1,101 @@
+/* ============================================================
+   miagencia.css — Panel Webservice · Mi Agencia · Broom AirLine
+   ============================================================ */
+
+/* ── Toast ───────────────────────────────────────────────────── */
+.mi-agencia-toast {
+  position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;
+  display: flex; align-items: center; gap: .75rem;
+  padding: 1rem 1.5rem; border-radius: 0 12px 0 12px;
+  font-size: .88rem; font-weight: 600; box-shadow: 0 8px 30px rgba(0,0,0,.15);
+  animation: toastIn .3s ease-out;
+}
+.mi-agencia-toast--success { background: #065f46; color: #d1fae5; }
+.mi-agencia-toast--error   { background: #7f1d1d; color: #fee2e2; }
+.mi-agencia-toast__icon    { font-size: 1.1rem; }
+@keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── Spinner ─────────────────────────────────────────────────── */
+.mi-agencia-spinner {
+  width: 44px; height: 44px; border: 3px solid var(--perla-dark);
+  border-top-color: var(--primary-color); border-radius: 50%;
+  margin: 0 auto; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Alert ───────────────────────────────────────────────────── */
+.mi-agencia-alert {
+  display: flex; align-items: center; gap: .75rem;
+  padding: 1rem 1.25rem; border-radius: 8px; font-size: .9rem;
+}
+.mi-agencia-alert--error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* ── Badge de estado ─────────────────────────────────────────── */
+.mi-agencia-badge {
+  display: inline-block; padding: .35rem .9rem;
+  border-radius: 0 20px 0 20px; font-size: .72rem;
+  font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+}
+.badge--active    { background: #d1fae5; color: #065f46; }
+.badge--inactive  { background: #f3f4f6; color: #6b7280; }
+.badge--suspended { background: #fef3c7; color: #92400e; }
+
+/* ── Cards de información ────────────────────────────────────── */
+.mi-agencia-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+.mi-agencia-card {
+  display: flex; align-items: flex-start; gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-color, #faf9f7);
+  border: 1px solid rgba(235,230,224,.7);
+  border-radius: 4px 16px 4px 16px;
+}
+.mi-agencia-card__icon { font-size: 1.5rem; flex-shrink: 0; }
+.mi-agencia-card__label {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--text-muted); margin: 0 0 .35rem;
+}
+.mi-agencia-card__value {
+  font-size: 1rem; color: var(--secondary-color); margin: 0; font-weight: 500;
+}
+.mi-agencia-card__value--highlight {
+  font-size: 1.3rem; font-weight: 700; color: var(--primary-color);
+}
+
+/* ── Notice ──────────────────────────────────────────────────── */
+.mi-agencia-notice {
+  display: flex; align-items: flex-start; gap: .75rem;
+  padding: 1rem 1.25rem; border-radius: 8px;
+  background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;
+  font-size: .85rem; line-height: 1.5;
+}
+.mi-agencia-notice p { margin: 0; }
+
+/* ── Formulario ──────────────────────────────────────────────── */
+.mi-agencia-form { max-width: 560px; display: flex; flex-direction: column; gap: 1.5rem; }
+.mi-agencia-field { display: flex; flex-direction: column; gap: .45rem; }
+.mi-agencia-field__label {
+  font-size: .82rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--secondary-color);
+}
+.mi-agencia-field__required { color: var(--primary-color); }
+.mi-agencia-field__input {
+  padding: .875rem 1.25rem; border: 1.5px solid #e5e7eb;
+  border-radius: 0 10px 0 10px; font-size: .95rem;
+  color: var(--secondary-color); background: var(--white);
+  transition: border-color .2s, box-shadow .2s;
+  outline: none; font-family: inherit;
+}
+.mi-agencia-field__input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 180,140,100),.15);
+}
+.mi-agencia-field__input--error  { border-color: #f87171; }
+.mi-agencia-field__input:disabled { opacity: .6; cursor: not-allowed; }
+.mi-agencia-field__error { font-size: .78rem; color: #dc2626; margin: 0; }
+.mi-agencia-form__actions { display: flex; gap: 1rem; padding-top: .5rem; }
+.mi-agencia-form__actions .btn-primary { max-width: 260px; }

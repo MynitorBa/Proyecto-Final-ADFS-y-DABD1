@@ -159,5 +159,135 @@ namespace Aerolinea.API.Repositories
             var result = await command.ExecuteScalarAsync();
             return result == null ? 0 : Convert.ToDecimal(result);
         }
+
+        // Devuelve la agencia asociada a un usuario Webservice, o null si no tiene ninguna.
+        public async Task<MiAgenciaDTO?> ObtenerAgenciaPorUsuarioId(int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(@"
+                SELECT ID, Nombre, Correo, PorcentajeDescuento, EstadoAgenciaID
+                FROM Agencia
+                WHERE UsuarioWebID = @UsuarioId", connection);
+            command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new MiAgenciaDTO
+                {
+                    ID = reader.GetInt32(0),
+                    Nombre = reader.GetString(1),
+                    Correo = reader.GetString(2),
+                    PorcentajeDescuento = reader.GetDecimal(3),
+                    EstadoAgenciaID = reader.GetInt32(4)
+                };
+            }
+            return null;
+        }
+
+        // ── Admin: listado completo con datos del usuario asignado ────────────
+        public async Task<List<AgenciaAdminDTO>> ObtenerTodasAdmin()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var lista = new List<AgenciaAdminDTO>();
+            using var command = new SqlCommand(@"
+                SELECT a.ID, a.Nombre, a.Correo, a.UsuarioWebID,
+                       u.Nombre  AS UsuarioNombre,
+                       u.Username,
+                       a.PorcentajeDescuento, a.EstadoAgenciaID
+                FROM Agencia a
+                LEFT JOIN Usuario u ON a.UsuarioWebID = u.Id
+                ORDER BY a.ID", connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new AgenciaAdminDTO
+                {
+                    ID = reader.GetInt32(0),
+                    Nombre = reader.GetString(1),
+                    Correo = reader.GetString(2),
+                    UsuarioWebID = reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                    UsuarioWebNombre = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    UsuarioWebUsername = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    PorcentajeDescuento = reader.GetDecimal(6),
+                    EstadoAgenciaID = reader.GetInt32(7)
+                });
+            }
+            return lista;
+        }
+
+        // ── Admin: usuarios Webservice que aún no tienen agencia ─────────────
+        public async Task<List<UsuarioWebserviceDTO>> ObtenerWebserviceSinAgencia()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var lista = new List<UsuarioWebserviceDTO>();
+            using var command = new SqlCommand(@"
+                SELECT u.Id, u.Nombre, u.Username, u.Correo
+                FROM Usuario u
+                WHERE u.RolID = 3
+                  AND NOT EXISTS (
+                      SELECT 1 FROM Agencia a WHERE a.UsuarioWebID = u.Id
+                  )
+                ORDER BY u.Nombre", connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new UsuarioWebserviceDTO
+                {
+                    Id = reader.GetInt32(0),
+                    Nombre = reader.GetString(1),
+                    Username = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    Correo = reader.GetString(3)
+                });
+            }
+            return lista;
+        }
+
+        // ── Admin: asignar o reasignar usuario a una agencia ─────────────────
+        public async Task<bool> AsignarUsuarioAAgencia(int agenciaId, int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "UPDATE Agencia SET UsuarioWebID = @UsuarioId WHERE ID = @AgenciaId", connection);
+            command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            command.Parameters.AddWithValue("@AgenciaId", agenciaId);
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
+
+        // ── Admin: actualizar descuento ───────────────────────────────────────
+        public async Task<bool> ActualizarDescuento(int agenciaId, decimal descuento)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "UPDATE Agencia SET PorcentajeDescuento = @Descuento WHERE ID = @AgenciaId", connection);
+            command.Parameters.AddWithValue("@Descuento", descuento);
+            command.Parameters.AddWithValue("@AgenciaId", agenciaId);
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
+
+        // ── Admin: actualizar estado ──────────────────────────────────────────
+        public async Task<bool> ActualizarEstado(int agenciaId, int estadoId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "UPDATE Agencia SET EstadoAgenciaID = @EstadoId WHERE ID = @AgenciaId", connection);
+            command.Parameters.AddWithValue("@EstadoId", estadoId);
+            command.Parameters.AddWithValue("@AgenciaId", agenciaId);
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
     }
 }
