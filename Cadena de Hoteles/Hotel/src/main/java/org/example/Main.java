@@ -25,7 +25,11 @@ import org.example.controllers.AdminBusquedaController;
 import org.example.controllers.EmailReservacionController;
 import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.BusquedaAgenciaController;
+
 import org.example.controllers.BusquedaAerolineaController;
+import org.example.controllers.TokenAerolineaController;
+import org.example.controllers.TokenValidacionController;
+
 import org.example.controllers.ReservacionAgenciaController;
 import org.example.controllers.PagoAgenciaController;
 
@@ -69,6 +73,8 @@ public class Main {
         UsuarioRepository              usuarioRepository              = new UsuarioRepository();
 
         AerolineaAliadaRepository aerolineaAliadaRepository = new AerolineaAliadaRepository();
+        TokenAerolineaRepository tokenAerolineaRepository = new TokenAerolineaRepository();
+        TokenValidacionRepository tokenValidacionRepository = new TokenValidacionRepository();
 
         // Services
         AdminBusquedaService      adminBusquedaService      = new AdminBusquedaService(adminBusquedaRepository);
@@ -88,7 +94,7 @@ public class Main {
         HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository);
         ImagenService             imagenService             = new ImagenService(imagenRepository);
         PagoAgenciaService        pagoAgenciaService        = new PagoAgenciaService(pagoAgenciaRepository);
-        PagoService               pagoService               = new PagoService(pagoRepository);
+        PagoService pagoService = new PagoService(pagoRepository, tokenValidacionRepository);
         PdfReservacionService     pdfReservacionService     = new PdfReservacionService(pdfReservacionRepository);
         ReservacionAgenciaService reservacionAgenciaService = new ReservacionAgenciaService(reservacionAgenciaRepository);
         ReservacionService        reservacionService        = new ReservacionService(reservacionRepository);
@@ -96,6 +102,8 @@ public class Main {
         UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository);
 
         BusquedaAerolineaService busquedaAerolineaService = new BusquedaAerolineaService(aerolineaAliadaRepository);
+        TokenAerolineaService tokenAerolineaService = new TokenAerolineaService(tokenAerolineaRepository, aerolineaAliadaRepository);
+        TokenValidacionService    tokenValidacionService    = new TokenValidacionService(tokenValidacionRepository);
 
         // Hilo de expiracion de reservaciones pendientes
         expiracionService.iniciar();
@@ -141,6 +149,8 @@ public class Main {
 
         // Controllers de aerolineas
         new BusquedaAerolineaController(busquedaAerolineaService).registerRoutes(app);
+        new TokenAerolineaController(tokenAerolineaService).registerRoutes(app);
+        new TokenValidacionController(tokenValidacionService).registerRoutes(app);
 
         // Controllers adicionales
         new DestinosController(destinosService).registerRoutes(app);

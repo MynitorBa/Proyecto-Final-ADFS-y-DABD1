@@ -88,4 +88,14 @@ public class PagoRepository {
 
         return result.isEmpty() ? null : result.get(0);
     }
+
+    /**
+     * Actualiza el total de una reservacion tras aplicar un descuento de alianza.
+     * @param reservacionId ID de la reservacion a actualizar.
+     * @param nuevoTotal    total ya con el descuento aplicado.
+     */
+    public void actualizarTotalReservacion(int reservacionId, double nuevoTotal) {
+        String sql = "UPDATE Reservacion SET Total = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, nuevoTotal, reservacionId);
+    }
 }

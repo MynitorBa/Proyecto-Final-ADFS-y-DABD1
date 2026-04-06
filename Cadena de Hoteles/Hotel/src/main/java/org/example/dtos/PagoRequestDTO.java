@@ -88,4 +88,10 @@ public class PagoRequestDTO {
      * @param cvv CVV de la tarjeta.
      */
     public void setCvv(String cvv) { this.cvv = cvv; }
+
+
+    private String tokenAlianza;
+
+    public String getTokenAlianza() { return tokenAlianza; }
+    public void setTokenAlianza(String tokenAlianza) { this.tokenAlianza = tokenAlianza; }
 }

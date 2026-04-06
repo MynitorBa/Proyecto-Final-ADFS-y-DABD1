@@ -4,6 +4,8 @@ import org.example.dtos.PagoRequestDTO;
 import org.example.dtos.PagoResponseDTO;
 import org.example.helpers.TarjetaHelper;
 import org.example.repositories.PagoRepository;
+import org.example.repositories.TokenValidacionRepository;
+import org.example.dtos.TokenValidacionResponseDTO;
 
 /**
  * Service para procesar pagos de reservaciones de usuarios web.
@@ -12,12 +14,14 @@ import org.example.repositories.PagoRepository;
 public class PagoService {
 
     private final PagoRepository pagoRepository;
+    private final TokenValidacionRepository tokenValidacionRepository;
 
     /**
      * Crea una instancia de PagoService con sus dependencias inyectadas.
      */
-    public PagoService(PagoRepository pagoRepository) {
-        this.pagoRepository = pagoRepository;
+    public PagoService(PagoRepository pagoRepository, TokenValidacionRepository tokenValidacionRepository) {
+        this.pagoRepository            = pagoRepository;
+        this.tokenValidacionRepository = tokenValidacionRepository;
     }
 
     /**
@@ -33,13 +37,11 @@ public class PagoService {
      */
     public PagoResponseDTO procesarPago(int reservacionId, int usuarioId, PagoRequestDTO request) {
 
-        // Verifica que la reservacion existe y pertenece al usuario
         Object[] reservacion = pagoRepository.obtenerReservacionParaPago(reservacionId, usuarioId);
         if (reservacion == null) {
             throw new IllegalArgumentException("Reservacion no encontrada o no pertenece al usuario");
         }
 
-        // Solo se puede pagar si la reservacion esta en estado Pendiente (EstadoID = 1)
         int estadoId = (int) reservacion[4];
         String estado = (String) reservacion[3];
         if (estadoId != 1) {
@@ -48,14 +50,31 @@ public class PagoService {
             );
         }
 
-        // Validacion simulada de tarjeta, no se persiste ningun dato de pago
         TarjetaHelper.validar(request);
 
-        // Cambia estado a Confirmada (2) y elimina la fecha de expiracion
+        // Declarar total ANTES de usarlo
+        double total = (double) reservacion[2];
+
+        // Aplica descuento si viene con token de aerolinea
+        if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
+            TokenValidacionResponseDTO datosToken = tokenValidacionRepository
+                    .buscarTokenValido(request.getTokenAlianza());
+            if (datosToken == null) {
+                throw new IllegalArgumentException("Token de alianza invalido, ya utilizado o expirado");
+            }
+            double factor = 1.0 - (datosToken.getPorcentajeDescuento() / 100.0);
+            total = Math.round(total * factor * 100.0) / 100.0;
+            pagoRepository.actualizarTotalReservacion(reservacionId, total);
+        }
+
+        // Confirmar UNA sola vez
         pagoRepository.confirmarReservacion(reservacionId);
 
-        // Genera la factura con el total de la reservacion
-        double total = (double) reservacion[2];
+        // Cierra el token despues de confirmar
+        if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
+            tokenValidacionRepository.marcarTokenUsado(request.getTokenAlianza(), reservacionId);
+        }
+
         int facturaId = pagoRepository.crearFactura(
                 reservacionId,
                 request.getNit(),
