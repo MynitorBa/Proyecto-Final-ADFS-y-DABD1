@@ -135,15 +135,9 @@ public class Main {
         new PagoAgenciaController(pagoAgenciaService).registerRoutes(app);
 
         // Controllers adicionales
-<<<<<<< HEAD
         new DestinosController(destinosService).registerRoutes(app);
         new EmailReservacionController(emailReservacionService).registerRoutes(app);
         new AdminBusquedaController(adminBusquedaService).registerRoutes(app);
-=======
-        new DestinosController().registerRoutes(app);
-        new EmailReservacionController().registerRouteds(app);
-        new AdminBusquedaController().registerRoutes(app);
->>>>>>> c6e405b900aad588a2ee3edc91b9184b308b0572
 
         // Rutas base de salud del servidor
         app.get("/", ctx -> ctx.json("OK"));
