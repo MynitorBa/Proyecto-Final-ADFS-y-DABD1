@@ -22,6 +22,7 @@
   import Profile from './pages/Profile.svelte';
   import MisReservas from './pages/MisReservas.svelte';
   import Admin from './pages/Admin.svelte';
+  import MiAgencia from './pages/MiAgencia.svelte';
   import InformacionAsientos from './pages/InformacionAsientos.svelte';
   import InformacionSeguridad from './pages/InformacionSeguridad.svelte';
   import AccesoDenegado from './pages/Accesodenegado.svelte';
@@ -53,8 +54,9 @@
   // ── NUEVO: datos para selección de asientos ──────────────────────────────
   let asientosData = null;
 
-  const paginasProtegidas = ['profile','admin','reservas','checkout','datos-pasajeros','carrito','seleccion-asientos'];
-  const paginasSoloAdmin  = ['admin'];
+  const paginasProtegidas = ['profile','admin','reservas','checkout','datos-pasajeros','carrito','seleccion-asientos','mi-agencia'];
+  const paginasSoloAdmin      = ['admin'];
+  const paginasSoloWebservice = ['mi-agencia'];
   const infoPages = [
     'contactanos','centro-ayuda','preguntas-frecuentes',
     'privacidad','terminos','cookies','politica-cancelacion','sobre-nosotros',
@@ -132,7 +134,19 @@
     const sesionActual = $sesion;
     if (paginasProtegidas.includes(page) && !sesionActual) return 'login';
     if (paginasSoloAdmin.includes(page) && sesionActual?.rolNombre !== 'Administrador') return 'acceso-denegado';
+    if (paginasSoloWebservice.includes(page) && sesionActual?.rolId !== 3) return 'acceso-denegado';
     return page;
+  }
+
+  // Re-evalúa la página actual una vez que la sesión termina de cargar.
+  // Esto cubre el caso de navegación directa por URL (ej: /mi-agencia, /admin)
+  // donde actualizarPaginaDesdeURL no pasa por resolverPagina.
+  $: if (sesionCargada && $sesion !== null) {
+    const paginaResuelta = resolverPagina(currentPage);
+    if (paginaResuelta !== currentPage) {
+      currentPage = paginaResuelta;
+      window.history.replaceState({}, '', '/' + paginaResuelta);
+    }
   }
 
   function navigateTo(page, data = null) {
@@ -209,7 +223,7 @@
   }
 
   const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','seleccion-asientos','checkout','confirmacion'];
-  const noFooterPages = ['profile','admin','login','register','acceso-denegado','reservas',...simpleHeaderPages];
+  const noFooterPages = ['profile','admin','login','register','acceso-denegado','reservas','mi-agencia',...simpleHeaderPages];
   const noHeaderPages = ['login','register'];
 
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
@@ -274,6 +288,8 @@
       <Profile {navigateTo} />
     {:else if currentPage === 'admin'}
       <Admin {navigateTo} />
+    {:else if currentPage === 'mi-agencia'}
+      <MiAgencia {navigateTo} />
     {:else if currentPage === 'info-asientos'}
       <InformacionAsientos {navigateTo} />
     {:else if currentPage === 'info-seguridad'}

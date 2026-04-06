@@ -123,8 +123,9 @@
     window.location.href = '/home';
   }
 
-  $: isLoggedIn = !!$sesion;
-  $: isAdmin    = $sesion?.rolNombre === 'Administrador';
+  $: isLoggedIn   = !!$sesion;
+  $: isAdmin      = $sesion?.rolNombre === 'Administrador';
+  $: isWebservice = $sesion?.rolId === 3;
 </script>
 
 <header class="broom-header">
@@ -151,6 +152,13 @@
           class:broom-header__inline-link--active={currentPage === 'admin'}
           on:click|preventDefault={() => handleNavigation('admin')}>
           ✦ Panel Admin
+        </a>
+      {/if}
+      {#if isWebservice}
+        <a href="/mi-agencia" class="broom-header__inline-link broom-header__inline-link--admin"
+          class:broom-header__inline-link--active={currentPage === 'mi-agencia'}
+          on:click|preventDefault={() => handleNavigation('mi-agencia')}>
+          ✦ Mi Agencia
         </a>
       {/if}
     </nav>
@@ -306,6 +314,15 @@
             class:broom-header__nav-link--active={currentPage === 'admin'}
             on:click|preventDefault={() => handleNavigation('admin')}>
             ✦ Panel Administración
+          </a>
+        </li>
+      {/if}
+      {#if isWebservice}
+        <li class="broom-header__nav-item">
+          <a href="/mi-agencia" class="broom-header__nav-link broom-header__nav-link--admin"
+            class:broom-header__nav-link--active={currentPage === 'mi-agencia'}
+            on:click|preventDefault={() => handleNavigation('mi-agencia')}>
+            ✦ Mi Agencia
           </a>
         </li>
       {/if}
