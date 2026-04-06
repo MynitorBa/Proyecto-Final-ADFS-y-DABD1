@@ -1,0 +1,56 @@
+﻿* [Inicio](README)
+
+* **Paginas Publicas**
+  * [Inicio](Home)
+  * [Login](Login)
+  * [Registro](Register)
+  * [Resultados de Busqueda](ResultadosBusqueda)
+  * [Detalle de Vuelo](DetalleVuelo)
+  * [Seleccion de Asientos](Seleccionasientos)
+  * [Informacion de Asientos](InformacionAsientos)
+  * [Datos de Pasajeros](DatosPasajeros)
+  * [Carrito](Carrito)
+  * [Checkout](Checkout)
+  * [Confirmacion](Confirmacion)
+  * [Mis Reservas](MisReservas)
+  * [Detalle de Reserva](DetallesReserva)
+  * [Mi Agencia](MiAgencia)
+  * [Perfil](Profile)
+  * [Vuelos](Vuelos)
+  * [Acceso Denegado](Accesodenegado)
+
+* **Informacion**
+  * [Sobre Nosotros](SobreNosotros)
+  * [Centro de Ayuda](CentroAyuda)
+  * [Contactanos](Contactanos)
+  * [Preguntas Frecuentes](PreguntasFrecuentes)
+  * [Politica de Cancelacion](PoliticaCancelacion)
+  * [Privacidad](Privacidad)
+  * [Terminos y Condiciones](Terminos)
+  * [Cookies](Cookies)
+  * [Informacion de Seguridad](InformacionSeguridad)
+
+* **Panel Administrador**
+  * [Admin](Admin)
+  * [Aeropuertos](AdminAeropuertos)
+  * [Agencias](AdminAgencias)
+  * [Aviones](AdminAviones)
+  * [Crear Vuelo](AdminCrearVuelo)
+  * [Historial](AdminHistorial)
+  * [Metricas](AdminMetricas)
+  * [Rutas](AdminRutas)
+  * [Tripulantes](AdminTripulantes)
+  * [Usuarios](AdminUsuarios)
+  * [Detalle Vuelo Admin](DetalleVueloAdmin)
+
+* **Componentes**
+  * [Header](Header)
+  * [Header Simple](HeaderSimple)
+  * [Footer](Footer)
+  * [Loading](Loading)
+  * [Flight Notification](FlightNotification)
+  * [Comentario Nodo](ComentarioNodo)
+
+* **Configuracion**
+  * [App](App)
+  * [Main](Main)

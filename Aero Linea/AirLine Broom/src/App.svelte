@@ -1,5 +1,12 @@
 <script>
-// @ts-nocheck
+  /**
+   * @file App.svelte
+   * @description Componente raiz de AirLine Broom. Gestiona el enrutamiento del lado
+   * del cliente, la sesion del usuario y decide que pagina y layout se muestran
+   * en cada momento.
+   */
+
+  // @ts-nocheck
 
   import { onMount } from 'svelte';
   import { sesion, cargarSesion } from './stores/sesion.js';
@@ -38,30 +45,77 @@
 
   import './app.css';
 
+  /** Clave de sessionStorage para persistir los parametros de busqueda. @type {string} */
   const SS_SEARCH_PARAMS = 'broom_searchParams';
+
+  /** Clave de sessionStorage para persistir la pagina activa. @type {string} */
   const SS_PAGE          = 'broom_currentPage';
 
+  /** Indica si la pantalla de carga inicial esta activa. @type {boolean} */
   let isLoading = true;
+
+  /** Bandera que se activa cuando la verificacion inicial de sesion termina. @type {boolean} */
   let sesionCargada = false;
+
+  /** Pagina activa en este momento. @type {string} */
   let currentPage = 'home';
+
+  /** Sugerencia de aeropuerto que puede llegar desde otras secciones. @type {object|null} */
   let suggestedAeropuerto = null;
+
+  /** ID del vuelo seleccionado para ver su detalle. @type {number|null} */
   let currentFlightId = null;
+
+  /** Parametros de la ultima busqueda realizada. @type {object|null} */
   let searchParams = null;
+
+  /** Lista de reservaciones confirmadas tras completar el pago. @type {Array} */
   let reservacionesConfirmadas = [];
+
+  /** Lista de facturas confirmadas tras completar el pago. @type {Array} */
   let facturasConfirmadas = [];
+
+  /**
+   * Llave que cambia con cada navegacion para forzar el re-mount
+   * de paginas que necesitan reiniciarse por completo.
+   * @type {number}
+   */
   let pageKey = Date.now();
 
-  // ── NUEVO: datos para selección de asientos ──────────────────────────────
+  /** Datos para la seleccion de asientos, contiene grupos de vuelo. @type {Array|null} */
   let asientosData = null;
 
+  /**
+   * Rutas que requieren sesion activa para acceder.
+   * @type {string[]}
+   */
   const paginasProtegidas = ['profile','admin','reservas','checkout','datos-pasajeros','carrito','seleccion-asientos','mi-agencia'];
+
+  /**
+   * Rutas accesibles unicamente para el rol Administrador.
+   * @type {string[]}
+   */
   const paginasSoloAdmin      = ['admin'];
+
+  /**
+   * Rutas accesibles unicamente para el rol Webservice.
+   * @type {string[]}
+   */
   const paginasSoloWebservice = ['mi-agencia'];
+
+  /**
+   * Rutas de paginas informativas de la aplicacion.
+   * @type {string[]}
+   */
   const infoPages = [
     'contactanos','centro-ayuda','preguntas-frecuentes',
     'privacidad','terminos','cookies','politica-cancelacion','sobre-nosotros',
   ];
 
+  /**
+   * Guarda los parametros de busqueda en sessionStorage.
+   * @param {object|null} params - Parametros a persistir.
+   */
   function saveSearchParams(params) {
     try {
       if (params) sessionStorage.setItem(SS_SEARCH_PARAMS, JSON.stringify(params));
@@ -69,6 +123,10 @@
     } catch (e) { }
   }
 
+  /**
+   * Recupera los parametros de busqueda desde sessionStorage.
+   * @returns {object|null} Parametros guardados o null si no existen.
+   */
   function loadSearchParams() {
     try {
       const raw = sessionStorage.getItem(SS_SEARCH_PARAMS);
@@ -76,6 +134,10 @@
     } catch { return null; }
   }
 
+  /**
+   * Persiste la pagina activa en sessionStorage.
+   * @param {string} page - Nombre de la pagina a guardar.
+   */
   function saveCurrentPage(page) {
     try { sessionStorage.setItem(SS_PAGE, page); } catch {}
   }
@@ -99,10 +161,19 @@
     };
   });
 
+  /** Indica si el pago del flujo de compra actual fue completado. @type {boolean} */
   let pagoCompletado = false;
 
+  /**
+   * Rutas que forman parte del flujo de compra de boletos.
+   * @type {string[]}
+   */
   const paginasFlujoCompra = ['vuelos', 'datos-pasajeros', 'seleccion-asientos', 'carrito', 'checkout'];
 
+  /**
+   * Sincroniza la pagina activa con el path de la URL actual.
+   * Protege el flujo de compra y la pagina de confirmacion contra acceso invalido.
+   */
   function actualizarPaginaDesdeURL() {
     const path = window.location.pathname.slice(1) || 'home';
 
@@ -129,6 +200,11 @@
     }
   }
 
+  /**
+   * Aplica las reglas de proteccion de rutas segun el estado de sesion y rol del usuario.
+   * @param {string} page - Nombre de la ruta a resolver.
+   * @returns {string} La ruta final permitida para el usuario actual.
+   */
   function resolverPagina(page) {
     if (!sesionCargada) return page;
     const sesionActual = $sesion;
@@ -138,8 +214,8 @@
     return page;
   }
 
-  // Re-evalúa la página actual una vez que la sesión termina de cargar.
-  // Esto cubre el caso de navegación directa por URL (ej: /mi-agencia, /admin)
+  // Re-evalua la pagina actual una vez que la sesion termina de cargar.
+  // Esto cubre el caso de navegacion directa por URL (ej: /mi-agencia, /admin)
   // donde actualizarPaginaDesdeURL no pasa por resolverPagina.
   $: if (sesionCargada && $sesion !== null) {
     const paginaResuelta = resolverPagina(currentPage);
@@ -149,6 +225,12 @@
     }
   }
 
+  /**
+   * Navega programaticamente a una pagina y actualiza el historial del navegador.
+   * Aplica proteccion de rutas y gestiona los datos de cada pagina del flujo.
+   * @param {string} page - Nombre de la ruta destino.
+   * @param {object|null} [data=null] - Datos opcionales que se pasan a la nueva pagina.
+   */
   function navigateTo(page, data = null) {
     const paginaFinal = resolverPagina(page);
     currentPage = paginaFinal;
@@ -213,6 +295,11 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  /**
+   * Maneja la sugerencia de un aeropuerto destino desde FlightNotification.
+   * Navega al inicio y hace scroll al buscador si no se esta en home.
+   * @param {object} aeropuertoData - Datos del aeropuerto sugerido.
+   */
   function handleDestinationSuggestion(aeropuertoData) {
     suggestedAeropuerto = aeropuertoData;
     if (currentPage !== 'home') navigateTo('home');
@@ -222,102 +309,30 @@
     }, 100);
   }
 
+  /**
+   * Paginas que usan el header simplificado en lugar del header completo.
+   * @type {string[]}
+   */
   const simpleHeaderPages = ['vuelos','carrito','datos-pasajeros','seleccion-asientos','checkout','confirmacion'];
+
+  /**
+   * Paginas que no muestran el Footer.
+   * @type {string[]}
+   */
   const noFooterPages = ['profile','admin','login','register','acceso-denegado','reservas','mi-agencia',...simpleHeaderPages];
+
+  /**
+   * Paginas que no muestran ningun Header.
+   * @type {string[]}
+   */
   const noHeaderPages = ['login','register'];
 
+  // Indica si la pagina actual debe usar el header simplificado.
   $: useSimpleHeader = simpleHeaderPages.includes(currentPage);
+
+  // Indica si la pagina actual debe mostrar el Header.
   $: showHeader      = !noHeaderPages.includes(currentPage);
+
+  // Indica si la pagina actual debe mostrar el Footer.
   $: showFooter      = !noFooterPages.includes(currentPage);
 </script>
-
-<div class="app-wrapper">
-  {#if isLoading}
-    <Loading message="Preparando tu vuelo..." />
-  {/if}
-
-  {#if !isLoading && currentPage === 'home'}
-    <FlightNotification onDestinationClick={handleDestinationSuggestion} />
-  {/if}
-
-  {#if showHeader}
-    {#if useSimpleHeader}
-      <HeaderSimple {navigateTo} />
-    {:else}
-      <Header {navigateTo} {currentPage} sesion={$sesion} />
-    {/if}
-  {/if}
-
-  <main class="app-main">
-    {#if !sesionCargada && paginasProtegidas.includes(currentPage)}
-      <p style="text-align:center; padding:4rem; color:#888">Cargando...</p>
-    {:else if currentPage === 'home'}
-      <Home {navigateTo} {suggestedAeropuerto} />
-    {:else if currentPage === 'reservas'}
-      {#key pageKey}
-        <MisReservas {navigateTo} />
-      {/key}
-    {:else if currentPage === 'vuelos'}
-      {#key pageKey}
-        <Vuelos {navigateTo} {searchParams} />
-      {/key}
-    {:else if currentPage === 'confirmacion'}
-      <Comfirmacion {navigateTo} reservaciones={reservacionesConfirmadas} facturas={facturasConfirmadas} />
-    {:else if currentPage === 'resultados-busqueda'}
-      <ResultadosBusqueda {navigateTo} {searchParams} />
-    {:else if currentPage === 'carrito'}
-      <Carrito {navigateTo} />
-    {:else if currentPage === 'checkout'}
-      <Checkout {navigateTo} />
-    {:else if currentPage === 'seleccion-asientos'}
-      <!-- ── NUEVO ── -->
-      {#key pageKey}
-        <SeleccionAsientos {navigateTo} flightData={asientosData} />
-      {/key}
-    {:else if currentPage === 'datos-pasajeros'}
-      <DatosPasajeros {navigateTo} />
-    {:else if currentPage === 'login'}
-      {#key pageKey}
-        <Login {navigateTo} />
-      {/key}
-    {:else if currentPage === 'register'}
-      {#key pageKey}
-        <Register {navigateTo} />
-      {/key}
-    {:else if currentPage === 'profile'}
-      <Profile {navigateTo} />
-    {:else if currentPage === 'admin'}
-      <Admin {navigateTo} />
-    {:else if currentPage === 'mi-agencia'}
-      <MiAgencia {navigateTo} />
-    {:else if currentPage === 'info-asientos'}
-      <InformacionAsientos {navigateTo} />
-    {:else if currentPage === 'info-seguridad'}
-      <InformacionSeguridad {navigateTo} />
-    {:else if currentPage === 'acceso-denegado'}
-      <AccesoDenegado {navigateTo} />
-    {:else if currentPage === 'contactanos'}
-      <Contactanos {navigateTo} />
-    {:else if currentPage === 'centro-ayuda'}
-      <CentroAyuda {navigateTo} />
-    {:else if currentPage === 'preguntas-frecuentes'}
-      <PreguntasFrecuentes {navigateTo} />
-    {:else if currentPage === 'privacidad'}
-      <Privacidad {navigateTo} />
-    {:else if currentPage === 'terminos'}
-      <Terminos {navigateTo} />
-    {:else if currentPage === 'cookies'}
-      <Cookies {navigateTo} />
-    {:else if currentPage === 'politica-cancelacion'}
-      <PoliticaCancelacion {navigateTo} />
-    {:else if currentPage === 'sobre-nosotros'}
-      <SobreNosotros {navigateTo} />
-    {:else}
-      <Home {navigateTo} />
-    {/if}
-  </main>
-
-  {#if showFooter}
-    <Footer {navigateTo} />
-  {/if}
-</div>
