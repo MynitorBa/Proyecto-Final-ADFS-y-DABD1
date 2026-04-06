@@ -308,27 +308,17 @@
    * @param {number} reservaId - The reservation ID whose comprobante should be downloaded.
    * @returns {Promise<void>}
    */
-  async function descargarComprobante(reservaId) {
-    comprobanteLoading = true;
-    try {
-      const r = await fetch(`${API}/api/mis-reservaciones/${reservaId}/comprobante`, { credentials:'include' });
-      if (r.ok) {
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `comprobante_${reservaId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        addToast('Comprobante descargado');
-      } else {
-        addToast('No se pudo descargar el comprobante', 'error');
+    async function descargarComprobante(reservaId) {
+        comprobanteLoading = true;
+        try {
+          window.open(`${API}/api/mis-reservaciones/${reservaId}/comprobante`, '_blank');
+          addToast('Comprobante abierto en nueva pestana');
+        } catch {
+          addToast('Error al abrir comprobante', 'error');
+        } finally {
+          comprobanteLoading = false;
+        }
       }
-    } catch { addToast('Error de conexion', 'error'); }
-    finally { comprobanteLoading = false; }
-  }
 
   /**
    * Sends the comprobante PDF to the user's registered email via

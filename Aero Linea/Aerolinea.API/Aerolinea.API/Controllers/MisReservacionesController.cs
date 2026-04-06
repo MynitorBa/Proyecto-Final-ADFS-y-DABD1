@@ -13,7 +13,7 @@ namespace Aerolinea.API.Controllers
     /// </summary>
     [ApiController]
     [Route("api/mis-reservaciones")]
-    [Authorize] // Todas las rutas requieren sesión
+    [Authorize]
     public class MisReservacionesController : ControllerBase
     {
         private readonly GestionReservacionService _service;
@@ -70,8 +70,9 @@ namespace Aerolinea.API.Controllers
 
         // GET api/mis-reservaciones/{reservacionId}/comprobante
         /// <summary>
-        /// Genera y descarga el comprobante de una reservacion en formato PDF.
-        /// El archivo se nombra con el numero de reservacion para facilitar su identificacion.
+        /// Genera y retorna el comprobante de una reservacion como HTML para que el usuario
+        /// lo abra en una nueva pestana e imprima como PDF desde el navegador.
+        /// No requiere la libreria nativa wkhtmltopdf.
         /// </summary>
         [HttpGet("{reservacionId}/comprobante")]
         public async Task<IActionResult> DescargarComprobante(int reservacionId)
@@ -81,8 +82,7 @@ namespace Aerolinea.API.Controllers
                 int usuarioId = ObtenerUsuarioId();
                 var reservacion = await _service.ObtenerDetalleReservacion(reservacionId, usuarioId);
                 string html = PdfHtmlHelper.GenerarComprobante(reservacion);
-                byte[] pdf = _pdfService.GenerarPdf(html);
-                return File(pdf, "application/pdf", $"comprobante-{reservacion.NoReservacion}.pdf");
+                return Content(html, "text/html; charset=utf-8");
             }
             catch (Exception ex)
             {
@@ -114,7 +114,7 @@ namespace Aerolinea.API.Controllers
         // Body: { "motivo": "Cambio de planes" }  (opcional)
         /// <summary>
         /// Cancela una reservacion activa del usuario autenticado. El motivo de cancelacion
-        /// es opcional. Solo se pueden cancelar reservaciones que aun no hayan sido completadas.
+        /// es opcional. Solo se pueden cancelar reservaciones pendientes o confirmadas.
         /// </summary>
         [HttpPost("{reservacionId}/cancelar")]
         public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
@@ -123,7 +123,7 @@ namespace Aerolinea.API.Controllers
             {
                 int usuarioId = ObtenerUsuarioId();
                 await _service.CancelarReservacion(reservacionId, usuarioId, dto?.Motivo);
-                return Ok(new { message = "Reservación cancelada exitosamente." });
+                return Ok(new { message = "Reservacion cancelada exitosamente." });
             }
             catch (Exception ex)
             {
@@ -134,7 +134,7 @@ namespace Aerolinea.API.Controllers
         // POST api/mis-reservaciones/{reservacionId}/enviar-comprobante
         /// <summary>
         /// Envia el comprobante de una reservacion al correo electronico registrado del usuario.
-        /// Genera el PDF en memoria y lo adjunta al correo antes de enviarlo.
+        /// Genera el HTML del comprobante y lo adjunta al correo antes de enviarlo.
         /// </summary>
         [HttpPost("{reservacionId}/enviar-comprobante")]
         public async Task<IActionResult> EnviarComprobanteEmail(int reservacionId)
@@ -155,7 +155,7 @@ namespace Aerolinea.API.Controllers
         {
             int? id = SessionHelper.GetUsuarioId(HttpContext);
             if (id == null)
-                throw new Exception("No se pudo obtener la sesión del usuario.");
+                throw new Exception("No se pudo obtener la sesion del usuario.");
             return id.Value;
         }
     }

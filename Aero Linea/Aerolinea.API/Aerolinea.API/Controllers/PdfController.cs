@@ -25,11 +25,10 @@ namespace Aerolinea.API.Controllers
             _reservacionRepo = reservacionRepo;
         }
 
-        // ══════════════════════════════════════════════════════════════════
         //  GET /api/reservaciones/{id}/comprobante
         //  Devuelve HTML formateado que el usuario imprime como PDF
         //  El frontend abre esto en una pestaña nueva: window.open(url)
-        // ══════════════════════════════════════════════════════════════════
+
         /// <summary>
         /// Retorna el HTML formateado del comprobante de una reservacion para que el usuario
         /// lo imprima como PDF desde el navegador. Solo accesible para roles Administrador (1)
