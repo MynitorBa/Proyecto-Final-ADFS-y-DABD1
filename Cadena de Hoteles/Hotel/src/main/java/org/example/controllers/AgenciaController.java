@@ -3,6 +3,7 @@ package org.example.controllers;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.example.dtos.CrearAgenciaRequestDTO;
+import org.example.dtos.CrearAgenciaAdminRequestDTO;
 import org.example.dtos.EditarAgenciaRequestDTO;
 import org.example.dtos.HandshakeRequestDTO;
 import org.example.dtos.HandshakeResponseDTO;
@@ -42,7 +43,7 @@ public class AgenciaController {
             ctx.json(agenciaService.listarPorUsuario(usuarioId(ctx)));
         });
 
-        // Crea una nueva agencia para el usuario autenticado
+        // Crea una nueva agencia para el usuario autenticado (flujo del portal webservice)
         app.post("/webservice/agencias", ctx -> {
             if (!esWebservice(ctx)) { deny(ctx); return; }
             try {
@@ -99,6 +100,18 @@ public class AgenciaController {
         app.get("/admin/agencias", ctx -> {
             if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
             ctx.json(agenciaService.listarTodas());
+        });
+
+        // Crea una nueva agencia desde el panel de administracion asignandola a un usuario webservice
+        app.post("/admin/agencias", ctx -> {
+            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+            try {
+                ctx.status(201).json(
+                        agenciaService.crearDesdeAdmin(ctx.bodyAsClass(CrearAgenciaAdminRequestDTO.class))
+                );
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
         });
 
         // Edita los datos de una agencia especifica

@@ -71,7 +71,7 @@
   /** Datos que se pasan a la pagina de checkout. @type {object|null} */
   let checkoutData          = null;
 
-  /** Datos que se pasan a la pagina de agradecimiento tras el pago. @type {object|null} */
+  /** Datos que se pasan a la pagina de agradecimientos tras el pago. @type {object|null} */
   let agradecimientoData    = null;
 
   /** Datos del hotel seleccionado para ver su detalle. @type {object|null} */

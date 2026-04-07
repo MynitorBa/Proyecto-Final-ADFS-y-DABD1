@@ -1,17 +1,18 @@
 package org.example.dtos;
 
 /**
- * DTO con los datos necesarios para crear una nueva agencia.
- * El porcentaje de descuento siempre inicia en 0% y solo el administrador puede modificarlo.
- * Los tokens de autenticacion se generan automaticamente al establecer la conexion con handshake.
+ * DTO con los datos necesarios para que el administrador cree una agencia
+ * y la asigne directamente a un usuario webservice existente.
+ * El porcentaje de descuento inicia en 0 y los tokens se generan al conectar.
  */
-public class CrearAgenciaRequestDTO {
+public class CrearAgenciaAdminRequestDTO {
 
     private String nombre;
     private String correo;
-
-    /** URL del sistema externo que se conectara con la plataforma como agencia. */
     private String urlAgencia;
+
+    /** ID del usuario webservice al que se vinculara la agencia. */
+    private int usuarioWebisId;
 
     /**
      * Retorna el nombre comercial de la nueva agencia.
@@ -32,6 +33,12 @@ public class CrearAgenciaRequestDTO {
     public String getUrlAgencia() { return urlAgencia; }
 
     /**
+     * Retorna el ID del usuario webservice asignado a la agencia.
+     * @return ID del usuario webservice.
+     */
+    public int getUsuarioWebisId() { return usuarioWebisId; }
+
+    /**
      * Asigna el nombre comercial de la nueva agencia.
      * @param nombre nombre de la agencia.
      */
@@ -45,7 +52,13 @@ public class CrearAgenciaRequestDTO {
 
     /**
      * Asigna la URL del sistema externo de la nueva agencia.
-     * @param urlAgencia URL del sistema externo.
+     * @param urlAgencia URL de la agencia.
      */
     public void setUrlAgencia(String urlAgencia) { this.urlAgencia = urlAgencia; }
+
+    /**
+     * Asigna el ID del usuario webservice que sera propietario de la agencia.
+     * @param usuarioWebisId ID del usuario webservice.
+     */
+    public void setUsuarioWebisId(int usuarioWebisId) { this.usuarioWebisId = usuarioWebisId; }
 }
