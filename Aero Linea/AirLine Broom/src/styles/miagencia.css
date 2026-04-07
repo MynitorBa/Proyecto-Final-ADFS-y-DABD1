@@ -1,4 +1,4 @@
-/* miagencia.css - Agency panel styles including a fixed top toast with entry animation, a circular spinner, an error alert, status badges, info cards grid, a notice box, and a form with labeled fields and error states */
+/* miagencia.css - Agency/hotel panel styles including a fixed top toast with entry animation, a circular spinner, an error alert, status badges, info cards grid, a notice box, a tipo-selector with two option cards, and a form with labeled fields and error states */
 
 /* Fixed top-right toast: flex row with icon, asymmetric radius, box shadow, and slide-in animation */
 .mi-agencia-toast {
@@ -82,6 +82,11 @@
   font-size: 1rem; color: var(--secondary-color); margin: 0; font-weight: 500;
 }
 
+/* URL card value: smaller font and word-break to prevent overflow on long URLs */
+.mi-agencia-card__value--url {
+  font-size: .88rem; word-break: break-all;
+}
+
 /* Highlighted card value: larger, bolder, and in the primary color */
 .mi-agencia-card__value--highlight {
   font-size: 1.3rem; font-weight: 700; color: var(--primary-color);
@@ -139,3 +144,59 @@
 /* Form action row: flex row with a gap, primary button capped at 260px */
 .mi-agencia-form__actions { display: flex; gap: 1rem; padding-top: .5rem; }
 .mi-agencia-form__actions .btn-primary { max-width: 260px; }
+
+/* ── Tipo-selector: two large clickable cards to choose between agencia and hotel ── */
+
+/* Grid of two equal columns for the tipo option cards */
+.mi-agencia-tipo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  max-width: 640px;
+}
+
+/* Responsive: stack to single column on narrow screens */
+@media (max-width: 500px) {
+  .mi-agencia-tipo-grid { grid-template-columns: 1fr; }
+}
+
+/* Individual tipo option card: clickable, centered column layout */
+.mi-agencia-tipo-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 1rem; padding: 2rem 1.5rem; cursor: pointer;
+  background: var(--bg-color, #faf9f7);
+  border: 2px solid rgba(235,230,224,.8);
+  border-radius: 4px 20px 4px 20px;
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+  text-align: center; user-select: none;
+}
+
+/* Hover lift effect on tipo card */
+.mi-agencia-tipo-card:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 24px rgba(0,0,0,.08);
+  transform: translateY(-2px);
+}
+
+/* Large emoji icon at the top of the tipo card */
+.mi-agencia-tipo-card__icon { font-size: 2.5rem; line-height: 1; }
+
+/* Title inside the tipo card: secondary color, medium weight */
+.mi-agencia-tipo-card__title {
+  font-size: 1.05rem; font-weight: 700; color: var(--secondary-color); margin: 0;
+}
+
+/* Short description inside the tipo card: muted, smaller */
+.mi-agencia-tipo-card__desc {
+  font-size: .82rem; color: var(--text-muted); margin: 0; line-height: 1.5;
+}
+
+/* Back link shown above the form after selecting a tipo */
+.mi-agencia-tipo-back {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-size: .82rem; font-weight: 600; color: var(--primary-color);
+  cursor: pointer; background: none; border: none; padding: 0;
+  margin-bottom: 1.5rem; text-decoration: underline; text-underline-offset: 3px;
+}
+.mi-agencia-tipo-back:hover { opacity: .75; }

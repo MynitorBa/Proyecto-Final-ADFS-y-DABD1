@@ -8,13 +8,12 @@ namespace Aerolinea.API.Repositories
     /// <summary>
     /// Repositorio de agencias. Gestiona la creacion, consulta, actualizacion
     /// y autenticacion de agencias de viaje, incluyendo la administracion de
-    /// tokens, descuentos, estados y usuarios webservice asociados.
+    /// tokens, descuentos, estados, URL y usuarios webservice asociados.
     /// </summary>
     public class AgenciaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
         public SqlConnection CrearConexion() => _connectionFactory.CreateConnection();
-
 
         public AgenciaRepository(DbConnectionFactory connectionFactory)
         {
@@ -55,8 +54,27 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync() > 0;
         }
 
+        // Verifica si el usuario webservice ya tiene un hotel aliado registrado
         /// <summary>
-        /// Crea una nueva agencia en la base de datos con estado Activo.
+        /// Verifica si el usuario webservice dado ya tiene un hotel aliado registrado.
+        /// Se usa para impedir que un usuario tenga tanto una agencia como un hotel.
+        /// Retorna true si existe al menos un hotel para ese usuario.
+        /// </summary>
+        public async Task<bool> UsuarioYaTieneHotelAliado(int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT COUNT(*) FROM HotelAliado WHERE UsuarioWEBIs = @Id", connection);
+            command.Parameters.AddWithValue("@Id", usuarioId);
+
+            return (int)await command.ExecuteScalarAsync() > 0;
+        }
+
+        /// <summary>
+        /// Crea una nueva agencia en la base de datos con estado Activo e incluye la URL publica.
+        /// Los tokens se dejan vacios ya que se generan automaticamente al establecer la conexion.
         /// Retorna el DTO con los datos de la agencia creada incluyendo su ID generado.
         /// </summary>
         public async Task<AgenciaResponseDTO> CrearAgencia(CrearAgenciaDTO dto)
@@ -66,12 +84,16 @@ namespace Aerolinea.API.Repositories
 
             const int estadoActivo = 1;
 
+            // URL_Agencia se guarda junto con los demas datos; los tokens quedan vacios
+            // y son asignados automaticamente en el proceso de handshake con la agencia
             var query = @"
                 INSERT INTO Agencia
-                    (Nombre, Correo, UsuarioWebID, PorcentajeDescuento, EstadoAgenciaID, Token_HASH_Entrada, Token_HASH_Salida)
+                    (Nombre, Correo, UsuarioWebID, PorcentajeDescuento, EstadoAgenciaID,
+                     Token_HASH_Entrada, Token_HASH_Salida, URL_Agencia)
                 OUTPUT INSERTED.ID
                 VALUES
-                    (@Nombre, @Correo, @UsuarioWebID, @PorcentajeDescuento, @EstadoAgenciaID, '', '')";
+                    (@Nombre, @Correo, @UsuarioWebID, @PorcentajeDescuento, @EstadoAgenciaID,
+                     '', '', @UrlAgencia)";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Nombre", dto.Nombre);
@@ -79,6 +101,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@UsuarioWebID", dto.UsuarioWebID);
             command.Parameters.AddWithValue("@PorcentajeDescuento", dto.PorcentajeDescuento);
             command.Parameters.AddWithValue("@EstadoAgenciaID", estadoActivo);
+            command.Parameters.AddWithValue("@UrlAgencia", dto.UrlAgencia ?? string.Empty);
 
             int nuevoId = (int)await command.ExecuteScalarAsync();
 
@@ -89,7 +112,8 @@ namespace Aerolinea.API.Repositories
                 Correo = dto.Correo,
                 UsuarioWebID = dto.UsuarioWebID,
                 PorcentajeDescuento = dto.PorcentajeDescuento,
-                EstadoAgenciaID = estadoActivo
+                EstadoAgenciaID = estadoActivo,
+                UrlAgencia = dto.UrlAgencia ?? string.Empty
             };
         }
 
@@ -115,7 +139,6 @@ namespace Aerolinea.API.Repositories
 
             return await command.ExecuteNonQueryAsync() > 0;
         }
-
 
         /// <summary>
         /// Busca el ID de la agencia a partir de su token de entrada.
@@ -197,7 +220,7 @@ namespace Aerolinea.API.Repositories
 
         // Devuelve la agencia asociada a un usuario Webservice, o null si no tiene ninguna.
         /// <summary>
-        /// Retorna los datos de la agencia del usuario webservice indicado.
+        /// Retorna los datos de la agencia del usuario webservice indicado, incluyendo la URL.
         /// Retorna null si el usuario no tiene ninguna agencia asignada.
         /// </summary>
         public async Task<MiAgenciaDTO?> ObtenerAgenciaPorUsuarioId(int usuarioId)
@@ -205,8 +228,9 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
+            // Se incluye URL_Agencia para mostrarsela al usuario en su panel
             using var command = new SqlCommand(@"
-                SELECT ID, Nombre, Correo, PorcentajeDescuento, EstadoAgenciaID
+                SELECT ID, Nombre, Correo, PorcentajeDescuento, EstadoAgenciaID, URL_Agencia
                 FROM Agencia
                 WHERE UsuarioWebID = @UsuarioId", connection);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
@@ -220,7 +244,8 @@ namespace Aerolinea.API.Repositories
                     Nombre = reader.GetString(1),
                     Correo = reader.GetString(2),
                     PorcentajeDescuento = reader.GetDecimal(3),
-                    EstadoAgenciaID = reader.GetInt32(4)
+                    EstadoAgenciaID = reader.GetInt32(4),
+                    UrlAgencia = reader.IsDBNull(5) ? string.Empty : reader.GetString(5)
                 };
             }
             return null;
@@ -229,7 +254,7 @@ namespace Aerolinea.API.Repositories
         // ── Admin: listado completo con datos del usuario asignado ────────────
         /// <summary>
         /// Retorna el listado completo de agencias con los datos del usuario webservice
-        /// asignado. Destinado al uso exclusivo del panel de administracion.
+        /// asignado, incluyendo la URL publica. Destinado al uso exclusivo del panel de administracion.
         /// </summary>
         public async Task<List<AgenciaAdminDTO>> ObtenerTodasAdmin()
         {
@@ -241,7 +266,7 @@ namespace Aerolinea.API.Repositories
                 SELECT a.ID, a.Nombre, a.Correo, a.UsuarioWebID,
                        u.Nombre  AS UsuarioNombre,
                        u.Username,
-                       a.PorcentajeDescuento, a.EstadoAgenciaID
+                       a.PorcentajeDescuento, a.EstadoAgenciaID, a.URL_Agencia
                 FROM Agencia a
                 LEFT JOIN Usuario u ON a.UsuarioWebID = u.Id
                 ORDER BY a.ID", connection);
@@ -258,16 +283,18 @@ namespace Aerolinea.API.Repositories
                     UsuarioWebNombre = reader.IsDBNull(4) ? null : reader.GetString(4),
                     UsuarioWebUsername = reader.IsDBNull(5) ? null : reader.GetString(5),
                     PorcentajeDescuento = reader.GetDecimal(6),
-                    EstadoAgenciaID = reader.GetInt32(7)
+                    EstadoAgenciaID = reader.GetInt32(7),
+                    UrlAgencia = reader.IsDBNull(8) ? string.Empty : reader.GetString(8)
                 });
             }
             return lista;
         }
 
-        // ── Admin: usuarios Webservice que aún no tienen agencia ─────────────
+        // ── Admin: usuarios Webservice libres (sin agencia NI hotel) ─────────
         /// <summary>
-        /// Retorna la lista de usuarios con rol Webservice que todavia no tienen
-        /// una agencia asignada. Se usa en el panel de administracion para asignar agencias.
+        /// Retorna la lista de usuarios con rol Webservice que no tienen ninguna entidad
+        /// asignada (ni agencia ni hotel aliado). Se usa en el panel de administracion
+        /// para los selectores de asignacion de ambos tipos de entidad.
         /// </summary>
         public async Task<List<UsuarioWebserviceDTO>> ObtenerWebserviceSinAgencia()
         {
@@ -275,12 +302,17 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             var lista = new List<UsuarioWebserviceDTO>();
+            // Se excluyen usuarios que ya tienen agencia O hotel para respetar la regla
+            // de que un usuario Webservice solo puede estar vinculado a una entidad
             using var command = new SqlCommand(@"
                 SELECT u.Id, u.Nombre, u.Username, u.Correo
                 FROM Usuario u
                 WHERE u.RolID = 3
                   AND NOT EXISTS (
                       SELECT 1 FROM Agencia a WHERE a.UsuarioWebID = u.Id
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM HotelAliado h WHERE h.UsuarioWEBIs = u.Id
                   )
                 ORDER BY u.Nombre", connection);
 
@@ -345,6 +377,23 @@ namespace Aerolinea.API.Repositories
             using var command = new SqlCommand(
                 "UPDATE Agencia SET EstadoAgenciaID = @EstadoId WHERE ID = @AgenciaId", connection);
             command.Parameters.AddWithValue("@EstadoId", estadoId);
+            command.Parameters.AddWithValue("@AgenciaId", agenciaId);
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
+
+        // ── Admin: actualizar URL de la agencia ───────────────────────────────
+        /// <summary>
+        /// Actualiza la URL publica de una agencia desde el panel de administracion.
+        /// Retorna true si la actualizacion fue exitosa.
+        /// </summary>
+        public async Task<bool> ActualizarUrl(int agenciaId, string urlAgencia)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "UPDATE Agencia SET URL_Agencia = @Url WHERE ID = @AgenciaId", connection);
+            command.Parameters.AddWithValue("@Url", urlAgencia);
             command.Parameters.AddWithValue("@AgenciaId", agenciaId);
             return await command.ExecuteNonQueryAsync() > 0;
         }
