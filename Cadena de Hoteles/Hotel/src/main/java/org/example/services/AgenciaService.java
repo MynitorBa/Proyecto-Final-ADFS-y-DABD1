@@ -2,6 +2,7 @@ package org.example.services;
 
 import org.example.dtos.AgenciaDTO;
 import org.example.dtos.CrearAgenciaRequestDTO;
+import org.example.dtos.CrearAgenciaAdminRequestDTO;
 import org.example.dtos.EditarAgenciaRequestDTO;
 import org.example.repositories.AgenciaRepository;
 
@@ -32,7 +33,7 @@ public class AgenciaService {
     }
 
     /**
-     * Crea una nueva agencia vinculada al usuario dado.
+     * Crea una nueva agencia vinculada al usuario dado (flujo del portal webservice).
      * @param usuarioId ID del usuario que crea la agencia.
      * @param req       datos de la nueva agencia.
      * @return DTO con los datos de la agencia creada.
@@ -42,9 +43,19 @@ public class AgenciaService {
     }
 
     /**
+     * Crea una nueva agencia desde el panel de administracion, asignandola al usuario
+     * webservice indicado en el request.
+     * @param req datos de la nueva agencia incluyendo el ID del usuario webservice.
+     * @return DTO con los datos de la agencia creada.
+     */
+    public AgenciaDTO crearDesdeAdmin(CrearAgenciaAdminRequestDTO req) {
+        return repo.crearDesdeAdmin(req);
+    }
+
+    /**
      * Cambia el estado de una agencia entre Activo (1) y Cerrado (2).
      * @param agenciaId    ID de la agencia a modificar.
-     * @param usuarioId    ID del usuario dueno de la agencia.
+     * @param usuarioId    ID del usuario webservice dueno de la agencia.
      * @param nuevoEstadoId nuevo estado: 1 para Activo, 2 para Cerrado.
      * @throws IllegalArgumentException si el estado no es 1 ni 2.
      */
@@ -57,7 +68,7 @@ public class AgenciaService {
     /**
      * Elimina una agencia del usuario dado.
      * @param agenciaId ID de la agencia a eliminar.
-     * @param usuarioId ID del usuario dueno de la agencia.
+     * @param usuarioId ID del usuario webservice dueno de la agencia.
      */
     public void eliminar(int agenciaId, int usuarioId) {
         repo.eliminar(agenciaId, usuarioId);

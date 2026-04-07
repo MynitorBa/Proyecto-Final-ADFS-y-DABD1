@@ -33,6 +33,10 @@ import org.example.controllers.TokenValidacionController;
 import org.example.controllers.ReservacionAgenciaController;
 import org.example.controllers.PagoAgenciaController;
 
+// Controllers de gestion de entidades webservice
+import org.example.controllers.AerolineaWebserviceController;
+import org.example.controllers.AerolineaAdminController;
+
 import java.util.Map;
 
 /**
@@ -72,9 +76,13 @@ public class Main {
         UsuarioNacionalidadRepository  usuarioNacionalidadRepository  = new UsuarioNacionalidadRepository();
         UsuarioRepository              usuarioRepository              = new UsuarioRepository();
 
-        AerolineaAliadaRepository aerolineaAliadaRepository = new AerolineaAliadaRepository();
-        TokenAerolineaRepository tokenAerolineaRepository = new TokenAerolineaRepository();
-        TokenValidacionRepository tokenValidacionRepository = new TokenValidacionRepository();
+        AerolineaAliadaRepository      aerolineaAliadaRepository      = new AerolineaAliadaRepository();
+        TokenAerolineaRepository       tokenAerolineaRepository       = new TokenAerolineaRepository();
+        TokenValidacionRepository      tokenValidacionRepository      = new TokenValidacionRepository();
+
+        // Repositories de gestion de entidades webservice
+        AerolineaWebserviceRepository  aerolineaWebserviceRepository  = new AerolineaWebserviceRepository();
+        AerolineaAdminRepository       aerolineaAdminRepository       = new AerolineaAdminRepository();
 
         // Services
         AdminBusquedaService      adminBusquedaService      = new AdminBusquedaService(adminBusquedaRepository);
@@ -104,6 +112,10 @@ public class Main {
         BusquedaAerolineaService busquedaAerolineaService = new BusquedaAerolineaService(aerolineaAliadaRepository);
         TokenAerolineaService tokenAerolineaService = new TokenAerolineaService(tokenAerolineaRepository, aerolineaAliadaRepository);
         TokenValidacionService    tokenValidacionService    = new TokenValidacionService(tokenValidacionRepository);
+
+        // Services de gestion de entidades webservice
+        AerolineaWebserviceService aerolineaWebserviceService = new AerolineaWebserviceService(aerolineaWebserviceRepository);
+        AerolineaAdminService      aerolineaAdminService      = new AerolineaAdminService(aerolineaAdminRepository);
 
         // Hilo de expiracion de reservaciones pendientes
         expiracionService.iniciar();
@@ -147,10 +159,14 @@ public class Main {
         new BusquedaAgenciaController(busquedaAgenciaService).registerRoutes(app);
         new PagoAgenciaController(pagoAgenciaService).registerRoutes(app);
 
-        // Controllers de aerolineas
+        // Controllers de aerolineas (busqueda y tokens para integraciones externas)
         new BusquedaAerolineaController(busquedaAerolineaService).registerRoutes(app);
         new TokenAerolineaController(tokenAerolineaService).registerRoutes(app);
         new TokenValidacionController(tokenValidacionService).registerRoutes(app);
+
+        // Controllers de gestion de entidades webservice desde sus respectivos portales
+        new AerolineaWebserviceController(aerolineaWebserviceService).registerRoutes(app);
+        new AerolineaAdminController(aerolineaAdminService).registerRoutes(app);
 
         // Controllers adicionales
         new DestinosController(destinosService).registerRoutes(app);

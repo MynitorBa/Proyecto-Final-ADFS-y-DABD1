@@ -2,20 +2,21 @@
   /**
    * @file Administrador.svelte
    * @description Panel de administracion de Miku Inn. Contiene un sidebar con
-   * navegacion entre secciones (dashboard, usuarios, hoteles, reservas, agencias
-   * y reportes) y carga el sub-componente correspondiente segun la seccion activa.
+   * navegacion entre secciones (dashboard, usuarios, hoteles, reservas, agencias,
+   * aerolineas y reportes) y carga el sub-componente correspondiente segun la seccion activa.
    */
 
   import '../styles/administrador.css';
   import { onMount } from 'svelte';
 
-  import AdminDashboard  from '../components/admin/AdminDashboard.svelte';
-  import AdminUsuarios   from '../components/admin/AdminUsuarios.svelte';
-  import AdminHoteles    from '../components/admin/AdminHoteles.svelte';
-  import AdminCrearHotel from '../components/admin/AdminCrearHotel.svelte';
-  import AdminReservas   from '../components/admin/AdminReservas.svelte';
-  import AdminAgencias   from '../components/admin/AdminAgencias.svelte';
-  import AdminReportes   from '../components/admin/AdminReportes.svelte';
+  import AdminDashboard   from '../components/admin/AdminDashboard.svelte';
+  import AdminUsuarios    from '../components/admin/AdminUsuarios.svelte';
+  import AdminHoteles     from '../components/admin/AdminHoteles.svelte';
+  import AdminCrearHotel  from '../components/admin/AdminCrearHotel.svelte';
+  import AdminReservas    from '../components/admin/AdminReservas.svelte';
+  import AdminAgencias    from '../components/admin/AdminAgencias.svelte';
+  import AdminAerolineas  from '../components/admin/AdminAerolineas.svelte';
+  import AdminReportes    from '../components/admin/AdminReportes.svelte';
 
   /** URL base del backend usada por todos los sub-componentes de admin. @type {string} */
   const API_BASE = 'http://localhost:7000';
@@ -27,16 +28,19 @@
   let activeSection = 'dashboard';
 
   /** Contador de usuarios, actualizado por AdminUsuarios via bind. @type {number} */
-  let countUsuarios = 0;
+  let countUsuarios   = 0;
 
   /** Contador de hoteles, actualizado por AdminHoteles via bind. @type {number} */
-  let countHoteles  = 0;
+  let countHoteles    = 0;
 
   /** Contador de reservas, actualizado por AdminReservas via bind. @type {number} */
-  let countReservas = 0;
+  let countReservas   = 0;
 
   /** Contador de agencias, actualizado por AdminAgencias via bind. @type {number} */
-  let countAgencias = 0;
+  let countAgencias   = 0;
+
+  /** Contador de aerolineas, actualizado por AdminAerolineas via bind. @type {number} */
+  let countAerolineas = 0;
 
   /**
    * Cambia la seccion visible dentro del panel de administracion.
@@ -87,6 +91,7 @@
 
   /**
    * Items del sidebar de navegacion con su id, etiqueta e icono SVG (path d).
+   * Incluye la seccion de aerolineas aliadas junto a la de agencias.
    * @type {Array<{id: string, label: string, icon: string}>}
    */
   const navItems = [
@@ -96,6 +101,8 @@
     { id: 'crear-hotel',  label: 'Crear Hotel',   icon: 'M12 4v16m8-8H4' },
     { id: 'reservas',     label: 'Reservas',      icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'agencias',     label: 'Agencias',      icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+    // Seccion de aerolineas aliadas en el sidebar de administracion
+    { id: 'aerolineas',   label: 'Aerolineas',    icon: 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z' },
     { id: 'reportes',     label: 'Reportes',      icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ];
 </script>
@@ -150,6 +157,7 @@
           {:else if activeSection === 'crear-hotel'}Crear Nuevo Hotel
           {:else if activeSection === 'reservas'}Reservas
           {:else if activeSection === 'agencias'}Gestión de Agencias
+          {:else if activeSection === 'aerolineas'}Gestión de Aerolineas Aliadas
           {:else if activeSection === 'reportes'}Reportes y Estadísticas
           {/if}
         </h1>
@@ -184,6 +192,10 @@
 
       {:else if activeSection === 'agencias'}
         <AdminAgencias {API_BASE} {badge} bind:count={countAgencias} />
+
+      <!-- Seccion de aerolineas aliadas: listado, creacion y edicion -->
+      {:else if activeSection === 'aerolineas'}
+        <AdminAerolineas {API_BASE} {badge} bind:count={countAerolineas} />
 
       {:else if activeSection === 'reportes'}
         <AdminReportes {API_BASE} {badge} />

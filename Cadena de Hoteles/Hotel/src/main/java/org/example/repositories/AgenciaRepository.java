@@ -3,6 +3,7 @@ package org.example.repositories;
 import org.example.data.DatabaseManager;
 import org.example.dtos.AgenciaDTO;
 import org.example.dtos.CrearAgenciaRequestDTO;
+import org.example.dtos.CrearAgenciaAdminRequestDTO;
 import org.example.dtos.EditarAgenciaRequestDTO;
 import org.example.dtos.AgenciaIdentidad;
 
@@ -19,6 +20,7 @@ public class AgenciaRepository {
 
     /**
      * Convierte una fila del ResultSet en un objeto AgenciaDTO.
+     * Incluye el campo URL_Agencia del sistema externo registrado.
      * @param rs fila activa del ResultSet con los campos de la agencia.
      * @return instancia de AgenciaDTO con los datos mapeados.
      * @throws SQLException si ocurre un error al leer alguna columna del ResultSet.
@@ -32,6 +34,8 @@ public class AgenciaRepository {
         dto.setPorcentajeDescuento(rs.getDouble("PorcentajeDescuento"));
         dto.setEstadoId(rs.getInt("EstadoID"));
         dto.setEstado(rs.getString("Estado"));
+        // Mapea la URL del sistema externo de la agencia
+        dto.setUrlAgencia(rs.getString("URL_Agencia"));
         return dto;
     }
 
@@ -42,7 +46,7 @@ public class AgenciaRepository {
     public List<AgenciaDTO> listarTodas() {
         String sql = """
                 SELECT a.ID, a.Nombre, a.Correo, a.UsuarioWebis_ID,
-                       a.PorcentajeDescuento, a.EstadoID, e.Estado
+                       a.PorcentajeDescuento, a.EstadoID, e.Estado, a.URL_Agencia
                 FROM   Agencia      a
                 JOIN   EstadoAgencia e ON a.EstadoID = e.ID
                 ORDER BY a.ID
@@ -58,7 +62,7 @@ public class AgenciaRepository {
     public List<AgenciaDTO> listarPorUsuario(int usuarioId) {
         String sql = """
                 SELECT a.ID, a.Nombre, a.Correo, a.UsuarioWebis_ID,
-                       a.PorcentajeDescuento, a.EstadoID, e.Estado
+                       a.PorcentajeDescuento, a.EstadoID, e.Estado, a.URL_Agencia
                 FROM   Agencia      a
                 JOIN   EstadoAgencia e ON a.EstadoID = e.ID
                 WHERE  a.UsuarioWebis_ID = ?
@@ -68,35 +72,46 @@ public class AgenciaRepository {
     }
 
     /**
-     * Crea una nueva agencia vinculada al usuario webservice indicado.
+     * Crea una nueva agencia vinculada al usuario webservice indicado (flujo del portal webservice).
      * Valida que los campos obligatorios esten presentes y que el usuario
-     * no tenga ya una agencia registrada, ya que solo se permite una por usuario.
+     * no tenga ya una agencia ni una aerolinea registrada,
+     * ya que solo se permite una entidad por usuario webservice.
      * @param usuarioId ID del usuario webservice que sera propietario de la agencia.
-     * @param req       datos de la nueva agencia (nombre y correo).
+     * @param req       datos de la nueva agencia (nombre, correo y URL del sistema externo).
      * @return AgenciaDTO con los datos de la agencia recien creada.
-     * @throws IllegalArgumentException si el nombre o correo estan vacios, o si el usuario ya tiene una agencia.
+     * @throws IllegalArgumentException si algun campo obligatorio esta vacio,
+     *                                  o si el usuario ya tiene una agencia o una aerolinea registrada.
      */
     public AgenciaDTO crear(int usuarioId, CrearAgenciaRequestDTO req) {
         if (req.getNombre() == null || req.getNombre().isBlank())
             throw new IllegalArgumentException("El nombre de la agencia es obligatorio");
         if (req.getCorreo() == null || req.getCorreo().isBlank())
             throw new IllegalArgumentException("El correo de la agencia es obligatorio");
+        if (req.getUrlAgencia() == null || req.getUrlAgencia().isBlank())
+            throw new IllegalArgumentException("La URL del sistema externo es obligatoria");
 
         // Verifica que el usuario no tenga ya una agencia registrada
-        String checkSql = "SELECT COUNT(*) AS C FROM Agencia WHERE UsuarioWebis_ID = ?";
-        List<Integer> existe = DatabaseManager.executeQuery(checkSql, rs -> rs.getInt("C"), usuarioId);
-        if (!existe.isEmpty() && existe.get(0) > 0)
-            throw new IllegalArgumentException("Ya tienes una agencia registrada. Solo se permite una por usuario webservice.");
+        String checkAgencia = "SELECT COUNT(*) AS C FROM Agencia WHERE UsuarioWebis_ID = ?";
+        List<Integer> existeAgencia = DatabaseManager.executeQuery(checkAgencia, rs -> rs.getInt("C"), usuarioId);
+        if (!existeAgencia.isEmpty() && existeAgencia.get(0) > 0)
+            throw new IllegalArgumentException("Ya tienes una agencia registrada. Solo se permite una entidad por usuario webservice.");
 
-        // EstadoID=1 equivale a Activa; el descuento siempre inicia en 0
+        // Verifica que el usuario no tenga ya una aerolinea registrada
+        String checkAerolinea = "SELECT COUNT(*) AS C FROM AerolineaAliado WHERE UsuarioWebis = ?";
+        List<Integer> existeAerolinea = DatabaseManager.executeQuery(checkAerolinea, rs -> rs.getInt("C"), usuarioId);
+        if (!existeAerolinea.isEmpty() && existeAerolinea.get(0) > 0)
+            throw new IllegalArgumentException("Ya tienes una aerolinea registrada. Solo se permite una entidad por usuario webservice.");
+
+        // EstadoID=1 equivale a Activa; el descuento siempre inicia en 0; los tokens se asignan en el handshake
         String sql = """
-                INSERT INTO Agencia (Nombre, Correo, UsuarioWebis_ID, PorcentajeDescuento, EstadoID)
-                VALUES (?, ?, ?, 0, 1)
+                INSERT INTO Agencia (Nombre, Correo, UsuarioWebis_ID, PorcentajeDescuento, EstadoID, URL_Agencia)
+                VALUES (?, ?, ?, 0, 1, ?)
                 """;
         int nuevoId = DatabaseManager.executeInsertReturnId(sql, "ID",
                 req.getNombre().trim(),
                 req.getCorreo().trim(),
-                usuarioId
+                usuarioId,
+                req.getUrlAgencia().trim()
         );
 
         // Construye y retorna el DTO con los datos insertados
@@ -108,6 +123,61 @@ public class AgenciaRepository {
         dto.setPorcentajeDescuento(0);
         dto.setEstadoId(1);
         dto.setEstado("Activa");
+        dto.setUrlAgencia(req.getUrlAgencia().trim());
+        return dto;
+    }
+
+    /**
+     * Crea una nueva agencia desde el panel de administracion, asignandola al usuario
+     * webservice indicado en el request. Valida que el usuario no tenga ya una entidad.
+     * @param req datos de la nueva agencia incluyendo el ID del usuario webservice.
+     * @return AgenciaDTO con los datos de la agencia recien creada.
+     * @throws IllegalArgumentException si algun campo es invalido o el usuario ya tiene una entidad.
+     */
+    public AgenciaDTO crearDesdeAdmin(CrearAgenciaAdminRequestDTO req) {
+        if (req.getNombre() == null || req.getNombre().isBlank())
+            throw new IllegalArgumentException("El nombre de la agencia es obligatorio");
+        if (req.getCorreo() == null || req.getCorreo().isBlank())
+            throw new IllegalArgumentException("El correo de la agencia es obligatorio");
+        if (req.getUrlAgencia() == null || req.getUrlAgencia().isBlank())
+            throw new IllegalArgumentException("La URL del sistema externo es obligatoria");
+        if (req.getUsuarioWebisId() <= 0)
+            throw new IllegalArgumentException("Debe seleccionar un usuario webservice valido");
+
+        // Verifica que el usuario no tenga ya una agencia registrada
+        String checkAgencia = "SELECT COUNT(*) AS C FROM Agencia WHERE UsuarioWebis_ID = ?";
+        List<Integer> existeAgencia = DatabaseManager.executeQuery(checkAgencia, rs -> rs.getInt("C"), req.getUsuarioWebisId());
+        if (!existeAgencia.isEmpty() && existeAgencia.get(0) > 0)
+            throw new IllegalArgumentException("El usuario ya tiene una agencia registrada. Solo se permite una entidad por usuario webservice.");
+
+        // Verifica que el usuario no tenga ya una aerolinea registrada
+        String checkAerolinea = "SELECT COUNT(*) AS C FROM AerolineaAliado WHERE UsuarioWebis = ?";
+        List<Integer> existeAerolinea = DatabaseManager.executeQuery(checkAerolinea, rs -> rs.getInt("C"), req.getUsuarioWebisId());
+        if (!existeAerolinea.isEmpty() && existeAerolinea.get(0) > 0)
+            throw new IllegalArgumentException("El usuario ya tiene una aerolinea registrada. Solo se permite una entidad por usuario webservice.");
+
+        // EstadoID=1 equivale a Activa; el descuento siempre inicia en 0; los tokens se asignan en el handshake
+        String sql = """
+                INSERT INTO Agencia (Nombre, Correo, UsuarioWebis_ID, PorcentajeDescuento, EstadoID, URL_Agencia)
+                VALUES (?, ?, ?, 0, 1, ?)
+                """;
+        int nuevoId = DatabaseManager.executeInsertReturnId(sql, "ID",
+                req.getNombre().trim(),
+                req.getCorreo().trim(),
+                req.getUsuarioWebisId(),
+                req.getUrlAgencia().trim()
+        );
+
+        // Construye y retorna el DTO con los datos insertados
+        AgenciaDTO dto = new AgenciaDTO();
+        dto.setId(nuevoId);
+        dto.setNombre(req.getNombre().trim());
+        dto.setCorreo(req.getCorreo().trim());
+        dto.setUsuarioWebisId(req.getUsuarioWebisId());
+        dto.setPorcentajeDescuento(0);
+        dto.setEstadoId(1);
+        dto.setEstado("Activa");
+        dto.setUrlAgencia(req.getUrlAgencia().trim());
         return dto;
     }
 
@@ -123,16 +193,20 @@ public class AgenciaRepository {
             throw new IllegalArgumentException("El nombre de la agencia es obligatorio");
         if (req.getCorreo() == null || req.getCorreo().isBlank())
             throw new IllegalArgumentException("El correo de la agencia es obligatorio");
+        if (req.getUrlAgencia() == null || req.getUrlAgencia().isBlank())
+            throw new IllegalArgumentException("La URL del sistema externo es obligatoria");
         if (req.getPorcentajeDescuento() < 0 || req.getPorcentajeDescuento() > 100)
             throw new IllegalArgumentException("El porcentaje de descuento debe estar entre 0 y 100");
         // EstadoAgencia: 1=Activa, 2=Inactiva
         if (req.getEstadoId() != 1 && req.getEstadoId() != 2)
             throw new IllegalArgumentException("Estado invalido. Use 1 (Activa) o 2 (Inactiva)");
 
+        // Actualiza todos los campos editables incluyendo la URL del sistema externo
         DatabaseManager.executeUpdate(
-                "UPDATE Agencia SET Nombre=?, Correo=?, PorcentajeDescuento=?, EstadoID=? WHERE ID=?",
+                "UPDATE Agencia SET Nombre=?, Correo=?, URL_Agencia=?, PorcentajeDescuento=?, EstadoID=? WHERE ID=?",
                 req.getNombre().trim(),
                 req.getCorreo().trim(),
+                req.getUrlAgencia().trim(),
                 req.getPorcentajeDescuento(),
                 req.getEstadoId(),
                 agenciaId

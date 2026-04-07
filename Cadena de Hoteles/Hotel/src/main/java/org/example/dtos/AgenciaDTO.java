@@ -2,7 +2,8 @@ package org.example.dtos;
 
 /**
  * DTO que representa los datos de una agencia para transferencia entre capas.
- * Incluye el nombre del estado resuelto mediante join con la tabla ESTADO.
+ * Incluye el nombre del estado resuelto mediante join con la tabla ESTADO,
+ * y la URL del sistema externo registrada al momento de la creacion.
  */
 public class AgenciaDTO {
 
@@ -13,6 +14,9 @@ public class AgenciaDTO {
     private double porcentajeDescuento;
     private int    estadoId;
     private String estado;
+
+    /** URL del sistema externo de la agencia registrada al crear la entidad. */
+    private String urlAgencia;
 
     /**
      * Retorna el identificador unico de la agencia.
@@ -57,6 +61,12 @@ public class AgenciaDTO {
     public String getEstado() { return estado; }
 
     /**
+     * Retorna la URL del sistema externo de la agencia.
+     * @return URL de la agencia.
+     */
+    public String getUrlAgencia() { return urlAgencia; }
+
+    /**
      * Asigna el identificador unico de la agencia.
      * @param id ID de la agencia.
      */
@@ -97,4 +107,10 @@ public class AgenciaDTO {
      * @param estado nombre del estado.
      */
     public void setEstado(String estado) { this.estado = estado; }
+
+    /**
+     * Asigna la URL del sistema externo de la agencia.
+     * @param urlAgencia URL del sistema externo.
+     */
+    public void setUrlAgencia(String urlAgencia) { this.urlAgencia = urlAgencia; }
 }
