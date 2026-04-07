@@ -2,12 +2,12 @@
 /**
  * @file AdminAgencias.svelte
  * @description Admin panel section for managing travel agencies. Displays a summary stats bar
- * (total, active, inactive, without assigned user) and a table of all agencies. Provides three
- * modal dialogs: one to create a new agency (with name, email, webservice user and initial
- * discount), one to assign an available webservice user to an existing agency, and one to edit
- * an agency's discount percentage. Agency status can also be changed inline through a select
- * element in the table row. All mutations call the backend API and refresh the local state on
- * success.
+ * (total, active, inactive, without assigned user) and a table of all agencies. Provides four
+ * modal dialogs: one to create a new agency (with name, email, URL, webservice user and initial
+ * discount), one to assign an available webservice user to an existing agency, one to edit an
+ * agency's discount percentage, and one to edit its public URL. Agency status can also be changed
+ * inline through a select element in the table row. All mutations call the backend API and refresh
+ * the local state on success.
  */
 // @ts-nocheck
   import { onMount } from 'svelte';
@@ -22,58 +22,81 @@
   export let mostrarConfirm;
 
   /** List of agencies loaded from the backend. @type {any[]} */
-  let agencias          = [];
+  let agencias           = [];
 
-  /** Webservice-role users that have no agency assigned yet, used to populate the user selectors. @type {any[]} */
+  /** Webservice-role users that have no entity assigned yet, used to populate the user selectors. @type {any[]} */
   let usuariosDisponibles = [];
 
   /** Whether the main data fetch is in progress. @type {boolean} */
-  let cargando          = false;
+  let cargando           = false;
+
+  // ── Create modal state ────────────────────────────────────────────────
 
   /** Controls visibility of the create-agency modal. @type {boolean} */
-  let modalCrear        = false;
+  let modalCrear         = false;
 
   /** Whether the create-agency API request is in flight. @type {boolean} */
-  let creando           = false;
+  let creando            = false;
 
   /** Agency name field value for the create form. @type {string} */
-  let crearNombre       = '';
+  let crearNombre        = '';
 
   /** Agency email field value for the create form. @type {string} */
-  let crearCorreo       = '';
+  let crearCorreo        = '';
+
+  /** Public URL of the agency for the create form. @type {string} */
+  let crearUrl           = '';
 
   /** Selected webservice user ID for the create form. @type {string} */
-  let crearUsuarioId    = '';
+  let crearUsuarioId     = '';
 
   /** Initial discount percentage value for the create form. @type {number} */
-  let crearDescuento    = 0;
+  let crearDescuento     = 0;
 
   /** Field-level validation errors for the create form. @type {Record<string, string>} */
-  let crearErrores      = {};
+  let crearErrores       = {};
+
+  // ── Assign-user modal state ───────────────────────────────────────────
 
   /** Controls visibility of the assign-user modal. @type {boolean} */
-  let modalAsignar      = false;
+  let modalAsignar       = false;
 
   /** Whether the assign-user API request is in flight. @type {boolean} */
-  let asignando         = false;
+  let asignando          = false;
 
   /** The agency row currently selected for user assignment. @type {any} */
   let agenciaSeleccionada = null;
 
   /** Selected webservice user ID in the assign-user modal. @type {string} */
-  let asignarUsuarioId  = '';
+  let asignarUsuarioId   = '';
+
+  // ── Edit-discount modal state ─────────────────────────────────────────
 
   /** Controls visibility of the edit-discount modal. @type {boolean} */
-  let modalDescuento    = false;
+  let modalDescuento     = false;
 
   /** Whether the save-discount API request is in flight. @type {boolean} */
   let guardandoDescuento = false;
 
-  /** Current discount percentage value being edited in the discount modal. @type {number} */
-  let descuentoEditando = 0;
+  /** Current discount percentage value being edited. @type {number} */
+  let descuentoEditando  = 0;
 
-  /** The agency row currently being edited in the discount modal. @type {any} */
-  let agenciaDescuento  = null;
+  /** The agency row being edited in the discount modal. @type {any} */
+  let agenciaDescuento   = null;
+
+  // ── Edit-URL modal state ──────────────────────────────────────────────
+
+  /** Controls visibility of the edit-URL modal. @type {boolean} */
+  let modalUrl           = false;
+
+  /** Whether the save-URL API request is in flight. @type {boolean} */
+  let guardandoUrl       = false;
+
+  /** URL value being edited in the URL modal. @type {string} */
+  let urlEditando        = '';
+
+  /** The agency row being edited in the URL modal. @type {any} */
+  let agenciaUrl         = null;
 
   /**
    * Status option definitions used to render the inline status select and badge styles.
@@ -107,12 +130,12 @@
     cargando = true;
     try {
       const [rAgencias, rUsuarios] = await Promise.all([
-        fetch(`${API}/api/agencias/todas`,                 { credentials: 'include' }),
-        fetch(`${API}/api/agencias/webservice-disponibles`,{ credentials: 'include' }),
+        fetch(`${API}/api/agencias/todas`,                  { credentials: 'include' }),
+        fetch(`${API}/api/agencias/webservice-disponibles`, { credentials: 'include' }),
       ]);
-      if (rAgencias.ok)  agencias           = await rAgencias.json();
+      if (rAgencias.ok) agencias            = await rAgencias.json();
       else mostrarToast('error', 'Error al cargar agencias.');
-      if (rUsuarios.ok)  usuariosDisponibles = await rUsuarios.json();
+      if (rUsuarios.ok) usuariosDisponibles = await rUsuarios.json();
     } catch { mostrarToast('error', 'Error de conexion.'); }
     finally  { cargando = false; }
   }
@@ -134,7 +157,7 @@
    * Resets the create-agency form fields and errors, then opens the create modal.
    */
   function abrirModalCrear() {
-    crearNombre = ''; crearCorreo = ''; crearUsuarioId = ''; crearDescuento = 0;
+    crearNombre = ''; crearCorreo = ''; crearUrl = ''; crearUsuarioId = ''; crearDescuento = 0;
     crearErrores = {};
     modalCrear = true;
   }
@@ -149,6 +172,8 @@
     if (!crearNombre.trim()) crearErrores.nombre = 'Requerido.';
     if (!crearCorreo.trim()) crearErrores.correo = 'Requerido.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(crearCorreo)) crearErrores.correo = 'Correo invalido.';
+    if (!crearUrl.trim()) crearErrores.url = 'Requerido.';
+    else if (!/^https?:\/\/.+/.test(crearUrl.trim())) crearErrores.url = 'URL invalida (debe iniciar con http:// o https://).';
     if (!crearUsuarioId) crearErrores.usuario = 'Debes seleccionar un usuario Webservice.';
     if (crearDescuento < 0 || crearDescuento > 100) crearErrores.descuento = 'Entre 0 y 100.';
     return Object.keys(crearErrores).length === 0;
@@ -170,6 +195,7 @@
         body: JSON.stringify({
           nombre:              crearNombre.trim(),
           correo:              crearCorreo.trim(),
+          urlAgencia:          crearUrl.trim(),
           usuarioWebID:        parseInt(crearUsuarioId),
           porcentajeDescuento: parseFloat(crearDescuento),
         })
@@ -235,8 +261,7 @@
 
   /**
    * Validates the discount value (0–100) and PUTs the updated discount to the backend.
-   * On success closes the modal and reloads all data. Shows error toasts on validation or
-   * API failure.
+   * On success closes the modal and reloads all data. Shows error toasts on failures.
    * @async
    * @returns {Promise<void>}
    */
@@ -264,9 +289,46 @@
   }
 
   /**
+   * Pre-fills the URL modal with the agency's current URL and opens it.
+   * @param {any} agencia - The agency row object from the table.
+   */
+  function abrirModalUrl(agencia) {
+    agenciaUrl  = agencia;
+    urlEditando = agencia.urlAgencia ?? '';
+    modalUrl    = true;
+  }
+
+  /**
+   * Validates the URL value and PUTs the updated URL to the backend.
+   * On success closes the modal and reloads all data. Shows error toasts on failures.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function handleGuardarUrl() {
+    if (!urlEditando.trim()) { mostrarToast('error', 'La URL no puede estar vacia.'); return; }
+    if (!/^https?:\/\/.+/.test(urlEditando.trim())) { mostrarToast('error', 'URL invalida (debe iniciar con http:// o https://).'); return; }
+    guardandoUrl = true;
+    try {
+      const r = await fetch(`${API}/api/agencias/${agenciaUrl.id}/url`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urlAgencia: urlEditando.trim() })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        mostrarToast('success', 'URL actualizada.');
+        modalUrl = false;
+        await cargarTodo();
+      } else {
+        mostrarToast('error', data.message || 'Error al actualizar URL.');
+      }
+    } catch { mostrarToast('error', 'Error de conexion.'); }
+    finally { guardandoUrl = false; }
+  }
+
+  /**
    * Sends a PUT request to change an agency's status. On success updates the local agencias
-   * array optimistically without a full reload. On failure reloads the full list to revert
-   * the inline select to the server state.
+   * array optimistically without a full reload. On failure reloads the full list to revert.
    * @async
    * @param {any} agencia - The agency row object whose status is being changed.
    * @param {string|number} nuevoEstadoId - The new status ID to apply.
@@ -290,20 +352,10 @@
     } catch { mostrarToast('error', 'Error de conexion.'); }
   }
 
-  // Total number of agencies currently loaded.
-  $: totalAgencias  = agencias.length;
 
-  // Number of agencies with estadoAgenciaID === 1 (active).
-  $: totalActivas   = agencias.filter(a => a.estadoAgenciaID === 1).length;
-
-  // Number of agencies that are not active (inactive or suspended).
-  $: totalInactivas = agencias.filter(a => a.estadoAgenciaID !== 1).length;
-
-  // Number of agencies with no webservice user assigned.
-  $: sinUsuario     = agencias.filter(a => !a.usuarioWebID).length;
 </script>
 
-<!-- Modal de creacion de nueva agencia con nombre, correo, usuario webservice y descuento -->
+<!-- Modal de creacion de nueva agencia con nombre, correo, URL, usuario webservice y descuento -->
 {#if modalCrear}
   <div class="ag-overlay" on:click={() => modalCrear = false} role="dialog" aria-modal="true">
     <div class="ag-modal" on:click|stopPropagation>
@@ -327,13 +379,21 @@
           {#if crearErrores.correo}<p class="ag-field__err">{crearErrores.correo}</p>{/if}
         </div>
 
+        <!-- URL publica de la agencia para que la aerolinea pueda comunicarse con ella -->
+        <div class="ag-field">
+          <label class="ag-field__label">URL de la agencia <span class="ag-required">*</span></label>
+          <input class="ag-field__input" class:ag-field__input--err={crearErrores.url}
+            type="url" bind:value={crearUrl} placeholder="https://mi-agencia.com" maxlength="300" />
+          {#if crearErrores.url}<p class="ag-field__err">{crearErrores.url}</p>{/if}
+        </div>
+
         <div class="ag-field">
           <label class="ag-field__label">
             Usuario Webservice <span class="ag-required">*</span>
           </label>
           {#if usuariosDisponibles.length === 0}
             <div class="ag-notice ag-notice--warn">
-              No hay usuarios Webservice disponibles sin agencia asignada.
+              No hay usuarios Webservice disponibles sin entidad asignada.
             </div>
           {:else}
             <select class="ag-field__select" class:ag-field__input--err={crearErrores.usuario}
@@ -381,7 +441,7 @@
         </p>
         {#if usuariosDisponibles.length === 0}
           <div class="ag-notice ag-notice--warn">
-            No hay usuarios Webservice disponibles sin agencia asignada.
+            No hay usuarios Webservice disponibles sin entidad asignada.
           </div>
         {:else}
           <div class="ag-field">
@@ -436,6 +496,34 @@
   </div>
 {/if}
 
+<!-- Modal para editar la URL publica de una agencia -->
+{#if modalUrl}
+  <div class="ag-overlay" on:click={() => modalUrl = false} role="dialog" aria-modal="true">
+    <div class="ag-modal ag-modal--sm" on:click|stopPropagation>
+      <div class="ag-modal__header">
+        <h3 class="ag-modal__title">Editar URL</h3>
+        <button class="ag-modal__close" on:click={() => modalUrl = false}>×</button>
+      </div>
+      <div class="ag-modal__body">
+        <p class="ag-modal__desc">Agencia: <strong>{agenciaUrl?.nombre}</strong></p>
+        <div class="ag-field">
+          <label class="ag-field__label">URL publica de la agencia</label>
+          <input class="ag-field__input" type="url" placeholder="https://mi-agencia.com"
+            bind:value={urlEditando} maxlength="300" />
+        </div>
+      </div>
+      <div class="ag-modal__footer">
+        <button class="btn-secondary" on:click={() => modalUrl = false} disabled={guardandoUrl}>
+          Cancelar
+        </button>
+        <button class="btn-primary" on:click={handleGuardarUrl} disabled={guardandoUrl}>
+          {guardandoUrl ? 'Guardando...' : 'Guardar'}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <!-- Seccion principal de gestion de agencias con estadisticas y tabla -->
 <section class="admin-section">
 
@@ -455,26 +543,6 @@
     </div>
   </div>
 
-  <!-- Barra de estadisticas: total, activas, inactivas y sin usuario asignado -->
-  <div class="ag-stats">
-    <div class="ag-stat">
-      <span class="ag-stat__num">{totalAgencias}</span>
-      <span class="ag-stat__lbl">Total</span>
-    </div>
-    <div class="ag-stat ag-stat--green">
-      <span class="ag-stat__num">{totalActivas}</span>
-      <span class="ag-stat__lbl">Activas</span>
-    </div>
-    <div class="ag-stat ag-stat--gray">
-      <span class="ag-stat__num">{totalInactivas}</span>
-      <span class="ag-stat__lbl">Inactivas / Susp.</span>
-    </div>
-    <div class="ag-stat ag-stat--warn">
-      <span class="ag-stat__num">{sinUsuario}</span>
-      <span class="ag-stat__lbl">Sin usuario</span>
-    </div>
-  </div>
-
   {#if cargando}
     <p class="loading-text">Cargando agencias...</p>
 
@@ -483,15 +551,15 @@
       <p class="placeholder-card__text">No hay agencias registradas todavia.</p>
     </div>
 
-  <!-- Tabla de agencias con usuario asignado, descuento editable y selector de estado -->
+  <!-- Tabla de agencias con usuario asignado, descuento editable, URL editable y selector de estado -->
   {:else}
     <div class="vuelos-table">
       <table class="table">
         <thead class="table__head">
           <tr>
             <th class="table__header">ID</th>
-            <th class="table__header">Nombre</th>
-            <th class="table__header">Correo</th>
+            <th class="table__header">Nombre / Correo</th>
+            <th class="table__header">URL</th>
             <th class="table__header">Usuario Webservice</th>
             <th class="table__header">Descuento</th>
             <th class="table__header">Estado</th>
@@ -505,10 +573,19 @@
 
               <td class="table__cell" data-label="Nombre">
                 <strong>{ag.nombre}</strong>
+                <br/>
+                <span style="font-size:.78rem; color:var(--text-muted)">{ag.correo}</span>
               </td>
 
-              <td class="table__cell" data-label="Correo">
-                <span style="font-size:.82rem; color:var(--text-muted)">{ag.correo}</span>
+              <!-- URL publica de la agencia; se trunca visualmente para no romper el layout -->
+              <td class="table__cell" data-label="URL">
+                {#if ag.urlAgencia}
+                  <span style="font-size:.78rem; color:var(--text-muted); word-break:break-all; max-width:160px; display:block;">
+                    {ag.urlAgencia}
+                  </span>
+                {:else}
+                  <span style="font-size:.75rem; color:#9ca3af; font-style:italic">Sin URL</span>
+                {/if}
               </td>
 
               <td class="table__cell" data-label="Usuario">
@@ -545,10 +622,17 @@
 
               <td class="table__cell" data-label="Acciones">
                 <div class="table__actions">
+                  <!-- Boton para editar la URL publica de la agencia -->
+                  <button class="table__action-btn ag-btn-asignar"
+                    style="background:#6366f1"
+                    on:click={() => abrirModalUrl(ag)}
+                    title="Editar URL">
+                    🔗 URL
+                  </button>
                   <button class="table__action-btn ag-btn-asignar"
                     on:click={() => abrirModalAsignar(ag)}
                     title="Asignar usuario Webservice">
-                    👤 Asignar usuario
+                    👤 Asignar
                   </button>
                 </div>
               </td>

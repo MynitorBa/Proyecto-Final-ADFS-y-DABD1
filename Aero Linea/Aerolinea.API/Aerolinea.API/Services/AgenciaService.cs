@@ -6,7 +6,7 @@ namespace Aerolinea.API.Services
     /// <summary>
     /// Servicio de agencias. Gestiona la logica de negocio para crear, consultar
     /// y administrar agencias de viaje, incluyendo asignacion de usuarios webservice,
-    /// descuentos y estados de la agencia.
+    /// descuentos, estados y URL publica de la agencia.
     /// </summary>
     public class AgenciaService
     {
@@ -23,7 +23,8 @@ namespace Aerolinea.API.Services
         // Usado por el Admin para crear una agencia asignando cualquier usuario webservice.
         /// <summary>
         /// Crea una nueva agencia asignando el usuario webservice indicado en el DTO.
-        /// Verifica que el usuario exista, tenga rol WebService y no tenga ya una agencia asignada.
+        /// Verifica que el usuario exista, tenga rol WebService y no tenga ya una agencia
+        /// ni un hotel aliado asignados, ya que solo puede tener una entidad activa.
         /// Uso exclusivo del administrador.
         /// </summary>
         public async Task<AgenciaResponseDTO> CrearAgencia(CrearAgenciaDTO dto)
@@ -34,31 +35,42 @@ namespace Aerolinea.API.Services
             if (rolID != 3)
                 throw new Exception("El usuario debe tener rol WebService.");
 
-            bool yaExiste = await _repository.UsuarioYaTieneAgencia(dto.UsuarioWebID);
-            if (yaExiste)
+            bool yaExisteAgencia = await _repository.UsuarioYaTieneAgencia(dto.UsuarioWebID);
+            if (yaExisteAgencia)
                 throw new Exception("El usuario WebService ya tiene una agencia asignada.");
+
+            // Verificar que el usuario no tenga ya un hotel aliado registrado
+            bool yaExisteHotel = await _repository.UsuarioYaTieneHotelAliado(dto.UsuarioWebID);
+            if (yaExisteHotel)
+                throw new Exception("El usuario WebService ya tiene un hotel aliado registrado. Un usuario solo puede tener una entidad.");
 
             return await _repository.CrearAgencia(dto);
         }
 
         // Usado por el propio usuario Webservice para registrar su agencia.
-        // Solo puede pasar Nombre y Correo; el UsuarioWebID viene de la sesión.
+        // Solo puede pasar Nombre, Correo y UrlAgencia; el UsuarioWebID viene de la sesión.
         /// <summary>
         /// Permite que un usuario con rol Webservice registre su propia agencia.
-        /// Solo acepta nombre y correo; el ID del usuario se toma de la sesion activa.
-        /// Un usuario Webservice solo puede tener una agencia registrada a la vez.
+        /// Verifica que no tenga ya una agencia ni un hotel aliado registrado.
+        /// El ID del usuario se toma de la sesion activa.
         /// </summary>
         public async Task<AgenciaResponseDTO> CrearAgenciaWebservice(int usuarioId, CrearAgenciaWebserviceDTO dto)
         {
-            bool yaExiste = await _repository.UsuarioYaTieneAgencia(usuarioId);
-            if (yaExiste)
+            bool yaExisteAgencia = await _repository.UsuarioYaTieneAgencia(usuarioId);
+            if (yaExisteAgencia)
                 throw new Exception("Ya tienes una agencia registrada. Solo se permite una por cuenta Webservice.");
+
+            // Un usuario Webservice no puede tener agencia Y hotel al mismo tiempo
+            bool yaExisteHotel = await _repository.UsuarioYaTieneHotelAliado(usuarioId);
+            if (yaExisteHotel)
+                throw new Exception("Ya tienes un hotel aliado registrado. Un usuario Webservice solo puede registrar una agencia o un hotel, no ambos.");
 
             // Construimos el DTO completo con los valores predeterminados
             var dtoCompleto = new CrearAgenciaDTO
             {
                 Nombre = dto.Nombre,
                 Correo = dto.Correo,
+                UrlAgencia = dto.UrlAgencia,
                 UsuarioWebID = usuarioId,
                 PorcentajeDescuento = 0   // El admin lo asigna después
             };
@@ -83,15 +95,15 @@ namespace Aerolinea.API.Services
             => await _repository.ObtenerTodasAdmin();
 
         /// <summary>
-        /// Retorna la lista de usuarios con rol Webservice que aun no tienen
-        /// ninguna agencia asignada. Util para el formulario de asignacion del admin.
+        /// Retorna la lista de usuarios con rol Webservice que no tienen ninguna entidad
+        /// asignada (ni agencia ni hotel aliado). Util para los selectores del panel admin.
         /// </summary>
         public async Task<List<UsuarioWebserviceDTO>> ObtenerWebserviceSinAgencia()
             => await _repository.ObtenerWebserviceSinAgencia();
 
         /// <summary>
         /// Asigna un usuario Webservice a una agencia existente. Verifica que el usuario
-        /// exista, tenga rol Webservice y no este ya asignado a otra agencia.
+        /// exista, tenga rol Webservice y no este ya asignado a ninguna otra entidad.
         /// </summary>
         public async Task AsignarUsuario(int agenciaId, int usuarioId)
         {
@@ -103,6 +115,10 @@ namespace Aerolinea.API.Services
             // Verificar que no tenga ya otra agencia
             bool yaAsignado = await _repository.UsuarioYaTieneAgencia(usuarioId);
             if (yaAsignado) throw new Exception("Ese usuario ya está asignado a otra agencia.");
+
+            // Verificar que no tenga un hotel aliado
+            bool tieneHotel = await _repository.UsuarioYaTieneHotelAliado(usuarioId);
+            if (tieneHotel) throw new Exception("Ese usuario ya tiene un hotel aliado registrado.");
 
             bool ok = await _repository.AsignarUsuarioAAgencia(agenciaId, usuarioId);
             if (!ok) throw new Exception("No se encontró la agencia indicada.");
@@ -129,6 +145,19 @@ namespace Aerolinea.API.Services
             if (estadoId < 1 || estadoId > 3)
                 throw new Exception("Estado no válido.");
             bool ok = await _repository.ActualizarEstado(agenciaId, estadoId);
+            if (!ok) throw new Exception("No se encontró la agencia indicada.");
+        }
+
+        // ── Admin: actualizar URL ─────────────────────────────────────────────
+        /// <summary>
+        /// Actualiza la URL publica de una agencia desde el panel de administracion.
+        /// La URL no puede estar vacia.
+        /// </summary>
+        public async Task ActualizarUrl(int agenciaId, string urlAgencia)
+        {
+            if (string.IsNullOrWhiteSpace(urlAgencia))
+                throw new Exception("La URL no puede estar vacía.");
+            bool ok = await _repository.ActualizarUrl(agenciaId, urlAgencia.Trim());
             if (!ok) throw new Exception("No se encontró la agencia indicada.");
         }
     }

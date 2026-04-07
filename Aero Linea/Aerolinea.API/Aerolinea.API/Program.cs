@@ -133,6 +133,11 @@ builder.Services.AddScoped<RutaAgenciaRepository>();
 builder.Services.AddScoped<HotelAliadoRepository>();
 
 /// <summary>
+/// servicio de hotel - obtener token descuentos al redireccionar.
+/// </summary>
+builder.Services.AddScoped<TokenHotelService>();
+
+/// <summary>
 /// Health check para monitoreo del estado del servidor.
 /// </summary>
 builder.Services.AddHealthChecks();
