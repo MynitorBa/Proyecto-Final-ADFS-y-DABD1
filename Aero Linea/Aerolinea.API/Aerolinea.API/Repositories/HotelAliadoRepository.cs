@@ -51,26 +51,47 @@ namespace Aerolinea.API.Repositories
             return hoteles;
         }
 
-<<<<<<< HEAD
-        // Verifica si el usuario webservice ya tiene un hotel aliado registrado
-        /// <summary>
-        /// Verifica si el usuario webservice dado ya tiene un hotel aliado registrado.
-        /// Retorna true si existe al menos un hotel para ese usuario.
-        /// </summary>
-        public async Task<bool> UsuarioYaTieneHotelAliado(int usuarioId)
-=======
         /// <summary>
         /// Retorna un hotel aliado activo por su ID.
         /// Retorna null si no existe o no esta activo.
         /// </summary>
         /// <param name="id">ID del registro HotelAliado a buscar.</param>
         public async Task<HotelAliadoConexionDTO> ObtenerHotelActivoPorId(int id)
->>>>>>> f5d91cb81a4cfa4abb8ca41606ab8646663340bf
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-<<<<<<< HEAD
+            string query = @"
+                SELECT h.ID, h.Nombre, h.URL, h.TokenHASH
+                FROM HotelAliado h
+                JOIN EstadoAliado e ON h.EstadoID = e.ID
+                WHERE h.ID = @id
+                AND LOWER(TRIM(e.Estado)) = 'activo'";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return new HotelAliadoConexionDTO
+            {
+                Id = reader.GetInt32(0),
+                Nombre = reader.GetString(1),
+                Url = reader.GetString(2),
+                TokenHash = reader.GetString(3)
+            };
+        }
+
+        /// <summary>
+        /// Verifica si el usuario webservice dado ya tiene un hotel aliado registrado.
+        /// Retorna true si existe al menos un hotel para ese usuario.
+        /// </summary>
+        public async Task<bool> UsuarioYaTieneHotelAliado(int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
             using var command = new SqlCommand(
                 "SELECT COUNT(*) FROM HotelAliado WHERE UsuarioWEBIs = @Id", connection);
             command.Parameters.AddWithValue("@Id", usuarioId);
@@ -78,7 +99,6 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync() > 0;
         }
 
-        // Verifica si el usuario webservice ya tiene una agencia registrada
         /// <summary>
         /// Verifica si el usuario webservice dado ya tiene una agencia de viaje registrada.
         /// Se usa para impedir que un usuario tenga tanto un hotel como una agencia.
@@ -96,7 +116,6 @@ namespace Aerolinea.API.Repositories
             return (int)await command.ExecuteScalarAsync() > 0;
         }
 
-        // Verifica el rol de un usuario para validaciones en el servicio
         /// <summary>
         /// Consulta el RolID del usuario especificado. Retorna 0 si el usuario no existe.
         /// Se usa para validar que el usuario a asignar tenga rol Webservice.
@@ -114,7 +133,6 @@ namespace Aerolinea.API.Repositories
             return result == null ? 0 : (int)result;
         }
 
-        // Crea un hotel aliado para el usuario Webservice autenticado
         /// <summary>
         /// Inserta un nuevo hotel aliado vinculado al usuario Webservice indicado.
         /// El EstadoID se establece en 1 (activo) por defecto. El TokenHASH se deja
@@ -128,7 +146,6 @@ namespace Aerolinea.API.Repositories
 
             const int estadoActivo = 1;
 
-            // TokenHASH se deja vacio; se asignara automaticamente en el proceso de handshake
             var query = @"
                 INSERT INTO HotelAliado (Nombre, UsuarioWEBIs, EstadoID, TokenHASH, URL, URLParaUsuario)
                 OUTPUT INSERTED.ID
@@ -153,7 +170,6 @@ namespace Aerolinea.API.Repositories
             };
         }
 
-        // Devuelve el hotel aliado asociado a un usuario Webservice, o null si no tiene ninguno.
         /// <summary>
         /// Retorna los datos del hotel aliado del usuario webservice indicado.
         /// No incluye el TokenHASH ya que es informacion interna del sistema.
@@ -164,7 +180,6 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            // Se omite TokenHASH deliberadamente; es informacion interna que no debe exponerse
             using var command = new SqlCommand(@"
                 SELECT ID, Nombre, EstadoID, URL, URLParaUsuario
                 FROM HotelAliado
@@ -186,7 +201,6 @@ namespace Aerolinea.API.Repositories
             return null;
         }
 
-        // ── Admin: listado completo de hoteles con datos del usuario ──────────
         /// <summary>
         /// Retorna el listado completo de hoteles aliados con los datos del usuario
         /// Webservice asignado. No incluye TokenHASH. Destinado al panel de administracion.
@@ -197,7 +211,7 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             var lista = new List<HotelAdminDTO>();
-            // Se omite TokenHASH; es informacion interna del sistema de handshake
+
             using var command = new SqlCommand(@"
                 SELECT h.ID, h.Nombre, h.EstadoID, h.URL, h.URLParaUsuario,
                        h.UsuarioWEBIs,
@@ -225,7 +239,6 @@ namespace Aerolinea.API.Repositories
             return lista;
         }
 
-        // ── Admin: crear hotel asignando un usuario Webservice ────────────────
         /// <summary>
         /// Crea un nuevo hotel aliado desde el panel de administracion, asignandolo
         /// directamente al usuario Webservice indicado. El TokenHASH se deja vacio.
@@ -238,7 +251,6 @@ namespace Aerolinea.API.Repositories
 
             const int estadoActivo = 1;
 
-            // TokenHASH se deja vacio; se asignara en el proceso de handshake
             var query = @"
                 INSERT INTO HotelAliado (Nombre, UsuarioWEBIs, EstadoID, TokenHASH, URL, URLParaUsuario)
                 OUTPUT INSERTED.ID
@@ -264,7 +276,6 @@ namespace Aerolinea.API.Repositories
             };
         }
 
-        // ── Admin: actualizar estado del hotel ────────────────────────────────
         /// <summary>
         /// Actualiza el EstadoID de un hotel aliado.
         /// Retorna true si la actualizacion fue exitosa.
@@ -281,7 +292,6 @@ namespace Aerolinea.API.Repositories
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
-        // ── Admin: asignar usuario Webservice a un hotel ──────────────────────
         /// <summary>
         /// Asigna o reasigna un usuario Webservice a un hotel aliado existente.
         /// Retorna true si la actualizacion fue exitosa.
@@ -298,7 +308,6 @@ namespace Aerolinea.API.Repositories
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
-        // ── Admin: actualizar URLs del hotel ──────────────────────────────────
         /// <summary>
         /// Actualiza la URL de la API y la URL publica para usuarios de un hotel aliado.
         /// Retorna true si la actualizacion fue exitosa.
@@ -317,28 +326,5 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@HotelId", hotelId);
             return await command.ExecuteNonQueryAsync() > 0;
         }
-=======
-            string query = @"
-        SELECT h.ID, h.Nombre, h.URL, h.TokenHASH
-        FROM HotelAliado h
-        JOIN EstadoAliado e ON h.EstadoID = e.ID
-        WHERE h.ID = @id
-        AND LOWER(TRIM(e.Estado)) = 'activo'";
-
-            using var cmd = new SqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@id", id);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
-
-            return new HotelAliadoConexionDTO
-            {
-                Id = reader.GetInt32(0),
-                Nombre = reader.GetString(1),
-                Url = reader.GetString(2),
-                TokenHash = reader.GetString(3)
-            };
-        }
->>>>>>> f5d91cb81a4cfa4abb8ca41606ab8646663340bf
     }
 }
