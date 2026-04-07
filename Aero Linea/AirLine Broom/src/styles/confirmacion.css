@@ -1,4 +1,5 @@
-/* confirmacion.css - Booking confirmation page styles including hero section with animated icon, invoice cards, PDF and email buttons, action panel, and toast notifications */
+/* confirmacion.css - Booking confirmation page styles including hero section with animated icon,
+   invoice cards, PDF and email buttons, partner hotel grid, action panel, and toast notifications */
 
 /* Full-page wrapper with project background color and generous bottom padding */
 .confirmacion {
@@ -452,6 +453,144 @@
     to   { opacity: 1; transform: translateX(0); }
 }
 
+/* White section card wrapping the partner hotel grid with matching asymmetric radius */
+.confirmacion__hoteles {
+    background: var(--white);
+    border: 1px solid rgba(235,230,224,0.6);
+    border-radius: 4px 30px 4px 30px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+}
+
+/* Row header with house icon and section title stacked beside it */
+.confirmacion__hoteles-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    color: var(--secondary-color);
+}
+
+/* Bold section title beside the house icon */
+.confirmacion__hoteles-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+/* Small muted promotional subtitle below the section title */
+.confirmacion__hoteles-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.15rem 0 0;
+}
+
+/* Auto-fit grid of hotel cards with a 280px minimum column width */
+.confirmacion__hoteles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+/* Inline loading row shown while the hotel search request is in progress */
+.confirmacion__hoteles-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin-bottom: 2rem;
+}
+
+/* Individual hotel card: warm off-white background with subtle border */
+.hotel-card {
+    border: 1px solid rgba(235,230,224,0.8);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    background: #fdfaf7;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Hotel card lifts slightly on hover */
+.hotel-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+    transform: translateY(-2px);
+}
+
+/* Top row: partner chain name on the left, star rating on the right */
+.hotel-card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Small all-caps gold label showing the partner chain name */
+.hotel-card__aliado {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Star icon plus numeric rating in gold */
+.hotel-card__rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #D4A056;
+}
+
+/* Bold hotel name in secondary color */
+.hotel-card__nombre {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+/* Short muted description with relaxed line height */
+.hotel-card__desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Pin icon plus address text in a tight flex row */
+.hotel-card__direccion {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 0.2rem;
+}
+
+/* Spinner used in the hotel loading row: rotates via the shared spin keyframe */
+.conf-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(235,230,224,0.8);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+/* Continuous clockwise rotation for spinner elements */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* At 600px: tighter hero, stacked invoice header, full-width buttons */
 @media (max-width: 600px) {
     .confirmacion__hero { padding: 3rem 1.25rem 2rem; }
@@ -463,4 +602,6 @@
     .confirmacion__btns { flex-direction: column; }
     .btn-primary, .btn-secondary { width: 100%; text-align: center; }
     .conf-toast-container { bottom: 1rem; right: 0.5rem; left: 0.5rem; }
+    .confirmacion__hoteles { padding: 1.25rem; }
+    .confirmacion__hoteles-grid { grid-template-columns: 1fr; }
 }

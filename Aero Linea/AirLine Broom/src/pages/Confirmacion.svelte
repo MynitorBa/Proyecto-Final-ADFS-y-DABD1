@@ -7,8 +7,11 @@
  * page. Displays a success hero section followed by invoice cards that include billing details,
  * per-ticket breakdown, and action buttons to download or email the PDF receipt for each
  * reservation. Also handles the fallback case where facturas is empty by rendering basic
- * reservation summary cards instead. Provides navigation actions to search for more flights
- * or view the user's reservations. Redirects unauthenticated users to the login page on mount.
+ * reservation summary cards instead. After the invoices, displays a promotional section of
+ * partner hotels available in the destination city for the night following the flight date,
+ * resolving the destination country from the boleto IATA code via a local lookup map.
+ * Provides navigation actions to search for more flights or view the user's reservations.
+ * Redirects unauthenticated users to the login page on mount.
  */
 
   import '../styles/confirmacion.css';
@@ -34,12 +37,14 @@
 
   /**
    * Lifecycle hook that runs after the component mounts.
-   * Redirects to login if no user session exists.
+   * Redirects to login if no user session exists, then triggers the partner hotel search
+   * in the destination city of the first boleto.
    * Returns the unsubscribe function for session store cleanup.
    * @returns {Function}
    */
   onMount(() => {
     if (!usuarioId) { navigateTo('login'); return; }
+    buscarHoteles();
     return () => unsubscribe();
   });
 
@@ -88,9 +93,8 @@
 
   /**
    * Downloads the PDF receipt for a specific reservation by calling the comprobante endpoint.
-   * Guards against concurrent calls using the descargando map. Creates a temporary anchor element
-   * to trigger a browser file download, then revokes the object URL and shows a success or
-   * error toast depending on the outcome.
+   * Guards against concurrent calls using the descargando map. Opens the comprobante in a new
+   * browser tab and shows a success or error toast depending on the outcome.
    * @async
    * @param {number} reservacionId - The ID of the reservation whose receipt to download.
    * @param {string} noReservacion - The human-readable reservation number used as the filename.
@@ -153,6 +157,81 @@
   function getBoletos(reservacionId) {
     const reserva = reservaciones.find(r => r.reservacionId === reservacionId);
     return reserva?.boletos ?? [];
+  }
+
+  /** Array of partner hotel objects returned by the hotel search endpoint. @type {Array} */
+  let hoteles = [];
+
+  /** True while the partner hotel search POST request is in progress. @type {boolean} */
+  let hotelesCargando = false;
+
+  /**
+   * Lookup map from IATA airport code to country name used to resolve the Pais field
+   * required by the hotel search endpoint. Falls back to destinoCiudad if the code is
+   * not present in the map. Extend this map to match the routes handled by the airline.
+   * @type {Record<string, string>}
+   */
+  const paisPorIATA = {
+    GUA: 'Guatemala',        FRS: 'Guatemala',        HUG: 'Guatemala',
+    MEX: 'Mexico',           CUN: 'Mexico',           GDL: 'Mexico',           MTY: 'Mexico',
+    LAX: 'United States',    JFK: 'United States',    MIA: 'United States',
+    ORD: 'United States',    SFO: 'United States',    DFW: 'United States',
+    BOG: 'Colombia',         MDE: 'Colombia',
+    LIM: 'Peru',
+    SCL: 'Chile',
+    EZE: 'Argentina',        AEP: 'Argentina',
+    GRU: 'Brazil',           GIG: 'Brazil',
+    MAD: 'Spain',            BCN: 'Spain',
+    CDG: 'France',
+    LHR: 'United Kingdom',
+    FCO: 'Italy',
+    AMS: 'Netherlands',
+    FRA: 'Germany',
+    SVO: 'Russia',           DME: 'Russia',
+    NRT: 'Japan',            HND: 'Japan',
+    PEK: 'China',            PVG: 'China',
+    DXB: 'United Arab Emirates',
+    SYD: 'Australia',
+  };
+
+  /**
+   * Searches for partner hotels available in the destination city of the first boleto.
+   * Resolves the required Pais field from the destination IATA code using paisPorIATA,
+   * falling back to destinoCiudad if the code is not mapped. Uses the flight date plus
+   * one day as check-in and the following day as check-out, covering a single promotional
+   * night. The number of persons matches the total boleto count of the first reservation.
+   * Silently ignores errors since the section is promotional and non-critical to the flow.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function buscarHoteles() {
+    if (!reservaciones.length) return;
+    const primerBoleto = reservaciones[0]?.boletos?.[0];
+    if (!primerBoleto) return;
+
+    const fechaVuelo = new Date(primerBoleto.fechaVuelo);
+    const checkIn    = new Date(fechaVuelo); checkIn.setDate(checkIn.getDate() + 1);
+    const checkOut   = new Date(fechaVuelo); checkOut.setDate(checkOut.getDate() + 2);
+    const fmt        = d => d.toISOString().split('T')[0];
+    const pais       = paisPorIATA[primerBoleto.destinoCodigo] ?? primerBoleto.destinoCiudad;
+
+    hotelesCargando = true;
+    try {
+      const res = await fetch(`${API}/api/hoteles-aliados/busqueda`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ciudad:           primerBoleto.destinoCiudad,
+          pais:             pais,
+          fechaCheckIn:     fmt(checkIn),
+          fechaCheckOut:    fmt(checkOut),
+          cantidadPersonas: reservaciones[0].boletos.length
+        })
+      });
+      if (res.ok) hoteles = await res.json();
+    } catch { /* seccion promocional, error silencioso */ }
+    finally { hotelesCargando = false; }
   }
 </script>
 
@@ -339,6 +418,53 @@
           </div>
         {/each}
       </div>
+    {/if}
+
+    <!-- Hoteles aliados disponibles en la ciudad destino para la noche posterior al vuelo -->
+    {#if hotelesCargando}
+      <div class="confirmacion__hoteles-loading">
+        <div class="conf-spinner"></div>
+        <p>Buscando hoteles disponibles en tu destino...</p>
+      </div>
+    {:else if hoteles.length > 0}
+      <section class="confirmacion__hoteles">
+        <div class="confirmacion__hoteles-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <div>
+            <h2 class="confirmacion__hoteles-titulo">Hoteles aliados en tu destino</h2>
+            <p class="confirmacion__hoteles-sub">Hospedaje disponible para tu llegada — oferta de una noche</p>
+          </div>
+        </div>
+
+        <!-- Grid de tarjetas de hotel con nombre, aliado, rating, descripcion y direccion -->
+        <div class="confirmacion__hoteles-grid">
+          {#each hoteles as hotel}
+            <div class="hotel-card">
+              <div class="hotel-card__top">
+                <span class="hotel-card__aliado">{hotel.aliadoNombre}</span>
+                <div class="hotel-card__rating">
+                  <svg viewBox="0 0 24 24" fill="#D4A056" stroke="none" width="14" height="14">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  <span>{hotel.rating}</span>
+                </div>
+              </div>
+              <h3 class="hotel-card__nombre">{hotel.nombre}</h3>
+              <p class="hotel-card__desc">{hotel.descripcion}</p>
+              <div class="hotel-card__direccion">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>{hotel.direccion}</span>
+              </div>
+            </div>
+          {/each}
+        </div>
+      </section>
     {/if}
 
     <!-- Botones de navegacion para buscar mas vuelos o ver reservaciones -->
