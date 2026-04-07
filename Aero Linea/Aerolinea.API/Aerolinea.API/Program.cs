@@ -128,6 +128,11 @@ builder.Services.AddScoped<AgenciaRepository>();
 builder.Services.AddScoped<RutaAgenciaRepository>();
 
 /// <summary>
+/// Repositorios de hotel - Rutas disponibles para hoteles.
+/// </summary>
+builder.Services.AddScoped<HotelAliadoRepository>();
+
+/// <summary>
 /// Health check para monitoreo del estado del servidor.
 /// </summary>
 builder.Services.AddHealthChecks();
@@ -282,6 +287,11 @@ builder.Services.AddScoped<AsientoAgenciaService>();
 /// Servicios de agencias - Confirmar reservaciones creadas por agencias externas.
 /// </summary>
 builder.Services.AddScoped<ConfirmarReservacionAgenciaService>();
+
+/// <summary>
+/// Servicios de Hotel Aliado - Encargo de traer la busqueda de los hoteles
+/// </summary>
+builder.Services.AddScoped<HotelAliadoService>();
 
 // --- wkhtmltopdf comentado: DLL nativa no disponible en este entorno ---
 // var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux-x64" : "win-x64";

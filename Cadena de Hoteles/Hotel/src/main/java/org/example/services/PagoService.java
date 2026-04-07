@@ -65,6 +65,7 @@ public class PagoService {
             double factor = 1.0 - (datosToken.getPorcentajeDescuento() / 100.0);
             total = Math.round(total * factor * 100.0) / 100.0;
             pagoRepository.actualizarTotalReservacion(reservacionId, total);
+            pagoRepository.actualizarTotalDetalles(reservacionId, factor);
         }
 
         // Confirmar UNA sola vez

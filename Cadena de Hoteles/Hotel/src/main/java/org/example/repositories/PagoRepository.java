@@ -98,4 +98,19 @@ public class PagoRepository {
         String sql = "UPDATE Reservacion SET Total = ? WHERE ID = ?";
         DatabaseManager.executeUpdate(sql, nuevoTotal, reservacionId);
     }
+
+    /**
+     * Aplica el mismo factor de descuento proporcionalmente a todos los detalles
+     * de una reservacion, para que la suma de detalles coincida con el total de la reservacion.
+     * @param reservacionId    ID de la reservacion cuyos detalles se van a actualizar.
+     * @param factorDescuento  factor multiplicador (ej. 0.90 para 10% de descuento).
+     */
+    public void actualizarTotalDetalles(int reservacionId, double factorDescuento) {
+        String sql = "UPDATE DetallesReservacion " +
+                "SET Total = ROUND(Total * ?, 2) " +
+                "WHERE ReservacionID = ?";
+        DatabaseManager.executeUpdate(sql, factorDescuento, reservacionId);
+    }
+
+
 }
