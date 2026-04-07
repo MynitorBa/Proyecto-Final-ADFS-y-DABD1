@@ -3,8 +3,8 @@
 /**
  * @file Admin.svelte
  * @description Main administration panel for Broom AirLine. Renders a sidebar-based layout
- * that gives administrators access to nine management modules: flight creation, routes,
- * aircraft, crew members, airports, flight history, users, metrics, and agencies.
+ * that gives administrators access to ten management modules: flight creation, routes,
+ * aircraft, crew members, airports, flight history, users, metrics, agencies, and hotel aliados.
  * On mount it verifies the current session role is "Administrador" and redirects to
  * the access-denied page otherwise. It loads shared data (airports, aircraft, crew)
  * needed by child modules and exposes a toast notification system and a reusable
@@ -15,15 +15,18 @@
   import { onMount, onDestroy } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
-  import AdminCrearVuelo   from '../components/admin/AdminCrearVuelo.svelte';
-  import AdminRutas        from '../components/admin/AdminRutas.svelte';
-  import AdminAviones      from '../components/admin/AdminAviones.svelte';
-  import AdminTripulantes  from '../components/admin/AdminTripulantes.svelte';
-  import AdminAeropuertos  from '../components/admin/AdminAeropuertos.svelte';
-  import AdminHistorial    from '../components/admin/AdminHistorial.svelte';
-  import AdminUsuarios     from '../components/admin/AdminUsuarios.svelte';
-  import AdminMetricas     from '../components/admin/AdminMetricas.svelte';
-  import AdminAgencias     from '../components/admin/AdminAgencias.svelte';
+  import AdminCrearVuelo    from '../components/admin/AdminCrearVuelo.svelte';
+  import AdminRutas         from '../components/admin/AdminRutas.svelte';
+  import AdminAviones       from '../components/admin/AdminAviones.svelte';
+  import AdminTripulantes   from '../components/admin/AdminTripulantes.svelte';
+  import AdminAeropuertos   from '../components/admin/AdminAeropuertos.svelte';
+  import AdminHistorial     from '../components/admin/AdminHistorial.svelte';
+  import AdminUsuarios      from '../components/admin/AdminUsuarios.svelte';
+  import AdminMetricas      from '../components/admin/AdminMetricas.svelte';
+  import AdminAgencias      from '../components/admin/AdminAgencias.svelte';
+
+  // Modulo de gestion de hoteles aliados para el panel de administracion
+  import AdminHotelAliados  from '../components/admin/AdminHotelAliados.svelte';
 
   /** Navigation function provided by the app router. Accepts an optional data payload. @type {Function} */
   export let navigateTo = (page, data = null) => {};
@@ -92,7 +95,6 @@
 
   /**
    * Opens the confirmation modal and returns a Promise that resolves to true when confirmed or false when cancelled.
-   * Sets confirmVisible, mensaje, subtexto, and tipo, then stores the resolve callback for later use.
    * @param {string} mensaje - Main question or action description to show in the modal.
    * @param {string} [subtexto=''] - Optional additional context displayed below the main message.
    * @param {string} [tipo='danger'] - Visual variant, either 'danger' or an informational style.
@@ -126,7 +128,6 @@
 
   /**
    * Fetches the full list of airports from the API and updates the aeropuertos state variable.
-   * Silently logs an error to the console if the request fails.
    * @async
    * @returns {Promise<void>}
    */
@@ -139,7 +140,6 @@
 
   /**
    * Fetches the full list of aircraft from the API and updates the aviones state variable.
-   * Silently logs an error to the console if the request fails.
    * @async
    * @returns {Promise<void>}
    */
@@ -152,7 +152,6 @@
 
   /**
    * Fetches the full list of crew members from the API and updates the tripulantes state variable.
-   * Silently logs an error to the console if the request fails.
    * @async
    * @returns {Promise<void>}
    */
@@ -164,8 +163,7 @@
   }
 
   /**
-   * Loads all shared dropdown data concurrently by calling cargarAeropuertos, cargarAviones,
-   * and cargarTripulantes in parallel via Promise.all.
+   * Loads all shared dropdown data concurrently by calling the three loaders in parallel.
    * @async
    * @returns {Promise<void>}
    */
@@ -214,6 +212,9 @@
     { id: 'usuarios',             label: 'Usuarios',             icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     { id: 'metricas',             label: 'Métricas',             icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { id: 'agencias',             label: 'Agencias',             icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+
+    // Modulo de hoteles aliados: gestion de hoteles vinculados via Webservice
+    { id: 'hoteles-aliados',      label: 'Hoteles Aliados',      icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4z' },
   ];
 
   /**
@@ -280,7 +281,6 @@
 {/if}
 
 <!-- Panel principal del administrador con sidebar de navegacion y area de modulos -->
-
 <div class="admin">
   <div class="admin__container">
 
@@ -332,6 +332,7 @@
             {:else if activeSection === 'usuarios'}Usuarios
             {:else if activeSection === 'metricas'}Métricas y Analíticos
             {:else if activeSection === 'agencias'}Agencias
+            {:else if activeSection === 'hoteles-aliados'}Hoteles Aliados
             {/if}
           </h2>
           <p style="font-size:.8rem;color:var(--text-muted);margin:0">
@@ -407,6 +408,14 @@
 
         {:else if activeSection === 'agencias'}
           <AdminAgencias
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+          />
+
+        <!-- Modulo de gestion de hoteles aliados; mismo contrato de props que AdminAgencias -->
+        {:else if activeSection === 'hoteles-aliados'}
+          <AdminHotelAliados
             {API}
             {mostrarToast}
             {mostrarConfirm}

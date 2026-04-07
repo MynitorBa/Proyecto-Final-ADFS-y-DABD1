@@ -27,6 +27,7 @@ namespace Aerolinea.API.Controllers
         // ── Admin: crea agencia para cualquier usuario Webservice ─────────────
         /// <summary>
         /// Crea una nueva agencia vinculada a un usuario Webservice. Requiere rol Administrador.
+        /// Verifica que el usuario no tenga ya una agencia ni un hotel aliado asignados.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPost]
@@ -55,10 +56,11 @@ namespace Aerolinea.API.Controllers
             return Ok(agencias);
         }
 
-        // ── Admin: usuarios Webservice sin agencia (para selector) ────────────
+        // ── Admin: usuarios Webservice libres (sin agencia ni hotel) ──────────
         /// <summary>
-        /// Retorna los usuarios con rol Webservice que aun no tienen agencia asignada.
-        /// Se usa para poblar el selector al crear una agencia desde el panel de admin.
+        /// Retorna los usuarios con rol Webservice que no tienen ninguna entidad asignada
+        /// (ni agencia ni hotel aliado). Se usa para poblar los selectores de asignacion
+        /// tanto en el panel de agencias como en el de hoteles.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpGet("webservice-disponibles")]
@@ -71,6 +73,7 @@ namespace Aerolinea.API.Controllers
         // ── Admin: asignar usuario Webservice a una agencia ───────────────────
         /// <summary>
         /// Asigna un usuario Webservice a una agencia existente. Requiere rol Administrador.
+        /// El usuario no puede tener ya una agencia ni un hotel aliado registrado.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPut("{id:int}/asignar-usuario")]
@@ -119,6 +122,26 @@ namespace Aerolinea.API.Controllers
             {
                 await _service.ActualizarEstado(id, dto.EstadoId);
                 return Ok(new { message = "Estado actualizado correctamente." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // ── Admin: actualizar URL de la agencia ───────────────────────────────
+        /// <summary>
+        /// Actualiza la URL publica de una agencia desde el panel de administracion.
+        /// Requiere rol Administrador.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("{id:int}/url")]
+        public async Task<IActionResult> ActualizarUrl(int id, [FromBody] ActualizarUrlAgenciaDTO dto)
+        {
+            try
+            {
+                await _service.ActualizarUrl(id, dto.UrlAgencia);
+                return Ok(new { message = "URL actualizada correctamente." });
             }
             catch (Exception ex)
             {
