@@ -9,7 +9,10 @@
  * reservation. Also handles the fallback case where facturas is empty by rendering basic
  * reservation summary cards instead. After the invoices, displays a promotional section of
  * partner hotels available in the destination city for the night following the flight date,
- * resolving the destination country from the boleto IATA code via a local lookup map.
+ * resolving the destination country from the boleto IATA code via a local lookup map. Each
+ * hotel card exposes a one-time redirect button that requests a discount token from the airline
+ * backend and immediately navigates the user to the partner hotel site. Only one token can be
+ * generated per aliado per purchase session to prevent free token abuse.
  * Provides navigation actions to search for more flights or view the user's reservations.
  * Redirects unauthenticated users to the login page on mount.
  */
@@ -167,8 +170,8 @@
 
   /**
    * Lookup map from IATA airport code to country name used to resolve the Pais field
-   * required by the hotel search endpoint. Falls back to destinoCiudad if the code is
-   * not present in the map. Extend this map to match the routes handled by the airline.
+   * required by the hotel search and token endpoints. Falls back to destinoCiudad if the
+   * code is not present in the map. Extend this map to match the routes handled by the airline.
    * @type {Record<string, string>}
    */
   const paisPorIATA = {
@@ -232,6 +235,60 @@
       if (res.ok) hoteles = await res.json();
     } catch { /* seccion promocional, error silencioso */ }
     finally { hotelesCargando = false; }
+  }
+
+  /**
+   * Set of aliadoId values already used in this confirmation session to prevent duplicate
+   * token generation for the same partner within a single purchase flow.
+   * @type {Set<number>}
+   */
+  let tokenUsados = new Set();
+
+  /** Map of aliadoId to boolean tracking which token requests are currently in progress. @type {object} */
+  let tokenCargando = {};
+
+  /**
+   * Requests a one-time redirect token from the partner hotel endpoint and immediately
+   * navigates the user to the hotel site with the discount applied. Guards against duplicate
+   * calls per aliado within the same confirmation session using tokenUsados. Only one token
+   * can be generated per aliado per purchase to prevent free token abuse.
+   * @async
+   * @param {object} hotel - The partner hotel object containing aliadoId and destination data.
+   * @returns {Promise<void>}
+   */
+  async function irAlHotel(hotel) {
+    if (tokenUsados.has(hotel.aliadoId) || tokenCargando[hotel.aliadoId]) return;
+
+    tokenCargando[hotel.aliadoId] = true;
+    tokenCargando = { ...tokenCargando };
+
+    const primerBoleto = reservaciones[0]?.boletos?.[0];
+    const pais         = paisPorIATA[primerBoleto?.destinoCodigo] ?? primerBoleto?.destinoCiudad ?? '';
+
+    try {
+      const res = await fetch(`${API}/api/hoteles-aliados/${hotel.aliadoId}/token`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ciudad: primerBoleto?.destinoCiudad ?? '',
+          pais:   pais
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        tokenUsados = new Set([...tokenUsados, hotel.aliadoId]);
+        window.location.href = data.urlRedireccion;
+      } else {
+        addToast('No se pudo generar el enlace al hotel', 'error');
+      }
+    } catch {
+      addToast('Error de conexion con el hotel', 'error');
+    } finally {
+      tokenCargando[hotel.aliadoId] = false;
+      tokenCargando = { ...tokenCargando };
+    }
   }
 </script>
 
@@ -439,7 +496,7 @@
           </div>
         </div>
 
-        <!-- Grid de tarjetas de hotel con nombre, aliado, rating, descripcion y direccion -->
+        <!-- Grid de tarjetas de hotel con nombre, aliado, rating, descripcion, direccion y boton de redireccion con token -->
         <div class="confirmacion__hoteles-grid">
           {#each hoteles as hotel}
             <div class="hotel-card">
@@ -461,6 +518,23 @@
                 </svg>
                 <span>{hotel.direccion}</span>
               </div>
+              <button
+                class="hotel-card__btn"
+                class:hotel-card__btn--usado={tokenUsados.has(hotel.aliadoId)}
+                class:hotel-card__btn--cargando={tokenCargando[hotel.aliadoId]}
+                disabled={tokenUsados.has(hotel.aliadoId) || tokenCargando[hotel.aliadoId]}
+                on:click={() => irAlHotel(hotel)}
+                type="button">
+                {#if tokenCargando[hotel.aliadoId]}
+                  <span class="conf-spinner conf-spinner--sm"></span> Generando enlace...
+                {:else if tokenUsados.has(hotel.aliadoId)}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Oferta aplicada
+                {:else}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Ver oferta con descuento
+                {/if}
+              </button>
             </div>
           {/each}
         </div>
