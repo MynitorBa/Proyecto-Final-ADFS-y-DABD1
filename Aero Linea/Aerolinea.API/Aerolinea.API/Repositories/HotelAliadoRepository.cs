@@ -51,16 +51,26 @@ namespace Aerolinea.API.Repositories
             return hoteles;
         }
 
+<<<<<<< HEAD
         // Verifica si el usuario webservice ya tiene un hotel aliado registrado
         /// <summary>
         /// Verifica si el usuario webservice dado ya tiene un hotel aliado registrado.
         /// Retorna true si existe al menos un hotel para ese usuario.
         /// </summary>
         public async Task<bool> UsuarioYaTieneHotelAliado(int usuarioId)
+=======
+        /// <summary>
+        /// Retorna un hotel aliado activo por su ID.
+        /// Retorna null si no existe o no esta activo.
+        /// </summary>
+        /// <param name="id">ID del registro HotelAliado a buscar.</param>
+        public async Task<HotelAliadoConexionDTO> ObtenerHotelActivoPorId(int id)
+>>>>>>> f5d91cb81a4cfa4abb8ca41606ab8646663340bf
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
+<<<<<<< HEAD
             using var command = new SqlCommand(
                 "SELECT COUNT(*) FROM HotelAliado WHERE UsuarioWEBIs = @Id", connection);
             command.Parameters.AddWithValue("@Id", usuarioId);
@@ -307,5 +317,28 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@HotelId", hotelId);
             return await command.ExecuteNonQueryAsync() > 0;
         }
+=======
+            string query = @"
+        SELECT h.ID, h.Nombre, h.URL, h.TokenHASH
+        FROM HotelAliado h
+        JOIN EstadoAliado e ON h.EstadoID = e.ID
+        WHERE h.ID = @id
+        AND LOWER(TRIM(e.Estado)) = 'activo'";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return new HotelAliadoConexionDTO
+            {
+                Id = reader.GetInt32(0),
+                Nombre = reader.GetString(1),
+                Url = reader.GetString(2),
+                TokenHash = reader.GetString(3)
+            };
+        }
+>>>>>>> f5d91cb81a4cfa4abb8ca41606ab8646663340bf
     }
 }
