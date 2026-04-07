@@ -48,5 +48,37 @@ namespace Aerolinea.API.Repositories
 
             return hoteles;
         }
+
+        /// <summary>
+        /// Retorna un hotel aliado activo por su ID.
+        /// Retorna null si no existe o no esta activo.
+        /// </summary>
+        /// <param name="id">ID del registro HotelAliado a buscar.</param>
+        public async Task<HotelAliadoConexionDTO> ObtenerHotelActivoPorId(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            string query = @"
+        SELECT h.ID, h.Nombre, h.URL, h.TokenHASH
+        FROM HotelAliado h
+        JOIN EstadoAliado e ON h.EstadoID = e.ID
+        WHERE h.ID = @id
+        AND LOWER(TRIM(e.Estado)) = 'activo'";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return new HotelAliadoConexionDTO
+            {
+                Id = reader.GetInt32(0),
+                Nombre = reader.GetString(1),
+                Url = reader.GetString(2),
+                TokenHash = reader.GetString(3)
+            };
+        }
     }
 }
