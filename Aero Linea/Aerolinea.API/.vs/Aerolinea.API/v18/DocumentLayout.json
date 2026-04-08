@@ -496,7 +496,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Repositories\\HotelAliadoRepository.cs",
               "ToolTip": "C:\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Repositories\\HotelAliadoRepository.cs",
               "RelativeToolTip": "Aerolinea.API\\Repositories\\HotelAliadoRepository.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAmwDMAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAgAAAAAAAAAAADwvw8AAABLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-07T04:58:39.378Z",
               "EditorCaption": ""
@@ -559,8 +559,7 @@
               "RelativeToolTip": "Aerolinea.API\\Repositories\\UsuarioRepository.cs",
               "ViewState": "AgIAANcAAAAAAAAAAAAuwAMBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-14T19:05:44.922Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-14T19:05:44.922Z"
             },
             {
               "$type": "Document",

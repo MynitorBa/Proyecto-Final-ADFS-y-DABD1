@@ -1,5 +1,6 @@
 /* confirmacion.css - Booking confirmation page styles including hero section with animated icon,
-   invoice cards, PDF and email buttons, partner hotel grid, action panel, and toast notifications */
+   invoice cards, PDF and email buttons, partner hotel grid with one-time discount redirect
+   buttons, action panel, and toast notifications */
 
 /* Full-page wrapper with project background color and generous bottom padding */
 .confirmacion {
@@ -487,7 +488,7 @@
     margin: 0.15rem 0 0;
 }
 
-/* Auto-fit grid of hotel cards with a 280px minimum column width */
+/* Auto-fit grid of hotel cards with a 260px minimum column width */
 .confirmacion__hoteles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -575,7 +576,46 @@
     margin-top: 0.2rem;
 }
 
-/* Spinner used in the hotel loading row: rotates via the shared spin keyframe */
+/* CTA button inside each hotel card linking to the partner discount page */
+.hotel-card__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding: 0.55rem 1rem;
+    background: linear-gradient(135deg, #1C1A18, #3A3531);
+    color: #F2EFEA;
+    border: none;
+    border-radius: 0 8px 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+/* Button lifts on hover when not in a disabled state */
+.hotel-card__btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+/* Used state: gold background indicating the token was already generated for this aliado */
+.hotel-card__btn--usado {
+    background: linear-gradient(135deg, #b89860, #c9a96e);
+    cursor: not-allowed;
+}
+
+/* Loading state: reduced opacity while the token request is in flight */
+.hotel-card__btn--cargando {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+/* Spinner used in the hotel loading row and inside the redirect button */
 .conf-spinner {
     width: 18px;
     height: 18px;
@@ -586,12 +626,20 @@
     flex-shrink: 0;
 }
 
-/* Continuous clockwise rotation for spinner elements */
+/* Small inline spinner variant used inside the hotel redirect button */
+.conf-spinner--sm {
+    width: 13px;
+    height: 13px;
+    border-width: 2px;
+    border-top-color: #F2EFEA;
+}
+
+/* Continuous clockwise rotation for all spinner elements */
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
-/* At 600px: tighter hero, stacked invoice header, full-width buttons */
+/* At 600px: tighter hero, stacked invoice header, full-width buttons, single-column hotel grid */
 @media (max-width: 600px) {
     .confirmacion__hero { padding: 3rem 1.25rem 2rem; }
     .factura-card__header { flex-direction: column; align-items: flex-start; }
