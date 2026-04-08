@@ -48,9 +48,18 @@ services:
   # Cors__Origins__1: frontend de la agencia de viajes corriendo localmente,
   #   necesario para que el boton "Probar" del panel de proveedores pueda
   #   hacer peticiones cross-origin al backend de la aerolinea.
-  # HANDSHAKE_HOST_OVERRIDE: cuando el backend recibe una URL de handshake
-  #   que contiene 'localhost', sustituye el host por 'host.docker.internal'
-  #   para poder alcanzar procesos corriendo en la maquina anfitriona.
+  # Cors__Origins__2: frontend del sistema hotelero corriendo localmente,
+  #   necesario para que el panel del hotel pueda hacer peticiones
+  #   cross-origin al backend de la aerolinea.
+  # ServerURL: URL publica de este backend tal como lo ve la maquina anfitriona.
+  #   Se envia al hotel durante el handshake para que lo registre en su BD y
+  #   pueda identificar a esta aerolinea en llamadas futuras.
+  #   Usa localhost:BACKEND_PORT porque el hotel corre fuera de Docker y desde
+  #   la maquina anfitriona localhost:BACKEND_PORT si llega al contenedor
+  #   gracias al mapeo de puertos de Docker.
+  # HANDSHAKE_HOST_OVERRIDE: cuando el backend necesita llamar a una URL que
+  #   contiene 'localhost' (ej: el hotel en localhost:7000), sustituye el host
+  #   por 'host.docker.internal' para poder salir del contenedor hacia el host.
   # extra_hosts registra host.docker.internal -> gateway del host para que
   #   la resolucion DNS funcione en Linux sin configuracion adicional.
   backend:
@@ -65,7 +74,9 @@ services:
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME};User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True
       - Cors__Origins__0=http://localhost:${FRONTEND_PORT}
       - Cors__Origins__1=http://localhost:${AGENCY_PORT}
+      - Cors__Origins__2=http://localhost:${HOTEL_PORT}
       - COOKIE_NAME=aerolinea_session_${COMPOSE_PROJECT_NAME}
+      - ServerURL=http://localhost:${BACKEND_PORT}
       - HANDSHAKE_HOST_OVERRIDE=host.docker.internal
     depends_on:
       db:

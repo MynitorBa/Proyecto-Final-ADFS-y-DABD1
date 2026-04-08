@@ -128,12 +128,12 @@ builder.Services.AddScoped<AgenciaRepository>();
 builder.Services.AddScoped<RutaAgenciaRepository>();
 
 /// <summary>
-/// Repositorios de hotel - Rutas disponibles para hoteles.
+/// Repositorios de hotel - Hoteles aliados registrados en el sistema.
 /// </summary>
 builder.Services.AddScoped<HotelAliadoRepository>();
 
 /// <summary>
-/// servicio de hotel - obtener token descuentos al redireccionar.
+/// Servicio de hotel - Obtener token de descuentos al redireccionar.
 /// </summary>
 builder.Services.AddScoped<TokenHotelService>();
 
@@ -259,7 +259,7 @@ builder.Services.AddScoped<AsientoService>();
 builder.Services.AddScoped<AgenciaService>();
 
 /// <summary>
-/// Servicios de agencias - Intercambio de tokens con agencias externas.
+/// Servicios de agencias - Intercambio de tokens con agencias externas (handshake).
 /// </summary>
 builder.Services.AddScoped<HandshakeService>();
 
@@ -294,9 +294,21 @@ builder.Services.AddScoped<AsientoAgenciaService>();
 builder.Services.AddScoped<ConfirmarReservacionAgenciaService>();
 
 /// <summary>
-/// Servicios de Hotel Aliado - Encargo de traer la busqueda de los hoteles
+/// Servicios de Hotel Aliado - Consulta y agregacion de resultados de hoteles aliados.
 /// </summary>
 builder.Services.AddScoped<HotelAliadoService>();
+
+/// <summary>
+/// IHttpClientFactory - Habilita llamadas HTTP salientes hacia sistemas externos
+/// (hotel aliado). Requerido por HandshakeHotelService para el proceso de handshake.
+/// </summary>
+builder.Services.AddHttpClient();
+
+/// <summary>
+/// Servicios de Hotel Aliado - Inicia el handshake de autenticacion con un hotel aliado
+/// y guarda el token de sesion resultante en HotelAliado.TokenHASH.
+/// </summary>
+builder.Services.AddScoped<HandshakeHotelService>();
 
 // --- wkhtmltopdf comentado: DLL nativa no disponible en este entorno ---
 // var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux-x64" : "win-x64";
