@@ -37,6 +37,9 @@ import org.example.controllers.PagoAgenciaController;
 import org.example.controllers.AerolineaWebserviceController;
 import org.example.controllers.AerolineaAdminController;
 
+// Controller de handshake con aerolineas aliadas externas
+import org.example.controllers.HandshakeAerolineaController;
+
 import java.util.Map;
 
 /**
@@ -102,20 +105,23 @@ public class Main {
         HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository);
         ImagenService             imagenService             = new ImagenService(imagenRepository);
         PagoAgenciaService        pagoAgenciaService        = new PagoAgenciaService(pagoAgenciaRepository);
-        PagoService pagoService = new PagoService(pagoRepository, tokenValidacionRepository);
+        PagoService               pagoService               = new PagoService(pagoRepository, tokenValidacionRepository);
         PdfReservacionService     pdfReservacionService     = new PdfReservacionService(pdfReservacionRepository);
         ReservacionAgenciaService reservacionAgenciaService = new ReservacionAgenciaService(reservacionAgenciaRepository);
         ReservacionService        reservacionService        = new ReservacionService(reservacionRepository);
         SesionService             sesionService             = new SesionService(sesionRepository);
         UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository);
 
-        BusquedaAerolineaService busquedaAerolineaService = new BusquedaAerolineaService(aerolineaAliadaRepository);
-        TokenAerolineaService tokenAerolineaService = new TokenAerolineaService(tokenAerolineaRepository, aerolineaAliadaRepository);
+        BusquedaAerolineaService  busquedaAerolineaService  = new BusquedaAerolineaService(aerolineaAliadaRepository);
+        TokenAerolineaService     tokenAerolineaService     = new TokenAerolineaService(tokenAerolineaRepository, aerolineaAliadaRepository);
         TokenValidacionService    tokenValidacionService    = new TokenValidacionService(tokenValidacionRepository);
 
         // Services de gestion de entidades webservice
         AerolineaWebserviceService aerolineaWebserviceService = new AerolineaWebserviceService(aerolineaWebserviceRepository);
         AerolineaAdminService      aerolineaAdminService      = new AerolineaAdminService(aerolineaAdminRepository);
+
+        // Service de handshake con aerolineas aliadas externas
+        HandshakeAerolineaService  handshakeAerolineaService  = new HandshakeAerolineaService(aerolineaAliadaRepository);
 
         // Hilo de expiracion de reservaciones pendientes
         expiracionService.iniciar();
@@ -163,6 +169,10 @@ public class Main {
         new BusquedaAerolineaController(busquedaAerolineaService).registerRoutes(app);
         new TokenAerolineaController(tokenAerolineaService).registerRoutes(app);
         new TokenValidacionController(tokenValidacionService).registerRoutes(app);
+
+        // Controller de handshake para aerolineas aliadas externas
+        // Endpoint publico: POST /api/aerolineas/handshake
+        new HandshakeAerolineaController(handshakeAerolineaService).registerRoutes(app);
 
         // Controllers de gestion de entidades webservice desde sus respectivos portales
         new AerolineaWebserviceController(aerolineaWebserviceService).registerRoutes(app);

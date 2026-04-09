@@ -8,6 +8,7 @@ namespace Aerolinea.API.Repositories
     /// Repositorio de hoteles aliados. Gestiona la consulta de hoteles activos para
     /// la busqueda dinamica, y la creacion, consulta y administracion de hoteles
     /// registrados tanto por usuarios Webservice como por el administrador del sistema.
+    /// Incluye el guardado del token de sesion resultante del handshake con la aerolinea.
     /// </summary>
     public class HotelAliadoRepository
     {
@@ -54,6 +55,7 @@ namespace Aerolinea.API.Repositories
         /// <summary>
         /// Retorna un hotel aliado activo por su ID.
         /// Retorna null si no existe o no esta activo.
+        /// Se usa para busquedas de disponibilidad donde el estado importa.
         /// </summary>
         /// <param name="id">ID del registro HotelAliado a buscar.</param>
         public async Task<HotelAliadoConexionDTO> ObtenerHotelActivoPorId(int id)
@@ -82,6 +84,61 @@ namespace Aerolinea.API.Repositories
                 TokenHash = reader.GetString(3)
             };
         }
+
+        // ── Handshake ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Retorna los datos basicos de un hotel aliado por su ID sin filtrar por estado.
+        /// Se usa exclusivamente para el proceso de handshake: el admin debe poder
+        /// hacer handshake independientemente del estado actual del hotel, siempre
+        /// que el hotel tenga una URL de API configurada.
+        /// Retorna null si el ID no existe en la tabla.
+        /// </summary>
+        /// <param name="id">ID del registro HotelAliado a buscar.</param>
+        public async Task<HotelAliadoConexionDTO?> ObtenerHotelParaHandshake(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // Sin JOIN a EstadoAliado: el handshake debe funcionar para cualquier
+            // hotel registrado que tenga URL configurada, sin importar su estado actual
+            using var cmd = new SqlCommand(
+                "SELECT ID, Nombre, URL, TokenHASH FROM HotelAliado WHERE ID = @id",
+                connection);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return new HotelAliadoConexionDTO
+            {
+                Id = reader.GetInt32(0),
+                Nombre = reader.GetString(1),
+                Url = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                TokenHash = reader.IsDBNull(3) ? string.Empty : reader.GetString(3)
+            };
+        }
+
+        /// <summary>
+        /// Actualiza el TokenHASH de un hotel aliado con el token de sesion
+        /// recibido tras completar el handshake. Este token se usa para autenticar
+        /// las llamadas posteriores de la aerolinea hacia el hotel.
+        /// Retorna true si la actualizacion fue exitosa.
+        /// </summary>
+        public async Task<bool> GuardarTokenHash(int hotelId, string tokenHash)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "UPDATE HotelAliado SET TokenHASH = @TokenHash WHERE ID = @HotelId",
+                connection);
+            command.Parameters.AddWithValue("@TokenHash", tokenHash);
+            command.Parameters.AddWithValue("@HotelId", hotelId);
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
+
+        // ── CRUD general ──────────────────────────────────────────────────────
 
         /// <summary>
         /// Verifica si el usuario webservice dado ya tiene un hotel aliado registrado.

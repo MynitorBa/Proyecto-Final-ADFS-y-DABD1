@@ -6,6 +6,8 @@
  * three modal dialogs: one to create a new hotel (with name, API URL, public URL and webservice
  * user), one to assign an available webservice user to an existing hotel, and one to edit both
  * URLs of a hotel. Hotel status can be changed inline through a select element in the table row.
+ * A handshake button triggers the authentication flow between the airline and the hotel aliado,
+ * generating and storing a session token in HotelAliado.TokenHASH.
  * All mutations call the backend API and refresh the local state on success.
  */
 // @ts-nocheck
@@ -82,6 +84,15 @@
 
   /** The hotel row being edited in the URLs modal. @type {any} */
   let hotelUrls          = null;
+
+  // ── Handshake state ───────────────────────────────────────────────────
+
+  /**
+   * ID del hotel cuyo handshake esta en curso. Null cuando ninguno esta activo.
+   * Se usa para deshabilitar el boton del hotel especifico durante la operacion.
+   * @type {number|null}
+   */
+  let handshakeEnCurso   = null;
 
   /**
    * Status option definitions used to render the inline status select and badge styles.
@@ -283,6 +294,37 @@
     } catch { mostrarToast('error', 'Error de conexion.'); }
   }
 
+  /**
+   * Initiates the handshake authentication flow between the airline and the selected hotel aliado.
+   * Calls POST /api/hoteles-aliados/{id}/handshake on the backend, which generates a token,
+   * sends it to the hotel's /api/aerolineas/handshake endpoint and stores the session token
+   * in HotelAliado.TokenHASH. The hotel must have its URL configured before calling this.
+   * @async
+   * @param {any} hotel - The hotel row object from the table.
+   * @returns {Promise<void>}
+   */
+  async function handleHandshake(hotel) {
+    const ok = await mostrarConfirm(
+      `¿Iniciar handshake con "${hotel.nombre}"?`,
+      'Se generara un nuevo token de sesion y sobreescribira el anterior si existe.',
+      'warning'
+    );
+    if (!ok) return;
+
+    handshakeEnCurso = hotel.id;
+    try {
+      const r = await fetch(`${API}/api/hoteles-aliados/${hotel.id}/handshake`, {
+        method: 'POST', credentials: 'include',
+      });
+      const data = await r.json();
+      if (r.ok) {
+        mostrarToast('success', `Handshake exitoso con "${hotel.nombre}". Token guardado.`);
+      } else {
+        mostrarToast('error', data.message || 'Error al realizar el handshake.');
+      }
+    } catch { mostrarToast('error', 'Error de conexion al intentar el handshake.'); }
+    finally { handshakeEnCurso = null; }
+  }
 
 </script>
 
@@ -309,7 +351,7 @@
           <input class="ag-field__input" class:ag-field__input--err={crearErrores.url}
             type="url" bind:value={crearUrl} placeholder="https://api.mi-hotel.com" maxlength="300" />
           <p style="font-size:.72rem; color:var(--text-muted); margin:.1rem 0 0;">
-            URL interna usada por la aerolinea para consultar disponibilidad.
+            URL interna usada por la aerolinea para consultar disponibilidad y hacer handshake.
           </p>
           {#if crearErrores.url}<p class="ag-field__err">{crearErrores.url}</p>{/if}
         </div>
@@ -464,7 +506,7 @@
       <p class="placeholder-card__text">No hay hoteles aliados registrados todavia.</p>
     </div>
 
-  <!-- Tabla de hoteles con usuario asignado, URLs editables y selector de estado -->
+  <!-- Tabla de hoteles con usuario asignado, URLs editables, handshake y selector de estado -->
   {:else}
     <div class="vuelos-table">
       <table class="table">
@@ -540,10 +582,22 @@
                     title="Editar URLs">
                     🔗 URLs
                   </button>
+
+                  <!-- Boton para asignar o reasignar usuario Webservice al hotel -->
                   <button class="table__action-btn ag-btn-asignar"
                     on:click={() => abrirModalAsignar(h)}
                     title="Asignar usuario Webservice">
                     👤 Asignar
+                  </button>
+
+                  <!-- Boton para iniciar el handshake de autenticacion con el hotel aliado.
+                       Requiere que el hotel tenga la URL de API configurada previamente. -->
+                  <button class="table__action-btn ag-btn-asignar"
+                    style="background:#059669"
+                    on:click={() => handleHandshake(h)}
+                    disabled={handshakeEnCurso === h.id}
+                    title="Iniciar handshake de autenticacion con el hotel">
+                    {handshakeEnCurso === h.id ? '⏳ Conectando...' : '🤝 Handshake'}
                   </button>
                 </div>
               </td>
