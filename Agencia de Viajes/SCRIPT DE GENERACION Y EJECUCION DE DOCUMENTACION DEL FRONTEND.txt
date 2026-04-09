@@ -1,0 +1,5 @@
+Primero:
+& "C:\Program Files\Git\bin\bash.exe" "generar-docs.sh"
+
+Segundo:
+docsify serve docs-vue

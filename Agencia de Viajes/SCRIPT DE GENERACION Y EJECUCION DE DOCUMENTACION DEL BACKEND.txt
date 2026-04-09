@@ -1,0 +1,5 @@
+Primero:
+.\generar-docs-go.ps1
+
+Segundo:
+docsify serve docs-go-md

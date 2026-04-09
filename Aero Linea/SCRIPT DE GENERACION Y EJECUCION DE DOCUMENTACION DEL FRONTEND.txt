@@ -1,0 +1,5 @@
+Primero:
+./generar-docs-svelte.ps1
+
+Segundo:
+docsify serve docs-svelte
