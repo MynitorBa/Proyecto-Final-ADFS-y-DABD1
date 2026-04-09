@@ -12,12 +12,20 @@
 
   /**
    * Parametros de la busqueda recibidos del componente padre.
-   * @type {{ pais?:string, ciudad?:string, fechaCheckIn?:string, fechaCheckOut?:string, cantidadPersonas?:number, hotels?:any[] } | null}
+   * @type {{ pais?:string, ciudad?:string, fechaCheckIn?:string, fechaCheckOut?:string, cantidadPersonas?:number, hotels?:any[], porcentajeDescuento?:number|null } | null}
    */
   export let searchParams = null;
 
   /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
+
+  /**
+   * Porcentaje de descuento de alianza pasado directamente desde App.svelte.
+   * Es la fuente de verdad principal. searchParams es fallback secundario.
+   * @type {number|null}
+   */
+  export let alianzaDescuento = null;
+
   import '../styles/searchresults.css';
 
   /** URL base de la API del backend. @type {string} */
@@ -49,6 +57,23 @@
 
   /** Hoteles crudos devueltos por la API antes de aplicar filtros. @type {any[]} */
   let hotelsRaw        = (searchParams && Array.isArray(searchParams.hotels)) ? searchParams.hotels      : [];
+
+  /**
+   * Porcentaje de descuento de alianza recibido desde el flujo de token.
+   * Fuente 1: alianzaDescuento prop (App.svelte, mas confiable).
+   * Fuente 2: searchParams (Home a navigateTo).
+   * Fuente 3: sessionStorage (fallback definitivo).
+   * @type {number|null}
+   */
+  let porcentajeDescuento = null;
+
+  // Reactivo: se recalcula cada vez que cambia alianzaDescuento prop o searchParams
+  $: porcentajeDescuento = (() => {
+    if (alianzaDescuento) return alianzaDescuento;
+    if (searchParams && searchParams.porcentajeDescuento) return searchParams.porcentajeDescuento;
+    const stored = sessionStorage.getItem('alianzaDescuento');
+    return stored ? Number(stored) : null;
+  })();
 
   /**
    * Convierte un objeto Date a cadena YYYY-MM-DD en la zona horaria local.
@@ -475,6 +500,17 @@
   const fmt = p => new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(p);
 
   /**
+   * Aplica el porcentaje de descuento de alianza a un precio dado.
+   * Devuelve null si no hay descuento activo.
+   * @param {number} p - Precio original.
+   * @returns {number|null}
+   */
+  function precioD(p) {
+    if (!porcentajeDescuento) return null;
+    return Math.round(p * (1 - porcentajeDescuento / 100) * 100) / 100;
+  }
+
+  /**
    * Opciones disponibles para el selector de ordenamiento.
    * @type {{ id: string, label: string }[]}
    */
@@ -598,6 +634,39 @@
         </form>
       </div>
     </div>
+
+    <!-- Banner de descuento de alianza -->
+    {#if porcentajeDescuento}
+      <div style="background:linear-gradient(135deg,#064e3b,#059669 55%,#34d399);border-radius:16px;padding:1.25rem 2rem;margin:1.5rem 0;display:flex;align-items:center;gap:1.5rem;position:relative;overflow:hidden;box-shadow:0 8px 28px rgba(16,185,129,.38);color:white;">
+        <!-- Burbujas decorativas de fondo -->
+        <div style="position:absolute;right:-28px;top:-28px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none;"></div>
+        <div style="position:absolute;right:60px;bottom:-38px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none;"></div>
+        <!-- Semicirculos que simulan el corte de un ticket -->
+        <div style="position:absolute;left:86px;top:-15px;width:30px;height:30px;border-radius:50%;background:#f8fafc;pointer-events:none;"></div>
+        <div style="position:absolute;left:86px;bottom:-15px;width:30px;height:30px;border-radius:50%;background:#f8fafc;pointer-events:none;"></div>
+        <!-- Icono de etiqueta / tag con label "Alianza" -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem;min-width:70px;padding-right:1.25rem;border-right:2px dashed rgba(255,255,255,.35);flex-shrink:0;position:relative;z-index:1;">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" aria-hidden="true">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <circle cx="7" cy="7" r="1.3" fill="white" stroke="none"/>
+          </svg>
+          <span style="font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;opacity:.9;">Alianza</span>
+        </div>
+        <!-- Porcentaje y descripcion -->
+        <div style="flex:1;min-width:0;position:relative;z-index:1;">
+          <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;line-height:1.1;">
+            <span style="font-size:2.75rem;font-weight:900;">{porcentajeDescuento}%</span>
+            <span style="font-size:1.15rem;font-weight:700;opacity:.95;">de descuento especial</span>
+          </div>
+          <p style="margin:.3rem 0 0;font-size:.83rem;opacity:.85;">Precio preferencial por alianza · Se aplica automáticamente en tu reservación</p>
+        </div>
+        <!-- Checkmark decorativo a la derecha -->
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" style="opacity:.18;flex-shrink:0;" aria-hidden="true">
+          <circle cx="32" cy="32" r="29" stroke="white" stroke-width="2.5" stroke-dasharray="7 4"/>
+          <path d="M19 32l9 10 17-19" stroke="white" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    {/if}
 
     <!-- Encabezado y resultados: solo se muestran si ya hubo una busqueda -->
     {#if searchDone}
@@ -733,11 +802,12 @@
                 {@const extraInfo  = getPersonaExtraMin(hotel, cantidadPersonas)}
                 {@const desde     = getDesde(hotel)}
 
+                <!-- Tarjeta clickeable: navega a hotel-detail pasando porcentajeDescuento -->
                 <div class="hotel-card"
                   role="button"
                   tabindex="0"
-                  on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}
-                  on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
+                  on:click={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut, porcentajeDescuento })}
+                  on:keydown={e => e.key === 'Enter' && navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut, porcentajeDescuento })}>
 
                   <!-- Galeria / imagen principal del hotel -->
                   <div class="hotel-gallery">
@@ -834,8 +904,13 @@
                         {#if desde !== null}
                           <div class="desde-badge">
                             <span class="desde-lbl">Desde</span>
-                            <span class="desde-precio">{fmt(desde)}</span>
-                            <span class="desde-sub">/ noche · {fmt(desde * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</span>
+                            {#if precioD(desde) !== null}
+                              <span class="desde-precio" style="text-decoration:line-through;opacity:.45;font-size:1rem;">{fmt(desde)}</span>
+                              <span class="desde-precio" style="color:#059669;">{fmt(precioD(desde))}</span>
+                            {:else}
+                              <span class="desde-precio">{fmt(desde)}</span>
+                            {/if}
+                            <span class="desde-sub">/ noche · {fmt((precioD(desde) ?? desde) * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</span>
                           </div>
                         {/if}
 
@@ -846,10 +921,15 @@
                             <div class="price-box">
                               <div class="price-box-label">Habitación directa</div>
                               <div class="curr-price">
-                                <span class="price-amount">{fmt(minPrice)}</span>
+                                {#if precioD(minPrice) !== null}
+                                  <span class="price-amount" style="text-decoration:line-through;opacity:.4;font-size:1.1rem;">{fmt(minPrice)}</span>
+                                  <span class="price-amount" style="color:#059669;">{fmt(precioD(minPrice))}</span>
+                                {:else}
+                                  <span class="price-amount">{fmt(minPrice)}</span>
+                                {/if}
                                 <span class="price-lbl">/ noche</span>
                               </div>
-                              <div class="per-night">{fmt(minPrice * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</div>
+                              <div class="per-night">{fmt((precioD(minPrice) ?? minPrice) * nights)} por {nights} noche{nights !== 1 ? 's' : ''}</div>
                             </div>
                           {/if}
 
@@ -863,16 +943,19 @@
                               <div class="price-box-label">Combinación de habitaciones</div>
                               {#each comboHabs as hab, i}
                                 <div class="combo-hab-row">
-                                  <span class="combo-hab-name">
-                                    Hab.{i + 1} · {hab.tipo}
-                                    <span class="combo-cap">({hab.cap} pers.)</span>
-                                  </span>
+                                  <span class="combo-hab-name">Hab.{i + 1} · {hab.tipo} <span class="combo-cap">({hab.cap} pers.)</span></span>
                                   <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
                                 </div>
                               {/each}
                               <div class="combo-total">
-                                Total: <strong>{fmt(comboTotal)}/noche</strong>
-                                · {fmt(comboTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {#if precioD(comboTotal) !== null}
+                                  <span style="text-decoration:line-through;opacity:.45;">{fmt(comboTotal)}/noche</span>
+                                  → <strong style="color:#059669;">{fmt(precioD(comboTotal))}/noche</strong>
+                                  · {fmt(precioD(comboTotal) * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {:else}
+                                  Total: <strong>{fmt(comboTotal)}/noche</strong>
+                                  · {fmt(comboTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {/if}
                               </div>
                             </div>
                           {/if}
@@ -886,16 +969,19 @@
                               </div>
                               {#each comboAprox.habs as hab, i}
                                 <div class="combo-hab-row">
-                                  <span class="combo-hab-name">
-                                    Hab.{i + 1} · {hab.tipo}
-                                    <span class="combo-cap">({hab.cap} pers.)</span>
-                                  </span>
+                                  <span class="combo-hab-name">Hab.{i + 1} · {hab.tipo} <span class="combo-cap">({hab.cap} pers.)</span></span>
                                   <span class="combo-hab-price">{fmt(hab.precio)}<span class="price-lbl">/noche</span></span>
                                 </div>
                               {/each}
                               <div class="combo-total">
-                                Total: <strong>{fmt(aproxTotal)}/noche</strong>
-                                · {fmt(aproxTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {#if precioD(aproxTotal) !== null}
+                                  <span style="text-decoration:line-through;opacity:.45;">{fmt(aproxTotal)}/noche</span>
+                                  → <strong style="color:#059669;">{fmt(precioD(aproxTotal))}/noche</strong>
+                                  · {fmt(precioD(aproxTotal) * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {:else}
+                                  Total: <strong>{fmt(aproxTotal)}/noche</strong>
+                                  · {fmt(aproxTotal * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {/if}
                               </div>
                             </div>
                           {/if}
@@ -908,10 +994,7 @@
                             <div class="price-box price-box--combo">
                               <div class="price-box-label">Habitación + 1 persona extra</div>
                               <div class="combo-hab-row">
-                                <span class="combo-hab-name">
-                                  {extraInfo.tipo}
-                                  <span class="combo-cap">(cap. {extraInfo.cap} +1 extra)</span>
-                                </span>
+                                <span class="combo-hab-name">{extraInfo.tipo} <span class="combo-cap">(cap. {extraInfo.cap} +1 extra)</span></span>
                                 <span class="combo-hab-price">{fmt(extraInfo.precioPorNoche)}<span class="price-lbl">/noche</span></span>
                               </div>
                               <div class="combo-hab-row">
@@ -919,8 +1002,14 @@
                                 <span class="combo-hab-price" style="color: var(--primary);">+{fmt(extraInfo.precioPorPersona)}<span class="price-lbl">/noche</span></span>
                               </div>
                               <div class="combo-total">
-                                Total: <strong>{fmt(extraInfo.total)}/noche</strong>
-                                · {fmt(extraInfo.total * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {#if precioD(extraInfo.total) !== null}
+                                  <span style="text-decoration:line-through;opacity:.45;">{fmt(extraInfo.total)}/noche</span>
+                                  → <strong style="color:#059669;">{fmt(precioD(extraInfo.total))}/noche</strong>
+                                  · {fmt(precioD(extraInfo.total) * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {:else}
+                                  Total: <strong>{fmt(extraInfo.total)}/noche</strong>
+                                  · {fmt(extraInfo.total * nights)} por {nights} noche{nights !== 1 ? 's' : ''}
+                                {/if}
                               </div>
                             </div>
                           {/if}
@@ -933,7 +1022,8 @@
 
                         </div>
 
-                        <button class="btn-view" on:click|stopPropagation={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut })}>
+                        <!-- Boton "Ver disponibilidad": tambien pasa porcentajeDescuento -->
+                        <button class="btn-view" on:click|stopPropagation={() => navigateTo('hotel-detail', { hotel, cantidadPersonas, fechaCheckIn, fechaCheckOut, porcentajeDescuento })}>
                           Ver disponibilidad
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </button>

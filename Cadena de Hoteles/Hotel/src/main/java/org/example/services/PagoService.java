@@ -28,12 +28,16 @@ public class PagoService {
      * Procesa el pago de una reservacion de usuario web.
      * Verifica que la reservacion exista y este pendiente, valida la tarjeta
      * en memoria, confirma la reservacion y genera la factura.
+     * Si se incluye un token de alianza, valida que el hotel de la reservacion
+     * se encuentre en la misma ciudad para la que fue generado el token antes
+     * de aplicar el descuento.
      * @param reservacionId ID de la reservacion a pagar.
      * @param usuarioId     ID del usuario dueno de la reservacion.
-     * @param request       datos de pago: tarjeta, NIT y codigo postal.
+     * @param request       datos de pago: tarjeta, NIT, codigo postal y token opcional.
      * @return DTO con los datos de la factura generada.
-     * @throws IllegalArgumentException si la reservacion no existe, no pertenece al usuario
-     *                                  o su estado no permite el pago.
+     * @throws IllegalArgumentException si la reservacion no existe, no pertenece al usuario,
+     *                                  su estado no permite el pago, el token es invalido
+     *                                  o el token no aplica para la ciudad del hotel.
      */
     public PagoResponseDTO procesarPago(int reservacionId, int usuarioId, PagoRequestDTO request) {
 
@@ -62,6 +66,17 @@ public class PagoService {
             if (datosToken == null) {
                 throw new IllegalArgumentException("Token de alianza invalido, ya utilizado o expirado");
             }
+
+            // Validar que el hotel de la reservacion este en la ciudad del token.
+            // Esto impide que el descuento se aplique a hoteles en otras ciudades,
+            // incluso si el request fue fabricado manualmente saltando el frontend.
+            String ciudadHotel = pagoRepository.obtenerCiudadReservacion(reservacionId);
+            if (ciudadHotel == null || !ciudadHotel.equalsIgnoreCase(datosToken.getCiudad())) {
+                throw new IllegalArgumentException(
+                        "El token de alianza no aplica para hoteles en esta ciudad"
+                );
+            }
+
             double factor = 1.0 - (datosToken.getPorcentajeDescuento() / 100.0);
             total = Math.round(total * factor * 100.0) / 100.0;
             pagoRepository.actualizarTotalReservacion(reservacionId, total);
