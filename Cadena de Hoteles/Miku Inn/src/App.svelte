@@ -114,6 +114,10 @@
     alianzaDescuento = descuento;
   }
 
+  function onAlianzaAutocompletarConsumida() {
+  alianzaAutocompletarData = null;
+}
+
   /**
    * Llave que cambia con cada navegacion para forzar el re-mount
    * de paginas que necesitan reiniciarse por completo.
@@ -137,8 +141,8 @@
    */
   let sessionChecked = false;
 
-  onMount(() => {
-    checkSession();
+  onMount(async () => {
+    await checkSession();
     syncFromURL();
     window.addEventListener('popstate', syncFromURL);
     return () => window.removeEventListener('popstate', syncFromURL);
@@ -348,7 +352,7 @@
     <!-- Area de contenido principal donde se renderiza la pagina activa -->
     <main class="app-main">
       {#if currentPage === 'home'}
-        {#key pageKey}<Home {navigateTo} {destinationSuggestion} {alianzaToken} {isLoggedIn} {alianzaAutocompletarData} {onAlianzaValidada} />{/key}
+        {#key pageKey}<Home {navigateTo} {destinationSuggestion} {alianzaToken} {isLoggedIn} {alianzaAutocompletarData} {onAlianzaValidada} {onAlianzaAutocompletarConsumida}/>{/key}
 
       {:else if currentPage === 'search-results'}
         <SearchResults {navigateTo} {searchParams} {alianzaDescuento} />

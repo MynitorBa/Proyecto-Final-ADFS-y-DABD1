@@ -201,6 +201,7 @@
       });
       if (res.ok) {
         const data = await res.json();
+        console.log('[alianza] respuesta backend:', data);
         paisSeleccionado  = { country: data.pais };
         paisQuery         = data.pais;
         ciudadQuery       = data.ciudad;

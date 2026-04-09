@@ -7,6 +7,11 @@ RUN npm install
 
 COPY . .
 
+# Recibe la URL del backend al momento del build para que Vite
+# la inyecte correctamente en import.meta.env.VITE_API_URL
+ARG VITE_API_URL=http://localhost:5190
+ENV VITE_API_URL=$VITE_API_URL
+
 EXPOSE 5173
 
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

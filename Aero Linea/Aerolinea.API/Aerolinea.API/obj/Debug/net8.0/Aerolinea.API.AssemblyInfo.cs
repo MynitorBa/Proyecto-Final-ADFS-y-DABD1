@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e4adee627aa9172e223af5df4f284e99248905bb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+147fd25e2c3fc23128e2a96310bc19f8c2b9772e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

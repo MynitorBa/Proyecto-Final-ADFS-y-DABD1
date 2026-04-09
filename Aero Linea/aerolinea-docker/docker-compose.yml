@@ -78,6 +78,7 @@ services:
       - COOKIE_NAME=aerolinea_session_${COMPOSE_PROJECT_NAME}
       - ServerURL=http://localhost:${BACKEND_PORT}
       - HANDSHAKE_HOST_OVERRIDE=host.docker.internal
+      - HOTEL_BACKEND_URL=http://host.docker.internal:${HOTEL_PORT}
     depends_on:
       db:
         condition: service_healthy
@@ -90,11 +91,14 @@ services:
     build:
       context: "../AirLine Broom"
       dockerfile: Dockerfile
+      args:                                          
+      - VITE_API_URL=http://localhost:${BACKEND_PORT}
     container_name: ${COMPOSE_PROJECT_NAME}-frontend
     ports:
       - "${FRONTEND_PORT}:5173"
     environment:
       - VITE_API_URL=http://localhost:${BACKEND_PORT}
+      - VITE_HOTEL_URL=http://localhost:${HOTEL_PORT}
     depends_on:
       - backend
     restart: unless-stopped
