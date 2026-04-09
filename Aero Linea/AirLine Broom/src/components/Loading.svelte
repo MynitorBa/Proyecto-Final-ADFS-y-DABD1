@@ -1,19 +1,19 @@
 <script>
 /**
  * @file Loading.svelte
- * @description Full-screen loading overlay displayed while asynchronous operations are in
- * progress. Renders an animated sky background with clouds, a plane image that animates
- * across the screen, a progress bar, and a configurable status message. The plane container
- * size adapts to the size prop ('small', 'medium', or 'large'). Imported and shown by
- * parent pages whenever data fetching or processing is underway.
+ * @description Superposicion de carga a pantalla completa mostrada mientras operaciones asincronas
+ * estan en progreso. Renderiza un fondo de cielo animado con nubes, una imagen de avion que se anima
+ * a traves de la pantalla, una barra de progreso y un mensaje de estado configurable. El tamano del
+ * contenedor del avion se adapta a la prop size ('small', 'medium' o 'large'). Importado y mostrado
+ * por las paginas padre cuando se esta obteniendo o procesando datos.
  */
   import '../styles/Loading.css';
   import avionImg from '../assets/AvionB.png';
 
-  /** Text message displayed below the animated plane to describe the loading state. @type {string} */
+  /** Mensaje de texto mostrado debajo del avion animado para describir el estado de carga. @type {string} */
   export let message = 'Preparando el despegue...';
 
-  /** Controls the size of the plane container. Accepted values: 'small', 'medium', 'large'. @type {string} */
+  /** Controla el tamano del contenedor del avion. Valores aceptados: 'small', 'medium', 'large'. @type {string} */
   export let size = 'medium';
 </script>
 

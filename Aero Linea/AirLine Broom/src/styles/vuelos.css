@@ -1,6 +1,11 @@
-/* vuelos.css - Flight listing page styles including global modal body scroll lock, full-screen modal backdrop, search summary panel, multi-flight step indicator, sticky filter panel with price range and flight-mode buttons, flight cards for direct and connecting flights with schedule timelines, seat class selection grid, a fixed next-step button, entry animation, and responsive breakpoints */
+/* vuelos.css - Estilos de la pagina de listado de vuelos, incluyendo bloqueo de scroll del body
+   con modal abierto, fondo del modal a pantalla completa, panel de resumen de busqueda, indicador
+   de pasos para vuelos multiples, panel de filtros fijo con rango de precio y botones de modo de
+   vuelo, tarjetas de vuelo para vuelos directos y con escalas con lineas de tiempo de horario,
+   grilla de seleccion de clase de asiento, boton fijo de siguiente paso, animacion de entrada
+   y puntos de quiebre responsivos */
 
-/* Global scroll lock applied to body when a modal is open */
+/* Bloqueo de scroll global aplicado al body cuando un modal esta abierto */
 :global(body.modal-open) {
     overflow: hidden !important;
     position: fixed !important;
@@ -8,7 +13,7 @@
     top: var(--scroll-y, 0) !important;
 }
 
-/* Full-screen flight detail backdrop: dark semi-transparent overlay, centered content */
+/* Fondo de detalle de vuelo a pantalla completa: superposicion oscura semitransparente, contenido centrado */
 :global(.dv-backdrop) {
     position: fixed !important;
     top: 0 !important; left: 0 !important;
@@ -23,7 +28,7 @@
     overflow: hidden !important;
 }
 
-/* Flight detail modal panel: white, asymmetric radius, max 1100px wide, scrollable column */
+/* Panel modal de detalle de vuelo: blanco, radio asimetrico, maximo 1100px de ancho, columna desplazable */
 :global(.dv-modal) {
     background: var(--white, #fff) !important;
     border-radius: 4px 24px 4px 24px !important;
@@ -36,7 +41,7 @@
     box-shadow: 0 30px 80px rgba(0,0,0,0.3) !important;
 }
 
-/* Fixed modal header: flex row with title and close, non-shrinking */
+/* Encabezado fijo del modal: fila flex con titulo y cierre, sin encogimiento */
 :global(.dv-header) {
     display: flex !important;
     justify-content: space-between !important;
@@ -48,20 +53,20 @@
     border-radius: 4px 24px 0 0 !important;
 }
 
-/* Fixed modal hero section with a dark diagonal gradient, non-shrinking */
+/* Seccion hero fija del modal con degradado diagonal oscuro, sin encogimiento */
 :global(.dv-hero) {
     background: linear-gradient(135deg, #1c1a18 0%, #2c2a1c 60%, #3d3010 100%) !important;
     flex-shrink: 0 !important;
 }
 
-/* Scrollable modal body that grows to fill remaining height */
+/* Cuerpo del modal desplazable que crece para llenar la altura restante */
 :global(.dv-body) {
     overflow-y: auto !important;
     flex: 1 !important;
     overscroll-behavior: contain !important;
 }
 
-/* Full-page wrapper with brand beige background and generous bottom padding */
+/* Contenedor de pagina completa con fondo beige de marca y relleno inferior generoso */
 .vuelos-page {
     width: 100%;
     min-height: 100vh;
@@ -69,13 +74,13 @@
     padding: 2rem 1rem 8rem;
 }
 
-/* Centered content column capped at 1400px */
+/* Columna de contenido centrada con un maximo de 1400px */
 .vuelos-page__container { max-width: 1400px; margin: 0 auto; }
 
-/* Page header block with bottom margin */
+/* Bloque de encabezado de la pagina con margen inferior */
 .vuelos-page__header { margin-bottom: 3rem; }
 
-/* Back button: outlined asymmetric pill with muted text, turns gold on hover */
+/* Boton de regreso: pastilla asimetrica con contorno y texto apagado, se vuelve dorado al pasar el cursor */
 .vuelos-page__back {
     background: transparent;
     border: 1px solid var(--perla-dark);
@@ -92,7 +97,7 @@
 }
 .vuelos-page__back:hover { border-color: var(--primary-color); color: var(--primary-color); }
 
-/* Search summary panel: white, asymmetric radius, gold left border accent */
+/* Panel de resumen de busqueda: blanco, radio asimetrico, acento de borde izquierdo dorado */
 .search-summary {
     background: var(--white);
     padding: 2rem;
@@ -102,40 +107,40 @@
     margin-bottom: 2rem;
 }
 
-/* Summary route row: origin arrow destination in a flex row */
+/* Fila de ruta del resumen: origen flecha destino en una fila flex */
 .search-summary__route { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
 
-/* Origin and destination text at 1.5rem, light weight */
+/* Texto de origen y destino a 1.5rem con peso liviano */
 .search-summary__origin,
 .search-summary__destination { font-size: 1.5rem; font-weight: 300; color: var(--secondary-color); }
-/* Gold arrow separator */
+/* Separador de flecha dorada */
 .search-summary__arrow { color: var(--primary-color); font-size: 1.5rem; }
 
-/* Summary detail items in a wrapping flex row with larger gaps */
+/* Elementos de detalle del resumen en una fila flex con ajuste y separaciones mayores */
 .search-summary__details { display: flex; gap: 3rem; flex-wrap: wrap; }
-/* Individual detail: stacked label and value */
+/* Detalle individual: etiqueta y valor apilados */
 .search-summary__item { display: flex; flex-direction: column; gap: 0.3rem; }
-/* All-caps tiny muted label */
+/* Etiqueta apagada, diminuta y en mayusculas */
 .search-summary__label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-/* Regular value at 0.95rem */
+/* Valor regular a 0.95rem */
 .search-summary__value { font-size: 0.95rem; font-weight: 500; color: var(--secondary-color); }
-/* Trip mode value highlighted in gold and bold */
+/* Valor del modo de viaje resaltado en dorado y negrita */
 .search-summary__value--mode { color: var(--primary-color); font-weight: 700; }
 
-/* Multi-flight step indicator: centered flex row with number badges and connecting lines */
+/* Indicador de pasos para multiples vuelos: fila flex centrada con insignias de numero y lineas de conexion */
 .step-indicator {
     display: flex; align-items: center; justify-content: center;
     gap: 2rem; padding: 2rem; background: #fcfbf9; border-radius: 20px;
 }
 
-/* Individual step item: centered column, faded when inactive */
+/* Elemento de paso individual: columna centrada, desvanecido cuando esta inactivo */
 .step-indicator__item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; opacity: 0.4; transition: var(--transition); }
 
-/* Active and completed steps are fully opaque */
+/* Los pasos activos y completados son completamente opacos */
 .step-indicator__item--active,
 .step-indicator__item--completed { opacity: 1; }
 
-/* Circular step number badge: 40px, default off-white */
+/* Insignia circular de numero de paso: 40px, blanco apagado por defecto */
 .step-indicator__number {
     width: 40px; height: 40px; border-radius: 50%;
     background: var(--perla-dark); color: var(--white);
@@ -143,23 +148,23 @@
     font-weight: 700; transition: var(--transition);
 }
 
-/* Active step badge scales up and turns gold */
+/* La insignia del paso activo escala y se vuelve dorada */
 .step-indicator__item--active    .step-indicator__number { background: var(--primary-color); transform: scale(1.1); }
-/* Completed step badge turns dark */
+/* La insignia del paso completado se vuelve oscura */
 .step-indicator__item--completed .step-indicator__number { background: var(--secondary-color); }
 
-/* Small all-caps step label below the badge */
+/* Etiqueta de paso pequena en mayusculas debajo de la insignia */
 .step-indicator__label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-/* Thin horizontal line connecting steps */
+/* Linea horizontal delgada que conecta los pasos */
 .step-indicator__line  { width: 80px; height: 2px; background: var(--perla-dark); }
 
-/* Two-column layout: 300px filter panel on the left, flight list on the right */
+/* Disposicion de dos columnas: panel de filtros de 300px a la izquierda, lista de vuelos a la derecha */
 .vuelos-page__content { display: grid; grid-template-columns: 300px 1fr; gap: 2.5rem; align-items: start; }
 
-/* Filter panel is sticky 7rem from the top */
+/* El panel de filtros es fijo a 7rem desde la parte superior */
 .vuelos-page__filters { position: sticky; top: 7rem; }
 
-/* Filter panel card: white, asymmetric radius, gold top border accent */
+/* Tarjeta del panel de filtros: blanca, radio asimetrico, acento de borde superior dorado */
 .filters-panel {
     background: var(--white); padding: 2rem;
     border-radius: 4px 32px 4px 32px;
@@ -167,17 +172,17 @@
     border-top: 3px solid var(--primary-color);
 }
 
-/* Filter panel header: title and clear link in a space-between row */
+/* Encabezado del panel de filtros: titulo y enlace de limpiar en una fila con espacio entre ellos */
 .filters-panel__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--perla-dark); }
 
-/* Small all-caps filter panel title */
+/* Titulo del panel de filtros pequeno y en mayusculas */
 .filters-panel__title  { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--secondary-color); }
 
-/* Underlined clear-filters link in the primary color */
+/* Enlace de limpiar filtros subrayado en el color primario */
 .filters-panel__clear  { background: transparent; border: none; color: var(--primary-color); font-size: 0.75rem; cursor: pointer; text-decoration: underline; transition: var(--transition); font-family: inherit; }
 .filters-panel__clear:hover { color: var(--secondary-color); }
 
-/* Full-width gold apply button at the bottom of the filter panel */
+/* Boton de aplicar de ancho completo dorado en la parte inferior del panel de filtros */
 .filters-panel__apply {
     width: 100%; padding: 0.75rem;
     background-color: var(--primary-color); color: white;
@@ -187,29 +192,29 @@
 }
 .filters-panel__apply:hover { background-color: #b07d2e; }
 
-/* Individual filter group with bottom margin */
+/* Grupo de filtro individual con margen inferior */
 .filter-group { margin-bottom: 1.5rem; }
 
-/* Small all-caps filter group label */
+/* Etiqueta del grupo de filtro pequena y en mayusculas */
 .filter-group__label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
 
-/* Filter text input and select element: shared warm beige style */
+/* Input de texto y elemento select del filtro: estilo beige calido compartido */
 .filter-group__input,
 .filter-group__select-element { width: 100%; padding: 0.7rem; border: 1px solid var(--perla-dark); border-radius: 4px; background: #fcfbf9; color: var(--secondary-color); font-size: 0.85rem; transition: var(--transition); font-family: inherit; }
 
-/* Gold border focus ring for filter inputs and selects */
+/* Anillo de enfoque dorado para inputs y selects de filtro */
 .filter-group__input:focus,
 .filter-group__select-element:focus { outline: none; border-color: var(--primary-color); background: var(--white); }
 
-/* Price range: two inputs side by side with a separator */
+/* Rango de precio: dos inputs uno al lado del otro con un separador */
 .filter-group__price-range { display: flex; align-items: center; gap: 0.5rem; }
 .filter-group__price-range input { flex: 1; }
 .filter-group__price-range span  { color: var(--text-muted); }
 
-/* Full-width select wrapper */
+/* Contenedor de select de ancho completo */
 .filter-group__select { width: 100%; }
 
-/* Flight mode filter: vertical stack of toggle buttons */
+/* Filtro de modo de vuelo: pila vertical de botones de alternancia */
 .filter-flight-mode {
     display: flex;
     flex-direction: column;
@@ -217,7 +222,7 @@
     margin-top: 0.25rem;
 }
 
-/* Individual mode toggle button: outlined asymmetric button */
+/* Boton de alternancia de modo individual: boton asimetrico con contorno */
 .filter-mode-btn {
     display: flex;
     align-items: center;
@@ -236,20 +241,20 @@
     width: 100%;
 }
 
-/* Mode button darkens on hover when not disabled */
+/* El boton de modo se oscurece al pasar el cursor cuando no esta deshabilitado */
 .filter-mode-btn:hover:not(:disabled) {
     border-color: var(--primary-color);
     color: var(--secondary-color);
     background: var(--white);
 }
 
-/* Disabled mode button is faded with no cursor */
+/* El boton de modo deshabilitado esta desvanecido y sin cursor */
 .filter-mode-btn:disabled {
     opacity: 0.35;
     cursor: not-allowed;
 }
 
-/* Active mode button: white background, gold border, gold inset left accent */
+/* Boton de modo activo: fondo blanco, borde dorado, acento izquierdo insertado dorado */
 .filter-mode-btn--active {
     background: var(--white) !important;
     color: var(--secondary-color) !important;
@@ -257,18 +262,18 @@
     box-shadow: inset 3px 0 0 var(--primary-color);
 }
 
-/* Active layover mode button: dark blue accent instead of gold */
+/* Boton de modo de escala activo: acento azul oscuro en lugar de dorado */
 .filter-mode-btn--escala.filter-mode-btn--active {
     border-color: #3b4f6b !important;
     box-shadow: inset 3px 0 0 #3b4f6b;
 }
 
-/* Emoji icon inside the mode button */
+/* Icono emoji dentro del boton de modo */
 .filter-mode-btn__icon { font-size: 1rem; flex-shrink: 0; }
-/* Flex-growing text label in the mode button */
+/* Etiqueta de texto que crece con flex dentro del boton de modo */
 .filter-mode-btn__text { flex: 1; }
 
-/* Count badge inside the mode button */
+/* Insignia de conteo dentro del boton de modo */
 .filter-mode-btn__count {
     display: inline-flex;
     align-items: center;
@@ -282,45 +287,45 @@
     padding: 0 5px;
 }
 
-/* Active mode button count uses a gold background */
+/* El conteo del boton de modo activo usa fondo dorado */
 .filter-mode-btn--active .filter-mode-btn__count { background: var(--primary-color); color: white; }
-/* Active layover mode count uses a dark blue background */
+/* El conteo del modo de escala activo usa fondo azul oscuro */
 .filter-mode-btn--escala.filter-mode-btn--active .filter-mode-btn__count { background: #3b4f6b; color: white; }
 
-/* Main flight list area takes full available width */
+/* El area de la lista de vuelos principal ocupa el ancho completo disponible */
 .vuelos-page__main { width: 100%; }
 
-/* Flight list header with a gold left border accent */
+/* Encabezado de la lista de vuelos con acento de borde izquierdo dorado */
 .flights-header { margin-bottom: 2rem; border-left: 4px solid var(--primary-color); padding-left: 1.5rem; }
-/* Light-weight flights title at 1.8rem */
+/* Titulo de vuelos de peso liviano a 1.8rem */
 .flights-header__title    { font-size: 1.8rem; font-weight: 300; color: var(--secondary-color); margin: 0 0 0.5rem 0; }
-/* Small all-caps subtitle */
+/* Subtitulo pequeno en mayusculas */
 .flights-header__subtitle { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
 
-/* Vertical stack of flight cards */
+/* Pila vertical de tarjetas de vuelo */
 .flights-list { display: flex; flex-direction: column; gap: 1.5rem; }
 
-/* Empty/error state: centered dashed container with muted text */
+/* Estado vacio o de error: contenedor con borde punteado centrado y texto apagado */
 .vuelos-estado {
     text-align: center; padding: 4rem 2rem; color: var(--text-muted);
     font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase;
     border: 1px dashed var(--perla-dark); border-radius: 4px 24px 4px 24px; background: #fcfbf9;
 }
 
-/* Info state variant: solid gold border, normal text */
+/* Variante de estado informativo: borde dorado solido, texto normal */
 .vuelos-estado--info {
     border-color: var(--primary-color); border-style: solid; color: var(--secondary-color);
     font-weight: 400; letter-spacing: 0.3px; text-transform: none; font-size: 0.88rem;
 }
 
-/* Inline booking error message: red background with a red border */
+/* Mensaje de error de reserva en linea: fondo rojo con borde rojo */
 .vuelos-error-reserva {
     margin: 1rem 2rem; color: #dc2626; background: #fef2f2;
     padding: 1rem; border-radius: 0.5rem; border: 1px solid #fca5a5;
     font-size: 0.88rem;
 }
 
-/* Flight card: white, asymmetric radius (4px 28px 4px 28px), fades in on load */
+/* Tarjeta de vuelo: blanca, radio asimetrico (4px 28px 4px 28px), aparece con fundido al cargar */
 .flight-card {
     background: var(--white);
     border-radius: 4px 28px 4px 28px;
@@ -332,26 +337,26 @@
     animation: fadeInUp 0.5s ease-out forwards;
 }
 
-/* Card lifts 5px and shows a light border on hover */
+/* La tarjeta sube 5px y muestra un borde claro al pasar el cursor */
 .flight-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 18px 40px rgba(28,26,24,0.1);
     border-color: var(--perla-dark);
 }
 
-/* Selected card: gold border and gold shadow */
+/* Tarjeta seleccionada: borde dorado y sombra dorada */
 .flight-card--selected {
     border-color: var(--primary-color) !important;
     box-shadow: 0 16px 42px rgba(176,125,46,0.18) !important;
 }
 
-/* Selected connecting card: dark blue border and shadow */
+/* Tarjeta de escala seleccionada: borde y sombra azul oscuro */
 .flight-card--escala.flight-card--selected {
     border-color: #3b4f6b !important;
     box-shadow: 0 16px 42px rgba(59,79,107,0.18) !important;
 }
 
-/* Decorative background element: fades in on hover/selection */
+/* Elemento decorativo de fondo: aparece al pasar el cursor o al seleccionar */
 .flight-card__deco {
     position: absolute; top: 0; right: 0;
     width: 200px; height: 100%;
@@ -360,166 +365,166 @@
 .flight-card:hover          .flight-card__deco { opacity: 0.85; }
 .flight-card--selected      .flight-card__deco { opacity: 1; }
 
-/* Card content area: padded flex column above the deco layer */
+/* Area de contenido de la tarjeta: columna flex con relleno encima de la capa decorativa */
 .flight-card__content {
     padding: 1.75rem 2rem;
     display: flex; flex-direction: column; gap: 1.2rem;
     position: relative; z-index: 1;
 }
 
-/* Card header: code/airline info on the left, badge on the right */
+/* Encabezado de la tarjeta: informacion de codigo y aerolinea a la izquierda, insignia a la derecha */
 .flight-card__header { display: flex; justify-content: space-between; align-items: flex-start; }
-/* Code and airline info stacked column */
+/* Columna apilada con codigo y aerolinea */
 .flight-card__code-info { display: flex; flex-direction: column; gap: 0.25rem; }
-/* Bold flight code at 1.35rem */
+/* Codigo de vuelo en negrita a 1.35rem */
 .flight-card__code    { font-size: 1.35rem; font-weight: 600; color: var(--secondary-color); letter-spacing: 0.5px; }
-/* Tiny all-caps airline name */
+/* Nombre de aerolinea diminuto en mayusculas */
 .flight-card__airline { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
 
-/* Type badge: small pill for direct vs. connecting */
+/* Insignia de tipo: pastilla pequena para vuelo directo o con escala */
 .flight-card__badge {
     font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
     letter-spacing: 1px; padding: 0.3rem 0.8rem; border-radius: 20px; flex-shrink: 0;
 }
-/* Direct badge: warm gold tones */
+/* Insignia de vuelo directo: tonos dorados calidos */
 .flight-card__badge--directo {
     background: rgba(201,169,97,0.12); color: #b07d2e;
     border: 1px solid rgba(201,169,97,0.3);
 }
-/* Connecting badge: blue tones */
+/* Insignia de vuelo con escala: tonos azules */
 .flight-card__badge--escala {
     background: rgba(59,79,107,0.1); color: #3b4f6b;
     border: 1px solid rgba(59,79,107,0.25);
 }
 
-/* Direct flight schedule: three-column grid with origin, duration, and destination */
+/* Horario de vuelo directo: grilla de tres columnas con origen, duracion y destino */
 .flight-card__schedule {
     display: grid; grid-template-columns: auto 1fr auto;
     gap: 1rem; align-items: center;
     background: #faf8f5; border-radius: 4px 16px 4px 16px; padding: 1.1rem 1.4rem;
 }
 
-/* Airport point column: stacked time, code */
+/* Columna de punto de aeropuerto: hora y codigo apilados */
 .schedule-point { display: flex; flex-direction: column; gap: 0.2rem; }
-/* Destination point aligned to the right */
+/* Punto de destino alineado a la derecha */
 .schedule-point--right { align-items: flex-end; }
-/* Large light-weight time display */
+/* Visualizacion de hora grande y liviana */
 .schedule-point__time { font-size: 1.6rem; font-weight: 300; color: var(--secondary-color); line-height: 1; letter-spacing: -0.5px; }
-/* Small gold all-caps IATA code */
+/* Codigo IATA dorado y pequeno en mayusculas */
 .schedule-point__code { font-size: 0.68rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
 
-/* Duration column: centered with track line and duration text */
+/* Columna de duracion: centrada con linea de pista y texto de duracion */
 .schedule-duration { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0 0.5rem; }
-/* Track row: dot, line, plane icon */
+/* Fila de pista: punto, linea, icono de avion */
 .schedule-duration__track { width: 100%; display: flex; align-items: center; gap: 4px; }
-/* Small gold dot at each end of the track */
+/* Punto dorado pequeno en cada extremo de la pista */
 .schedule-duration__dot   { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-color); flex-shrink: 0; }
-/* Thin off-white track line */
+/* Linea de pista delgada en blanco apagado */
 .schedule-duration__line  { flex: 1; height: 1px; background: var(--perla-dark); }
-/* Small gold plane icon */
+/* Icono de avion dorado pequeno */
 .schedule-duration__plane { font-size: 0.95rem; color: var(--primary-color); line-height: 1; }
-/* Duration time text */
+/* Texto de tiempo de duracion */
 .schedule-duration__time  { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-/* Small direct/stopover type label */
+/* Etiqueta de tipo directo o con escala pequena */
 .schedule-duration__type  { font-size: 0.6rem; color: var(--primary-color); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
 
-/* Connecting flight timeline container */
+/* Contenedor de linea de tiempo del vuelo con escalas */
 .escala-timeline {
     background: #f7f5f2; border-radius: 4px 16px 4px 16px; padding: 1.2rem 1.4rem;
     display: flex; flex-direction: column; gap: 0;
 }
 
-/* Individual leg airports: three-column grid */
+/* Aeropuertos del tramo individual: grilla de tres columnas */
 .escala-tramo__airports {
     display: grid; grid-template-columns: auto 1fr auto; gap: 0.8rem; align-items: center;
 }
 
-/* Airport point column in a connecting leg */
+/* Columna de punto de aeropuerto en un tramo de escala */
 .escala-tramo__point { display: flex; flex-direction: column; gap: 0.15rem; min-width: 70px; }
 .escala-tramo__point--right { align-items: flex-end; }
 
-/* Leg departure/arrival time at 1.35rem, light weight */
+/* Hora de salida o llegada del tramo a 1.35rem con peso liviano */
 .escala-tramo__time { font-size: 1.35rem; font-weight: 300; color: var(--secondary-color); line-height: 1; }
-/* Blue bold IATA code in the connecting leg */
+/* Codigo IATA azul y en negrita en el tramo de escala */
 .escala-tramo__code { font-size: 0.65rem; font-weight: 700; color: #3b4f6b; text-transform: uppercase; letter-spacing: 2px; }
-/* Tiny muted city name */
+/* Nombre de ciudad diminuto y apagado */
 .escala-tramo__city { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* Center column of the connecting leg: track, plane icon, duration */
+/* Columna central del tramo de escala: pista, icono de avion y duracion */
 .escala-tramo__middle { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
 .escala-tramo__track  { width: 100%; display: flex; align-items: center; gap: 3px; }
-/* Small blue dot at each end of the connecting track */
+/* Punto azul pequeno en cada extremo de la pista de escala */
 .escala-tramo__dot    { width: 5px; height: 5px; border-radius: 50%; background: #3b4f6b; flex-shrink: 0; }
-/* Translucent blue track line */
+/* Linea de pista azul translucida */
 .escala-tramo__line   { flex: 1; height: 1px; background: rgba(59,79,107,0.25); }
-/* Blue plane icon in the connecting leg */
+/* Icono de avion azul en el tramo de escala */
 .escala-tramo__plane  { font-size: 0.85rem; color: #3b4f6b; }
-/* Leg flight duration text */
+/* Texto de duracion del tramo */
 .escala-tramo__dur    { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
-/* Leg number badge: small blue pill */
+/* Insignia de numero de tramo: pastilla azul pequena */
 .escala-tramo__num    { font-size: 0.58rem; color: #3b4f6b; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(59,79,107,0.08); padding: 0.15rem 0.5rem; border-radius: 10px; }
 
-/* Layover separator row between legs */
+/* Fila separadora de conexion entre tramos */
 .escala-conexion { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; margin: 0.4rem 0; }
-/* Dashed blue lines flanking the layover badge */
+/* Lineas azules punteadas flanqueando la insignia de conexion */
 .escala-conexion__line  { flex: 1; height: 1px; border-top: 1px dashed rgba(59,79,107,0.3); }
 
-/* Layover badge: blue pill showing the connection time and airport */
+/* Insignia de conexion: pastilla azul que muestra el tiempo de conexion y el aeropuerto */
 .escala-conexion__badge {
     display: flex; align-items: center; gap: 0.4rem;
     font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
     color: #3b4f6b; background: rgba(59,79,107,0.08); border: 1px solid rgba(59,79,107,0.15);
     padding: 0.3rem 0.8rem; border-radius: 20px; white-space: nowrap;
 }
-/* Small icon inside the layover badge */
+/* Icono pequeno dentro de la insignia de conexion */
 .escala-conexion__badge svg { width: 11px; height: 11px; flex-shrink: 0; }
 
-/* Summary row below the connecting legs: total duration and stop count */
+/* Fila de resumen debajo de los tramos de escala: duracion total y conteo de paradas */
 .escala-resumen { display: flex; gap: 2rem; padding: 0.6rem 0; border-top: 1px solid var(--perla-dark); }
 .escala-resumen__item  { display: flex; flex-direction: column; gap: 0.15rem; }
-/* Tiny all-caps muted summary label */
+/* Etiqueta de resumen diminuta en mayusculas y apagada */
 .escala-resumen__label { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
-/* Bold summary value */
+/* Valor de resumen en negrita */
 .escala-resumen__value { font-size: 0.88rem; font-weight: 600; color: var(--secondary-color); }
 
-/* Two-column seat class selection grid */
+/* Grilla de seleccion de clase de asiento de dos columnas */
 .flight-card__class-selection { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
-/* Individual class option button: off-white asymmetric button */
+/* Boton de opcion de clase individual: boton asimetrico en blanco apagado */
 .class-option {
     display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
     padding: 0.85rem 1rem; background: #faf8f5;
     border: 1.5px solid #ede9e1; border-radius: 4px 12px 4px 12px;
     cursor: pointer; transition: all 0.2s ease; font-family: inherit;
 }
-/* Class option border turns gold and lifts 2px on hover */
+/* El borde de la opcion de clase se vuelve dorado y sube 2px al pasar el cursor */
 .class-option:hover { border-color: var(--primary-color); transform: translateY(-2px); }
 
-/* Selected class option: gold background for direct flights */
+/* Opcion de clase seleccionada: fondo dorado para vuelos directos */
 .class-option--selected { background: var(--primary-color) !important; border-color: var(--primary-color) !important; }
-/* Selected class option: dark blue for connecting flights */
+/* Opcion de clase seleccionada: azul oscuro para vuelos con escala */
 .flight-card--escala .class-option--selected { background: #3b4f6b !important; border-color: #3b4f6b !important; }
-/* Unavailable class: semi-transparent, not clickable */
+/* Clase no disponible: semitransparente, no clicable */
 .class-option--disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Tiny all-caps class name label */
+/* Etiqueta de nombre de clase diminuta en mayusculas */
 .class-option__name  { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-/* Selected class name turns white */
+/* El nombre de la clase seleccionada se vuelve blanco */
 .class-option--selected .class-option__name { color: var(--white); }
 
-/* Price display at 1.25rem in the primary color */
+/* Visualizacion de precio a 1.25rem en el color primario */
 .class-option__price { font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0.25rem 0; }
-/* Selected class price turns white */
+/* El precio de la clase seleccionada se vuelve blanco */
 .class-option--selected .class-option__price { color: var(--white); }
 
-/* Small muted class label below the price */
+/* Etiqueta de clase pequena y apagada debajo del precio */
 .class-option__label { font-size: 0.62rem; color: var(--text-muted); }
-/* Selected class label turns translucent white */
+/* La etiqueta de la clase seleccionada se vuelve blanco translucido */
 .class-option--selected .class-option__label { color: rgba(255,255,255,0.85); }
-/* Unavailable label in red */
+/* Etiqueta de no disponible en rojo */
 .class-option__label--unavailable { color: #dc2626; font-weight: 600; }
 
-/* Full-width details link button: outlined asymmetric, fills on hover */
+/* Boton de enlace de detalles de ancho completo: asimetrico con contorno, se rellena al pasar el cursor */
 .flight-card__details-btn {
     width: 100%; padding: 0.85rem; background: transparent;
     border: 1.5px solid var(--perla-dark); color: var(--secondary-color);
@@ -529,10 +534,10 @@
 }
 .flight-card__details-btn:hover { background: var(--secondary-color); color: var(--white); border-color: var(--secondary-color); }
 
-/* Fixed bottom-right next-step button container */
+/* Contenedor fijo del boton de siguiente paso en la esquina inferior derecha */
 .vuelos-page__next-step { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; }
 
-/* Next step button: dark background, asymmetric radius, deep shadow, lifts on hover */
+/* Boton de siguiente paso: fondo oscuro, radio asimetrico, sombra profunda, sube al pasar el cursor */
 .next-step-btn {
     padding: 1.2rem 2.5rem; background: var(--secondary-color); color: var(--white);
     border: none; border-radius: 4px 20px 4px 20px; cursor: pointer;
@@ -540,27 +545,27 @@
     letter-spacing: 1.5px; font-size: 0.85rem;
     box-shadow: 0 15px 40px rgba(28,26,24,0.25); font-family: inherit;
 }
-/* Button turns gold and lifts with an intense golden shadow on hover */
+/* El boton se vuelve dorado y sube con una sombra dorada intensa al pasar el cursor */
 .next-step-btn:hover { background: var(--primary-color); transform: translateY(-3px); box-shadow: 0 20px 50px rgba(201,169,97,0.35); }
-/* Disabled state: semi-transparent, no hover effects */
+/* Estado deshabilitado: semitransparente, sin efectos de cursor */
 .next-step-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-/* Card entry animation: slides up 20px while fading in */
+/* Animacion de entrada de la tarjeta: sube 20px mientras aparece con fundido */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* At 1200px: filter panel narrows to 270px */
+/* A 1200px: el panel de filtros se estrecha a 270px */
 @media (max-width: 1200px) { .vuelos-page__content { grid-template-columns: 270px 1fr; gap: 2rem; } }
 
-/* At 1024px: single-column layout, filter panel leaves sticky mode */
+/* A 1024px: disposicion de una columna, el panel de filtros sale del modo fijo */
 @media (max-width: 1024px) {
     .vuelos-page__content { grid-template-columns: 1fr; }
     .vuelos-page__filters { position: relative; top: 0; margin-bottom: 2rem; }
 }
 
-/* At 768px: less page padding, route summary stacks vertically, next-step button shifts left */
+/* A 768px: menos relleno de pagina, el resumen de ruta se apila verticalmente, el boton de siguiente paso se desplaza a la izquierda */
 @media (max-width: 768px) {
     .vuelos-page { padding: 1.5rem 1rem 10rem; }
     .search-summary__route { flex-direction: column; gap: 0.5rem; }

@@ -1,8 +1,384 @@
 ﻿# Dtos
 
+## AerolineaAdminDTO
+
+> DTO que representa los datos de una aerolinea aliada para el panel de administracion. Incluye el username del usuario webservice propietario para facilitar la gestion. No expone el TokenHASH de autenticacion ya que ese se gestiona internamente.
+
+```java
+public int getId()
+```
+
+Retorna el identificador unico de la aerolinea.
+
+- **Returns** - ID de la aerolinea.
+
+---
+
+```java
+public String getNombre()
+```
+
+Retorna el nombre comercial de la aerolinea.
+
+- **Returns** - nombre de la aerolinea.
+
+---
+
+```java
+public int getUsuarioWebis()
+```
+
+Retorna el ID del usuario webservice propietario de la aerolinea.
+
+- **Returns** - ID del usuario webservice.
+
+---
+
+```java
+public String getUsuarioUsername()
+```
+
+Retorna el username del usuario webservice propietario.
+
+- **Returns** - username del usuario webservice.
+
+---
+
+```java
+public double getPorcentajeDescuento()
+```
+
+Retorna el porcentaje de descuento asignado.
+
+- **Returns** - porcentaje de descuento.
+
+---
+
+```java
+public int getEstadoId()
+```
+
+Retorna el ID del estado actual de la aerolinea.
+
+- **Returns** - ID del estado.
+
+---
+
+```java
+public String getEstado()
+```
+
+Retorna el nombre del estado actual de la aerolinea.
+
+- **Returns** - nombre del estado.
+
+---
+
+```java
+public String getUrl()
+```
+
+Retorna la URL del sistema externo de la aerolinea.
+
+- **Returns** - URL del sistema externo.
+
+---
+
+```java
+public String getUrlParaUsuario()
+```
+
+Retorna la URL de redireccion para el usuario final.
+
+- **Returns** - URL para el usuario final.
+
+---
+
+```java
+public void setId(int id)
+```
+
+Asigna el identificador unico de la aerolinea.
+
+- **Param** `id` - ID de la aerolinea.
+
+---
+
+```java
+public void setNombre(String nombre)
+```
+
+Asigna el nombre comercial de la aerolinea.
+
+- **Param** `nombre` - nombre de la aerolinea.
+
+---
+
+```java
+public void setUsuarioWebis(int usuarioWebis)
+```
+
+Asigna el ID del usuario webservice propietario.
+
+- **Param** `usuarioWebis` - ID del usuario webservice.
+
+---
+
+```java
+public void setUsuarioUsername(String usuarioUsername)
+```
+
+Asigna el username del usuario webservice propietario.
+
+- **Param** `usuarioUsername` - username del usuario webservice.
+
+---
+
+```java
+public void setPorcentajeDescuento(double porcentajeDescuento)
+```
+
+Asigna el porcentaje de descuento.
+
+- **Param** `porcentajeDescuento` - porcentaje de descuento.
+
+---
+
+```java
+public void setEstadoId(int estadoId)
+```
+
+Asigna el ID del estado actual.
+
+- **Param** `estadoId` - ID del estado.
+
+---
+
+```java
+public void setEstado(String estado)
+```
+
+Asigna el nombre del estado actual.
+
+- **Param** `estado` - nombre del estado.
+
+---
+
+```java
+public void setUrl(String url)
+```
+
+Asigna la URL del sistema externo.
+
+- **Param** `url` - URL del sistema externo.
+
+---
+
+```java
+public void setUrlParaUsuario(String urlParaUsuario)
+```
+
+Asigna la URL de redireccion para el usuario final.
+
+- **Param** `urlParaUsuario` - URL para el usuario final.
+
+---
+
+## AerolineaIdentidadDTO
+
+> DTO con los datos de identidad de una aerolinea aliada autenticada por token.
+
+```java
+public AerolineaIdentidadDTO(int id, String nombre, String urlAerolinea)
+```
+
+---
+
+```java
+public int    getId()
+```
+
+---
+
+```java
+public String getNombre()
+```
+
+---
+
+```java
+public String getUrlAerolinea()
+```
+
+---
+
+## AerolineaWebserviceDTO
+
+> DTO que representa los datos de una aerolinea aliada para el portal webservice. No expone el TokenHASH de autenticacion ya que ese se gestiona internamente. Incluye el nombre del estado resuelto mediante join con la tabla EstadoAliado.
+
+```java
+public int getId()
+```
+
+Retorna el identificador unico de la aerolinea.
+
+- **Returns** - ID de la aerolinea.
+
+---
+
+```java
+public String getNombre()
+```
+
+Retorna el nombre comercial de la aerolinea.
+
+- **Returns** - nombre de la aerolinea.
+
+---
+
+```java
+public int getUsuarioWebis()
+```
+
+Retorna el ID del usuario webservice propietario de la aerolinea.
+
+- **Returns** - ID del usuario webservice.
+
+---
+
+```java
+public double getPorcentajeDescuento()
+```
+
+Retorna el porcentaje de descuento asignado por el administrador.
+
+- **Returns** - porcentaje de descuento.
+
+---
+
+```java
+public int getEstadoId()
+```
+
+Retorna el ID del estado actual de la aerolinea.
+
+- **Returns** - ID del estado.
+
+---
+
+```java
+public String getEstado()
+```
+
+Retorna el nombre del estado actual resuelto desde la tabla EstadoAliado.
+
+- **Returns** - nombre del estado.
+
+---
+
+```java
+public String getUrl()
+```
+
+Retorna la URL del sistema externo de la aerolinea.
+
+- **Returns** - URL del sistema externo.
+
+---
+
+```java
+public String getUrlParaUsuario()
+```
+
+Retorna la URL de redireccion para usuarios finales.
+
+- **Returns** - URL para el usuario final.
+
+---
+
+```java
+public void setId(int id)
+```
+
+Asigna el identificador unico de la aerolinea.
+
+- **Param** `id` - ID de la aerolinea.
+
+---
+
+```java
+public void setNombre(String nombre)
+```
+
+Asigna el nombre comercial de la aerolinea.
+
+- **Param** `nombre` - nombre de la aerolinea.
+
+---
+
+```java
+public void setUsuarioWebis(int usuarioWebis)
+```
+
+Asigna el ID del usuario webservice propietario de la aerolinea.
+
+- **Param** `usuarioWebis` - ID del usuario webservice.
+
+---
+
+```java
+public void setPorcentajeDescuento(double porcentajeDescuento)
+```
+
+Asigna el porcentaje de descuento asignado por el administrador.
+
+- **Param** `porcentajeDescuento` - porcentaje de descuento.
+
+---
+
+```java
+public void setEstadoId(int estadoId)
+```
+
+Asigna el ID del estado actual de la aerolinea.
+
+- **Param** `estadoId` - ID del estado.
+
+---
+
+```java
+public void setEstado(String estado)
+```
+
+Asigna el nombre del estado actual resuelto desde la tabla EstadoAliado.
+
+- **Param** `estado` - nombre del estado.
+
+---
+
+```java
+public void setUrl(String url)
+```
+
+Asigna la URL del sistema externo de la aerolinea.
+
+- **Param** `url` - URL del sistema externo.
+
+---
+
+```java
+public void setUrlParaUsuario(String urlParaUsuario)
+```
+
+Asigna la URL de redireccion para usuarios finales.
+
+- **Param** `urlParaUsuario` - URL para el usuario final.
+
+---
+
 ## AgenciaDTO
 
-> DTO que representa los datos de una agencia para transferencia entre capas. Incluye el nombre del estado resuelto mediante join con la tabla ESTADO.
+> DTO que representa los datos de una agencia para transferencia entre capas. Incluye el nombre del estado resuelto mediante join con la tabla ESTADO, y la URL del sistema externo registrada al momento de la creacion.
 
 ```java
 public int getId()
@@ -75,6 +451,16 @@ Retorna el nombre del estado actual resuelto desde la tabla ESTADO.
 ---
 
 ```java
+public String getUrlAgencia()
+```
+
+Retorna la URL del sistema externo de la agencia.
+
+- **Returns** - URL de la agencia.
+
+---
+
+```java
 public void setId(int id)
 ```
 
@@ -141,6 +527,16 @@ public void setEstado(String estado)
 Asigna el nombre del estado actual resuelto desde la tabla ESTADO.
 
 - **Param** `estado` - nombre del estado.
+
+---
+
+```java
+public void setUrlAgencia(String urlAgencia)
+```
+
+Asigna la URL del sistema externo de la agencia.
+
+- **Param** `urlAgencia` - URL del sistema externo.
 
 ---
 
@@ -991,9 +1387,157 @@ Asigna la cantidad total de downs recibidos por el comentario.
 
 ---
 
-## CrearAgenciaRequestDTO
+## CrearAerolineaAdminRequestDTO
 
-> DTO con los datos necesarios para crear una nueva agencia. El porcentaje de descuento siempre inicia en 0% y solo el administrador puede modificarlo.
+> DTO con los datos necesarios para que el administrador cree una aerolinea aliada y la asigne directamente a un usuario webservice existente. El porcentaje de descuento inicia en 0 y el token se genera al conectar.
+
+```java
+public String getNombre()
+```
+
+Retorna el nombre comercial de la nueva aerolinea.
+
+- **Returns** - nombre de la aerolinea.
+
+---
+
+```java
+public String getUrl()
+```
+
+Retorna la URL del sistema externo de la nueva aerolinea.
+
+- **Returns** - URL del sistema externo.
+
+---
+
+```java
+public String getUrlParaUsuario()
+```
+
+Retorna la URL de redireccion para el usuario final.
+
+- **Returns** - URL para el usuario final.
+
+---
+
+```java
+public int getUsuarioWebisId()
+```
+
+Retorna el ID del usuario webservice asignado a la aerolinea.
+
+- **Returns** - ID del usuario webservice.
+
+---
+
+```java
+public void setNombre(String nombre)
+```
+
+Asigna el nombre comercial de la nueva aerolinea.
+
+- **Param** `nombre` - nombre de la aerolinea.
+
+---
+
+```java
+public void setUrl(String url)
+```
+
+Asigna la URL del sistema externo de la nueva aerolinea.
+
+- **Param** `url` - URL del sistema externo.
+
+---
+
+```java
+public void setUrlParaUsuario(String urlParaUsuario)
+```
+
+Asigna la URL de redireccion para el usuario final.
+
+- **Param** `urlParaUsuario` - URL para el usuario final.
+
+---
+
+```java
+public void setUsuarioWebisId(int usuarioWebisId)
+```
+
+Asigna el ID del usuario webservice que sera propietario de la aerolinea.
+
+- **Param** `usuarioWebisId` - ID del usuario webservice.
+
+---
+
+## CrearAerolineaRequestDTO
+
+> DTO con los datos necesarios para registrar una nueva aerolinea aliada desde el portal webservice. El porcentaje de descuento siempre inicia en 0% y solo el administrador puede modificarlo. El token de autenticacion se genera automaticamente al establecer la conexion.
+
+```java
+public String getNombre()
+```
+
+Retorna el nombre comercial de la nueva aerolinea.
+
+- **Returns** - nombre de la aerolinea.
+
+---
+
+```java
+public String getUrl()
+```
+
+Retorna la URL del sistema externo de la aerolinea.
+
+- **Returns** - URL del sistema externo.
+
+---
+
+```java
+public String getUrlParaUsuario()
+```
+
+Retorna la URL de redireccion para usuarios finales.
+
+- **Returns** - URL para el usuario final.
+
+---
+
+```java
+public void setNombre(String nombre)
+```
+
+Asigna el nombre comercial de la nueva aerolinea.
+
+- **Param** `nombre` - nombre de la aerolinea.
+
+---
+
+```java
+public void setUrl(String url)
+```
+
+Asigna la URL del sistema externo de la aerolinea.
+
+- **Param** `url` - URL del sistema externo.
+
+---
+
+```java
+public void setUrlParaUsuario(String urlParaUsuario)
+```
+
+Asigna la URL de redireccion para usuarios finales.
+
+- **Param** `urlParaUsuario` - URL para el usuario final.
+
+---
+
+## CrearAgenciaAdminRequestDTO
+
+> DTO con los datos necesarios para que el administrador cree una agencia y la asigne directamente a un usuario webservice existente. El porcentaje de descuento inicia en 0 y los tokens se generan al conectar.
 
 ```java
 public String getNombre()
@@ -1016,6 +1560,26 @@ Retorna el correo electronico de la nueva agencia.
 ---
 
 ```java
+public String getUrlAgencia()
+```
+
+Retorna la URL del sistema externo de la nueva agencia.
+
+- **Returns** - URL de la agencia.
+
+---
+
+```java
+public int getUsuarioWebisId()
+```
+
+Retorna el ID del usuario webservice asignado a la agencia.
+
+- **Returns** - ID del usuario webservice.
+
+---
+
+```java
 public void setNombre(String nombre)
 ```
 
@@ -1032,6 +1596,90 @@ public void setCorreo(String correo)
 Asigna el correo electronico de la nueva agencia.
 
 - **Param** `correo` - correo de la agencia.
+
+---
+
+```java
+public void setUrlAgencia(String urlAgencia)
+```
+
+Asigna la URL del sistema externo de la nueva agencia.
+
+- **Param** `urlAgencia` - URL de la agencia.
+
+---
+
+```java
+public void setUsuarioWebisId(int usuarioWebisId)
+```
+
+Asigna el ID del usuario webservice que sera propietario de la agencia.
+
+- **Param** `usuarioWebisId` - ID del usuario webservice.
+
+---
+
+## CrearAgenciaRequestDTO
+
+> DTO con los datos necesarios para crear una nueva agencia. El porcentaje de descuento siempre inicia en 0% y solo el administrador puede modificarlo. Los tokens de autenticacion se generan automaticamente al establecer la conexion con handshake.
+
+```java
+public String getNombre()
+```
+
+Retorna el nombre comercial de la nueva agencia.
+
+- **Returns** - nombre de la agencia.
+
+---
+
+```java
+public String getCorreo()
+```
+
+Retorna el correo electronico de la nueva agencia.
+
+- **Returns** - correo de la agencia.
+
+---
+
+```java
+public String getUrlAgencia()
+```
+
+Retorna la URL del sistema externo de la nueva agencia.
+
+- **Returns** - URL de la agencia.
+
+---
+
+```java
+public void setNombre(String nombre)
+```
+
+Asigna el nombre comercial de la nueva agencia.
+
+- **Param** `nombre` - nombre de la agencia.
+
+---
+
+```java
+public void setCorreo(String correo)
+```
+
+Asigna el correo electronico de la nueva agencia.
+
+- **Param** `correo` - correo de la agencia.
+
+---
+
+```java
+public void setUrlAgencia(String urlAgencia)
+```
+
+Asigna la URL del sistema externo de la nueva agencia.
+
+- **Param** `urlAgencia` - URL del sistema externo.
 
 ---
 
@@ -1419,9 +2067,113 @@ Asigna el texto del comentario sobre el que se aplico el down.
 
 ---
 
+## EditarAerolineaRequestDTO
+
+> DTO con los datos editables de una aerolinea aliada desde el panel de administracion. Permite modificar nombre, URLs, porcentaje de descuento y estado.
+
+```java
+public String getNombre()
+```
+
+Retorna el nombre comercial actualizado de la aerolinea.
+
+- **Returns** - nombre de la aerolinea.
+
+---
+
+```java
+public String getUrl()
+```
+
+Retorna la URL del sistema externo actualizada.
+
+- **Returns** - URL del sistema externo.
+
+---
+
+```java
+public String getUrlParaUsuario()
+```
+
+Retorna la URL de redireccion para el usuario final actualizada.
+
+- **Returns** - URL para el usuario final.
+
+---
+
+```java
+public double getPorcentajeDescuento()
+```
+
+Retorna el porcentaje de descuento actualizado.
+
+- **Returns** - porcentaje de descuento.
+
+---
+
+```java
+public int getEstadoId()
+```
+
+Retorna el ID del nuevo estado de la aerolinea.
+
+- **Returns** - ID del estado.
+
+---
+
+```java
+public void setNombre(String nombre)
+```
+
+Asigna el nombre comercial actualizado de la aerolinea.
+
+- **Param** `nombre` - nombre de la aerolinea.
+
+---
+
+```java
+public void setUrl(String url)
+```
+
+Asigna la URL del sistema externo actualizada.
+
+- **Param** `url` - URL del sistema externo.
+
+---
+
+```java
+public void setUrlParaUsuario(String urlParaUsuario)
+```
+
+Asigna la URL de redireccion para el usuario final actualizada.
+
+- **Param** `urlParaUsuario` - URL para el usuario final.
+
+---
+
+```java
+public void setPorcentajeDescuento(double porcentajeDescuento)
+```
+
+Asigna el porcentaje de descuento actualizado.
+
+- **Param** `porcentajeDescuento` - porcentaje de descuento.
+
+---
+
+```java
+public void setEstadoId(int estadoId)
+```
+
+Asigna el ID del nuevo estado de la aerolinea.
+
+- **Param** `estadoId` - ID del estado.
+
+---
+
 ## EditarAgenciaRequestDTO
 
-> DTO con los datos editables de una agencia desde el panel de administracion. Permite modificar nombre, correo, porcentaje de descuento y estado.
+> DTO con los datos editables de una agencia desde el panel de administracion. Permite modificar nombre, correo, URL del sistema externo, porcentaje de descuento y estado.
 
 ```java
 public String getNombre()
@@ -1440,6 +2192,16 @@ public String getCorreo()
 Retorna el correo electronico actualizado de la agencia.
 
 - **Returns** - correo de la agencia.
+
+---
+
+```java
+public String getUrlAgencia()
+```
+
+Retorna la URL del sistema externo actualizada de la agencia.
+
+- **Returns** - URL del sistema externo.
 
 ---
 
@@ -1480,6 +2242,16 @@ public void setCorreo(String correo)
 Asigna el correo electronico actualizado de la agencia.
 
 - **Param** `correo` - correo de la agencia.
+
+---
+
+```java
+public void setUrlAgencia(String urlAgencia)
+```
+
+Asigna la URL del sistema externo actualizada de la agencia.
+
+- **Param** `urlAgencia` - URL del sistema externo.
 
 ---
 
@@ -3551,6 +4323,18 @@ Asigna el CVV de la tarjeta del cliente.
 
 ---
 
+```java
+public String getTokenAlianza()
+```
+
+---
+
+```java
+public void setTokenAlianza(String tokenAlianza)
+```
+
+---
+
 ## PagoResponseDTO
 
 > DTO con los datos de confirmacion retornados al cliente tras procesar un pago. Incluye los datos de la factura generada y el total cobrado.
@@ -4857,6 +5641,112 @@ Asigna las habitaciones fisicas disponibles de este tipo para el rango de fechas
 
 ---
 
+## TokenAerolineaRequestDTO
+
+> DTO con los datos que envia la aerolinea para solicitar un token de alianza. La ciudad y pais se usan para identificar el destino del pasajero.
+
+```java
+public String getCiudad()
+```
+
+---
+
+```java
+public void setCiudad(String ciudad)
+```
+
+---
+
+```java
+public String getPais()
+```
+
+---
+
+```java
+public void setPais(String pais)
+```
+
+---
+
+## TokenAerolineaResponseDTO
+
+> DTO con la respuesta tras generar un token de alianza exitosamente. Contiene el token generado, la URL para redirigir al usuario y la fecha en que expira el token.
+
+```java
+public class TokenAerolineaResponseDTO
+```
+
+DTO con la respuesta tras generar un token de alianza exitosamente. Contiene el token generado, la URL para redirigir al usuario y la fecha en que expira el token.
+
+---
+
+```java
+public TokenAerolineaResponseDTO(String token, String urlRedireccion, String fechaExpiracion)
+```
+
+---
+
+```java
+public String getToken()
+```
+
+---
+
+```java
+public String getUrlRedireccion()
+```
+
+---
+
+```java
+public String getFechaExpiracion()
+```
+
+---
+
+## TokenValidacionResponseDTO
+
+> DTO con la respuesta de validacion de un token de alianza. Contiene los datos necesarios para que el frontend configure la busqueda con descuento sin exponer logica interna.
+
+```java
+public class TokenValidacionResponseDTO
+```
+
+DTO con la respuesta de validacion de un token de alianza. Contiene los datos necesarios para que el frontend configure la busqueda con descuento sin exponer logica interna.
+
+---
+
+```java
+public TokenValidacionResponseDTO(String ciudad, String pais,
+```
+
+---
+
+```java
+public String getCiudad()
+```
+
+---
+
+```java
+public String getPais()
+```
+
+---
+
+```java
+public double getPorcentajeDescuento()
+```
+
+---
+
+```java
+public String getFechaExpiracion()
+```
+
+---
+
 ## UsuarioAdminDTO
 
 > DTO con los datos completos de un usuario para el panel de administracion. Incluye informacion personal, rol asignado y ubicacion geografica.
@@ -5608,5 +6498,49 @@ public boolean isPasaporteExiste()
 Retorna si el pasaporte ya existe en el sistema.
 
 - **Returns** - true si el pasaporte esta registrado, false en caso contrario.
+
+---
+
+## UsuarioWebserviceLibreDTO
+
+> DTO que representa un usuario webservice disponible para ser asignado a una entidad. Un usuario se considera "libre" cuando no tiene ni agencia ni aerolinea vinculadas.
+
+```java
+public int getId()
+```
+
+Retorna el ID del usuario webservice.
+
+- **Returns** - ID del usuario.
+
+---
+
+```java
+public String getUsername()
+```
+
+Retorna el nombre de usuario.
+
+- **Returns** - username del usuario.
+
+---
+
+```java
+public void setId(int id)
+```
+
+Asigna el ID del usuario webservice.
+
+- **Param** `id` - ID del usuario.
+
+---
+
+```java
+public void setUsername(String username)
+```
+
+Asigna el nombre de usuario.
+
+- **Param** `username` - username del usuario.
 
 ---

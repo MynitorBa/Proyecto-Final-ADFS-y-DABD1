@@ -1,65 +1,65 @@
 <script>
 /**
  * @file Profile.svelte
- * @description User profile page with two tabs: personal information and security. On mount it
- * redirects to login if no session exists, loads international dial codes from the restcountries
- * API to determine the user's country prefix and digit count, then fetches the authenticated
- * user's profile data from GET /api/perfil/:id. The personal tab shows read-only fields
- * (name, surname, email, username, passport, birth date, country, city) plus an editable phone
- * input with a dial-code prefix and digit-count validation submitted via PATCH
- * /api/perfil/:id/telefono. The security tab allows changing the password using PATCH
- * /api/perfil/:id/contrasena with live strength indicators and match validation. A logout button
- * calls the sesion store's logout function and navigates to the home page.
+ * @description Pagina de perfil de usuario con dos pestanas: informacion personal y seguridad. Al montar
+ * redirige al login si no existe sesion, carga los codigos de marcado internacional desde la API de
+ * restcountries para determinar el prefijo y conteo de digitos del pais del usuario, luego obtiene los datos
+ * de perfil del usuario autenticado desde GET /api/perfil/:id. La pestana personal muestra campos de solo
+ * lectura (nombre, apellido, correo, username, pasaporte, fecha de nacimiento, pais, ciudad) mas un input
+ * editable de telefono con prefijo de codigo de marcado y validacion de conteo de digitos enviado via PATCH
+ * /api/perfil/:id/telefono. La pestana de seguridad permite cambiar la contrasena usando PATCH
+ * /api/perfil/:id/contrasena con indicadores de fortaleza en tiempo real y validacion de coincidencia.
+ * Un boton de logout llama a la funcion logout del store de sesion y navega a la pagina de inicio.
  */
   import '../styles/profile.css';
   import { onMount } from 'svelte';
   import { sesion, logout } from '../stores/sesion.js';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion usada para navegar entre paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** The authenticated user's ID retrieved from the sesion store, or null if not logged in. @type {number|null} */
+  /** El ID del usuario autenticado obtenido del store de sesion, o null si no esta logueado. @type {number|null} */
   let usuarioId = null;
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
   import { API } from '../lib/api.js';
 
-  /** Currently active tab identifier, either 'personal' or 'security'. @type {string} */
+  /** Identificador de la pestana activa, ya sea 'personal' o 'security'. @type {string} */
   let activeTab = 'personal';
 
-  /** True while the initial profile data is being fetched from the API. @type {boolean} */
+  /** True mientras se obtienen los datos iniciales de perfil de la API. @type {boolean} */
   let cargando = true;
 
-  /** Profile data object populated from the API response. @type {{nombre: string, apellido: string, correo: string, username: string, telefono: string, pasaporte: string, fechaNacimiento: string, pais: string, ciudad: string}} */
+  /** Objeto de datos de perfil poblado desde la respuesta de la API. @type {{nombre: string, apellido: string, correo: string, username: string, telefono: string, pasaporte: string, fechaNacimiento: string, pais: string, ciudad: string}} */
   let perfil = {
     nombre: '', apellido: '', correo: '', username: '',
     telefono: '', pasaporte: '', fechaNacimiento: '', pais: '', ciudad: ''
   };
 
-  /** Locally formatted phone digits without dial code prefix, bound to the phone input. @type {string} */
+  /** Digitos de telefono formateados localmente sin prefijo de codigo de marcado, vinculado al input de telefono. @type {string} */
   let telefonoEditado  = '';
 
-  /** International dial code prefix for the user's country, e.g. '+502'. @type {string} */
+  /** Prefijo de codigo de marcado internacional para el pais del usuario, por ejemplo '+502'. @type {string} */
   let dialCode         = '';
 
-  /** Number of local digits required for phone numbers in the user's country. @type {number} */
+  /** Numero de digitos locales requeridos para numeros de telefono en el pais del usuario. @type {number} */
   let phoneDigitCount  = 8;
 
-  /** Map of country name (lowercased) to dial code and digit count built from restcountries API. @type {Object.<string, {code: string, digits: number}>} */
+  /** Mapa de nombre de pais (en minusculas) a codigo de marcado y conteo de digitos construido desde la API de restcountries. @type {Object.<string, {code: string, digits: number}>} */
   let dialCodesMap     = {};
 
-  /** Success message shown after a successful phone update. @type {string} */
+  /** Mensaje de exito mostrado despues de una actualizacion exitosa del telefono. @type {string} */
   let telefonoMensaje  = '';
 
-  /** Error message shown when phone validation fails or the PATCH request fails. @type {string} */
+  /** Mensaje de error mostrado cuando la validacion del telefono falla o la solicitud PATCH falla. @type {string} */
   let telefonoError    = '';
 
-  /** True while the phone PATCH request is in progress. @type {boolean} */
+  /** True mientras la solicitud PATCH del telefono esta en progreso. @type {boolean} */
   let guardandoTelefono = false;
 
   /**
-   * Static lookup map of international dial codes to expected local digit counts.
-   * Keys are dial code strings (e.g. '+502'), values are digit counts (e.g. 8).
+   * Mapa de busqueda estatico de codigos de marcado internacional a conteos de digitos locales esperados.
+   * Las claves son cadenas de codigo de marcado (por ejemplo '+502'), los valores son conteos de digitos (por ejemplo 8).
    * @type {Object.<string, number>}
    */
   const knownDigits = {
@@ -78,11 +78,11 @@
   };
 
   /**
-   * Formats a string of raw digit characters into a human-readable local phone number using
-   * space-separated groups whose sizes depend on the total expected digit count for the country.
-   * @param {string} digits - Raw digit string to format.
-   * @param {number} total - Total expected digit count for the country.
-   * @returns {string} The formatted phone string with spaces between digit groups.
+   * Formatea una cadena de caracteres de digitos sin procesar en un numero de telefono local legible usando
+   * grupos separados por espacios cuyo tamano depende del conteo total de digitos esperado del pais.
+   * @param {string} digits - Cadena de digitos sin procesar a formatear.
+   * @param {number} total - Conteo total de digitos esperado para el pais.
+   * @returns {string} La cadena de telefono formateada con espacios entre grupos de digitos.
    */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
@@ -93,9 +93,9 @@
   }
 
   /**
-   * Handles the phone input event by stripping non-digits, capping to phoneDigitCount, formatting
-   * the result with formatLocalPhone, and storing it in telefonoEditado. Clears telefonoError.
-   * @param {Event} e - The input event from the phone text field.
+   * Maneja el evento de input del telefono eliminando los no-digitos, limitando a phoneDigitCount, formateando
+   * el resultado con formatLocalPhone y almacenandolo en telefonoEditado. Limpia telefonoError.
+   * @param {Event} e - El evento de input del campo de texto del telefono.
    */
   function onPhoneInput(e) {
     const raw = e.target.value.replace(/\D/g, '').slice(0, phoneDigitCount);
@@ -104,35 +104,35 @@
   }
 
   /**
-   * Generates a sample placeholder phone number string by formatting a repeated '5' digit string
-   * of the required length to show the expected format for the current country.
-   * @param {number} digits - Total digit count expected for the country.
-   * @returns {string} A formatted placeholder string such as '5555 5555'.
+   * Genera una cadena de placeholder de telefono de muestra formateando una cadena de digito '5' repetido
+   * de la longitud requerida para mostrar el formato esperado del pais actual.
+   * @param {number} digits - Conteo total de digitos esperado para el pais.
+   * @returns {string} Una cadena de placeholder formateada como '5555 5555'.
    */
   function getPhonePlaceholder(digits) {
     return formatLocalPhone('5'.repeat(digits), digits);
   }
 
-  /** Password change form data object. @type {{currentPassword: string, newPassword: string, confirmPassword: string}} */
+  /** Objeto de datos del formulario de cambio de contrasena. @type {{currentPassword: string, newPassword: string, confirmPassword: string}} */
   let passwordData = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
-  /** Success message shown after a successful password change. @type {string} */
+  /** Mensaje de exito mostrado despues de un cambio de contrasena exitoso. @type {string} */
   let passwordMensaje = '';
 
-  /** Error message shown when password validation fails or the PATCH request fails. @type {string} */
+  /** Mensaje de error mostrado cuando la validacion de contrasena falla o la solicitud PATCH falla. @type {string} */
   let passwordError   = '';
 
-  /** True while the password PATCH request is in progress. @type {boolean} */
+  /** True mientras la solicitud PATCH de contrasena esta en progreso. @type {boolean} */
   let guardandoPassword = false;
 
-  // Computed password strength flags for the new password input.
+  // Indicadores de fortaleza de contrasena calculados para el input de nueva contrasena.
   $: ps = {
     length:    passwordData.newPassword.length >= 8,
     uppercase: /[A-Z]/.test(passwordData.newPassword),
     number:    /[0-9]/.test(passwordData.newPassword)
   };
 
-  // True when all three password strength requirements are met.
+  // True cuando los tres requisitos de fortaleza de contrasena se cumplen.
   $: passwordValid = ps.length && ps.uppercase && ps.number;
 
   onMount(async () => {
@@ -193,9 +193,9 @@
   });
 
   /**
-   * Validates the phone input digit count, constructs the full phone string with dial code prefix,
-   * and submits it via PATCH /api/perfil/:id/telefono. On success updates perfil.telefono and sets
-   * telefonoMensaje. On failure sets telefonoError with the server or validation message.
+   * Valida el conteo de digitos del input de telefono, construye la cadena de telefono completa con prefijo de
+   * codigo de marcado y la envia via PATCH /api/perfil/:id/telefono. Al tener exito actualiza perfil.telefono
+   * y establece telefonoMensaje. En caso de fallo establece telefonoError con el mensaje del servidor o de validacion.
    * @async
    * @returns {Promise<void>}
    */
@@ -241,10 +241,10 @@
   }
 
   /**
-   * Validates the new password against strength requirements and the confirmation field, then
-   * submits the password change via PATCH /api/perfil/:id/contrasena. On success sets
-   * passwordMensaje and clears the form fields. On failure sets passwordError with the server
-   * or validation message.
+   * Valida la nueva contrasena contra los requisitos de fortaleza y el campo de confirmacion, luego
+   * envia el cambio de contrasena via PATCH /api/perfil/:id/contrasena. Al tener exito establece
+   * passwordMensaje y limpia los campos del formulario. En caso de fallo establece passwordError con el
+   * mensaje del servidor o de validacion.
    * @async
    * @returns {Promise<void>}
    */
@@ -284,7 +284,7 @@
   }
 
   /**
-   * Calls the sesion store's logout function to clear the session, then navigates to the home page.
+   * Llama a la funcion logout del store de sesion para limpiar la sesion, luego navega a la pagina de inicio.
    * @async
    * @returns {Promise<void>}
    */

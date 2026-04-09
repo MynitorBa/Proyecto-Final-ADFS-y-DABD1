@@ -17,18 +17,9 @@ Crea una nueva excepcion de acceso a datos.
 
 ## DatabaseManager
 
-> Gestor central de acceso a la base de datos Oracle. Proporciona metodos estaticos para ejecutar consultas, actualizaciones e inserciones usando JDBC con PreparedStatement.
-
 ```java
 public static <T> List<T> executeQuery(
 ```
-
-Ejecuta una consulta SQL y mapea los resultados a una lista de objetos.
-
-- **Param** `sql` - sentencia SQL con parametros posicionales.
-- **Param** `mapper` - funcion que convierte cada fila del ResultSet en un objeto T.
-- **Param** `params` - valores que reemplazan los parametros de la sentencia.
-- **Returns** - lista de objetos mapeados desde el ResultSet.
 
 ---
 
@@ -36,24 +27,11 @@ Ejecuta una consulta SQL y mapea los resultados a una lista de objetos.
 public static int executeUpdate(
 ```
 
-Ejecuta una sentencia SQL de modificacion (INSERT, UPDATE, DELETE).
-
-- **Param** `sql` - sentencia SQL con parametros posicionales.
-- **Param** `params` - valores que reemplazan los parametros de la sentencia.
-- **Returns** - numero de filas afectadas.
-
 ---
 
 ```java
 public static int executeInsertReturnId(
 ```
-
-Ejecuta un INSERT y retorna el ID generado automaticamente por la base de datos.
-
-- **Param** `sql` - sentencia INSERT con parametros posicionales.
-- **Param** `idColumnName` - nombre de la columna que contiene el ID generado.
-- **Param** `params` - valores que reemplazan los parametros de la sentencia.
-- **Returns** - ID generado tras el INSERT exitoso.
 
 ---
 

@@ -54,7 +54,7 @@
 
 ## CrearAgenciaDTO
 
-> DTO para que un administrador cree una nueva agencia y la asigne a un usuario Webservice. Incluye nombre, correo, ID del usuario web y porcentaje de descuento aplicable.
+> DTO para que un administrador cree una nueva agencia y la asigne a un usuario Webservice. Incluye nombre, correo, ID del usuario web, porcentaje de descuento y URL publica.
 
 ## CrearAvionDTO
 
@@ -87,6 +87,10 @@
 ## HandshakeRequestDTO
 
 > DTO de peticion para iniciar el proceso de autenticacion por handshake con una agencia externa. Contiene el token de entrada proporcionado por la agencia y su URL de origen.
+
+## HotelesAliados
+
+> DTO con la informacion completa de un hotel disponible retornado al frontend. Incluye los datos del hotel de la API externa y la referencia al aliado registrado en la base de datos de aerolineas.
 
 ## LoginRequestDto
 
@@ -127,6 +131,10 @@
 ## SubirImagenDTO
 
 > DTO para subir una imagen codificada en Base64 de forma independiente a cualquier entidad. Se utiliza en endpoints de carga de imagenes para aeropuertos, aviones y tripulantes.
+
+## TokenHotelDTO
+
+> DTO con los datos necesarios para solicitar un token de alianza a un hotel.
 
 ## TripulanteDTO
 

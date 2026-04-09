@@ -1,20 +1,21 @@
 <script>
 /**
  * @file Terminos.svelte
- * @description Static Terms and Conditions page for Broom AirLine. Covers six areas: account
- * registration requirements (unique email, verification, role assignment), flight search and
- * availability rules (real-time updates, filters), the purchase and reservation process (payment
- * confirmation, unique code generation, 10-minute seat blocking, group purchases, confirmation
- * email with PDF), payment methods and SSL processing, comments and ratings policy (completed
- * flights only, 1-5 star scale, single rating per flight, admin moderation), and platform
- * responsibilities including passenger documentation obligations and the airline's right to cancel
- * flights with automatic notification. Accessible from the main navigation with a back button
- * that returns to the home page.
+ * @description Pagina estatica de Terminos y Condiciones de Broom AirLine. Cubre seis areas:
+ * requisitos de registro de cuenta (correo unico, verificacion, asignacion de rol), reglas de
+ * busqueda y disponibilidad de vuelos (actualizaciones en tiempo real, filtros), el proceso de
+ * compra y reserva (confirmacion de pago, generacion de codigo unico, bloqueo de asiento por 10
+ * minutos, compras grupales, correo de confirmacion con PDF), metodos de pago y procesamiento
+ * SSL, politica de comentarios y calificaciones (solo vuelos completados, escala de 1 a 5
+ * estrellas, una calificacion por vuelo, moderacion de administrador) y responsabilidades de la
+ * plataforma incluyendo obligaciones de documentacion del pasajero y el derecho de la aerolinea a
+ * cancelar vuelos con notificacion automatica. Accesible desde la navegacion principal con un
+ * boton de regreso al inicio.
  */
 // @ts-nocheck
   import '../styles/info-pages.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 </script>
 

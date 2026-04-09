@@ -178,7 +178,7 @@ Obtiene el ID del primer aeropuerto registrado para una ciudad dada. Lanza una e
 
 ## AgenciaRepository
 
-> Repositorio de agencias. Gestiona la creacion, consulta, actualizacion y autenticacion de agencias de viaje, incluyendo la administracion de tokens, descuentos, estados y usuarios webservice asociados.
+> Repositorio de agencias. Gestiona la creacion, consulta, actualizacion y autenticacion de agencias de viaje, incluyendo la administracion de tokens, descuentos, estados, URL y usuarios webservice asociados.
 
 ```csharp
 public async Task<int> ObtenerRolUsuario(int usuarioId)
@@ -197,10 +197,18 @@ Verifica si el usuario webservice dado ya tiene una agencia asignada. Retorna tr
 ---
 
 ```csharp
+public async Task<bool> UsuarioYaTieneHotelAliado(int usuarioId)
+```
+
+Verifica si el usuario webservice dado ya tiene un hotel aliado registrado. Se usa para impedir que un usuario tenga tanto una agencia como un hotel. Retorna true si existe al menos un hotel para ese usuario.
+
+---
+
+```csharp
 public async Task<AgenciaResponseDTO> CrearAgencia(CrearAgenciaDTO dto)
 ```
 
-Crea una nueva agencia en la base de datos con estado Activo. Retorna el DTO con los datos de la agencia creada incluyendo su ID generado.
+Crea una nueva agencia en la base de datos con estado Activo e incluye la URL publica. Los tokens se dejan vacios ya que se generan automaticamente al establecer la conexion. Retorna el DTO con los datos de la agencia creada incluyendo su ID generado.
 
 ---
 
@@ -248,7 +256,7 @@ Retorna el porcentaje de descuento configurado para la agencia indicada. Retorna
 public async Task<MiAgenciaDTO?> ObtenerAgenciaPorUsuarioId(int usuarioId)
 ```
 
-Retorna los datos de la agencia del usuario webservice indicado. Retorna null si el usuario no tiene ninguna agencia asignada.
+Retorna los datos de la agencia del usuario webservice indicado, incluyendo la URL. Retorna null si el usuario no tiene ninguna agencia asignada.
 
 ---
 
@@ -256,7 +264,7 @@ Retorna los datos de la agencia del usuario webservice indicado. Retorna null si
 public async Task<List<AgenciaAdminDTO>> ObtenerTodasAdmin()
 ```
 
-Retorna el listado completo de agencias con los datos del usuario webservice asignado. Destinado al uso exclusivo del panel de administracion.
+Retorna el listado completo de agencias con los datos del usuario webservice asignado, incluyendo la URL publica. Destinado al uso exclusivo del panel de administracion.
 
 ---
 
@@ -264,7 +272,7 @@ Retorna el listado completo de agencias con los datos del usuario webservice asi
 public async Task<List<UsuarioWebserviceDTO>> ObtenerWebserviceSinAgencia()
 ```
 
-Retorna la lista de usuarios con rol Webservice que todavia no tienen una agencia asignada. Se usa en el panel de administracion para asignar agencias.
+Retorna la lista de usuarios con rol Webservice que no tienen ninguna entidad asignada (ni agencia ni hotel aliado). Se usa en el panel de administracion para los selectores de asignacion de ambos tipos de entidad.
 
 ---
 
@@ -289,6 +297,14 @@ public async Task<bool> ActualizarEstado(int agenciaId, int estadoId)
 ```
 
 Actualiza el estado de una agencia (activa, suspendida, etc.). Retorna true si la actualizacion fue exitosa.
+
+---
+
+```csharp
+public async Task<bool> ActualizarUrl(int agenciaId, string urlAgencia)
+```
+
+Actualiza la URL publica de una agencia desde el panel de administracion. Retorna true si la actualizacion fue exitosa.
 
 ---
 
@@ -565,6 +581,126 @@ public async Task<PuedeCancelarDTO> PuedeCancelar(int reservacionId, int usuario
 ```
 
 Verifica si una reservacion puede ser cancelada por el usuario. Evalua el estado actual y, para reservaciones confirmadas, si faltan mas de 24 horas para el vuelo. Retorna un DTO con el resultado y el motivo de la decision.
+
+---
+
+## HotelAliadoRepository
+
+> Repositorio de hoteles aliados. Gestiona la consulta de hoteles activos para la busqueda dinamica, y la creacion, consulta y administracion de hoteles registrados tanto por usuarios Webservice como por el administrador del sistema. Incluye el guardado del token de sesion resultante del handshake con la aerolinea.
+
+```csharp
+public async Task<List<HotelAliadoConexionDTO>> ObtenerHotelesActivos()
+```
+
+Retorna todos los hoteles aliados activos con su URL y TokenHASH para que el service pueda consultarlos dinamicamente.
+
+---
+
+```csharp
+public async Task<HotelAliadoConexionDTO> ObtenerHotelActivoPorId(int id)
+```
+
+Retorna un hotel aliado activo por su ID. Retorna null si no existe o no esta activo. Se usa para busquedas de disponibilidad donde el estado importa.
+
+- **Param** `id` - ID del registro HotelAliado a buscar.
+
+---
+
+```csharp
+public async Task<HotelAliadoConexionDTO?> ObtenerHotelParaHandshake(int id)
+```
+
+Retorna los datos basicos de un hotel aliado por su ID sin filtrar por estado. Se usa exclusivamente para el proceso de handshake: el admin debe poder hacer handshake independientemente del estado actual del hotel, siempre que el hotel tenga una URL de API configurada. Retorna null si el ID no existe en la tabla.
+
+- **Param** `id` - ID del registro HotelAliado a buscar.
+
+---
+
+```csharp
+public async Task<bool> GuardarTokenHash(int hotelId, string tokenHash)
+```
+
+Actualiza el TokenHASH de un hotel aliado con el token de sesion recibido tras completar el handshake. Este token se usa para autenticar las llamadas posteriores de la aerolinea hacia el hotel. Retorna true si la actualizacion fue exitosa.
+
+---
+
+```csharp
+public async Task<bool> UsuarioYaTieneHotelAliado(int usuarioId)
+```
+
+Verifica si el usuario webservice dado ya tiene un hotel aliado registrado. Retorna true si existe al menos un hotel para ese usuario.
+
+---
+
+```csharp
+public async Task<bool> UsuarioYaTieneAgencia(int usuarioId)
+```
+
+Verifica si el usuario webservice dado ya tiene una agencia de viaje registrada. Se usa para impedir que un usuario tenga tanto un hotel como una agencia. Retorna true si existe al menos una agencia para ese usuario.
+
+---
+
+```csharp
+public async Task<int> ObtenerRolUsuario(int usuarioId)
+```
+
+Consulta el RolID del usuario especificado. Retorna 0 si el usuario no existe. Se usa para validar que el usuario a asignar tenga rol Webservice.
+
+---
+
+```csharp
+public async Task<MiHotelDTO> CrearHotelWebservice(int usuarioId, CrearHotelWebserviceDTO dto)
+```
+
+Inserta un nuevo hotel aliado vinculado al usuario Webservice indicado. El EstadoID se establece en 1 (activo) por defecto. El TokenHASH se deja vacio ya que se genera automaticamente al establecer la conexion con la aerolinea. Retorna el DTO con los datos del hotel recien creado.
+
+---
+
+```csharp
+public async Task<MiHotelDTO?> ObtenerHotelPorUsuarioId(int usuarioId)
+```
+
+Retorna los datos del hotel aliado del usuario webservice indicado. No incluye el TokenHASH ya que es informacion interna del sistema. Retorna null si el usuario no tiene ningun hotel registrado.
+
+---
+
+```csharp
+public async Task<List<HotelAdminDTO>> ObtenerTodosAdmin()
+```
+
+Retorna el listado completo de hoteles aliados con los datos del usuario Webservice asignado. No incluye TokenHASH. Destinado al panel de administracion.
+
+---
+
+```csharp
+public async Task<HotelAdminDTO> CrearHotelAdmin(CrearHotelAdminDTO dto)
+```
+
+Crea un nuevo hotel aliado desde el panel de administracion, asignandolo directamente al usuario Webservice indicado. El TokenHASH se deja vacio. Retorna el DTO completo del hotel creado con el ID generado.
+
+---
+
+```csharp
+public async Task<bool> ActualizarEstado(int hotelId, int estadoId)
+```
+
+Actualiza el EstadoID de un hotel aliado. Retorna true si la actualizacion fue exitosa.
+
+---
+
+```csharp
+public async Task<bool> AsignarUsuario(int hotelId, int usuarioId)
+```
+
+Asigna o reasigna un usuario Webservice a un hotel aliado existente. Retorna true si la actualizacion fue exitosa.
+
+---
+
+```csharp
+public async Task<bool> ActualizarUrls(int hotelId, string url, string urlParaUsuario)
+```
+
+Actualiza la URL de la API y la URL publica para usuarios de un hotel aliado. Retorna true si la actualizacion fue exitosa.
 
 ---
 

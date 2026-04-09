@@ -1,18 +1,18 @@
 <script>
 /**
  * @file SobreNosotros.svelte
- * @description Static "About Us" page for Broom AirLine. Presents the company's background
- * as a Guatemalan airline entering the tourism market in 2026, its vision as an integrated
- * operational platform, and six feature cards covering flight management, secure payments,
- * role-based access control, the admin dashboard with metrics, robust security (CAPTCHA, email
- * verification), and REST API integration for travel agencies and hotels. Includes a contact
- * section with a button to navigate to the Contactanos page. Accessible from the main navigation
- * with a back button that returns to the home page.
+ * @description Pagina estatica "Sobre Nosotros" de Broom AirLine. Presenta los antecedentes de
+ * la empresa como aerolinea guatemalteca que ingresa al mercado turistico en 2026, su vision como
+ * plataforma operativa integrada y seis tarjetas de caracteristicas que cubren gestion de vuelos,
+ * pagos seguros, control de acceso por roles, el panel administrativo con metricas, seguridad
+ * robusta (CAPTCHA, verificacion de correo) e integracion REST para agencias de viajes y hoteles.
+ * Incluye una seccion de contacto con un boton para navegar a la pagina Contactanos. Accesible
+ * desde la navegacion principal con un boton de regreso al inicio.
  */
 // @ts-nocheck
   import '../styles/info-pages.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 </script>
 

@@ -118,10 +118,8 @@
     }
   }
 
-  /**
-   * Indica si el usuario ya tiene alguna entidad registrada (agencia o aerolinea).
-   * Declarada como reactiva para que Svelte la recalcule cada vez que cambien
-   * las listas de agencias o aerolineas.
+  /*
+   * Indica si el usuario ya tiene alguna entidad registrada...
    * @type {boolean}
    */
   $: tieneEntidad = agencias.length > 0 || aerolineas.length > 0;

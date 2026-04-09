@@ -1,111 +1,111 @@
-/* admin.css - Full administration panel styles including layout, navigation, tables, modals, forms, metrics, toasts, and agency management */
+/* admin.css - Estilos completos del panel de administracion: layout, navegacion, tablas, modales, formularios, metricas, toasts y gestion de agencias */
 
-/* Full-width page with variable background color and generous bottom padding */
+/* Pagina de ancho completo con color de fondo variable y padding inferior generoso */
 .admin { width:100%; min-height:100vh; background-color:var(--bg-color); padding:2rem 1rem 8rem; font-family:inherit; }
 .admin__container { max-width:1400px; margin:0 auto; }
 
-/* Header accented with a 6px left border in the primary color */
+/* Encabezado con acento de borde izquierdo de 6px en el color primario */
 .admin__header { margin-bottom:3rem; border-left:6px solid var(--primary-color); padding-left:2rem; }
-/* Small uppercase back button that slides left on hover */
+/* Boton de regreso pequeno en mayusculas que se desliza a la izquierda al pasar el cursor */
 .admin__back { background:transparent; border:none; color:var(--text-muted); font-size:.8rem; text-transform:uppercase; letter-spacing:2px; cursor:pointer; margin-bottom:1rem; transition:var(--transition); display:block; padding:0; }
 .admin__back:hover { color:var(--primary-color); transform:translateX(-5px); }
-/* Fluid page title using clamp for responsive sizing */
+/* Titulo de pagina fluido usando clamp para dimensionamiento responsivo */
 .admin__title { font-size:clamp(2rem,5vw,3rem); font-weight:300; color:var(--secondary-color); margin:0 0 .5rem; }
 .admin__subtitle { font-size:1rem; color:var(--text-muted); margin:0; }
 
-/* Two-column grid: 260px fixed sidebar + flexible main area */
+/* Grilla de dos columnas: barra lateral fija de 260px + area principal flexible */
 .admin__content { display:grid; grid-template-columns:260px 1fr; gap:3rem; align-items:start; }
-/* Sidebar sticks at the top while the user scrolls the main content */
+/* La barra lateral se fija en la parte superior mientras el usuario desplaza el contenido principal */
 .admin__sidebar { position:sticky; top:2rem; }
 .admin__main { width:100%; }
 
-/* Sidebar navigation card with asymmetric border-radius */
+/* Tarjeta de navegacion de la barra lateral con border-radius asimetrico */
 .admin-nav { display:flex; flex-direction:column; gap:.25rem; background:var(--white); padding:1.25rem .75rem; border-radius:4px 30px 4px 30px; box-shadow:0 20px 40px rgba(0,0,0,.03); border:1px solid rgba(235,230,224,.5); }
-/* Individual nav item with left accent border indicating active state */
+/* Elemento de navegacion individual con borde izquierdo de acento que indica estado activo */
 .admin-nav__item { display:flex; align-items:center; gap:.65rem; background:transparent; border:none; padding:.85rem 1.25rem; text-align:left; font-size:.8rem; font-weight:600; color:var(--text-muted); cursor:pointer; border-left:3px solid transparent; border-radius:0 8px 8px 0; transition:var(--transition); text-transform:uppercase; letter-spacing:.8px; width:100%; }
 .admin-nav__item svg { flex-shrink:0; opacity:.6; }
 .admin-nav__item:hover { color:var(--secondary-color); background:rgba(235,230,224,.2); }
-/* Active item gets full opacity icon and gold left border */
+/* El elemento activo obtiene icono a plena opacidad y borde izquierdo dorado */
 .admin-nav__item--active { color:var(--secondary-color); border-left-color:var(--primary-color); background:rgba(235,230,224,.3); }
 .admin-nav__item--active svg { opacity:1; }
 
-/* Content section card with fade-in entry animation */
+/* Tarjeta de seccion de contenido con animacion de entrada en fundido */
 .admin-section { background:var(--white); padding:2.5rem; border-radius:30px 4px 30px 4px; box-shadow:0 20px 60px rgba(28,26,24,.05); animation:sectionFadeIn .35s ease-out; }
 @keyframes sectionFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 .admin-section__title { font-size:1.8rem; color:var(--secondary-color); margin:0 0 .5rem; }
 .admin-section__subtitle { color:var(--text-muted); margin:0 0 2rem; font-size:.9rem; line-height:1.5; }
-/* Row that places section title and the add-button side by side */
+/* Fila que coloca el titulo de seccion y el boton de agregar uno al lado del otro */
 .section-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2rem; gap:1.5rem; }
 
-/* Primary add-record button with asymmetric corners */
+/* Boton primario para agregar registros con esquinas asimetricas */
 .btn-add { display:inline-flex; align-items:center; gap:.5rem; padding:.7rem 1.4rem; background:var(--secondary-color); color:white; border:none; border-radius:0 12px 0 12px; font-size:.82rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); white-space:nowrap; }
 .btn-add:hover { background:var(--primary-color); transform:translateY(-2px); }
 .btn-add:active { transform:translateY(0); }
 .btn-add__icon { font-size:1.2rem; font-weight:700; line-height:1; }
-/* Full-width primary submit button used inside modals and forms */
+/* Boton de envio primario de ancho completo usado dentro de modales y formularios */
 .btn-primary { flex:1; padding:.875rem 1.5rem; background:var(--secondary-color); color:white; border:none; border-radius:0 10px 0 10px; font-size:.9rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); }
 .btn-primary:hover:not(:disabled) { background:var(--primary-color); transform:translateY(-2px); }
 .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
-/* Ghost secondary button with light border */
+/* Boton secundario transparente con borde claro */
 .btn-secondary { flex:1; padding:.875rem 1.5rem; background:transparent; color:#6b7280; border:2px solid #e5e7eb; border-radius:0 10px 0 10px; font-size:.9rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:all .2s; }
 .btn-secondary:hover { border-color:#d1d5db; background:#f9fafb; color:var(--secondary-color); }
 
-/* Horizontally scrollable table wrapper */
+/* Contenedor de tabla con desplazamiento horizontal */
 .vuelos-table { margin-top:1rem; overflow-x:auto; }
 .table { width:100%; border-collapse:collapse; }
 .table__head { border-bottom:2px solid var(--perla-dark); }
 .table__row { transition:var(--transition); }
 .table__row:hover { background:rgba(235,230,224,.15); }
-/* Tiny uppercase column headers */
+/* Encabezados de columna pequenos en mayusculas */
 .table__header { text-align:left; padding:.85rem .75rem; font-size:.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:700; white-space:nowrap; }
 .table__body .table__row { border-bottom:1px solid rgba(235,230,224,.5); }
 .table__cell { padding:1.1rem .75rem; color:var(--secondary-color); font-size:.88rem; }
-/* Cell that holds action buttons in a wrapping flex row */
+/* Celda que contiene botones de accion en una fila flex con ajuste automatico */
 .table__actions { display:flex; gap:.5rem; flex-wrap:wrap; }
-/* Small pill-shaped row action buttons */
+/* Botones de accion de fila pequenos con forma de pastilla */
 .table__action-btn { padding:.5rem .9rem; border:none; border-radius:0 8px 0 8px; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); }
 .table__action-btn--view { background:var(--secondary-color); color:var(--white); }
 .table__action-btn--view:hover { background:var(--primary-color); transform:translateY(-1px); }
-/* Cancel variant uses red text on transparent background */
+/* La variante cancelar usa texto rojo sobre fondo transparente */
 .table__action-btn--cancel { background:transparent; border:1px solid #ffcdd2; color:#c62828; }
 .table__action-btn--cancel:hover { background:#ffebee; }
 .table__action-btn:disabled { opacity:.45; cursor:not-allowed; transform:none !important; }
 
-/* Pill-shaped status badges in green/blue/red */
+/* Badges de estado con forma de pastilla en verde, azul y rojo */
 .status-badge { display:inline-block; padding:.35rem .75rem; border-radius:0 8px 0 8px; font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; }
 .status-badge--activo     { background:#e8f5e9; color:#2e7d32; }
 .status-badge--completado { background:#e3f2fd; color:#1565c0; }
 .status-badge--cancelado  { background:#ffebee; color:#c62828; }
-/* Blue crew role badge used inside crew tables */
+/* Badge azul de rol de tripulacion usado dentro de las tablas de tripulacion */
 .rol-badge--tripulacion { display:inline-block; padding:.25rem .75rem; border-radius:12px; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; background:#dbeafe; color:#1e40af; }
-/* Role selector dropdown with branded border */
+/* Dropdown selector de rol con borde de marca */
 .rol-select { padding:.45rem .9rem; background:#fcfbf9; border:1px solid var(--perla-dark); border-radius:0 8px 0 8px; font-size:.85rem; color:var(--secondary-color); cursor:pointer; transition:var(--transition); }
 .rol-select:focus { outline:none; border-color:var(--primary-color); }
 
-/* Dashed placeholder card shown when a list section is empty */
+/* Tarjeta de marcador de posicion con borde discontinuo que se muestra cuando una seccion esta vacia */
 .placeholder-card { padding:3rem; text-align:center; background:rgba(235,230,224,.15); border-radius:12px; border:2px dashed var(--perla-dark); }
 .placeholder-card__text { color:var(--text-muted); font-size:.95rem; }
-/* Italic muted text shown while data is loading */
+/* Texto atenuado en cursiva mostrado mientras se cargan los datos */
 .loading-text { color:var(--text-muted); font-style:italic; font-size:.9rem; }
 
-/* Small thumbnail image for entity rows in tables */
+/* Imagen miniatura pequena para filas de entidades en tablas */
 .entity-thumb { width:48px; height:48px; object-fit:cover; border-radius:6px; border:2px solid var(--perla-dark); }
 .entity-thumb--circle { border-radius:50%; }
-/* Smaller thumbnail for dropdown option rows */
+/* Miniatura mas pequena para filas de opciones en dropdown */
 .dropdown-thumb { width:32px; height:32px; object-fit:cover; border-radius:4px; flex-shrink:0; }
 .dropdown-thumb--circle { border-radius:50%; }
-/* Full-width image preview above file inputs in forms */
+/* Vista previa de imagen de ancho completo por encima de los inputs de archivo en formularios */
 .img-preview { width:100%; max-height:200px; object-fit:contain; border-radius:8px; border:2px solid var(--perla-dark); margin-bottom:.75rem; display:block; }
 .img-preview--circle { width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto .75rem; }
-/* Small hint text below image inputs */
+/* Texto de sugerencia pequeno debajo de los inputs de imagen */
 .img-hint { color:var(--text-muted); font-size:.78rem; display:block; margin-top:.25rem; }
 
-/* Stacked form layout with animated group entries */
+/* Layout de formulario apilado con entradas de grupo animadas */
 .admin-form { display:flex; flex-direction:column; gap:2rem; }
-/* Each group is separated by a dashed bottom border and animates in */
+/* Cada grupo esta separado por un borde inferior discontinuo y entra con animacion */
 .admin-form__group { border-bottom:1px dashed var(--perla-dark); padding-bottom:2rem; animation:formGroupIn .35s ease-out backwards; }
 .admin-form__group:last-of-type { border-bottom:none; }
-/* Staggered animation delays per group child index */
+/* Retrasos de animacion escalonados por indice de hijo de grupo */
 .admin-form__group:nth-child(1) { animation-delay:.04s; }
 .admin-form__group:nth-child(2) { animation-delay:.08s; }
 .admin-form__group:nth-child(3) { animation-delay:.12s; }
@@ -113,312 +113,312 @@
 .admin-form__group:nth-child(5) { animation-delay:.20s; }
 .admin-form__group:nth-child(6) { animation-delay:.24s; }
 @keyframes formGroupIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-/* Tiny uppercase label for form group sections */
+/* Etiqueta pequena en mayusculas para secciones de grupo de formulario */
 .admin-form__group-title { font-size:.85rem; color:var(--secondary-color); margin:0 0 1.25rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
-/* Two-column row inside a form group */
+/* Fila de dos columnas dentro de un grupo de formulario */
 .admin-form__row { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
-/* Column-stacked field that raises its z-index while focused to avoid dropdown clipping */
+/* Campo apilado en columna que eleva su z-index al enfocarse para evitar recorte del dropdown */
 .admin-form__field { display:flex; flex-direction:column; gap:.5rem; position:relative; z-index:1; }
 .admin-form__field:focus-within { z-index:10; }
-/* Field that spans both grid columns */
+/* Campo que se extiende por ambas columnas de la grilla */
 .admin-form__field--full { grid-column:1/-1; }
-/* Small bold uppercase field label */
+/* Etiqueta de campo pequena, en negrita y mayusculas */
 .admin-form__label { font-size:.78rem; font-weight:700; color:var(--secondary-color); text-transform:uppercase; letter-spacing:.5px; display:block; margin:0; }
-/* Styled text/select/date input with gold focus ring */
+/* Input de texto, select y fecha con estilo y anillo de enfoque dorado */
 .admin-form__input { padding:.85rem 1.1rem; border:2px solid var(--perla-dark); border-radius:0 12px 0 12px; font-size:.92rem; font-family:inherit; color:var(--secondary-color); background:#fcfbf9; transition:var(--transition); width:100%; box-sizing:border-box; }
 .admin-form__input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(212,175,55,.12); background:var(--white); }
 .admin-form__input::placeholder { color:#b8b0a5; }
-/* Row that holds submit and cancel buttons at the bottom of the form */
+/* Fila que contiene los botones de envio y cancelar en la parte inferior del formulario */
 .admin-form__actions { display:flex; gap:1.25rem; padding-top:.5rem; }
-/* Dark submit button with wide letter-spacing */
+/* Boton de envio oscuro con espaciado de letras amplio */
 .admin-form__submit { padding:.95rem 2.5rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 15px 0 15px; font-size:.88rem; font-weight:600; text-transform:uppercase; letter-spacing:2px; cursor:pointer; transition:var(--transition); }
 .admin-form__submit:hover { background:var(--primary-color); transform:translateY(-2px); }
-/* Ghost cancel button that darkens border on hover */
+/* Boton de cancelar transparente que oscurece el borde al pasar el cursor */
 .admin-form__cancel { padding:.95rem 2rem; background:transparent; border:2px solid var(--perla-dark); border-radius:0 15px 0 15px; font-size:.88rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); cursor:pointer; transition:var(--transition); }
 .admin-form__cancel:hover { border-color:var(--secondary-color); color:var(--secondary-color); }
 
-/* Bar showing seat capacity usage with labels and a progress track */
+/* Barra que muestra el uso de capacidad de asientos con etiquetas y una pista de progreso */
 .capacidad-bar { background:rgba(235,230,224,.25); border:1px solid var(--perla-dark); border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.25rem; }
 .capacidad-bar__labels { display:flex; justify-content:space-between; align-items:center; font-size:.85rem; color:var(--secondary-color); margin-bottom:.6rem; }
 .capacidad-bar__count { font-weight:600; color:var(--text-muted); }
-/* Green count when within capacity, red when over */
+/* Conteo verde cuando esta dentro de la capacidad, rojo cuando la supera */
 .capacidad-bar__count--ok    { color:#2e7d32; }
 .capacidad-bar__count--error { color:#c62828; }
 .capacidad-bar__track { width:100%; height:8px; background:rgba(235,230,224,.6); border-radius:4px; overflow:hidden; }
-/* Gold fill that transitions width smoothly; turns red when over capacity */
+/* Relleno dorado que transiciona el ancho suavemente; se vuelve rojo cuando supera la capacidad */
 .capacidad-bar__fill { height:100%; background:var(--primary-color); border-radius:4px; transition:width .3s ease, background .2s; }
 .capacidad-bar__fill--error { background:#ef4444; }
 
-/* Relative wrapper for searchable dropdown inputs */
+/* Contenedor relativo para inputs de dropdown con busqueda */
 .searchable-select { position:relative; }
-/* Floating dropdown list below the input with gold top border */
+/* Lista de dropdown flotante debajo del input con borde superior dorado */
 .searchable-select__dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--white); border:2px solid var(--primary-color); border-radius:0 0 12px 12px; max-height:280px; overflow-y:auto; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,.12); }
-/* Each selectable option row with a bottom divider */
+/* Cada fila de opcion seleccionable con un divisor inferior */
 .searchable-select__option { display:flex; align-items:center; gap:.75rem; width:100%; padding:.8rem 1rem; background:transparent; border:none; border-bottom:1px solid rgba(235,230,224,.5); text-align:left; cursor:pointer; transition:background .15s; }
 .searchable-select__option:last-child { border-bottom:none; }
 .searchable-select__option:hover { background:rgba(235,230,224,.3); }
-/* IATA code shown bold in primary color */
+/* Codigo IATA mostrado en negrita con el color primario */
 .searchable-select__option-code   { font-weight:700; color:var(--primary-color); font-size:.82rem; min-width:38px; }
 .searchable-select__option-name   { color:var(--secondary-color); font-size:.88rem; flex:1; }
-/* Secondary muted text for city or role info */
+/* Texto secundario atenuado para informacion de ciudad o rol */
 .searchable-select__option-city   { color:var(--text-muted); font-size:.78rem; }
 .searchable-select__option-role   { color:var(--text-muted); font-size:.78rem; margin-left:auto; }
 .searchable-select__option-detail { color:var(--text-muted); font-size:.78rem; margin-left:auto; }
-/* Shown when no options match the typed query */
+/* Se muestra cuando ninguna opcion coincide con la consulta escrita */
 .searchable-select__empty { padding:.75rem 1rem; color:#6b7280; font-size:.82rem; text-align:center; line-height:1.5; }
-/* Italic hint row at the top of the dropdown */
+/* Fila de sugerencia en cursiva en la parte superior del dropdown */
 .searchable-select__hint { padding:.45rem 1rem; font-size:.72rem; color:var(--text-muted); background:#fafaf8; border-bottom:1px solid rgba(235,230,224,.5); font-style:italic; }
-/* Green confirmation text shown below a select when an item is chosen */
+/* Texto de confirmacion verde que se muestra debajo de un select cuando se elige un elemento */
 .selected-item { margin-top:.4rem; font-size:.82rem; color:#2e7d32; font-weight:600; }
 
-/* Panel listing crew members selected for the flight */
+/* Panel que lista los miembros de tripulacion seleccionados para el vuelo */
 .tripulantes-seleccionados { margin-top:1rem; background:rgba(235,230,224,.2); border-radius:10px; padding:1.1rem; border:1px solid var(--perla-dark); }
 .tripulantes-seleccionados__title { font-size:.78rem; font-weight:700; color:var(--secondary-color); text-transform:uppercase; letter-spacing:.5px; margin:0 0 .6rem; }
 .tripulantes-seleccionados__list { display:flex; flex-direction:column; gap:.4rem; }
-/* Single crew row with name, role and remove button */
+/* Fila individual de tripulante con nombre, rol y boton de eliminar */
 .tripulante-item { display:flex; align-items:center; justify-content:space-between; background:var(--white); border:1px solid var(--perla-dark); border-radius:8px; padding:.65rem .9rem; }
 .tripulante-item__info { display:flex; flex-direction:column; gap:.15rem; }
 .tripulante-item__name { font-size:.88rem; font-weight:600; color:var(--secondary-color); }
 .tripulante-item__rol  { font-size:.75rem; color:var(--text-muted); }
-/* Small circular remove button that fills red on hover */
+/* Boton de eliminar circular pequeno que se rellena de rojo al pasar el cursor */
 .tripulante-item__remove { width:26px; height:26px; display:flex; align-items:center; justify-content:center; background:#ffebee; border:1px solid #ffcdd2; border-radius:50%; color:#c62828; font-size:1.1rem; cursor:pointer; transition:var(--transition); flex-shrink:0; }
 .tripulante-item__remove:hover { background:#c62828; color:white; }
 
-/* Inline hint block with left-border color coding: yellow=warn, green=ok, blue=info */
+/* Bloque de sugerencia en linea con codificacion de color por borde izquierdo: amarillo=aviso, verde=ok, azul=info */
 .disponibilidad-hint { display:block; margin-bottom:.4rem; font-size:.75rem; padding:.3rem .6rem; border-radius:4px; }
 .disponibilidad-hint--warn { background:#fef3c7; color:#92400e; border-left:3px solid #f59e0b; }
 .disponibilidad-hint--ok   { background:#ecfdf5; color:#065f46; border-left:3px solid #34d399; }
 .disponibilidad-hint--info { background:#eff6ff; color:#1e40af; border-left:3px solid #3b82f6; }
 
-/* Relative wrapper for autocomplete inputs in admin forms */
+/* Contenedor relativo para inputs de autocompletado en formularios de administracion */
 .autocomplete { position:relative; }
-/* Absolute dropdown list below the autocomplete input */
+/* Lista de dropdown absoluta debajo del input de autocompletado */
 .autocomplete__list { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--white); border:2px solid var(--primary-color); border-radius:0 0 12px 12px; max-height:200px; overflow-y:auto; z-index:100; list-style:none; margin:0; padding:0; box-shadow:0 8px 24px rgba(0,0,0,.1); }
 .autocomplete__item { border-bottom:1px solid rgba(235,230,224,.5); }
 .autocomplete__item:last-child { border-bottom:none; }
-/* Full-width option button that highlights on hover */
+/* Boton de opcion de ancho completo que se resalta al pasar el cursor */
 .autocomplete__btn { width:100%; padding:.7rem 1rem; background:transparent; border:none; text-align:left; cursor:pointer; font-size:.88rem; color:var(--secondary-color); transition:background .15s; }
 .autocomplete__btn:hover { background:rgba(235,230,224,.3); }
 
-/* Disabled input state for standard form inputs */
+/* Estado de input deshabilitado para inputs de formulario estandar */
 .form-input:disabled { background:#f3f4f6; color:#9ca3af; cursor:not-allowed; border-color:#e5e7eb; opacity:1; }
-/* Read-only IATA code field shown in gray; turns green when a valid code is set */
+/* Campo de codigo IATA de solo lectura mostrado en gris; se vuelve verde cuando se establece un codigo valido */
 .iata-readonly { background:#f3f4f6 !important; color:#6b7280 !important; cursor:not-allowed !important; border-color:#e5e7eb !important; opacity:1; pointer-events:none !important; }
 .iata-readonly:not([value=""]) { background:#f0fdf4 !important; color:#15803d !important; font-weight:600 !important; border-color:#86efac !important; }
 
-/* Admin-panel header link styled in brown to stand out from regular nav links */
+/* Enlace del encabezado del panel de administracion con estilo marron para destacar de los enlaces de navegacion regulares */
 .broom-header__inline-link--admin { color:#8B6B4A; font-weight:700; letter-spacing:.3px; }
 .broom-header__inline-link--admin::after { background:#8B6B4A; }
 .broom-header__nav-link--admin { color:#8B6B4A; font-weight:700; }
 
-/* Fixed full-screen modal backdrop with blur and fade-in */
+/* Fondo modal de pantalla completa fijo con desenfoque y fundido de entrada */
 .modal-overlay { position:fixed; inset:0; background:rgba(28,26,24,.65); display:flex; align-items:center; justify-content:center; z-index:9999; animation:overlayIn .2s ease-out; backdrop-filter:blur(2px); }
 @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
-/* Modal dialog with spring entry animation and internal scroll */
+/* Cuadro de dialogo modal con animacion de entrada elastica y desplazamiento interno */
 .modal { background:white; border-radius:4px 24px 4px 24px; box-shadow:0 25px 60px rgba(0,0,0,.25); width:90%; max-width:500px; max-height:90vh; overflow-y:auto; animation:modalIn .3s cubic-bezier(.34,1.56,.64,1); }
 @keyframes modalIn { from { opacity:0; transform:translateY(30px) scale(.96); } to { opacity:1; transform:translateY(0) scale(1); } }
-/* Sticky header row inside the modal with title and close button */
+/* Fila de encabezado fija dentro del modal con titulo y boton de cierre */
 .modal__header { display:flex; justify-content:space-between; align-items:center; padding:1.4rem 1.75rem; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:white; z-index:1; }
 .modal__title { margin:0; font-size:1.3rem; font-weight:600; color:var(--secondary-color); }
-/* X close button that changes background on hover */
+/* Boton de cierre X que cambia el fondo al pasar el cursor */
 .modal__close { width:34px; height:34px; display:flex; align-items:center; justify-content:center; background:none; border:none; font-size:1.7rem; color:#9ca3af; cursor:pointer; border-radius:8px; transition:all .2s; }
 .modal__close:hover { background:#f3f4f6; color:var(--secondary-color); }
-/* Padded flex form inside the modal */
+/* Formulario flex con padding dentro del modal */
 .modal__form { padding:1.75rem; display:flex; flex-direction:column; gap:1.25rem; }
 .modal__actions { display:flex; gap:1rem; margin-top:.5rem; }
-/* Custom thin scrollbar for the modal */
+/* Barra de desplazamiento delgada personalizada para el modal */
 .modal::-webkit-scrollbar { width:5px; }
 .modal::-webkit-scrollbar-track { background:#f3f4f6; }
 .modal::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
 .modal::-webkit-scrollbar-thumb:hover { background:#9ca3af; }
-/* Prevent page scroll when a modal is open */
+/* Evitar el desplazamiento de la pagina cuando un modal esta abierto */
 body:has(.modal-overlay) { overflow:hidden; }
 
-/* Column-stacked form field with label and input */
+/* Campo de formulario apilado en columna con etiqueta e input */
 .form-field { display:flex; flex-direction:column; gap:.45rem; }
 .form-label { font-weight:700; color:var(--secondary-color); font-size:.78rem; text-transform:uppercase; letter-spacing:.5px; }
-/* Modal form input with gold focus ring */
+/* Input de formulario modal con anillo de enfoque dorado */
 .form-input { padding:.75rem 1rem; border:2px solid #e5e7eb; border-radius:0 10px 0 10px; font-size:.92rem; font-family:inherit; transition:all .2s; background:white; color:var(--secondary-color); width:100%; box-sizing:border-box; }
 .form-input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(212,175,55,.1); }
 .form-input::placeholder { color:#9ca3af; }
 
-/* Fixed bottom-right toast stack, max 360px wide */
+/* Pila de toasts fija en la esquina inferior derecha, maximo 360px de ancho */
 .toast-stack { position:fixed; bottom:2rem; right:2rem; display:flex; flex-direction:column; gap:.65rem; z-index:10000; pointer-events:none; max-width:360px; width:calc(100vw - 2rem); }
-/* Individual toast with slide-in animation and left border color coding */
+/* Toast individual con animacion de deslizamiento y codificacion de color por borde izquierdo */
 .toast { display:flex; align-items:center; gap:.7rem; padding:.9rem 1.1rem; border-radius:0 14px 0 14px; box-shadow:0 8px 32px rgba(0,0,0,.18); pointer-events:all; animation:toastIn .35s cubic-bezier(.34,1.56,.64,1); border-left:4px solid transparent; font-size:.88rem; font-weight:500; }
 @keyframes toastIn { from { opacity:0; transform:translateX(60px) scale(.9); } to { opacity:1; transform:translateX(0) scale(1); } }
-/* Green success, red error, yellow warning toast backgrounds */
+/* Fondos de toast: verde para exito, rojo para error, amarillo para aviso */
 .toast--success { background:#f0fdf4; border-left-color:#22c55e; color:#14532d; }
 .toast--error   { background:#fff1f2; border-left-color:#ef4444; color:#7f1d1d; }
 .toast--warning { background:#fffbeb; border-left-color:#f59e0b; color:#78350f; }
-/* Circular icon badge inside the toast */
+/* Badge de icono circular dentro del toast */
 .toast__icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:.8rem; font-weight:700; flex-shrink:0; }
 .toast--success .toast__icon { background:#22c55e; color:white; }
 .toast--error   .toast__icon { background:#ef4444; color:white; }
 .toast--warning .toast__icon { background:#f59e0b; color:white; }
 .toast__msg { flex:1; line-height:1.4; }
-/* Semi-transparent close button that becomes fully opaque on hover */
+/* Boton de cierre semitransparente que se vuelve completamente opaco al pasar el cursor */
 .toast__close { background:none; border:none; font-size:1.2rem; line-height:1; cursor:pointer; padding:0 .2rem; opacity:.5; transition:opacity .15s; color:inherit; }
 .toast__close:hover { opacity:1; }
 
-/* Centered confirmation dialog with spring-scale entry */
+/* Dialogo de confirmacion centrado con entrada de escala elastica */
 .confirm-dialog { background:white; border-radius:8px 24px 8px 24px; box-shadow:0 30px 80px rgba(0,0,0,.3); width:90%; max-width:400px; padding:2.25rem 1.75rem 1.75rem; text-align:center; animation:confirmIn .3s cubic-bezier(.34,1.56,.64,1); }
 @keyframes confirmIn { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:scale(1); } }
-/* Circular icon badge at the top of the dialog */
+/* Badge de icono circular en la parte superior del dialogo */
 .confirm-dialog__icon { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.1rem; }
 .confirm-dialog__icon svg { width:28px; height:28px; }
-/* Red danger and yellow warning icon color sets */
+/* Conjuntos de color de icono rojo para peligro y amarillo para aviso */
 .confirm-dialog__icon--danger  { background:#fef2f2; color:#ef4444; }
 .confirm-dialog__icon--warning { background:#fffbeb; color:#f59e0b; }
 .confirm-dialog__title { font-size:1.15rem; font-weight:600; color:var(--secondary-color); margin:0 0 .5rem; line-height:1.4; }
 .confirm-dialog__sub   { font-size:.88rem; color:var(--text-muted); margin:0 0 1.5rem; line-height:1.5; }
-/* Row of confirm/cancel buttons centered horizontally */
+/* Fila de botones confirmar y cancelar centrada horizontalmente */
 .confirm-dialog__actions { display:flex; gap:.75rem; justify-content:center; }
-/* Shared base style for all confirm dialog buttons */
+/* Estilo base compartido para todos los botones del dialogo de confirmacion */
 .confirm-dialog__btn { padding:.7rem 1.6rem; border:none; border-radius:0 10px 0 10px; font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); min-width:120px; }
 .confirm-dialog__btn--cancel  { background:#f3f4f6; color:#6b7280; border:2px solid #e5e7eb; }
 .confirm-dialog__btn--cancel:hover  { background:#e5e7eb; color:var(--secondary-color); }
-/* Red destructive confirm button */
+/* Boton de confirmacion destructivo rojo */
 .confirm-dialog__btn--danger  { background:#ef4444; color:white; }
 .confirm-dialog__btn--danger:hover  { background:#dc2626; transform:translateY(-2px); }
-/* Yellow warning confirm button */
+/* Boton de confirmacion de aviso amarillo */
 .confirm-dialog__btn--warning { background:#f59e0b; color:white; }
 .confirm-dialog__btn--warning:hover { background:#d97706; transform:translateY(-2px); }
 
-/* Informational timezone note bar shown above route fields */
+/* Barra de nota informativa de zona horaria mostrada encima de los campos de ruta */
 .rutas-tz-note { display:flex; gap:.75rem; align-items:flex-start; padding:.8rem 1.1rem; background:var(--perla-dark); border:1px solid var(--marron-light,#d4c5a9); border-radius:8px; margin-bottom:1.25rem; font-size:.83rem; color:var(--text-muted); line-height:1.5; }
-/* Monospace badge showing the IATA code in a dark pill */
+/* Badge monoespacio que muestra el codigo IATA en una pastilla oscura */
 .ruta-code { display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-family:monospace; background:var(--secondary-color); color:var(--white); border-radius:4px; padding:.15rem .45rem; font-size:.75rem; margin-right:.35rem; letter-spacing:.5px; }
-/* Route name shown as a small block below the IATA code */
+/* Nombre de ruta mostrado como un bloque pequeno debajo del codigo IATA */
 .ruta-name { color:var(--secondary-color); font-size:.85rem; display:block; margin-top:.15rem; }
-/* Small timezone badge: green when detected, yellow when missing */
+/* Badge de zona horaria pequeno: verde cuando se detecta, amarillo cuando falta */
 .tz-badge { display:inline-block; font-size:.7rem; padding:.2rem .55rem; border-radius:4px; font-weight:600; letter-spacing:.3px; }
 .tz-badge--ok      { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
 .tz-badge--missing { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
-/* Static display of calculated flight duration */
+/* Visualizacion estatica de la duracion de vuelo calculada */
 .duracion-display { color:var(--secondary-color); font-size:.88rem; }
-/* Edit mode wrapper that aligns hour and minute inputs side by side */
+/* Contenedor de modo edicion que alinea los inputs de hora y minuto uno al lado del otro */
 .duracion-edit    { display:flex; gap:.4rem; align-items:center; }
-/* Small inline input for entering duration hours or minutes */
+/* Input en linea pequeno para ingresar horas o minutos de duracion */
 .duracion-input { width:88px !important; padding:.4rem .6rem !important; font-size:.85rem !important; border:2px solid var(--marron-light,#d4c5a9) !important; border-radius:4px !important; background:var(--white) !important; color:var(--secondary-color) !important; box-sizing:border-box !important; }
 .duracion-input:focus { outline:none !important; border-color:var(--primary-color) !important; }
 
-/* Preview box showing the calculated arrival time; switches style based on state */
+/* Caja de vista previa que muestra la hora de llegada calculada; cambia de estilo segun el estado */
 .llegada-preview { border:2px solid var(--perla-dark); border-radius:0 10px 0 10px; padding:.85rem 1rem; background:var(--perla-dark); min-height:72px; display:flex; flex-direction:column; gap:.3rem; }
-/* Green tint when a valid timezone is resolved */
+/* Tono verde cuando se resuelve una zona horaria valida */
 .llegada-preview--tz      { border-color:#6ee7b7; background:#ecfdf5; }
-/* Light amber tint while the timezone is loading */
+/* Tono ambar claro mientras se carga la zona horaria */
 .llegada-preview--loading { background:#fdf9ef; border-color:#f0e6c0; opacity:1; justify-content:center; align-items:center; }
-/* Dashed border shown when no departure data is set yet */
+/* Borde discontinuo mostrado cuando aun no se han establecido datos de salida */
 .llegada-preview--empty   { color:var(--text-muted); font-size:.82rem; justify-content:center; border-style:dashed; }
-/* Large bold arrival time digits */
+/* Digitos grandes y en negrita de la hora de llegada */
 .llegada-preview__time    { font-size:1.35rem; font-weight:700; color:var(--secondary-color); line-height:1; }
-/* Small gold tag shown when arrival is the next calendar day */
+/* Etiqueta dorada pequena mostrada cuando la llegada es al dia siguiente del calendario */
 .llegada-preview__nextday { font-size:.75rem; color:var(--primary-color); font-weight:600; margin-left:.4rem; }
 .llegada-preview__meta    { font-size:.75rem; color:var(--text-muted); margin-top:.1rem; }
 .llegada-preview__nota    { font-size:.7rem; color:var(--text-muted); font-style:italic; margin-top:.15rem; line-height:1.4; }
 
-/* Sliding bar animation used in loading indicators */
+/* Animacion de barra deslizante usada en indicadores de carga */
 @keyframes barSlide {
   0%   { transform:translateX(-100%); }
   100% { transform:translateX(300%); }
 }
 
-/* Oscillating plane animation used in loading spinners */
+/* Animacion de avion oscilante usada en los spinners de carga */
 @keyframes planeFly {
   0%   { transform:translateX(-6px) rotate(-5deg); opacity:.6; }
   50%  { transform:translateX(6px)  rotate(5deg);  opacity:1; }
   100% { transform:translateX(-6px) rotate(-5deg); opacity:.6; }
 }
 
-/* Animated plane + progress bar loader shown while arrival time is being calculated */
+/* Cargador animado de avion y barra de progreso mostrado mientras se calcula la hora de llegada */
 .llegada-loader { display:flex; flex-direction:column; align-items:center; gap:.5rem; padding:.5rem 0; width:100%; }
-/* Plane emoji that oscillates left/right */
+/* Emoji de avion que oscila de izquierda a derecha */
 .llegada-loader__plane { font-size:1.4rem; animation:planeFly 1.4s ease-in-out infinite; display:block; }
-/* Thin progress bar track */
+/* Pista delgada de la barra de progreso */
 .llegada-loader__bar { width:100%; height:5px; background:rgba(212,175,55,.15); border-radius:3px; overflow:hidden; }
-/* Sweeping gold fill on the progress bar */
+/* Relleno dorado que barre la barra de progreso */
 .llegada-loader__fill { height:100%; background:linear-gradient(90deg, transparent, #D4AF37, transparent); border-radius:3px; animation:barSlide 1.2s ease-in-out infinite; width:50%; }
 .llegada-loader__text { font-size:.78rem; color:var(--text-muted); font-style:italic; letter-spacing:.3px; }
 
-/* Very subtle empty-state bar animation under the arrival preview when no data is entered */
+/* Animacion de barra de estado vacio muy sutil debajo de la vista previa de llegada cuando no se han ingresado datos */
 .llegada-empty-bar { width:100%; height:3px; background:rgba(212,175,55,.12); border-radius:3px; overflow:hidden; margin-top:.6rem; }
 .llegada-empty-bar__fill { height:100%; width:40%; background:linear-gradient(90deg, transparent, #D4AF37, transparent); border-radius:3px; animation:barSlide 2.5s ease-in-out infinite; }
 
-/* Red-tinted arrival preview shown when the selected route has no timezone configured */
+/* Vista previa de llegada con tono rojo mostrada cuando la ruta seleccionada no tiene zona horaria configurada */
 .llegada-preview--no-ruta { border:2px solid #fca5a5; border-radius:0 10px 0 10px; padding:.85rem 1rem; background:#fff5f5; display:flex; flex-direction:column; gap:.3rem; min-height:60px; }
 .llegada-preview__no-ruta-icon  { font-size:1.05rem; line-height:1; }
 .llegada-preview__no-ruta-title { font-size:.92rem; font-weight:700; color:#b91c1c; }
 .llegada-preview__no-ruta-msg   { font-size:.75rem; color:#7f1d1d; line-height:1.5; }
-/* Small inline button to navigate to route configuration */
+/* Boton en linea pequeno para navegar a la configuracion de rutas */
 .llegada-preview__no-ruta-btn { margin-top:.3rem; align-self:flex-start; padding:.28rem .7rem; background:#b91c1c; color:#fff; border:none; border-radius:0 6px 0 6px; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); }
 .llegada-preview__no-ruta-btn:hover { background:var(--primary-color); transform:translateY(-1px); }
 
-/* Display box showing the auto-detected timezone for origin or destination */
+/* Caja de visualizacion que muestra la zona horaria detectada automaticamente para el origen o destino */
 .tz-detected-display { display:flex; align-items:center; gap:.7rem; padding:.7rem 1rem; background:var(--perla-dark); border:2px solid var(--marron-light,#d4c5a9); border-radius:0 10px 0 10px; color:var(--secondary-color); font-size:.88rem; font-weight:500; min-height:46px; }
-/* Italic muted style when no timezone is detected yet */
+/* Estilo atenuado en cursiva cuando aun no se ha detectado ninguna zona horaria */
 .tz-detected-display--empty { color:var(--text-muted); font-style:italic; font-weight:400; }
 .tz-detected-display__icon  { font-size:1.05rem; flex-shrink:0; }
-/* Button that triggers timezone auto-detection from the route data */
+/* Boton que activa la deteccion automatica de zona horaria a partir de los datos de la ruta */
 .tz-detect-btn { padding:.55rem 1rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 8px 0 8px; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:var(--transition); white-space:nowrap; flex-shrink:0; }
 .tz-detect-btn:hover:not(:disabled) { background:var(--primary-color); transform:translateY(-2px); }
 .tz-detect-btn:disabled { opacity:.45; cursor:not-allowed; }
 
-/* Wrapper for a date cell that can show a next-day tag beside the date */
+/* Contenedor para una celda de fecha que puede mostrar una etiqueta de dia siguiente junto a la fecha */
 .fecha-llegada-distinta { display:flex; align-items:center; gap:.35rem; white-space:nowrap; }
-/* Amber pill shown when the arrival date differs from the departure date */
+/* Pastilla ambar mostrada cuando la fecha de llegada difiere de la fecha de salida */
 .nextday-tag { display:inline-block; background:#fef3c7; color:#92400e; font-size:.62rem; font-weight:700; padding:.12rem .38rem; border-radius:4px; text-transform:uppercase; letter-spacing:.5px; border:1px solid #fde68a; }
-/* Filter area above reservation/flight history lists */
+/* Area de filtros encima de las listas de historial de reservas y vuelos */
 .historial-filtros { display:flex; flex-direction:column; gap:1rem; margin-bottom:1.5rem; }
-/* Tab row for switching between history categories */
+/* Fila de pestanas para alternar entre categorias del historial */
 .historial-tabs { display:flex; gap:.5rem; flex-wrap:wrap; }
-/* Individual tab button with color set via --tab-color custom property */
+/* Boton de pestana individual con color establecido mediante la propiedad personalizada --tab-color */
 .historial-tab { display:flex; align-items:center; gap:.5rem; padding:.55rem 1.1rem; border:2px solid #e5e7eb; border-radius:0 8px 0 8px; background:transparent; font-size:.78rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; cursor:pointer; transition:var(--transition); }
 .historial-tab:hover { border-color:var(--tab-color); color:var(--tab-color); }
-/* Active tab fills with the tab color */
+/* La pestana activa se rellena con el color de la pestana */
 .historial-tab--active { background:var(--tab-color); border-color:var(--tab-color); color:white; }
-/* Small rounded count badge inside the tab */
+/* Badge de conteo pequeno y redondeado dentro de la pestana */
 .historial-tab__count { background:rgba(255,255,255,.25); padding:.1rem .4rem; border-radius:10px; font-size:.7rem; }
 .historial-tab:not(.historial-tab--active) .historial-tab__count { background:#f3f4f6; color:#6b7280; }
-/* Search input inside the history filter area */
+/* Input de busqueda dentro del area de filtros del historial */
 .historial-search { padding:.75rem 1rem; border:2px solid #e5e7eb; border-radius:0 10px 0 10px; font-size:.88rem; font-family:inherit; width:100%; box-sizing:border-box; transition:var(--transition); }
 .historial-search:focus { outline:none; border-color:var(--primary-color); }
-/* Result count label above the history list */
+/* Etiqueta de conteo de resultados encima de la lista del historial */
 .historial-count { font-size:.82rem; color:var(--text-muted); margin-bottom:.75rem; }
 
-/* Metrics section container */
+/* Contenedor de la seccion de metricas */
 .met-section { padding:2.25rem; }
 .met-header  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.75rem; }
-/* Filter bar with date inputs and an apply button */
+/* Barra de filtros con inputs de fecha y un boton de aplicar */
 .met-filtros { display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end; background:#fcfbf9; border:1px solid var(--perla-dark); border-radius:0 16px 0 16px; padding:1.25rem; margin-bottom:1.75rem; }
 .met-filtro-grupo { display:flex; flex-direction:column; gap:.35rem; min-width:130px; }
 .met-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); }
-/* Date/select input inside the metrics filter bar */
+/* Input de fecha/select dentro de la barra de filtros de metricas */
 .met-input { padding:.65rem .9rem; border:2px solid var(--perla-dark); border-radius:0 10px 0 10px; font-size:.85rem; font-family:inherit; color:var(--secondary-color); background:var(--white); transition:var(--transition); }
 .met-input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 0 3px rgba(212,175,55,.12); }
-/* Apply filters button aligned to the bottom of the filter bar */
+/* Boton de aplicar filtros alineado a la parte inferior de la barra de filtros */
 .met-btn-aplicar { padding:.7rem 1.75rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 12px 0 12px; font-size:.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); align-self:flex-end; }
 .met-btn-aplicar:hover:not(:disabled) { background:var(--primary-color); transform:translateY(-2px); }
 .met-btn-aplicar:disabled { opacity:.6; cursor:not-allowed; }
-/* Centered loading state for metrics section */
+/* Estado de carga centrado para la seccion de metricas */
 .met-loading { display:flex; flex-direction:column; align-items:center; gap:1rem; padding:4rem; color:var(--text-muted); }
 .met-loading--sm { padding:2rem; }
-/* Spinning circle loader using gold top border */
+/* Cargador de circulo giratorio usando borde superior dorado */
 .met-spinner { width:34px; height:34px; border:3px solid var(--perla-dark); border-top-color:var(--primary-color); border-radius:50%; animation:metSpin .8s linear infinite; }
 @keyframes metSpin { to { transform:rotate(360deg); } }
 
-/* Dark gradient revenue banner with large gold amount and breakdown stats */
+/* Banner de ingresos con gradiente oscuro, monto grande en dorado y estadisticas de desglose */
 .met-ingresos-banner { display:flex; align-items:center; gap:2rem; background:linear-gradient(135deg,#1C1A18 0%,#2d2a26 100%); border-radius:14px; padding:1.5rem 1.75rem; margin-bottom:1.5rem; color:white; flex-wrap:wrap; }
-/* Left column showing the primary revenue figure */
+/* Columna izquierda que muestra la cifra principal de ingresos */
 .met-ing-main { display:flex; flex-direction:column; min-width:190px; border-right:1px solid rgba(255,255,255,.15); padding-right:2rem; flex-shrink:0; }
 .met-ing-label { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:.3rem; }
-/* Large gold revenue number */
+/* Numero de ingresos grande en dorado */
 .met-ing-valor { font-size:1.9rem; font-weight:800; color:#D4AF37; line-height:1.1; }
 .met-ing-sub   { font-size:.75rem; color:rgba(255,255,255,.45); margin-top:.35rem; }
-/* Flex row of revenue breakdown items */
+/* Fila flex de elementos de desglose de ingresos */
 .met-ing-stats { display:flex; gap:1.5rem; flex-wrap:wrap; flex:1; }
 .met-ing-stat  { display:flex; align-items:flex-start; gap:.5rem; }
-/* Small colored dot identifying each revenue category */
+/* Punto de color pequeno que identifica cada categoria de ingresos */
 .met-ing-stat__dot { width:9px; height:9px; border-radius:50%; margin-top:4px; flex-shrink:0; }
 .met-ing-stat__dot--turista   { background:#D4AF37; }
 .met-ing-stat__dot--ejecutivo { background:#10b981; }
@@ -427,160 +427,160 @@ body:has(.modal-overlay) { overflow:hidden; }
 .met-ing-stat__label { display:block; font-size:.68rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.05em; }
 .met-ing-stat__val   { display:block; font-size:.92rem; font-weight:700; color:white; }
 
-/* Two-column grid for chart cards; stacks to one column on tablet */
+/* Grilla de dos columnas para tarjetas de graficos; se apila en una columna en tablets */
 .met-graficas { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.75rem; }
-/* Chart card with light shadow and asymmetric corners */
+/* Tarjeta de grafico con sombra ligera y esquinas asimetricas */
 .met-grafica { background:var(--white); border:1px solid var(--perla-dark); border-radius:4px 20px 4px 20px; padding:1.5rem; box-shadow:0 8px 24px rgba(28,26,24,.04); }
-/* Wide card spans both grid columns */
+/* Tarjeta ancha que se extiende por ambas columnas de la grilla */
 .met-grafica--wide  { grid-column:1/-1; }
 .met-grafica--donut { display:flex; flex-direction:column; }
 .met-grafica__titulo    { font-size:1rem; font-weight:700; color:var(--secondary-color); margin:0 0 .2rem; }
 .met-grafica__subtitulo { font-size:.75rem; color:var(--text-muted); margin:0 0 1.1rem; }
-/* Scrollable SVG wrapper */
+/* Contenedor SVG con desplazamiento */
 .met-svg-wrap { width:100%; overflow-x:auto; }
 .met-svg { width:100%; height:auto; max-height:200px; display:block; }
-/* Legend row below a chart */
+/* Fila de leyenda debajo de un grafico */
 .met-grafica__leyenda { display:flex; align-items:center; gap:.5rem; font-size:.75rem; color:var(--text-muted); margin-top:.9rem; flex-wrap:wrap; }
-/* Small circle dot for chart legend items */
+/* Punto circular pequeno para los elementos de leyenda del grafico */
 .met-leyenda-dot { display:inline-block; width:11px; height:11px; border-radius:50%; flex-shrink:0; }
 
-/* Stacked double bar chart rows */
+/* Filas de grafico de barras dobles apiladas */
 .met-barras-dobles { display:flex; flex-direction:column; gap:.55rem; }
-/* Two-column layout: label on left, stacked bars on right */
+/* Layout de dos columnas: etiqueta a la izquierda, barras apiladas a la derecha */
 .met-barra-doble-row    { display:grid; grid-template-columns:90px 1fr; align-items:center; gap:.5rem; }
 .met-barra-doble-label  { display:flex; flex-direction:column; gap:.1rem; }
 .met-barra-doble-tracks { display:flex; flex-direction:column; gap:.2rem; }
 .met-barra-doble-track  { display:flex; align-items:center; gap:.4rem; height:11px; }
-/* Proportional fill bar that transitions width */
+/* Barra de relleno proporcional que transiciona el ancho */
 .met-barra-fill { height:100%; border-radius:3px; min-width:2px; transition:width .4s ease; }
-/* Gold bar for tourist class, green for executive */
+/* Barra dorada para clase turista, verde para clase ejecutiva */
 .met-barra-fill--gold  { background:#D4AF37; }
 .met-barra-fill--green { background:#10b981; }
-/* Tiny rank number beside the bar */
+/* Numero de rango diminuto al lado de la barra */
 .met-barra-rank { font-size:.66rem; color:var(--text-muted); font-weight:700; min-width:20px; }
 .met-barra-ruta { font-size:.78rem; font-weight:600; color:var(--secondary-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .met-barra-val  { font-size:.7rem; color:var(--text-muted); white-space:nowrap; }
 
-/* Donut chart wrapper with flex layout for chart + legend side by side */
+/* Contenedor del grafico de dona con layout flex para grafico y leyenda uno al lado del otro */
 .met-donut-wrap    { display:flex; align-items:center; gap:1.75rem; flex:1; }
 .met-donut-svg     { width:155px; height:155px; flex-shrink:0; }
-/* Vertical legend list for the donut chart */
+/* Lista de leyenda vertical para el grafico de dona */
 .met-donut-leyenda { display:flex; flex-direction:column; gap:.65rem; }
 .met-ley-item { display:flex; align-items:flex-start; gap:.45rem; }
 .met-ley-tipo { font-size:.82rem; font-weight:600; color:var(--secondary-color); display:block; }
 .met-ley-num  { font-size:.82rem; color:var(--secondary-color); display:block; }
-/* Muted sub-text inside the legend number cell */
+/* Subtexto atenuado dentro de la celda del numero de leyenda */
 .met-ley-num em { font-style:normal; color:var(--text-muted); font-size:.72rem; margin-left:.2rem; }
 .met-ley-sub  { display:block; font-size:.7rem; color:var(--text-muted); }
 
-/* Sales channel breakdown card with horizontal bar per channel */
+/* Tarjeta de desglose por canal de ventas con barra horizontal por canal */
 .met-canal-wrap   { background:#f7f4f0; border:1px solid #EBE6E0; border-radius:12px; padding:1.1rem 1.4rem; margin-bottom:1.5rem; }
 .met-canal__titulo { font-size:.88rem; font-weight:700; color:var(--secondary-color); margin:0 0 .85rem; }
 .met-canal-pills  { display:flex; gap:1.5rem; flex-wrap:wrap; }
-/* Individual channel pill with a percentage fill bar */
+/* Pastilla de canal individual con una barra de relleno de porcentaje */
 .met-canal-pill   { flex:1; min-width:150px; display:flex; flex-direction:column; gap:.28rem; }
-/* CSS gradient bar showing fill percentage via --pct custom property */
+/* Barra de gradiente CSS que muestra el porcentaje de relleno mediante la propiedad personalizada --pct */
 .met-canal-bar    { height:7px; border-radius:4px; background:linear-gradient(to right, var(--color,#D4AF37) var(--pct,0%), #EBE6E0 var(--pct,0%)); }
 .met-canal-tipo   { font-size:.78rem; font-weight:600; color:var(--secondary-color); }
 .met-canal-num    { font-size:.75rem; color:var(--text-muted); }
 
-/* Detailed metrics table card */
+/* Tarjeta de tabla de metricas detallada */
 .met-listado { background:var(--white); border:1px solid var(--perla-dark); border-radius:4px 20px 4px 20px; padding:1.75rem; box-shadow:0 8px 24px rgba(28,26,24,.04); }
 .met-listado__header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; }
 .met-listado__titulo { font-size:1rem; font-weight:700; color:var(--secondary-color); margin:0; }
-/* Ghost export button that fills dark on hover */
+/* Boton de exportar fantasma que se rellena de oscuro al pasar el cursor */
 .met-btn-exportar { padding:.55rem 1.25rem; background:transparent; border:2px solid var(--secondary-color); border-radius:0 10px 0 10px; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; cursor:pointer; transition:var(--transition); color:var(--secondary-color); }
 .met-btn-exportar:hover { background:var(--secondary-color); color:var(--white); }
 .met-tabla-wrap { overflow-x:auto; }
-/* Small route code badge inside the metrics table */
+/* Insignia pequena de codigo de ruta dentro de la tabla de metricas */
 .met-ruta-tag { display:inline-block; background:#EBE6E0; border-radius:4px; padding:.1rem .35rem; font-size:.75rem; font-weight:600; color:var(--secondary-color); }
-/* Pill-shaped type badge distinguishing web vs REST API sales */
+/* Insignia de tipo en forma de pastilla que distingue ventas web vs API REST */
 .met-tipo-badge { display:inline-block; padding:.15rem .5rem; border-radius:999px; font-size:.7rem; font-weight:600; }
 .met-tipo-badge--web  { background:#fef9e7; color:#92400e; border:1px solid #D4AF37; }
 .met-tipo-badge--rest { background:#f0fdf4; color:#065f46; border:1px solid #10b981; }
-/* Pagination row below the metrics table */
+/* Fila de paginacion debajo de la tabla de metricas */
 .met-paginado { display:flex; align-items:center; justify-content:center; gap:1.25rem; padding:1.25rem 0 0; border-top:1px solid var(--perla-dark); margin-top:1rem; }
 .met-pag-btn { padding:.55rem 1.1rem; background:var(--secondary-color); color:var(--white); border:none; border-radius:0 8px 0 8px; font-size:.78rem; font-weight:600; cursor:pointer; transition:var(--transition); }
 .met-pag-btn:hover:not(:disabled) { background:var(--primary-color); }
 .met-pag-btn:disabled { opacity:.35; cursor:not-allowed; }
 .met-pag-info { font-size:.8rem; color:var(--text-muted); }
-/* Centered empty-state message for metrics with no data */
+/* Mensaje de estado vacio centrado para metricas sin datos */
 .met-empty { text-align:center; padding:2.5rem; color:var(--text-muted); font-size:.88rem; }
 
-/* Responsive adjustments: sidebar collapses to 220px, charts stack on 1024px */
+/* Ajustes responsivos: la barra lateral colapsa a 220px, los graficos se apilan en 1024px */
 @media (max-width:1024px) {
   .admin__content { grid-template-columns:220px 1fr; gap:2rem; }
   .met-graficas { grid-template-columns:1fr; }
   .met-grafica--wide { grid-column:1; }
 }
 
-/* Summary cards row for the agencies panel */
+/* Fila de tarjetas de resumen para el panel de agencias */
 .ag-stats { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:2rem; }
-/* Individual stat card with large count and label */
+/* Tarjeta de estadistica individual con contador grande y etiqueta */
 .ag-stat { flex:1; min-width:100px; padding:1rem 1.25rem; background:var(--bg-color); border:1px solid rgba(235,230,224,.7); border-radius:4px 14px 4px 14px; text-align:center; }
 .ag-stat__num { display:block; font-size:1.8rem; font-weight:700; color:var(--secondary-color); }
 .ag-stat__lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); }
-/* Color variants for the stat count: green for active, gray for inactive, amber for warnings */
+/* Variantes de color para el contador de estadistica: verde para activo, gris para inactivo, ambar para advertencias */
 .ag-stat--green .ag-stat__num { color:#065f46; }
 .ag-stat--gray  .ag-stat__num { color:#6b7280; }
 .ag-stat--warn  .ag-stat__num { color:#92400e; }
 
-/* Table cell showing user name stacked above username */
+/* Celda de tabla que muestra el nombre completo apilado sobre el nombre de usuario */
 .ag-user-cell       { display:flex; flex-direction:column; gap:.1rem; }
 .ag-user-cell__name { font-size:.88rem; font-weight:600; color:var(--secondary-color); }
 .ag-user-cell__user { font-size:.75rem; color:var(--text-muted); }
-/* Amber pill shown when no user is assigned to an agency */
+/* Pastilla ambar mostrada cuando no hay usuario asignado a una agencia */
 .ag-sin-usuario     { font-size:.78rem; background:#fef3c7; color:#92400e; padding:.2rem .6rem; border-radius:20px; font-weight:600; }
 
-/* Blue button to set or edit the agency discount percentage */
+/* Boton azul para establecer o editar el porcentaje de descuento de la agencia */
 .ag-discount-btn { display:inline-flex; align-items:center; gap:.35rem; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:0 8px 0 8px; padding:.3rem .7rem; font-size:.82rem; font-weight:700; cursor:pointer; transition:background .2s; }
 .ag-discount-btn:hover { background:#dbeafe; }
 
-/* Status select dropdown with color-coded states */
+/* Selector desplegable de estado con codificacion de color por estado */
 .ag-estado-select { padding:.3rem .6rem; border-radius:0 8px 0 8px; font-size:.78rem; font-weight:700; border:none; cursor:pointer; text-transform:uppercase; letter-spacing:.5px; }
-/* Green = active, gray = inactive, amber = suspended */
+/* Verde = activo, gris = inactivo, ambar = suspendido */
 .ag-estado--1 { background:#d1fae5; color:#065f46; }
 .ag-estado--2 { background:#f3f4f6; color:#6b7280; }
 .ag-estado--3 { background:#fef3c7; color:#92400e; }
 
-/* Button that assigns a user to an agency record */
+/* Boton que asigna un usuario a un registro de agencia */
 .ag-btn-asignar { background:var(--secondary-color); color:white; padding:.45rem .85rem; border:none; border-radius:0 8px 0 8px; font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; cursor:pointer; transition:background .2s, transform .2s; }
 .ag-btn-asignar:hover { background:var(--primary-color); transform:translateY(-1px); }
 
-/* Full-screen overlay for agency modals */
+/* Superposicion de pantalla completa para los modales de agencia */
 .ag-overlay { position:fixed; inset:0; background:rgba(28,26,24,.55); display:flex; align-items:center; justify-content:center; z-index:1000; padding:1rem; }
-/* Agency modal dialog with asymmetric corners */
+/* Cuadro de dialogo modal de agencia con esquinas asimetricas */
 .ag-modal { background:var(--white); border-radius:4px 24px 4px 24px; box-shadow:0 25px 60px rgba(0,0,0,.18); width:100%; max-width:540px; display:flex; flex-direction:column; }
 .ag-modal--sm { max-width:400px; }
-/* Sticky modal header with title and close button */
+/* Encabezado fijo del modal con titulo y boton de cierre */
 .ag-modal__header { display:flex; justify-content:space-between; align-items:center; padding:1.5rem 2rem 1rem; border-bottom:1px solid rgba(235,230,224,.6); }
 .ag-modal__title { font-size:1.2rem; font-weight:700; color:var(--secondary-color); margin:0; }
 .ag-modal__close { background:none; border:none; font-size:1.5rem; color:var(--text-muted); cursor:pointer; line-height:1; padding:0 .25rem; }
 .ag-modal__close:hover { color:var(--secondary-color); }
-/* Padded body area of the agency modal */
+/* Area del cuerpo con relleno del modal de agencia */
 .ag-modal__body  { padding:1.5rem 2rem; display:flex; flex-direction:column; gap:1.1rem; }
 .ag-modal__desc  { margin:0 0 .5rem; font-size:.9rem; color:var(--text-muted); }
-/* Footer with action buttons aligned to the right */
+/* Pie de pagina con botones de accion alineados a la derecha */
 .ag-modal__footer { display:flex; justify-content:flex-end; gap:.75rem; padding:1rem 2rem 1.5rem; border-top:1px solid rgba(235,230,224,.6); }
 
-/* Field wrapper with stacked label and input */
+/* Contenedor de campo con etiqueta e input apilados */
 .ag-field        { display:flex; flex-direction:column; gap:.4rem; }
 .ag-field__label { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--secondary-color); }
-/* Required asterisk colored in primary gold */
+/* Asterisco de campo requerido coloreado en dorado primario */
 .ag-required     { color:var(--primary-color); }
-/* Text/select inputs in the agency form */
+/* Inputs de texto y select en el formulario de agencia */
 .ag-field__input, .ag-field__select { padding:.8rem 1rem; border:1.5px solid #e5e7eb; border-radius:0 8px 0 8px; font-size:.92rem; color:var(--secondary-color); background:var(--white); font-family:inherit; outline:none; transition:border-color .2s; }
 .ag-field__input:focus, .ag-field__select:focus { border-color:var(--primary-color); }
-/* Red border on input validation error */
+/* Borde rojo en el input cuando hay un error de validacion */
 .ag-field__input--err { border-color:#f87171; }
-/* Small red error message below the field */
+/* Mensaje de error pequeno en rojo debajo del campo */
 .ag-field__err   { font-size:.75rem; color:#dc2626; margin:0; }
 
-/* Informational notice box inside the agency modal */
+/* Cuadro de aviso informativo dentro del modal de agencia */
 .ag-notice       { padding:.75rem 1rem; border-radius:6px; font-size:.83rem; line-height:1.5; }
 .ag-notice--warn { background:#fef3c7; color:#92400e; border:1px solid #fde68a; }
 
-/* Mobile: agency stats wrap tighter, modal uses simpler radius */
+/* Movil: las estadisticas de agencia se ajustan mas compactas, el modal usa un radio mas simple */
 @media (max-width:768px) {
   .ag-stats { gap:.75rem; }
   .ag-modal { border-radius:12px; }
@@ -588,12 +588,12 @@ body:has(.modal-overlay) { overflow:hidden; }
   .ag-modal__header { padding-left:1.25rem; padding-right:1.25rem; }
 }
 
-/* Mobile: sidebar becomes a horizontal tab bar, main takes full width */
+/* Movil: la barra lateral se convierte en una barra de pestanas horizontal, el contenido principal ocupa el ancho completo */
 @media (max-width:768px) {
   .admin__content { grid-template-columns:1fr; }
   .admin__sidebar { position:static; }
   .admin-nav { flex-direction:row; flex-wrap:wrap; padding:.75rem; border-radius:12px; gap:.25rem; }
-  /* Nav items switch from left border to bottom border indicator */
+  /* Los elementos de navegacion cambian de borde izquierdo a borde inferior como indicador */
   .admin-nav__item { padding:.55rem .85rem; border-left:none; border-bottom:3px solid transparent; font-size:.7rem; border-radius:8px; }
   .admin-nav__item--active { border-left:none; border-bottom-color:var(--primary-color); }
   .admin-section { padding:1.5rem; border-radius:12px; }
@@ -608,10 +608,10 @@ body:has(.modal-overlay) { overflow:hidden; }
   .confirm-dialog__actions { flex-direction:column; }
   .confirm-dialog__btn { width:100%; }
   .toast-stack { bottom:1rem; right:1rem; max-width:calc(100vw - 2rem); }
-  /* Crew items stack their info and remove button vertically */
+  /* Los elementos de tripulacion apilan su informacion y el boton de eliminar verticalmente */
   .tripulante-item { flex-direction:column; align-items:flex-start; gap:.6rem; }
   .tripulante-item__remove { align-self:flex-end; }
-  /* Metrics banner stacks vertically with a bottom border separator */
+  /* El banner de metricas se apila verticalmente con un separador de borde inferior */
   .met-ingresos-banner { flex-direction:column; align-items:flex-start; }
   .met-ing-main { border-right:none; border-bottom:1px solid rgba(255,255,255,.15); padding-right:0; padding-bottom:1rem; }
   .met-filtros { flex-direction:column; }
@@ -619,7 +619,7 @@ body:has(.modal-overlay) { overflow:hidden; }
   .met-donut-wrap { flex-direction:column; align-items:flex-start; }
 }
 
-/* Extra-small screens: reduce padding on the header and metrics sections */
+/* Pantallas muy pequenas: reducir el relleno en el encabezado y las secciones de metricas */
 @media (max-width:480px) {
   .admin__header { padding-left:1rem; }
   .admin-section { padding:1.25rem; }

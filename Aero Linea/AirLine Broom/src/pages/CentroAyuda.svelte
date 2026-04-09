@@ -2,17 +2,17 @@
   // @ts-nocheck
 /**
  * @file CentroAyuda.svelte
- * @description Static help center page for Broom AirLine. Displays contact information
- * (phone, email, and office location), a grid of frequently asked help topics covering
- * reservations, payments, luggage, and cancellations, and a call-to-action section
- * that redirects the user to the Contactanos page. No API calls are made; all content
- * is static. Appears in the user flow as an informational support resource accessible
- * from the main navigation or the footer.
+ * @description Pagina estatica del centro de ayuda de Broom AirLine. Muestra informacion de
+ * contacto (telefono, correo y ubicacion de oficina), una grilla de temas frecuentes de ayuda
+ * sobre reservas, pagos, equipaje y cancelaciones, y una seccion de llamado a la accion
+ * que redirige al usuario a la pagina de Contactanos. No se realizan llamadas a la API;
+ * todo el contenido es estatico. Aparece en el flujo del usuario como recurso de soporte
+ * informativo accesible desde la navegacion principal o el pie de pagina.
  */
 
   import '../styles/info-pages.css';
 
-  /** Navigation function provided by the app router to change the current page. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar la pagina actual. @type {Function} */
   export let navigateTo;
 </script>
 

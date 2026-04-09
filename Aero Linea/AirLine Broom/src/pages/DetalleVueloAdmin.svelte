@@ -1,23 +1,24 @@
 <script>
 /**
  * @file DetalleVueloAdmin.svelte
- * @description Admin-only modal that displays read-only details of a base flight record.
- * Shows general information (ID, flight number, aircraft), route with origin and destination,
- * seat capacity broken down by cabin class, pricing per class, and usage statistics.
- * Rendered as an overlay on the admin flight management panel when an admin clicks a flight row.
+ * @description Modal de solo lectura para administradores que muestra detalles de un registro
+ * de vuelo base. Muestra informacion general (ID, numero de vuelo, aeronave), ruta con origen
+ * y destino, capacidad de asientos desglosada por clase de cabina, precios por clase y
+ * estadisticas de uso. Se renderiza como superposicion en el panel de administracion de vuelos
+ * cuando un administrador hace clic en una fila de vuelo.
  */
   import '../styles/DetalleVueloAdmin.css';
 
-  /** The base flight object to display, containing all flight fields from the admin API. @type {object} */
+  /** El objeto de vuelo base a mostrar, que contiene todos los campos de vuelo de la API de administracion. @type {object} */
   export let vuelo;
 
-  /** Callback invoked to dismiss this modal from the parent component. @type {function} */
+  /** Callback invocado para cerrar este modal desde el componente padre. @type {function} */
   export let onClose;
 
   /**
-   * Closes the modal when the user clicks directly on the semi-transparent backdrop
-   * rather than on the modal content itself.
-   * @param {MouseEvent} event - The DOM click event from the backdrop element.
+   * Cierra el modal cuando el usuario hace clic directamente en el fondo semitransparente
+   * en lugar de en el contenido del modal en si.
+   * @param {MouseEvent} event - El evento clic del DOM del elemento de fondo.
    */
   function handleBackdropClick(event) {
     if (event.target === event.currentTarget) {

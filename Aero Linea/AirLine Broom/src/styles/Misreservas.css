@@ -1,9 +1,13 @@
-/* Misreservas.css - My reservations page styles including summary stat cards, status filter pills, reservation grid cards with animated top gradient bar and route display, detail modal with boleto cards, review form with star rating, cancellation section, toast notifications, and responsive layout */
+/* Misreservas.css - Estilos de la pagina de mis reservas, incluyendo tarjetas de estadisticas
+   de resumen, pastillas de filtro por estado, tarjetas de grilla de reservas con barra superior
+   de degradado animada y visualizacion de ruta, modal de detalle con tarjetas de boleto, formulario
+   de resena con calificacion de estrellas, seccion de cancelacion, notificaciones toast y
+   disposicion responsiva */
 
-/* Reset margin, padding, and box-sizing for the page and all descendants */
+/* Restablecer margin, padding y box-sizing para la pagina y todos sus descendientes */
 .mr-page, .mr-page * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* Full-page wrapper with warm off-white background and bottom padding */
+/* Contenedor de pagina completa con fondo blanco calido y relleno inferior */
 .mr-page {
   min-height: 100vh;
   background: #F5F1EB;
@@ -12,14 +16,14 @@
   padding-bottom: 3rem;
 }
 
-/* Centered content column capped at 1200px */
+/* Columna de contenido centrada con un maximo de 1200px */
 .mr-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
 
-/* Page header: space-between flex row with title and action controls */
+/* Encabezado de la pagina: fila flex con espacio entre el titulo y los controles de accion */
 .mr-header {
   display: flex;
   align-items: flex-start;
@@ -29,7 +33,7 @@
   flex-wrap: wrap;
 }
 
-/* Bold dark page title at 1.8rem with tight letter spacing */
+/* Titulo de pagina oscuro y en negrita a 1.8rem con espaciado de letras ajustado */
 .mr-title {
   font-size: 1.8rem;
   font-weight: 700;
@@ -37,14 +41,14 @@
   letter-spacing: -0.5px;
 }
 
-/* Muted subtitle line below the title */
+/* Linea de subtitulo apagada debajo del titulo */
 .mr-subtitle {
   font-size: 0.95rem;
   color: #7a7067;
   margin-top: 0.25rem;
 }
 
-/* Base button: inline-flex with icon, rounded corners, and a transition */
+/* Boton base: flex en linea con icono, esquinas redondeadas y una transicion */
 .mr-btn {
   display: inline-flex;
   align-items: center;
@@ -61,31 +65,31 @@
   line-height: 1.3;
 }
 
-/* Primary button: dark brown background, darkens on hover */
+/* Boton primario: fondo marron oscuro, se oscurece al pasar el cursor */
 .mr-btn--primary { background: #8B6B4A; color: #fff; }
 .mr-btn--primary:hover { background: #7a5c3d; }
 
-/* Secondary button: light beige background with a brown border */
+/* Boton secundario: fondo beige claro con borde marron */
 .mr-btn--secondary { background: #EDE7DD; color: #8B6B4A; border: 1px solid #D4C4B0; }
 .mr-btn--secondary:hover { background: #E2D9CC; }
 
-/* Outline button: transparent with a brown border, fills on hover */
+/* Boton de contorno: transparente con borde marron, se rellena al pasar el cursor */
 .mr-btn--outline { background: transparent; color: #8B6B4A; border: 1.5px solid #8B6B4A; }
 .mr-btn--outline:hover { background: #8B6B4A; color: #fff; }
 
-/* Ghost button: transparent with a light grey border, warms on hover */
+/* Boton fantasma: transparente con borde gris claro, se calienta al pasar el cursor */
 .mr-btn--ghost { background: transparent; color: #7a7067; border: 1px solid #D8D1C5; }
 .mr-btn--ghost:hover { background: #EDE7DD; color: #1C1A18; }
 
-/* Danger button: red background, darkens on hover */
+/* Boton de peligro: fondo rojo, se oscurece al pasar el cursor */
 .mr-btn--danger { background: #c0392b; color: #fff; }
 .mr-btn--danger:hover { background: #a93226; }
 
-/* Danger outline button: transparent with red border, fills red on hover */
+/* Boton de contorno de peligro: transparente con borde rojo, se rellena de rojo al pasar el cursor */
 .mr-btn--danger-outline { background: transparent; color: #c0392b; border: 1.5px solid #c0392b; }
 .mr-btn--danger-outline:hover { background: #c0392b; color: #fff; }
 
-/* Back button: white background, grey border, turns gold on hover */
+/* Boton de regreso: fondo blanco, borde gris, se vuelve dorado al pasar el cursor */
 .mr-btn--back {
   background: #fff;
   color: #4a4035;
@@ -95,10 +99,10 @@
 }
 .mr-btn--back:hover { background: #F2EFEA; border-color: #8B6B4A; color: #8B6B4A; }
 
-/* Disabled state for all button variants: semi-transparent, not-allowed cursor */
+/* Estado deshabilitado para todas las variantes de boton: semitransparente, cursor no permitido */
 .mr-btn:disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
 
-/* Inline spinner for button loading states: 15px white spinning circle */
+/* Spinner en linea para estados de carga del boton: circulo blanco giratorio de 15px */
 .mr-btn__spinner {
   width: 15px; height: 15px;
   border: 2px solid rgba(255,255,255,0.35);
@@ -109,13 +113,13 @@
   flex-shrink: 0;
 }
 
-/* Dark-themed spinner variant for buttons on light backgrounds */
+/* Variante de spinner con tema oscuro para botones sobre fondos claros */
 .mr-btn__spinner--dark {
   border-color: rgba(139,107,74,0.25);
   border-top-color: #8B6B4A;
 }
 
-/* Auto-fit summary stats grid, minimum 145px per card */
+/* Grilla de estadisticas de resumen auto-ajustable, minimo 145px por tarjeta */
 .mr-resumen {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
@@ -123,7 +127,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* Individual stat card: white background, rounded corners, lifts 2px on hover */
+/* Tarjeta de estadistica individual: fondo blanco, esquinas redondeadas, sube 2px al pasar el cursor */
 .mr-resumen__card {
   background: #fff;
   border: 1px solid #E6E1DA;
@@ -140,7 +144,7 @@
   box-shadow: 0 6px 20px rgba(139,107,74,0.07);
 }
 
-/* Large bold stat value at 1.45rem */
+/* Valor de estadistica grande y en negrita a 1.45rem */
 .mr-resumen__val {
   font-size: 1.45rem;
   font-weight: 700;
@@ -149,7 +153,7 @@
   margin-top: 0.35rem;
 }
 
-/* Small all-caps muted label beneath the stat value */
+/* Etiqueta apagada en mayusculas pequenas debajo del valor de estadistica */
 .mr-resumen__label {
   font-size: 0.72rem;
   color: #7a7067;
@@ -158,7 +162,7 @@
   letter-spacing: 0.6px;
 }
 
-/* Filter pill row: wraps, separated from the card grid by a bottom border */
+/* Fila de pastillas de filtro: se ajusta, separada de la grilla de tarjetas por un borde inferior */
 .mr-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -168,7 +172,7 @@
   border-bottom: 1px solid #E6E1DA;
 }
 
-/* Filter pill button: white pill with a light border, turns brown-text on hover */
+/* Boton de pastilla de filtro: pastilla blanca con borde claro, el texto se vuelve marron al pasar el cursor */
 .mr-filtro {
   display: inline-flex;
   align-items: center;
@@ -186,11 +190,11 @@
 }
 .mr-filtro:hover { border-color: #8B6B4A; color: #8B6B4A; }
 
-/* Active filter pill: filled brown background */
+/* Pastilla de filtro activa: fondo marron relleno */
 .mr-filtro--active { background: #8B6B4A; color: #fff; border-color: #8B6B4A; }
 .mr-filtro--active:hover { background: #7a5c3d; }
 
-/* Count badge inside the filter pill */
+/* Insignia de conteo dentro de la pastilla de filtro */
 .mr-filtro__count {
   background: rgba(0,0,0,0.08);
   padding: 0.05rem 0.4rem;
@@ -200,10 +204,10 @@
   min-width: 20px;
   text-align: center;
 }
-/* Active pill count uses a semi-transparent white badge */
+/* El conteo de la pastilla activa usa una insignia blanca semitransparente */
 .mr-filtro--active .mr-filtro__count { background: rgba(255,255,255,0.22); }
 
-/* Inline status badge with an icon gap and all-caps text */
+/* Insignia de estado en linea con separacion de icono y texto en mayusculas */
 .mr-badge {
   display: inline-flex;
   align-items: center;
@@ -216,24 +220,24 @@
   text-transform: uppercase;
   flex-shrink: 0;
 }
-/* Small badge variant */
+/* Variante de insignia pequena */
 .mr-badge--sm { font-size: 0.7rem; padding: 0.18rem 0.5rem; }
 
-/* Status badge color themes */
+/* Temas de color de la insignia de estado */
 .mr-badge--confirmada { background: #e8f5e9; color: #2e7d32; }
 .mr-badge--cancelada  { background: #fdecea; color: #c0392b; }
 .mr-badge--completada { background: #e3f2fd; color: #1565c0; }
 .mr-badge--expirada   { background: #f3e5f5; color: #7b1fa2; }
 .mr-badge--pendiente  { background: #fff8e1; color: #e65100; }
 
-/* Auto-fill card grid, minimum 355px per card */
+/* Grilla de tarjetas de relleno automatico, minimo 355px por tarjeta */
 .mr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(355px, 1fr));
   gap: 1rem;
 }
 
-/* Reservation card: white, rounded, clickable, with a hidden gradient top bar */
+/* Tarjeta de reserva: blanca, redondeada, clicable, con barra superior de degradado oculta */
 .mr-card {
   background: #fff;
   border: 1px solid #E6E1DA;
@@ -248,7 +252,7 @@
   overflow: hidden;
 }
 
-/* Hidden brown-to-gold gradient top bar that appears on hover */
+/* Barra superior de degradado de marron a dorado oculta que aparece al pasar el cursor */
 .mr-card::before {
   content: '';
   position: absolute;
@@ -259,7 +263,7 @@
   transition: opacity 0.3s;
 }
 
-/* Card lifts, deepens shadow, and shows the top bar on hover */
+/* La tarjeta sube, profundiza la sombra y muestra la barra superior al pasar el cursor */
 .mr-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 28px rgba(139,107,74,0.11);
@@ -267,7 +271,7 @@
 }
 .mr-card:hover::before { opacity: 1; }
 
-/* Card top row: reservation number on the left, badge on the right */
+/* Fila superior de la tarjeta: numero de reserva a la izquierda, insignia a la derecha */
 .mr-card__top {
   display: flex;
   align-items: center;
@@ -275,7 +279,7 @@
   gap: 0.5rem;
 }
 
-/* Monospaced reservation number truncated with ellipsis */
+/* Numero de reserva en fuente monoespaciada, truncado con puntos suspensivos */
 .mr-card__noreserva {
   font-size: 0.73rem;
   color: #9a9089;
@@ -287,7 +291,7 @@
   max-width: 210px;
 }
 
-/* Route row: flex with origin point, animated track line, and destination point */
+/* Fila de ruta: flex con punto de origen, linea de pista animada y punto de destino */
 .mr-card__ruta {
   display: flex;
   align-items: center;
@@ -295,17 +299,17 @@
   padding: 0.4rem 0;
 }
 
-/* Origin point column aligned to the left */
+/* Columna de punto de origen alineada a la izquierda */
 .mr-card__punto {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   min-width: 55px;
 }
-/* Destination point column aligned to the right */
+/* Columna de punto de destino alineada a la derecha */
 .mr-card__punto--right { align-items: flex-end; }
 
-/* Bold airport IATA code at 1.3rem */
+/* Codigo IATA del aeropuerto en negrita a 1.3rem */
 .mr-card__code {
   font-size: 1.3rem;
   font-weight: 700;
@@ -314,7 +318,7 @@
   line-height: 1;
 }
 
-/* Small muted city name below the code, truncated with ellipsis */
+/* Nombre de ciudad pequeno y apagado debajo del codigo, truncado con puntos suspensivos */
 .mr-card__city {
   font-size: 0.7rem;
   color: #9a9089;
@@ -324,7 +328,7 @@
   white-space: nowrap;
 }
 
-/* Flex connector between origin and destination containing the track and plane icon */
+/* Conector flex entre origen y destino que contiene la pista y el icono de avion */
 .mr-card__line {
   flex: 1;
   display: flex;
@@ -334,7 +338,7 @@
   min-width: 55px;
 }
 
-/* Brown-to-grey gradient track line behind the plane icon */
+/* Linea de pista con degradado de marron a gris detras del icono de avion */
 .mr-card__line-track {
   position: absolute;
   top: 50%; left: 0; right: 0;
@@ -343,7 +347,7 @@
   transform: translateY(-50%);
 }
 
-/* Plane icon on a white circular background sitting above the track line */
+/* Icono de avion sobre fondo circular blanco encima de la linea de pista */
 .mr-card__plane-icon {
   position: relative;
   z-index: 1;
@@ -352,14 +356,14 @@
   padding: 2px;
 }
 
-/* Flex-wrapped row of meta items below the route */
+/* Fila de elementos meta con ajuste automatico debajo de la ruta */
 .mr-card__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
 }
 
-/* Individual meta item: small flex row with an icon and text */
+/* Elemento meta individual: fila flex pequena con icono y texto */
 .mr-card__meta-item {
   display: inline-flex;
   align-items: center;
@@ -369,7 +373,7 @@
 }
 .mr-card__meta-item svg { flex-shrink: 0; }
 
-/* Bottom row of the card: ticket count and total price separated by a top border */
+/* Fila inferior de la tarjeta: conteo de boletos y precio total separados por un borde superior */
 .mr-card__bottom {
   display: flex;
   justify-content: space-between;
@@ -378,12 +382,12 @@
   border-top: 1px solid #F0EBE3;
 }
 
-/* Small muted ticket count text */
+/* Texto de conteo de boletos pequeno y apagado */
 .mr-card__boletos { font-size: 0.82rem; color: #7a7067; }
-/* Bold brown total price at 1.1rem */
+/* Precio total marron y en negrita a 1.1rem */
 .mr-card__total { font-size: 1.1rem; font-weight: 700; color: #8B6B4A; }
 
-/* "View details" CTA row: hidden by default, fades in on card hover */
+/* Fila de CTA "ver detalles": oculta por defecto, aparece con fundido al pasar el cursor sobre la tarjeta */
 .mr-card__cta {
   display: flex;
   align-items: center;
@@ -398,7 +402,7 @@
 }
 .mr-card:hover .mr-card__cta { opacity: 1; }
 
-/* Empty state centered column with title and descriptive text */
+/* Columna centrada de estado vacio con titulo y texto descriptivo */
 .mr-empty-state {
   display: flex;
   flex-direction: column;
@@ -412,7 +416,7 @@
 .mr-empty-state__title { font-size: 1.15rem; font-weight: 600; color: #4a4035; }
 .mr-empty-state__text { font-size: 0.92rem; color: #7a7067; }
 
-/* 32px circular spinner with a brown top-border accent */
+/* Spinner circular de 32px con acento de borde superior marron */
 .mr-spinner {
   width: 32px; height: 32px;
   border: 3px solid #E6E1DA;
@@ -420,13 +424,13 @@
   border-radius: 50%;
   animation: mr-spin 0.7s linear infinite;
 }
-/* Large spinner variant at 44px */
+/* Variante de spinner grande a 44px */
 .mr-spinner--lg { width: 44px; height: 44px; border-width: 4px; }
 
-/* Full rotation keyframe shared by spinners */
+/* Fotograma clave de rotacion completa compartido por los spinners */
 @keyframes mr-spin { to { transform: rotate(360deg); } }
 
-/* Full-screen modal backdrop: semi-transparent dark blur layer */
+/* Fondo de modal a pantalla completa: capa oscura semitransparente con desenfoque */
 .mr-overlay {
   position: fixed;
   inset: 0;
@@ -441,10 +445,10 @@
   animation: mr-fadeIn 0.2s ease;
 }
 
-/* Backdrop fade-in keyframe */
+/* Fotograma clave de aparicion con fundido del fondo */
 @keyframes mr-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Detail modal panel: white, max 720px wide, slides up on open */
+/* Panel modal de detalle: blanco, maximo 720px de ancho, se desliza hacia arriba al abrirse */
 .mr-detail-modal {
   background: #fff;
   border-radius: 16px;
@@ -458,13 +462,13 @@
   animation: mr-slideUp 0.3s ease;
 }
 
-/* Modal slide-up entry animation */
+/* Animacion de entrada deslizante hacia arriba del modal */
 @keyframes mr-slideUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Circular close button pinned to the top-right of the modal */
+/* Boton de cierre circular fijado en la esquina superior derecha del modal */
 .mr-modal__close-btn {
   position: absolute;
   top: 1rem; right: 1rem;
@@ -482,7 +486,7 @@
 }
 .mr-modal__close-btn:hover { background: #E6E1DA; }
 
-/* Centered loading/error state inside the detail modal */
+/* Estado de carga o error centrado dentro del modal de detalle */
 .mr-detail-modal__center {
   display: flex;
   flex-direction: column;
@@ -494,7 +498,7 @@
   text-align: center;
 }
 
-/* Top section of the detail modal: reservation info on the left, space for close on the right */
+/* Seccion superior del modal de detalle: informacion de la reserva a la izquierda, espacio para el cierre a la derecha */
 .mr-detail__top {
   display: flex;
   align-items: flex-start;
@@ -504,14 +508,14 @@
   padding-right: 2.5rem;
 }
 
-/* Left column in the detail top: stacks reservation number and total price */
+/* Columna izquierda en la parte superior del detalle: apila el numero de reserva y el precio total */
 .mr-detail__top-left {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
 }
 
-/* Monospaced reservation number with word-break for long IDs */
+/* Numero de reserva en fuente monoespaciada con quiebre de palabra para IDs largos */
 .mr-detail__noreserva {
   font-size: 0.8rem;
   color: #9a9089;
@@ -519,7 +523,7 @@
   word-break: break-all;
 }
 
-/* Large bold total in the primary brown color */
+/* Total grande y en negrita en el color marron primario */
 .mr-detail__total {
   font-size: 1.55rem;
   font-weight: 700;
@@ -527,7 +531,7 @@
   line-height: 1;
 }
 
-/* Compact warm-beige info row with flex-wrapped items */
+/* Fila de informacion compacta en beige calido con elementos en flex con ajuste */
 .mr-detail__info-row {
   display: flex;
   flex-wrap: wrap;
@@ -539,7 +543,7 @@
   margin-bottom: 1.2rem;
 }
 
-/* Individual info item: small flex row with an icon and text */
+/* Elemento de informacion individual: fila flex pequena con icono y texto */
 .mr-detail__info-item {
   display: inline-flex;
   align-items: center;
@@ -548,10 +552,10 @@
   color: #5a5249;
 }
 .mr-detail__info-item svg { flex-shrink: 0; }
-/* Cancellation info item is red */
+/* El elemento de informacion de cancelacion es rojo */
 .mr-detail__info-item--cancel { color: #c0392b; }
 
-/* Section title inside the modal: flex row with icon and label */
+/* Titulo de seccion dentro del modal: fila flex con icono y etiqueta */
 .mr-detail__section-title {
   display: flex;
   align-items: center;
@@ -563,7 +567,7 @@
   margin-top: 0.3rem;
 }
 
-/* Vertical stack of boleto (ticket) cards inside the modal */
+/* Pila vertical de tarjetas de boleto dentro del modal */
 .mr-detail__boletos {
   display: flex;
   flex-direction: column;
@@ -571,7 +575,7 @@
   margin-bottom: 1.3rem;
 }
 
-/* Individual ticket card: warm off-white background with a light border */
+/* Tarjeta de boleto individual: fondo blanco calido con borde claro */
 .mr-boleto {
   background: #FAF8F5;
   border: 1px solid #E6E1DA;
@@ -582,7 +586,7 @@
   gap: 0.65rem;
 }
 
-/* Ticket header: flight info on the left, badge on the right */
+/* Encabezado del boleto: informacion del vuelo a la izquierda, insignia a la derecha */
 .mr-boleto__header {
   display: flex;
   align-items: center;
@@ -590,7 +594,7 @@
   gap: 0.5rem;
 }
 
-/* Flex row showing a plane icon and flight number */
+/* Fila flex que muestra un icono de avion y el numero de vuelo */
 .mr-boleto__flight-info {
   display: flex;
   align-items: center;
@@ -598,21 +602,21 @@
 }
 .mr-boleto__flight-info svg { flex-shrink: 0; }
 
-/* Bold flight number at 0.92rem */
+/* Numero de vuelo en negrita a 0.92rem */
 .mr-boleto__vuelo-num {
   font-weight: 700;
   font-size: 0.92rem;
   color: #1C1A18;
 }
 
-/* Small muted aircraft type text */
+/* Texto de tipo de aeronave pequeno y apagado */
 .mr-boleto__avion {
   font-size: 0.78rem;
   color: #9a9089;
   margin-left: 0.15rem;
 }
 
-/* Ticket route row identical to the card route pattern */
+/* Fila de ruta del boleto identica al patron de ruta de la tarjeta */
 .mr-boleto__ruta {
   display: flex;
   align-items: center;
@@ -620,17 +624,17 @@
   padding: 0.2rem 0;
 }
 
-/* Origin point column in the ticket */
+/* Columna de punto de origen en el boleto */
 .mr-boleto__punto {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   min-width: 48px;
 }
-/* Destination point column in the ticket */
+/* Columna de punto de destino en el boleto */
 .mr-boleto__punto--right { align-items: flex-end; }
 
-/* Bold IATA code at 1.1rem in the ticket */
+/* Codigo IATA en negrita a 1.1rem en el boleto */
 .mr-boleto__code {
   font-size: 1.1rem;
   font-weight: 700;
@@ -639,7 +643,7 @@
   line-height: 1;
 }
 
-/* Small muted city name in the ticket */
+/* Nombre de ciudad pequeno y apagado en el boleto */
 .mr-boleto__city {
   font-size: 0.68rem;
   color: #9a9089;
@@ -649,7 +653,7 @@
   white-space: nowrap;
 }
 
-/* Bold departure/arrival time in the ticket */
+/* Hora de salida o llegada en negrita en el boleto */
 .mr-boleto__time {
   font-size: 0.82rem;
   font-weight: 600;
@@ -657,7 +661,7 @@
   margin-top: 0.1rem;
 }
 
-/* Flex connector in the ticket holding the track line and duration */
+/* Conector flex en el boleto que sostiene la linea de pista y la duracion */
 .mr-boleto__line {
   flex: 1;
   display: flex;
@@ -668,36 +672,36 @@
   min-width: 50px;
 }
 
-/* Brown gradient track line in the ticket connector */
+/* Linea de pista con degradado marron en el conector del boleto */
 .mr-boleto__line-track {
   width: 100%;
   height: 1.5px;
   background: linear-gradient(90deg, #D8D1C5, #8B6B4A, #D8D1C5);
 }
 
-/* Small plane SVG icon in the ticket connector */
+/* Icono SVG de avion pequeno en el conector del boleto */
 .mr-boleto__plane-svg { margin-top: -1px; }
 
-/* Small muted flight duration text */
+/* Texto de duracion del vuelo pequeno y apagado */
 .mr-boleto__duration {
   font-size: 0.68rem;
   color: #9a9089;
   font-weight: 500;
 }
 
-/* Three-column detail grid inside the ticket card */
+/* Grilla de detalle de tres columnas dentro de la tarjeta de boleto */
 .mr-boleto__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem 0.6rem;
 }
 
-/* Individual detail cell: stacked label and value */
+/* Celda de detalle individual: etiqueta y valor apilados */
 .mr-boleto__cell { display: flex; flex-direction: column; }
-/* Wide cell spans two columns */
+/* Celda ancha que abarca dos columnas */
 .mr-boleto__cell--wide { grid-column: span 2; }
 
-/* Small all-caps muted detail label */
+/* Etiqueta de detalle apagada y en mayusculas pequenas */
 .mr-boleto__cell-label {
   font-size: 0.66rem;
   color: #9a9089;
@@ -707,15 +711,15 @@
   line-height: 1.3;
 }
 
-/* Bold detail value at 0.85rem */
+/* Valor de detalle en negrita a 0.85rem */
 .mr-boleto__cell-val {
   font-size: 0.85rem;
   font-weight: 600;
   color: #1C1A18;
 }
-/* Price value in brown */
+/* Valor de precio en marron */
 .mr-boleto__cell-val--price { color: #8B6B4A; }
-/* Monospaced value for IDs and codes */
+/* Valor monoespaciado para IDs y codigos */
 .mr-boleto__cell-val--mono {
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.72rem;
@@ -723,7 +727,7 @@
   color: #5a5249;
 }
 
-/* Passenger row inside the ticket: white background with a subtle border */
+/* Fila de pasajero dentro del boleto: fondo blanco con borde sutil */
 .mr-boleto__pasajero {
   display: flex;
   align-items: center;
@@ -735,24 +739,24 @@
 }
 .mr-boleto__pasajero svg { flex-shrink: 0; }
 
-/* Italic empty passenger placeholder */
+/* Marcador de posicion de pasajero vacio en cursiva */
 .mr-boleto__pasajero--empty {
   color: #9a9089;
   font-size: 0.82rem;
   font-style: italic;
 }
 
-/* Passenger data column: stacked name and info */
+/* Columna de datos del pasajero: nombre e informacion apilados */
 .mr-boleto__pasajero-data { display: flex; flex-direction: column; min-width: 0; }
 
-/* Bold passenger name */
+/* Nombre del pasajero en negrita */
 .mr-boleto__pasajero-name {
   font-weight: 600;
   font-size: 0.88rem;
   color: #1C1A18;
 }
 
-/* Small muted passenger info line with ellipsis overflow */
+/* Linea de informacion del pasajero pequena y apagada con desbordamiento en puntos suspensivos */
 .mr-boleto__pasajero-info {
   font-size: 0.73rem;
   color: #7a7067;
@@ -761,7 +765,7 @@
   white-space: nowrap;
 }
 
-/* Existing review box: warm beige background with a bottom margin */
+/* Cuadro de resena existente: fondo beige calido con margen inferior */
 .mr-ya-comento {
   background: #FAF8F5;
   border: 1px solid #E6E1DA;
@@ -770,7 +774,7 @@
   margin-bottom: 1.2rem;
 }
 
-/* Review top row: stars and date spaced apart */
+/* Fila superior de la resena: estrellas y fecha separadas con espacio */
 .mr-ya-comento__top {
   display: flex;
   align-items: center;
@@ -780,14 +784,14 @@
   flex-wrap: wrap;
 }
 
-/* Star icon row */
+/* Fila de iconos de estrellas */
 .mr-ya-comento__stars {
   display: flex;
   align-items: center;
   gap: 0.15rem;
 }
 
-/* Bold gold rating number */
+/* Numero de calificacion dorado y en negrita */
 .mr-ya-comento__rating {
   font-size: 0.85rem;
   font-weight: 700;
@@ -795,13 +799,13 @@
   margin-left: 0.4rem;
 }
 
-/* Small muted review date */
+/* Fecha de resena pequena y apagada */
 .mr-ya-comento__date {
   font-size: 0.75rem;
   color: #9a9089;
 }
 
-/* Review text at 0.9rem with comfortable line height */
+/* Texto de la resena a 0.9rem con altura de linea comoda */
 .mr-ya-comento__text {
   font-size: 0.9rem;
   color: #4a4035;
@@ -809,7 +813,7 @@
   margin-bottom: 0.7rem;
 }
 
-/* Green "verified review" badge */
+/* Insignia verde de "resena verificada" */
 .mr-ya-comento__badge {
   display: inline-flex;
   align-items: center;
@@ -822,7 +826,7 @@
   border-radius: 6px;
 }
 
-/* Review submission form: warm beige card with stacked flex layout */
+/* Formulario de envio de resena: tarjeta beige calido con disposicion flex vertical */
 .mr-comentar-form {
   background: #FAF8F5;
   border: 1px solid #E6E1DA;
@@ -834,14 +838,14 @@
   gap: 0.7rem;
 }
 
-/* Star rating row */
+/* Fila de calificacion con estrellas */
 .mr-stars {
   display: flex;
   align-items: center;
   gap: 0.2rem;
 }
 
-/* Individual star button: no border, scales up 18% on hover */
+/* Boton de estrella individual: sin borde, escala un 18% al pasar el cursor */
 .mr-star {
   background: none;
   border: none;
@@ -852,10 +856,10 @@
   line-height: 0;
 }
 .mr-star:hover { transform: scale(1.18); }
-/* 28px star SVG with a fill/stroke transition */
+/* SVG de estrella de 28px con transicion de relleno y trazo */
 .mr-star svg { width: 28px; height: 28px; transition: fill 0.15s, stroke 0.15s; }
 
-/* Small muted label text next to the star row */
+/* Texto de etiqueta pequeno y apagado junto a la fila de estrellas */
 .mr-stars__label {
   font-size: 0.82rem;
   color: #7a7067;
@@ -863,7 +867,7 @@
   font-weight: 500;
 }
 
-/* Review textarea: full width, vertically resizable, with a gold focus ring */
+/* Textarea de resena: ancho completo, redimensionable verticalmente, con anillo de enfoque dorado */
 .mr-comentar-form__textarea {
   width: 100%;
   padding: 0.7rem 0.85rem;
@@ -883,31 +887,31 @@
   box-shadow: 0 0 0 3px rgba(139,107,74,0.08);
 }
 
-/* Submit button inside the review form aligned to the start */
+/* Boton de envio dentro del formulario de resena alineado al inicio */
 .mr-comentar-form .mr-btn { align-self: flex-start; }
 
-/* Inline form error message in red */
+/* Mensaje de error del formulario en linea en rojo */
 .mr-form-error {
   font-size: 0.82rem;
   color: #c0392b;
   font-weight: 500;
 }
 
-/* Inline form success message in green */
+/* Mensaje de exito del formulario en linea en verde */
 .mr-form-exito {
   font-size: 0.82rem;
   color: #27ae60;
   font-weight: 500;
 }
 
-/* Cancellation trigger row with a top trigger button */
+/* Fila de activacion de cancelacion con un boton superior de activacion */
 .mr-detail__cancel-trigger {
   padding: 0.8rem 0;
   display: flex;
   justify-content: flex-start;
 }
 
-/* Cancellation form section: light red background, animated via mr-fadeIn */
+/* Seccion de formulario de cancelacion: fondo rojo claro, animado con mr-fadeIn */
 .mr-cancel-section {
   background: #fef8f7;
   border: 1.5px solid #f5c6c0;
@@ -920,7 +924,7 @@
   animation: mr-fadeIn 0.25s ease;
 }
 
-/* Cancellation header: warning icon and title in a flex row */
+/* Encabezado de cancelacion: icono de advertencia y titulo en una fila flex */
 .mr-cancel-section__header {
   display: flex;
   align-items: flex-start;
@@ -928,7 +932,7 @@
 }
 .mr-cancel-section__header svg { flex-shrink: 0; margin-top: 0.1rem; }
 
-/* Bold cancellation warning title */
+/* Titulo de advertencia de cancelacion en negrita */
 .mr-cancel-section__title {
   font-size: 1rem;
   font-weight: 700;
@@ -936,7 +940,7 @@
   margin: 0;
 }
 
-/* Muted supporting subtitle below the warning title */
+/* Subtitulo de apoyo apagado debajo del titulo de advertencia */
 .mr-cancel-section__sub {
   font-size: 0.84rem;
   color: #7a7067;
@@ -944,14 +948,14 @@
   margin: 0;
 }
 
-/* Label for the cancellation reason textarea */
+/* Etiqueta para el textarea de motivo de cancelacion */
 .mr-cancel-section__label {
   font-size: 0.82rem;
   font-weight: 600;
   color: #4a4035;
 }
 
-/* Cancellation reason textarea with a red border and focus-to-red transition */
+/* Textarea de motivo de cancelacion con borde rojo y transicion de enfoque a rojo */
 .mr-cancel-section__textarea {
   width: 100%;
   padding: 0.7rem 0.85rem;
@@ -968,7 +972,7 @@
 }
 .mr-cancel-section__textarea:focus { border-color: #c0392b; }
 
-/* Confirm and cancel button row aligned to the right */
+/* Fila de botones de confirmar y cancelar alineada a la derecha */
 .mr-cancel-section__actions {
   display: flex;
   justify-content: flex-end;
@@ -976,7 +980,7 @@
   margin-top: 0.2rem;
 }
 
-/* Bottom modal action row: flex-wrapped buttons separated by a top border */
+/* Fila de acciones del pie del modal: botones con ajuste automatico separados por un borde superior */
 .mr-detail__footer-actions {
   display: flex;
   align-items: center;
@@ -987,7 +991,7 @@
   border-top: 1px solid #E6E1DA;
 }
 
-/* Fixed bottom-right toast stack: pointer-events none on the container */
+/* Pila de toast fija en la esquina inferior derecha: sin eventos de puntero en el contenedor */
 .mr-toast-container {
   position: fixed;
   bottom: 1.5rem;
@@ -999,7 +1003,7 @@
   pointer-events: none;
 }
 
-/* Individual toast: colored pill that slides in from the right */
+/* Toast individual: pastilla de color que se desliza desde la derecha */
 .mr-toast {
   display: flex;
   align-items: center;
@@ -1014,20 +1018,20 @@
   pointer-events: auto;
 }
 
-/* Toast color variants */
+/* Variantes de color del toast */
 .mr-toast--success { background: #27ae60; }
 .mr-toast--error   { background: #c0392b; }
 
-/* 18px icon inside the toast */
+/* Icono de 18px dentro del toast */
 .mr-toast__icon { width: 18px; height: 18px; flex-shrink: 0; }
 
-/* Toast slides in from the right */
+/* El toast se desliza desde la derecha */
 @keyframes mr-toastIn {
   from { opacity: 0; transform: translateX(30px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* At 768px: single-column grid, detail modal fills more height, action rows stack vertically */
+/* A 768px: grilla de una columna, el modal de detalle ocupa mas altura, las filas de accion se apilan verticalmente */
 @media (max-width: 768px) {
   .mr-container { padding: 1.2rem 1rem; }
   .mr-title { font-size: 1.4rem; }
@@ -1066,7 +1070,7 @@
   .mr-toast-container { bottom: 1rem; right: 0.5rem; left: 0.5rem; }
 }
 
-/* At 480px: summary grid narrows to 2 columns, header stacks, code and number reduce */
+/* A 480px: la grilla de resumen se estrecha a 2 columnas, el encabezado se apila, el codigo y el numero se reducen */
 @media (max-width: 480px) {
   .mr-resumen { grid-template-columns: repeat(2, 1fr); }
   .mr-header { flex-direction: column; }
@@ -1076,7 +1080,7 @@
   .mr-star svg { width: 24px; height: 24px; }
 }
 
-/* Custom scrollbar for the detail modal: thin, brown thumb */
+/* Barra de desplazamiento personalizada para el modal de detalle: delgada, con pulgar marron */
 .mr-detail-modal::-webkit-scrollbar { width: 5px; }
 .mr-detail-modal::-webkit-scrollbar-track { background: transparent; }
 .mr-detail-modal::-webkit-scrollbar-thumb { background: #D8D1C5; border-radius: 3px; }

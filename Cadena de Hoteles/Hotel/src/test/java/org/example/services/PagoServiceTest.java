@@ -232,6 +232,7 @@ class PagoServiceTest {
         when(tokenValidacionRepository.buscarTokenValido("token-valido-uuid")).thenReturn(datosToken);
         when(pagoRepository.crearFactura(eq(5), eq("CF"), eq("01001"), eq(180.0))).thenReturn(30);
         when(pagoRepository.obtenerFactura(30)).thenReturn(facturaEsperada);
+        when(pagoRepository.obtenerCiudadReservacion(5)).thenReturn("Guatemala");
 
         PagoResponseDTO resultado = service.procesarPago(5, 7, request);
 

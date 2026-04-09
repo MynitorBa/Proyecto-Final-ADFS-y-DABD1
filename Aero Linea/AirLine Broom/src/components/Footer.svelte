@@ -1,23 +1,23 @@
 <script>
 /**
  * @file Footer.svelte
- * @description Site-wide footer component for Broom AirLine. Renders four columns: brand info
- * with social links, quick navigation links, support links, and contact details. Also renders a
- * bottom bar with the copyright year and legal links. All navigation is handled by the parent
- * through the navigateTo prop so the footer stays compatible with the SPA routing system.
+ * @description Componente de pie de pagina global para Broom AirLine. Renderiza cuatro columnas: informacion
+ * de marca con enlaces a redes sociales, enlaces de navegacion rapida, enlaces de soporte y datos de contacto.
+ * Tambien renderiza una barra inferior con el anio de copyright y enlaces legales. Toda la navegacion
+ * es manejada por el padre a traves de la prop navigateTo para que el footer sea compatible con el sistema de enrutamiento SPA.
  */
   // @ts-nocheck
   import logoPath from '../assets/logBAL.png';
   import '../styles/footer.css';
 
-  /** Function provided by the parent to navigate to a named page within the SPA. @type {(page: string) => void} */
+  /** Funcion proporcionada por el padre para navegar a una pagina nombrada dentro del SPA. @type {(page: string) => void} */
   export let navigateTo;
 
-  /** Current calendar year, computed once at module init and used in the copyright notice. @type {number} */
+  /** Anio calendario actual, calculado una vez al inicio del modulo y usado en el aviso de copyright. @type {number} */
   const currentYear = new Date().getFullYear();
 
   /**
-   * Array of primary navigation link descriptors shown in the "Broom AirLine" column.
+   * Arreglo de descriptores de enlaces de navegacion principal mostrados en la columna "Broom AirLine".
    * @type {{ name: string, page: string }[]}
    */
   const quickLinks = [
@@ -28,7 +28,7 @@
   ];
 
   /**
-   * Array of support-related link descriptors shown in the "Soporte" column.
+   * Arreglo de descriptores de enlaces de soporte mostrados en la columna "Soporte".
    * @type {{ name: string, page: string }[]}
    */
   const support = [
@@ -39,7 +39,7 @@
   ];
 
   /**
-   * Array of legal link descriptors shown in the bottom bar of the footer.
+   * Arreglo de descriptores de enlaces legales mostrados en la barra inferior del footer.
    * @type {{ name: string, page: string }[]}
    */
   const legalLinks = [
@@ -49,8 +49,8 @@
   ];
 
   /**
-   * Array of social media link descriptors, each containing a name, an href URL and
-   * an inline SVG icon string rendered with {@html}.
+   * Arreglo de descriptores de enlaces a redes sociales, cada uno con nombre, URL href y
+   * una cadena de icono SVG en linea renderizada con {@html}.
    * @type {{ name: string, href: string, icon: string }[]}
    */
   const socialLinks = [

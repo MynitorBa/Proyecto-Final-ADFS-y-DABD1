@@ -1,20 +1,20 @@
 <script>
 /**
  * @file PreguntasFrecuentes.svelte
- * @description FAQ accordion page for Broom AirLine. Renders a list of ten frequently asked
- * questions covering the reservation flow, seat classes, group purchases, seat blocking,
- * reservation codes, cancellation steps, PDF ticket download, layovers, and payment methods.
- * Each question can be expanded or collapsed individually. A second card provides contact
- * info and a button to navigate to the Contactanos page.
+ * @description Pagina de acordeon de preguntas frecuentes para Broom AirLine. Renderiza una lista
+ * de diez preguntas frecuentes sobre el flujo de reserva, clases de asiento, compras grupales,
+ * bloqueo de asientos, codigos de reserva, pasos de cancelacion, descarga de boleto en PDF,
+ * escalas y metodos de pago. Cada pregunta puede expandirse o colapsarse individualmente.
+ * Una segunda tarjeta proporciona informacion de contacto y un boton para navegar a Contactanos.
  */
 // @ts-nocheck
   import '../styles/info-pages.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 
   /**
-   * Static FAQ data array. Each entry has a question string (q) and an answer string (a).
+   * Arreglo estatico de datos de preguntas frecuentes. Cada entrada tiene una cadena de pregunta (q) y una cadena de respuesta (a).
    * @type {Array<{q: string, a: string}>}
    */
   const faqs = [
@@ -60,12 +60,12 @@
     },
   ];
 
-  /** Array of open/closed states for each FAQ item, indexed parallel to faqs. @type {boolean[]} */
+  /** Arreglo de estados abierto/cerrado para cada elemento del FAQ, indexado en paralelo con faqs. @type {boolean[]} */
   let open = faqs.map(() => false);
 
   /**
-   * Toggles the expanded state of the FAQ item at the given index and triggers Svelte reactivity.
-   * @param {number} i - The index of the FAQ item to toggle.
+   * Alterna el estado expandido del elemento FAQ en el indice dado y activa la reactividad de Svelte.
+   * @param {number} i - El indice del elemento FAQ a alternar.
    */
   function toggle(i) { open[i] = !open[i]; open = [...open]; }
 </script>

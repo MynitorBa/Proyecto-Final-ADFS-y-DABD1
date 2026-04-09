@@ -1,57 +1,57 @@
 <script>
 /**
  * @file AdminTripulantes.svelte
- * @description Admin panel section for managing crew members (tripulantes). Displays a table
- * listing all crew members with their photo, ID, first name, last name and role badge. Allows
- * creating new crew members and editing existing ones through a modal form. The form includes
- * first name, last name, role (loaded from the API), and an optional profile photo uploaded as
- * base64. Profile photos can also be removed individually via a confirmation dialog. Dispatches
- * 'tripulantesActualizados' to the parent after any successful create, update, or photo deletion
- * so the parent can refresh its own crew list.
+ * @description Seccion del panel de administracion para gestionar tripulantes. Muestra una tabla con
+ * todos los tripulantes con su foto, ID, nombre, apellido y insignia de rol. Permite crear nuevos
+ * tripulantes y editar los existentes mediante un formulario modal. El formulario incluye nombre,
+ * apellido, rol (cargado desde la API) y una foto de perfil opcional subida en base64. Las fotos
+ * de perfil tambien pueden eliminarse individualmente mediante un dialogo de confirmacion. Despacha
+ * 'tripulantesActualizados' al padre tras cualquier creacion, actualizacion o eliminacion de foto
+ * exitosa para que el padre pueda actualizar su propia lista de tripulantes.
  */
 // @ts-nocheck
   import { createEventDispatcher, onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
   const dispatch = createEventDispatcher();
 
-  /** List of crew members currently registered in the system. @type {any[]} */
+  /** Lista de tripulantes registrados actualmente en el sistema. @type {any[]} */
   let tripulantes        = [];
 
-  /** Available crew roles fetched from the backend, mapped to { id, nombre }. @type {{ id: number, nombre: string }[]} */
+  /** Roles de tripulacion disponibles obtenidos del backend, mapeados a { id, nombre }. @type {{ id: number, nombre: string }[]} */
   let rolesTripulacion   = [];
 
-  /** Whether the crew member list fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la lista de tripulantes esta en progreso. @type {boolean} */
   let loadingTripulantes = false;
 
-  /** True when the modal is editing an existing crew member, false when creating a new one. @type {boolean} */
+  /** Verdadero cuando el modal esta editando un tripulante existente, falso cuando crea uno nuevo. @type {boolean} */
   let modoEdicion        = false;
 
-  /** Whether the create/edit modal form is visible. @type {boolean} */
+  /** Indica si el formulario modal de creacion/edicion esta visible. @type {boolean} */
   let mostrarFormulario       = false;
 
   /**
-   * Form data bound to the create/edit modal fields.
+   * Datos del formulario vinculado a los campos del modal de creacion/edicion.
    * @type {{ id: number|null, nombre: string, apellido: string, rolID: string|number }}
    */
   let tripulanteForm          = { id: null, nombre: '', apellido: '', rolID: '' };
 
-  /** Data URL of the photo preview shown in the modal before saving. @type {string|null} */
+  /** URL de datos de la vista previa de foto mostrada en el modal antes de guardar. @type {string|null} */
   let tripulanteImagenPreview = null;
 
-  /** Base64-encoded photo string sent to the backend on form submission. @type {string|null} */
+  /** Cadena de foto en base64 enviada al backend al enviar el formulario. @type {string|null} */
   let tripulanteImagenBase64  = null;
 
   /**
-   * On mount: loads both the crew member list and available roles in parallel.
+   * Al montar: carga la lista de tripulantes y los roles disponibles en paralelo.
    * @async
    * @returns {Promise<void>}
    */
@@ -60,8 +60,8 @@
   });
 
   /**
-   * Fetches the complete crew member list from the backend and stores it in tripulantes.
-   * Shows a toast on error and sets loadingTripulantes during the request.
+   * Obtiene la lista completa de tripulantes desde el backend y la almacena en tripulantes.
+   * Muestra un toast en caso de error y establece loadingTripulantes durante la solicitud.
    * @async
    * @returns {Promise<void>}
    */
@@ -76,8 +76,8 @@
   }
 
   /**
-   * Fetches the available crew roles from the backend API and maps each entry to { id, nombre }
-   * using the cargo field as the display name. Logs an error to the console on failure.
+   * Obtiene los roles de tripulacion disponibles desde la API del backend y mapea cada entrada a { id, nombre }
+   * usando el campo cargo como nombre de visualizacion. Registra un error en la consola si falla.
    * @async
    * @returns {Promise<void>}
    */
@@ -92,9 +92,9 @@
   }
 
   /**
-   * Reads the file selected in the photo input, converts it to a base64 data URL and stores
-   * it in both tripulanteImagenBase64 (for submission) and tripulanteImagenPreview (for display).
-   * @param {Event} e - The change event from the file input element.
+   * Lee el archivo seleccionado en el input de foto, lo convierte a una URL de datos base64 y lo almacena
+   * en tripulanteImagenBase64 (para envio) y tripulanteImagenPreview (para visualizacion).
+   * @param {Event} e - El evento de cambio del elemento input de archivo.
    */
   function onImagenChange(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -104,7 +104,7 @@
   }
 
   /**
-   * Resets the form to empty values and opens the modal in creation mode.
+   * Reinicia el formulario a valores vacios y abre el modal en modo de creacion.
    */
   function abrirNuevo() {
     modoEdicion = false;
@@ -114,8 +114,8 @@
   }
 
   /**
-   * Pre-fills the form with the selected crew member's data and opens the modal in edit mode.
-   * @param {any} t - The crew member row object from the table.
+   * Pre-rellena el formulario con los datos del tripulante seleccionado y abre el modal en modo de edicion.
+   * @param {any} t - El objeto fila del tripulante de la tabla.
    */
   function abrirEditar(t) {
     modoEdicion = true;
@@ -125,7 +125,7 @@
   }
 
   /**
-   * Closes the modal and resets all form fields and photo state.
+   * Cierra el modal y reinicia todos los campos del formulario y el estado de la foto.
    */
   function cerrar() {
     mostrarFormulario = false;
@@ -134,9 +134,9 @@
   }
 
   /**
-   * Validates nombre, apellido and rolID, then sends a POST or PUT request to the backend.
-   * On success reloads the crew list, dispatches 'tripulantesActualizados' and closes the modal.
-   * Shows error toasts for validation failures or API errors.
+   * Valida nombre, apellido y rolID, luego envia una solicitud POST o PUT al backend.
+   * Si tiene exito recarga la lista de tripulantes, despacha 'tripulantesActualizados' y cierra el modal.
+   * Muestra toasts de error para fallos de validacion o errores de la API.
    * @async
    * @returns {Promise<void>}
    */
@@ -170,10 +170,10 @@
   }
 
   /**
-   * Asks for confirmation and then sends a DELETE request to remove the photo from a crew member
-   * record. On success reloads the crew list and dispatches 'tripulantesActualizados'.
+   * Pide confirmacion y luego envia una solicitud DELETE para eliminar la foto de un registro de tripulante.
+   * Si tiene exito recarga la lista de tripulantes y despacha 'tripulantesActualizados'.
    * @async
-   * @param {number} tripulanteId - The ID of the crew member whose photo should be removed.
+   * @param {number} tripulanteId - El ID del tripulante cuya foto debe eliminarse.
    * @returns {Promise<void>}
    */
   async function handleEliminarFoto(tripulanteId) {

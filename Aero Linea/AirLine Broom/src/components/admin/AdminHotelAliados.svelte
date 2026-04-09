@@ -1,91 +1,92 @@
 <script>
 /**
  * @file AdminHotelAliados.svelte
- * @description Admin panel section for managing hotel aliados. Displays a summary stats bar
- * (total, active, inactive, without assigned user) and a table of all hotel aliados. Provides
- * three modal dialogs: one to create a new hotel (with name, API URL, public URL and webservice
- * user), one to assign an available webservice user to an existing hotel, and one to edit both
- * URLs of a hotel. Hotel status can be changed inline through a select element in the table row.
- * A handshake button triggers the authentication flow between the airline and the hotel aliado,
- * generating and storing a session token in HotelAliado.TokenHASH.
- * All mutations call the backend API and refresh the local state on success.
+ * @description Seccion del panel de administracion para gestionar hoteles aliados. Muestra una
+ * barra de estadisticas resumidas (total, activos, inactivos, sin usuario asignado) y una tabla
+ * de todos los hoteles aliados. Proporciona tres dialogos modales: uno para crear un nuevo hotel
+ * (con nombre, URL de API, URL publica y usuario webservice), uno para asignar un usuario
+ * webservice disponible a un hotel existente, y uno para editar ambas URLs de un hotel. El estado
+ * del hotel puede cambiarse inline mediante un elemento select en la fila de la tabla. Un boton
+ * de handshake inicia el flujo de autenticacion entre la aerolinea y el hotel aliado, generando
+ * y almacenando un token de sesion en HotelAliado.TokenHASH.
+ * Todas las mutaciones llaman a la API del backend y actualizan el estado local al tener exito.
  */
 // @ts-nocheck
   import { onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
-  /** List of hotel aliados loaded from the backend. @type {any[]} */
+  /** Lista de hoteles aliados cargados desde el backend. @type {any[]} */
   let hoteles            = [];
 
-  /** Webservice-role users that have no entity assigned yet, used to populate the user selectors. @type {any[]} */
+  /** Usuarios con rol Webservice que aun no tienen entidad asignada, usados para poblar los selectores de usuario. @type {any[]} */
   let usuariosDisponibles = [];
 
-  /** Whether the main data fetch is in progress. @type {boolean} */
+  /** Indica si la carga principal de datos esta en progreso. @type {boolean} */
   let cargando           = false;
 
-  // ── Create modal state ────────────────────────────────────────────────
+  // -- Estado del modal de creacion --
 
-  /** Controls visibility of the create-hotel modal. @type {boolean} */
+  /** Controla la visibilidad del modal de creacion de hotel. @type {boolean} */
   let modalCrear         = false;
 
-  /** Whether the create-hotel API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para crear el hotel esta en curso. @type {boolean} */
   let creando            = false;
 
-  /** Hotel name field value for the create form. @type {string} */
+  /** Valor del campo nombre del hotel en el formulario de creacion. @type {string} */
   let crearNombre        = '';
 
-  /** API URL field value for the create form. @type {string} */
+  /** Valor del campo URL de API en el formulario de creacion. @type {string} */
   let crearUrl           = '';
 
-  /** Public URL field value for the create form. @type {string} */
+  /** Valor del campo URL publica en el formulario de creacion. @type {string} */
   let crearUrlParaUsuario = '';
 
-  /** Selected webservice user ID for the create form. @type {string} */
+  /** ID del usuario webservice seleccionado en el formulario de creacion. @type {string} */
   let crearUsuarioId     = '';
 
-  /** Field-level validation errors for the create form. @type {Record<string, string>} */
+  /** Errores de validacion por campo para el formulario de creacion. @type {Record<string, string>} */
   let crearErrores       = {};
 
-  // ── Assign-user modal state ───────────────────────────────────────────
+  // -- Estado del modal de asignacion de usuario --
 
-  /** Controls visibility of the assign-user modal. @type {boolean} */
+  /** Controla la visibilidad del modal de asignacion de usuario. @type {boolean} */
   let modalAsignar       = false;
 
-  /** Whether the assign-user API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para asignar usuario esta en curso. @type {boolean} */
   let asignando          = false;
 
-  /** The hotel row currently selected for user assignment. @type {any} */
+  /** La fila del hotel actualmente seleccionado para asignacion de usuario. @type {any} */
   let hotelSeleccionado  = null;
 
-  /** Selected webservice user ID in the assign-user modal. @type {string} */
+  /** ID del usuario webservice seleccionado en el modal de asignacion. @type {string} */
   let asignarUsuarioId   = '';
 
-  // ── Edit-URLs modal state ─────────────────────────────────────────────
+  // -- Estado del modal de edicion de URLs --
 
-  /** Controls visibility of the edit-URLs modal. @type {boolean} */
+  /** Controla la visibilidad del modal de edicion de URLs. @type {boolean} */
   let modalUrls          = false;
 
-  /** Whether the save-URLs API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para guardar URLs esta en curso. @type {boolean} */
   let guardandoUrls      = false;
 
-  /** API URL value being edited in the URLs modal. @type {string} */
+  /** Valor de la URL de API que se esta editando en el modal de URLs. @type {string} */
   let urlEditando        = '';
 
-  /** Public URL value being edited in the URLs modal. @type {string} */
+  /** Valor de la URL publica que se esta editando en el modal de URLs. @type {string} */
   let urlParaUsuarioEditando = '';
 
-  /** The hotel row being edited in the URLs modal. @type {any} */
+  /** La fila del hotel que se esta editando en el modal de URLs. @type {any} */
   let hotelUrls          = null;
 
-  // ── Handshake state ───────────────────────────────────────────────────
+  // -- Estado del handshake --
 
   /**
    * ID del hotel cuyo handshake esta en curso. Null cuando ninguno esta activo.
@@ -95,8 +96,8 @@
   let handshakeEnCurso   = null;
 
   /**
-   * Status option definitions used to render the inline status select and badge styles.
-   * Mirrors the EstadoAliado catalog in the database.
+   * Definiciones de opciones de estado usadas para renderizar el select de estado inline y los estilos de insignia.
+   * Refleja el catalogo EstadoAliado en la base de datos.
    * @type {{ id: number, label: string }[]}
    */
   const estadoOpciones = [
@@ -106,13 +107,13 @@
   ];
 
   /**
-   * On mount: loads hotel aliados and available webservice users in parallel.
+   * Al montar: carga los hoteles aliados y los usuarios webservice disponibles en paralelo.
    */
   onMount(() => { cargarTodo(); });
 
   /**
-   * Fetches the full hotel aliado list and the list of unassigned webservice users in parallel.
-   * Updates hoteles and usuariosDisponibles on success. Shows toasts on errors.
+   * Obtiene la lista completa de hoteles aliados y la lista de usuarios webservice sin asignar en paralelo.
+   * Actualiza hoteles y usuariosDisponibles al tener exito. Muestra toasts en caso de errores.
    * @async
    * @returns {Promise<void>}
    */
@@ -131,7 +132,7 @@
   }
 
   /**
-   * Resets the create-hotel form fields and errors, then opens the create modal.
+   * Reinicia los campos del formulario de creacion de hotel y los errores, luego abre el modal de creacion.
    */
   function abrirModalCrear() {
     crearNombre = ''; crearUrl = ''; crearUrlParaUsuario = ''; crearUsuarioId = '';
@@ -140,9 +141,9 @@
   }
 
   /**
-   * Validates all fields in the create-hotel form. Populates crearErrores with any
-   * field-level messages and returns false if validation fails.
-   * @returns {boolean} True when all fields are valid.
+   * Valida todos los campos del formulario de creacion de hotel. Rellena crearErrores con los
+   * mensajes por campo y retorna false si la validacion falla.
+   * @returns {boolean} True cuando todos los campos son validos.
    */
   function validarCrear() {
     crearErrores = {};
@@ -156,8 +157,8 @@
   }
 
   /**
-   * Validates the create form and, if valid, POSTs the new hotel to the backend.
-   * On success closes the modal and reloads all data. On failure shows an error toast.
+   * Valida el formulario de creacion y, si es valido, envia con POST el nuevo hotel al backend.
+   * Al tener exito cierra el modal y recarga todos los datos. En caso de fallo muestra un toast de error.
    * @async
    * @returns {Promise<void>}
    */
@@ -188,8 +189,8 @@
   }
 
   /**
-   * Sets the selected hotel and resets the user selector, then opens the assign-user modal.
-   * @param {any} hotel - The hotel row object from the table.
+   * Establece el hotel seleccionado y reinicia el selector de usuario, luego abre el modal de asignacion.
+   * @param {any} hotel - El objeto fila del hotel de la tabla.
    */
   function abrirModalAsignar(hotel) {
     hotelSeleccionado = hotel;
@@ -198,8 +199,8 @@
   }
 
   /**
-   * Validates that a user is selected and PUTs the assignment to the backend. On success
-   * closes the modal and reloads all data. Shows validation or error toasts as needed.
+   * Valida que se haya seleccionado un usuario y envia con PUT la asignacion al backend. Al tener
+   * exito cierra el modal y recarga todos los datos. Muestra toasts de validacion o error segun sea necesario.
    * @async
    * @returns {Promise<void>}
    */
@@ -225,8 +226,8 @@
   }
 
   /**
-   * Pre-fills the URLs modal with the hotel's current URLs and opens it.
-   * @param {any} hotel - The hotel row object from the table.
+   * Pre-rellena el modal de URLs con las URLs actuales del hotel y lo abre.
+   * @param {any} hotel - El objeto fila del hotel de la tabla.
    */
   function abrirModalUrls(hotel) {
     hotelUrls              = hotel;
@@ -236,8 +237,8 @@
   }
 
   /**
-   * Validates both URL values and PUTs the updated URLs to the backend.
-   * On success closes the modal and reloads all data. Shows error toasts on failures.
+   * Valida ambos valores de URL y envia con PUT las URLs actualizadas al backend.
+   * Al tener exito cierra el modal y recarga todos los datos. Muestra toasts de error en caso de fallos.
    * @async
    * @returns {Promise<void>}
    */
@@ -269,11 +270,11 @@
   }
 
   /**
-   * Sends a PUT request to change a hotel's status. On success updates the local hoteles
-   * array optimistically without a full reload. On failure reloads the full list to revert.
+   * Envia una solicitud PUT para cambiar el estado de un hotel. Al tener exito actualiza el arreglo
+   * local hoteles de forma optimista sin recarga completa. En caso de fallo recarga la lista completa para revertir.
    * @async
-   * @param {any} hotel - The hotel row object whose status is being changed.
-   * @param {string|number} nuevoEstadoId - The new status ID to apply.
+   * @param {any} hotel - El objeto fila del hotel cuyo estado se esta cambiando.
+   * @param {string|number} nuevoEstadoId - El nuevo ID de estado a aplicar.
    * @returns {Promise<void>}
    */
   async function handleCambiarEstado(hotel, nuevoEstadoId) {
@@ -295,12 +296,12 @@
   }
 
   /**
-   * Initiates the handshake authentication flow between the airline and the selected hotel aliado.
-   * Calls POST /api/hoteles-aliados/{id}/handshake on the backend, which generates a token,
-   * sends it to the hotel's /api/aerolineas/handshake endpoint and stores the session token
-   * in HotelAliado.TokenHASH. The hotel must have its URL configured before calling this.
+   * Inicia el flujo de autenticacion handshake entre la aerolinea y el hotel aliado seleccionado.
+   * Llama a POST /api/hoteles-aliados/{id}/handshake en el backend, que genera un token,
+   * lo envia al endpoint /api/aerolineas/handshake del hotel y almacena el token de sesion
+   * en HotelAliado.TokenHASH. El hotel debe tener su URL configurada antes de llamar a esta funcion.
    * @async
-   * @param {any} hotel - The hotel row object from the table.
+   * @param {any} hotel - El objeto fila del hotel de la tabla.
    * @returns {Promise<void>}
    */
   async function handleHandshake(hotel) {

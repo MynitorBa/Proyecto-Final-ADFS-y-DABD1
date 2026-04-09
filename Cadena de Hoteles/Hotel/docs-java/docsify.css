@@ -1,4 +1,4 @@
-/* Variables de color de marca Movent Docs */
+/* Variables de color de marca Miku Inn Docs */
 :root {
   --brand-dark:     #1a1a2e;
   --brand-mid:      #16213e;
@@ -11,14 +11,13 @@
 /* Fuente base Inter en todo el documento */
 body { font-family: 'Inter', sans-serif; }
 
-
 /* Fondo y borde derecho del sidebar */
 .sidebar {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
 }
 
-/* Ítem de navegación con hover deslizante y estado activo */
+/* Item de navegacion con hover deslizante y estado activo */
 .sidebar-nav li a {
   font-size: 0.875rem;
   font-weight: 500;
@@ -30,7 +29,7 @@ body { font-family: 'Inter', sans-serif; }
 .sidebar-nav li a:hover  { color: var(--brand-blue); padding-left: 0.75rem; }
 .sidebar-nav li a.active { color: var(--brand-accent); font-weight: 600; }
 
-/* Encabezados de sección del sidebar en mayúsculas */
+/* Encabezados de seccion del sidebar en mayusculas */
 .sidebar-nav > ul > li > a {
   font-weight: 700;
   font-size: 0.8rem;
@@ -39,7 +38,7 @@ body { font-family: 'Inter', sans-serif; }
   color: #2d3748;
 }
 
-/* Quita la línea derecha del ítem activo del sidebar */
+/* Quita la linea derecha del item activo del sidebar */
 .sidebar-nav li a.active,
 .sidebar-nav li.active > a {
   border-right: none !important;
@@ -49,7 +48,6 @@ body { font-family: 'Inter', sans-serif; }
 .sidebar::-webkit-scrollbar       { width: 4px; }
 .sidebar::-webkit-scrollbar-track { background: transparent; }
 .sidebar::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 4px; }
-
 
 /* Input del buscador con foco azul de marca */
 .search input {
@@ -64,7 +62,6 @@ body { font-family: 'Inter', sans-serif; }
   box-shadow: 0 0 0 3px rgba(74,158,255,0.15);
   outline: none;
 }
-
 
 /* Hero header con gradiente azul oscuro de marca */
 .hero-header {
@@ -88,12 +85,12 @@ body { font-family: 'Inter', sans-serif; }
   pointer-events: none;
 }
 
-/* Ícono del hero con glow azul */
+/* Icono del hero con glow azul */
 .hero-header svg { margin-bottom: 1rem; filter: drop-shadow(0 4px 12px rgba(74,158,255,0.4)); }
 .hero-header h1  { font-size: 2.25rem; margin: 0.5rem 0; font-weight: 700; letter-spacing: -0.02em; }
 .hero-header p   { opacity: 0.7; font-size: 1rem; margin: 0; font-weight: 400; }
 
-/* Fila de badges de tecnología dentro del hero */
+/* Fila de badges de tecnologia dentro del hero */
 .hero-badges {
   margin-top: 1.25rem;
   display: flex;
@@ -116,31 +113,29 @@ body { font-family: 'Inter', sans-serif; }
 }
 .hero-badge:hover { background: rgba(255,255,255,0.22); }
 
-
-/* Área de contenido sin padding superior para que el hero quede pegado */
+/* Area de contenido sin padding superior para que el hero quede pegado */
 .content { padding-top: 0 !important; }
 
-/* Ancho máximo y ritmo de lectura del markdown */
+/* Ancho maximo y ritmo de lectura del markdown */
 .markdown-section {
   max-width: 860px;
   font-size: 0.97rem;
   line-height: 1.75;
 }
 
-/* Títulos con kerning ajustado */
+/* Titulos con kerning ajustado */
 .markdown-section h1,
 .markdown-section h2,
 .markdown-section h3 { font-weight: 700; letter-spacing: -0.01em; }
 
-/* H2 con línea divisoria inferior */
+/* H2 con linea divisoria inferior */
 .markdown-section h2 {
   border-bottom: 2px solid var(--sidebar-border);
   padding-bottom: 0.4rem;
   margin-top: 2.5rem;
 }
 
-
-/* Código inline con fondo azul claro de marca */
+/* Codigo inline con fondo azul claro de marca */
 .markdown-section code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.84rem;
@@ -150,13 +145,13 @@ body { font-family: 'Inter', sans-serif; }
   border-radius: 5px;
 }
 
-/* Bloque de código con sombra y esquinas redondeadas */
+/* Bloque de codigo con sombra y esquinas redondeadas */
 .markdown-section pre {
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 
-/* Reset del código dentro de pre para heredar colores de Prism */
+/* Reset del codigo dentro de pre para heredar colores de Prism */
 .markdown-section pre code {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.85rem;
@@ -164,7 +159,6 @@ body { font-family: 'Inter', sans-serif; }
   color: inherit;
   padding: 0;
 }
-
 
 /* Tabla con encabezado azul oscuro de marca */
 .markdown-section table { border-collapse: collapse; width: 100%; }
@@ -180,7 +174,6 @@ body { font-family: 'Inter', sans-serif; }
 .markdown-section td,
 .markdown-section th { padding: 0.6rem 1rem; border: 1px solid var(--sidebar-border); }
 
-
 /* Blockquote con borde accent azul y fondo suave */
 .markdown-section blockquote {
   border-left: 4px solid var(--brand-accent);
@@ -189,23 +182,75 @@ body { font-family: 'Inter', sans-serif; }
   color: #2d3748;
 }
 
-
-/* Navegación superior de Docsify oculta */
+/* Navegacion superior de Docsify oculta */
 .app-nav { display: none; }
 
-
-/* Contenedor de paginación con separador superior */
+/* Contenedor de paginacion con separador superior */
 .docsify-pagination-container {
   margin-top: 3rem;
   border-top: 1px solid var(--sidebar-border);
   padding-top: 1.5rem;
 }
 
-
-/* Botón de copiar código con azul de marca */
+/* Boton de copiar codigo con azul de marca */
 .docsify-copy-code-button {
   font-family: 'Inter', sans-serif !important;
   font-size: 0.75rem !important;
   border-radius: 6px !important;
   background: var(--brand-blue) !important;
 }
+
+/* Boton flotante de exportacion PDF en la esquina inferior derecha */
+.pdf-download-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.4rem;
+  background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(15,52,96,0.45);
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  user-select: none;
+}
+
+/* Elevacion al pasar el cursor sobre el boton PDF */
+.pdf-download-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(15,52,96,0.55);
+}
+
+/* Estado presionado del boton PDF */
+.pdf-download-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Estado deshabilitado mientras se genera el PDF */
+.pdf-download-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+/* Spinner animado visible unicamente mientras se genera el PDF */
+.pdf-btn-spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: pdf-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Animacion de rotacion del spinner */
+@keyframes pdf-spin { to { transform: rotate(360deg); } }

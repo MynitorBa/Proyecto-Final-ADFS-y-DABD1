@@ -55,7 +55,7 @@ func (s *CatalogoSchedulerService) Iniciar() {
 		for {
 			select {
 			case <-ticker.C:
-				// 1. Ejecutar actualización completa del catálogo
+				// 1. Ejecutar actualizacion completa del catalogo
 				resultados, err := s.service.ActualizarCatalogo()
 				if err != nil {
 					log.Println("[CATALOGO] Error en actualización automática:", err)

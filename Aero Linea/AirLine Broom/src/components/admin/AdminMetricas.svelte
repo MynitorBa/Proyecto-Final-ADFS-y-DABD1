@@ -1,37 +1,38 @@
 <script>
 /**
  * @file AdminMetricas.svelte
- * @description Admin panel analytics and reporting section. Fetches two data sets from the
- * backend on mount: a summary (KPI banner, daily search volume chart, top routes bar chart,
- * income-by-class donut chart, and Web vs REST channel split) and a paginated search log.
- * All data is filtered by date range, channel type and username. The admin can apply or reset
- * filters and paginate through the search log. A modal allows exporting the current filtered
- * list to an email address via the backend exportar-correo endpoint. All SVG charts are
- * rendered inline using Svelte template math without external chart libraries.
+ * @description Seccion de analiticos y reportes del panel de administracion. Obtiene dos conjuntos de datos
+ * del backend al montar: un resumen (banner de KPI, grafica de volumen de busquedas diarias, grafica de
+ * barras de rutas principales, grafica de dona de ingresos por clase, y division de canal Web vs REST)
+ * y un registro de busquedas paginado. Todos los datos se filtran por rango de fechas, tipo de canal y
+ * nombre de usuario. El administrador puede aplicar o restablecer filtros y paginar el registro de busquedas.
+ * Un modal permite exportar la lista filtrada actual a un correo electronico mediante el endpoint
+ * exportar-correo del backend. Todas las graficas SVG se renderizan en linea usando matematica de
+ * plantilla de Svelte sin librerias externas de graficas.
  */
 // @ts-nocheck
   import { onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Summary metrics object returned by the resumen endpoint; null while loading. @type {any} */
+  /** Objeto de metricas de resumen devuelto por el endpoint resumen; null mientras carga. @type {any} */
   let metricasResumen = null;
 
-  /** Paginated search log object returned by the listado endpoint; null while loading. @type {any} */
+  /** Objeto de registro de busquedas paginado devuelto por el endpoint listado; null mientras carga. @type {any} */
   let metricasListado = null;
 
-  /** Whether the summary metrics fetch is in progress. @type {boolean} */
+  /** Indica si la carga de metricas de resumen esta en progreso. @type {boolean} */
   let loadingMetricas = false;
 
-  /** Whether the search log fetch is in progress. @type {boolean} */
+  /** Indica si la carga del registro de busquedas esta en progreso. @type {boolean} */
   let loadingListado  = false;
 
   /**
-   * Start date filter initialized to 30 days before today in YYYY-MM-DD format.
+   * Filtro de fecha de inicio inicializado a 30 dias antes de hoy en formato YYYY-MM-DD.
    * @type {string}
    */
   let metFechaDesde = (() => {
@@ -39,29 +40,29 @@
     return d.toISOString().split('T')[0];
   })();
 
-  /** End date filter initialized to today in YYYY-MM-DD format. @type {string} */
+  /** Filtro de fecha de fin inicializado a hoy en formato YYYY-MM-DD. @type {string} */
   let metFechaHasta = new Date().toISOString().split('T')[0];
 
-  /** Channel filter value: '' (all), 'Web', or 'REST'. @type {string} */
+  /** Valor del filtro de canal: '' (todos), 'Web' o 'REST'. @type {string} */
   let metTipo       = '';
 
-  /** Username text filter applied to the search log query. @type {string} */
+  /** Filtro de texto de nombre de usuario aplicado a la consulta del registro de busquedas. @type {string} */
   let metUsuario    = '';
 
-  /** Current page number for the paginated search log. @type {number} */
+  /** Numero de pagina actual para el registro de busquedas paginado. @type {number} */
   let metPagina     = 1;
 
-  /** Email address entered in the export modal. @type {string} */
+  /** Correo electronico ingresado en el modal de exportacion. @type {string} */
   let correoExportar       = '';
 
-  /** Whether the email export modal is visible. @type {boolean} */
+  /** Indica si el modal de exportacion por correo esta visible. @type {boolean} */
   let mostrarModalExportar = false;
 
-  /** Whether the email export API request is in progress. @type {boolean} */
+  /** Indica si la solicitud de exportacion por correo a la API esta en progreso. @type {boolean} */
   let enviandoCorreo       = false;
 
   /**
-   * On mount: loads summary metrics and the first page of the search log in parallel.
+   * Al montar: carga las metricas de resumen y la primera pagina del registro de busquedas en paralelo.
    */
   onMount(() => {
     cargarMetricas();
@@ -69,9 +70,9 @@
   });
 
   /**
-   * Fetches the summary metrics (KPIs, daily chart data, top routes, class distribution,
-   * channel split) from the backend using the current date and channel filters. Updates
-   * metricasResumen on success and shows a toast on error.
+   * Obtiene las metricas de resumen (KPIs, datos de grafica diaria, rutas principales, distribucion de clase,
+   * division de canal) del backend usando los filtros actuales de fecha y canal. Actualiza
+   * metricasResumen al tener exito y muestra un toast en caso de error.
    * @async
    * @returns {Promise<void>}
    */
@@ -87,10 +88,10 @@
   }
 
   /**
-   * Fetches a specific page of the paginated search log from the backend using the current
-   * filters (date range, channel, username, page size 25). Updates metricasListado on success.
+   * Obtiene una pagina especifica del registro de busquedas paginado del backend usando los filtros
+   * actuales (rango de fechas, canal, nombre de usuario, tamano de pagina 25). Actualiza metricasListado al tener exito.
    * @async
-   * @param {number} pagina - The 1-based page number to load.
+   * @param {number} pagina - El numero de pagina basado en 1 a cargar.
    * @returns {Promise<void>}
    */
   async function cargarListadoBusquedas(pagina = 1) {
@@ -116,8 +117,8 @@
   }
 
   /**
-   * Re-applies all current filters by reloading both the summary metrics and page 1 of the
-   * search log simultaneously.
+   * Vuelve a aplicar todos los filtros actuales recargando las metricas de resumen y la pagina 1
+   * del registro de busquedas de forma simultanea.
    */
   function aplicarFiltros() {
     cargarMetricas();
@@ -125,17 +126,17 @@
   }
 
   /**
-   * Navigates to the given page in the search log by calling cargarListadoBusquedas.
-   * @param {number} pagina - The page number to navigate to.
+   * Navega a la pagina indicada del registro de busquedas llamando a cargarListadoBusquedas.
+   * @param {number} pagina - El numero de pagina al que navegar.
    */
   function cambiarPagina(pagina) {
     cargarListadoBusquedas(pagina);
   }
 
   /**
-   * POSTs an export request to the backend with the current filters and the provided email
-   * address. The backend will send the filtered search log as an email attachment. Shows
-   * a success or error toast and closes the modal on completion.
+   * Envia con POST una solicitud de exportacion al backend con los filtros actuales y el correo
+   * electronico proporcionado. El backend enviara el registro de busquedas filtrado como archivo adjunto.
+   * Muestra un toast de exito o error y cierra el modal al completar.
    * @async
    * @returns {Promise<void>}
    */
@@ -163,8 +164,8 @@
     finally { enviandoCorreo = false; }
   }
 
-  // Conversion rate: total reservations divided by total searches, expressed as a percentage.
-  // Evaluates to '0.0' when there are no searches or no summary data yet.
+  // Tasa de conversion: total de reservaciones dividido por total de busquedas, expresado como porcentaje.
+  // Evalua a '0.0' cuando no hay busquedas o no hay datos de resumen aun.
   $: tasaConversion = (metricasResumen && metricasResumen.totalBusquedas > 0)
     ? ((metricasResumen.ingresosKpi.totalReservaciones / metricasResumen.totalBusquedas) * 100).toFixed(1)
     : '0.0';

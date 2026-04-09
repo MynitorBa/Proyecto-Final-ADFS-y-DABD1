@@ -1,6 +1,9 @@
-/* miagencia.css - Agency/hotel panel styles including a fixed top toast with entry animation, a circular spinner, an error alert, status badges, info cards grid, a notice box, a tipo-selector with two option cards, and a form with labeled fields and error states */
+/* miagencia.css - Estilos del panel de agencia u hotel, incluyendo un toast fijo superior con
+   animacion de entrada, un spinner circular, una alerta de error, insignias de estado, grilla de
+   tarjetas de informacion, un cuadro de aviso, un selector de tipo con dos tarjetas de opcion
+   y un formulario con campos etiquetados y estados de error */
 
-/* Fixed top-right toast: flex row with icon, asymmetric radius, box shadow, and slide-in animation */
+/* Toast fijo en la esquina superior derecha: fila flex con icono, radio asimetrico, sombra y animacion */
 .mi-agencia-toast {
   position: fixed; top: 1.5rem; right: 1.5rem; z-index: 9999;
   display: flex; align-items: center; gap: .75rem;
@@ -9,49 +12,49 @@
   animation: toastIn .3s ease-out;
 }
 
-/* Success toast: dark green background with light green text */
+/* Toast de exito: fondo verde oscuro con texto verde claro */
 .mi-agencia-toast--success { background: #065f46; color: #d1fae5; }
-/* Error toast: dark red background with light red text */
+/* Toast de error: fondo rojo oscuro con texto rojo claro */
 .mi-agencia-toast--error   { background: #7f1d1d; color: #fee2e2; }
-/* Icon within the toast at 1.1rem */
+/* Icono dentro del toast a 1.1rem */
 .mi-agencia-toast__icon    { font-size: 1.1rem; }
 
-/* Toast entry animation: slides down 12px while fading in */
+/* Animacion de entrada del toast: se desliza 12px hacia abajo mientras aparece con fundido */
 @keyframes toastIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
 
-/* Circular spinner: 44px with a partial gold border rotating at 0.8s */
+/* Spinner circular: 44px con borde dorado parcial girando a 0.8s */
 .mi-agencia-spinner {
   width: 44px; height: 44px; border: 3px solid var(--perla-dark);
   border-top-color: var(--primary-color); border-radius: 50%;
   margin: 0 auto; animation: spin .8s linear infinite;
 }
 
-/* Full rotation keyframe for the spinner */
+/* Fotograma clave de rotacion completa para el spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Alert row: flex with icon, padded, rounded with a light red theme for errors */
+/* Fila de alerta: flex con icono, relleno, redondeado con tema rojo claro para errores */
 .mi-agencia-alert {
   display: flex; align-items: center; gap: .75rem;
   padding: 1rem 1.25rem; border-radius: 8px; font-size: .9rem;
 }
-/* Error alert: light red background, dark red text, and a red border */
+/* Alerta de error: fondo rojo claro, texto rojo oscuro y borde rojo */
 .mi-agencia-alert--error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
-/* Status badge: small pill with asymmetric radius and all-caps bold text */
+/* Insignia de estado: pastilla pequena con radio asimetrico y texto en negrita y mayusculas */
 .mi-agencia-badge {
   display: inline-block; padding: .35rem .9rem;
   border-radius: 0 20px 0 20px; font-size: .72rem;
   font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
 }
 
-/* Active badge: green tones */
+/* Insignia activa: tonos verdes */
 .badge--active    { background: #d1fae5; color: #065f46; }
-/* Inactive badge: grey tones */
+/* Insignia inactiva: tonos grises */
 .badge--inactive  { background: #f3f4f6; color: #6b7280; }
-/* Suspended badge: amber tones */
+/* Insignia suspendida: tonos ambar */
 .badge--suspended { background: #fef3c7; color: #92400e; }
 
-/* Auto-fit grid of info cards, minimum 220px wide, with bottom margin */
+/* Grilla auto-ajustable de tarjetas de informacion, minimo 220px de ancho, con margen inferior */
 .mi-agencia-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -59,7 +62,7 @@
   margin-bottom: 2rem;
 }
 
-/* Individual info card: flex row with icon, asymmetric border-radius, and a warm border */
+/* Tarjeta de informacion individual: fila flex con icono, radio de borde asimetrico y borde calido */
 .mi-agencia-card {
   display: flex; align-items: flex-start; gap: 1rem;
   padding: 1.25rem 1.5rem;
@@ -68,31 +71,31 @@
   border-radius: 4px 16px 4px 16px;
 }
 
-/* Large icon column that does not shrink */
+/* Columna de icono grande que no se encoge */
 .mi-agencia-card__icon { font-size: 1.5rem; flex-shrink: 0; }
 
-/* Small all-caps muted label above the card value */
+/* Etiqueta pequena en mayusculas y apagada encima del valor de la tarjeta */
 .mi-agencia-card__label {
   font-size: .72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .8px; color: var(--text-muted); margin: 0 0 .35rem;
 }
 
-/* Regular card value in the secondary color */
+/* Valor regular de la tarjeta en el color secundario */
 .mi-agencia-card__value {
   font-size: 1rem; color: var(--secondary-color); margin: 0; font-weight: 500;
 }
 
-/* URL card value: smaller font and word-break to prevent overflow on long URLs */
+/* Valor de URL de la tarjeta: fuente mas pequena y quiebre de palabra para URLs largas */
 .mi-agencia-card__value--url {
   font-size: .88rem; word-break: break-all;
 }
 
-/* Highlighted card value: larger, bolder, and in the primary color */
+/* Valor resaltado de la tarjeta: mas grande, en negrita y en el color primario */
 .mi-agencia-card__value--highlight {
   font-size: 1.3rem; font-weight: 700; color: var(--primary-color);
 }
 
-/* Notice box: blue tones with a left-to-right flex row layout */
+/* Cuadro de aviso: tonos azules con disposicion de fila flex de izquierda a derecha */
 .mi-agencia-notice {
   display: flex; align-items: flex-start; gap: .75rem;
   padding: 1rem 1.25rem; border-radius: 8px;
@@ -100,25 +103,25 @@
   font-size: .85rem; line-height: 1.5;
 }
 
-/* Paragraph inside the notice resets its default margin */
+/* El parrafo dentro del aviso restablece su margen predeterminado */
 .mi-agencia-notice p { margin: 0; }
 
-/* Form column capped at 560px with a vertical flex layout */
+/* Columna de formulario con un maximo de 560px y disposicion flex vertical */
 .mi-agencia-form { max-width: 560px; display: flex; flex-direction: column; gap: 1.5rem; }
 
-/* Individual form field: label stacked above the input */
+/* Campo de formulario individual: etiqueta apilada encima del input */
 .mi-agencia-field { display: flex; flex-direction: column; gap: .45rem; }
 
-/* Small all-caps bold field label in the secondary color */
+/* Etiqueta de campo pequena en mayusculas y negrita en el color secundario */
 .mi-agencia-field__label {
   font-size: .82rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .8px; color: var(--secondary-color);
 }
 
-/* Required asterisk in the primary color */
+/* Asterisco de campo requerido en el color primario */
 .mi-agencia-field__required { color: var(--primary-color); }
 
-/* Field input: asymmetric radius (0 10px 0 10px) with a gold focus ring */
+/* Input de campo: radio asimetrico (0 10px 0 10px) con anillo de enfoque dorado */
 .mi-agencia-field__input {
   padding: .875rem 1.25rem; border: 1.5px solid #e5e7eb;
   border-radius: 0 10px 0 10px; font-size: .95rem;
@@ -127,27 +130,27 @@
   outline: none; font-family: inherit;
 }
 
-/* Input border turns gold with a translucent ring on focus */
+/* El borde del input se vuelve dorado con un anillo translucido al enfocar */
 .mi-agencia-field__input:focus {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb, 180,140,100),.15);
 }
 
-/* Error state: red border */
+/* Estado de error: borde rojo */
 .mi-agencia-field__input--error  { border-color: #f87171; }
-/* Disabled state: faded with a not-allowed cursor */
+/* Estado deshabilitado: desvanecer con cursor no permitido */
 .mi-agencia-field__input:disabled { opacity: .6; cursor: not-allowed; }
 
-/* Inline field-level error message in red */
+/* Mensaje de error en linea a nivel de campo en rojo */
 .mi-agencia-field__error { font-size: .78rem; color: #dc2626; margin: 0; }
 
-/* Form action row: flex row with a gap, primary button capped at 260px */
+/* Fila de acciones del formulario: fila flex con separacion, boton primario con maximo de 260px */
 .mi-agencia-form__actions { display: flex; gap: 1rem; padding-top: .5rem; }
 .mi-agencia-form__actions .btn-primary { max-width: 260px; }
 
-/* ── Tipo-selector: two large clickable cards to choose between agencia and hotel ── */
+/* -- Selector de tipo: dos tarjetas grandes y clicables para elegir entre agencia y hotel -- */
 
-/* Grid of two equal columns for the tipo option cards */
+/* Grilla de dos columnas iguales para las tarjetas de opcion de tipo */
 .mi-agencia-tipo-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -156,12 +159,12 @@
   max-width: 640px;
 }
 
-/* Responsive: stack to single column on narrow screens */
+/* Responsivo: apila en columna unica en pantallas estrechas */
 @media (max-width: 500px) {
   .mi-agencia-tipo-grid { grid-template-columns: 1fr; }
 }
 
-/* Individual tipo option card: clickable, centered column layout */
+/* Tarjeta de opcion de tipo individual: clicable, disposicion en columna centrada */
 .mi-agencia-tipo-card {
   display: flex; flex-direction: column; align-items: center;
   gap: 1rem; padding: 2rem 1.5rem; cursor: pointer;
@@ -172,27 +175,27 @@
   text-align: center; user-select: none;
 }
 
-/* Hover lift effect on tipo card */
+/* Efecto de elevacion al pasar el cursor sobre la tarjeta de tipo */
 .mi-agencia-tipo-card:hover {
   border-color: var(--primary-color);
   box-shadow: 0 6px 24px rgba(0,0,0,.08);
   transform: translateY(-2px);
 }
 
-/* Large emoji icon at the top of the tipo card */
+/* Icono emoji grande en la parte superior de la tarjeta de tipo */
 .mi-agencia-tipo-card__icon { font-size: 2.5rem; line-height: 1; }
 
-/* Title inside the tipo card: secondary color, medium weight */
+/* Titulo dentro de la tarjeta de tipo: color secundario, peso medio */
 .mi-agencia-tipo-card__title {
   font-size: 1.05rem; font-weight: 700; color: var(--secondary-color); margin: 0;
 }
 
-/* Short description inside the tipo card: muted, smaller */
+/* Descripcion corta dentro de la tarjeta de tipo: apagada y mas pequena */
 .mi-agencia-tipo-card__desc {
   font-size: .82rem; color: var(--text-muted); margin: 0; line-height: 1.5;
 }
 
-/* Back link shown above the form after selecting a tipo */
+/* Enlace de regreso mostrado encima del formulario despues de seleccionar un tipo */
 .mi-agencia-tipo-back {
   display: inline-flex; align-items: center; gap: .4rem;
   font-size: .82rem; font-weight: 600; color: var(--primary-color);

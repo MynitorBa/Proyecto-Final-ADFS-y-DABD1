@@ -35,6 +35,8 @@ de transporte y la capa de servicio de la agencia de viajes.
 
 
 
+
+
 ## TYPES
 
 ```go
@@ -482,6 +484,14 @@ type SeleccionVuelo struct {
 
     Representa un vuelo especifico elegido por el usuario, junto con la clase de
     servicio y la cantidad de pasajeros.
+
+type UsuarioResumen struct {
+	RolID    int    `json:"rolId"`    // ID del rol asignado al usuario
+	Rol      string `json:"rol"`      // Nombre del rol asignado al usuario
+    UsuarioResumen
+
+    Representa los datos basicos de un usuario retornados por el panel de
+    administracion para gestion de roles y asignacion de WebService.
 
 type ValidacionUsuarioResponse struct {
 	Correo    bool `json:"correo"`    // Indica si el correo ya esta registrado en el sistema

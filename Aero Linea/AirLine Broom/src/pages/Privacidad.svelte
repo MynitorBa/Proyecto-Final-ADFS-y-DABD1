@@ -1,19 +1,20 @@
 <script>
 /**
  * @file Privacidad.svelte
- * @description Static privacy policy page for Broom AirLine. Describes what personal data is
- * collected at registration (name, email, phone, birth date, country, city, password hash) and
- * at purchase (passenger info, payment data processed with SSL, reservation code, transaction
- * record). Explains how data is used (authentication, reservation processing, email notifications,
- * history display, anonymized statistics, legal compliance). Lists security measures (SSL,
- * password hashing, role-based access control, server-side permission checks, API operation logs)
- * and user rights (access, correction, history consultation, deletion request). Accessible from
- * the main navigation with a back button that returns to the home page.
+ * @description Pagina estatica de politica de privacidad de Broom AirLine. Describe los datos
+ * personales recopilados en el registro (nombre, correo, telefono, fecha de nacimiento, pais,
+ * ciudad, hash de contrasena) y en la compra (datos del pasajero, datos de pago procesados con
+ * SSL, codigo de reserva, registro de transaccion). Explica el uso de los datos (autenticacion,
+ * procesamiento de reservas, notificaciones por correo, visualizacion de historial, estadisticas
+ * anonimizadas, cumplimiento legal). Lista medidas de seguridad (SSL, hash de contrasena, control
+ * de acceso por roles, verificacion de permisos en el servidor, logs de operaciones de API) y
+ * derechos del usuario (acceso, correccion, consulta de historial, solicitud de eliminacion).
+ * Accesible desde la navegacion principal con un boton de regreso al inicio.
  */
 // @ts-nocheck
   import '../styles/info-pages.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 </script>
 

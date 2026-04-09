@@ -2,18 +2,19 @@
   // @ts-nocheck
 /**
  * @file Cookies.svelte
- * @description Static informational page that explains Broom AirLine's cookie policy.
- * Describes what cookies are, the three categories used by the platform (session cookies
- * that maintain authentication and role state, functional cookies that remember search
- * preferences, and analytics cookies that record route statistics for admins), the CAPTCHA
- * security mechanism applied to registration and login forms, and instructions for managing
- * or disabling cookies in the browser. No API calls or reactive state is used; the entire
- * page is static content. Accessible from the footer and informational navigation links.
+ * @description Pagina informativa estatica que explica la politica de cookies de Broom AirLine.
+ * Describe que son las cookies, las tres categorias utilizadas por la plataforma (cookies de
+ * sesion que mantienen la autenticacion y el estado del rol, cookies funcionales que recuerdan
+ * las preferencias de busqueda, y cookies analiticas que registran estadisticas de rutas para
+ * administradores), el mecanismo de seguridad CAPTCHA aplicado a los formularios de registro
+ * e inicio de sesion, e instrucciones para gestionar o deshabilitar cookies en el navegador.
+ * No se realizan llamadas a la API ni se usa estado reactivo; toda la pagina es contenido
+ * estatico. Accesible desde el pie de pagina y los enlaces de navegacion informativos.
  */
 
   import '../styles/info-pages.css';
 
-  /** Navigation function provided by the app router to change the current page. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar la pagina actual. @type {Function} */
   export let navigateTo;
 </script>
 

@@ -1,116 +1,118 @@
 <script>
 /**
  * @file Seleccionasientos.svelte
- * @description Interactive seat map page for selecting seats across one or multiple flight groups.
- * The plane is visually rendered with a nose SVG, a cabin body divided into an Ejecutiva section
- * (fixed 4 rows, columns A-F, IDs: E-{col}{row}) and a Turista section (dynamic rows, IDs:
- * {col}{row}), and a tail SVG. On mount it loads the seat map from GET /api/asientos/:vueloId
- * and builds a local map keyed by backend seat IDs. When the user clicks a free seat it calls
- * PUT /api/asientos/:boletoId to persist the assignment and updates the local state without
- * reloading. A sidebar shows passenger assignment progress, a seat legend, and a continue button
- * that advances to the next flight group or navigates to 'carrito' when all groups are done.
+ * @description Pagina interactiva de mapa de asientos para seleccionar asientos en uno o varios
+ * grupos de vuelo. El avion se renderiza visualmente con un SVG de nariz, un cuerpo de cabina
+ * dividido en una seccion Ejecutiva (4 filas fijas, columnas A-F, IDs: E-{col}{fila}) y una
+ * seccion Turista (filas dinamicas, IDs: {col}{fila}), y un SVG de cola. Al montar, carga el
+ * mapa de asientos desde GET /api/asientos/:vueloId y construye un mapa local indexado por
+ * IDs de asientos del backend. Cuando el usuario hace clic en un asiento libre, llama a
+ * PUT /api/asientos/:boletoId para persistir la asignacion y actualiza el estado local sin
+ * recargar. Un panel lateral muestra el progreso de asignacion de pasajeros, una leyenda de
+ * asientos y un boton de continuar que avanza al siguiente grupo de vuelo o navega a 'carrito'
+ * cuando todos los grupos estan completos.
  */
 // @ts-nocheck
   import '../styles/asientos.css';
   import { onMount } from 'svelte';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion para navegar entre las paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** Array of flight group objects passed from the previous step, each with vueloId, numeroVuelo, avionModelo, avionMarca, clase, and boletos array. @type {Array<object>} */
+  /** Arreglo de objetos de grupo de vuelo pasado desde el paso anterior, cada uno con vueloId, numeroVuelo, avionModelo, avionMarca, clase y arreglo de boletos. @type {Array<object>} */
   export let flightData = [];
 
   import { API } from '../lib/api.js';
 
-  /** Number of seat columns in both Ejecutiva and Turista zones. @type {number} */
+  /** Cantidad de columnas de asientos en las zonas Ejecutiva y Turista. @type {number} */
   const NUM_COLUMNAS    = 6;
 
-  /** Fixed number of row rows in the Ejecutiva zone. @type {number} */
+  /** Cantidad fija de filas en la zona Ejecutiva. @type {number} */
   const FILAS_EJECUTIVA = 4;
 
-  /** Column letter labels used as seat column identifiers. @type {string[]} */
+  /** Etiquetas de letras de columna usadas como identificadores de columnas de asiento. @type {string[]} */
   const COLS_LABEL      = ['A','B','C','D','E','F'];
 
-  /** Index of the currently active flight group being seat-mapped. @type {number} */
+  /** Indice del grupo de vuelo activo actualmente siendo mapeado. @type {number} */
   let grupoActualIdx = 0;
 
-  // Current flight group object resolved from flightData at grupoActualIdx.
+  // Objeto del grupo de vuelo actual resuelto desde flightData en grupoActualIdx.
   $: grupoActual   = flightData?.[grupoActualIdx] ?? null;
 
-  // Total number of flight groups in flightData.
+  // Cantidad total de grupos de vuelo en flightData.
   $: totalGrupos   = flightData?.length ?? 0;
 
-  // True when grupoActualIdx points to the last flight group.
+  // Verdadero cuando grupoActualIdx apunta al ultimo grupo de vuelo.
   $: esUltimoGrupo = grupoActualIdx === totalGrupos - 1;
 
-  // Flight ID of the current group, or null if unavailable.
+  // ID de vuelo del grupo actual, o null si no esta disponible.
   $: vueloId          = grupoActual?.vueloId      ?? null;
 
-  // Flight number string for the current group's display header.
+  // Cadena de numero de vuelo para el encabezado de display del grupo actual.
   $: numeroVuelo      = grupoActual?.numeroVuelo   ?? '';
 
-  // Aircraft model name for the current group's display header.
+  // Nombre del modelo de avion para el encabezado de display del grupo actual.
   $: avionModelo      = grupoActual?.avionModelo   ?? '';
 
-  // Aircraft brand name for the current group's display header.
+  // Nombre de la marca del avion para el encabezado de display del grupo actual.
   $: avionMarca       = grupoActual?.avionMarca    ?? '';
 
-  // Seat class for the current group ('Turista' or 'Ejecutiva'), restricts selectable seats.
+  // Clase de asiento del grupo actual ('Turista' o 'Ejecutiva'), restringe los asientos seleccionables.
   $: claseActual      = grupoActual?.clase         ?? 'Turista';
 
-  // Total number of passengers (boletos) in the current group.
+  // Cantidad total de pasajeros (boletos) en el grupo actual.
   $: pasajerosTotales = grupoActual?.boletos?.length ?? 1;
 
-  /** True while the seat map API request is in progress. @type {boolean} */
+  /** Verdadero mientras la solicitud de la API del mapa de asientos esta en progreso. @type {boolean} */
   let loading      = true;
 
-  /** Error message shown if the seat map fails to load. @type {string|null} */
+  /** Mensaje de error mostrado si el mapa de asientos no puede cargarse. @type {string|null} */
   let error        = null;
 
-  /** True while a seat assignment PUT request is in progress. @type {boolean} */
+  /** Verdadero mientras una solicitud PUT de asignacion de asiento esta en progreso. @type {boolean} */
   let guardando    = false;
 
-  /** Error message shown if a seat assignment PUT request fails. @type {string|null} */
+  /** Mensaje de error mostrado si una solicitud PUT de asignacion de asiento falla. @type {string|null} */
   let errorGuardar = null;
 
-  /** Total number of rows (Ejecutiva + Turista) for the current flight's aircraft. @type {number} */
+  /** Cantidad total de filas (Ejecutiva + Turista) para el avion del vuelo actual. @type {number} */
   let totalFilas       = 0;
 
-  /** Set of seat ID strings already occupied by other passengers. @type {Set<string>} */
+  /** Conjunto de cadenas de ID de asiento ya ocupados por otros pasajeros. @type {Set<string>} */
   let asientosOcupados = new Set();
 
-  /** Array of boleto objects with boletoId and asiento for the current user's reservation. @type {Array<{boletoId: number, asiento: string}>} */
+  /** Arreglo de objetos de boleto con boletoId y asiento para la reservacion del usuario actual. @type {Array<{boletoId: number, asiento: string}>} */
   let boletosUsuario   = [];
 
-  /** Map of seat ID string to seat object with id, fila, col, clase, and estado. @type {Object.<string, object>} */
+  /** Mapa de cadena de ID de asiento a objeto de asiento con id, fila, col, clase y estado. @type {Object.<string, object>} */
   let asientos         = {};
 
-  /** Array of seat ID strings, one per passenger, representing current seat assignments. @type {string[]} */
+  /** Arreglo de cadenas de ID de asiento, una por pasajero, representando las asignaciones de asiento actuales. @type {string[]} */
   let seleccionados    = [];
 
-  /** Index of the passenger whose seat is currently being assigned. @type {number} */
+  /** Indice del pasajero cuyo asiento se esta asignando actualmente. @type {number} */
   let pasajeroActual   = 0;
 
   /**
-   * Constructs the backend seat ID string for an Ejecutiva seat given row number and column letter.
-   * @param {number} fila - Row number (1-based).
-   * @param {string} col - Column letter (A-F).
-   * @returns {string} Seat ID in the format 'E-{col}{fila}', e.g. 'E-A1'.
+   * Construye la cadena de ID de asiento del backend para un asiento Ejecutiva dado el numero de fila y la letra de columna.
+   * @param {number} fila - Numero de fila (base 1).
+   * @param {string} col - Letra de columna (A-F).
+   * @returns {string} ID de asiento en el formato 'E-{col}{fila}', por ejemplo 'E-A1'.
    */
   function idEjecutiva(fila, col) { return `E-${col}${fila}`; }
 
   /**
-   * Constructs the backend seat ID string for a Turista seat given row number and column letter.
-   * @param {number} fila - Row number (1-based).
-   * @param {string} col - Column letter (A-F).
-   * @returns {string} Seat ID in the format '{col}{fila}', e.g. 'A1'.
+   * Construye la cadena de ID de asiento del backend para un asiento Turista dado el numero de fila y la letra de columna.
+   * @param {number} fila - Numero de fila (base 1).
+   * @param {string} col - Letra de columna (A-F).
+   * @returns {string} ID de asiento en el formato '{col}{fila}', por ejemplo 'A1'.
    */
   function idTurista(fila, col)   { return `${col}${fila}`;   }
 
-  // Row number array for the Ejecutiva zone, always [1, 2, 3, 4].
+  // Arreglo de numeros de fila para la zona Ejecutiva, siempre [1, 2, 3, 4].
   $: filasEje = Array.from({ length: FILAS_EJECUTIVA }, (_, i) => i + 1);
 
-  // Row number array for the Turista zone, dynamically sized from totalFilas minus Ejecutiva rows.
+  // Arreglo de numeros de fila para la zona Turista, dimensionado dinamicamente desde totalFilas menos filas Ejecutiva.
   $: filasT = totalFilas > FILAS_EJECUTIVA
       ? Array.from({ length: totalFilas - FILAS_EJECUTIVA }, (_, i) => i + 1)
       : [];
@@ -124,19 +126,19 @@
     await cargarAsientos();
   });
 
-  /** Tracks the last grupoActualIdx for which seats were loaded to avoid redundant reloads. @type {number} */
+  /** Rastrea el ultimo grupoActualIdx para el que se cargaron asientos para evitar recargas redundantes. @type {number} */
   let ultimoGrupoIdx = -1;
 
-  // Reload seat map whenever the active group index changes and a valid vueloId is present.
+  // Recarga el mapa de asientos cada vez que el indice del grupo activo cambia y hay un vueloId valido.
   $: if (grupoActualIdx !== ultimoGrupoIdx && vueloId) {
     ultimoGrupoIdx = grupoActualIdx;
     cargarAsientos();
   }
 
   /**
-   * Fetches seat availability for the current vueloId from GET /api/asientos/:vueloId. Populates
-   * totalFilas, asientosOcupados, boletosUsuario, and seleccionados from the response, resets
-   * pasajeroActual to 0, and rebuilds the seat map via construirMapa.
+   * Obtiene la disponibilidad de asientos para el vueloId actual desde GET /api/asientos/:vueloId.
+   * Llena totalFilas, asientosOcupados, boletosUsuario y seleccionados desde la respuesta, restablece
+   * pasajeroActual a 0 y reconstruye el mapa de asientos mediante construirMapa.
    * @async
    * @returns {Promise<void>}
    */
@@ -162,9 +164,9 @@
   }
 
   /**
-   * Builds the asientos map keyed by backend seat ID for both Ejecutiva and Turista zones.
-   * Each entry has id, fila, col, clase, and estado ('ocupado', 'propio', or 'libre').
-   * @param {number} totalF - Total row count for the aircraft (Ejecutiva + Turista rows combined).
+   * Construye el mapa de asientos indexado por ID de asiento del backend para las zonas Ejecutiva y Turista.
+   * Cada entrada tiene id, fila, col, clase y estado ('ocupado', 'propio' o 'libre').
+   * @param {number} totalF - Cantidad total de filas del avion (filas Ejecutiva + Turista combinadas).
    */
   function construirMapa(totalF) {
     const mapa = {};
@@ -200,10 +202,10 @@
   }
 
   /**
-   * Returns true if the given seat object can be selected by the current passenger. A seat is
-   * selectable when it exists, is not occupied, and belongs to the same class as claseActual.
-   * @param {object} a - Seat object from the asientos map.
-   * @returns {boolean} Whether the seat can be selected.
+   * Retorna verdadero si el objeto de asiento dado puede ser seleccionado por el pasajero actual. Un asiento
+   * es seleccionable cuando existe, no esta ocupado y pertenece a la misma clase que claseActual.
+   * @param {object} a - Objeto de asiento del mapa de asientos.
+   * @returns {boolean} Si el asiento puede ser seleccionado.
    */
   function puedeSeleccionar(a) {
     if (!a) return false;
@@ -214,11 +216,11 @@
   }
 
   /**
-   * Returns true if the seat button should be disabled. A seat is blocked if it is null, occupied,
-   * or belongs to a different class than claseActual. Seats with estado 'propio' are never blocked
-   * so the user can click them to shift passenger focus.
-   * @param {object} a - Seat object from the asientos map.
-   * @returns {boolean} Whether the seat button should be rendered as disabled.
+   * Retorna verdadero si el boton de asiento debe estar deshabilitado. Un asiento esta bloqueado si es null, esta
+   * ocupado o pertenece a una clase diferente a claseActual. Los asientos con estado 'propio' nunca se bloquean
+   * para que el usuario pueda hacer clic en ellos para cambiar el foco de pasajero.
+   * @param {object} a - Objeto de asiento del mapa de asientos.
+   * @returns {boolean} Si el boton de asiento debe renderizarse como deshabilitado.
    */
   function esBloqueado(a) {
     if (!a) return true;
@@ -230,20 +232,20 @@
   }
 
   /**
-   * Returns the index of the given seat ID in the seleccionados array, or -1 if not found.
-   * Used to render the passenger number badge on already-assigned seats.
-   * @param {string} id - Seat ID string to look up.
-   * @returns {number} Index in seleccionados, or -1.
+   * Retorna el indice del ID de asiento dado en el arreglo seleccionados, o -1 si no se encuentra.
+   * Usado para renderizar el badge de numero de pasajero en asientos ya asignados.
+   * @param {string} id - Cadena de ID de asiento a buscar.
+   * @returns {number} Indice en seleccionados, o -1.
    */
   function indicePasajero(id) { return seleccionados.indexOf(id); }
 
   /**
-   * Handles a seat button click. If the seat is already owned by the user, shifts pasajeroActual
-   * to that passenger's index. Otherwise validates selectability, sends PUT /api/asientos/:boletoId
-   * to update the assignment, updates the local asientos map and seleccionados array without
-   * reloading, and advances pasajeroActual to the next passenger without an assigned seat.
+   * Maneja el clic en un boton de asiento. Si el asiento ya pertenece al usuario, desplaza pasajeroActual
+   * al indice de ese pasajero. De lo contrario, valida la seleccionabilidad, envia PUT /api/asientos/:boletoId
+   * para actualizar la asignacion, actualiza el mapa local de asientos y el arreglo seleccionados sin
+   * recargar, y avanza pasajeroActual al siguiente pasajero sin asiento asignado.
    * @async
-   * @param {object} a - Seat object from the asientos map.
+   * @param {object} a - Objeto de asiento del mapa de asientos.
    * @returns {Promise<void>}
    */
   async function seleccionarAsiento(a) {
@@ -290,11 +292,11 @@
   }
 
   /**
-   * Returns the CSS class string for a seat button based on its state and class compatibility.
-   * Possible return values: 'asiento--vacio', 'asiento--ocupado', 'asiento--seleccionado',
-   * 'asiento--clase-incorrecta', or 'asiento--libre'.
-   * @param {object} a - Seat object from the asientos map, or null/undefined.
-   * @returns {string} CSS modifier class string.
+   * Retorna la cadena de clase CSS para un boton de asiento segun su estado y compatibilidad de clase.
+   * Valores de retorno posibles: 'asiento--vacio', 'asiento--ocupado', 'asiento--seleccionado',
+   * 'asiento--clase-incorrecta' o 'asiento--libre'.
+   * @param {object} a - Objeto de asiento del mapa de asientos, o null/undefined.
+   * @returns {string} Cadena de clase CSS modificadora.
    */
   function claseAsiento(a) {
     if (!a) return 'asiento--vacio';
@@ -305,15 +307,15 @@
     return 'asiento--libre';
   }
 
-  // True when all passengers in the current group have an assigned seat.
+  // Verdadero cuando todos los pasajeros del grupo actual tienen un asiento asignado.
   $: todoSeleccionado = seleccionados.length === pasajerosTotales && seleccionados.every(Boolean);
 
-  // Percentage of seats assigned out of total passengers for the progress bar.
+  // Porcentaje de asientos asignados sobre el total de pasajeros para la barra de progreso.
   $: progreso         = (seleccionados.filter(Boolean).length / pasajerosTotales) * 100;
 
   /**
-   * Advances to the next flight group if not on the last one, or navigates to 'carrito' when
-   * all flight groups have been seat-mapped. Does nothing if not all seats are selected.
+   * Avanza al siguiente grupo de vuelo si no esta en el ultimo, o navega a 'carrito' cuando
+   * todos los grupos de vuelo han sido mapeados. No hace nada si no todos los asientos estan seleccionados.
    */
   function handleContinuar() {
     if (!todoSeleccionado) return;

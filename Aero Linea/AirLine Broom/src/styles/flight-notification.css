@@ -1,6 +1,6 @@
-/* flight-notification.css - Animated flight notification toast that flies a plane across the screen with a speech bubble showing a destination, and a close button */
+/* flight-notification.css - Notificacion de vuelo animada tipo toast que hace volar un avion por la pantalla con un bocadillo de dialogo que muestra un destino y un boton de cierre */
 
-/* Base notification container: fixed at vertical center, parked 500px to the left off-screen, invisible */
+/* Contenedor base de la notificacion: fijo en el centro vertical, estacionado 500px a la izquierda fuera de la pantalla, invisible */
 .broom-flight-notification {
   position: fixed;
   top: 50%;
@@ -15,14 +15,14 @@
   transition: opacity 0.5s ease;
 }
 
-/* Visible state: triggers the 6-second fly-across animation */
+/* Estado visible: activa la animacion de vuelo cruzado de 6 segundos */
 .broom-flight-notification--visible {
   animation: flyAcrossScreen 6s ease-in-out forwards;
   opacity: 1;
   pointer-events: all;
 }
 
-/* Plane flies from off-screen left, centers at 50%, then exits off-screen right while fading */
+/* El avion vuela desde fuera de la pantalla a la izquierda, se centra al 50%, luego sale a la derecha desvaneciendo */
 @keyframes flyAcrossScreen {
   0% {
     left: -500px;
@@ -45,20 +45,20 @@
   }
 }
 
-/* Plane container: gentle up-down float animation with a soft drop shadow */
+/* Contenedor del avion: animacion suave de flotacion arriba y abajo con sombra suave */
 .broom-flight-notification__plane {
   animation: planeFloat 2s ease-in-out infinite;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
 
-/* Plane image sized to 80px wide */
+/* Imagen del avion con 80px de ancho */
 .broom-flight-notification__plane-img {
   width: 80px;
   height: auto;
   display: block;
 }
 
-/* Plane floats up 10px and tilts -2deg at mid-cycle */
+/* El avion flota 10px hacia arriba y se inclina -2 grados en el punto medio */
 @keyframes planeFloat {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -68,7 +68,7 @@
   }
 }
 
-/* White speech bubble with rounded corners, a shadow, and two sequential animations */
+/* Bocadillo de dialogo blanco con esquinas redondeadas, sombra y dos animaciones secuenciales */
 .broom-flight-notification__bubble {
   position: relative;
   background: white;
@@ -79,7 +79,7 @@
   animation: bubbleAppear 0.5s ease-out 1.5s backwards, bubblePulse 2s ease-in-out 2s infinite;
 }
 
-/* Bubble scales from 50% to full size while fading in after a 1.5s delay */
+/* El bocadillo escala del 50% al tamano completo mientras aparece con fundido tras un retardo de 1.5s */
 @keyframes bubbleAppear {
   0% {
     opacity: 0;
@@ -91,7 +91,7 @@
   }
 }
 
-/* Bubble gently scales to 105% and back in a continuous breathing pulse */
+/* El bocadillo escala suavemente al 105% y vuelve en un pulso de respiracion continuo */
 @keyframes bubblePulse {
   0%, 100% {
     transform: scale(1);
@@ -101,7 +101,7 @@
   }
 }
 
-/* Clickable flex column inside the bubble: label, destination city, and country */
+/* Columna flex clicable dentro del bocadillo: etiqueta, ciudad de destino y pais */
 .broom-flight-notification__bubble-content {
   display: flex;
   flex-direction: column;
@@ -115,19 +115,19 @@
   transition: transform 0.2s ease;
 }
 
-/* Bubble content scales slightly on hover */
+/* El contenido del bocadillo escala ligeramente al pasar el cursor */
 .broom-flight-notification__bubble-content:hover {
   transform: scale(1.02);
 }
 
-/* Small muted label above the destination name */
+/* Etiqueta apagada pequena encima del nombre del destino */
 .broom-flight-notification__bubble-label {
   font-size: 14px;
   color: #666;
   font-weight: 400;
 }
 
-/* Bold large destination city name */
+/* Nombre de ciudad de destino grande y en negrita */
 .broom-flight-notification__bubble-destination {
   font-size: 20px;
   font-weight: 700;
@@ -135,14 +135,14 @@
   line-height: 1.2;
 }
 
-/* Small muted country name below the city */
+/* Nombre de pais apagado pequeno debajo de la ciudad */
 .broom-flight-notification__bubble-country {
   font-size: 12px;
   color: #999;
   font-weight: 400;
 }
 
-/* CSS triangle pointing left, creating the speech bubble tail toward the plane */
+/* Triangulo CSS apuntando a la izquierda, creando la cola del bocadillo hacia el avion */
 .broom-flight-notification__bubble-tail {
   position: absolute;
   left: -10px;
@@ -156,7 +156,7 @@
   filter: drop-shadow(-2px 0 3px rgba(0, 0, 0, 0.05));
 }
 
-/* Red circular close button pinned to the top-right corner of the bubble */
+/* Boton de cierre circular rojo fijado en la esquina superior derecha del bocadillo */
 .broom-flight-notification__close {
   position: absolute;
   top: -10px;
@@ -175,7 +175,7 @@
   animation: closeButtonAppear 0.3s ease-out 2s backwards;
 }
 
-/* Close button scales in from zero after a 2s delay */
+/* El boton de cierre escala desde cero tras un retardo de 2s */
 @keyframes closeButtonAppear {
   0% {
     opacity: 0;
@@ -187,13 +187,13 @@
   }
 }
 
-/* Close button darkens and scales up on hover */
+/* El boton de cierre se oscurece y escala al pasar el cursor */
 .broom-flight-notification__close:hover {
   background: #cc0000;
   transform: scale(1.1);
 }
 
-/* White X icon inside the close button */
+/* Icono X blanco dentro del boton de cierre */
 .broom-flight-notification__close-icon {
   width: 14px;
   height: 14px;
@@ -201,7 +201,7 @@
   color: white;
 }
 
-/* At 768px: plane image and bubble shrink; fly animation has a shorter off-screen offset */
+/* A 768px: la imagen del avion y el bocadillo se encogen; la animacion de vuelo tiene un desplazamiento fuera de pantalla mas corto */
 @media (max-width: 768px) {
   .broom-flight-notification__plane-img {
     width: 60px;
@@ -224,7 +224,7 @@
     font-size: 11px;
   }
 
-  /* Reduced off-screen offset for smaller viewports */
+  /* Desplazamiento fuera de pantalla reducido para ventanas de visualizacion mas pequenas */
   @keyframes flyAcrossScreen {
     0% {
       left: -400px;
@@ -248,7 +248,7 @@
   }
 }
 
-/* At 480px: plane and bubble shrink further */
+/* A 480px: el avion y el bocadillo se encogen aun mas */
 @media (max-width: 480px) {
   .broom-flight-notification__plane-img {
     width: 50px;

@@ -1,6 +1,6 @@
-/* detallereserva.css - Reservation detail modal styles including animated backdrop, flight detail cards, route display, passenger grid, payment section, review form with star rating, and responsive breakpoints */
+/* detallereserva.css - Estilos del modal de detalle de reserva, incluyendo fondo animado, tarjetas de detalle de vuelo, visualizacion de ruta, grilla de pasajeros, seccion de pago, formulario de resena con calificacion de estrellas y puntos de quiebre responsivos */
 
-/* Semi-transparent dark overlay that covers the full viewport with a fade-in animation */
+/* Superposicion oscura semitransparente que cubre toda la ventana de visualizacion con animacion de aparicion */
 .modal-backdrop {
     position: fixed;
     top: 0;
@@ -17,7 +17,7 @@
     animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Modal container: full width up to 1400px, project background, slides up on enter */
+/* Contenedor del modal: ancho completo hasta 1400px, fondo del proyecto, sube al entrar */
 .detalle-reserva-modal {
     width: 100%;
     max-width: 1400px;
@@ -28,7 +28,7 @@
     animation: slideUp 0.4s ease-out;
 }
 
-/* Slide-up entrance: modal translates from 50px below while fading in */
+/* Entrada de deslizamiento hacia arriba: el modal se traslada desde 50px abajo mientras aparece con fundido */
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -40,7 +40,7 @@
     }
 }
 
-/* Backdrop fade-in from fully transparent */
+/* Aparicion del fondo desde completamente transparente */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -50,21 +50,21 @@
     }
 }
 
-/* Inner content area centered at 1400px with side padding */
+/* Area de contenido interior centrada en 1400px con relleno lateral */
 .detalle-reserva__container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 1.5rem;
 }
 
-/* Header area: right-aligned close button with 2rem bottom margin */
+/* Area de encabezado: boton de cierre alineado a la derecha con margen inferior de 2rem */
 .detalle-reserva__header {
     padding: 1.5rem 0;
     text-align: right;
     margin-bottom: 2rem;
 }
 
-/* Transparent close button with muted border and uppercase text */
+/* Boton de cierre transparente con borde apagado y texto en mayusculas */
 .detalle-reserva__close {
     background: transparent;
     border: 2px solid var(--text-muted);
@@ -78,14 +78,14 @@
     transition: var(--transition);
 }
 
-/* Close button border and text turn gold with a slight scale on hover */
+/* El borde y texto del boton de cierre se vuelven dorados con una ligera escala al pasar el cursor */
 .detalle-reserva__close:hover {
     color: var(--primary-color);
     border-color: var(--primary-color);
     transform: scale(1.05);
 }
 
-/* Centered header row containing the title and status badge */
+/* Fila de encabezado centrada con titulo y insignia de estado */
 .detalle-reserva__header-content {
     display: flex;
     align-items: center;
@@ -94,7 +94,7 @@
     justify-content: center;
 }
 
-/* Fluid reservation title from 1.8rem to 2.5rem, light weight with tight tracking */
+/* Titulo de reserva fluido de 1.8rem a 2.5rem, peso ligero con espaciado ajustado */
 .detalle-reserva__title {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 300;
@@ -103,7 +103,7 @@
     letter-spacing: -1px;
 }
 
-/* Status badge pill: 0.75rem bold uppercase text */
+/* Pastilla de insignia de estado: texto en negrita a 0.75rem en mayusculas */
 .detalle-reserva__status {
     padding: 0.5rem 1rem;
     border-radius: 20px;
@@ -112,14 +112,14 @@
     text-transform: uppercase;
 }
 
-/* Confirmed status: green background with dark green text */
+/* Estado confirmado: fondo verde con texto verde oscuro */
 .status--confirmed { background: #e8f5e9; color: #2e7d32; }
-/* Completed status: light grey background with mid grey text */
+/* Estado completado: fondo gris claro con texto gris medio */
 .status--completed { background: #f5f5f5; color: #616161; }
-/* Cancelled status: light red background with dark red text */
+/* Estado cancelado: fondo rojo claro con texto rojo oscuro */
 .status--cancelled { background: #ffebee; color: #c62828; }
 
-/* Centered subtitle below the header content */
+/* Subtitulo centrado debajo del contenido del encabezado */
 .detalle-reserva__subtitle {
     color: var(--text-muted);
     font-size: 1rem;
@@ -127,18 +127,18 @@
     margin-top: 0.5rem;
 }
 
-/* Bottom padding wrapper for the modal content area */
+/* Contenedor con relleno inferior para el area de contenido del modal */
 .detalle-reserva__content {
     padding-bottom: 3rem;
 }
 
-/* Centered main content column capped at 1200px */
+/* Columna de contenido principal centrada limitada a 1200px */
 .detalle-reserva__main {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Section heading: uppercase with wide tracking and a gold left border */
+/* Encabezado de seccion: mayusculas con espaciado amplio y borde izquierdo dorado */
 .section-title {
     font-size: 1.5rem;
     color: var(--secondary-color);
@@ -150,7 +150,7 @@
     font-weight: 400;
 }
 
-/* Centered confirmation card with large asymmetric radius */
+/* Tarjeta de confirmacion centrada con radio asimetrico grande */
 .confirmation-card {
     background: var(--white);
     border-radius: 4px 50px;
@@ -160,7 +160,7 @@
     margin-bottom: 5rem;
 }
 
-/* Centered flex column inside the confirmation card */
+/* Columna flex centrada dentro de la tarjeta de confirmacion */
 .confirmation-card__content {
     display: flex;
     flex-direction: column;
@@ -168,7 +168,7 @@
     gap: 1.5rem;
 }
 
-/* Booking code label in small all-caps muted text */
+/* Etiqueta del codigo de reserva en texto apagado pequeno en mayusculas */
 .confirmation-card__title {
     font-size: 1.2rem;
     color: var(--text-muted);
@@ -177,7 +177,7 @@
     font-weight: 600;
 }
 
-/* Dashed gold-bordered box displaying the booking reference code */
+/* Cuadro con borde dorado punteado que muestra el codigo de referencia de la reserva */
 .confirmation-card__code {
     background: linear-gradient(135deg, rgba(139, 107, 74, 0.08), rgba(139, 107, 74, 0.03));
     border: 2px dashed var(--primary-color);
@@ -185,7 +185,7 @@
     padding: 2rem 3rem;
 }
 
-/* Large monospaced booking reference in bold gold */
+/* Referencia de reserva grande en monoespacio y negrita dorada */
 .confirmation-card__code-value {
     font-size: 2rem;
     font-weight: 700;
@@ -194,18 +194,18 @@
     font-family: 'Courier New', monospace;
 }
 
-/* Muted note text below the booking code */
+/* Texto de nota apagado debajo del codigo de reserva */
 .confirmation-card__note {
     font-size: 0.9rem;
     color: var(--text-muted);
 }
 
-/* Flight details section with 5rem bottom margin */
+/* Seccion de detalles del vuelo con margen inferior de 5rem */
 .flight-details-section {
     margin-bottom: 5rem;
 }
 
-/* Individual flight detail card: white with large asymmetric radius and hover lift */
+/* Tarjeta de detalle de vuelo individual: blanca con radio asimetrico grande y elevacion al pasar el cursor */
 .flight-detail-card {
     background: var(--white);
     border-radius: 4px 60px 4px 60px;
@@ -215,13 +215,13 @@
     transition: var(--transition);
 }
 
-/* Card lifts and deepens shadow on hover */
+/* La tarjeta se eleva y profundiza la sombra al pasar el cursor */
 .flight-detail-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 20px 45px rgba(0,0,0,0.1);
 }
 
-/* Card header: beige background with badge and flight number in a space-between row */
+/* Encabezado de la tarjeta: fondo beige con insignia y numero de vuelo en fila separada */
 .flight-detail-card__header {
     background: #fcfbf9;
     padding: 1.5rem 2rem;
@@ -231,7 +231,7 @@
     border-bottom: 2px solid var(--perla-dark);
 }
 
-/* Uppercase badge text (e.g. "IDA", "VUELTA") in secondary color */
+/* Texto de insignia en mayusculas (por ejemplo "IDA", "VUELTA") en color secundario */
 .flight-detail-card__badge {
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -240,14 +240,14 @@
     font-weight: 700;
 }
 
-/* Flight number displayed in gold */
+/* Numero de vuelo mostrado en dorado */
 .flight-detail-card__number {
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--primary-color);
 }
 
-/* Route section: gradient background with origin, arrow, and destination */
+/* Seccion de ruta: fondo con gradiente con origen, flecha y destino */
 .flight-detail-card__route {
     padding: 2.5rem 2rem;
     display: flex;
@@ -257,7 +257,7 @@
     border-bottom: 1px solid var(--perla-dark);
 }
 
-/* Route endpoint: centered column with IATA code, city, and time */
+/* Punto de ruta: columna centrada con codigo IATA, ciudad y hora */
 .route-point {
     display: flex;
     flex-direction: column;
@@ -265,7 +265,7 @@
     gap: 0.5rem;
 }
 
-/* Large bold IATA airport code with wide letter spacing */
+/* Codigo IATA del aeropuerto grande y en negrita con espaciado amplio */
 .route-point__code {
     font-size: 2.5rem;
     font-weight: 700;
@@ -273,18 +273,18 @@
     letter-spacing: 2px;
 }
 
-/* City name in small muted text below the IATA code */
+/* Nombre de ciudad en texto apagado pequeno debajo del codigo IATA */
 .route-point__city {
     font-size: 0.9rem;
     color: var(--text-muted);
 }
 
-/* Gold arrow icon between origin and destination */
+/* Icono de flecha dorada entre origen y destino */
 .route-arrow {
     color: var(--primary-color);
 }
 
-/* Info panel below the route display with flex column and gap */
+/* Panel de informacion debajo de la visualizacion de ruta con columna flex y separacion */
 .flight-detail-card__info {
     padding: 2rem;
     display: flex;
@@ -292,21 +292,21 @@
     gap: 1.5rem;
 }
 
-/* Auto-fit grid of labeled flight information items */
+/* Grilla de ajuste automatico de elementos de informacion de vuelo etiquetados */
 .info-group {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 2rem;
 }
 
-/* Individual info datum: stacked label and value */
+/* Dato de informacion individual: etiqueta y valor apilados */
 .info-item {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
 }
 
-/* Tiny all-caps muted label */
+/* Etiqueta pequena en mayusculas apagada */
 .info-item__label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -315,33 +315,33 @@
     font-weight: 600;
 }
 
-/* Medium-weight value in secondary color */
+/* Valor con peso medio en color secundario */
 .info-item__value {
     font-size: 1.1rem;
     color: var(--secondary-color);
     font-weight: 500;
 }
 
-/* Highlighted time value in bold gold */
+/* Valor de hora resaltado en dorado y negrita */
 .info-item__time {
     font-size: 1.3rem;
     color: var(--primary-color);
     font-weight: 700;
 }
 
-/* Passengers section with 5rem bottom margin */
+/* Seccion de pasajeros con margen inferior de 5rem */
 .passengers-section {
     margin-bottom: 5rem;
 }
 
-/* Auto-fit grid of passenger cards, minimum 500px wide */
+/* Grilla de ajuste automatico de tarjetas de pasajeros, minimo 500px de ancho */
 .passengers-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
     gap: 2rem;
 }
 
-/* Individual passenger card with asymmetric radius and hover lift */
+/* Tarjeta de pasajero individual con radio asimetrico y elevacion al pasar el cursor */
 .passenger-detail-card {
     background: var(--white);
     border-radius: 4px 40px;
@@ -350,20 +350,20 @@
     transition: var(--transition);
 }
 
-/* Passenger card lifts and deepens shadow on hover */
+/* La tarjeta de pasajero se eleva y profundiza la sombra al pasar el cursor */
 .passenger-detail-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 15px 40px rgba(0,0,0,0.1);
 }
 
-/* Beige header of the passenger card with a bottom separator */
+/* Encabezado beige de la tarjeta de pasajero con separador inferior */
 .passenger-detail-card__header {
     background: #fcfbf9;
     padding: 1.2rem 1.5rem;
     border-bottom: 2px solid var(--perla-dark);
 }
 
-/* All-caps passenger name heading */
+/* Encabezado de nombre del pasajero en mayusculas */
 .passenger-detail-card__title {
     font-size: 1rem;
     text-transform: uppercase;
@@ -373,7 +373,7 @@
     margin: 0;
 }
 
-/* Card body with flex column and gap for info rows */
+/* Cuerpo de la tarjeta con columna flex y separacion para las filas de informacion */
 .passenger-detail-card__content {
     padding: 2rem 1.5rem;
     display: flex;
@@ -381,21 +381,21 @@
     gap: 1.5rem;
 }
 
-/* Auto-fit grid row of passenger info items */
+/* Fila de grilla de ajuste automatico de elementos de informacion del pasajero */
 .passenger-info-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
 }
 
-/* Individual passenger detail: stacked label and value */
+/* Detalle de pasajero individual: etiqueta y valor apilados */
 .passenger-info-item {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
 }
 
-/* Tiny all-caps muted label */
+/* Etiqueta pequena en mayusculas apagada */
 .passenger-info-item__label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -404,19 +404,19 @@
     font-weight: 600;
 }
 
-/* Medium-weight value in secondary color */
+/* Valor con peso medio en color secundario */
 .passenger-info-item__value {
     font-size: 0.95rem;
     color: var(--secondary-color);
     font-weight: 500;
 }
 
-/* Payment section with 5rem bottom margin */
+/* Seccion de pago con margen inferior de 5rem */
 .payment-section {
     margin-bottom: 5rem;
 }
 
-/* Payment card: white auto-fit grid with large asymmetric radius */
+/* Tarjeta de pago: grilla blanca de ajuste automatico con radio asimetrico grande */
 .payment-card {
     background: var(--white);
     border-radius: 4px 50px;
@@ -427,14 +427,14 @@
     gap: 2rem;
 }
 
-/* Individual payment datum: stacked label and value */
+/* Dato de pago individual: etiqueta y valor apilados */
 .payment-detail {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/* Tiny all-caps muted label */
+/* Etiqueta pequena en mayusculas apagada */
 .payment-detail__label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -443,27 +443,27 @@
     font-weight: 600;
 }
 
-/* Medium-weight value in secondary color */
+/* Valor con peso medio en color secundario */
 .payment-detail__value {
     font-size: 1.2rem;
     color: var(--secondary-color);
     font-weight: 600;
 }
 
-/* Total row: top border separator and overrides for value size and color */
+/* Fila de total: separador superior y anulaciones para tamano y color del valor */
 .payment-detail--total {
     padding-top: 1rem;
     border-top: 2px solid var(--perla-dark);
 }
 
-/* Grand total displayed large in gold with light weight */
+/* Total general mostrado grande en dorado con peso ligero */
 .payment-detail--total .payment-detail__value {
     font-size: 2.5rem;
     color: var(--primary-color);
     font-weight: 300;
 }
 
-/* Centered flex row of action buttons with wrapping */
+/* Fila flex centrada de botones de accion con ajuste de linea */
 .detalle-reserva__actions {
     display: flex;
     flex-wrap: wrap;
@@ -473,7 +473,7 @@
     margin-top: 3rem;
 }
 
-/* Base action button: asymmetric radius with a spring-like transition */
+/* Boton de accion base: radio asimetrico con transicion de resorte */
 .action-btn {
     padding: 1rem 2.5rem;
     border-radius: 0 16px 0 16px;
@@ -487,42 +487,42 @@
     font-size: 0.9rem;
 }
 
-/* Primary action button: dark background with a subtle shadow */
+/* Boton de accion primario: fondo oscuro con sombra sutil */
 .action-btn--primary {
     background-color: var(--secondary-color);
     color: var(--white);
     box-shadow: 0 8px 20px rgba(28, 26, 24, 0.2);
 }
 
-/* Primary button turns gold and lifts on hover */
+/* El boton primario se vuelve dorado y se eleva al pasar el cursor */
 .action-btn--primary:hover {
     background-color: var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 12px 30px rgba(28, 26, 24, 0.3);
 }
 
-/* Secondary action button: gold background with a gold shadow */
+/* Boton de accion secundario: fondo dorado con sombra dorada */
 .action-btn--secondary {
     background-color: var(--primary-color);
     color: var(--white);
     box-shadow: 0 8px 20px rgba(139, 107, 74, 0.3);
 }
 
-/* Secondary button turns dark and lifts on hover */
+/* El boton secundario se vuelve oscuro y se eleva al pasar el cursor */
 .action-btn--secondary:hover {
     background-color: var(--secondary-color);
     transform: translateY(-2px);
     box-shadow: 0 12px 30px rgba(139, 107, 74, 0.4);
 }
 
-/* Outline action button: transparent with a dark border */
+/* Boton de accion de contorno: transparente con borde oscuro */
 .action-btn--outline {
     background-color: transparent;
     color: var(--secondary-color);
     border: 2px solid var(--secondary-color);
 }
 
-/* Outline button fills dark and lifts on hover */
+/* El boton de contorno se rellena de oscuro y se eleva al pasar el cursor */
 .action-btn--outline:hover {
     background-color: var(--secondary-color);
     color: var(--white);
@@ -530,14 +530,14 @@
     box-shadow: 0 8px 20px rgba(28, 26, 24, 0.15);
 }
 
-/* At 1200px: content grid collapses to single column */
+/* A 1200px: la grilla de contenido colapsa a una columna */
 @media (max-width: 1200px) {
     .detalle-reserva__content {
         grid-template-columns: 1fr;
     }
 }
 
-/* At 768px: modal fills full screen, route stacks vertically, grids collapse */
+/* A 768px: el modal ocupa la pantalla completa, la ruta se apila verticalmente, las grillas colapsan */
 @media (max-width: 768px) {
     .modal-backdrop {
         padding: 0;
@@ -572,7 +572,7 @@
         gap: 1.5rem;
     }
 
-    /* Arrow rotates 90deg to point downward in vertical route layout */
+    /* La flecha rota 90 grados para apuntar hacia abajo en la disposicion vertical de ruta */
     .route-arrow {
         transform: rotate(90deg);
     }
@@ -594,7 +594,7 @@
         flex-direction: column;
     }
 
-    /* Action buttons become full-width stacked on mobile */
+    /* Los botones de accion pasan a ancho completo apilados en movil */
     .action-btn {
         width: 100%;
         text-align: center;
@@ -605,7 +605,7 @@
     }
 }
 
-/* At 480px: smaller heading and code text */
+/* A 480px: encabezado y texto de codigo mas pequenos */
 @media (max-width: 480px) {
     .detalle-reserva__title {
         font-size: 1.5rem;
@@ -629,19 +629,19 @@
     }
 }
 
-/* Review section with 5rem bottom margin */
+/* Seccion de resena con margen inferior de 5rem */
 .review-section {
     margin-bottom: 5rem;
 }
 
-/* Centered loading placeholder with muted italic text */
+/* Marcador de posicion de carga centrado con texto apagado en cursiva */
 .review-loading {
     text-align: center;
     padding: 2rem;
     color: var(--text-muted);
 }
 
-/* White card displaying an existing review with asymmetric radius */
+/* Tarjeta blanca que muestra una resena existente con radio asimetrico */
 .review-existing {
     background: var(--white);
     border-radius: 4px 40px;
@@ -649,7 +649,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
-/* Existing review header: title and date in a space-between row */
+/* Encabezado de resena existente: titulo y fecha en fila separada */
 .review-existing__header {
     display: flex;
     justify-content: space-between;
@@ -659,7 +659,7 @@
     border-bottom: 1px solid var(--perla-dark);
 }
 
-/* All-caps review title */
+/* Titulo de resena en mayusculas */
 .review-existing__title {
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -668,7 +668,7 @@
     font-weight: 600;
 }
 
-/* Full review text with comfortable line height */
+/* Texto completo de la resena con interlineado comodo */
 .review-existing__content {
     font-size: 1rem;
     color: var(--secondary-color);
@@ -676,13 +676,13 @@
     margin-bottom: 1rem;
 }
 
-/* Small muted submission date */
+/* Fecha de envio pequena y apagada */
 .review-existing__date {
     font-size: 0.85rem;
     color: var(--text-muted);
 }
 
-/* Review submission form: white card with asymmetric radius */
+/* Formulario de envio de resena: tarjeta blanca con radio asimetrico */
 .review-form {
     background: var(--white);
     border-radius: 4px 40px;
@@ -690,12 +690,12 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
-/* Form field wrapper with bottom margin */
+/* Contenedor de campo del formulario con margen inferior */
 .review-form__field {
     margin-bottom: 1.5rem;
 }
 
-/* Small all-caps bold label above each form field */
+/* Etiqueta pequena en mayusculas y negrita encima de cada campo del formulario */
 .review-form__label {
     display: block;
     font-size: 0.8rem;
@@ -706,18 +706,18 @@
     margin-bottom: 0.75rem;
 }
 
-/* Flex row of star rating buttons with a gap */
+/* Fila flex de botones de calificacion de estrellas con separacion */
 .review-stars {
     display: flex;
     gap: 0.5rem;
 }
 
-/* Read-only star display uses a smaller gap */
+/* La visualizacion de estrellas de solo lectura usa una separacion mas pequena */
 .review-stars--display {
     gap: 0.25rem;
 }
 
-/* Clickable star button: large grey star that turns gold when filled */
+/* Boton de estrella clicable: estrella gris grande que se vuelve dorada cuando esta rellena */
 .review-star {
     background: none;
     border: none;
@@ -728,28 +728,28 @@
     transition: all 0.2s ease;
 }
 
-/* Star scales slightly on hover */
+/* La estrella escala ligeramente al pasar el cursor */
 .review-star:hover {
     transform: scale(1.1);
 }
 
-/* Filled star colored gold */
+/* Estrella rellena coloreada en dorado */
 .review-star--filled {
     color: var(--primary-color);
 }
 
-/* Display-mode stars: smaller with no hover interaction */
+/* Estrellas en modo de visualizacion: mas pequenas y sin interaccion al pasar el cursor */
 .review-stars--display .review-star {
     cursor: default;
     font-size: 1.5rem;
 }
 
-/* Display stars do not scale on hover */
+/* Las estrellas de visualizacion no escalan al pasar el cursor */
 .review-stars--display .review-star:hover {
     transform: none;
 }
 
-/* Resizable textarea with project font and gold border on focus */
+/* Textarea redimensionable con fuente del proyecto y borde dorado al enfocar */
 .review-form__textarea {
     width: 100%;
     padding: 1rem;
@@ -762,13 +762,13 @@
     transition: var(--transition);
 }
 
-/* Textarea border turns gold on focus */
+/* El borde del textarea se vuelve dorado al enfocar */
 .review-form__textarea:focus {
     outline: none;
     border-color: var(--primary-color);
 }
 
-/* Right-aligned character counter below the textarea */
+/* Contador de caracteres alineado a la derecha debajo del textarea */
 .review-form__counter {
     display: block;
     text-align: right;
@@ -777,7 +777,7 @@
     margin-top: 0.5rem;
 }
 
-/* Full-width submit button in gold with an active hover that turns dark */
+/* Boton de envio de ancho completo en dorado con efecto de pasar el cursor que lo vuelve oscuro */
 .review-form__submit {
     width: 100%;
     padding: 1rem 2rem;
@@ -793,20 +793,20 @@
     transition: var(--transition);
 }
 
-/* Submit button turns dark and lifts when enabled on hover */
+/* El boton de envio se vuelve oscuro y se eleva cuando esta habilitado al pasar el cursor */
 .review-form__submit:hover:not(:disabled) {
     background-color: var(--secondary-color);
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(28, 26, 24, 0.2);
 }
 
-/* Disabled submit button: reduced opacity and not-allowed cursor */
+/* Boton de envio desactivado: opacidad reducida y cursor no permitido */
 .review-form__submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-/* At 768px: review form padding tightens and header stacks */
+/* A 768px: el relleno del formulario de resena se ajusta y el encabezado se apila */
 @media (max-width: 768px) {
     .review-form {
         padding: 1.5rem;

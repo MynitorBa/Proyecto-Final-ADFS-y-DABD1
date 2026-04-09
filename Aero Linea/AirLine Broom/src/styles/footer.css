@@ -1,6 +1,6 @@
-/* footer.css - Site-wide footer styles including brand column, navigation links, social icons, contact items, bottom bar with copyright, legal links, and responsive grid breakpoints */
+/* footer.css - Estilos del pie de pagina del sitio, incluyendo columna de marca, enlaces de navegacion, iconos de redes sociales, elementos de contacto, barra inferior con copyright, enlaces legales y puntos de quiebre responsivos de la grilla */
 
-/* Reset margin, padding, and box-sizing for the footer and all its children */
+/* Restablecer margin, padding y box-sizing para el pie de pagina y todos sus hijos */
 .broom-footer,
 .broom-footer * {
   margin: 0;
@@ -8,7 +8,7 @@
   box-sizing: border-box;
 }
 
-/* Dark charcoal footer background with cream text */
+/* Fondo oscuro de carbon para el pie de pagina con texto crema */
 .broom-footer {
   background-color: #1C1A18;
   color: #F2EFEA;
@@ -16,7 +16,7 @@
   margin-top: auto;
 }
 
-/* Four-column grid layout for the footer content, capped at 1400px */
+/* Disposicion de cuatro columnas para el contenido del pie de pagina, limitada a 1400px */
 .broom-footer__container {
   max-width: 1400px;
   margin: 0 auto;
@@ -26,17 +26,17 @@
   gap: 3rem;
 }
 
-/* Brand column: wider than the nav columns, capped at 320px */
+/* Columna de marca: mas ancha que las columnas de navegacion, limitada a 320px */
 .broom-footer__brand {
   max-width: 320px;
 }
 
-/* Logo wrapper with bottom margin */
+/* Contenedor del logo con margen inferior */
 .broom-footer__logo {
   margin-bottom: 1.5rem;
 }
 
-/* Logo image inverted to white using a CSS filter chain */
+/* Imagen del logo invertida a blanco mediante una cadena de filtros CSS */
 .broom-footer__logo-img {
   height: 45px;
   width: auto;
@@ -44,7 +44,7 @@
   filter: brightness(0) saturate(100%) invert(98%) sepia(3%) saturate(354%) hue-rotate(352deg) brightness(101%) contrast(92%);
 }
 
-/* Brand description in warm muted gold with relaxed line height */
+/* Descripcion de la marca en dorado apagado calido con interlineado relajado */
 .broom-footer__description {
   font-size: 0.95rem;
   line-height: 1.8;
@@ -52,13 +52,13 @@
   margin-bottom: 2rem;
 }
 
-/* Flex row of circular social icon buttons */
+/* Fila flex de botones de icono de redes sociales circulares */
 .broom-footer__social {
   display: flex;
   gap: 1rem;
 }
 
-/* Social icon button: 40px circle with a dark border and a smooth hover transition */
+/* Boton de icono de redes sociales: circulo de 40px con borde oscuro y transicion suave al pasar el cursor */
 .broom-footer__social-link {
   width: 40px;
   height: 40px;
@@ -72,26 +72,26 @@
   transition: all 0.3s ease;
 }
 
-/* SVG icon inside the social button */
+/* Icono SVG dentro del boton de redes sociales */
 .broom-footer__social-link svg {
   width: 18px;
   height: 18px;
 }
 
-/* Social button fills with warm brown and lifts on hover */
+/* El boton de redes sociales se rellena de marron calido y se eleva al pasar el cursor */
 .broom-footer__social-link:hover {
   background-color: #8B6B4A;
   border-color: #8B6B4A;
   transform: translateY(-3px);
 }
 
-/* Each navigation column: flex column for stacking title and link list */
+/* Cada columna de navegacion: columna flex para apilar el titulo y la lista de enlaces */
 .broom-footer__section {
   display: flex;
   flex-direction: column;
 }
 
-/* Column title: bold white uppercase with wide letter spacing */
+/* Titulo de columna: blanco en negrita, mayusculas con espaciado amplio */
 .broom-footer__title {
   font-size: 1rem;
   font-weight: 600;
@@ -102,7 +102,7 @@
   font-size: 0.85rem;
 }
 
-/* Unstacked link list with vertical gaps */
+/* Lista de enlaces sin apilar con separaciones verticales */
 .broom-footer__links {
   list-style: none;
   display: flex;
@@ -110,7 +110,7 @@
   gap: 0.8rem;
 }
 
-/* Link button: borderless with warm gold color and a left-shift hover effect */
+/* Boton de enlace: sin borde, color dorado calido y efecto de desplazamiento a la izquierda al pasar el cursor */
 .broom-footer__link {
   background: none;
   border: none;
@@ -123,20 +123,20 @@
   transition: all 0.25s ease;
 }
 
-/* Link turns fully cream and shifts 6px right on hover */
+/* El enlace se vuelve totalmente crema y se desplaza 6px a la derecha al pasar el cursor */
 .broom-footer__link:hover {
   color: #F2EFEA;
   padding-left: 6px;
 }
 
-/* Vertical stack of contact detail rows */
+/* Pila vertical de filas de detalle de contacto */
 .broom-footer__contact-items {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-/* Each contact row: icon and text side by side in muted gold */
+/* Cada fila de contacto: icono y texto lado a lado en dorado apagado */
 .broom-footer__contact-item {
   display: flex;
   align-items: center;
@@ -145,19 +145,19 @@
   font-size: 0.88rem;
 }
 
-/* Contact icon in a slightly darker warm brown */
+/* Icono de contacto en marron calido ligeramente mas oscuro */
 .broom-footer__contact-item svg {
   flex-shrink: 0;
   color: #8B6B4A;
 }
 
-/* Bottom bar: darker strip separated from the main footer by a dark border */
+/* Barra inferior: franja mas oscura separada del pie de pagina principal por un borde oscuro */
 .broom-footer__bottom {
   border-top: 1px solid #3A3531;
   background-color: #161412;
 }
 
-/* Centered bottom bar content: copyright and legal links on opposite ends */
+/* Contenido centrado de la barra inferior: copyright y enlaces legales en extremos opuestos */
 .broom-footer__bottom-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -169,25 +169,25 @@
   flex-wrap: wrap;
 }
 
-/* Copyright text in very muted grey */
+/* Texto de copyright en gris muy apagado */
 .broom-footer__copyright {
   font-size: 0.82rem;
   color: #6B6560;
 }
 
-/* Brand name within the copyright line is highlighted in warm gold */
+/* El nombre de la marca dentro del copyright se resalta en dorado calido */
 .broom-footer__copyright strong {
   color: #B89A7A;
 }
 
-/* Inline legal link row with small separators */
+/* Fila de enlaces legales en linea con separadores pequenos */
 .broom-footer__legal {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* Legal link button: borderless in muted grey, turns gold on hover */
+/* Boton de enlace legal: sin borde en gris apagado, se vuelve dorado al pasar el cursor */
 .broom-footer__legal-link {
   background: none;
   border: none;
@@ -203,13 +203,13 @@
   color: #B89A7A;
 }
 
-/* Vertical separator character between legal links */
+/* Caracter separador vertical entre enlaces legales */
 .broom-footer__separator {
   color: #3A3531;
   font-size: 0.7rem;
 }
 
-/* At 1024px: footer collapses to two columns; brand spans full width */
+/* A 1024px: el pie de pagina colapsa a dos columnas; la marca ocupa el ancho completo */
 @media (max-width: 1024px) {
   .broom-footer__container {
     grid-template-columns: 1fr 1fr;
@@ -221,7 +221,7 @@
   }
 }
 
-/* At 576px: single-column layout, centered text alignment, centered social icons */
+/* A 576px: disposicion de una columna, alineacion de texto centrada, iconos de redes sociales centrados */
 @media (max-width: 576px) {
   .broom-footer__container {
     grid-template-columns: 1fr;
@@ -241,7 +241,7 @@
   .broom-footer__links {
     align-items: center;
   }
-  /* Remove the left-shift hover effect on centered links */
+  /* Eliminar el efecto de desplazamiento a la izquierda en enlaces centrados */
   .broom-footer__link:hover {
     padding-left: 0;
   }

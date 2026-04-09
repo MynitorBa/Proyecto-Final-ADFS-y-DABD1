@@ -1,9 +1,9 @@
-/* header.css - Main site header styles including logo, inline navigation links with underline animation, right-side action icons, cart badge, hamburger menu, dropdown nav, desktop and mobile search bar with autocomplete dropdown, and admin link variants */
+/* header.css - Estilos del encabezado principal del sitio, incluyendo logo, enlaces de navegacion en linea con animacion de subrayado, iconos de accion del lado derecho, insignia del carrito, menu hamburguesa, navegacion desplegable, barra de busqueda de escritorio y movil con desplegable de autocompletado y variantes de enlace de administrador */
 
-/* Reset margin, padding, and box-sizing for the header and all descendants */
+/* Restablecer margin, padding y box-sizing para el encabezado y todos sus descendientes */
 .broom-header, .broom-header * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* Cream-background sticky header strip with a subtle bottom border and shadow */
+/* Barra de encabezado fija con fondo crema, borde inferior sutil y sombra */
 .broom-header {
     background-color: #F2EFEA;
     box-shadow: 0 2px 10px rgba(28,26,24,.05);
@@ -14,7 +14,7 @@
     border-bottom: 1px solid #E6E1DA;
 }
 
-/* Centered container row sized to exactly 66px tall */
+/* Fila de contenedor centrada con exactamente 66px de alto */
 .broom-header__container {
     max-width: 1400px;
     margin: 0 auto;
@@ -25,7 +25,7 @@
     gap: 1.5rem;
 }
 
-/* Logo image sized to 45px height, non-shrinking */
+/* Imagen del logo con altura de 45px, sin encogerse */
 .broom-header__logo-img {
     height: 45px;
     width: auto;
@@ -34,7 +34,7 @@
     flex-shrink: 0;
 }
 
-/* Horizontal navigation link strip matching the header height */
+/* Tira de enlaces de navegacion horizontal que coincide con la altura del encabezado */
 .broom-header__inline-nav {
     display: flex;
     align-items: center;
@@ -43,7 +43,7 @@
     gap: 0;
 }
 
-/* Inline nav link: no underline, dark muted text with a sliding bottom bar on hover */
+/* Enlace de navegacion en linea: sin subrayado, texto oscuro apagado con barra inferior deslizante al pasar el cursor */
 .broom-header__inline-link {
     position: relative;
     text-decoration: none;
@@ -58,7 +58,7 @@
     transition: color 0.2s;
     letter-spacing: 0.1px;
 }
-/* Brown underline bar that scales in from zero on hover or active state */
+/* Barra de subrayado marron que escala desde cero al pasar el cursor o en estado activo */
 .broom-header__inline-link::after {
     content: '';
     position: absolute;
@@ -69,15 +69,15 @@
     transform: scaleX(0);
     transition: transform 0.2s ease;
 }
-/* Link text darkens on hover */
+/* El texto del enlace se oscurece al pasar el cursor */
 .broom-header__inline-link:hover { color: #1C1A18; }
-/* Underline bar scales to full width on hover */
+/* La barra de subrayado escala al ancho completo al pasar el cursor */
 .broom-header__inline-link:hover::after { transform: scaleX(1); }
-/* Active link: gold text with the underline bar always visible */
+/* Enlace activo: texto dorado con la barra de subrayado siempre visible */
 .broom-header__inline-link--active { color: #8B6B4A; font-weight: 600; }
 .broom-header__inline-link--active::after { transform: scaleX(1); }
 
-/* Right-side action icons row pushed to the far right via margin-left auto */
+/* Fila de iconos de accion del lado derecho empujada al extremo derecho via margin-left auto */
 .broom-header__actions {
     display: flex;
     align-items: center;
@@ -86,7 +86,7 @@
     margin-left: auto;
 }
 
-/* Circular icon button: no border, beige hover background */
+/* Boton de icono circular: sin borde, fondo beige al pasar el cursor */
 .broom-header__action-btn {
     background: none;
     border: none;
@@ -100,12 +100,12 @@
     position: relative;
     color: #1C1A18;
 }
-/* Button background turns beige on hover */
+/* El fondo del boton se vuelve beige al pasar el cursor */
 .broom-header__action-btn:hover { background-color: #E6E1DA; }
-/* 24px SVG icon using currentColor for stroke */
+/* Icono SVG de 24px usando currentColor para el trazo */
 .broom-header__action-icon { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; }
 
-/* Brown circular cart counter badge pinned to the top-right of the cart button */
+/* Insignia circular marron del contador del carrito fijada en la esquina superior derecha del boton del carrito */
 .broom-header__cart-count {
     position: absolute;
     top: 0; right: 0;
@@ -122,7 +122,7 @@
     border: 2px solid #F2EFEA;
 }
 
-/* Hamburger toggle button: stacked bar button, higher z-index to stay above the nav panel */
+/* Boton de alternancia hamburguesa: boton de barras apiladas, z-index mayor para permanecer sobre el panel de navegacion */
 .broom-header__menu-toggle {
     background: none;
     border: none;
@@ -133,7 +133,7 @@
     gap: 5px;
     z-index: 1001;
 }
-/* Each hamburger bar: thin dark rectangle */
+/* Cada barra del hamburguesa: rectangulo oscuro delgado */
 .broom-header__hamburger {
     width: 22px; height: 2px;
     background-color: #1C1A18;
@@ -141,14 +141,14 @@
     transition: all 0.3s ease;
     border-radius: 1px;
 }
-/* Active state: top bar rotates +45deg and drops down to cross */
+/* Estado activo: la barra superior rota +45 grados y baja para formar una cruz */
 .broom-header__menu-toggle--active .broom-header__hamburger:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-/* Active state: middle bar fades out */
+/* Estado activo: la barra del medio desaparece con fundido */
 .broom-header__menu-toggle--active .broom-header__hamburger:nth-child(2) { opacity: 0; }
-/* Active state: bottom bar rotates -45deg and rises to cross */
+/* Estado activo: la barra inferior rota -45 grados y sube para formar una cruz */
 .broom-header__menu-toggle--active .broom-header__hamburger:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-/* Dropdown nav panel: starts collapsed, expands to max 600px on active */
+/* Panel de navegacion desplegable: comienza colapsado, se expande hasta 600px cuando esta activo */
 .broom-header__nav {
     background-color: #EAE4DB;
     max-height: 0;
@@ -164,12 +164,12 @@
     box-shadow: -4px 8px 24px rgba(28,26,24,.12);
     z-index: 999;
 }
-/* Expanded state allows content to grow up to 600px */
+/* El estado expandido permite que el contenido crezca hasta 600px */
 .broom-header__nav--active {
     max-height: 600px;
 }
 
-/* Desktop search bar: flex-grows up to 420px, pushed left by margin-left auto */
+/* Barra de busqueda de escritorio: crece flexiblemente hasta 420px, empujada a la izquierda por margin-left auto */
 .broom-header__search--desktop {
     flex: 1;
     max-width: 420px;
@@ -179,7 +179,7 @@
     margin-left: auto;
 }
 
-/* Mobile search bar: hidden by default, shown below the header on mobile */
+/* Barra de busqueda movil: oculta por defecto, mostrada debajo del encabezado en movil */
 .broom-header__search--mobile {
     display: none;
     padding: 1.5rem 2rem 1rem;
@@ -188,7 +188,7 @@
     background: #EAE4DB;
 }
 
-/* Pill-shaped search input with a warm brown border and gold focus ring */
+/* Input de busqueda en forma de pastilla con borde marron calido y anillo de enfoque dorado */
 .broom-header__search-input {
     width: 100%;
     padding: 0.75rem 3.5rem 0.75rem 1.25rem;
@@ -201,17 +201,17 @@
     font-family: inherit;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
-/* Input border turns darker brown with a translucent ring on focus */
+/* El borde del input se vuelve marron oscuro con un anillo translucido al enfocar */
 .broom-header__search-input:focus {
     border-color: #8B6B4A;
     box-shadow: 0 0 0 3px rgba(139,107,74,.1);
 }
-/* Placeholder text in warm muted grey */
+/* Texto de marcador de posicion en gris calido apagado */
 .broom-header__search-input::placeholder {
     color: #a09888;
 }
 
-/* Brown circular search submit button inside the pill input on the right */
+/* Boton de envio de busqueda circular marron dentro del input de pastilla a la derecha */
 .broom-header__search-btn {
     position: absolute;
     right: 5px;
@@ -224,14 +224,14 @@
     cursor: pointer;
     transition: background 0.2s;
 }
-/* Search button darkens on hover */
+/* El boton de busqueda se oscurece al pasar el cursor */
 .broom-header__search-btn:hover {
     background: #6b5238;
 }
-/* White search icon inside the button */
+/* Icono de busqueda blanco dentro del boton */
 .broom-header__search-icon { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.5; }
 
-/* Autocomplete dropdown list: positioned below the search input */
+/* Lista desplegable de autocompletado: posicionada debajo del input de busqueda */
 .broom-header__search-results {
     position: absolute;
     top: calc(100% + 4px);
@@ -248,16 +248,16 @@
     overflow-y: auto;
 }
 
-/* Each autocomplete result row with a bottom separator */
+/* Cada fila de resultado de autocompletado con separador inferior */
 .broom-header__search-result-item {
     border-bottom: 1px solid #f0ece6;
 }
-/* Last item removes the separator */
+/* El ultimo elemento elimina el separador */
 .broom-header__search-result-item:last-child {
     border-bottom: none;
 }
 
-/* Result button: full-width flex row with icon, code, and destination info */
+/* Boton de resultado: fila flex de ancho completo con icono, codigo e informacion del destino */
 .broom-header__search-result-btn {
     width: 100%;
     background: none;
@@ -271,12 +271,12 @@
     transition: background 0.15s;
     font-family: inherit;
 }
-/* Result row lightens to beige on hover */
+/* La fila de resultado se aclara a beige al pasar el cursor */
 .broom-header__search-result-btn:hover {
     background: #fcfbf9;
 }
 
-/* Bold gold IATA code at the left of each result row */
+/* Codigo IATA dorado y negrita a la izquierda de cada fila de resultado */
 .broom-header__search-result-code {
     font-weight: 700;
     font-size: 0.78rem;
@@ -286,7 +286,7 @@
     flex-shrink: 0;
 }
 
-/* Stacked city name and detail text in the result row */
+/* Nombre de ciudad y texto de detalle apilados en la fila de resultado */
 .broom-header__search-result-info {
     display: flex;
     flex-direction: column;
@@ -296,7 +296,7 @@
     flex: 1;
 }
 
-/* Bold city name with text overflow ellipsis */
+/* Nombre de ciudad en negrita con elipsis por desbordamiento */
 .broom-header__search-result-city {
     font-size: 0.88rem;
     color: #1C1A18;
@@ -306,7 +306,7 @@
     text-overflow: ellipsis;
 }
 
-/* Smaller muted airport or country detail with ellipsis */
+/* Detalle de aeropuerto o pais mas pequeno y apagado con elipsis */
 .broom-header__search-result-detail {
     font-size: 0.72rem;
     color: #8a8070;
@@ -315,7 +315,7 @@
     text-overflow: ellipsis;
 }
 
-/* Gold arrow at the right of each result row, hidden and shifted left by default */
+/* Flecha dorada a la derecha de cada fila de resultado, oculta y desplazada a la izquierda por defecto */
 .broom-header__search-result-arrow {
     color: #8B6B4A;
     font-size: 1rem;
@@ -324,18 +324,18 @@
     transform: translateX(-4px);
     transition: opacity 0.2s, transform 0.2s;
 }
-/* Arrow slides in and becomes visible on result row hover */
+/* La flecha se desliza y se hace visible al pasar el cursor sobre la fila de resultado */
 .broom-header__search-result-btn:hover .broom-header__search-result-arrow {
     opacity: 1;
     transform: translateX(0);
 }
 
-/* Dropdown nav link list: padded inside the hamburger panel */
+/* Lista de enlaces del panel de navegacion desplegable: con relleno dentro del panel hamburguesa */
 .broom-header__nav-list { list-style: none; padding: 0.5rem 1.5rem 1.5rem; }
-/* Each nav item has a thin bottom separator */
+/* Cada elemento de navegacion tiene un separador inferior delgado */
 .broom-header__nav-item { border-bottom: 1px solid #D8D1C5; }
 
-/* Dropdown nav link: block element with padding, shifts right on hover */
+/* Enlace de navegacion desplegable: elemento de bloque con relleno, se desplaza a la derecha al pasar el cursor */
 .broom-header__nav-link {
     display: block;
     padding: 1rem 0;
@@ -344,23 +344,23 @@
     font-size: 0.95rem;
     transition: color 0.2s, padding-left 0.2s;
 }
-/* Link turns brown and shifts right on hover */
+/* El enlace se vuelve marron y se desplaza a la derecha al pasar el cursor */
 .broom-header__nav-link:hover { color: #8B6B4A; padding-left: 0.4rem; }
-/* Active and register links are already gold-colored */
+/* Los enlaces activo y de registro ya estan coloreados de dorado */
 .broom-header__nav-link--active { color: #8B6B4A; font-weight: 600; }
 .broom-header__nav-link--register { color: #8B6B4A; font-weight: 600; }
-/* Logout link is red */
+/* El enlace de cierre de sesion es rojo */
 .broom-header__nav-link--logout { color: #9a3a2a; }
 
-/* Spacer element below the fixed header to prevent content overlap */
+/* Elemento espaciador debajo del encabezado fijo para evitar superposicion de contenido */
 .broom-header-spacer { height: 66px; }
 
-/* At 768px: hide inline nav and desktop search; show mobile search in the dropdown */
+/* A 768px: ocultar navegacion en linea y busqueda de escritorio; mostrar busqueda movil en el desplegable */
 @media (max-width: 768px) {
     .broom-header__inline-nav { display: none; }
     .broom-header__search--desktop { display: none; }
     .broom-header__search--mobile { display: flex; flex-wrap: wrap; }
-    /* Mobile search results are positioned statically in the dropdown panel */
+    /* Los resultados de busqueda movil se posicionan estaticamente en el panel desplegable */
     .broom-header__search--mobile .broom-header__search-results {
         position: relative;
         top: 0;
@@ -369,35 +369,35 @@
         border-radius: 12px;
     }
     .broom-header__container { padding: 0 1.2rem; }
-    /* Shorter spacer for the slightly taller mobile nav bar */
+    /* Espaciador mas corto para la barra de navegacion movil ligeramente mas alta */
     .broom-header-spacer { height: 58px; }
-    /* Search button offset accounts for horizontal padding in the mobile panel */
+    /* El desplazamiento del boton de busqueda compensa el relleno horizontal en el panel movil */
     .broom-header__search--mobile .broom-header__search-btn {
         right: calc(2rem + 5px);
     }
 }
 
-/* Mobile search input uses a warm beige background */
+/* El input de busqueda movil usa un fondo beige calido */
 .broom-header__search-input {
     background: #F5F1EB;
 }
-/* Dropdown nav links are always left-aligned */
+/* Los enlaces de navegacion desplegable siempre estan alineados a la izquierda */
 .broom-header__nav-link {
     text-align: left;
 }
 
-/* Admin panel inline link: gold text, bolder weight, slightly wider tracking */
+/* Enlace en linea del panel de administrador: texto dorado, peso mas grueso, espaciado ligeramente mayor */
 .broom-header__inline-link--admin {
   color: #8B6B4A;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
-/* Admin inline link underline bar is gold */
+/* La barra de subrayado del enlace en linea de administrador es dorada */
 .broom-header__inline-link--admin::after {
   background: #8B6B4A;
 }
 
-/* Admin panel dropdown link: gold text and bold */
+/* Enlace desplegable del panel de administrador: texto dorado y negrita */
 .broom-header__nav-link--admin {
   color: #8B6B4A;
   font-weight: 700;

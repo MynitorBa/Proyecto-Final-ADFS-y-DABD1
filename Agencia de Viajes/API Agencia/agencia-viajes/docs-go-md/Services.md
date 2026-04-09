@@ -14,10 +14,10 @@ con proveedores externos (aerolineas y hoteleras).
 
 
 
+
+
 Contiene los servicios de negocio de la agencia de viajes, incluyendo
 procesamiento de pagos, reservaciones, proveedores y usuarios.
-
-
 
 
 
@@ -226,6 +226,43 @@ func (s *CancelacionService) VerificarCancelacion(reservacionID, usuarioID int) 
       - *dto.VerificarCancelacionResponse: resultado con flag global y detalle
         por proveedor
 
+type CatalogoSchedulerService struct {
+    CatalogoSchedulerService
+
+    Servicio encargado de actualizar automaticamente el catalogo de la agencia
+    cada 7 dias en segundo plano. Utiliza el CatalogoService para ejecutar
+    la sincronizacion con todos los proveedores activos registrados en BD.
+    El proceso puede detenerse de forma controlada mediante Detener.
+
+func NewCatalogoSchedulerService(service *CatalogoService) *CatalogoSchedulerService
+    NewCatalogoSchedulerService
+
+    Crea e inicializa una nueva instancia de CatalogoSchedulerService con el
+    servicio de catalogo necesario para ejecutar la actualizacion y el canal de
+    control para detener el proceso en segundo plano.
+
+      - service: instancia del servicio de catalogo a utilizar en cada ciclo
+
+      - *CatalogoSchedulerService: instancia lista para usar, aun no iniciada
+
+func (s *CatalogoSchedulerService) Detener()
+    Detener
+
+    Detiene el proceso de actualizacion automatica en segundo plano cerrando
+    el canal de control. Debe llamarse al apagar la aplicacion para liberar la
+    goroutine.
+
+func (s *CatalogoSchedulerService) Iniciar()
+    Iniciar
+
+    Lanza en segundo plano una goroutine que actualiza el catalogo completo
+    de la agencia cada 7 dias llamando al CatalogoService. El proceso puede
+    detenerse llamando a Detener.
+
+    Notas:
+      - Registra en log cada actualizacion completada, el numero de proveedores
+        procesados o cualquier error ocurrido durante el ciclo
+
 type CatalogoService struct {
     CatalogoService
 
@@ -419,7 +456,6 @@ func NewExpiracionService(db *sql.DB) *ExpiracionService
       - *ExpiracionService: instancia lista para usar, aun no iniciada
 
 func (s *ExpiracionService) Detener()
-    Detener
 
     Detiene el proceso de expiracion en segundo plano cerrando el canal de
     control. Debe llamarse al apagar la aplicacion para liberar la goroutine.
@@ -438,13 +474,11 @@ func (s *ExpiracionService) ExpirarReservacionesDeUsuario(usuarioID int) error
       - error: si falla la consulta de reservaciones pendientes del usuario en
 
 func (s *ExpiracionService) Iniciar()
-    Iniciar
 
     Lanza en segundo plano una goroutine que revisa y expira reservaciones
     pendientes vencidas cada minuto. El proceso puede detenerse llamando a
     Detener.
 
-    Notas:
       - Registra en log cada revision completada o error ocurrido
 
 type HandshakeHoteleraService struct {
@@ -588,16 +622,22 @@ type PagoService struct {
     PagoService
 
     Servicio encargado de gestionar el procesamiento de pagos de reservaciones,
-    incluyendo validacion de tarjetas, verificacion de integridad de detalles y
-    notificacion a proveedores externos.
+    incluyendo validacion de tarjetas, verificacion de integridad de detalles,
+    aplicacion de descuento por paquete y notificacion a proveedores externos.
 
-func NewPagoService(repo *repositories.PagoRepository, rr *repositories.ReservacionRepository) *PagoService
+func NewPagoService(
+	repo *repositories.PagoRepository,
+	rr *repositories.ReservacionRepository,
+	cr *repositories.AgenciaConfiguracionRepository,
+) *PagoService
     NewPagoService
 
     Crea e inicializa una nueva instancia de PagoService con sus dependencias.
 
       - repo: repositorio de pagos para operaciones en base de datos
       - rr: repositorio de reservaciones para consultar detalles
+      - cr: repositorio de configuracion de la agencia para leer el descuento de
+        paquetes
 
       - *PagoService: instancia inicializada del servicio de pagos
 
@@ -608,6 +648,9 @@ func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest
     la tarjeta, verifica que la reserva pertenezca al usuario y este pendiente,
     valida la integridad de los detalles segun el tipo de reserva, notifica a
     cada proveedor externo y finalmente confirma la reserva en la base de datos.
+    Si el tipo de reserva es paquete (3), aplica el porcentaje de descuento
+    configurado en Agencia_Configuracion sobre el total final. El descuento es
+    absorbido por la agencia, no por los proveedores.
 
       - usuarioID: identificador del usuario que realiza el pago
       - req: datos del pago incluyendo numero de tarjeta, CVV, NIT y codigo
@@ -837,6 +880,17 @@ func NewUsuarioService(db *sql.DB, ubicacionService *UbicacionService) *UsuarioS
         nacionalidades
 
       - *UsuarioService: instancia inicializada del servicio de usuarios
+
+func (s *UsuarioService) ObtenerTodos() ([]dto.UsuarioResumen, error)
+    ObtenerTodos
+
+    Retorna la lista completa de usuarios registrados en el sistema con sus
+    datos basicos y rol asignado. Usado por el panel de administracion para
+    gestion de roles y asignacion de WebService.
+
+      - []dto.UsuarioResumen: lista de usuarios con id, nombre, apellido,
+        correo y rol
+      - error: error si falla la consulta a la base de datos
 
 func (s *UsuarioService) Registrar(req dto.RegistroUsuarioRequest) (dto.ValidacionUsuarioResponse, error)
     Registrar

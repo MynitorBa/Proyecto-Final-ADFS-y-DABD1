@@ -2,41 +2,41 @@
   // @ts-nocheck
 /**
  * @file Carrito.svelte
- * @description Shopping cart page that displays all pending reservations (estadoReservaId === 1)
- * for the authenticated user. Fetches reservations from the API on mount, groups each
- * reservation's tickets by flight for display, and shows a summary sidebar with individual
- * reservation totals and the combined grand total. Redirects unauthenticated users to the
- * login page and provides a button to proceed to the checkout page.
+ * @description Pagina del carrito de compras que muestra todas las reservaciones pendientes (estadoReservaId === 1)
+ * del usuario autenticado. Obtiene las reservaciones de la API al montar, agrupa los boletos de cada
+ * reservacion por vuelo para mostrarlos, y muestra un sidebar de resumen con los totales individuales de cada
+ * reservacion y el gran total combinado. Redirige a los usuarios no autenticados a la pagina de login y
+ * proporciona un boton para proceder a la pagina de pago.
  */
 
   import '../styles/carrito.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
-  /** Navigation function provided by the app router to change the current page. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar la pagina actual. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
+  /** ID del usuario autenticado actualmente, leido del store de sesion. @type {number|null} */
   let usuarioId = null;
 
-  /** Unsubscribe handle for the session store subscription. @type {Function} */
+  /** Manejador de desuscripcion para la suscripcion al store de sesion. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
-  /** Indicates whether the reservations are currently being loaded from the API. @type {boolean} */
+  /** Indica si las reservaciones se estan cargando actualmente desde la API. @type {boolean} */
   let cargando    = true;
 
-  /** Error message string set when the API request fails. @type {string} */
+  /** Cadena de mensaje de error establecida cuando la solicitud a la API falla. @type {string} */
   let errorMsg    = '';
 
-  /** Array of pending reservations (estadoReservaId === 1) fetched from the API. @type {Array} */
+  /** Arreglo de reservaciones pendientes (estadoReservaId === 1) obtenidas de la API. @type {Array} */
   let reservas    = [];
 
   /**
-   * Lifecycle hook that runs after the component mounts.
-   * Redirects to login if no user session exists, otherwise fetches pending reservations.
-   * Returns the session store unsubscribe function for cleanup.
+   * Hook de ciclo de vida que se ejecuta tras el montaje del componente.
+   * Redirige al login si no existe sesion de usuario, de lo contrario obtiene las reservaciones pendientes.
+   * Retorna la funcion de desuscripcion del store de sesion para limpieza.
    * @async
    * @returns {Promise<Function>}
    */
@@ -47,8 +47,8 @@
   });
 
   /**
-   * Fetches the authenticated user's reservations from the API and filters to keep only
-   * those with estadoReservaId === 1 (Pending). Sets cargando and errorMsg as side effects.
+   * Obtiene las reservaciones del usuario autenticado desde la API y filtra para conservar solo
+   * las que tienen estadoReservaId === 1 (Pendiente). Establece cargando y errorMsg como efectos secundarios.
    * @async
    * @returns {Promise<void>}
    */
@@ -69,10 +69,10 @@
   }
 
   /**
-   * Formats a date string into a localized short date using the es-GT locale.
-   * Returns an em dash if the input is falsy.
-   * @param {string|null} f - ISO date string to format.
-   * @returns {string} Formatted date such as "15 ene. 2025" or "—".
+   * Formatea una cadena de fecha en una fecha corta localizada usando el locale es-GT.
+   * Retorna un guion si el input es falsy.
+   * @param {string|null} f - Cadena de fecha ISO a formatear.
+   * @returns {string} Fecha formateada como "15 ene. 2025" o "-".
    */
   function formatFecha(f) {
     if (!f) return '—';

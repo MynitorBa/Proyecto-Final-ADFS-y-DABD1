@@ -1,31 +1,31 @@
 <script>
 /**
  * @file Login.svelte
- * @description Login page for Broom AirLine. Renders a two-panel layout with a decorative
- * image section on the left and a login form on the right. Calls the sesion store's login
- * function with the user's credentials and navigates to the home page on success. Displays
- * an inline error message on authentication failure or connection problems.
+ * @description Pagina de inicio de sesion de Broom AirLine. Renderiza un layout de dos paneles con una
+ * seccion decorativa de imagen a la izquierda y un formulario de login a la derecha. Llama a la funcion
+ * login del store de sesion con las credenciales del usuario y navega a la pagina de inicio al tener exito.
+ * Muestra un mensaje de error inline en caso de fallo de autenticacion o problemas de conexion.
  */
   import '../styles/login.css';
   import { onMount } from 'svelte';
   import { login } from '../stores/sesion.js';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion usada para navegar entre paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** Form data object holding the user's credentials. @type {{correoOUsername: string, contrasena: string}} */
+  /** Objeto de datos del formulario que contiene las credenciales del usuario. @type {{correoOUsername: string, contrasena: string}} */
   let loginData = {
     correoOUsername: '',
     contrasena: ''
   };
 
-  /** Whether the remember-me checkbox is checked (UI only, no persistence implemented). @type {boolean} */
+  /** Indica si el checkbox de recordarme esta marcado (solo UI, sin persistencia implementada). @type {boolean} */
   let rememberMe = false;
 
-  /** Error message shown below the form when login fails or a connection error occurs. @type {string} */
+  /** Mensaje de error mostrado debajo del formulario cuando el login falla o hay un error de conexion. @type {string} */
   let loginError = '';
 
-  /** True while the login request is in progress, used to disable the submit button. @type {boolean} */
+  /** True mientras la solicitud de login esta en progreso, usado para deshabilitar el boton de envio. @type {boolean} */
   let submitting = false;
 
   onMount(() => {
@@ -35,9 +35,9 @@
   });
 
   /**
-   * Submits the login credentials to the sesion store's login function. On success,
-   * navigates the user to the home page. On failure, sets loginError with a descriptive
-   * message distinguishing between bad credentials and connection errors.
+   * Envia las credenciales de login a la funcion login del store de sesion. Al tener exito,
+   * navega al usuario a la pagina de inicio. En caso de fallo, establece loginError con un mensaje
+   * descriptivo que distingue entre credenciales incorrectas y errores de conexion.
    * @async
    * @returns {Promise<void>}
    */

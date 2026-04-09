@@ -118,6 +118,241 @@ Actualiza el estado de una reservacion a Cancelada (EstadoID = 4) y registra el 
 
 ---
 
+## AerolineaAdminRepository
+
+> Repository para la gestion de aerolineas aliadas desde el panel de administracion. Cubre operaciones de listado, creacion y edicion para el rol Administrador (rol 2). Tambien expone la consulta de usuarios webservice libres (sin entidad asignada).
+
+```java
+public List<AerolineaAdminDTO> listarTodas()
+```
+
+Retorna todas las aerolineas aliadas registradas en el sistema, incluyendo el username del usuario webservice propietario.
+
+- **Returns** - lista completa de aerolineas con datos de su usuario webservice.
+
+---
+
+```java
+public void editar(int aerolineaId, EditarAerolineaRequestDTO req)
+```
+
+Actualiza los datos de una aerolinea existente desde el panel de administracion. Valida nombre, URLs, porcentaje de descuento y estado antes de aplicar los cambios.
+
+- **Param** `aerolineaId` - ID de la aerolinea a editar.
+- **Param** `req` - datos actualizados de la aerolinea.
+- **Throws** `IllegalArgumentException` - si algun campo es invalido.
+
+---
+
+```java
+public List<UsuarioWebserviceLibreDTO> listarWebserviceLibres()
+```
+
+Retorna los usuarios con rol Webservice (rol 3) que no tienen ninguna entidad registrada (ni agencia ni aerolinea). Se usan para poblar el selector al crear una entidad desde el panel de administracion.
+
+- **Returns** - lista de UsuarioWebserviceLibreDTO disponibles para asignacion.
+
+---
+
+## AerolineaAliadaRepository
+
+> Repository para autenticacion y busqueda de hoteles desde el canal de aerolineas aliadas. Tambien gestiona el proceso de handshake con aerolineas externas, incluyendo la busqueda por URL y la persistencia de tokens de autenticacion.
+
+```java
+public AerolineaIdentidadDTO obtenerAerolineaPorToken(String token)
+```
+
+Retorna la identidad de la aerolinea activa que corresponde al token dado.
+
+- **Param** `token` - hash del token de la aerolinea aliada.
+- **Returns** - AerolineaIdentidadDTO si existe y esta activa, null si no.
+
+---
+
+```java
+public Double obtenerDescuentoAerolinea(String token)
+```
+
+Retorna el porcentaje de descuento de la aerolinea activa identificada por su token.
+
+- **Param** `token` - hash del token de la aerolinea aliada.
+- **Returns** - porcentaje de descuento como Double, o null si no se encuentra.
+
+---
+
+```java
+public Integer buscarCiudadId(String nombreCiudad, String nombrePais)
+```
+
+Busca el ID de una ciudad comparando nombre de ciudad y pais sin distincion de mayusculas.
+
+- **Param** `nombreCiudad` - nombre de la ciudad a buscar.
+- **Param** `nombrePais` - nombre del pais al que pertenece la ciudad.
+- **Returns** - ID de la ciudad, o null si no se encuentra.
+
+---
+
+```java
+public void guardarBusqueda(int ciudadId, Date fechaCheckIn, Date fechaCheckOut,
+```
+
+Registra una busqueda realizada desde una aerolinea aliada (TipoBusquedaID = 3). Se guarda sin usuario porque la sesion pertenece al sistema de la aerolinea.
+
+- **Param** `ciudadId` - ID de la ciudad destino de la busqueda.
+- **Param** `fechaCheckIn` - fecha de entrada solicitada.
+- **Param** `fechaCheckOut` - fecha de salida solicitada.
+- **Param** `cantidadPersonas` - numero de personas para la busqueda.
+
+---
+
+```java
+public List<HotelResultadoDTO> buscarHotelesPorCiudad(int ciudadId)
+```
+
+Busca hoteles activos en la ciudad indicada.
+
+- **Param** `ciudadId` - ID de la ciudad a buscar.
+- **Returns** - lista de HotelResultadoDTO con los hoteles disponibles.
+
+---
+
+```java
+public List<Integer> buscarImagenesHotel(int hotelId)
+```
+
+Retorna los IDs de las imagenes asociadas a un hotel.
+
+- **Param** `hotelId` - ID del hotel.
+- **Returns** - lista de IDs de imagenes.
+
+---
+
+```java
+public List<AmenidadHotelDTO> buscarAmenidadesHotel(int hotelId)
+```
+
+Retorna las amenidades registradas para un hotel con sus descripciones.
+
+- **Param** `hotelId` - ID del hotel.
+- **Returns** - lista de AmenidadHotelDTO con los datos de cada amenidad.
+
+---
+
+```java
+public List<Integer> buscarImagenesAmenidad(int hotelAmenidadId)
+```
+
+Retorna los IDs de las imagenes asociadas a una amenidad de hotel.
+
+- **Param** `hotelAmenidadId` - ID del registro HotelAmenidad.
+- **Returns** - lista de IDs de imagenes.
+
+---
+
+```java
+public List<TipoHabitacionResultadoDTO> buscarTiposHabitacionDisponibles(
+```
+
+Busca tipos de habitacion disponibles en un hotel segun fechas y capacidad minima.
+
+- **Param** `hotelId` - ID del hotel.
+- **Param** `capacidadMinima` - numero minimo de personas que debe aceptar el tipo de habitacion.
+- **Param** `fechaCheckIn` - fecha de inicio de la estancia.
+- **Param** `fechaCheckOut` - fecha de fin de la estancia.
+- **Returns** - lista de TipoHabitacionResultadoDTO disponibles para el rango de fechas.
+
+---
+
+```java
+public List<HabitacionResumenDTO> buscarHabitacionesResumenPorTipo(
+```
+
+Busca habitaciones disponibles de un tipo especifico en un hotel y rango de fechas.
+
+- **Param** `hotelId` - ID del hotel.
+- **Param** `tipoHabitacionId` - ID del tipo de habitacion.
+- **Param** `fechaCheckIn` - fecha de inicio de la estancia.
+- **Param** `fechaCheckOut` - fecha de fin de la estancia.
+- **Returns** - lista de HabitacionResumenDTO con ID y numero de habitacion disponibles.
+
+---
+
+```java
+public List<Integer> buscarImagenesHabitacion(int habitacionId)
+```
+
+Retorna los IDs de las imagenes asociadas a una habitacion.
+
+- **Param** `habitacionId` - ID de la habitacion.
+- **Returns** - lista de IDs de imagenes.
+
+---
+
+```java
+public Integer obtenerAerolineaIdPorURL(String urlAerolinea)
+```
+
+Busca el ID de una aerolinea aliada a partir de su URL registrada en la base de datos. Se usa durante el handshake para identificar a la aerolinea que se esta autenticando.
+
+- **Param** `urlAerolinea` - URL unica asociada a la aerolinea aliada (campo URL en AerolineaAliado).
+- **Returns** - ID de la aerolinea aliada, o null si no se encuentra ninguna con esa URL.
+
+---
+
+```java
+public boolean guardarTokensAerolinea(int aerolineaId, String tokenEntrada, String tokenSalida)
+```
+
+Persiste el token de sesion del handshake en el registro de la aerolinea aliada. Se guarda el token de SALIDA (generado por el hotel) y NO el de entrada. De esta forma ambas bases de datos quedan con el mismo token: - Oracle  (hotel)     : TokenHASH = tokenSalida  (guardado aqui) - SQL Server (aerolinea): TokenHASH = tokenSalida  (guardado por HandshakeHotelService) Cuando la aerolinea llame al hotel en requests futuros enviara ese tokenSalida, y el hotel podra validarlo buscando en AerolineaAliado WHERE TokenHASH = tokenSalida.
+
+- **Param** `aerolineaId` - ID del registro AerolineaAliado a actualizar.
+- **Param** `tokenEntrada` - token enviado por la aerolinea (no se persiste, ya no es necesario).
+- **Param** `tokenSalida` - token generado por el hotel; se guarda en ambas BDs para que coincidan.
+- **Returns** - true si se actualizo al menos un registro, false si no se encontro la aerolinea.
+
+---
+
+## AerolineaWebserviceRepository
+
+> Repository para la gestion de aerolineas aliadas desde el portal webservice. Cubre operaciones de consulta, creacion y cambio de estado para el usuario webservice dueno. El token de autenticacion no se gestiona aqui; se asigna automaticamente al conectar.
+
+```java
+public List<AerolineaWebserviceDTO> listarPorUsuario(int usuarioId)
+```
+
+Retorna las aerolineas aliadas asociadas a un usuario webservice especifico. La consulta no realiza JOIN con EstadoAliado para evitar dependencia del ID de estado.
+
+- **Param** `usuarioId` - ID del usuario webservice propietario de las aerolineas.
+- **Returns** - lista de AerolineaWebserviceDTO pertenecientes al usuario.
+
+---
+
+```java
+public AerolineaWebserviceDTO crear(int usuarioId, CrearAerolineaRequestDTO req)
+```
+
+Crea una nueva aerolinea aliada vinculada al usuario webservice indicado. Valida que los campos obligatorios esten presentes y que el usuario no tenga ya una aerolinea ni una agencia registrada, ya que solo se permite una entidad por usuario webservice. o si el usuario ya tiene una aerolinea o una agencia registrada.
+
+- **Param** `usuarioId` - ID del usuario webservice que sera propietario de la aerolinea.
+- **Param** `req` - datos de la nueva aerolinea (nombre, URL del sistema y URL para usuario).
+- **Returns** - AerolineaWebserviceDTO con los datos de la aerolinea recien creada.
+- **Throws** `IllegalArgumentException` - si algun campo obligatorio esta vacio,
+
+---
+
+```java
+public void cambiarEstado(int aerolineaId, int usuarioId, int nuevoEstadoId)
+```
+
+Cambia el estado de una aerolinea verificando que pertenezca al usuario webservice indicado.
+
+- **Param** `aerolineaId` - ID de la aerolinea a modificar.
+- **Param** `usuarioId` - ID del usuario webservice propietario de la aerolinea.
+- **Param** `nuevoEstadoId` - nuevo estado a asignar.
+- **Throws** `IllegalArgumentException` - si la aerolinea no existe o no pertenece al usuario.
+
+---
+
 ## AgenciaRepository
 
 > Repository para la gestion de agencias de viaje. Cubre operaciones de consulta, creacion, edicion, cambio de estado y eliminacion, tanto para el panel de administracion como para usuarios webservice.
@@ -147,12 +382,12 @@ Retorna las agencias asociadas a un usuario webservice especifico.
 public AgenciaDTO crear(int usuarioId, CrearAgenciaRequestDTO req)
 ```
 
-Crea una nueva agencia vinculada al usuario webservice indicado. Valida que los campos obligatorios esten presentes y que el usuario no tenga ya una agencia registrada, ya que solo se permite una por usuario.
+Crea una nueva agencia vinculada al usuario webservice indicado (flujo del portal webservice). Valida que los campos obligatorios esten presentes y que el usuario no tenga ya una agencia ni una aerolinea registrada, ya que solo se permite una entidad por usuario webservice. o si el usuario ya tiene una agencia o una aerolinea registrada.
 
 - **Param** `usuarioId` - ID del usuario webservice que sera propietario de la agencia.
-- **Param** `req` - datos de la nueva agencia (nombre y correo).
+- **Param** `req` - datos de la nueva agencia (nombre, correo y URL del sistema externo).
 - **Returns** - AgenciaDTO con los datos de la agencia recien creada.
-- **Throws** `IllegalArgumentException` - si el nombre o correo estan vacios, o si el usuario ya tiene una agencia.
+- **Throws** `IllegalArgumentException` - si algun campo obligatorio esta vacio,
 
 ---
 
@@ -1245,6 +1480,39 @@ Retorna los datos completos de una factura junto con el estado y numero de su re
 
 ---
 
+```java
+public void actualizarTotalReservacion(int reservacionId, double nuevoTotal)
+```
+
+Actualiza el total de una reservacion tras aplicar un descuento de alianza.
+
+- **Param** `reservacionId` - ID de la reservacion a actualizar.
+- **Param** `nuevoTotal` - total ya con el descuento aplicado.
+
+---
+
+```java
+public void actualizarTotalDetalles(int reservacionId, double factorDescuento)
+```
+
+Aplica el mismo factor de descuento proporcionalmente a todos los detalles de una reservacion, para que la suma de detalles coincida con el total de la reservacion.
+
+- **Param** `reservacionId` - ID de la reservacion cuyos detalles se van a actualizar.
+- **Param** `factorDescuento` - factor multiplicador (ej. 0.90 para 10% de descuento).
+
+---
+
+```java
+public String obtenerCiudadReservacion(int reservacionId)
+```
+
+Obtiene el nombre de la ciudad del hotel asociado a una reservacion. Se usa para validar que el token de alianza aplique unicamente a hoteles en la ciudad para la que fue generado el token.
+
+- **Param** `reservacionId` - ID de la reservacion.
+- **Returns** - Nombre de la ciudad del hotel o null si no se encuentra.
+
+---
+
 ## PaisRepository
 
 > Repository para la gestion de paises y ciudades. Permite buscar o crear paises de forma segura ante condiciones de carrera, y provee listados de paises y ciudades para uso en formularios del panel de administracion.
@@ -1628,6 +1896,72 @@ Retorna el nombre del rol correspondiente a un ID dado. Si el rol no existe, dev
 
 ---
 
+## TokenAerolineaRepository
+
+> Repository para la creacion y consulta de tokens de alianza entre aerolineas y hoteles.
+
+```java
+public Integer obtenerAerolineaIdPorToken(String tokenHash)
+```
+
+Retorna el ID de la aerolinea aliada activa que corresponde al token HASH dado.
+
+- **Param** `tokenHash` - hash del token enviado en el header por la aerolinea.
+- **Returns** - ID de la aerolinea si existe y esta activa, null si no.
+
+---
+
+```java
+public Integer buscarCiudadId(String nombreCiudad, String nombrePais)
+```
+
+Busca el ID de una ciudad por su nombre y el nombre de su pais, sin distincion de mayusculas ni espacios.
+
+- **Param** `nombreCiudad` - nombre de la ciudad destino.
+- **Param** `nombrePais` - nombre del pais al que pertenece la ciudad.
+- **Returns** - ID de la ciudad si existe, null si no se encuentra.
+
+---
+
+```java
+public void insertarToken(int aerolineaAliadoId, int ciudadId,
+```
+
+Inserta un nuevo token de alianza en la base de datos. El token se crea como no usado, sin fecha de uso, sin reservacion, y con expiracion a 15 minutos desde el momento de creacion.
+
+- **Param** `aerolineaAliadoId` - ID de la aerolinea aliada que genera el token.
+- **Param** `ciudadId` - ID de la ciudad destino del pasajero.
+- **Param** `token` - string unico generado para este token de alianza.
+- **Param** `fechaExpiracion` - timestamp calculado como now() mas 15 minutos.
+
+---
+
+## TokenValidacionRepository
+
+> Repository para la validacion de tokens de alianza recibidos desde aerolineas.
+
+```java
+public TokenValidacionResponseDTO buscarTokenValido(String token)
+```
+
+Busca un token valido: que exista, no este usado y no haya expirado. Retorna ciudad, pais y porcentaje de descuento si el token es valido.
+
+- **Param** `token` - string UUID recibido desde la URL del usuario.
+- **Returns** - TokenValidacionResponseDTO con los datos del token, o null si no es valido.
+
+---
+
+```java
+public void marcarTokenUsado(String token, int reservacionId)
+```
+
+Marca un token de alianza como usado, registra la fecha de uso y vincula la reservacion que se genero con ese descuento.
+
+- **Param** `token` - string UUID del token a cerrar.
+- **Param** `reservacionId` - ID de la reservacion pagada con este token.
+
+---
+
 ## UsuarioNacionalidadRepository
 
 > Repository para gestionar la relacion entre usuarios y sus nacionalidades.
@@ -1636,7 +1970,7 @@ Retorna el nombre del rol correspondiente a un ID dado. Si el rol no existe, dev
 public void asignarNacionalidades(int usuarioId, List<Integer> nacionalidadIds)
 ```
 
-Inserta en la base de datos las nacionalidades asociadas a un usuario. Ejecuta una insercion por cada nacionalidad recibida en la lista.
+Inserta en la base de datos las nacionalidades asociadas a un usuario. Si la combinacion ya existe (ORA-00001), la ignora y continua.
 
 - **Param** `usuarioId` - ID del usuario al que se le asignan las nacionalidades.
 - **Param** `nacionalidadIds` - lista de IDs de nacionalidades a asociar.
@@ -1684,7 +2018,7 @@ Verifica si ya existe un usuario registrado con el numero de pasaporte dado. Ret
 public int crearUsuario(
 ```
 
-Inserta un nuevo usuario en la base de datos con rol de cliente por defecto.
+Inserta un nuevo usuario en la base de datos con rol de cliente por defecto. Si Oracle lanza ORA-00001 (restriccion unica violada) por una race condition, re-verifica que campos estan duplicados y lanza {@link CamposDuplicadosException}.
 
 - **Param** `correo` - correo electronico del usuario.
 - **Param** `contrasenaHasheada` - contrasena ya procesada con hash.
@@ -1696,6 +2030,7 @@ Inserta un nuevo usuario en la base de datos con rol de cliente por defecto.
 - **Param** `fechaNacimiento` - fecha de nacimiento del usuario.
 - **Param** `ciudadId` - ID de la ciudad de residencia del usuario.
 - **Returns** - ID generado por la base de datos para el nuevo usuario.
+- **Throws** `CamposDuplicadosException` - si correo, pasaporte o username ya existen.
 
 ---
 

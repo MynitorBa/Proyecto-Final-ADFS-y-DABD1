@@ -1,87 +1,88 @@
 <script>
 /**
  * @file MisReservas.svelte
- * @description Full reservations management page for authenticated users. Loads all
- * reservations and a summary widget on mount, then displays them in a filterable card grid.
- * Clicking a card opens a detail modal that shows all boletos with flight route, passenger
- * data, seat and class info. From the modal the user can: rate completed routes with a
- * 1-5 star comment, cancel confirmed reservations with a mandatory reason field, download
- * the reservation PDF comprobante, or send the comprobante to their registered email.
- * Toast notifications confirm successful actions. Redirects to login if no session is found.
+ * @description Pagina completa de gestion de reservaciones para usuarios autenticados. Carga
+ * todas las reservaciones y un widget de resumen al montar, luego las muestra en una cuadricula
+ * de tarjetas con filtros. Al hacer clic en una tarjeta se abre un modal de detalle que muestra
+ * todos los boletos con ruta de vuelo, datos del pasajero, asiento e informacion de clase. Desde
+ * el modal el usuario puede: calificar rutas completadas con un comentario de 1 a 5 estrellas,
+ * cancelar reservaciones confirmadas con un campo obligatorio de motivo, descargar el comprobante
+ * PDF de la reservacion o enviarlo al correo registrado. Las notificaciones toast confirman las
+ * acciones exitosas. Redirige al login si no hay sesion activa.
  */
   import '../styles/Misreservas.css';
   import { sesion } from '../stores/sesion.js';
   import { onMount } from 'svelte';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion para navegar entre las paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  /** List of all reservation objects fetched for the current user. @type {Array<object>} */
+  /** Lista de todos los objetos de reservacion obtenidos para el usuario actual. @type {Array<object>} */
   let reservas       = [];
 
-  /** Summary statistics object containing totals by status and total amount spent. @type {object|null} */
+  /** Objeto de estadisticas de resumen con totales por estado y monto total gastado. @type {object|null} */
   let resumen        = null;
 
-  /** True while the reservations list is being fetched. @type {boolean} */
+  /** Verdadero mientras se esta obteniendo la lista de reservaciones. @type {boolean} */
   let loading        = true;
 
-  /** Error message shown when the reservations fetch fails. @type {string} */
+  /** Mensaje de error mostrado cuando falla la obtencion de reservaciones. @type {string} */
   let error          = '';
 
-  /** Currently active filter key applied to the reservations list. @type {string} */
+  /** Clave del filtro activo actualmente aplicado a la lista de reservaciones. @type {string} */
   let filtroActivo   = 'todas';
 
-  /** Array of comment objects posted by the current user, used to check if a route was already rated. @type {Array<object>} */
+  /** Arreglo de objetos de comentario publicados por el usuario actual, usado para verificar si una ruta ya fue calificada. @type {Array<object>} */
   let misComentarios = [];
 
-  /** The reservation object currently shown in the detail modal, null when modal is closed. @type {object|null} */
+  /** El objeto de reservacion mostrado actualmente en el modal de detalle, null cuando el modal esta cerrado. @type {object|null} */
   let reservaDetalle    = null;
 
-  /** True while the full reservation detail is being fetched from the API. @type {boolean} */
+  /** Verdadero mientras se obtiene el detalle completo de la reservacion desde la API. @type {boolean} */
   let detalleLoading    = false;
 
-  /** Error message shown inside the detail modal when the detail fetch fails. @type {string} */
+  /** Mensaje de error mostrado dentro del modal de detalle cuando falla la obtencion. @type {string} */
   let detalleError      = '';
 
-  /** Whether the cancellation form panel is visible inside the detail modal. @type {boolean} */
+  /** Si el panel de formulario de cancelacion es visible dentro del modal de detalle. @type {boolean} */
   let cancelarAbierto   = false;
 
-  /** Reason text entered by the user in the cancellation form. @type {string} */
+  /** Texto del motivo ingresado por el usuario en el formulario de cancelacion. @type {string} */
   let cancelMotivo      = '';
 
-  /** True while the cancellation POST request is in progress. @type {boolean} */
+  /** Verdadero mientras la solicitud POST de cancelacion esta en progreso. @type {boolean} */
   let cancelLoading     = false;
 
-  /** Validation or API error message shown inside the cancellation form. @type {string} */
+  /** Mensaje de error de validacion o de la API mostrado dentro del formulario de cancelacion. @type {string} */
   let cancelError       = '';
 
-  /** Star rating selected by hovering or clicking in the comment form (1-5). @type {number} */
+  /** Calificacion de estrellas seleccionada al pasar el cursor o hacer clic en el formulario de comentario (1-5). @type {number} */
   let comentarEstrellas = 0;
 
-  /** Star count currently highlighted due to mouse hover in the rating widget. @type {number} */
+  /** Cantidad de estrellas resaltadas actualmente por el hover del mouse en el widget de calificacion. @type {number} */
   let comentarHover     = 0;
 
-  /** Text content of the comment being drafted by the user. @type {string} */
+  /** Contenido de texto del comentario que el usuario esta redactando. @type {string} */
   let comentarContenido = '';
 
-  /** True while the comment POST request is in progress. @type {boolean} */
+  /** Verdadero mientras la solicitud POST de comentario esta en progreso. @type {boolean} */
   let comentarLoading   = false;
 
-  /** Error message shown when comment submission fails validation or the API returns an error. @type {string} */
+  /** Mensaje de error mostrado cuando el envio de comentario falla la validacion o la API retorna un error. @type {string} */
   let comentarError     = '';
 
-  /** Success message shown when a comment is submitted successfully. @type {string} */
+  /** Mensaje de exito mostrado cuando un comentario se envia exitosamente. @type {string} */
   let comentarExito     = '';
 
-  /** True while the PDF comprobante is being downloaded. @type {boolean} */
+  /** Verdadero mientras el comprobante PDF se esta descargando. @type {boolean} */
   let comprobanteLoading = false;
 
-  /** True while the comprobante email send request is in progress. @type {boolean} */
+  /** Verdadero mientras la solicitud de envio de comprobante por correo esta en progreso. @type {boolean} */
   let enviarCorreoLoading = false;
 
-  /** Array of active toast notification objects, each with id, msg, and tipo fields. @type {Array<{id: number, msg: string, tipo: string}>} */
+  /** Arreglo de objetos de notificacion toast activos, cada uno con campos id, msg y tipo. @type {Array<{id: number, msg: string, tipo: string}>} */
   let toasts = [];
 
   onMount(async () => {
@@ -90,9 +91,9 @@
   });
 
   /**
-   * Creates a new toast notification and automatically removes it after 4 seconds.
-   * @param {string} msg - The message text to display in the toast.
-   * @param {'success'|'error'} tipo - Visual style of the toast.
+   * Crea una nueva notificacion toast y la elimina automaticamente despues de 4 segundos.
+   * @param {string} msg - El texto del mensaje a mostrar en el toast.
+   * @param {'success'|'error'} tipo - Estilo visual del toast.
    */
   function addToast(msg, tipo = 'success') {
     const id = Date.now();
@@ -101,10 +102,10 @@
   }
 
   /**
-   * Maps a reservation or boleto status string to its corresponding CSS badge modifier class.
-   * Handles Confirmada, Cancelada, Completada, Expirada, and defaults to Pendiente.
-   * @param {string} estado - The status label string from the API.
-   * @returns {string} The CSS badge class string.
+   * Mapea una cadena de estado de reservacion o boleto a su clase CSS modificadora de badge correspondiente.
+   * Maneja Confirmada, Cancelada, Completada, Expirada y usa Pendiente como valor por defecto.
+   * @param {string} estado - La cadena de etiqueta de estado de la API.
+   * @returns {string} La cadena de clase CSS del badge.
    */
   function estadoClase(estado) {
     if (!estado) return 'mr-badge--pendiente';
@@ -117,10 +118,10 @@
   }
 
   /**
-   * Formats an ISO date-time string into a localized date + time string using es-GT locale.
-   * Returns '--' if the input is falsy.
-   * @param {string} f - ISO date-time string from the API.
-   * @returns {string} Formatted date and time string such as '06 abr 2026 14:30'.
+   * Formatea una cadena ISO de fecha y hora en una cadena de fecha y hora localizada usando el locale es-GT.
+   * Retorna '--' si el input es falsy.
+   * @param {string} f - Cadena ISO de fecha y hora de la API.
+   * @returns {string} Cadena de fecha y hora formateada como '06 abr 2026 14:30'.
    */
   function formatFechaHora(f) {
     if (!f) return '--';
@@ -130,10 +131,10 @@
   }
 
   /**
-   * Formats an ISO date string into a short localized date using es-GT locale.
-   * Returns '--' if the input is falsy.
-   * @param {string} f - ISO date string.
-   * @returns {string} Formatted date string such as '06 abr 2026'.
+   * Formatea una cadena ISO de fecha en una fecha corta localizada usando el locale es-GT.
+   * Retorna '--' si el input es falsy.
+   * @param {string} f - Cadena ISO de fecha.
+   * @returns {string} Cadena de fecha formateada como '06 abr 2026'.
    */
   function formatFecha(f) {
     if (!f) return '--';
@@ -141,9 +142,9 @@
   }
 
   /**
-   * Extracts the HH:MM portion from a time string, returning '--' if the input is falsy.
-   * @param {string} h - Time string in HH:MM:SS or HH:MM format.
-   * @returns {string} The first 5 characters of the time string, or '--'.
+   * Extrae la porcion HH:MM de una cadena de hora, retornando '--' si el input es falsy.
+   * @param {string} h - Cadena de hora en formato HH:MM:SS o HH:MM.
+   * @returns {string} Los primeros 5 caracteres de la cadena de hora, o '--'.
    */
   function formatHora(h) {
     if (!h) return '--';
@@ -151,10 +152,10 @@
   }
 
   /**
-   * Converts a flight duration in total minutes to a human-readable Xh Ym string.
-   * Returns '--' if the input is falsy.
-   * @param {number} min - Duration in minutes.
-   * @returns {string} Formatted duration such as '2h 30m'.
+   * Convierte una duracion de vuelo en minutos totales a una cadena legible Xh Ym.
+   * Retorna '--' si el input es falsy.
+   * @param {number} min - Duracion en minutos.
+   * @returns {string} Duracion formateada como '2h 30m'.
    */
   function formatDuracion(min) {
     if (!min) return '--';
@@ -164,27 +165,27 @@
   }
 
   /**
-   * Checks whether the current user has already posted a root-level rating comment for a route.
-   * Only considers comments with a non-null cantidadEstrellas and no parent (root level).
-   * @param {number} rutaId - The route ID to check against misComentarios.
-   * @returns {boolean} True if a matching comment exists.
+   * Verifica si el usuario actual ya publico un comentario de calificacion de nivel raiz para una ruta.
+   * Solo considera comentarios con cantidadEstrellas no nulo y sin padre (nivel raiz).
+   * @param {number} rutaId - El ID de ruta a verificar contra misComentarios.
+   * @returns {boolean} Verdadero si existe un comentario coincidente.
    */
   function yaComentaRuta(rutaId) {
     return misComentarios.some(c => c.rutaId === rutaId && c.comentarioPadreId === null && c.cantidadEstrellas !== null);
   }
 
   /**
-   * Returns the first root-level rating comment posted by the user for a given route.
-   * @param {number} rutaId - The route ID to look up.
-   * @returns {object|undefined} The matching comment object, or undefined if not found.
+   * Retorna el primer comentario de calificacion de nivel raiz publicado por el usuario para una ruta dada.
+   * @param {number} rutaId - El ID de ruta a buscar.
+   * @returns {object|undefined} El objeto de comentario coincidente, o undefined si no se encuentra.
    */
   function obtenerComentarioRuta(rutaId) {
     return misComentarios.find(c => c.rutaId === rutaId && c.comentarioPadreId === null && c.cantidadEstrellas !== null);
   }
 
   /**
-   * Fetches the authenticated user's reservations list from GET /api/mis-reservaciones.
-   * Updates the reservas array on success or sets an error message on failure.
+   * Obtiene la lista de reservaciones del usuario autenticado desde GET /api/mis-reservaciones.
+   * Actualiza el arreglo reservas en caso de exito o establece un mensaje de error en caso de fallo.
    * @async
    * @returns {Promise<void>}
    */
@@ -199,8 +200,8 @@
   }
 
   /**
-   * Fetches the reservations summary statistics from GET /api/mis-reservaciones/resumen.
-   * Sets resumen on success; silently ignores errors since it is supplementary data.
+   * Obtiene las estadisticas de resumen de reservaciones desde GET /api/mis-reservaciones/resumen.
+   * Establece resumen en caso de exito; ignora errores silenciosamente ya que son datos suplementarios.
    * @async
    * @returns {Promise<void>}
    */
@@ -212,8 +213,8 @@
   }
 
   /**
-   * Fetches all comments posted by the current user from GET /api/comentarios/usuario.
-   * Sets misComentarios on success; used to determine if a route has already been rated.
+   * Obtiene todos los comentarios publicados por el usuario actual desde GET /api/comentarios/usuario.
+   * Establece misComentarios en caso de exito; usado para determinar si una ruta ya fue calificada.
    * @async
    * @returns {Promise<void>}
    */
@@ -225,11 +226,11 @@
   }
 
   /**
-   * Opens the reservation detail modal for the given reservation. Fetches the full detail
-   * from GET /api/mis-reservaciones/:id and updates reservaDetalle with the response.
-   * Resets the comment and cancellation form state before loading.
+   * Abre el modal de detalle de la reservacion para la reservacion dada. Obtiene el detalle completo
+   * desde GET /api/mis-reservaciones/:id y actualiza reservaDetalle con la respuesta.
+   * Restablece el estado del formulario de comentario y cancelacion antes de cargar.
    * @async
-   * @param {object} reserva - The reservation summary object from the list.
+   * @param {object} reserva - El objeto de resumen de reservacion de la lista.
    * @returns {Promise<void>}
    */
   async function abrirDetalle(reserva) {
@@ -249,8 +250,8 @@
   }
 
   /**
-   * Closes the detail modal by clearing reservaDetalle and resetting related state
-   * including the cancellation panel and comment form.
+   * Cierra el modal de detalle limpiando reservaDetalle y restableciendo el estado relacionado
+   * incluyendo el panel de cancelacion y el formulario de comentario.
    */
   function cerrarDetalle() {
     reservaDetalle = null;
@@ -260,8 +261,8 @@
   }
 
   /**
-   * Toggles the cancellation form panel open or closed, clearing the motivo and error
-   * whenever the panel is toggled.
+   * Alterna el panel del formulario de cancelacion entre abierto y cerrado, limpiando
+   * el motivo y el error cada vez que se alterna.
    */
   function toggleCancelar() {
     cancelarAbierto = !cancelarAbierto;
@@ -270,9 +271,9 @@
   }
 
   /**
-   * Submits the cancellation request for the currently open reservation via
-   * POST /api/mis-reservaciones/:id/cancelar with the typed motivo. On success,
-   * shows a toast, reloads both the list and summary, and refreshes the detail view.
+   * Envia la solicitud de cancelacion para la reservacion abierta actualmente mediante
+   * POST /api/mis-reservaciones/:id/cancelar con el motivo escrito. En caso de exito,
+   * muestra un toast, recarga tanto la lista como el resumen, y actualiza la vista de detalle.
    * @async
    * @returns {Promise<void>}
    */
@@ -301,11 +302,11 @@
   }
 
   /**
-   * Downloads the PDF comprobante for a reservation from GET /api/mis-reservaciones/:id/comprobante.
-   * Creates a temporary anchor element to trigger the browser download, then revokes the object URL.
-   * Shows a success or error toast depending on the result.
+   * Descarga el comprobante PDF de una reservacion desde GET /api/mis-reservaciones/:id/comprobante.
+   * Crea un elemento ancla temporal para disparar la descarga del navegador, luego revoca la URL del objeto.
+   * Muestra un toast de exito o error segun el resultado.
    * @async
-   * @param {number} reservaId - The reservation ID whose comprobante should be downloaded.
+   * @param {number} reservaId - El ID de la reservacion cuyo comprobante debe descargarse.
    * @returns {Promise<void>}
    */
     async function descargarComprobante(reservaId) {
@@ -321,10 +322,10 @@
       }
 
   /**
-   * Sends the comprobante PDF to the user's registered email via
-   * POST /api/mis-reservaciones/:id/enviar-comprobante. Shows a toast with the result.
+   * Envia el comprobante PDF al correo registrado del usuario mediante
+   * POST /api/mis-reservaciones/:id/enviar-comprobante. Muestra un toast con el resultado.
    * @async
-   * @param {number} reservaId - The reservation ID whose comprobante should be emailed.
+   * @param {number} reservaId - El ID de la reservacion cuyo comprobante debe enviarse por correo.
    * @returns {Promise<void>}
    */
   async function enviarComprobantePorCorreo(reservaId) {
@@ -345,7 +346,7 @@
   }
 
   /**
-   * Resets all comment form fields to their initial empty/zero state.
+   * Restablece todos los campos del formulario de comentario a su estado inicial vacio o cero.
    */
   function resetComentarForm() {
     comentarEstrellas = 0;
@@ -356,12 +357,12 @@
   }
 
   /**
-   * Submits a new route rating comment via POST /api/comentarios/ruta. Validates that at
-   * least one star is selected and the comment text is non-empty before sending. On success,
-   * shows a success message, shows a toast, and reloads misComentarios so the rating is
-   * reflected immediately without reopening the modal.
+   * Envia un nuevo comentario de calificacion de ruta mediante POST /api/comentarios/ruta. Valida
+   * que al menos una estrella este seleccionada y que el texto del comentario no este vacio antes
+   * de enviar. En caso de exito, muestra un mensaje de exito, un toast, y recarga misComentarios
+   * para que la calificacion se refleje inmediatamente sin reabrir el modal.
    * @async
-   * @param {number} rutaId - The route ID being rated.
+   * @param {number} rutaId - El ID de la ruta que se esta calificando.
    * @returns {Promise<void>}
    */
   async function enviarComentario(rutaId) {
@@ -392,8 +393,8 @@
   }
 
   /**
-   * Filter configuration array defining each tab label and its filter key.
-   * The key is matched against the estadoReserva field (lowercased) of each reservation.
+   * Arreglo de configuracion de filtros que define la etiqueta y la clave de filtro de cada pestana.
+   * La clave se compara contra el campo estadoReserva (en minusculas) de cada reservacion.
    * @type {Array<{key: string, label: string}>}
    */
   const filtros = [
@@ -405,7 +406,7 @@
     { key: 'pendiente',  label: 'Pendientes' },
   ];
 
-  // Filtered subset of reservas matching the currently active status filter tab.
+  // Subconjunto filtrado de reservas que coincide con la pestana de filtro de estado activa actualmente.
   $: reservasFiltradas = filtroActivo === 'todas'
     ? reservas
     : reservas.filter(r => r.estadoReserva?.toLowerCase() === filtroActivo);

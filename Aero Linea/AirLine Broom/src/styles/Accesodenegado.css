@@ -1,6 +1,6 @@
-/* Accesodenegado.css - Styles the access-denied page, centering content vertically and horizontally with a warm beige background */
+/* Accesodenegado.css - Estilos de la pagina de acceso denegado, centrando el contenido vertical y horizontalmente con un fondo beige calido */
 
-/* Full-page centered column layout with beige background for the access-denied screen */
+/* Disposicion de columna centrada de pagina completa con fondo beige para la pantalla de acceso denegado */
 .acceso-denegado {
   min-height: 80vh;
   display: flex;
@@ -12,7 +12,7 @@
   background: #F5F1ED;
 }
 
-/* Large light-weight heading for the denial title */
+/* Encabezado grande y de peso normal para el titulo de denegacion */
 .acceso-denegado__title {
   font-size: 2rem;
   font-weight: 400;
@@ -20,7 +20,7 @@
   margin-bottom: 1rem;
 }
 
-/* Muted paragraph capped at 450px width describing the denial reason */
+/* Parrafo apagado limitado a 450px de ancho que describe el motivo de la denegacion */
 .acceso-denegado__message {
   color: #6b6b6b;
   max-width: 450px;
@@ -29,7 +29,7 @@
   font-size: 1rem;
 }
 
-/* Responsive image container with rounded corners and a subtle shadow */
+/* Contenedor de imagen responsivo con esquinas redondeadas y una sombra sutil */
 .acceso-denegado__image {
   width: 100%;
   max-width: 900px;
@@ -39,14 +39,14 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-/* Image fills its container fully without distortion */
+/* La imagen llena su contenedor completamente sin distorsion */
 .acceso-denegado__image img {
   width: 100%;
   height: auto;
   display: block;
 }
 
-/* Wrapping flex row that centers the CTA buttons with a gap */
+/* Fila flex envolvente que centra los botones de llamada a la accion con separacion */
 .acceso-denegado__actions {
   display: flex;
   gap: 1rem;
@@ -54,7 +54,7 @@
   justify-content: center;
 }
 
-/* Base button style shared by both primary and secondary variants */
+/* Estilo base de boton compartido por las variantes primaria y secundaria */
 .acceso-denegado__btn {
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
@@ -65,33 +65,33 @@
   border: 2px solid transparent;
 }
 
-/* Solid brown primary button */
+/* Boton primario marron solido */
 .acceso-denegado__btn--primary {
   background: #8B6B4A;
   color: white;
   border-color: #8B6B4A;
 }
 
-/* Darkens the primary button on hover */
+/* El boton primario se oscurece al pasar el cursor */
 .acceso-denegado__btn--primary:hover {
   background: #6d523a;
   border-color: #6d523a;
 }
 
-/* Transparent secondary button with brown border */
+/* Boton secundario transparente con borde marron */
 .acceso-denegado__btn--secondary {
   background: transparent;
   color: #8B6B4A;
   border-color: #8B6B4A;
 }
 
-/* Secondary button fills with brown on hover, text turns white */
+/* El boton secundario se rellena de marron al pasar el cursor y el texto se vuelve blanco */
 .acceso-denegado__btn--secondary:hover {
   background: #8B6B4A;
   color: white;
 }
 
-/* Compact layout adjustments for small screens */
+/* Ajustes de disposicion compacta para pantallas pequenas */
 @media (max-width: 640px) {
   .acceso-denegado {
     padding: 2rem 1.5rem;
@@ -110,7 +110,7 @@
     border-radius: 8px;
   }
 
-  /* Buttons stack in a column limited to 300px on very small screens */
+  /* Los botones se apilan en una columna limitada a 300px en pantallas muy pequenas */
   .acceso-denegado__actions {
     flex-direction: column;
     width: 100%;

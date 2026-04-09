@@ -7,7 +7,6 @@
   <!-- Favicon SVG con icono de avion en azul de marca -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230f3460' d='M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/></svg>">
 
-  <!-- Compatibilidad IE y descripcion para SEO -->
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
   <meta name="description" content="Documentacion tecnica del Backend de Broom AirLine">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
@@ -15,44 +14,41 @@
   <!-- Fuentes Inter (UI) y JetBrains Mono (codigo) desde Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- Tema base claro de Docsify (vue.css) -->
+  <!-- Tema base claro de Docsify -->
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
 
   <!-- Estilos personalizados de marca Broom AirLine -->
   <link rel="stylesheet" href="docsify.css">
 </head>
 <body>
+
+  <!-- Punto de montaje de la aplicacion Docsify -->
   <div id="app"></div>
 
-  <!-- Configuracion base de Docsify: nombre, sidebar y busqueda -->
-  <script>
-    window.$docsify = {
-      name: 'Broom AirLine Docs',
-      repo: '',
-      loadSidebar: true,
-      subMaxLevel: 0,
-      search: {
-        placeholder: 'Buscar...',
-        noData: 'Sin resultados',
-      }
-    }
-  </script>
-
-  <!-- Hero header y plugins adicionales del proyecto -->
+  <!-- Configuracion principal de Docsify, hero header y boton PDF -->
   <script src="docsify-go.js"></script>
 
-  <!-- Core de Docsify -->
-  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <!-- Motor principal de Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
 
-  <!-- Plugin de busqueda -->
-  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <!-- Plugin de busqueda integrada en el sidebar -->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
 
-  <!-- Syntax highlighting para C# con Prism -->
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-csharp.min.js"></script>
+  <!-- Syntax highlighting: C# -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-csharp.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
 
-  <!-- Paginacion entre paginas del sidebar -->
-  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+  <!-- Boton de copiar codigo en cada bloque pre -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+
+  <!-- Paginacion: botones anterior y siguiente entre paginas del sidebar -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+
+  <!-- jsPDF: generacion de PDF directamente sin html2canvas -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 </body>
 </html>

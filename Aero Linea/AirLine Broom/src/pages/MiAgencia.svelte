@@ -1,14 +1,14 @@
 <script>
 /**
  * @file MiAgencia.svelte
- * @description Webservice user panel for registering and viewing their linked entity.
- * On load it checks whether the user already has an agency (GET /api/agencias/mi-agencia)
- * or a hotel aliado (GET /api/hoteles-aliados/mi-hotel). A Webservice user can only have
- * one of the two. If neither exists, a tipo-selector is shown so the user can choose what
- * they want to register. The agency form collects nombre, correo and URL; the hotel form
- * collects nombre, URL de la API and URL para el usuario. Tokens are never shown or
- * requested, as they are generated automatically during the connection handshake.
- * Redirects to 'acceso-denegado' on 401/403.
+ * @description Panel de usuario Webservice para registrar y visualizar su entidad vinculada.
+ * Al cargar verifica si el usuario ya tiene una agencia (GET /api/agencias/mi-agencia)
+ * o un hotel aliado (GET /api/hoteles-aliados/mi-hotel). Un usuario Webservice solo puede tener
+ * una de las dos. Si no existe ninguna, se muestra un selector de tipo para que el usuario elija
+ * que desea registrar. El formulario de agencia recopila nombre, correo y URL; el formulario de
+ * hotel recopila nombre, URL de la API y URL para el usuario. Los tokens no se muestran ni
+ * se solicitan, ya que se generan automaticamente durante el proceso de conexion.
+ * Redirige a 'acceso-denegado' en caso de 401/403.
  */
 // @ts-nocheck
   import { onMount } from 'svelte';
@@ -16,66 +16,66 @@
   import '../styles/admin.css';
   import '../styles/miagencia.css';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion utilizada para navegar entre las paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** True while the initial data fetch is in progress. @type {boolean} */
+  /** Verdadero mientras la carga inicial de datos esta en progreso. @type {boolean} */
   let cargando     = true;
 
-  /** True while the creation form is being submitted. @type {boolean} */
+  /** Verdadero mientras el formulario de creacion esta siendo enviado. @type {boolean} */
   let enviando     = false;
 
-  /** True when the API confirms the user already has a registered agency. @type {boolean} */
+  /** Verdadero cuando la API confirma que el usuario ya tiene una agencia registrada. @type {boolean} */
   let tieneAgencia = false;
 
-  /** True when the API confirms the user already has a registered hotel aliado. @type {boolean} */
+  /** Verdadero cuando la API confirma que el usuario ya tiene un hotel aliado registrado. @type {boolean} */
   let tieneHotel   = false;
 
-  /** The agency object returned by the API if one exists, otherwise null. @type {object|null} */
+  /** El objeto de agencia devuelto por la API si existe, de lo contrario null. @type {object|null} */
   let agencia      = null;
 
-  /** The hotel object returned by the API if one exists, otherwise null. @type {object|null} */
+  /** El objeto de hotel devuelto por la API si existe, de lo contrario null. @type {object|null} */
   let hotel        = null;
 
-  /** Global error message shown when the API call fails completely. @type {string} */
+  /** Mensaje de error global que se muestra cuando la llamada a la API falla por completo. @type {string} */
   let errorGlobal  = '';
 
-  /** Current toast notification object with tipo and mensaje, or null when hidden. @type {{tipo: string, mensaje: string}|null} */
+  /** Objeto de notificacion toast actual con tipo y mensaje, o null cuando esta oculto. @type {{tipo: string, mensaje: string}|null} */
   let toast        = null;
 
   /**
-   * Controls which entity type the user is registering: null shows the tipo-selector,
-   * 'agencia' shows the agency form, 'hotel' shows the hotel form.
+   * Controla que tipo de entidad esta registrando el usuario: null muestra el selector de tipo,
+   * 'agencia' muestra el formulario de agencia, 'hotel' muestra el formulario de hotel.
    * @type {'agencia'|'hotel'|null}
    */
   let tipoSeleccionado = null;
 
-  // ── Agency form fields ──────────────────────────────────────────────────
+  // -- Campos del formulario de agencia ------------------------------------
 
-  /** Agency name field bound to the creation form input. @type {string} */
+  /** Campo de nombre de la agencia vinculado al input del formulario de creacion. @type {string} */
   let nombre     = '';
 
-  /** Agency contact email field bound to the creation form input. @type {string} */
+  /** Campo de correo de contacto de la agencia vinculado al input del formulario de creacion. @type {string} */
   let correo     = '';
 
-  /** Public URL of the agency registered by the webservice user. @type {string} */
+  /** URL publica de la agencia registrada por el usuario Webservice. @type {string} */
   let urlAgencia = '';
 
-  /** Field-level validation error messages for the agency form. @type {{nombre: string, correo: string, urlAgencia: string}} */
+  /** Mensajes de error de validacion por campo para el formulario de agencia. @type {{nombre: string, correo: string, urlAgencia: string}} */
   let erroresAgencia = { nombre: '', correo: '', urlAgencia: '' };
 
-  // ── Hotel form fields ───────────────────────────────────────────────────
+  // -- Campos del formulario de hotel --------------------------------------
 
-  /** Hotel name field bound to the hotel creation form. @type {string} */
+  /** Campo de nombre del hotel vinculado al formulario de creacion de hotel. @type {string} */
   let nombreHotel    = '';
 
-  /** API base URL of the hotel for the airline to communicate with. @type {string} */
+  /** URL base de la API del hotel para que la aerolinea se comunique con el. @type {string} */
   let urlHotel       = '';
 
-  /** Public URL of the hotel shown to passengers. @type {string} */
+  /** URL publica del hotel que se muestra a los pasajeros. @type {string} */
   let urlParaUsuario = '';
 
-  /** Field-level validation error messages for the hotel form. @type {{nombre: string, url: string, urlParaUsuario: string}} */
+  /** Mensajes de error de validacion por campo para el formulario de hotel. @type {{nombre: string, url: string, urlParaUsuario: string}} */
   let erroresHotel = { nombre: '', url: '', urlParaUsuario: '' };
 
   onMount(async () => {
@@ -83,9 +83,9 @@
   });
 
   /**
-   * Loads both agency and hotel data for the authenticated Webservice user in parallel.
-   * Sets tieneAgencia/agencia and tieneHotel/hotel from the respective API responses.
-   * Redirects to 'acceso-denegado' on 401 or 403. Sets errorGlobal on other failures.
+   * Carga en paralelo los datos de agencia y hotel para el usuario Webservice autenticado.
+   * Establece tieneAgencia/agencia y tieneHotel/hotel a partir de las respuestas de la API.
+   * Redirige a 'acceso-denegado' en caso de 401 o 403. Asigna errorGlobal en otros fallos.
    * @async
    * @returns {Promise<void>}
    */
@@ -125,13 +125,13 @@
     }
   }
 
-  // ── Agency form ─────────────────────────────────────────────────────────
+  // -- Formulario de agencia -----------------------------------------------
 
   /**
-   * Validates the agency creation form. Ensures nombre is non-empty, correo matches
-   * a basic email pattern, and urlAgencia is a non-empty valid URL.
-   * Populates erroresAgencia with messages for any failing field.
-   * @returns {boolean} True if all agency fields are valid.
+   * Valida el formulario de creacion de agencia. Verifica que nombre no este vacio, que correo
+   * coincida con un patron de correo basico y que urlAgencia sea una URL valida no vacia.
+   * Rellena erroresAgencia con mensajes para cada campo que falle.
+   * @returns {boolean} Verdadero si todos los campos de la agencia son validos.
    */
   function validarAgencia() {
     erroresAgencia = { nombre: '', correo: '', urlAgencia: '' };
@@ -147,9 +147,9 @@
   }
 
   /**
-   * Submits the agency creation form to POST /api/agencias/mi-agencia.
-   * On success shows a success toast, reloads entity data and clears the form.
-   * On failure shows an error toast with the server message.
+   * Envia el formulario de creacion de agencia a POST /api/agencias/mi-agencia.
+   * En caso de exito muestra un toast de exito, recarga los datos de la entidad y limpia el formulario.
+   * En caso de fallo muestra un toast de error con el mensaje del servidor.
    * @async
    * @returns {Promise<void>}
    */
@@ -182,13 +182,13 @@
     }
   }
 
-  // ── Hotel form ──────────────────────────────────────────────────────────
+  // -- Formulario de hotel -------------------------------------------------
 
   /**
-   * Validates the hotel creation form. Ensures nombreHotel is non-empty and both
-   * URLs are non-empty valid HTTP/HTTPS addresses.
-   * Populates erroresHotel with messages for any failing field.
-   * @returns {boolean} True if all hotel fields are valid.
+   * Valida el formulario de creacion de hotel. Verifica que nombreHotel no este vacio y que ambas
+   * URLs sean direcciones HTTP/HTTPS validas y no vacias.
+   * Rellena erroresHotel con mensajes para cada campo que falle.
+   * @returns {boolean} Verdadero si todos los campos del hotel son validos.
    */
   function validarHotel() {
     erroresHotel = { nombre: '', url: '', urlParaUsuario: '' };
@@ -204,9 +204,9 @@
   }
 
   /**
-   * Submits the hotel creation form to POST /api/hoteles-aliados/mi-hotel.
-   * On success shows a success toast, reloads entity data and clears the form.
-   * On failure shows an error toast with the server message.
+   * Envia el formulario de creacion de hotel a POST /api/hoteles-aliados/mi-hotel.
+   * En caso de exito muestra un toast de exito, recarga los datos de la entidad y limpia el formulario.
+   * En caso de fallo muestra un toast de error con el mensaje del servidor.
    * @async
    * @returns {Promise<void>}
    */
@@ -239,12 +239,12 @@
     }
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────
+  // -- Utilidades ----------------------------------------------------------
 
   /**
-   * Displays a toast notification for 4 seconds then clears it.
-   * @param {'success'|'error'} tipo - The visual type of the toast.
-   * @param {string} mensaje - The message text to display in the toast.
+   * Muestra una notificacion toast durante 4 segundos y luego la oculta.
+   * @param {'success'|'error'} tipo - El tipo visual del toast.
+   * @param {string} mensaje - El texto del mensaje a mostrar en el toast.
    */
   function mostrarToast(tipo, mensaje) {
     toast = { tipo, mensaje };
@@ -252,30 +252,30 @@
   }
 
   /**
-   * Maps an agency status ID to its human-readable label string.
-   * @param {number} id - The estadoAgenciaID value (1=Activa, 2=Inactiva, 3=Suspendida).
-   * @returns {string} The corresponding label or 'Desconocido' for unknown IDs.
+   * Convierte un ID de estado de agencia en su etiqueta legible por humanos.
+   * @param {number} id - El valor de estadoAgenciaID (1=Activa, 2=Inactiva, 3=Suspendida).
+   * @returns {string} La etiqueta correspondiente o 'Desconocido' para IDs desconocidos.
    */
   const estadoAgenciaLabel = (id) => ({ 1: 'Activa', 2: 'Inactiva', 3: 'Suspendida' }[id] ?? 'Desconocido');
 
   /**
-   * Maps an agency status ID to its CSS badge modifier class.
-   * @param {number} id - The estadoAgenciaID value.
-   * @returns {string} The CSS class string or empty string for unknown IDs.
+   * Convierte un ID de estado de agencia en su clase CSS modificadora de badge.
+   * @param {number} id - El valor de estadoAgenciaID.
+   * @returns {string} La cadena de clase CSS o cadena vacia para IDs desconocidos.
    */
   const estadoAgenciaClass = (id) => ({ 1: 'badge--active', 2: 'badge--inactive', 3: 'badge--suspended' }[id] ?? '');
 
   /**
-   * Maps a hotel aliado status ID to its human-readable label string.
-   * @param {number} id - The EstadoID value (1=Activo, others may vary).
-   * @returns {string} The corresponding label or 'Desconocido' for unknown IDs.
+   * Convierte un ID de estado de hotel aliado en su etiqueta legible por humanos.
+   * @param {number} id - El valor de EstadoID (1=Activo, otros pueden variar).
+   * @returns {string} La etiqueta correspondiente o 'Desconocido' para IDs desconocidos.
    */
   const estadoHotelLabel = (id) => ({ 1: 'Activo', 2: 'Inactivo', 3: 'Suspendido' }[id] ?? 'Desconocido');
 
   /**
-   * Maps a hotel aliado status ID to its CSS badge modifier class.
-   * @param {number} id - The EstadoID value.
-   * @returns {string} The CSS class string or empty string for unknown IDs.
+   * Convierte un ID de estado de hotel aliado en su clase CSS modificadora de badge.
+   * @param {number} id - El valor de EstadoID.
+   * @returns {string} La cadena de clase CSS o cadena vacia para IDs desconocidos.
    */
   const estadoHotelClass = (id) => ({ 1: 'badge--active', 2: 'badge--inactive', 3: 'badge--suspended' }[id] ?? '');
 </script>

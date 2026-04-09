@@ -1,45 +1,45 @@
 <script>
 /**
  * @file AdminHistorial.svelte
- * @description Admin panel section that displays the full flight history for the system.
- * Provides tab-based filtering by flight status (All, Active, Cancelled, Finished) and a
- * text search bar that matches against flight number, origin or destination. Each row shows
- * departure/arrival dates and times, available seats per class, prices and a status badge.
- * Active and in-progress flights have a Cancel button that triggers a confirmation dialog
- * before calling the backend cancellation endpoint. Dispatches 'vueloCancelado' to the parent
- * after a successful cancellation.
+ * @description Seccion del panel de administracion que muestra el historial completo de vuelos del sistema.
+ * Proporciona filtrado por pestanas segun el estado del vuelo (Todos, Activo, Cancelado, Finalizado) y una
+ * barra de busqueda por texto que coincide con el numero de vuelo, origen o destino. Cada fila muestra
+ * fechas y horarios de salida/llegada, asientos disponibles por clase, precios y una insignia de estado.
+ * Los vuelos activos y en curso tienen un boton de Cancelar que activa un dialogo de confirmacion antes de
+ * llamar al endpoint de cancelacion del backend. Despacha 'vueloCancelado' al padre tras una cancelacion exitosa.
  */
 // @ts-nocheck
   import { createEventDispatcher, onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
   const dispatch = createEventDispatcher();
 
-  /** Full list of flights loaded from the historial endpoint. @type {any[]} */
+  /** Lista completa de vuelos cargados desde el endpoint del historial. @type {any[]} */
   let historialVuelos        = [];
 
-  /** Whether the historial fetch is in progress. @type {boolean} */
+  /** Indica si la carga del historial esta en progreso. @type {boolean} */
   let loadingHistorialVuelos = false;
 
   /**
-   * Active tab key for status filtering.
-   * Possible values: 'todos', 'Activo', 'Cancelado', 'Finalizado'.
+   * Clave de la pestana activa para el filtrado por estado.
+   * Valores posibles: 'todos', 'Activo', 'Cancelado', 'Finalizado'.
    * @type {string}
    */
   let filtroEstado  = 'todos';
 
-  /** Text used to filter flights by flight number, origin or destination. @type {string} */
+  /** Texto usado para filtrar vuelos por numero de vuelo, origen o destino. @type {string} */
   let filtroBusqueda = '';
 
-  // Returns flights that match both the active status tab and the text search query.
+  /** Vuelos que coinciden con el filtro de estado activo y la busqueda por texto. @type {any[]} */
+  let vuelosFiltrados = [];
   $: vuelosFiltrados = historialVuelos.filter(v => {
     const coincideEstado = filtroEstado === 'todos' || v.estado === filtroEstado;
     const q = filtroBusqueda.toLowerCase();
@@ -50,10 +50,8 @@
     return coincideEstado && coincideBusqueda;
   });
 
-  /**
-   * Counts of flights by status for the tab badges, computed reactively from historialVuelos.
-   * @type {{ todos: number, Activo: number, Cancelado: number, Finalizado: number }}
-   */
+  /** Conteo de vuelos por estado para los badges de las pestanas. @type {{ todos: number, Activo: number, Cancelado: number, Finalizado: number }} */
+  let contadores = { todos: 0, Activo: 0, Cancelado: 0, Finalizado: 0 };
   $: contadores = {
     todos:      historialVuelos.length,
     Activo:     historialVuelos.filter(v => v.estado === 'Activo').length,
@@ -62,13 +60,13 @@
   };
 
   /**
-   * On mount: loads the flight history from the backend.
+   * Al montar: carga el historial de vuelos desde el backend.
    */
   onMount(() => { cargarHistorial(); });
 
   /**
-   * Fetches the complete flight history from the backend API and stores it in historialVuelos.
-   * Shows a toast on error and sets loadingHistorialVuelos during the request.
+   * Obtiene el historial completo de vuelos desde la API del backend y lo almacena en historialVuelos.
+   * Muestra un toast en caso de error y establece loadingHistorialVuelos durante la solicitud.
    * @async
    * @returns {Promise<void>}
    */
@@ -83,11 +81,11 @@
   }
 
   /**
-   * Shows a danger confirmation dialog, and if confirmed, sends a PUT request to cancel
-   * the specified flight. Also cancels all active tickets and reservations associated with
-   * the flight. On success reloads the historial and dispatches 'vueloCancelado'.
+   * Muestra un dialogo de confirmacion de peligro y, si se confirma, envia una solicitud PUT para cancelar
+   * el vuelo especificado. Tambien cancela todos los boletos activos y las reservaciones asociadas al vuelo.
+   * Al tener exito recarga el historial y despacha 'vueloCancelado'.
    * @async
-   * @param {number} vueloId - The ID of the flight to cancel.
+   * @param {number} vueloId - El ID del vuelo a cancelar.
    * @returns {Promise<void>}
    */
   async function handleCancelarVuelo(vueloId) {

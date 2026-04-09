@@ -7,7 +7,6 @@
   <!-- Favicon SVG con icono de casa en azul de marca -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230f3460' d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 22V12h6v10'/></svg>">
 
-  <!-- Compatibilidad IE y descripcion para SEO -->
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
   <meta name="description" content="Documentacion tecnica del Backend de Miku Inn">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
@@ -17,47 +16,39 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- Tema base claro de Docsify (vue.css) -->
+  <!-- Tema base claro de Docsify -->
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
 
   <!-- Estilos personalizados de marca Miku Inn -->
-  <link rel="stylesheet" href="docsify-java.css">
+  <link rel="stylesheet" href="docsify.css">
 </head>
 <body>
+
+<!-- Punto de montaje de la aplicacion Docsify -->
 <div id="app"></div>
 
-<!-- Configuracion base de Docsify: nombre, sidebar y busqueda -->
-<script>
-  window.$docsify = {
-    name: 'Miku Inn Docs',
-    repo: '',
-    loadSidebar: true,
-    subMaxLevel: 2,
-    search: {
-      placeholder: 'Buscar...',
-      noData: 'Sin resultados',
-    }
-  }
-</script>
+<!-- Configuracion principal de Docsify, hero header y boton PDF -->
+<script src="docsify-go.js"></script>
 
-<!-- Hero header y plugins adicionales del proyecto -->
-<script src="docsify-java.js"></script>
-
-<!-- Core de Docsify -->
+<!-- Motor principal de Docsify v4 -->
 <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
 
-<!-- Plugin de busqueda -->
+<!-- Plugin de busqueda integrada en el sidebar -->
 <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
 
-<!-- Syntax highlighting para Java, SQL y JSON con Prism -->
+<!-- Syntax highlighting: Java, SQL y JSON -->
 <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-java.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
 
-<!-- Boton de copiar codigo en bloques -->
+<!-- Boton de copiar codigo en cada bloque pre -->
 <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
 
-<!-- Paginacion entre paginas del sidebar -->
+<!-- Paginacion: botones anterior y siguiente entre paginas del sidebar -->
 <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+
+<!-- jsPDF: generacion de PDF directamente sin html2canvas -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 </body>
 </html>

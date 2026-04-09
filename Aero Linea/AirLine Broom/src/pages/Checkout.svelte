@@ -2,44 +2,44 @@
   // @ts-nocheck
 /**
  * @file Checkout.svelte
- * @description Payment checkout page that allows an authenticated user to pay for all their
- * pending reservations in a single transaction. Fetches pending reservations on mount and
- * redirects to home if none exist. Renders an interactive card visual that updates in real
- * time as the user fills in the card number, cardholder name, and expiry date fields.
- * Performs client-side validation on all payment fields before submitting. On submission,
- * sends parallel POST requests to the API for each pending reservation and navigates to
- * the confirmacion page with reservation and invoice data on success, or surfaces inline
- * error messages on failure.
+ * @description Pagina de pago que permite a un usuario autenticado pagar todas sus reservaciones
+ * pendientes en una sola transaccion. Obtiene las reservaciones pendientes al montar y redirige
+ * al inicio si no hay ninguna. Muestra una tarjeta visual interactiva que se actualiza en tiempo
+ * real mientras el usuario ingresa el numero de tarjeta, nombre del titular y fecha de expiracion.
+ * Realiza validacion del lado del cliente en todos los campos de pago antes de enviar. Al enviar,
+ * manda solicitudes POST en paralelo a la API para cada reservacion pendiente y navega a la pagina
+ * de confirmacion con los datos de reservacion y factura en caso de exito, o muestra mensajes de
+ * error en linea ante fallos.
  */
 
   import '../styles/checkout.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
-  /** Navigation function provided by the app router to switch pages. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar la pagina. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
+  /** ID del usuario autenticado actualmente, leido del store de sesion. @type {number|null} */
   let usuarioId = null;
 
-  /** Unsubscribe handle for the session store subscription. @type {Function} */
+  /** Manejador de desuscripcion para la suscripcion al store de sesion. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
-  /** Indicates whether the initial reservation data is being loaded. @type {boolean} */
+  /** Indica si los datos iniciales de reservacion se estan cargando. @type {boolean} */
   let loading    = true;
 
-  /** Error message set when the initial reservation fetch fails. @type {string|null} */
+  /** Mensaje de error establecido cuando falla la carga inicial de reservaciones. @type {string|null} */
   let error      = null;
 
-  /** Indicates whether a payment submission is currently in progress. @type {boolean} */
+  /** Indica si un envio de pago esta actualmente en progreso. @type {boolean} */
   let submitting = false;
 
-  /** Array of pending reservations fetched from the API, used to build the order summary. @type {Array} */
+  /** Arreglo de reservaciones pendientes obtenidas de la API, usado para construir el resumen del pedido. @type {Array} */
   let reservacionesPendientes = [];
 
-  /** Object holding per-field validation error messages for the payment form. @type {object} */
+  /** Objeto con mensajes de error de validacion por campo para el formulario de pago. @type {object} */
   let errores = {
     numeroTarjeta:   '',
     nombreTitular:   '',
@@ -49,7 +49,7 @@
     codigoPostal:    ''
   };
 
-  /** Object holding the current values entered by the user in the payment form fields. @type {object} */
+  /** Objeto con los valores actuales ingresados por el usuario en los campos del formulario de pago. @type {object} */
   let cardInfo = {
     nit:             '',
     codigoPostal:    '',
@@ -59,7 +59,7 @@
     cvv:             ''
   };
 
-  // Derives display-friendly values for the card visual from cardInfo; shows placeholders when fields are empty.
+  // Deriva valores para mostrar en la tarjeta visual a partir de cardInfo; muestra marcadores de posicion cuando los campos estan vacios.
   $: cardDisplay = {
     numero:  cardInfo.numeroTarjeta || '•••• •••• •••• ••••',
     titular: cardInfo.nombreTitular  || 'NOMBRE TITULAR',
@@ -67,9 +67,9 @@
   };
 
   /**
-   * Lifecycle hook that runs after the component mounts.
-   * Redirects to login if no user session exists, otherwise loads pending reservations.
-   * Returns the unsubscribe function for cleanup.
+   * Hook de ciclo de vida que se ejecuta tras el montaje del componente.
+   * Redirige al login si no existe sesion de usuario, de lo contrario carga las reservaciones pendientes.
+   * Retorna la funcion de desuscripcion para limpieza.
    * @async
    * @returns {Promise<Function>}
    */
@@ -80,9 +80,9 @@
   });
 
   /**
-   * Fetches the user's reservations from the API and filters to only those with
-   * estadoReservaId === 1 (Pending). If no pending reservations are found, redirects
-   * to the home page immediately. Sets loading and error as side effects.
+   * Obtiene las reservaciones del usuario desde la API y filtra solo aquellas con
+   * estadoReservaId === 1 (Pendiente). Si no hay reservaciones pendientes, redirige
+   * al inicio inmediatamente. Establece loading y error como efectos secundarios.
    * @async
    * @returns {Promise<void>}
    */
@@ -102,9 +102,9 @@
   }
 
   /**
-   * Handles input on the card number field. Strips non-digits, enforces a 16-digit maximum,
-   * formats the value into groups of four separated by spaces, and clears the field error.
-   * @param {Event} e - The input event from the card number field.
+   * Maneja la entrada en el campo de numero de tarjeta. Elimina no-digitos, limita a 16 digitos
+   * como maximo, formatea el valor en grupos de cuatro separados por espacios y limpia el error del campo.
+   * @param {Event} e - El evento de entrada del campo de numero de tarjeta.
    */
   function onNumeroInput(e) {
     let v = e.target.value.replace(/\D/g, '').substring(0, 16);
@@ -113,10 +113,10 @@
   }
 
   /**
-   * Handles input on the expiry date field. Strips non-digits, enforces a 4-digit maximum,
-   * and automatically inserts a slash after the second digit to produce MM/YY format.
-   * Clears the field error on each input event.
-   * @param {Event} e - The input event from the expiry date field.
+   * Maneja la entrada en el campo de fecha de expiracion. Elimina no-digitos, limita a 4 digitos
+   * como maximo e inserta automaticamente una barra despues del segundo digito para producir
+   * el formato MM/AA. Limpia el error del campo en cada evento de entrada.
+   * @param {Event} e - El evento de entrada del campo de fecha de expiracion.
    */
   function onExpiryInput(e) {
     let v = e.target.value.replace(/[^\d]/g, '').substring(0, 4);
@@ -126,9 +126,9 @@
   }
 
   /**
-   * Handles input on the CVV field. Strips non-digits and enforces a 4-digit maximum.
-   * Clears the CVV error on each input event.
-   * @param {Event} e - The input event from the CVV field.
+   * Maneja la entrada en el campo de CVV. Elimina no-digitos y limita a 4 digitos como maximo.
+   * Limpia el error de CVV en cada evento de entrada.
+   * @param {Event} e - El evento de entrada del campo de CVV.
    */
   function onCvvInput(e) {
     cardInfo.cvv = e.target.value.replace(/\D/g, '').substring(0, 4);
@@ -136,10 +136,10 @@
   }
 
   /**
-   * Handles input on the NIT field. Converts to uppercase and allows the special values
-   * "C" and "CF" (consumer final), or strips all non-numeric characters up to 12 digits.
-   * Clears the NIT error on each input event.
-   * @param {Event} e - The input event from the NIT field.
+   * Maneja la entrada en el campo de NIT. Convierte a mayusculas y permite los valores especiales
+   * "C" y "CF" (consumidor final), o elimina todos los caracteres no numericos hasta 12 digitos.
+   * Limpia el error de NIT en cada evento de entrada.
+   * @param {Event} e - El evento de entrada del campo de NIT.
    */
   function onNitInput(e) {
     let v = e.target.value.toUpperCase();
@@ -152,9 +152,9 @@
   }
 
   /**
-   * Handles input on the postal code field. Strips non-digits and enforces a 10-digit maximum.
-   * Clears the postal code error on each input event.
-   * @param {Event} e - The input event from the postal code field.
+   * Maneja la entrada en el campo de codigo postal. Elimina no-digitos y limita a 10 digitos
+   * como maximo. Limpia el error de codigo postal en cada evento de entrada.
+   * @param {Event} e - El evento de entrada del campo de codigo postal.
    */
   function onCodigoPostalInput(e) {
     cardInfo.codigoPostal = e.target.value.replace(/\D/g, '').substring(0, 10);
@@ -162,11 +162,12 @@
   }
 
   /**
-   * Validates all required payment form fields and populates the errores object with
-   * specific messages for each invalid field. Checks that the card number is exactly
-   * 16 digits, the cardholder name contains only letters and is at least 3 characters,
-   * the expiry date matches MM/AA format and has not passed, and the CVV is 3 or 4 digits.
-   * @returns {boolean} True if all validations pass, false if any field has an error.
+   * Valida todos los campos requeridos del formulario de pago y llena el objeto errores con
+   * mensajes especificos para cada campo invalido. Verifica que el numero de tarjeta tenga
+   * exactamente 16 digitos, que el nombre del titular contenga solo letras y sea de al menos
+   * 3 caracteres, que la fecha de expiracion coincida con el formato MM/AA y no haya pasado,
+   * y que el CVV tenga 3 o 4 digitos.
+   * @returns {boolean} Verdadero si todas las validaciones pasan, falso si algun campo tiene error.
    */
   function validar() {
     let ok = true;
@@ -207,11 +208,11 @@
   }
 
   /**
-   * Validates the form and then submits payment for all pending reservations in parallel.
-   * For each reservation, sends a POST to the /api/reservaciones/:id/comprar endpoint with
-   * the card details. If all requests succeed, navigates to the confirmacion page passing
-   * the reservation list and the array of returned invoice objects. On partial or total
-   * failure, surfaces the API error message in the card number field error slot.
+   * Valida el formulario y luego envia el pago de todas las reservaciones pendientes en paralelo.
+   * Para cada reservacion, envia un POST al endpoint /api/reservaciones/:id/comprar con los datos
+   * de la tarjeta. Si todas las solicitudes tienen exito, navega a la pagina de confirmacion
+   * pasando la lista de reservaciones y el arreglo de objetos de factura retornados. Ante fallo
+   * parcial o total, muestra el mensaje de error de la API en el campo de error del numero de tarjeta.
    * @async
    * @returns {Promise<void>}
    */
@@ -260,9 +261,9 @@
   }
 
   /**
-   * Groups the flat boletos array of a reservation by flight (vueloId) and computes
-   * the passenger count and total price per flight group.
-   * @param {Array} boletos - Array of ticket objects from a single reservation.
+   * Agrupa el arreglo plano de boletos de una reservacion por vuelo (vueloId) y calcula
+   * la cantidad de pasajeros y el precio total por grupo de vuelo.
+   * @param {Array} boletos - Arreglo de objetos de boleto de una sola reservacion.
    * @returns {Array<{numeroVuelo: string, origenCodigo: string, destinoCodigo: string, origenCiudad: string, destinoCiudad: string, fecha: string, clase: string, cantidadPasajeros: number, precioTotal: number}>}
    */
   function agruparVuelosPorRuta(boletos) {
@@ -282,17 +283,17 @@
   }
 
   /**
-   * Formats a date string using the es-ES locale with full month name.
-   * Returns an empty string if the input is falsy.
-   * @param {string|null} d - ISO date string to format.
-   * @returns {string} Formatted date such as "15 de enero de 2025" or "".
+   * Formatea una cadena de fecha usando el locale es-ES con el nombre completo del mes.
+   * Retorna una cadena vacia si el input es falsy.
+   * @param {string|null} d - Cadena de fecha ISO a formatear.
+   * @returns {string} Fecha formateada como "15 de enero de 2025" o "".
    */
   function formatDate(d) {
     if (!d) return '';
     return new Date(d).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
-  // Computes the sum of all pending reservation totals for the order summary grand total display.
+  // Calcula la suma de todos los totales de reservaciones pendientes para mostrar el gran total en el resumen del pedido.
   $: totalGeneral = reservacionesPendientes.reduce((s, r) => s + r.total, 0);
 </script>
 

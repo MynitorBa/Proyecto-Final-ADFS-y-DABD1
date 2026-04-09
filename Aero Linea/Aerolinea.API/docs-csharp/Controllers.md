@@ -120,7 +120,7 @@ Elimina la imagen asociada a un aeropuerto. Requiere rol Administrador. Retorna 
 public async Task<IActionResult> CrearAgencia([FromBody] CrearAgenciaDTO dto)
 ```
 
-Crea una nueva agencia vinculada a un usuario Webservice. Requiere rol Administrador.
+Crea una nueva agencia vinculada a un usuario Webservice. Requiere rol Administrador. Verifica que el usuario no tenga ya una agencia ni un hotel aliado asignados.
 
 ---
 
@@ -136,7 +136,7 @@ Retorna la lista completa de agencias registradas en el sistema. Requiere rol Ad
 public async Task<IActionResult> ObtenerWebserviceDisponibles()
 ```
 
-Retorna los usuarios con rol Webservice que aun no tienen agencia asignada. Se usa para poblar el selector al crear una agencia desde el panel de admin.
+Retorna los usuarios con rol Webservice que no tienen ninguna entidad asignada (ni agencia ni hotel aliado). Se usa para poblar los selectores de asignacion tanto en el panel de agencias como en el de hoteles.
 
 ---
 
@@ -144,7 +144,7 @@ Retorna los usuarios con rol Webservice que aun no tienen agencia asignada. Se u
 public async Task<IActionResult> AsignarUsuario(int id, [FromBody] AsignarUsuarioAgenciaDTO dto)
 ```
 
-Asigna un usuario Webservice a una agencia existente. Requiere rol Administrador.
+Asigna un usuario Webservice a una agencia existente. Requiere rol Administrador. El usuario no puede tener ya una agencia ni un hotel aliado registrado.
 
 ---
 
@@ -161,6 +161,14 @@ public async Task<IActionResult> ActualizarEstado(int id, [FromBody] ActualizarE
 ```
 
 Actualiza el estado de una agencia (activa, suspendida, etc.). Requiere rol Administrador.
+
+---
+
+```csharp
+public async Task<IActionResult> ActualizarUrl(int id, [FromBody] ActualizarUrlAgenciaDTO dto)
+```
+
+Actualiza la URL publica de una agencia desde el panel de administracion. Requiere rol Administrador.
 
 ---
 
@@ -450,6 +458,18 @@ Recibe las credenciales de una agencia externa (URL y token de entrada), las val
 
 ---
 
+## HandshakeHotelController
+
+> Controlador que inicia el proceso de handshake entre la aerolinea y un hotel aliado. Genera un token de entrada, lo envia al hotel y guarda el token de sesion resultante en la base de datos. Solo accesible por administradores autenticados.
+
+```csharp
+public async Task<IActionResult> IniciarHandshake(int hotelId)
+```
+
+Inicia el handshake de autenticacion con el hotel aliado identificado por hotelId. Genera un token de entrada, lo envia al endpoint /api/aerolineas/handshake del hotel y guarda el token de sesion recibido en HotelAliado.TokenHASH. Retorna el token de sesion resultante si el proceso fue exitoso.
+
+---
+
 ## HealthController
 
 > Controlador de estado de la API. Expone un endpoint publico para verificar que el servicio esta en linea y obtener informacion basica del ambiente y la hora del servidor. Utilizado por herramientas de monitoreo y orquestacion de contenedores.
@@ -459,6 +479,74 @@ public IActionResult Get()
 ```
 
 Retorna el estado actual de la API, el ambiente de ejecucion (Development, Production, etc.) y la hora UTC del servidor. Endpoint publico, no requiere autenticacion.
+
+---
+
+## HotelAliadoController
+
+> Controlador de hoteles aliados. Expone el endpoint de busqueda dinamica de hoteles, los endpoints para que usuarios Webservice consulten y registren su propio hotel, y los endpoints de administracion completa para el panel de administrador.
+
+```csharp
+public async Task<IActionResult> BuscarHoteles([FromBody] BusquedaHotelesDTO dto)
+```
+
+Busca hoteles disponibles en la ciudad destino del pasajero consultando la API de cada hotel aliado activo de forma dinamica.
+
+---
+
+```csharp
+public async Task<IActionResult> ObtenerMiHotel()
+```
+
+Retorna los datos del hotel aliado asociado al usuario Webservice autenticado. Si el usuario no tiene hotel registrado, retorna tieneHotel = false. Solo accesible para usuarios con rol Webservice (rolId = 3).
+
+---
+
+```csharp
+public async Task<IActionResult> CrearMiHotel([FromBody] CrearHotelWebserviceDTO dto)
+```
+
+Permite a un usuario Webservice autenticado registrar su propio hotel aliado. Un usuario Webservice solo puede tener un hotel o una agencia, nunca ambos. Solo accesible para usuarios con rol Webservice (rolId = 3).
+
+---
+
+```csharp
+public async Task<IActionResult> ObtenerTodosAdmin()
+```
+
+Retorna la lista completa de hoteles aliados con datos del usuario asignado. Requiere rol Administrador.
+
+---
+
+```csharp
+public async Task<IActionResult> CrearHotelAdmin([FromBody] CrearHotelAdminDTO dto)
+```
+
+Crea un nuevo hotel aliado y lo vincula al usuario Webservice indicado. Verifica que el usuario no tenga ya ninguna otra entidad asignada. Requiere rol Administrador.
+
+---
+
+```csharp
+public async Task<IActionResult> ActualizarEstado(int id, [FromBody] ActualizarEstadoHotelDTO dto)
+```
+
+Actualiza el estado de un hotel aliado segun el catalogo EstadoAliado. Requiere rol Administrador.
+
+---
+
+```csharp
+public async Task<IActionResult> AsignarUsuario(int id, [FromBody] AsignarUsuarioHotelDTO dto)
+```
+
+Asigna un usuario Webservice a un hotel aliado existente. El usuario no puede tener ya ninguna otra entidad asignada. Requiere rol Administrador.
+
+---
+
+```csharp
+public async Task<IActionResult> ActualizarUrls(int id, [FromBody] ActualizarUrlHotelDTO dto)
+```
+
+Actualiza la URL de la API y la URL publica para usuarios de un hotel aliado. Requiere rol Administrador.
 
 ---
 
@@ -538,7 +626,7 @@ Retorna el detalle completo de una reservacion especifica del usuario autenticad
 public async Task<IActionResult> DescargarComprobante(int reservacionId)
 ```
 
-Genera y descarga el comprobante de una reservacion en formato PDF. El archivo se nombra con el numero de reservacion para facilitar su identificacion.
+Genera y retorna el comprobante de una reservacion como HTML para que el usuario lo abra en una nueva pestana e imprima como PDF desde el navegador. No requiere la libreria nativa wkhtmltopdf.
 
 ---
 
@@ -554,7 +642,7 @@ Retorna un resumen estadistico de las reservaciones del usuario autenticado, com
 public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
 ```
 
-Cancela una reservacion activa del usuario autenticado. El motivo de cancelacion es opcional. Solo se pueden cancelar reservaciones que aun no hayan sido completadas.
+Cancela una reservacion activa del usuario autenticado. El motivo de cancelacion es opcional. Solo se pueden cancelar reservaciones pendientes o confirmadas.
 
 ---
 
@@ -562,7 +650,7 @@ Cancela una reservacion activa del usuario autenticado. El motivo de cancelacion
 public async Task<IActionResult> EnviarComprobanteEmail(int reservacionId)
 ```
 
-Envia el comprobante de una reservacion al correo electronico registrado del usuario. Genera el PDF en memoria y lo adjunta al correo antes de enviarlo.
+Envia el comprobante de una reservacion al correo electronico registrado del usuario. Genera el HTML del comprobante y lo adjunta al correo antes de enviarlo.
 
 ---
 
@@ -747,6 +835,18 @@ public async Task<IActionResult> ExisteRuta(
 ```
 
 Verifica si ya existe una ruta entre dos aeropuertos. Se usa en el formulario de creacion de rutas para validar en tiempo real. Requiere rol Administrador.
+
+---
+
+## TokenHotelController
+
+> Controlador que expone el endpoint para solicitar un token de alianza a un hotel aliado especifico. Requiere sesion activa del usuario.
+
+```csharp
+public async Task<IActionResult> SolicitarToken(int aliadoId, [FromBody] TokenHotelRequestDTO dto)
+```
+
+Solicita un token de alianza al hotel identificado por aliadoId. El hotel genera un token de un solo uso valido por 15 minutos y retorna la URL lista para redirigir al usuario.
 
 ---
 

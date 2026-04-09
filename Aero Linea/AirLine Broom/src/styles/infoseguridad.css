@@ -1,6 +1,6 @@
-/* infoseguridad.css - Security information page styles including header with left border accent, section cards with icon and title header, baggage subsections, check-in steps with gradient number badges, boarding groups grid, rules list, entry animation, and responsive breakpoints */
+/* infoseguridad.css - Estilos de la pagina de informacion de seguridad, incluyendo encabezado con acento de borde izquierdo, tarjetas de seccion con encabezado de icono y titulo, subsecciones de equipaje, pasos de check-in con insignias de numero con gradiente, grilla de grupos de abordaje, lista de reglas, animacion de entrada y puntos de quiebre responsivos */
 
-/* Full-page wrapper with warm beige background and generous bottom padding */
+/* Contenedor de pagina completa con fondo beige calido y relleno inferior generoso */
 .info-seguridad {
     width: 100%;
     min-height: 100vh;
@@ -8,20 +8,20 @@
     padding: 3rem 1rem 6rem;
 }
 
-/* Centered content column capped at 1200px */
+/* Columna de contenido centrada limitada a 1200px */
 .info-seguridad__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Page header with a thick warm-gold left border accent */
+/* Encabezado de pagina con un acento de borde izquierdo dorado calido grueso */
 .info-seguridad__header {
     margin-bottom: 4rem;
     border-left: 6px solid #B89A7A;
     padding-left: 2rem;
 }
 
-/* Transparent back button with muted brown text that shifts left on hover */
+/* Boton de regreso transparente con texto marron apagado que se desplaza a la izquierda al pasar el cursor */
 .info-seguridad__back {
     background: transparent;
     border: none;
@@ -38,13 +38,13 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Back button darkens and slides 5px left on hover */
+/* El boton de regreso se oscurece y se desliza 5px a la izquierda al pasar el cursor */
 .info-seguridad__back:hover {
     color: #1C1A18;
     transform: translateX(-5px);
 }
 
-/* Fluid page title from 2rem to 3rem, light weight */
+/* Titulo de pagina fluido de 2rem a 3rem con peso ligero */
 .info-seguridad__title {
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 300;
@@ -53,7 +53,7 @@
     line-height: 1.1;
 }
 
-/* Muted subtitle capped at 650px with relaxed line height */
+/* Subtitulo apagado limitado a 650px con interlineado relajado */
 .info-seguridad__subtitle {
     color: #6B5D52;
     letter-spacing: 0.5px;
@@ -63,14 +63,14 @@
     line-height: 1.6;
 }
 
-/* Vertical stack of section cards with gaps between them */
+/* Pila vertical de tarjetas de seccion con separaciones entre ellas */
 .secciones-container {
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
 }
 
-/* Section card: white, asymmetric border-radius, fades in and slides up on load */
+/* Tarjeta de seccion: blanca, radio asimetrico, aparece con fundido y sube al cargar */
 .seccion-card {
     background: #FFFFFF;
     border-radius: 4px 32px 4px 32px;
@@ -82,13 +82,13 @@
     opacity: 0;
 }
 
-/* Card lifts 5px and deepens shadow on hover */
+/* La tarjeta se eleva 5px y profundiza la sombra al pasar el cursor */
 .seccion-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 45px rgba(28, 26, 24, 0.1);
 }
 
-/* Card header: gradient beige background with icon and title in a flex row */
+/* Encabezado de tarjeta: fondo beige con gradiente, icono y titulo en fila flex */
 .seccion-card__header {
     padding: 2rem 2.5rem;
     background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
@@ -98,13 +98,13 @@
     gap: 1.2rem;
 }
 
-/* Large emoji icon at 2.5rem with a 1 line-height reset */
+/* Icono de emoji grande a 2.5rem con interlineado de 1 */
 .seccion-card__icon {
     font-size: 2.5rem;
     line-height: 1;
 }
 
-/* Light-weight section title at 2rem with tight letter-spacing */
+/* Titulo de seccion ligero a 2rem con espaciado de letras ajustado */
 .seccion-card__title {
     font-size: 2rem;
     font-weight: 300;
@@ -113,22 +113,22 @@
     letter-spacing: -0.5px;
 }
 
-/* Section body with comfortable padding and extra bottom space */
+/* Cuerpo de la seccion con relleno comodo y espacio inferior extra */
 .seccion-card__content {
     padding: 2.5rem 2.5rem 3rem;
 }
 
-/* Baggage subsection block with bottom margin separating it from siblings */
+/* Bloque de subseccion de equipaje con margen inferior que lo separa de sus hermanos */
 .equipaje-subsection {
     margin-bottom: 2rem;
 }
 
-/* Last baggage subsection gets slightly more bottom margin */
+/* La ultima subseccion de equipaje tiene un margen inferior ligeramente mayor */
 .equipaje-subsection:last-of-type {
     margin-bottom: 2.5rem;
 }
 
-/* Baggage type name: medium weight, underlined with a gold 2px border */
+/* Nombre del tipo de equipaje: peso medio, subrayado con un borde dorado de 2px */
 .equipaje-subsection__name {
     font-size: 1.3rem;
     font-weight: 500;
@@ -138,14 +138,14 @@
     border-bottom: 2px solid #B89A7A;
 }
 
-/* Vertical stack of baggage detail items */
+/* Pila vertical de elementos de detalle de equipaje */
 .equipaje-details {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-/* Individual baggage detail row: warm off-white background with a gold left accent border */
+/* Fila de detalle de equipaje individual: fondo beige calido con acento de borde izquierdo dorado */
 .equipaje-item {
     display: flex;
     flex-direction: column;
@@ -156,7 +156,7 @@
     border-left: 3px solid #B89A7A;
 }
 
-/* Small all-caps muted label above the baggage value */
+/* Etiqueta pequena en mayusculas apagada encima del valor del equipaje */
 .equipaje-item__label {
     font-size: 0.75rem;
     color: #6B5D52;
@@ -166,7 +166,7 @@
     margin: 0;
 }
 
-/* Baggage value text in regular dark text with relaxed line height */
+/* Texto del valor del equipaje en texto oscuro regular con interlineado relajado */
 .equipaje-item__value {
     font-size: 0.95rem;
     color: #1C1A18;
@@ -175,7 +175,7 @@
     margin: 0;
 }
 
-/* Note callout box: warm yellow background with a gold left border */
+/* Cuadro de nota: fondo amarillo calido con borde izquierdo dorado */
 .seccion-note {
     background: #FFF9E6;
     border-left: 4px solid #B89A7A;
@@ -186,28 +186,28 @@
     line-height: 1.7;
 }
 
-/* Note heading displayed as a block with bottom margin */
+/* Encabezado de nota mostrado como bloque con margen inferior */
 .seccion-note strong {
     color: #1C1A18;
     display: block;
     margin-bottom: 0.5rem;
 }
 
-/* Vertical stack of check-in step rows */
+/* Pila vertical de filas de pasos de check-in */
 .steps-container {
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
-/* Each check-in step: flex row with number badge on the left */
+/* Cada paso de check-in: fila flex con insignia de numero a la izquierda */
 .step-item {
     display: flex;
     gap: 1.5rem;
     align-items: flex-start;
 }
 
-/* Circular step number: 50px gradient brown badge with a warm drop shadow */
+/* Numero de paso circular: insignia marron con gradiente de 50px con sombra calida */
 .step-item__number {
     flex-shrink: 0;
     width: 50px;
@@ -223,13 +223,13 @@
     box-shadow: 0 4px 12px rgba(139, 107, 74, 0.3);
 }
 
-/* Step content column with a small top offset to align with the badge center */
+/* Columna de contenido del paso con un desplazamiento superior pequeno para alinearse con el centro de la insignia */
 .step-item__content {
     flex: 1;
     padding-top: 0.3rem;
 }
 
-/* Bold step title at 1.2rem with bottom margin */
+/* Titulo del paso en negrita a 1.2rem con margen inferior */
 .step-item__title {
     font-size: 1.2rem;
     font-weight: 600;
@@ -237,7 +237,7 @@
     margin: 0 0 0.5rem 0;
 }
 
-/* Muted step description at 0.95rem with relaxed line height */
+/* Descripcion del paso apagada a 0.95rem con interlineado relajado */
 .step-item__description {
     font-size: 0.95rem;
     color: #6B5D52;
@@ -245,7 +245,7 @@
     margin: 0;
 }
 
-/* Boarding section block with bottom margin; last child removes it */
+/* Bloque de seccion de abordaje con margen inferior; el ultimo hijo lo elimina */
 .abordaje-section {
     margin-bottom: 2.5rem;
 }
@@ -254,7 +254,7 @@
     margin-bottom: 0;
 }
 
-/* Small all-caps boarding subtitle with 1px letter spacing */
+/* Subtitulo de abordaje pequeno en mayusculas con espaciado de letras de 1px */
 .abordaje-section__subtitle {
     font-size: 1.1rem;
     font-weight: 600;
@@ -265,7 +265,7 @@
     font-size: 0.85rem;
 }
 
-/* Auto-fit grid of boarding group cards, minimum 250px wide */
+/* Grilla de ajuste automatico de tarjetas de grupo de abordaje, minimo 250px de ancho */
 .abordaje-groups {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -273,7 +273,7 @@
     margin-bottom: 2rem;
 }
 
-/* Individual boarding group card: off-white with a gold left border accent */
+/* Tarjeta de grupo de abordaje individual: fondo beige calido con acento de borde izquierdo dorado */
 .abordaje-group {
     background: #fcfbf9;
     padding: 1.5rem;
@@ -281,7 +281,7 @@
     border-left: 3px solid #B89A7A;
 }
 
-/* Bold boarding priority heading at 1.1rem */
+/* Encabezado de prioridad de abordaje en negrita a 1.1rem */
 .abordaje-group__priority {
     font-size: 1.1rem;
     font-weight: 600;
@@ -289,7 +289,7 @@
     margin: 0 0 0.8rem 0;
 }
 
-/* Muted boarding group description at 0.9rem with relaxed line height */
+/* Descripcion del grupo de abordaje apagada a 0.9rem con interlineado relajado */
 .abordaje-group__description {
     font-size: 0.9rem;
     color: #6B5D52;
@@ -297,7 +297,7 @@
     margin: 0;
 }
 
-/* Vertical stack of rule items with gaps */
+/* Pila vertical de elementos de regla con separaciones */
 .reglas-list {
     list-style: none;
     padding: 0;
@@ -307,7 +307,7 @@
     gap: 1rem;
 }
 
-/* Rule row: off-white background with a gold checkmark bullet and relaxed line height */
+/* Fila de regla: fondo beige calido con viñeta de marca de verificacion dorada e interlineado relajado */
 .reglas-list__item {
     color: #1C1A18;
     font-size: 0.95rem;
@@ -320,7 +320,7 @@
     border-radius: 4px;
 }
 
-/* Gold checkmark bullet before each rule item */
+/* Viñeta de marca de verificacion dorada antes de cada elemento de regla */
 .reglas-list__item::before {
     content: '✓';
     color: #B89A7A;
@@ -330,7 +330,7 @@
     line-height: 1;
 }
 
-/* Card entry animation: slides up 30px while fading in */
+/* Animacion de entrada de tarjeta: sube 30px mientras aparece con fundido */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -342,7 +342,7 @@
     }
 }
 
-/* At 1024px: page padding and section gap reduce */
+/* A 1024px: el relleno de la pagina y la separacion de secciones se reducen */
 @media (max-width: 1024px) {
     .info-seguridad {
         padding: 2.5rem 1rem 5rem;
@@ -353,7 +353,7 @@
     }
 }
 
-/* At 768px: tighter page padding, smaller header and title, boarding grid goes single column */
+/* A 768px: relleno mas ajustado, encabezado y titulo mas pequenos, grilla de abordaje pasa a una columna */
 @media (max-width: 768px) {
     .info-seguridad {
         padding: 2rem 1rem 4rem;
@@ -403,7 +403,7 @@
     }
 }
 
-/* At 480px: minimal padding, card icon stacks above title, step items stack vertically */
+/* A 480px: relleno minimo, el icono de tarjeta se apila sobre el titulo, los pasos se apilan verticalmente */
 @media (max-width: 480px) {
     .info-seguridad {
         padding: 1.5rem 0.5rem 3rem;
@@ -474,7 +474,7 @@
     }
 }
 
-/* At 380px: card header and content tighten padding further */
+/* A 380px: el encabezado y el contenido de la tarjeta ajustan el relleno aun mas */
 @media (max-width: 380px) {
     .seccion-card__header {
         padding: 1.25rem 1.25rem;
