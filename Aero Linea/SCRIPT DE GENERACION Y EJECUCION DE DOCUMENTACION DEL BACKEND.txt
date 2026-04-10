@@ -1,0 +1,5 @@
+Primero:
+iex (Get-Content ".\generar-docs-csharp.ps1" -Raw)
+
+Segundo:
+docsify serve docs-csharp

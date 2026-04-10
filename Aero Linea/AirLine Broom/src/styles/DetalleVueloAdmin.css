@@ -1,6 +1,6 @@
-/* DetalleVueloAdmin.css - Admin flight detail modal styles including animated backdrop, info grid, route display, stats card, and responsive breakpoints */
+/* DetalleVueloAdmin.css - Estilos del modal de detalle de vuelo para administrador, incluyendo fondo animado, grilla de informacion, visualizacion de ruta, tarjeta de estadisticas y puntos de quiebre responsivos */
 
-/* Semi-transparent dark overlay centered in the viewport with a fade-in animation */
+/* Superposicion oscura semitransparente centrada en la ventana de visualizacion con animacion de aparicion */
 .modal-backdrop-admin {
     position: fixed;
     top: 0;
@@ -16,13 +16,13 @@
     animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Backdrop fades in from transparent */
+/* El fondo aparece con fundido desde transparente */
 @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
 
-/* Modal panel: white with asymmetric radius, capped at 800px, slides up on enter */
+/* Panel del modal: blanco con radio asimetrico, limitado a 800px, sube al entrar */
 .detalle-vuelo-admin {
     background: var(--white);
     border-radius: 4px 30px 4px 30px;
@@ -34,7 +34,7 @@
     animation: slideUp 0.4s ease-out;
 }
 
-/* Modal slides up 50px while fading in */
+/* El modal sube 50px mientras aparece con fundido */
 @keyframes slideUp {
     from {
         opacity: 0;
@@ -46,7 +46,7 @@
     }
 }
 
-/* Beige header strip with title and close button in a space-between row */
+/* Franja de encabezado beige con titulo y boton de cierre en fila separada */
 .detalle-vuelo-admin__header {
     background: #fcfbf9;
     padding: 2rem 2.5rem;
@@ -56,7 +56,7 @@
     align-items: center;
 }
 
-/* Light-weight modal title in secondary color */
+/* Titulo del modal ligero en color secundario */
 .detalle-vuelo-admin__title {
     font-size: 1.5rem;
     font-weight: 300;
@@ -64,7 +64,7 @@
     margin: 0;
 }
 
-/* Transparent close button with muted border and uppercase text */
+/* Boton de cierre transparente con borde apagado y texto en mayusculas */
 .detalle-vuelo-admin__close {
     background: transparent;
     border: 2px solid var(--text-muted);
@@ -78,14 +78,14 @@
     transition: all 0.3s ease;
 }
 
-/* Close button border and text turn gold with a slight scale on hover */
+/* El borde y texto del boton de cierre se vuelven dorados con una ligera escala al pasar el cursor */
 .detalle-vuelo-admin__close:hover {
     color: var(--primary-color);
     border-color: var(--primary-color);
     transform: scale(1.05);
 }
 
-/* Modal body: flex column with 2.5rem gap between sections */
+/* Cuerpo del modal: columna flex con separacion de 2.5rem entre secciones */
 .detalle-vuelo-admin__content {
     padding: 2.5rem;
     display: flex;
@@ -93,19 +93,19 @@
     gap: 2.5rem;
 }
 
-/* Section container with a beige bottom separator */
+/* Contenedor de seccion con separador inferior beige */
 .info-section {
     border-bottom: 1px solid var(--perla-dark);
     padding-bottom: 2rem;
 }
 
-/* Last section removes the bottom border and padding */
+/* La ultima seccion elimina el borde inferior y el relleno */
 .info-section:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }
 
-/* Uppercase gold section heading with wide letter spacing */
+/* Encabezado de seccion dorado en mayusculas con espaciado amplio */
 .info-section__title {
     font-size: 0.9rem;
     text-transform: uppercase;
@@ -115,21 +115,21 @@
     font-weight: 600;
 }
 
-/* Auto-fit grid of labeled data items, minimum 200px per column */
+/* Grilla de ajuste automatico de elementos de datos etiquetados, minimo 200px por columna */
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
 }
 
-/* Individual info datum: stacked label and value */
+/* Dato de informacion individual: etiqueta y valor apilados */
 .info-item {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/* Tiny all-caps muted label above the value */
+/* Etiqueta pequena en mayusculas apagada encima del valor */
 .info-item__label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -138,21 +138,21 @@
     font-weight: 600;
 }
 
-/* Medium-weight value in secondary color */
+/* Valor con peso medio en color secundario */
 .info-item__value {
     font-size: 1.1rem;
     color: var(--secondary-color);
     font-weight: 500;
 }
 
-/* Gold and larger price variant of the info value */
+/* Variante de valor de precio dorado y mas grande */
 .info-item__value--price {
     font-size: 1.3rem;
     color: var(--primary-color);
     font-weight: 600;
 }
 
-/* Beige banner displaying origin and destination in a space-between row */
+/* Panel beige que muestra origen y destino en fila separada */
 .ruta-display {
     display: flex;
     justify-content: space-between;
@@ -163,14 +163,14 @@
     margin-bottom: 1.5rem;
 }
 
-/* Route endpoint: stacked label and IATA/city value */
+/* Punto de ruta: etiqueta y valor IATA/ciudad apilados */
 .ruta-point {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/* Tiny all-caps muted label above the route value */
+/* Etiqueta pequena en mayusculas apagada encima del valor de ruta */
 .ruta-label {
     font-size: 0.7rem;
     text-transform: uppercase;
@@ -178,21 +178,21 @@
     letter-spacing: 1px;
 }
 
-/* Bold secondary color route value (IATA code or city name) */
+/* Valor de ruta en negrita con color secundario (codigo IATA o nombre de ciudad) */
 .ruta-value {
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--secondary-color);
 }
 
-/* Large gold arrow between origin and destination */
+/* Flecha dorada grande entre origen y destino */
 .ruta-arrow {
     font-size: 2rem;
     color: var(--primary-color);
     margin: 0 1rem;
 }
 
-/* Gold-tinted stats card with a large centered occupancy percentage */
+/* Tarjeta de estadisticas con tono dorado y un gran porcentaje de ocupacion centrado */
 .stats-card {
     background: linear-gradient(135deg, rgba(139, 107, 74, 0.08), rgba(139, 107, 74, 0.03));
     padding: 2rem;
@@ -200,14 +200,14 @@
     text-align: center;
 }
 
-/* Stacked label and value for the stats card */
+/* Etiqueta y valor apilados para la tarjeta de estadisticas */
 .stat-item {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/* Small all-caps muted label above the stat value */
+/* Etiqueta pequena en mayusculas apagada encima del valor estadistico */
 .stat-label {
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -215,14 +215,14 @@
     letter-spacing: 1.5px;
 }
 
-/* Very large light-weight gold percentage or count */
+/* Porcentaje o conteo muy grande y ligero en dorado */
 .stat-value {
     font-size: 2.5rem;
     font-weight: 300;
     color: var(--primary-color);
 }
 
-/* At 768px: modal padding reduces, header stacks, route goes vertical */
+/* A 768px: el relleno del modal se reduce, el encabezado se apila, la ruta va vertical */
 @media (max-width: 768px) {
     .modal-backdrop-admin {
         padding: 1rem;
@@ -248,20 +248,20 @@
         gap: 2rem;
     }
 
-    /* Info grid collapses to a single column on mobile */
+    /* La grilla de informacion colapsa a una columna en movil */
     .info-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
 
-    /* Route banner becomes vertical on mobile */
+    /* El panel de ruta se vuelve vertical en movil */
     .ruta-display {
         flex-direction: column;
         gap: 1rem;
         padding: 1.5rem;
     }
 
-    /* Arrow rotates 90deg to point downward in the vertical route layout */
+    /* La flecha rota 90 grados para apuntar hacia abajo en la disposicion vertical de ruta */
     .ruta-arrow {
         transform: rotate(90deg);
         margin: 0;

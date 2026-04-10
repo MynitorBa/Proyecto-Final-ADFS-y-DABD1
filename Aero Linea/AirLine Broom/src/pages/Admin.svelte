@@ -2,13 +2,13 @@
 // @ts-nocheck
 /**
  * @file Admin.svelte
- * @description Main administration panel for Broom AirLine. Renders a sidebar-based layout
- * that gives administrators access to ten management modules: flight creation, routes,
- * aircraft, crew members, airports, flight history, users, metrics, agencies, and hotel aliados.
- * On mount it verifies the current session role is "Administrador" and redirects to
- * the access-denied page otherwise. It loads shared data (airports, aircraft, crew)
- * needed by child modules and exposes a toast notification system and a reusable
- * confirmation modal that child components can call via prop functions.
+ * @description Panel principal de administracion de Broom AirLine. Renderiza un layout basado en
+ * sidebar que da a los administradores acceso a diez modulos de gestion: creacion de vuelos, rutas,
+ * aeronaves, tripulantes, aeropuertos, historial de vuelos, usuarios, metricas, agencias y hoteles aliados.
+ * Al montar verifica que el rol de la sesion actual sea "Administrador" y redirige a la pagina de
+ * acceso denegado en caso contrario. Carga datos compartidos (aeropuertos, aeronaves, tripulantes)
+ * necesarios por los modulos hijos y expone un sistema de notificaciones toast y un modal de
+ * confirmacion reutilizable que los componentes hijos pueden invocar mediante funciones de prop.
  */
 
   import '../styles/admin.css';
@@ -28,43 +28,43 @@
   // Modulo de gestion de hoteles aliados para el panel de administracion
   import AdminHotelAliados  from '../components/admin/AdminHotelAliados.svelte';
 
-  /** Navigation function provided by the app router. Accepts an optional data payload. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion. Acepta un payload de datos opcional. @type {Function} */
   export let navigateTo = (page, data = null) => {};
 
   import { API } from '../lib/api.js';
 
-  /** Role name of the currently authenticated user, populated from the session store. @type {string|null} */
+  /** Nombre del rol del usuario autenticado actualmente, poblado desde el store de sesion. @type {string|null} */
   let rolNombre = null;
 
-  /** Unsubscribe handle for the session store subscription, used during cleanup. @type {Function} */
+  /** Manejador de desuscripcion para la suscripcion al store de sesion, usado durante la limpieza. @type {Function} */
   const unsubscribeSesion = sesion.subscribe(s => { rolNombre = s?.rolNombre ?? null; });
 
-  /** Identifier of the currently visible admin module section. @type {string} */
+  /** Identificador de la seccion del modulo admin actualmente visible. @type {string} */
   let activeSection = 'crear-vuelo';
 
-  /** List of airports fetched from the API and shared as props to child modules that need dropdown data. @type {Array} */
+  /** Lista de aeropuertos obtenidos de la API y compartidos como props a los modulos hijos que necesitan datos de dropdown. @type {Array} */
   let aeropuertos = [];
 
-  /** List of aircraft fetched from the API and shared as props to child modules that need dropdown data. @type {Array} */
+  /** Lista de aeronaves obtenidas de la API y compartidas como props a los modulos hijos que necesitan datos de dropdown. @type {Array} */
   let aviones     = [];
 
-  /** List of crew members fetched from the API and shared as props to child modules that need dropdown data. @type {Array} */
+  /** Lista de tripulantes obtenidos de la API y compartidos como props a los modulos hijos que necesitan datos de dropdown. @type {Array} */
   let tripulantes = [];
 
-  /** Reference to the AdminHistorial component instance, reserved for manual reload triggers. @type {any} */
+  /** Referencia a la instancia del componente AdminHistorial, reservada para activadores de recarga manual. @type {any} */
   let historialRef;
 
-  /** Array of active toast notification objects, each containing id, tipo, and mensaje. @type {Array} */
+  /** Arreglo de objetos de notificacion toast activos, cada uno con id, tipo y mensaje. @type {Array} */
   let toasts  = [];
 
-  /** Auto-incrementing counter used to generate unique toast IDs. @type {number} */
+  /** Contador auto-incremental usado para generar IDs unicos de toast. @type {number} */
   let toastId = 0;
 
   /**
-   * Adds a toast notification to the stack and schedules its automatic removal after a given duration.
-   * @param {string} tipo - Visual style of the toast: 'success', 'error', or a warning variant.
-   * @param {string} mensaje - Text message to display inside the toast.
-   * @param {number} [duracion=4000] - Milliseconds before the toast is automatically dismissed.
+   * Agrega una notificacion toast a la pila y programa su eliminacion automatica tras una duracion dada.
+   * @param {string} tipo - Estilo visual del toast: 'success', 'error' o una variante de advertencia.
+   * @param {string} mensaje - Texto del mensaje a mostrar dentro del toast.
+   * @param {number} [duracion=4000] - Milisegundos antes de que el toast sea descartado automaticamente.
    */
   function mostrarToast(tipo, mensaje, duracion = 4000) {
     const id = ++toastId;
@@ -73,32 +73,32 @@
   }
 
   /**
-   * Immediately removes a specific toast from the stack by its ID.
-   * @param {number} id - The unique identifier of the toast to close.
+   * Elimina inmediatamente un toast especifico de la pila por su ID.
+   * @param {number} id - El identificador unico del toast a cerrar.
    */
   function cerrarToast(id) { toasts = toasts.filter(t => t.id !== id); }
 
-  /** Controls the visibility of the confirmation modal dialog. @type {boolean} */
+  /** Controla la visibilidad del dialogo modal de confirmacion. @type {boolean} */
   let confirmVisible  = false;
 
-  /** Primary message text displayed in the confirmation modal. @type {string} */
+  /** Texto del mensaje principal mostrado en el modal de confirmacion. @type {string} */
   let confirmMensaje  = '';
 
-  /** Secondary descriptive text shown below the main message in the confirmation modal. @type {string} */
+  /** Texto descriptivo secundario mostrado debajo del mensaje principal en el modal de confirmacion. @type {string} */
   let confirmSubtexto = '';
 
-  /** Visual style variant of the confirmation modal, affects icon and button color. @type {string} */
+  /** Variante de estilo visual del modal de confirmacion, afecta el icono y el color del boton. @type {string} */
   let confirmTipo     = 'danger';
 
-  /** Promise resolver function stored so the modal result can be returned asynchronously. @type {Function|null} */
+  /** Funcion resolutora de la Promise almacenada para que el resultado del modal pueda retornarse de forma asincrona. @type {Function|null} */
   let confirmResolve  = null;
 
   /**
-   * Opens the confirmation modal and returns a Promise that resolves to true when confirmed or false when cancelled.
-   * @param {string} mensaje - Main question or action description to show in the modal.
-   * @param {string} [subtexto=''] - Optional additional context displayed below the main message.
-   * @param {string} [tipo='danger'] - Visual variant, either 'danger' or an informational style.
-   * @returns {Promise<boolean>} Resolves to true if the user confirms, false if they cancel.
+   * Abre el modal de confirmacion y retorna una Promise que se resuelve en true al confirmar o false al cancelar.
+   * @param {string} mensaje - Pregunta principal o descripcion de la accion a mostrar en el modal.
+   * @param {string} [subtexto=''] - Contexto adicional opcional mostrado debajo del mensaje principal.
+   * @param {string} [tipo='danger'] - Variante visual, ya sea 'danger' o un estilo informativo.
+   * @returns {Promise<boolean>} Se resuelve en true si el usuario confirma, false si cancela.
    */
   function mostrarConfirm(mensaje, subtexto = '', tipo = 'danger') {
     confirmMensaje  = mensaje;
@@ -109,7 +109,7 @@
   }
 
   /**
-   * Handles the confirmation action: hides the modal and resolves the pending Promise with true.
+   * Maneja la accion de confirmacion: oculta el modal y resuelve la Promise pendiente con true.
    */
   function confirmarAccion() {
     confirmVisible = false;
@@ -118,7 +118,7 @@
   }
 
   /**
-   * Handles the cancel action: hides the modal and resolves the pending Promise with false.
+   * Maneja la accion de cancelar: oculta el modal y resuelve la Promise pendiente con false.
    */
   function cancelarConfirm() {
     confirmVisible = false;
@@ -127,7 +127,7 @@
   }
 
   /**
-   * Fetches the full list of airports from the API and updates the aeropuertos state variable.
+   * Obtiene la lista completa de aeropuertos desde la API y actualiza la variable de estado aeropuertos.
    * @async
    * @returns {Promise<void>}
    */
@@ -139,7 +139,7 @@
   }
 
   /**
-   * Fetches the full list of aircraft from the API and updates the aviones state variable.
+   * Obtiene la lista completa de aeronaves desde la API y actualiza la variable de estado aviones.
    * @async
    * @returns {Promise<void>}
    */
@@ -151,7 +151,7 @@
   }
 
   /**
-   * Fetches the full list of crew members from the API and updates the tripulantes state variable.
+   * Obtiene la lista completa de tripulantes desde la API y actualiza la variable de estado tripulantes.
    * @async
    * @returns {Promise<void>}
    */
@@ -163,7 +163,7 @@
   }
 
   /**
-   * Loads all shared dropdown data concurrently by calling the three loaders in parallel.
+   * Carga todos los datos de dropdown compartidos de forma concurrente llamando a los tres cargadores en paralelo.
    * @async
    * @returns {Promise<void>}
    */
@@ -172,34 +172,34 @@
   }
 
   /**
-   * Handles the vueloCreado event emitted by AdminCrearVuelo.
-   * Switches the active section to 'historial' so the user can see the newly created flight.
+   * Maneja el evento vueloCreado emitido por AdminCrearVuelo.
+   * Cambia la seccion activa a 'historial' para que el usuario pueda ver el vuelo recien creado.
    */
   function onVueloCreado() {
     activeSection = 'historial';
   }
 
   /**
-   * Handles the avionesActualizados event emitted by AdminAviones.
-   * Refreshes the shared aircraft list so other modules receive up-to-date data.
+   * Maneja el evento avionesActualizados emitido por AdminAviones.
+   * Actualiza la lista compartida de aeronaves para que otros modulos reciban datos actualizados.
    */
   function onAvionesActualizados()     { cargarAviones(); }
 
   /**
-   * Handles the tripulantesActualizados event emitted by AdminTripulantes.
-   * Refreshes the shared crew list so other modules receive up-to-date data.
+   * Maneja el evento tripulantesActualizados emitido por AdminTripulantes.
+   * Actualiza la lista compartida de tripulantes para que otros modulos reciban datos actualizados.
    */
   function onTripulantesActualizados() { cargarTripulantes(); }
 
   /**
-   * Handles the aeropuertosActualizados event emitted by AdminAeropuertos.
-   * Refreshes the shared airports list so other modules receive up-to-date data.
+   * Maneja el evento aeropuertosActualizados emitido por AdminAeropuertos.
+   * Actualiza la lista compartida de aeropuertos para que otros modulos reciban datos actualizados.
    */
   function onAeropuertosActualizados() { cargarAeropuertos(); }
 
   /**
-   * Configuration array for the sidebar navigation items.
-   * Each entry defines the section id, display label, and SVG path data for the icon.
+   * Arreglo de configuracion para los elementos de navegacion del sidebar.
+   * Cada entrada define el id de seccion, la etiqueta de visualizacion y los datos de ruta SVG del icono.
    * @type {Array<{id: string, label: string, icon: string}>}
    */
   const navItems = [
@@ -218,9 +218,9 @@
   ];
 
   /**
-   * Lifecycle hook that runs after the component mounts.
-   * Redirects to 'acceso-denegado' if the current user is not an Administrador,
-   * otherwise loads all shared dropdown data needed by child modules.
+   * Hook de ciclo de vida que se ejecuta tras el montaje del componente.
+   * Redirige a 'acceso-denegado' si el usuario actual no es Administrador,
+   * de lo contrario carga todos los datos de dropdown compartidos necesarios por los modulos hijos.
    * @async
    * @returns {Promise<void>}
    */
@@ -230,8 +230,8 @@
   });
 
   /**
-   * Lifecycle hook that runs when the component is destroyed.
-   * Unsubscribes from the session store to prevent memory leaks.
+   * Hook de ciclo de vida que se ejecuta cuando el componente es destruido.
+   * Cancela la suscripcion al store de sesion para evitar fugas de memoria.
    */
   onDestroy(() => { unsubscribeSesion(); });
 </script>

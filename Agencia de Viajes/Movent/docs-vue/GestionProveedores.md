@@ -15,46 +15,48 @@
 *   [probando][11]
 *   [toggling][12]
 *   [handshaking][13]
-*   [usuariosWS][14]
-*   [formError][15]
-*   [toast][16]
-*   [estadoConexion][17]
-*   [formVacio][18]
-*   [form][19]
-*   [tiposOpts][20]
-*   [proveedoresFiltrados][21]
-*   [contarPorTipo][22]
-    *   [Parameters][23]
-*   [tipoClase][24]
-    *   [Parameters][25]
-*   [onMounted][26]
-*   [cargarProveedores][27]
-*   [abrirFormNuevo][28]
-*   [abrirFormEditar][29]
-    *   [Parameters][30]
-*   [cerrarForm][31]
-*   [validarForm][32]
-*   [guardarProveedor][33]
-*   [toggleActivo][34]
-    *   [Parameters][35]
-*   [probarConexion][36]
-    *   [Parameters][37]
-*   [iniciarHandshake][38]
-    *   [Parameters][39]
-*   [mostrarToast][40]
-    *   [Parameters][41]
+*   [actualizando][14]
+*   [usuariosWS][15]
+*   [formError][16]
+*   [toast][17]
+*   [estadoConexion][18]
+*   [formVacio][19]
+*   [form][20]
+*   [tiposOpts][21]
+*   [proveedoresFiltrados][22]
+*   [contarPorTipo][23]
+    *   [Parameters][24]
+*   [tipoClase][25]
+    *   [Parameters][26]
+*   [onMounted][27]
+*   [cargarProveedores][28]
+*   [abrirFormNuevo][29]
+*   [abrirFormEditar][30]
+    *   [Parameters][31]
+*   [cerrarForm][32]
+*   [validarForm][33]
+*   [guardarProveedor][34]
+*   [toggleActivo][35]
+    *   [Parameters][36]
+*   [probarConexion][37]
+    *   [Parameters][38]
+*   [iniciarHandshake][39]
+    *   [Parameters][40]
+*   [actualizarCatalogo][41]
+*   [mostrarToast][42]
+    *   [Parameters][43]
 
 ## ref
 
 Vista del panel de administración para gestionar los proveedores externos
-(aerolíneas y hoteles). Permite agregar, editar, activar/desactivar, probar la conexión
-y ejecutar handshake con cada proveedor conectado.
+(aerolíneas y hoteles). Permite agregar, editar, activar/desactivar, probar la conexión,
+ejecutar handshake con cada proveedor conectado y actualizar el catálogo manualmente.
 
 ## API
 
 URL base del backend. @type {string}
 
-Type: [string][42]
+Type: [string][44]
 
 ## proveedores
 
@@ -100,6 +102,10 @@ ID del proveedor cuyo estado activo/inactivo se está cambiando. @type {import('
 
 ID del proveedor que está ejecutando el handshake. @type {import('vue').Ref\<number|null>}
 
+## actualizando
+
+Indica si la actualización manual del catálogo está en proceso. @type {import('vue').Ref<boolean>}
+
 ## usuariosWS
 
 Lista de usuarios conectados o disponibles en el WebSocket. @type {import('vue').Ref\<any\[]>}
@@ -120,7 +126,7 @@ Resultado de la última prueba de conexión para cada proveedor, indexado por ID
 
 Devuelve un objeto vacío con los campos del formulario de proveedor.
 
-Returns **{nombre: [string][42], tipoProveedorId: [string][42], usuarioId: [string][42], url: [string][42], porcentajeGanancia: [number][43]}**&#x20;
+Returns **{nombre: [string][44], tipoProveedorId: [string][44], usuarioId: [string][44], url: [string][44], porcentajeGanancia: [number][45]}**&#x20;
 
 ## form
 
@@ -130,7 +136,7 @@ Estado reactivo del formulario de creación/edición. @type {import('vue').Ref<O
 
 Opciones para los botones de filtro por tipo de proveedor.
 
-Type: [Array][44]<{val: [string][42], label: [string][42]}>
+Type: [Array][46]<{val: [string][44], label: [string][44]}>
 
 ## proveedoresFiltrados
 
@@ -142,9 +148,9 @@ Cuenta cuántos proveedores hay de un tipo determinado.
 
 ### Parameters
 
-*   `t` **[string][42]** El tipo a contar o 'todos' para el total.
+*   `t` **[string][44]** El tipo a contar o 'todos' para el total.
 
-Returns **[number][43]**&#x20;
+Returns **[number][45]**&#x20;
 
 ## tipoClase
 
@@ -152,7 +158,7 @@ Devuelve la clase CSS correspondiente al tipo de proveedor.
 
 ### Parameters
 
-*   `p` **[Object][45]** El proveedor.
+*   `p` **[Object][47]** El proveedor.
 
 Returns **(`"aerolinea"` | `"hotel"`)**&#x20;
 
@@ -164,7 +170,7 @@ Carga la lista de proveedores al montar el componente.
 
 Obtiene todos los proveedores desde el backend.
 
-Returns **[Promise][46]\<void>**&#x20;
+Returns **[Promise][48]\<void>**&#x20;
 
 ## abrirFormNuevo
 
@@ -176,7 +182,7 @@ Abre el modal en modo edición precargando los datos del proveedor seleccionado.
 
 ### Parameters
 
-*   `p` **[Object][45]** El proveedor a editar.
+*   `p` **[Object][47]** El proveedor a editar.
 
 ## cerrarForm
 
@@ -186,14 +192,14 @@ Cierra el modal de formulario y limpia el estado de edición.
 
 Valida los campos del formulario antes de enviarlo.
 
-Returns **[boolean][47]** true si es válido, false si hay algún campo incompleto.
+Returns **[boolean][49]** true si es válido, false si hay algún campo incompleto.
 
 ## guardarProveedor
 
 Guarda el proveedor mediante POST (creación) o PUT (edición).
 Recarga la lista tras un guardado exitoso.
 
-Returns **[Promise][46]\<void>**&#x20;
+Returns **[Promise][48]\<void>**&#x20;
 
 ## toggleActivo
 
@@ -202,9 +208,9 @@ Actualiza el valor localmente sin recargar la lista completa.
 
 ### Parameters
 
-*   `p` **[Object][45]** El proveedor a activar o desactivar.
+*   `p` **[Object][47]** El proveedor a activar o desactivar.
 
-Returns **[Promise][46]\<void>**&#x20;
+Returns **[Promise][48]\<void>**&#x20;
 
 ## probarConexion
 
@@ -213,9 +219,9 @@ Guarda el resultado ('ok' o 'err') en estadoConexion indexado por ID.
 
 ### Parameters
 
-*   `p` **[Object][45]** El proveedor a probar.
+*   `p` **[Object][47]** El proveedor a probar.
 
-Returns **[Promise][46]\<void>**&#x20;
+Returns **[Promise][48]\<void>**&#x20;
 
 ## iniciarHandshake
 
@@ -224,9 +230,16 @@ El endpoint cambia según si es aerolínea o hotelera.
 
 ### Parameters
 
-*   `p` **[Object][45]** El proveedor con el que se hará handshake.
+*   `p` **[Object][47]** El proveedor con el que se hará handshake.
 
-Returns **[Promise][46]\<void>**&#x20;
+Returns **[Promise][48]\<void>**&#x20;
+
+## actualizarCatalogo
+
+Dispara la actualización manual del catálogo llamando al endpoint dedicado.
+Bloquea el botón mientras la petición está en curso y notifica el resultado.
+
+Returns **[Promise][48]\<void>**&#x20;
 
 ## mostrarToast
 
@@ -235,7 +248,7 @@ Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
 ### Parameters
 
 *   `tipo` **(`"ok"` | `"err"`)** Tipo de notificación.
-*   `msg` **[string][42]** Mensaje a mostrar.
+*   `msg` **[string][44]** Mensaje a mostrar.
 
 [1]: #ref
 
@@ -263,70 +276,74 @@ Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
 
 [13]: #handshaking
 
-[14]: #usuariosws
+[14]: #actualizando
 
-[15]: #formerror
+[15]: #usuariosws
 
-[16]: #toast
+[16]: #formerror
 
-[17]: #estadoconexion
+[17]: #toast
 
-[18]: #formvacio
+[18]: #estadoconexion
 
-[19]: #form
+[19]: #formvacio
 
-[20]: #tiposopts
+[20]: #form
 
-[21]: #proveedoresfiltrados
+[21]: #tiposopts
 
-[22]: #contarportipo
+[22]: #proveedoresfiltrados
 
-[23]: #parameters
+[23]: #contarportipo
 
-[24]: #tipoclase
+[24]: #parameters
 
-[25]: #parameters-1
+[25]: #tipoclase
 
-[26]: #onmounted
+[26]: #parameters-1
 
-[27]: #cargarproveedores
+[27]: #onmounted
 
-[28]: #abrirformnuevo
+[28]: #cargarproveedores
 
-[29]: #abrirformeditar
+[29]: #abrirformnuevo
 
-[30]: #parameters-2
+[30]: #abrirformeditar
 
-[31]: #cerrarform
+[31]: #parameters-2
 
-[32]: #validarform
+[32]: #cerrarform
 
-[33]: #guardarproveedor
+[33]: #validarform
 
-[34]: #toggleactivo
+[34]: #guardarproveedor
 
-[35]: #parameters-3
+[35]: #toggleactivo
 
-[36]: #probarconexion
+[36]: #parameters-3
 
-[37]: #parameters-4
+[37]: #probarconexion
 
-[38]: #iniciarhandshake
+[38]: #parameters-4
 
-[39]: #parameters-5
+[39]: #iniciarhandshake
 
-[40]: #mostrartoast
+[40]: #parameters-5
 
-[41]: #parameters-6
+[41]: #actualizarcatalogo
 
-[42]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
+[42]: #mostrartoast
 
-[43]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
+[43]: #parameters-6
 
-[44]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
+[44]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String
 
-[45]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+[45]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number
 
-[46]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+[46]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array
 
-[47]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean
+[47]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object
+
+[48]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise
+
+[49]: https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean

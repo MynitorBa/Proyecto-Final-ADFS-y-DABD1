@@ -1,6 +1,8 @@
-/* HeaderSimple.css - Fixed simple header with warm beige background, logo that fades on hover, a page title, a spacer element, and responsive padding reductions at 768px and 480px */
+/* HeaderSimple.css - Estilos del encabezado simple fijo con fondo beige calido, logo que se
+   desvanece al pasar el cursor, un titulo de pagina, un elemento espaciador y reducciones de
+   relleno responsivas en 768px y 480px */
 
-/* Reset margin, padding, and box-sizing for the header and all its children */
+/* Restablecer margin, padding y box-sizing para el encabezado y todos sus hijos */
 .simple-header,
 .simple-header * {
     margin: 0;
@@ -8,7 +10,7 @@
     box-sizing: border-box;
 }
 
-/* Fixed header strip: beige background, subtle bottom border, and a soft shadow */
+/* Barra de encabezado fija: fondo beige, borde inferior sutil y sombra suave */
 .simple-header {
     background-color: #F2EFEA;
     box-shadow: 0 2px 8px rgba(28, 26, 24, 0.08);
@@ -21,7 +23,7 @@
     border-bottom: 1px solid #E6E1DA;
 }
 
-/* Centered container row with 0.8rem vertical padding, capped at 1400px */
+/* Fila de contenedor centrada con relleno vertical de 0.8rem, limitada a 1400px */
 .simple-header__container {
     max-width: 1400px;
     margin: 0 auto;
@@ -31,12 +33,12 @@
     gap: 1.5rem;
 }
 
-/* Logo wrapper that does not shrink in the flex row */
+/* Contenedor del logo que no se encoge en la fila flex */
 .simple-header__logo {
     flex-shrink: 0;
 }
 
-/* Logo image: 40px tall, clickable, fades to 80% opacity on hover */
+/* Imagen del logo: 40px de alto, clicable, se desvanece al 80% de opacidad al pasar el cursor */
 .simple-header__logo-img {
     height: 40px;
     width: auto;
@@ -50,7 +52,7 @@
     opacity: 0.8;
 }
 
-/* Page title inside an h1: 1.3rem bold with tight letter spacing */
+/* Titulo de pagina dentro de un h1: 1.3rem en negrita con espaciado de letras ajustado */
 .simple-header__title h1 {
     font-size: 1.3rem;
     font-weight: 600;
@@ -58,12 +60,12 @@
     letter-spacing: -0.02em;
 }
 
-/* Spacer element matching the fixed header height to prevent content overlap */
+/* Elemento espaciador que coincide con la altura del encabezado fijo para evitar superposicion de contenido */
 .simple-header-spacer {
     height: 65px;
 }
 
-/* At 768px: horizontal padding reduces and logo shrinks to 35px */
+/* A 768px: el relleno horizontal se reduce y el logo se encoge a 35px */
 @media (max-width: 768px) {
     .simple-header__container {
         padding: 0.6rem 1.2rem;
@@ -82,7 +84,7 @@
     }
 }
 
-/* At 480px: title reduces further to 1rem */
+/* A 480px: el titulo se reduce aun mas a 1rem */
 @media (max-width: 480px) {
     .simple-header__title h1 {
         font-size: 1rem;

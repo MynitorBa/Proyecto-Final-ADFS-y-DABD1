@@ -1,27 +1,28 @@
 <script>
 /**
  * @file ResultadosBusqueda.svelte
- * @description Legacy static search results page for Broom AirLine. Contains a hardcoded
- * allFlights array with six sample flights between Guatemala City, Paris, and London with
- * prices for economico, normal, and ejecutivo seat classes. Supports keyword-based filtering
- * against origin, destination, country, airline, and departure/arrival dates. Results can be
- * sorted by lowest price, highest price, duration, or departure time. Renders a flight card
- * grid with route, schedule, duration, and price information. Each card has a details button
- * that navigates to the 'detalle-vuelo' page. A search bar allows re-filtering in real time.
+ * @description Pagina de resultados de busqueda estatica heredada de Broom AirLine. Contiene un
+ * arreglo allFlights con seis vuelos de ejemplo entre Ciudad de Guatemala, Paris y Londres con
+ * precios para las clases economico, normal y ejecutivo. Admite filtrado por palabras clave
+ * comparando origen, destino, pais, aerolinea y fechas de salida/llegada. Los resultados pueden
+ * ordenarse por precio menor, precio mayor, duracion u hora de salida. Renderiza una grilla de
+ * tarjetas de vuelos con informacion de ruta, horario, duracion y precio. Cada tarjeta tiene un
+ * boton de detalles que navega a la pagina 'detalle-vuelo'. Una barra de busqueda permite
+ * refiltrar en tiempo real.
  */
 // @ts-nocheck
   import '../styles/busqueda.css';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion utilizada para navegar entre las paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** Search parameters passed from the home page, may contain a keyword property. @type {object|null} */
+  /** Parametros de busqueda pasados desde la pagina de inicio, puede contener una propiedad keyword. @type {object|null} */
   export let searchParams = null;
 
   /**
-   * Hardcoded sample flight data array used by this legacy page. Each entry has id, image URL,
-   * origin, destination, country, departure and arrival date/time strings, duration, airline, and
-   * a prices object with economico, normal, and ejecutivo numeric values.
+   * Arreglo de datos de vuelos de ejemplo fijo utilizado por esta pagina heredada. Cada entrada
+   * tiene id, URL de imagen, origen, destino, pais, cadenas de fecha/hora de salida y llegada,
+   * duracion, aerolinea y un objeto prices con valores numericos para economico, normal y ejecutivo.
    * @type {Array<{id: number, image: string, origin: string, destination: string, country: string, departureDate: string, departureTime: string, arrivalDate: string, arrivalTime: string, duration: string, airline: string, prices: {economico: number, normal: number, ejecutivo: number}}>}
    */
   const allFlights = [
@@ -135,15 +136,15 @@
     }
   ];
 
-  /** Current keyword string used to filter flights; initialized from searchParams.keyword or empty. @type {string} */
+  /** Cadena de palabra clave actual utilizada para filtrar vuelos; inicializada desde searchParams.keyword o vacia. @type {string} */
   let searchKeyword = searchParams?.keyword || '';
 
   /**
-   * Filters allFlights against a keyword by checking whether any of origin, destination, country,
-   * airline, departureDate, or arrivalDate includes the lowercased search term. Returns all flights
-   * if keyword is empty or whitespace-only.
-   * @param {string} keyword - The search term to filter by.
-   * @returns {Array<object>} Array of matching flight objects from allFlights.
+   * Filtra allFlights con una palabra clave verificando si alguno de origen, destino, pais,
+   * aerolinea, departureDate o arrivalDate contiene el termino de busqueda en minusculas.
+   * Devuelve todos los vuelos si la palabra clave esta vacia o solo tiene espacios.
+   * @param {string} keyword - El termino de busqueda por el que filtrar.
+   * @returns {Array<object>} Arreglo de objetos de vuelo coincidentes de allFlights.
    */
   function filterFlights(keyword) {
     if (!keyword || keyword.trim() === '') {
@@ -164,13 +165,13 @@
     });
   }
 
-  // Array of flight objects matching the current keyword filter.
+  // Arreglo de objetos de vuelo que coinciden con el filtro de palabra clave actual.
   $: searchResults = filterFlights(searchKeyword);
 
-  /** Current sort criterion for the results list. @type {string} */
+  /** Criterio de ordenamiento actual para la lista de resultados. @type {string} */
   let sortBy = 'price-low';
 
-  // Sorted copy of searchResults according to the selected sortBy criterion.
+  // Copia ordenada de searchResults segun el criterio sortBy seleccionado.
   $: sortedResults = (() => {
     const results = [...searchResults];
 
@@ -193,15 +194,15 @@
   })();
 
   /**
-   * Navigates to the 'detalle-vuelo' page passing the flight ID as the second argument.
-   * @param {number} flightId - The ID of the flight to view.
+   * Navega a la pagina 'detalle-vuelo' pasando el ID del vuelo como segundo argumento.
+   * @param {number} flightId - El ID del vuelo a visualizar.
    */
   function viewFlightDetails(flightId) {
     navigateTo('detalle-vuelo', flightId);
   }
 
   /**
-   * Re-runs filterFlights with the current searchKeyword and assigns the result to searchResults.
+   * Vuelve a ejecutar filterFlights con el searchKeyword actual y asigna el resultado a searchResults.
    */
   function handleSearch() {
     searchResults = filterFlights(searchKeyword);

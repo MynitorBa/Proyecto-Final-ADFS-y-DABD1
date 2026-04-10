@@ -1,11 +1,11 @@
 <script lang="ts">
 /**
  * @file FlightNotification.svelte
- * @description Animated floating notification that periodically appears in the corner of the
- * screen suggesting a random destination to the user. It fetches the full list of airports
- * from the API on mount, then cycles through them on a timer. Clicking the notification
- * bubble triggers the parent-supplied callback with the full airport object, allowing the
- * parent page to navigate to a flight search for that destination.
+ * @description Notificacion flotante animada que aparece periodicamente en la esquina de la
+ * pantalla sugiriendo un destino aleatorio al usuario. Obtiene la lista completa de aeropuertos
+ * desde la API al montar, luego los recorre mediante un temporizador. Al hacer clic en la burbuja
+ * de notificacion se activa el callback proporcionado por el padre con el objeto completo del aeropuerto,
+ * permitiendo que la pagina padre navegue a una busqueda de vuelos para ese destino.
  */
   import '../styles/flight-notification.css';
   import avionPath from '../assets/AvionB.png';
@@ -13,31 +13,31 @@
   import { API } from '../lib/api.js';
 
   /**
-   * Callback invoked when the user clicks the destination bubble.
-   * Receives the full airport object (id, ciudad, codigo, nombre, pais, etc.).
+   * Callback invocado cuando el usuario hace clic en la burbuja de destino.
+   * Recibe el objeto completo del aeropuerto (id, ciudad, codigo, nombre, pais, etc.).
    * @type {(aeropuertoObj: any) => void}
    */
   export let onDestinationClick = (aeropuertoObj: any) => {};
 
-  /** Mapped list of destinations built from the airport API response. @type {any[]} */
+  /** Lista mapeada de destinos construida a partir de la respuesta de la API de aeropuertos. @type {any[]} */
   let destinations = [];
 
-  /** Whether the initial airport fetch is still in progress. @type {boolean} */
+  /** Indica si la carga inicial de aeropuertos aun esta en progreso. @type {boolean} */
   let loadingDestinations = true;
 
-  /** Controls whether the notification element is present in the DOM. @type {boolean} */
+  /** Controla si el elemento de notificacion esta presente en el DOM. @type {boolean} */
   let showNotification = false;
 
-  /** The destination object currently being displayed in the bubble. @type {any} */
+  /** El objeto de destino que se muestra actualmente en la burbuja. @type {any} */
   let currentDestination = null;
 
-  /** Controls the CSS visibility/opacity transition of the notification bubble. @type {boolean} */
+  /** Controla la transicion de visibilidad y opacidad CSS de la burbuja de notificacion. @type {boolean} */
   let isVisible = false;
 
   /**
-   * Fetches all airports from the API, maps them into destination objects and starts the
-   * animation cycle. Shows the first notification after 3 seconds and repeats every 15 seconds
-   * if no notification is currently visible.
+   * Obtiene todos los aeropuertos de la API, los mapea a objetos de destino e inicia el
+   * ciclo de animacion. Muestra la primera notificacion despues de 3 segundos y se repite cada 15 segundos
+   * si no hay ninguna notificacion visible en ese momento.
    * @async
    * @returns {Promise<void>}
    */
@@ -76,9 +76,9 @@
   });
 
   /**
-   * Returns a randomly selected destination object from the destinations array.
-   * Returns null if the array is empty.
-   * @returns {any} A destination object or null.
+   * Devuelve un objeto de destino seleccionado aleatoriamente del arreglo destinations.
+   * Devuelve null si el arreglo esta vacio.
+   * @returns {any} Un objeto de destino o null.
    */
   function getRandomDestination() {
     if (destinations.length === 0) return null;
@@ -87,9 +87,9 @@
   }
 
   /**
-   * Picks a random destination and shows the notification bubble with a slide-in animation.
-   * After 6 seconds the bubble fades out; after the fade (500ms) it is removed from the DOM.
-   * Does nothing if the destinations list is empty.
+   * Elige un destino aleatorio y muestra la burbuja de notificacion con una animacion de deslizamiento.
+   * Despues de 6 segundos la burbuja se desvanece; tras el desvanecimiento (500ms) se elimina del DOM.
+   * No hace nada si la lista de destinos esta vacia.
    */
   function startAnimation() {
     if (destinations.length === 0) return;
@@ -109,8 +109,8 @@
   }
 
   /**
-   * Handles a click on the destination bubble. Passes the original airport object to the
-   * parent callback, then hides and removes the notification.
+   * Maneja un clic en la burbuja de destino. Pasa el objeto original del aeropuerto al
+   * callback del padre, luego oculta y elimina la notificacion.
    */
   function handleDestinationClick() {
     if (currentDestination) {

@@ -1,13 +1,13 @@
-/* home.css - Homepage styles including hero section with dark gradient overlay, flight search form with round-trip/one-way radios, form grid with autocomplete dropdowns, date calendar pickers, destination cards grid, and responsive breakpoints */
+/* home.css - Estilos de la pagina de inicio, incluyendo seccion hero con superposicion de gradiente oscuro, formulario de busqueda de vuelos con radios de ida y vuelta/solo ida, grilla de formulario con desplegables de autocompletado, selectores de calendario de fechas, grilla de tarjetas de destinos y puntos de quiebre responsivos */
 
-/* Full-width page wrapper with project background color and no horizontal overflow */
+/* Contenedor de pagina de ancho completo con el color de fondo del proyecto y sin desbordamiento horizontal */
 .broom-home {
     width: 100%;
     background-color: var(--bg-color);
     overflow-x: hidden;
 }
 
-/* Hero section: 85vh tall with a full-bleed background image and bottom-left content positioning */
+/* Seccion hero: 85vh de alto con imagen de fondo a pantalla completa y contenido posicionado abajo a la izquierda */
 .broom-home__hero {
     position: relative;
     height: 85vh;
@@ -20,7 +20,7 @@
     padding: 3rem 4rem;
     box-sizing: border-box;
 }
-/* Full-bleed hero background image with object-fit cover */
+/* Imagen de fondo del hero a pantalla completa con object-fit cover */
 .broom-home__hero img {
     position: absolute;
     inset: 0;
@@ -28,7 +28,7 @@
     object-fit: cover;
     z-index: 1;
 }
-/* Diagonal dark-to-transparent gradient overlay for text legibility */
+/* Superposicion de gradiente diagonal oscuro a transparente para legibilidad del texto */
 .broom-home__hero::after {
     content: '';
     position: absolute;
@@ -36,7 +36,7 @@
     background: linear-gradient(135deg, rgba(28,26,24,.75) 0%, rgba(28,26,24,.3) 55%, transparent 100%);
     z-index: 2;
 }
-/* Text overlay stacked above the gradient, capped at min(600px, 90%) */
+/* Superposicion de texto apilada sobre el gradiente, limitada a min(600px, 90%) */
 .broom-home__hero-overlay {
     position: relative;
     z-index: 3;
@@ -44,7 +44,7 @@
     color: var(--white);
     max-width: min(600px, 90%);
 }
-/* Fluid hero heading from 1.8rem to 3.8rem, light weight with a text shadow */
+/* Titulo del hero fluido de 1.8rem a 3.8rem, peso ligero con sombra de texto */
 .broom-home__hero-title {
     font-size: clamp(1.8rem, 4vw, 3.8rem);
     font-weight: 300;
@@ -56,7 +56,7 @@
     word-break: break-word;
     overflow-wrap: break-word;
 }
-/* Fluid hero subtitle in small uppercase with wide tracking */
+/* Subtitulo del hero fluido en mayusculas pequenas con espaciado amplio */
 .broom-home__hero-subtitle {
     font-size: clamp(0.65rem, 1.5vw, 0.95rem);
     letter-spacing: 3px;
@@ -67,14 +67,14 @@
     margin: 0;
 }
 
-/* Search section: relative positioning above the hero bottom, padded below */
+/* Seccion de busqueda: posicionamiento relativo sobre el fondo del hero, con relleno inferior */
 .broom-home__search-section {
     position: relative;
     margin-top: 2rem;
     z-index: 10;
     padding: 0 2rem 4rem;
 }
-/* White search card with a gold left border accent, asymmetric radius, and deep shadow */
+/* Tarjeta de busqueda blanca con acento de borde izquierdo dorado, radio asimetrico y sombra profunda */
 .broom-home__search-container {
     max-width: 1400px;
     margin: 0 auto;
@@ -85,7 +85,7 @@
     border-left: 4px solid var(--primary-color);
     box-sizing: border-box;
 }
-/* Search card heading in small all-caps secondary color with wide tracking */
+/* Encabezado de la tarjeta de busqueda en mayusculas pequenas con color secundario y espaciado amplio */
 .broom-home__search-title {
     font-size: 1rem;
     color: var(--secondary-color);
@@ -95,28 +95,28 @@
     text-transform: uppercase;
 }
 
-/* Row of trip type radio buttons (one-way / round-trip) with wrapping */
+/* Fila de botones de radio de tipo de viaje (solo ida / ida y vuelta) con ajuste de linea */
 .broom-home__trip-type {
     display: flex;
     gap: 2rem;
     margin-bottom: 1.5rem;
     flex-wrap: wrap;
 }
-/* Flex row radio label: cursor pointer with label and input side by side */
+/* Etiqueta de radio en fila flex: cursor pointer con etiqueta e input lado a lado */
 .broom-home__radio-label {
     display: flex;
     align-items: center;
     gap: .5rem;
     cursor: pointer;
 }
-/* 16px radio input styled with the primary accent color */
+/* Input de radio de 16px con el color de acento primario */
 .broom-home__radio-input {
     width: 16px; height: 16px;
     cursor: pointer;
     accent-color: var(--primary-color);
     flex-shrink: 0;
 }
-/* Radio label text in medium-weight secondary color */
+/* Texto de la etiqueta de radio en color secundario con peso medio */
 .broom-home__radio-text {
     font-size: .88rem;
     color: var(--secondary-color);
@@ -124,25 +124,25 @@
     white-space: nowrap;
 }
 
-/* Four-column search form grid: two wide origin/destination columns, one date, one button */
+/* Grilla de formulario de busqueda de cuatro columnas: dos columnas anchas de origen/destino, una de fecha, un boton */
 .broom-home__form-grid {
     display: grid;
     grid-template-columns: 1.4fr 1.4fr 1fr auto;
     gap: 1rem;
     align-items: flex-end;
 }
-/* Flex column form group stacking label above input */
+/* Grupo de formulario en columna flex que apila la etiqueta sobre el input */
 .broom-home__form-group {
     display: flex;
     flex-direction: column;
     gap: .45rem;
     min-width: 0;
 }
-/* Relative-positioned form group for autocomplete dropdown positioning */
+/* Grupo de formulario posicionado relativamente para el desplegable de autocompletado */
 .broom-home__form-group--relative {
     position: relative;
 }
-/* Tiny all-caps bold muted label above each form field */
+/* Etiqueta pequena en mayusculas y negrita apagada encima de cada campo de formulario */
 .broom-home__form-label {
     font-size: .68rem;
     font-weight: 600;
@@ -151,12 +151,12 @@
     letter-spacing: 1px;
     white-space: nowrap;
 }
-/* Invisible label that reserves vertical space for alignment without showing text */
+/* Etiqueta invisible que reserva espacio vertical para alineacion sin mostrar texto */
 .broom-home__form-label--hidden {
     opacity: 0;
     pointer-events: none;
 }
-/* Form input with asymmetric radius, beige background, and gold border on focus */
+/* Input de formulario con radio asimetrico, fondo beige y borde dorado al enfocar */
 .broom-home__form-input {
     width: 100%;
     padding: .85rem .9rem;
@@ -170,25 +170,25 @@
     box-sizing: border-box;
     min-width: 0;
 }
-/* Input border turns gold on focus, background turns white */
+/* El borde del input se vuelve dorado al enfocar, el fondo se vuelve blanco */
 .broom-home__form-input:focus {
     outline: none;
     border-color: var(--primary-color);
     background-color: var(--white);
 }
-/* Disabled input is faded and not-allowed */
+/* Input desactivado: desvanecido y cursor no permitido */
 .broom-home__form-input:disabled { opacity: .5; cursor: not-allowed; }
-/* Input with a highlight animation applied via JavaScript on validation error */
+/* Input con animacion de resaltado aplicada via JavaScript en error de validacion */
 .broom-home__form-input--highlighted {
     animation: fieldHighlight 2s ease-in-out;
 }
-/* Pulsing brown glow that fades in and out to draw attention to the field */
+/* Brillo marron pulsante que aparece y desaparece para atraer la atencion al campo */
 @keyframes fieldHighlight {
     0%,100% { background-color: transparent; box-shadow: none; }
     50%      { background-color: rgba(139,107,74,.1); box-shadow: 0 0 0 4px rgba(139,107,74,.3); }
 }
 
-/* Dark search button with asymmetric radius, turns gold on hover */
+/* Boton de busqueda oscuro con radio asimetrico, se vuelve dorado al pasar el cursor */
 .broom-home__search-btn {
     background-color: var(--secondary-color);
     color: var(--white);
@@ -208,18 +208,18 @@
     white-space: nowrap;
     width: 100%;
 }
-/* Button turns gold and lifts on hover when enabled */
+/* El boton se vuelve dorado y se eleva al pasar el cursor cuando esta habilitado */
 .broom-home__search-btn:hover:not(:disabled) {
     background-color: var(--primary-color);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(28,26,24,.2);
 }
-/* Disabled search button: faded and not-allowed */
+/* Boton de busqueda desactivado: desvanecido y cursor no permitido */
 .broom-home__search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-/* Small SVG icon inside the search button */
+/* Icono SVG pequeno dentro del boton de busqueda */
 .broom-home__search-btn-icon { width: 16px; height: 16px; flex-shrink: 0; }
 
-/* Search validation error message with a gold left border accent */
+/* Mensaje de error de validacion de busqueda con acento de borde izquierdo dorado */
 .broom-home__search-error {
     color: #b07d2e;
     font-size: .82rem;
@@ -230,7 +230,7 @@
     border-radius: 0 4px 4px 0;
 }
 
-/* Absolute-positioned autocomplete dropdown list below the input */
+/* Lista desplegable de autocompletado posicionada de forma absoluta debajo del input */
 .home-autocomplete__list {
     position: absolute;
     top: calc(100% + 2px);
@@ -246,13 +246,13 @@
     max-height: 260px;
     overflow-y: auto;
 }
-/* Each autocomplete result item with a bottom separator */
+/* Cada elemento de resultado de autocompletado con separador inferior */
 .home-autocomplete__item {
     border-bottom: 1px solid var(--perla-dark);
 }
-/* Last item has no bottom separator */
+/* El ultimo elemento no tiene separador inferior */
 .home-autocomplete__item:last-child { border-bottom: none; }
-/* Result button: full-width flex row with IATA code and airport info */
+/* Boton de resultado: fila flex de ancho completo con codigo IATA e informacion del aeropuerto */
 .home-autocomplete__btn {
     width: 100%;
     background: none; border: none;
@@ -265,9 +265,9 @@
     transition: background .15s;
     font-family: inherit;
 }
-/* Result row lightens to beige on hover */
+/* La fila de resultado se aclara a beige al pasar el cursor */
 .home-autocomplete__btn:hover { background: #fcfbf9; }
-/* Bold gold IATA code at the left of each result */
+/* Codigo IATA dorado y negrita a la izquierda de cada resultado */
 .home-autocomplete__code {
     font-weight: 700;
     font-size: .8rem;
@@ -276,7 +276,7 @@
     letter-spacing: .5px;
     flex-shrink: 0;
 }
-/* Stacked city name and airport name column */
+/* Columna apilada de nombre de ciudad y nombre de aeropuerto */
 .home-autocomplete__info {
     display: flex;
     flex-direction: column;
@@ -284,7 +284,7 @@
     min-width: 0;
     overflow: hidden;
 }
-/* Bold city name with overflow ellipsis */
+/* Nombre de ciudad en negrita con elipsis por desbordamiento */
 .home-autocomplete__ciudad {
     font-size: .88rem;
     color: var(--secondary-color);
@@ -293,7 +293,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/* Smaller muted airport name with overflow ellipsis */
+/* Nombre de aeropuerto apagado mas pequeno con elipsis por desbordamiento */
 .home-autocomplete__nombre {
     font-size: .72rem;
     color: var(--text-muted);
@@ -302,7 +302,7 @@
     text-overflow: ellipsis;
 }
 
-/* Centered loading placeholder inside the calendar area */
+/* Marcador de posicion de carga centrado dentro del area del calendario */
 .cal-loading {
     text-align: center;
     padding: 1rem;
@@ -312,28 +312,28 @@
     text-transform: uppercase;
     margin: 1rem 0;
 }
-/* Calendar wrapper that fades and slides down from above on appear */
+/* Contenedor del calendario que aparece con fundido y se desliza hacia abajo desde arriba */
 .cal-wrapper { margin: 1.5rem 0 .5rem; animation: fadeInDown .3s ease; }
-/* Slide-down entry for the calendar */
+/* Entrada deslizante hacia abajo para el calendario */
 @keyframes fadeInDown {
     from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-/* Header above the calendar grid showing selection info */
+/* Encabezado encima de la grilla del calendario que muestra informacion de seleccion */
 .cal-header-info { margin-bottom: .8rem; }
-/* Muted info text below the calendar header */
+/* Texto de informacion apagado debajo del encabezado del calendario */
 .cal-info-text       { font-size: .76rem; color: var(--text-muted); letter-spacing: .5px; }
-/* Empty-state info text turns gold */
+/* El texto de informacion en estado vacio se vuelve dorado */
 .cal-info-text--empty { color: var(--primary-color); }
-/* Two-column grid for displaying outbound and return calendars side by side */
+/* Grilla de dos columnas para mostrar los calendarios de ida y vuelta lado a lado */
 .cal-dual {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
 }
-/* Single-calendar variant: one column only */
+/* Variante de calendario unico: solo una columna */
 .cal-dual--single { grid-template-columns: 1fr; max-width: 100%; }
-/* Individual calendar card: white with an asymmetric radius and beige border */
+/* Tarjeta de calendario individual: blanca con radio asimetrico y borde beige */
 .cal-container {
     background: var(--white);
     border: 1.5px solid var(--perla-dark);
@@ -342,24 +342,24 @@
     width: 100%;
     box-sizing: border-box;
 }
-/* Small bold gold label above the calendar (e.g. "IDA", "VUELTA") */
+/* Etiqueta dorada pequena y negrita encima del calendario (por ejemplo "IDA", "VUELTA") */
 .cal-label {
     font-size: .62rem; font-weight: 700;
     text-transform: uppercase; letter-spacing: 1.5px;
     color: var(--primary-color); margin-bottom: .8rem;
 }
-/* Calendar navigation row: prev/next buttons flanking the month-year title */
+/* Fila de navegacion del calendario: botones anterior/siguiente flanqueando el titulo de mes y ano */
 .cal-nav {
     display: flex; align-items: center;
     justify-content: space-between; margin-bottom: 1.5rem;
 }
-/* Month-year title in bold uppercase with wide tracking */
+/* Titulo de mes y ano en negrita mayusculas con espaciado amplio */
 .cal-nav__title {
     font-size: .85rem; font-weight: 600;
     color: var(--secondary-color);
     text-transform: uppercase; letter-spacing: 1.5px;
 }
-/* Square nav button with a beige border that turns gold on hover */
+/* Boton de navegacion cuadrado con borde beige que se vuelve dorado al pasar el cursor */
 .cal-nav__btn {
     background: none; border: 1px solid var(--perla-dark);
     border-radius: 4px; width: 28px; height: 28px;
@@ -369,19 +369,19 @@
     transition: var(--transition); font-family: inherit;
 }
 .cal-nav__btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
-/* 7-column grid for the day cells */
+/* Grilla de 7 columnas para las celdas de dias */
 .cal-grid {
     display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
 }
-/* Header row of the calendar grid */
+/* Fila de encabezado de la grilla del calendario */
 .cal-grid--header { margin-bottom: 4px; }
-/* Day-of-week name in small all-caps muted text */
+/* Nombre del dia de la semana en texto apagado pequeno en mayusculas */
 .cal-day-name {
     text-align: center; font-size: .6rem; font-weight: 700;
     color: var(--text-muted); text-transform: uppercase;
     letter-spacing: .5px; padding: .3rem 0;
 }
-/* Base day cell: no border, rounded corners, default muted color */
+/* Celda de dia base: sin borde, esquinas redondeadas, color apagado por defecto */
 .cal-day {
     width: 100%; border: none; background: none; border-radius: 5px;
     font-size: .78rem; display: flex; align-items: center;
@@ -389,55 +389,55 @@
     transition: var(--transition); color: #bbb;
     font-family: inherit; padding: .45rem 0;
 }
-/* Empty cell placeholder for days before the first of the month */
+/* Marcador de posicion de celda vacia para dias antes del primero del mes */
 .cal-day--empty { background: none; }
-/* Blocked/past day: faded, not-allowed */
+/* Dia bloqueado/pasado: desvanecido y cursor no permitido */
 .cal-day--bloqueado { color: #ddd; cursor: not-allowed; opacity: .4; }
-/* Available outbound day: dark brown background, white text, clickable */
+/* Dia de ida disponible: fondo marron oscuro, texto blanco, clicable */
 .cal-day--disponible {
     background: #7a5c3f; color: var(--white);
     cursor: pointer; font-weight: 700; border-radius: 5px;
 }
-/* Available outbound day scales slightly on hover */
+/* El dia de ida disponible escala ligeramente al pasar el cursor */
 .cal-day--disponible:hover { background: #5e4430; transform: scale(1.08); }
-/* Selected outbound day: primary gold with asymmetric radius and a gold glow */
+/* Dia de ida seleccionado: dorado primario con radio asimetrico y brillo dorado */
 .cal-day--seleccionado-ida {
     background: var(--primary-color) !important; color: var(--white) !important;
     font-weight: 700; border-radius: 5px 0 5px 0;
     transform: scale(1.1); box-shadow: 0 4px 14px rgba(201,169,97,.5);
 }
-/* Available return day: blue-toned dark background */
+/* Dia de vuelta disponible: fondo oscuro con tono azul */
 .cal-day--disponible-vuelta {
     background: #3b4f6b; color: var(--white);
     cursor: pointer; font-weight: 700; border-radius: 5px;
 }
-/* Available return day scales on hover */
+/* El dia de vuelta disponible escala al pasar el cursor */
 .cal-day--disponible-vuelta:hover { background: #2a3a52; transform: scale(1.08); }
-/* Selected return day: dark green with inverted asymmetric radius and a green glow */
+/* Dia de vuelta seleccionado: verde oscuro con radio asimetrico invertido y brillo verde */
 .cal-day--seleccionado-vuelta {
     background: #2a4a3e !important; color: var(--white) !important;
     font-weight: 700; border-radius: 0 5px 0 5px;
     transform: scale(1.1); box-shadow: 0 4px 14px rgba(42,74,62,.45);
 }
-/* Summary of selected dates below the calendar with a top border */
+/* Resumen de fechas seleccionadas debajo del calendario con borde superior */
 .cal-selected-info {
     margin-top: .8rem; padding-top: .7rem;
     border-top: 1px solid var(--perla-dark);
     font-size: .72rem; color: var(--text-muted);
 }
-/* Bold part of the selected date info */
+/* Parte en negrita de la informacion de fecha seleccionada */
 .cal-selected-info strong { color: var(--secondary-color); }
-/* Return trip date info uses a dark green bold color */
+/* La informacion de fecha de vuelta usa un color verde oscuro en negrita */
 .cal-selected-info--vuelta strong { color: #2a4a3e; }
 
-/* Destinations section: gradient background from project color to a slightly deeper cream */
+/* Seccion de destinos: fondo con gradiente desde el color del proyecto hasta crema mas profunda */
 .broom-home__destinations {
     padding: 6rem 2rem 5rem;
     background: linear-gradient(to bottom, var(--bg-color), #ede8e0);
 }
-/* Centered inner container for the destinations heading and grid */
+/* Contenedor interior centrado para el encabezado y la grilla de destinos */
 .broom-home__destinations-container { max-width: 1300px; margin: 0 auto; }
-/* Fluid destination section heading with a gold left border accent */
+/* Encabezado fluido de la seccion de destinos con acento de borde izquierdo dorado */
 .broom-home__destinations-title {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 300;
@@ -448,7 +448,7 @@
     color: var(--secondary-color);
 }
 
-/* Auto-fill destination card grid, minimum 260px per card */
+/* Grilla de tarjetas de destino con relleno automatico, minimo 260px por tarjeta */
 .broom-home__destinations-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -456,7 +456,7 @@
     margin-top: 3rem;
 }
 
-/* Destination card: white with asymmetric radius, lifts on hover */
+/* Tarjeta de destino: blanca con radio asimetrico, se eleva al pasar el cursor */
 .broom-home__destination-card {
     background: var(--white);
     border-radius: 0 20px 0 20px;
@@ -466,33 +466,33 @@
     cursor: pointer;
     outline: none;
 }
-/* Card lifts and deepens shadow on hover */
+/* La tarjeta se eleva y profundiza la sombra al pasar el cursor */
 .broom-home__destination-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 14px 36px rgba(28,26,24,.15);
 }
-/* Focused card shows a gold focus ring for keyboard navigation */
+/* La tarjeta enfocada muestra un anillo de enfoque dorado para navegacion por teclado */
 .broom-home__destination-card:focus-visible {
     box-shadow: 0 0 0 3px var(--primary-color);
 }
 
-/* Image area: fixed 200px height with overflow hidden and a beige fallback */
+/* Area de imagen: altura fija de 200px con desbordamiento oculto y fondo beige de reserva */
 .broom-home__destination-image {
     width: 100%; height: 200px;
     overflow: hidden; position: relative;
     background-color: var(--perla-dark);
 }
-/* Full-cover destination photo with a spring zoom transition on card hover */
+/* Foto de destino a pantalla completa con transicion de zoom suave al pasar el cursor sobre la tarjeta */
 .broom-home__destination-image-visual {
     width: 100%; height: 100%;
     object-fit: cover; display: block;
     transition: transform .6s cubic-bezier(.34,1.56,.64,1);
 }
-/* Photo scales to 112% on card hover */
+/* La foto escala al 112% al pasar el cursor sobre la tarjeta */
 .broom-home__destination-card:hover .broom-home__destination-image-visual {
     transform: scale(1.12);
 }
-/* Bottom gradient overlay on the image for the IATA badge legibility */
+/* Superposicion de gradiente inferior en la imagen para legibilidad de la insignia IATA */
 .broom-home__destination-image::after {
     content: '';
     position: absolute; bottom: 0; left: 0;
@@ -501,7 +501,7 @@
     pointer-events: none;
 }
 
-/* Frosted IATA code badge pinned to the top-left of the destination image */
+/* Insignia IATA esmerilada fijada en la esquina superior izquierda de la imagen del destino */
 .broom-home__destination-badge {
     position: absolute;
     top: 12px; left: 12px;
@@ -516,16 +516,16 @@
     z-index: 2;
 }
 
-/* Card content area below the image with comfortable padding */
+/* Area de contenido de la tarjeta debajo de la imagen con relleno comodo */
 .broom-home__destination-content { padding: 1.25rem 1.5rem 1.5rem; }
-/* Destination city name in medium-weight secondary color */
+/* Nombre de ciudad de destino en color secundario con peso medio */
 .broom-home__destination-name {
     font-size: 1.25rem;
     margin: 0 0 .25rem;
     color: var(--secondary-color);
     font-weight: 500;
 }
-/* Country or region label in small uppercase gold */
+/* Etiqueta de pais o region en mayusculas doradas pequenas */
 .broom-home__destination-meta {
     font-size: .72rem;
     color: var(--primary-color, #c9a96e);
@@ -534,7 +534,7 @@
     margin: 0 0 .5rem;
     font-weight: 600;
 }
-/* Single-line truncated destination description in muted text */
+/* Descripcion del destino truncada en una linea con texto apagado */
 .broom-home__destination-description {
     color: var(--text-muted);
     font-size: .82rem;
@@ -545,12 +545,12 @@
     text-overflow: ellipsis;
 }
 
-/* Right-aligned actions row below the destination grid */
+/* Fila de acciones alineada a la derecha debajo de la grilla de destinos */
 .broom-home__destinations-actions {
     text-align: right;
     margin-top: 2.5rem;
 }
-/* Transparent outline button for "see all destinations", shifts left on hover */
+/* Boton de contorno transparente para "ver todos los destinos", se desplaza a la izquierda al pasar el cursor */
 .broom-home__destinations-btn {
     background: transparent;
     border: 2px solid var(--secondary-color);
@@ -563,25 +563,25 @@
     font-family: inherit;
     font-size: .9rem;
 }
-/* Button fills dark and shifts 4px left on hover */
+/* El boton se rellena de oscuro y se desplaza 4px a la izquierda al pasar el cursor */
 .broom-home__destinations-btn:hover {
     background: var(--secondary-color);
     color: var(--white);
     transform: translateX(-4px);
 }
 
-/* At 1100px: form grid drops to four columns with equal widths */
+/* A 1100px: la grilla del formulario pasa a cuatro columnas de igual ancho */
 @media (max-width: 1100px) {
     .broom-home__form-grid { grid-template-columns: 1fr 1fr 1fr auto; }
 }
 
-/* At 900px: hero padding reduces; dual calendar collapses to single column */
+/* A 900px: el relleno del hero se reduce; el calendario dual colapsa a una columna */
 @media (max-width: 900px) {
     .broom-home__hero { padding: 2.5rem 2rem; }
     .cal-dual { grid-template-columns: 1fr; }
 }
 
-/* At 768px: hero reduces to 65vh; search form becomes single-column; destinations shift */
+/* A 768px: el hero se reduce a 65vh; el formulario de busqueda pasa a una columna; los destinos cambian */
 @media (max-width: 768px) {
     .broom-home__hero {
         height: 65vh;
@@ -601,12 +601,12 @@
         padding: 1.5rem;
         border-radius: 16px 4px 16px 4px;
     }
-    /* Form grid collapses to single column on mobile */
+    /* La grilla del formulario colapsa a una columna en movil */
     .broom-home__form-grid {
         grid-template-columns: 1fr;
         gap: .85rem;
     }
-    /* Search button group is ordered last in the stacked form */
+    /* El grupo del boton de busqueda se ordena al final en el formulario apilado */
     .broom-home__form-group--btn { order: 4; }
     .broom-home__search-btn { width: 100%; justify-content: center; }
     .broom-home__destinations { padding: 4rem 1.25rem 3.5rem; }
@@ -615,7 +615,7 @@
     .broom-home__destinations-btn { width: 100%; justify-content: center; }
 }
 
-/* At 480px: tighter padding throughout; single-column destination grid */
+/* A 480px: relleno mas ajustado en toda la pagina; grilla de destinos de una columna */
 @media (max-width: 480px) {
     .broom-home__hero { padding: 1.5rem 1rem; }
     .broom-home__search-container { padding: 1.25rem 1rem; }

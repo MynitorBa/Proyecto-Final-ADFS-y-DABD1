@@ -72,6 +72,81 @@ Cancela una reservacion si su estado actual lo permite. Solo se pueden cancelar 
 
 ---
 
+## AerolineaAdminService
+
+> Service para la gestion de aerolineas aliadas desde el panel de administracion. Cubre operaciones de listado, creacion, edicion y consulta de usuarios libres.
+
+```java
+public List<AerolineaAdminDTO> listarTodas()
+```
+
+Retorna todas las aerolineas aliadas registradas en el sistema.
+
+- **Returns** - lista completa de aerolineas.
+
+---
+
+```java
+public void editar(int aerolineaId, EditarAerolineaRequestDTO req)
+```
+
+Edita los datos de una aerolinea existente.
+
+- **Param** `aerolineaId` - ID de la aerolinea a editar.
+- **Param** `req` - datos actualizados de la aerolinea.
+
+---
+
+```java
+public List<UsuarioWebserviceLibreDTO> listarWebserviceLibres()
+```
+
+Retorna los usuarios webservice disponibles para ser asignados a una entidad. Un usuario se considera libre si no tiene ni agencia ni aerolinea registrada.
+
+- **Returns** - lista de usuarios webservice sin entidad asignada.
+
+---
+
+## AerolineaWebserviceService
+
+> Service para la gestion de aerolineas aliadas desde el portal webservice. Cubre operaciones del usuario webservice dueno de la aerolinea: consulta, registro y cambio de estado.
+
+```java
+public List<AerolineaWebserviceDTO> listarPorUsuario(int usuarioId)
+```
+
+Retorna las aerolineas aliadas asociadas a un usuario webservice especifico.
+
+- **Param** `usuarioId` - ID del usuario webservice propietario de las aerolineas.
+- **Returns** - lista de aerolineas del usuario.
+
+---
+
+```java
+public AerolineaWebserviceDTO crear(int usuarioId, CrearAerolineaRequestDTO req)
+```
+
+Registra una nueva aerolinea aliada vinculada al usuario dado.
+
+- **Param** `usuarioId` - ID del usuario webservice que crea la aerolinea.
+- **Param** `req` - datos de la nueva aerolinea.
+- **Returns** - DTO con los datos de la aerolinea creada.
+
+---
+
+```java
+public void cambiarEstado(int aerolineaId, int usuarioId, int nuevoEstadoId)
+```
+
+Cambia el estado de una aerolinea entre Activo (1) y Cerrado (2).
+
+- **Param** `aerolineaId` - ID de la aerolinea a modificar.
+- **Param** `usuarioId` - ID del usuario webservice dueno de la aerolinea.
+- **Param** `nuevoEstadoId` - nuevo estado: 1 para Activo, 2 para Cerrado.
+- **Throws** `IllegalArgumentException` - si el estado no es 1 ni 2.
+
+---
+
 ## AgenciaService
 
 > Service para la gestion de agencias de viaje. Cubre operaciones del webservice (usuario dueno) y del panel de administracion.
@@ -91,7 +166,7 @@ Retorna las agencias asociadas a un usuario especifico.
 public AgenciaDTO crear(int usuarioId, CrearAgenciaRequestDTO req)
 ```
 
-Crea una nueva agencia vinculada al usuario dado.
+Crea una nueva agencia vinculada al usuario dado (flujo del portal webservice).
 
 - **Param** `usuarioId` - ID del usuario que crea la agencia.
 - **Param** `req` - datos de la nueva agencia.
@@ -106,7 +181,7 @@ public void cambiarEstado(int agenciaId, int usuarioId, int nuevoEstadoId)
 Cambia el estado de una agencia entre Activo (1) y Cerrado (2).
 
 - **Param** `agenciaId` - ID de la agencia a modificar.
-- **Param** `usuarioId` - ID del usuario dueno de la agencia.
+- **Param** `usuarioId` - ID del usuario webservice dueno de la agencia.
 - **Param** `nuevoEstadoId` - nuevo estado: 1 para Activo, 2 para Cerrado.
 - **Throws** `IllegalArgumentException` - si el estado no es 1 ni 2.
 
@@ -119,7 +194,7 @@ public void eliminar(int agenciaId, int usuarioId)
 Elimina una agencia del usuario dado.
 
 - **Param** `agenciaId` - ID de la agencia a eliminar.
-- **Param** `usuarioId` - ID del usuario dueno de la agencia.
+- **Param** `usuarioId` - ID del usuario webservice dueno de la agencia.
 
 ---
 
@@ -156,6 +231,23 @@ Agrupa el token JWT y los datos de respuesta tras un login exitoso.
 
 - **Param** `token` - JWT generado para la sesion.
 - **Param** `respuesta` - datos del usuario autenticado.
+
+---
+
+## BusquedaAerolineaService
+
+> Service de busqueda de hoteles para aerolineas aliadas. Aplica el descuento de la aerolinea a los precios y calcula combinaciones de habitaciones para grupos grandes.
+
+```java
+public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, String token)
+```
+
+Busca hoteles disponibles para una aerolinea autenticada por token. Valida que el token corresponda a una aerolinea activa, obtiene su descuento, guarda la busqueda y retorna los hoteles con precios ya descontados.
+
+- **Param** `request` - criterios de busqueda: ciudad, pais, fechas y cantidad de personas.
+- **Param** `token` - token de acceso de la aerolinea aliada.
+- **Returns** - lista de hoteles con tipos de habitacion, amenidades y combinaciones disponibles.
+- **Throws** `IllegalArgumentException` - si el token es invalido o la ciudad no existe.
 
 ---
 
@@ -399,6 +491,22 @@ public void detener()
 ```
 
 Detiene el hilo del scheduler al apagar el servidor. Se llama desde el ShutdownHook registrado en Main.
+
+---
+
+## HandshakeAerolineaService
+
+> Service para el proceso de handshake entre el sistema hotelero y una aerolinea aliada externa. Valida la URL de la aerolinea registrada en la tabla AerolineaAliado, genera un token de salida y persiste ambos tokens para que la aerolinea pueda autenticarse en llamadas futuras.
+
+```java
+public HandshakeResponseDTO procesarHandshake(HandshakeRequestDTO dto)
+```
+
+Procesa el handshake de una aerolinea aliada externa. Busca la aerolinea por su URL registrada en la base de datos, genera un token de respuesta y guarda el token de entrada y el de salida vinculados a ese registro. o si los tokens no se pudieron persistir en la base de datos.
+
+- **Param** `dto` - datos del handshake con la URL de la aerolinea y el token de entrada.
+- **Returns** - DTO con el token de salida generado para que la aerolinea lo use en requests futuros.
+- **Throws** `IllegalArgumentException` - si no existe una aerolinea registrada con esa URL
 
 ---
 
@@ -767,13 +875,13 @@ Procesa el pago de una reservacion de agencia. Valida NIT y codigo postal, verif
 public PagoResponseDTO procesarPago(int reservacionId, int usuarioId, PagoRequestDTO request)
 ```
 
-Procesa el pago de una reservacion de usuario web. Verifica que la reservacion exista y este pendiente, valida la tarjeta en memoria, confirma la reservacion y genera la factura. o su estado no permite el pago.
+Procesa el pago de una reservacion de usuario web. Verifica que la reservacion exista y este pendiente, valida la tarjeta en memoria, confirma la reservacion y genera la factura. Si se incluye un token de alianza, valida que el hotel de la reservacion se encuentre en la misma ciudad para la que fue generado el token antes de aplicar el descuento. su estado no permite el pago, el token es invalido o el token no aplica para la ciudad del hotel.
 
 - **Param** `reservacionId` - ID de la reservacion a pagar.
 - **Param** `usuarioId` - ID del usuario dueno de la reservacion.
-- **Param** `request` - datos de pago: tarjeta, NIT y codigo postal.
+- **Param** `request` - datos de pago: tarjeta, NIT, codigo postal y token opcional.
 - **Returns** - DTO con los datos de la factura generada.
-- **Throws** `IllegalArgumentException` - si la reservacion no existe, no pertenece al usuario
+- **Throws** `IllegalArgumentException` - si la reservacion no existe, no pertenece al usuario,
 
 ---
 
@@ -889,6 +997,39 @@ Construye el DTO de sesion para un usuario autenticado. Los datos del usuario vi
 - **Param** `username` - nombre de usuario extraido del token.
 - **Param** `rolId` - ID del rol del usuario.
 - **Returns** - DTO con los datos de sesion y autenticado en true.
+
+---
+
+## TokenAerolineaService
+
+> Service encargado de generar tokens de alianza para aerolineas. Valida la identidad de la aerolinea, resuelve la ciudad destino y persiste el token con una ventana de expiracion de 15 minutos.
+
+```java
+public TokenAerolineaResponseDTO generarToken(TokenAerolineaRequestDTO request, String tokenHash)
+```
+
+Genera y persiste un token de alianza para una aerolinea autenticada. El token expira a los 15 minutos y no tiene reservacion asociada todavia. La URL de redireccion se construye con el token para que la aerolinea pueda enviarsela directamente al usuario. o si la ciudad no existe en la base de datos.
+
+- **Param** `request` - datos de la solicitud: ciudad y pais destino del pasajero.
+- **Param** `tokenHash` - hash del token de la aerolinea enviado en el header.
+- **Returns** - TokenAerolineaResponseDTO con el token generado, URL de redireccion y fecha de expiracion.
+- **Throws** `IllegalArgumentException` - si el token no corresponde a una aerolinea activa
+
+---
+
+## TokenValidacionService
+
+> Service encargado de validar tokens de alianza enviados por usuarios que llegan desde una aerolinea aliada.
+
+```java
+public TokenValidacionResponseDTO validar(String token)
+```
+
+Valida un token de alianza y retorna los datos necesarios para configurar la busqueda con descuento en el frontend. No marca el token como usado; eso ocurre al momento del pago.
+
+- **Param** `token` - string UUID recibido desde la URL del usuario.
+- **Returns** - TokenValidacionResponseDTO con ciudad, pais, descuento y expiracion.
+- **Throws** `IllegalArgumentException` - si el token no existe, ya fue usado o expiro.
 
 ---
 

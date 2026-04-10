@@ -122,13 +122,13 @@ Elimina la imagen asociada al aeropuerto indicado.
 
 ## AgenciaService
 
-> Servicio de agencias. Gestiona la logica de negocio para crear, consultar y administrar agencias de viaje, incluyendo asignacion de usuarios webservice, descuentos y estados de la agencia.
+> Servicio de agencias. Gestiona la logica de negocio para crear, consultar y administrar agencias de viaje, incluyendo asignacion de usuarios webservice, descuentos, estados y URL publica de la agencia.
 
 ```csharp
 public async Task<AgenciaResponseDTO> CrearAgencia(CrearAgenciaDTO dto)
 ```
 
-Crea una nueva agencia asignando el usuario webservice indicado en el DTO. Verifica que el usuario exista, tenga rol WebService y no tenga ya una agencia asignada. Uso exclusivo del administrador.
+Crea una nueva agencia asignando el usuario webservice indicado en el DTO. Verifica que el usuario exista, tenga rol WebService y no tenga ya una agencia ni un hotel aliado asignados, ya que solo puede tener una entidad activa. Uso exclusivo del administrador.
 
 ---
 
@@ -136,7 +136,7 @@ Crea una nueva agencia asignando el usuario webservice indicado en el DTO. Verif
 public async Task<AgenciaResponseDTO> CrearAgenciaWebservice(int usuarioId, CrearAgenciaWebserviceDTO dto)
 ```
 
-Permite que un usuario con rol Webservice registre su propia agencia. Solo acepta nombre y correo; el ID del usuario se toma de la sesion activa. Un usuario Webservice solo puede tener una agencia registrada a la vez.
+Permite que un usuario con rol Webservice registre su propia agencia. Verifica que no tenga ya una agencia ni un hotel aliado registrado. El ID del usuario se toma de la sesion activa.
 
 ---
 
@@ -160,7 +160,7 @@ Retorna la lista completa de agencias registradas en el sistema, incluyendo dato
 public async Task<List<UsuarioWebserviceDTO>> ObtenerWebserviceSinAgencia()
 ```
 
-Retorna la lista de usuarios con rol Webservice que aun no tienen ninguna agencia asignada. Util para el formulario de asignacion del admin.
+Retorna la lista de usuarios con rol Webservice que no tienen ninguna entidad asignada (ni agencia ni hotel aliado). Util para los selectores del panel admin.
 
 ---
 
@@ -168,7 +168,7 @@ Retorna la lista de usuarios con rol Webservice que aun no tienen ninguna agenci
 public async Task AsignarUsuario(int agenciaId, int usuarioId)
 ```
 
-Asigna un usuario Webservice a una agencia existente. Verifica que el usuario exista, tenga rol Webservice y no este ya asignado a otra agencia.
+Asigna un usuario Webservice a una agencia existente. Verifica que el usuario exista, tenga rol Webservice y no este ya asignado a ninguna otra entidad.
 
 ---
 
@@ -185,6 +185,14 @@ public async Task ActualizarEstado(int agenciaId, int estadoId)
 ```
 
 Actualiza el estado de una agencia. El valor del estado debe ser un ID valido entre 1 y 3 segun el catalogo de estados de agencia.
+
+---
+
+```csharp
+public async Task ActualizarUrl(int agenciaId, string urlAgencia)
+```
+
+Actualiza la URL publica de una agencia desde el panel de administracion. La URL no puede estar vacia.
 
 ---
 
@@ -476,6 +484,22 @@ Verifica si una reservacion puede ser cancelada por el usuario en el momento act
 
 ---
 
+## HandshakeHotelService
+
+> Servicio encargado de iniciar el proceso de handshake de autenticacion con un hotel aliado externo. Genera un token de entrada que identifica a la aerolinea, lo envia al hotel junto con la URL publica de la aerolinea y almacena el token de sesion resultante en la columna TokenHASH del registro HotelAliado. Cuando el backend corre dentro de Docker y la URL del hotel contiene 'localhost', se sustituye ese host por el valor de HANDSHAKE_HOST_OVERRIDE (host.docker.internal) para poder alcanzar el servidor Java corriendo en la maquina anfitriona.
+
+```csharp
+public async Task<string> IniciarHandshake(int hotelId)
+```
+
+Ejecuta el flujo completo de handshake con un hotel aliado. Obtiene la URL del hotel desde la base de datos sin filtrar por estado, aplica la sustitucion de host si es necesaria para entornos Docker, genera un token de entrada, lo envia al hotel, recibe el token de sesion y lo guarda en HotelAliado.TokenHASH. Si el hotel no existe, no tiene URL configurada, falla la llamada HTTP o falla el guardado en base de datos.
+
+- **Param** `hotelId` - ID del registro HotelAliado con quien iniciar el handshake.
+- **Returns** - El token de sesion recibido del hotel aliado.
+- `@throws Exception`
+
+---
+
 ## HandshakeService
 
 > Servicio de handshake entre la aerolinea y agencias externas. Gestiona el intercambio de tokens de autenticacion para establecer una sesion segura con una agencia registrada identificada por su URL.
@@ -485,6 +509,77 @@ public async Task<HandshakeResponseDTO> ProcesarHandshake(HandshakeRequestDTO dt
 ```
 
 Procesa la solicitud de handshake de una agencia externa. Busca la agencia por su URL, genera un token de salida y guarda ambos tokens (entrada y salida) en la base de datos. Retorna el token de salida que la agencia debe usar en solicitudes posteriores.
+
+---
+
+## HotelAliadoService
+
+> Servicio de hoteles aliados. Gestiona la busqueda dinamica de hoteles consultando cada aliado activo con su propia URL y TokenHASH, el registro y consulta de hoteles por usuarios Webservice, y la administracion completa desde el panel de administracion.
+
+```csharp
+public async Task<List<HotelAliadoDTO>> BuscarHoteles(BusquedaHotelesDTO dto)
+```
+
+Obtiene todos los hoteles aliados activos de la base de datos y consulta cada uno con su propia URL y token. Agrega todos los resultados en una sola lista. Si un aliado falla, se omite sin interrumpir la busqueda en los demas.
+
+- **Param** `dto` - Criterios de busqueda: ciudad, pais, fechas y personas.
+- **Returns** - Lista combinada de hoteles de todos los aliados activos.
+
+---
+
+```csharp
+public async Task<MiHotelDTO> CrearHotelWebservice(int usuarioId, CrearHotelWebserviceDTO dto)
+```
+
+Permite que un usuario con rol Webservice registre su propio hotel aliado. Verifica que no tenga ya un hotel ni una agencia registrada. El ID del usuario se toma de la sesion activa.
+
+---
+
+```csharp
+public async Task<MiHotelDTO?> ObtenerMiHotel(int usuarioId)
+```
+
+Retorna la informacion del hotel aliado asociado al usuario Webservice autenticado. Retorna null si el usuario aun no tiene ningun hotel registrado.
+
+---
+
+```csharp
+public async Task<List<HotelAdminDTO>> ObtenerTodosAdmin()
+```
+
+Retorna la lista completa de hoteles aliados con datos del usuario asignado. Destinado al uso exclusivo del panel de administracion.
+
+---
+
+```csharp
+public async Task<HotelAdminDTO> CrearHotelAdmin(CrearHotelAdminDTO dto)
+```
+
+Crea un nuevo hotel aliado desde el panel de administracion, asignandolo al usuario Webservice indicado. Verifica que el usuario exista, tenga rol Webservice y no tenga ya ninguna otra entidad asignada (agencia o hotel).
+
+---
+
+```csharp
+public async Task ActualizarEstado(int hotelId, int estadoId)
+```
+
+Actualiza el estado de un hotel aliado. El EstadoId debe ser un valor valido del catalogo EstadoAliado (1=Activo, 2=Inactivo, 3=Suspendido).
+
+---
+
+```csharp
+public async Task AsignarUsuario(int hotelId, int usuarioId)
+```
+
+Asigna un usuario Webservice a un hotel aliado existente. Verifica que el usuario exista, tenga rol Webservice y no este ya vinculado a ninguna entidad.
+
+---
+
+```csharp
+public async Task ActualizarUrls(int hotelId, string url, string urlParaUsuario)
+```
+
+Actualiza la URL de la API y la URL publica de un hotel aliado. Ninguna de las dos URLs puede estar vacia.
 
 ---
 
@@ -554,13 +649,13 @@ Retorna la lista completa de nacionalidades disponibles mapeadas a su DTO, inclu
 
 ## PdfService
 
-> Servicio de generacion de documentos PDF. Convierte contenido HTML a un archivo PDF usando la libreria DinkToPdf con configuracion de pagina A4 horizontal y codificacion UTF-8.
+> Servicio de generacion de documentos PDF. Convierte contenido HTML a bytes de PDF. Temporalmente retorna un array vacio mientras la libreria nativa wkhtmltopdf no este disponible en el entorno de desarrollo.
 
 ```csharp
 public byte[] GenerarPdf(string html)
 ```
 
-Genera un archivo PDF a partir del contenido HTML recibido. Configura el documento en orientacion horizontal, tamano A4, sin margenes y con codificacion UTF-8. Retorna los bytes del PDF generado.
+Genera un archivo PDF a partir del contenido HTML recibido. Retorna un array vacio si la libreria nativa no esta disponible.
 
 ---
 
@@ -705,6 +800,23 @@ public async Task<(bool creada, int rutaId, string mensaje)> CrearRuta(
 ```
 
 Crea una nueva ruta entre dos aeropuertos con la duracion estimada en minutos. Valida que origen y destino sean distintos, que la duracion sea valida y que la ruta no exista previamente. Retorna una tupla con el resultado, el ID y un mensaje.
+
+---
+
+## TokenHotelService
+
+> Servicio que solicita un token de alianza a un hotel aliado especifico. Busca el hotel en la BD de aerolineas por su ID, llama a su endpoint de generacion de token y retorna el resultado al frontend.
+
+```csharp
+public async Task<TokenHotelResponseDTO> SolicitarToken(int aliadoId, TokenHotelRequestDTO dto)
+```
+
+Busca el hotel aliado por su ID en la BD, llama a su endpoint POST /aerolinea/token con el TokenHASH y retorna el token generado junto con la URL de redireccion para el usuario.
+
+- **Param** `aliadoId` - ID del registro HotelAliado en la BD de aerolineas.
+- **Param** `dto` - Ciudad y pais destino del pasajero.
+- **Returns** - TokenHotelResponseDTO con token, URL y fecha de expiracion.
+- **Throws** `Exception` - Si el aliado no existe, no esta activo o el hotel responde con error.
 
 ---
 

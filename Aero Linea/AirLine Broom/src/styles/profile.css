@@ -1,6 +1,10 @@
-/* profile.css - User profile page styles including header with gold left border, two-column layout with sticky sidebar, avatar card with asymmetric border and gold ring, section navigation with active left border, logout button, main form section with fadeIn animation, two-column form grid, security tips list, and responsive breakpoints */
+/* profile.css - Estilos de la pagina de perfil de usuario, incluyendo encabezado con borde
+   izquierdo dorado, disposicion de dos columnas con barra lateral fija, tarjeta de avatar con
+   borde asimetrico y anillo dorado, navegacion de seccion con borde izquierdo activo, boton de
+   cierre de sesion, seccion de formulario principal con animacion fadeIn, grilla de formulario
+   de dos columnas, lista de consejos de seguridad y puntos de quiebre responsivos */
 
-/* Full-page wrapper with the brand beige background and generous bottom padding */
+/* Contenedor de pagina completa con el fondo beige de marca y relleno inferior generoso */
 .profile {
     width: 100%;
     min-height: 100vh;
@@ -9,20 +13,20 @@
     font-family: inherit;
 }
 
-/* Centered content column capped at 1200px */
+/* Columna de contenido centrada con un maximo de 1200px */
 .profile__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Page header with a thick gold left border accent */
+/* Encabezado de la pagina con un acento de borde izquierdo dorado grueso */
 .profile__header {
     margin-bottom: 3rem;
     border-left: 6px solid var(--primary-color);
     padding-left: 2rem;
 }
 
-/* Transparent back button that shifts 5px left on hover */
+/* Boton de regreso transparente que se desplaza 5px a la izquierda al pasar el cursor */
 .profile__back {
     background: transparent;
     border: none;
@@ -40,7 +44,7 @@
     transform: translateX(-5px);
 }
 
-/* Fluid page title from 2rem to 3rem, light weight */
+/* Titulo de pagina fluido de 2rem a 3rem con peso liviano */
 .profile__title {
     font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 300;
@@ -48,7 +52,7 @@
     margin: 0;
 }
 
-/* Two-column layout: 320px sidebar on the left, main content on the right */
+/* Disposicion de dos columnas: barra lateral de 320px a la izquierda, contenido principal a la derecha */
 .profile__content {
     display: grid;
     grid-template-columns: 320px 1fr;
@@ -56,13 +60,13 @@
     align-items: start;
 }
 
-/* Sticky sidebar that stays 2rem from the top when scrolling */
+/* Barra lateral fija que permanece a 2rem de la parte superior al desplazarse */
 .profile__sidebar {
     position: sticky;
     top: 2rem;
 }
 
-/* Avatar card: white, asymmetric radius (4px 40px 4px 40px), centered text */
+/* Tarjeta de avatar: blanca, radio asimetrico (4px 40px 4px 40px), texto centrado */
 .profile-card {
     background: var(--white);
     padding: 3rem 2rem;
@@ -73,7 +77,7 @@
     border: 1px solid rgba(235, 230, 224, 0.5);
 }
 
-/* Avatar container: 100px dark square with an asymmetric radius (0 35px 0 35px) */
+/* Contenedor del avatar: cuadrado oscuro de 100px con radio asimetrico (0 35px 0 35px) */
 .profile-card__avatar {
     width: 100px;
     height: 100px;
@@ -89,7 +93,7 @@
     position: relative;
 }
 
-/* Gold ring pseudo-element inset 5px outside the avatar border */
+/* Pseudoelemento de anillo dorado insertado 5px fuera del borde del avatar */
 .profile-card__avatar::after {
     content: '';
     position: absolute;
@@ -99,20 +103,20 @@
     z-index: -1;
 }
 
-/* User full name at 1.4rem below the avatar */
+/* Nombre completo del usuario a 1.4rem debajo del avatar */
 .profile-card__name {
     font-size: 1.4rem;
     color: var(--secondary-color);
     margin-bottom: 0.5rem;
 }
 
-/* Muted email address below the name */
+/* Direccion de correo apagada debajo del nombre */
 .profile-card__email {
     font-size: 0.9rem;
     color: var(--text-muted);
 }
 
-/* Vertical stack of navigation buttons below the avatar card */
+/* Pila vertical de botones de navegacion debajo de la tarjeta de avatar */
 .profile-nav {
     display: flex;
     flex-direction: column;
@@ -120,7 +124,7 @@
     margin-bottom: 2rem;
 }
 
-/* Nav item: transparent button with a left border that fills on active/hover */
+/* Elemento de navegacion: boton transparente con borde izquierdo que se rellena al estar activo o al pasar el cursor */
 .profile-nav__item {
     background: transparent;
     border: none;
@@ -136,20 +140,20 @@
     letter-spacing: 1px;
 }
 
-/* Nav item darkens text and shows a faint background on hover */
+/* El elemento de navegacion oscurece el texto y muestra un fondo tenue al pasar el cursor */
 .profile-nav__item:hover {
     color: var(--secondary-color);
     background: rgba(235, 230, 224, 0.2);
 }
 
-/* Active nav item: dark text, white background, gold left border */
+/* Elemento de navegacion activo: texto oscuro, fondo blanco, borde izquierdo dorado */
 .profile-nav__item--active {
     color: var(--secondary-color);
     border-left-color: var(--primary-color);
     background: var(--white);
 }
 
-/* Logout button: full-width, red text with a red border, warms on hover */
+/* Boton de cierre de sesion: ancho completo, texto rojo con borde rojo, se calienta al pasar el cursor */
 .profile-logout {
     width: 100%;
     padding: 1rem;
@@ -166,7 +170,7 @@
     background: #ffebee;
 }
 
-/* Main content section: white, inverted asymmetric radius (40px 4px 40px 4px), fades in on load */
+/* Seccion de contenido principal: blanca, radio asimetrico invertido (40px 4px 40px 4px), aparece con fundido al cargar */
 .profile-section {
     background: var(--white);
     padding: 3rem;
@@ -175,46 +179,46 @@
     animation: fadeIn 0.5s ease-out;
 }
 
-/* Section fade-in entry animation: slides up 10px while fading in */
+/* Animacion de entrada de la seccion: sube 10px mientras aparece con fundido */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Section heading at 1.8rem in the secondary color */
+/* Encabezado de seccion a 1.8rem en el color secundario */
 .profile-section__title {
     font-size: 1.8rem;
     color: var(--secondary-color);
     margin-bottom: 0.5rem;
 }
 
-/* Muted subtitle below the section title */
+/* Subtitulo apagado debajo del titulo de la seccion */
 .profile-section__subtitle {
     color: var(--text-muted);
     margin-bottom: 3rem;
     font-size: 1rem;
 }
 
-/* Vertical flex form with 2rem gaps between rows */
+/* Formulario flex vertical con separaciones de 2rem entre filas */
 .profile-form {
     display: flex;
     flex-direction: column;
     gap: 2rem;
 }
 
-/* Two-column form row with a 2rem gap */
+/* Fila de formulario de dos columnas con separacion de 2rem */
 .profile-form__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
 }
 
-/* Full-width field spanning both columns */
+/* Campo de ancho completo que abarca ambas columnas */
 .profile-form__field--full {
     grid-column: span 2;
 }
 
-/* Small all-caps bold field label */
+/* Etiqueta de campo pequena en mayusculas y negrita */
 .profile-form__label {
     display: block;
     font-size: 0.75rem;
@@ -225,7 +229,7 @@
     font-weight: 700;
 }
 
-/* Text input: asymmetric radius (0 12px 0 12px), warm beige background, gold focus ring */
+/* Input de texto: radio asimetrico (0 12px 0 12px), fondo beige calido, anillo de enfoque dorado */
 .profile-form__input {
     width: 100%;
     padding: 1rem 1.2rem;
@@ -237,7 +241,7 @@
     transition: var(--transition);
 }
 
-/* Input turns white with a gold border and subtle glow on focus */
+/* El input se vuelve blanco con borde dorado y brillo sutil al enfocar */
 .profile-form__input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -245,7 +249,7 @@
     box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1);
 }
 
-/* Submit button: left-aligned, dark background, asymmetric radius, lifts on hover */
+/* Boton de envio: alineado a la izquierda, fondo oscuro, radio asimetrico, sube al pasar el cursor */
 .profile-form__submit {
     align-self: flex-start;
     padding: 1.2rem 3rem;
@@ -261,28 +265,28 @@
     margin-top: 1rem;
 }
 
-/* Submit button turns gold with a warm shadow on hover */
+/* El boton de envio se vuelve dorado con una sombra calida al pasar el cursor */
 .profile-form__submit:hover {
     background: var(--primary-color);
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
 }
 
-/* Security tips section separated from the form by a dashed divider */
+/* Seccion de consejos de seguridad separada del formulario por un divisor punteado */
 .security-info {
     margin-top: 4rem;
     padding-top: 2rem;
     border-top: 1px dashed var(--perla-dark);
 }
 
-/* Security tips heading at 1rem */
+/* Encabezado de consejos de seguridad a 1rem */
 .security-info__title {
     font-size: 1rem;
     color: var(--secondary-color);
     margin-bottom: 1.5rem;
 }
 
-/* Two-column grid of security tip items */
+/* Grilla de dos columnas de elementos de consejos de seguridad */
 .security-info__list {
     list-style: none;
     padding: 0;
@@ -291,7 +295,7 @@
     gap: 1rem;
 }
 
-/* Individual tip: flex row with a gold checkmark pseudo-element */
+/* Consejo individual: fila flex con un pseudoelemento de marca de verificacion dorada */
 .security-info__item {
     font-size: 0.85rem;
     color: var(--text-muted);
@@ -300,14 +304,14 @@
     gap: 0.8rem;
 }
 
-/* Gold checkmark bullet before each security tip */
+/* Viñeta de marca de verificacion dorada antes de cada consejo de seguridad */
 .security-info__item::before {
     content: '✓';
     color: var(--primary-color);
     font-weight: bold;
 }
 
-/* At 992px: single-column layout; sidebar leaves sticky mode */
+/* A 992px: disposicion de una columna; la barra lateral sale del modo fijo */
 @media (max-width: 992px) {
     .profile__content {
         grid-template-columns: 1fr;
@@ -319,7 +323,7 @@
     }
 }
 
-/* At 600px: form rows collapse to single column, security tips stack, section padding halves */
+/* A 600px: las filas del formulario colapsan a una columna, los consejos de seguridad se apilan, el relleno de la seccion se reduce a la mitad */
 @media (max-width: 600px) {
     .profile-form__row {
         grid-template-columns: 1fr;

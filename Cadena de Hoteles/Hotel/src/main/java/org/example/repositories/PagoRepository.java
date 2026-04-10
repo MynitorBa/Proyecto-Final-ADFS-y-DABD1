@@ -112,5 +112,24 @@ public class PagoRepository {
         DatabaseManager.executeUpdate(sql, factorDescuento, reservacionId);
     }
 
+    /**
+     * Obtiene el nombre de la ciudad del hotel asociado a una reservacion.
+     * Se usa para validar que el token de alianza aplique unicamente a hoteles
+     * en la ciudad para la que fue generado el token.
+     * @param reservacionId ID de la reservacion.
+     * @return Nombre de la ciudad del hotel o null si no se encuentra.
+     */
+    public String obtenerCiudadReservacion(int reservacionId) {
+        String sql = "SELECT DISTINCT c.Nombre " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Habitacion h  ON dr.HabitacionID = h.ID " +
+                "JOIN Hotel ht      ON h.HotelID       = ht.ID " +
+                "JOIN Ciudad c      ON ht.CiudadID     = c.ID " +
+                "WHERE dr.ReservacionID = ? AND ROWNUM = 1";
 
+        List<String> result = DatabaseManager.executeQuery(
+                sql, rs -> rs.getString("Nombre"), reservacionId
+        );
+        return result.isEmpty() ? null : result.get(0);
+    }
 }

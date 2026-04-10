@@ -1,13 +1,13 @@
-/* detallesv.css - Flight detail modal styles including full-screen backdrop, hero route display, specs grid, seat class cards, crew tiles, comments with threaded replies, Reddit-style voting, and responsive breakpoints */
+/* detallesv.css - Estilos del modal de detalle de vuelo, incluyendo fondo de pantalla completa, visualizacion de ruta hero, grilla de especificaciones, tarjetas de clase de asiento, fichas de tripulacion, comentarios con respuestas anidadas, votacion estilo Reddit y puntos de quiebre responsivos */
 
-/* Global scroll lock applied to body when the modal is open, prevents background scrolling */
+/* Bloqueo de scroll global aplicado al body cuando el modal esta abierto, evita el desplazamiento del fondo */
 :global(body.modal-open) {
   overflow: hidden !important;
   height: 100% !important;
   touch-action: none !important;
 }
 
-/* Full-viewport blurred dark backdrop with a fade-in animation */
+/* Fondo oscuro desenfocado a pantalla completa con animacion de aparicion */
 .dv-backdrop {
   position: fixed;
   inset: 0;
@@ -24,13 +24,13 @@
   animation: dvFadeIn 0.25s ease;
 }
 
-/* Backdrop fades in from transparent */
+/* El fondo aparece con fundido desde transparente */
 @keyframes dvFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-/* Modal container: warm off-white background, rounded corners, slides up on enter */
+/* Contenedor del modal: fondo beige calido, esquinas redondeadas, sube al entrar */
 .dv-modal {
   width: 100%;
   max-width: 1100px;
@@ -43,13 +43,13 @@
   flex-direction: column;
 }
 
-/* Modal slides up 32px while fading in */
+/* El modal sube 32px mientras aparece con fundido */
 @keyframes dvSlideUp {
   from { transform: translateY(32px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-/* White header strip with flight code, aircraft pill, and close button */
+/* Franja de encabezado blanca con codigo de vuelo, pastilla de aeronave y boton de cierre */
 .dv-header {
   display: flex;
   align-items: center;
@@ -59,328 +59,328 @@
   border-bottom: 1px solid #ede9e1;
   flex-shrink: 0;
 }
-/* Left section of the header: code and aircraft pill side by side */
+/* Seccion izquierda del encabezado: codigo y pastilla de aeronave lado a lado */
 .dv-header-left { display: flex; align-items: center; gap: 1rem; }
-/* Bold flight code in dark color */
+/* Codigo de vuelo en negrita con color oscuro */
 .dv-code { font-size: 1.25rem; font-weight: 700; color: #1c1a18; letter-spacing: 0.5px; }
-/* Small beige pill showing the aircraft type */
+/* Pastilla beige pequena que muestra el tipo de aeronave */
 .dv-aircraft { font-size: 0.78rem; color: #8a7d6b; background: #f0ede8; padding: 0.25rem 0.75rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
-/* Transparent close button with a muted border, turns gold on hover */
+/* Boton de cierre transparente con borde apagado, se vuelve dorado al pasar el cursor */
 .dv-close { background: transparent; border: 2px solid #c4bdb2; color: #8a7d6b; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; padding: 0.6rem 1.25rem; border-radius: 4px; transition: all 0.2s; font-family: inherit; }
 .dv-close:hover { border-color: #b07d2e; color: #b07d2e; transform: scale(1.03); }
 
-/* Dark diagonal gradient hero strip showing the main route */
+/* Franja hero con gradiente diagonal oscuro que muestra la ruta principal */
 .dv-hero { background: linear-gradient(135deg, #1c1a18 0%, #2e2416 50%, #b07d2e 100%); padding: 2.5rem 3rem; flex-shrink: 0; }
-/* Centered row: origin point, middle duration section, destination point */
+/* Fila centrada: punto de origen, seccion de duracion al centro, punto de destino */
 .dv-hero-content { display: flex; align-items: center; gap: 2rem; max-width: 700px; margin: 0 auto; }
-/* Origin point: stacked time, IATA code, and city label */
+/* Punto de origen: hora, codigo IATA y etiqueta de ciudad apilados */
 .dv-hero-point { display: flex; flex-direction: column; align-items: flex-start; min-width: 90px; }
-/* Destination point aligns items to the right */
+/* El punto de destino alinea los elementos a la derecha */
 .dv-hero-point--right { align-items: flex-end; }
-/* Large light-weight departure/arrival time in white */
+/* Hora de salida/llegada grande y ligera en blanco */
 .dv-hero-time { font-size: 2.5rem; font-weight: 300; color: #fff; line-height: 1; letter-spacing: -1px; }
-/* Gold IATA airport code with wide tracking */
+/* Codigo IATA dorado del aeropuerto con espaciado amplio */
 .dv-hero-code { font-size: 1rem; font-weight: 700; color: #c9a96e; letter-spacing: 3px; margin-top: 0.3rem; }
-/* Semi-transparent city or terminal label */
+/* Etiqueta de ciudad o terminal semitransparente */
 .dv-hero-label { font-size: 0.65rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 0.2rem; }
-/* Center section: flight track line with plane icon and duration */
+/* Seccion central: linea de pista de vuelo con icono de avion y duracion */
 .dv-hero-middle { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-/* Row containing the two dots and track line with plane icon */
+/* Fila que contiene los dos puntos y la linea de pista con icono de avion */
 .dv-hero-line { display: flex; align-items: center; width: 100%; }
-/* Small gold dot at each end of the track line */
+/* Punto dorado pequeno en cada extremo de la linea de pista */
 .dv-hero-dot { width: 8px; height: 8px; border-radius: 50%; background: #c9a96e; flex-shrink: 0; }
-/* Semi-transparent gold track line between the dots */
+/* Linea de pista dorada semitransparente entre los puntos */
 .dv-hero-track { flex: 1; height: 1px; background: rgba(201,169,110,0.35); }
-/* Gold plane icon centered on the track */
+/* Icono de avion dorado centrado en la pista */
 .dv-hero-plane { font-size: 1.2rem; color: #c9a96e; margin: 0 0.4rem; }
-/* Flight duration in gold below the track */
+/* Duracion del vuelo en dorado debajo de la pista */
 .dv-hero-dur { font-size: 0.9rem; font-weight: 600; color: #c9a96e; }
-/* Flight type label (direct/con escala) in semi-transparent text */
+/* Etiqueta del tipo de vuelo (directo/con escala) en texto semitransparente */
 .dv-hero-tipo { font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1.5px; }
 
-/* Scrollable body area with padding and a two-column grid */
+/* Area de cuerpo desplazable con relleno y grilla de dos columnas */
 .dv-body { padding: 2rem; overflow-y: auto; flex: 1; }
-/* Two-column grid: main content on left, sticky sidebar on right */
+/* Grilla de dos columnas: contenido principal a la izquierda, barra lateral fija a la derecha */
 .dv-grid { display: grid; grid-template-columns: 1fr 300px; gap: 2rem; align-items: start; }
 
-/* Gold-left-bordered section heading in small uppercase */
+/* Titulo de seccion con borde izquierdo dorado en mayusculas pequenas */
 .dv-section-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #8a7d6b; border-left: 3px solid #b07d2e; padding-left: 0.75rem; margin-bottom: 1.25rem; }
-/* Section title with extra top margin for spacing between sections */
+/* Titulo de seccion con margen superior extra para separacion entre secciones */
 .dv-section-title--mt { margin-top: 2.5rem; }
-/* Slightly smaller section title variant */
+/* Variante de titulo de seccion ligeramente mas pequena */
 .dv-section-title--sm { font-size: 0.6rem; letter-spacing: 1.5px; }
 
-/* White flight segment card with a beige border */
+/* Tarjeta de segmento de vuelo blanca con borde beige */
 .dv-tramo-card { background: #fff; border: 1px solid #ede9e1; border-radius: 8px; padding: 1.5rem; margin-bottom: 0.5rem; }
-/* Segment header: badge, flight number, and aircraft label in a flex row */
+/* Encabezado del segmento: insignia, numero de vuelo y etiqueta de aeronave en fila flex */
 .dv-tramo-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
-/* Dark blue pill badge labeling the segment (e.g. "Tramo 1") */
+/* Insignia de pastilla azul oscuro que etiqueta el segmento (por ejemplo "Tramo 1") */
 .dv-tramo-badge { background: #3b4f6b; color: #fff; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 0.25rem 0.75rem; border-radius: 12px; flex-shrink: 0; }
-/* Segment flight code in large bold dark text */
+/* Codigo de vuelo del segmento en texto oscuro grande y negrita */
 .dv-tramo-vuelo    { font-size: 1rem; font-weight: 700; color: #1c1a18; }
-/* Aircraft type in small muted uppercase pushed to the right */
+/* Tipo de aeronave en mayusculas apagadas pequenas empujado a la derecha */
 .dv-tramo-aeronave { font-size: 0.7rem; color: #8a7d6b; text-transform: uppercase; letter-spacing: 0.8px; margin-left: auto; }
-/* Segment mini-route block: three-column grid with origin, track, and destination */
+/* Bloque de mini-ruta del segmento: grilla de tres columnas con origen, pista y destino */
 .dv-tramo-hero { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; background: #f7f5f2; border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
-/* Segment endpoint column with stacked time, code, city, and country */
+/* Columna del punto del segmento con hora, codigo, ciudad y pais apilados */
 .dv-tramo-point { display: flex; flex-direction: column; gap: 0.15rem; min-width: 80px; }
-/* Destination segment point aligns items to the right */
+/* El punto del segmento de destino alinea los elementos a la derecha */
 .dv-tramo-point--right { align-items: flex-end; }
-/* Large light-weight departure or arrival time */
+/* Hora de salida o llegada grande y ligera */
 .dv-tramo-time { font-size: 1.8rem; font-weight: 300; color: #1c1a18; line-height: 1; letter-spacing: -0.5px; }
-/* Blue IATA airport code with wide tracking */
+/* Codigo IATA del aeropuerto azul con espaciado amplio */
 .dv-tramo-code { font-size: 0.65rem; font-weight: 700; color: #3b4f6b; text-transform: uppercase; letter-spacing: 2px; }
-/* City name in small dark text */
+/* Nombre de ciudad en texto oscuro pequeno */
 .dv-tramo-city { font-size: 0.62rem; color: #1c1a18; }
-/* Country name in muted uppercase text */
+/* Nombre de pais en texto apagado en mayusculas */
 .dv-tramo-pais { font-size: 0.58rem; color: #8a7d6b; text-transform: uppercase; letter-spacing: 0.5px; }
-/* Center track column with dot, line, and plane icon */
+/* Columna central de la pista con punto, linea e icono de avion */
 .dv-tramo-mid { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
-/* Row containing the blue dot, track line, and plane icon */
+/* Fila que contiene el punto azul, la linea de pista y el icono de avion */
 .dv-tramo-track-wrap { width: 100%; display: flex; align-items: center; gap: 4px; }
-/* Small blue dot at the start of the track */
+/* Punto azul pequeno al inicio de la pista */
 .dv-tramo-dot  { width: 5px; height: 5px; border-radius: 50%; background: #3b4f6b; flex-shrink: 0; }
-/* Faint blue track line between the dots */
+/* Linea de pista azul tenue entre los puntos */
 .dv-tramo-line { flex: 1; height: 1px; background: rgba(59,79,107,0.25); }
-/* Blue plane icon on the track */
+/* Icono de avion azul en la pista */
 .dv-tramo-plane { font-size: 0.95rem; color: #3b4f6b; }
-/* Small muted duration text below the track */
+/* Texto de duracion apagado pequeno debajo de la pista */
 .dv-tramo-dur  { font-size: 0.68rem; color: #8a7d6b; font-weight: 600; }
-/* Blue flight type label below the duration */
+/* Etiqueta del tipo de vuelo azul debajo de la duracion */
 .dv-tramo-tipo { font-size: 0.58rem; color: #3b4f6b; text-transform: uppercase; letter-spacing: 1.5px; }
 
-/* Layover separator between two flight segments: dashed lines with a pill badge */
+/* Separador de escala entre dos segmentos de vuelo: lineas punteadas con una insignia de pastilla */
 .dv-escala-sep { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1.5rem; margin-bottom: 0.5rem; }
-/* Dashed blue horizontal rule on each side of the layover badge */
+/* Regla horizontal punteada azul a cada lado de la insignia de escala */
 .dv-escala-sep__line { flex: 1; border-top: 1px dashed rgba(59,79,107,0.3); }
-/* Blue pill label showing the layover city and duration */
+/* Etiqueta de pastilla azul que muestra la ciudad y duracion de la escala */
 .dv-escala-sep__badge { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #3b4f6b; background: rgba(59,79,107,0.08); border: 1px solid rgba(59,79,107,0.2); padding: 0.35rem 1rem; border-radius: 20px; white-space: nowrap; }
 
-/* Three-column spec grid for flight details like duration, stops, and aircraft */
+/* Grilla de especificaciones de tres columnas para detalles del vuelo como duracion, escalas y aeronave */
 .dv-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
-/* Individual spec cell: white card with a thicker warm-toned bottom border */
+/* Celda de especificacion individual: tarjeta blanca con borde inferior mas grueso en tono calido */
 .dv-spec { background: #fff; border: 1px solid #ede9e1; border-bottom: 2px solid #d4c9b8; border-radius: 6px; padding: 1rem 1.1rem; }
-/* Tiny all-caps muted label above the spec value */
+/* Etiqueta pequena en mayusculas apagada encima del valor de especificacion */
 .dv-spec-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; color: #a09282; margin-bottom: 0.35rem; }
-/* Bold spec value in dark color */
+/* Valor de especificacion en negrita con color oscuro */
 .dv-spec-value { font-size: 0.92rem; font-weight: 600; color: #1c1a18; }
-/* Gold variant of the spec value for price or highlighted data */
+/* Variante dorada del valor de especificacion para precio o datos resaltados */
 .dv-spec-value--gold { color: #b07d2e; }
 
-/* Two-column grid of seat class selection cards */
+/* Grilla de dos columnas de tarjetas de seleccion de clase de asiento */
 .dv-clases { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-/* Seat class card: asymmetric radius button with hover lift and spring transition */
+/* Tarjeta de clase de asiento: boton con radio asimetrico, se eleva al pasar el cursor con transicion de resorte */
 .dv-clase { position: relative; background: #fff; border: 2px solid #e8e3db; border-radius: 4px 24px 4px 24px; padding: 1.5rem; text-align: left; cursor: pointer; transition: all 0.3s cubic-bezier(0.165,0.84,0.44,1); overflow: hidden; font-family: inherit; }
-/* Clase card lifts on hover with a gold border and warm glow */
+/* La tarjeta se eleva al pasar el cursor con borde dorado y brillo calido */
 .dv-clase:hover { border-color: #c9a96e; transform: translateY(-4px); box-shadow: 0 12px 30px rgba(176,125,46,0.12); }
-/* Selected clase card: gold border, cream background, larger lift */
+/* Tarjeta de clase seleccionada: borde dorado, fondo crema, elevacion mayor */
 .dv-clase--selected { border-color: #b07d2e !important; background: #fdf9f2 !important; transform: translateY(-6px) !important; box-shadow: 0 16px 36px rgba(176,125,46,0.18) !important; }
-/* Premium clase card has a warm gradient background */
+/* La tarjeta de clase premium tiene un fondo con gradiente calido */
 .dv-clase--premium  { background: linear-gradient(145deg, #fffdf8, #faf5eb); border-color: #d4c9b8; }
-/* Disabled clase card: faded and non-interactive */
+/* Tarjeta de clase desactivada: desvanecida y no interactiva */
 .dv-clase--disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-/* Gold label badge hanging from the top of the clase card */
+/* Insignia de etiqueta dorada colgando de la parte superior de la tarjeta de clase */
 .dv-clase-badge { position: absolute; top: -1px; right: 16px; background: #b07d2e; color: #fff; font-size: 0.62rem; font-weight: 700; letter-spacing: 1px; padding: 0.25rem 0.75rem; border-radius: 0 0 8px 8px; text-transform: uppercase; }
-/* Diagonal ribbon across the card corner for special class labels */
+/* Cinta diagonal en la esquina de la tarjeta para etiquetas de clase especial */
 .dv-clase-ribbon { position: absolute; top: 14px; right: -22px; background: linear-gradient(135deg, #c9a96e, #b07d2e); color: #fff; font-size: 0.58rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 0.2rem 2rem; transform: rotate(35deg); width: 100px; text-align: center; }
-/* Class name in bold dark text */
+/* Nombre de clase en texto oscuro y negrita */
 .dv-clase-name   { font-size: 1rem; font-weight: 700; color: #1c1a18; margin-bottom: 0.3rem; }
-/* Availability notice in orange for low-seat warnings */
+/* Aviso de disponibilidad en naranja para advertencias de asientos limitados */
 .dv-clase-avail  { font-size: 0.68rem; color: #e67e22; margin-bottom: 0.9rem; }
-/* Sold-out notice in bold red */
+/* Aviso de agotado en rojo y negrita */
 .dv-clase-unavailable { color: #dc2626; font-weight: 700; font-size: 1.1rem; margin: 1rem 0; }
-/* Price row: "desde" label, large price amount, and per-person note */
+/* Fila de precio: etiqueta "desde", monto grande y nota por persona */
 .dv-clase-price  { display: flex; align-items: baseline; gap: 0.3rem; margin-bottom: 1rem; flex-wrap: wrap; }
-/* Small muted "desde" label */
+/* Etiqueta apagada pequena "desde" */
 .dv-clase-desde  { font-size: 0.7rem; color: #a09282; text-transform: uppercase; letter-spacing: 0.5px; }
-/* Large light-weight gold price amount */
+/* Monto de precio dorado grande y ligero */
 .dv-clase-amount { font-size: 1.8rem; font-weight: 300; color: #b07d2e; line-height: 1; }
-/* Small muted per-person note */
+/* Nota por persona apagada pequena */
 .dv-clase-pp     { font-size: 0.7rem; color: #a09282; }
-/* Bulleted list of class amenities with a gold bullet character */
+/* Lista de servicios de clase con viñeta de caracter dorado */
 .dv-amenities    { list-style: none; padding: 0; margin: 0; border-top: 1px solid #ede9e1; padding-top: 0.9rem; display: flex; flex-direction: column; gap: 0.4rem; }
-/* Amenity item: small text with a gold pseudo-element bullet on the left */
+/* Elemento de servicio: texto pequeno con pseudoelemento de viñeta dorada a la izquierda */
 .dv-amenities li { font-size: 0.76rem; color: #6b5f52; padding-left: 1rem; position: relative; line-height: 1.4; }
 .dv-amenities li::before { content: '•'; position: absolute; left: 0; color: #b07d2e; font-size: 1rem; line-height: 1.2; }
 
-/* Auto-fit grid of crew member tiles */
+/* Grilla de ajuste automatico de fichas de miembros de tripulacion */
 .dv-tripulantes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
-/* Individual crew tile: flex row with avatar and info, border turns gold on hover */
+/* Ficha de tripulacion individual: fila flex con avatar e informacion, borde dorado al pasar el cursor */
 .dv-tripulante { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 1px solid #e5e7eb; border-radius: 0.5rem; transition: all 0.2s ease; }
 .dv-tripulante:hover { border-color: #c9a96e; box-shadow: 0 2px 8px rgba(201,169,110,0.1); }
-/* Circular gold gradient avatar for the crew member */
+/* Avatar circular con gradiente dorado para el miembro de tripulacion */
 .dv-tripulante-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, #c9a96e 0%, #d4b782 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-/* White SVG person icon inside the avatar */
+/* Icono de persona SVG blanco dentro del avatar */
 .dv-tripulante-avatar svg { width: 24px; height: 24px; color: white; }
-/* Info column: name and role stacked */
+/* Columna de informacion: nombre y rol apilados */
 .dv-tripulante-info   { flex: 1; min-width: 0; }
-/* Crew member name in bold dark text with overflow ellipsis */
+/* Nombre del miembro de tripulacion en negrita con elipsis por desbordamiento */
 .dv-tripulante-nombre { font-weight: 600; font-size: 0.875rem; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Gold uppercase role label below the name */
+/* Etiqueta de rol dorada en mayusculas debajo del nombre */
 .dv-tripulante-rol    { font-size: 0.75rem; color: #c9a96e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.025em; margin-top: 0.125rem; }
 
-/* Sticky sidebar pinned 1rem from the top */
+/* Barra lateral fija a 1rem desde la parte superior */
 .dv-sidebar { position: sticky; top: 1rem; }
-/* Dark summary panel with large asymmetric radius and deep shadow */
+/* Panel de resumen oscuro con radio asimetrico grande y sombra profunda */
 .dv-summary { background: #1c1a18; color: #fff; padding: 2rem; border-radius: 4px 32px 4px 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); }
-/* Light-weight summary title with a faint bottom border */
+/* Titulo de resumen ligero con borde inferior tenue */
 .dv-summary-title { font-size: 1.1rem; font-weight: 300; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.9rem; }
-/* Blue pill inline label for each flight segment within the summary */
+/* Etiqueta de pastilla azul en linea para cada segmento de vuelo dentro del resumen */
 .dv-summary-tramo-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #6b9fd4; background: rgba(59,79,107,0.3); padding: 0.25rem 0.6rem; border-radius: 8px; margin: 0.75rem 0 0.4rem; display: inline-block; }
-/* Summary data row: muted label on left, bold value on right */
+/* Fila de datos del resumen: etiqueta apagada a la izquierda, valor en negrita a la derecha */
 .dv-summary-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.8rem; margin-bottom: 0.8rem; color: rgba(255,255,255,0.85); }
-/* Left label is semi-transparent and non-wrapping */
+/* La etiqueta izquierda es semitransparente y sin ajuste de linea */
 .dv-summary-row span:first-child { opacity: 0.5; flex-shrink: 0; }
-/* Right value is bold and right-aligned */
+/* El valor derecho esta en negrita y alineado a la derecha */
 .dv-summary-row span:last-child  { font-weight: 500; text-align: right; }
-/* Highlighted row: gold left border with a subtle white background */
+/* Fila resaltada: borde izquierdo dorado con fondo blanco sutil */
 .dv-summary-row--highlight { background: rgba(255,255,255,0.06); padding: 0.6rem 0.75rem; border-left: 3px solid #b07d2e; border-radius: 2px; margin: 0.5rem -0.25rem; }
-/* Thin white horizontal divider in the summary */
+/* Divisor horizontal blanco delgado en el resumen */
 .dv-summary-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 1rem 0; }
-/* Large bold gold price override for the total price row */
+/* Precio total grande y en negrita dorada */
 .dv-summary-price { font-size: 1.3rem !important; font-weight: 700 !important; color: #c9a96e !important; }
-/* Gold seat count value */
+/* Valor de asientos dorado */
 .dv-summary-seats { color: #c9a96e; font-weight: 700; }
-/* Red sold-out notice in the summary */
+/* Aviso de agotado en rojo en el resumen */
 .dv-summary-unavailable { color: #dc2626; font-weight: 600; text-align: center; }
-/* Blue centered layover separator within the summary */
+/* Separador de escala centrado en azul dentro del resumen */
 .dv-summary-escala-sep { font-size: 0.6rem; color: #6b9fd4; text-align: center; padding: 0.3rem 0; font-weight: 600; letter-spacing: 0.5px; }
-/* Tiny right-aligned note below a price row */
+/* Nota pequena alineada a la derecha debajo de una fila de precio */
 .dv-summary-note { font-size: 0.65rem; color: rgba(255,255,255,0.35); text-align: right; margin-top: 0.25rem; }
-/* Legal disclaimer at the bottom of the summary in very muted text */
+/* Aviso legal al final del resumen en texto muy apagado */
 .dv-summary-disclaimer { font-size: 0.68rem; color: rgba(255,255,255,0.38); text-align: center; line-height: 1.6; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); }
 
-/* Centered italic loading placeholder for comments */
+/* Marcador de posicion de carga centrado en cursiva para comentarios */
 .dv-loading { text-align: center; padding: 2rem; color: #6b7280; font-style: italic; }
-/* Centered empty-state for comments with an oversized icon */
+/* Estado vacio centrado para comentarios con un icono sobredimensionado */
 .dv-no-comentarios { text-align: center; padding: 3rem 2rem; color: #9ca3af; }
-/* Large faded icon above the no-comments message */
+/* Icono grande y desvanecido encima del mensaje de sin comentarios */
 .dv-no-comentarios svg { width: 48px; height: 48px; margin: 0 auto 1rem; opacity: 0.5; display: block; }
 .dv-no-comentarios p { font-size: 0.95rem; margin: 0; }
-/* Vertical stack of top-level comment threads */
+/* Pila vertical de hilos de comentarios de nivel superior */
 .dv-comentarios-raiz { display: flex; flex-direction: column; gap: 1.25rem; margin-top: 1rem; }
-/* Each comment thread: a comment card optionally followed by nested replies */
+/* Cada hilo de comentario: una tarjeta de comentario seguida opcionalmente de respuestas anidadas */
 .dv-comentario-nodo  { display: flex; flex-direction: column; }
-/* Threaded reply container: a vertical line on the left, replies stacked on the right */
+/* Contenedor de respuestas anidadas: linea vertical a la izquierda, respuestas apiladas a la derecha */
 .dv-comentario-hilo  { display: flex; gap: 0; margin-top: 0.5rem; }
-/* Thin vertical gradient line indicating thread depth */
+/* Linea vertical delgada con gradiente que indica la profundidad del hilo */
 .dv-hilo-linea { width: 24px; flex-shrink: 0; position: relative; display: flex; justify-content: center; }
 .dv-hilo-linea::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: linear-gradient(to bottom, #e5e7eb, #f3f4f6); transform: translateX(-50%); }
-/* Stacked reply cards indented to the right of the thread line */
+/* Tarjetas de respuesta apiladas sangradas a la derecha de la linea del hilo */
 .dv-hilo-respuestas { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; padding-left: 0.5rem; }
-/* Comment card: white with a subtle border that turns gold on hover */
+/* Tarjeta de comentario: blanca con borde sutil que se vuelve dorado al pasar el cursor */
 .dv-comentario-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1rem 1.1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
 .dv-comentario-card:hover { border-color: #c9a96e; box-shadow: 0 4px 12px rgba(201,169,110,0.08); }
-/* First-level replies use a slightly off-white background */
+/* Las respuestas de primer nivel usan un fondo ligeramente mas oscuro */
 .dv-hilo-respuestas .dv-comentario-card { background: #fafafa; border-color: #ede9e1; }
-/* Second-level replies use a slightly darker off-white */
+/* Las respuestas de segundo nivel usan un fondo aun mas oscuro */
 .dv-hilo-respuestas .dv-hilo-respuestas .dv-comentario-card { background: #f5f4f2; }
-/* Comment header: user info on left, date and votes on right */
+/* Encabezado del comentario: informacion del usuario a la izquierda, fecha y votos a la derecha */
 .dv-comentario-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; gap: 0.5rem; }
-/* User section: avatar and name/username stacked */
+/* Seccion de usuario: avatar y nombre/nombre de usuario apilados */
 .dv-comentario-user  { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
-/* Circular gold gradient avatar with the first letter of the username */
+/* Avatar circular con gradiente dorado con la primera letra del nombre de usuario */
 .dv-comentario-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #c9a96e 0%, #d4b782 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 0.9rem; flex-shrink: 0; }
-/* Stacked display name and @username */
+/* Nombre visible y nombre de usuario apilados */
 .dv-comentario-user-info { display: flex; flex-direction: column; min-width: 0; }
-/* Bold display name with overflow ellipsis */
+/* Nombre visible en negrita con elipsis por desbordamiento */
 .dv-comentario-nombre   { font-weight: 600; color: #1f2937; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Muted @username below the display name */
+/* Nombre de usuario apagado debajo del nombre visible */
 .dv-comentario-username { font-size: 0.75rem; color: #6b7280; }
-/* Right meta column: stacked date and rating stars */
+/* Columna meta derecha: fecha y estrellas de calificacion apiladas */
 .dv-comentario-meta  { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; flex-shrink: 0; }
-/* Small muted date string */
+/* Cadena de fecha pequena apagada */
 .dv-comentario-fecha { font-size: 0.72rem; color: #9ca3af; white-space: nowrap; }
-/* Row of 15px star icons for the comment rating */
+/* Fila de iconos de estrella de 15px para la calificacion del comentario */
 .dv-comentario-estrellas { display: flex; gap: 0.2rem; margin-bottom: 0.5rem; }
-/* Default empty star in light grey */
+/* Estrella vacia predeterminada en gris claro */
 .dv-estrella       { width: 15px; height: 15px; color: #d1d5db; transition: color 0.2s; }
-/* Filled star in amber */
+/* Estrella rellena en ambar */
 .dv-estrella--llena { color: #fbbf24; }
-/* Comment body text with comfortable line height */
+/* Texto del comentario con interlineado comodo */
 .dv-comentario-contenido { color: #374151; font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; }
-/* Action row: vote buttons and reply button in a flex row */
+/* Fila de acciones: botones de voto y boton de respuesta en fila flex */
 .dv-comentario-acciones  { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-/* Vote button pill: transparent with a light border, turns gold on hover */
+/* Pastilla de boton de voto: transparente con borde claro, se vuelve dorado al pasar el cursor */
 .dv-voto-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.65rem; border-radius: 20px; border: 1.5px solid #e5e7eb; background: transparent; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; color: #6b7280; }
-/* Small icon inside the vote button */
+/* Icono pequeno dentro del boton de voto */
 .dv-voto-btn svg { width: 13px; height: 13px; }
 .dv-voto-btn:hover { border-color: #c9a96e; color: #b07d2e; background: #fdf9f2; }
-/* Active upvote: gold border and gold text on a warm cream background */
+/* Voto positivo activo: borde dorado y texto dorado sobre fondo crema calido */
 .dv-voto-btn--up.dv-voto-btn--activo   { background: #fdf9f2; border-color: #b07d2e; color: #b07d2e; }
-/* Active downvote: red border and red text on a light red background */
+/* Voto negativo activo: borde rojo y texto rojo sobre fondo rojo claro */
 .dv-voto-btn--down.dv-voto-btn--activo { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
-/* Reply button: borderless transparent text that turns gold on hover */
+/* Boton de respuesta: texto transparente sin borde que se vuelve dorado al pasar el cursor */
 .dv-responder-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.65rem; border-radius: 20px; border: 1.5px solid transparent; background: transparent; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-family: inherit; color: #9ca3af; }
 .dv-responder-btn:hover { color: #b07d2e; background: #fdf9f2; border-color: #c9a96e; }
-/* Small icon inside the reply button */
+/* Icono pequeno dentro del boton de respuesta */
 .dv-responder-btn svg { width: 13px; height: 13px; }
-/* Numeric vote score next to the vote button */
+/* Puntuacion de votos numerica junto al boton de voto */
 .dv-voto-score { font-size: 0.72rem; color: #9ca3af; margin-left: 0.25rem; }
-/* Red score for negative vote totals */
+/* Puntuacion roja para totales de votos negativos */
 .dv-voto-score--negativo { color: #dc2626; }
-/* Inline reply form: beige background that fades in when opened */
+/* Formulario de respuesta en linea: fondo beige que aparece al abrirse */
 .dv-reply-form { margin-top: 0.75rem; background: #f8f7f5; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.85rem; animation: dvFadeIn 0.2s ease; }
-/* Reply textarea: full width, auto-resize, gold border on focus */
+/* Textarea de respuesta: ancho completo, redimensionamiento automatico, borde dorado al enfocar */
 .dv-reply-form textarea { width: 100%; min-height: 70px; border: 1px solid #d4c9b8; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.85rem; font-family: inherit; color: #1c1a18; background: #fff; resize: vertical; transition: border-color 0.2s; box-sizing: border-box; }
 .dv-reply-form textarea:focus { outline: none; border-color: #b07d2e; }
 .dv-reply-form textarea::placeholder { color: #a09282; }
-/* Action row for the reply form: cancel and submit on the right */
+/* Fila de acciones del formulario de respuesta: cancelar y enviar a la derecha */
 .dv-reply-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
-/* Cancel reply button: muted outline that turns gold on hover */
+/* Boton de cancelar respuesta: contorno apagado que se vuelve dorado al pasar el cursor */
 .dv-reply-cancel { padding: 0.4rem 0.85rem; border-radius: 4px; border: 1px solid #d4c9b8; background: transparent; color: #8a7d6b; font-size: 0.75rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
 .dv-reply-cancel:hover { border-color: #b07d2e; color: #b07d2e; }
-/* Submit reply button: dark background with gold text */
+/* Boton de enviar respuesta: fondo oscuro con texto dorado */
 .dv-reply-submit { padding: 0.4rem 0.85rem; border-radius: 4px; border: none; background: #1c1a18; color: #c9a96e; font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; letter-spacing: 0.5px; }
-/* Submit turns fully gold on hover */
+/* El envio se vuelve completamente dorado al pasar el cursor */
 .dv-reply-submit:hover { background: #b07d2e; color: #fff; }
-/* Disabled submit: faded and not-allowed cursor */
+/* Envio desactivado: desvanecido y cursor no permitido */
 .dv-reply-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-/* "Ver mas respuestas" toggle button: transparent gold uppercase text */
+/* Boton de alternancia "Ver mas respuestas": texto dorado en mayusculas transparente */
 .dv-ver-mas { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem; margin-top: 0.5rem; border: none; background: transparent; color: #b07d2e; font-size: 0.75rem; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: 0.5px; text-transform: uppercase; border-radius: 4px; transition: background 0.2s; }
 .dv-ver-mas:hover { background: #fdf9f2; }
-/* Small chevron icon inside the toggle button */
+/* Icono de chevron pequeno dentro del boton de alternancia */
 .dv-ver-mas svg { width: 13px; height: 13px; transition: transform 0.2s; }
-/* Chevron rotates 180deg when expanded */
+/* El chevron rota 180 grados cuando esta expandido */
 .dv-ver-mas--expanded svg { transform: rotate(180deg); }
-/* Small muted italic login hint pushed to the far right of the actions row */
+/* Sugerencia de inicio de sesion apagada en cursiva empujada al extremo derecho de la fila de acciones */
 .dv-login-hint { font-size: 0.72rem; color: #a09282; font-style: italic; margin-left: auto; }
 
-/* Reddit-style vote layout: narrow column on the left, content on the right */
+/* Disposicion de voto estilo Reddit: columna estrecha a la izquierda, contenido a la derecha */
 .dv-cmt-layout { display: flex; gap: 0.75rem; align-items: flex-start; }
-/* Vertical vote column: up arrow, score, down arrow */
+/* Columna de votos vertical: flecha arriba, puntuacion, flecha abajo */
 .dv-cmt-votes  { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; flex-shrink: 0; padding-top: 0.1rem; }
-/* Comment body takes the remaining width */
+/* El cuerpo del comentario ocupa el ancho restante */
 .dv-cmt-body   { flex: 1; min-width: 0; }
-/* Arrow button: square with rounded corners, transparent background */
+/* Boton de flecha: cuadrado con esquinas redondeadas, fondo transparente */
 .dv-vote-arrow { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px; border: none; background: transparent; cursor: pointer; transition: background 0.15s, color 0.15s; color: #c4bdb2; padding: 0; }
-/* Arrow SVG icon */
+/* Icono SVG de la flecha */
 .dv-vote-arrow svg { width: 16px; height: 16px; }
-/* Disabled arrow is faded and not-allowed */
+/* La flecha desactivada esta desvanecida y con cursor no permitido */
 .dv-vote-arrow:disabled { cursor: not-allowed; opacity: 0.4; }
-/* Upvote arrow turns gold on hover */
+/* La flecha de voto positivo se vuelve dorada al pasar el cursor */
 .dv-vote-arrow--up:not(:disabled):hover   { background: #fdf4e7; color: #b07d2e; }
-/* Active upvote: gold background stays */
+/* El voto positivo activo mantiene el fondo dorado */
 .dv-vote-arrow--up.dv-vote-arrow--active   { color: #b07d2e; background: #fdf4e7; }
-/* Downvote arrow turns red on hover */
+/* La flecha de voto negativo se vuelve roja al pasar el cursor */
 .dv-vote-arrow--down:not(:disabled):hover  { background: #fef2f2; color: #dc2626; }
-/* Active downvote: red background stays */
+/* El voto negativo activo mantiene el fondo rojo */
 .dv-vote-arrow--down.dv-vote-arrow--active { color: #dc2626; background: #fef2f2; }
-/* Tabular numeric vote score centered between the arrows */
+/* Puntuacion de voto numerica tabular centrada entre las flechas */
 .dv-vote-score { font-size: 0.8rem; font-weight: 700; min-width: 28px; text-align: center; line-height: 1.2; font-variant-numeric: tabular-nums; transition: color 0.2s; }
-/* Positive score is gold */
+/* La puntuacion positiva es dorada */
 .dv-vote-score.score-pos  { color: #b07d2e; }
-/* Negative score is red */
+/* La puntuacion negativa es roja */
 .dv-vote-score.score-neg  { color: #dc2626; }
-/* Zero score is muted */
+/* La puntuacion cero es apagada */
 .dv-vote-score.score-zero { color: #a09282; }
 
-/* At 900px: single-column layout; sidebar loses sticky positioning */
+/* A 900px: disposicion de una columna; la barra lateral pierde el posicionamiento fijo */
 @media (max-width: 900px) {
   .dv-grid    { grid-template-columns: 1fr; }
   .dv-sidebar { position: static; }
 }
-/* At 640px: hero padding shrinks, specs collapse to two columns, modal goes full screen */
+/* A 640px: el relleno del hero se encoge, las especificaciones colapsan a dos columnas, el modal va a pantalla completa */
 @media (max-width: 640px) {
   .dv-hero        { padding: 2rem 1.5rem; }
   .dv-hero-time   { font-size: 1.8rem; }
@@ -393,7 +393,7 @@
   .dv-tramo-hero  { gap: 0.5rem; padding: 0.75rem; }
   .dv-tramo-time  { font-size: 1.4rem; }
 }
-/* At 400px: specs collapse to a single column */
+/* A 400px: las especificaciones colapsan a una columna */
 @media (max-width: 400px) {
   .dv-specs { grid-template-columns: 1fr; }
 }

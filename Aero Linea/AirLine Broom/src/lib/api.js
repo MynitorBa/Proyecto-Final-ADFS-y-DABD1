@@ -1,10 +1,10 @@
 /**
  * @file api.js
- * @description Exports the base URL for all backend API requests made by the
- * AirLine Broom frontend. The value is resolved at build time from the Vite
- * environment variable VITE_API_URL, falling back to the local development
- * server address when the variable is not defined.
+ * @description Exporta la URL base para todas las solicitudes a la API del backend realizadas por el
+ * frontend de AirLine Broom. El valor se resuelve en tiempo de construccion desde la variable de entorno
+ * de Vite VITE_API_URL, usando la direccion del servidor de desarrollo local como respaldo
+ * cuando la variable no esta definida.
  */
 
-/** Base URL of the backend REST API used across all fetch calls in the app. @type {string} */
+/** URL base de la API REST del backend utilizada en todas las llamadas fetch de la aplicacion. @type {string} */
 export const API = import.meta.env.VITE_API_URL || 'http://localhost:5190';

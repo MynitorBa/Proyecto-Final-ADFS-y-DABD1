@@ -1,92 +1,92 @@
 <script>
 /**
  * @file Home.svelte
- * @description Main landing page of the Broom AirLine application. Renders a hero banner,
- * a flight search form with origin/destination autocomplete, passenger count selector,
- * dual interactive calendars that highlight available flight dates fetched from the API,
- * and a grid of featured destinations sourced from airports that have a stored image.
- * Submits a flight search to the API and navigates to the Vuelos page with the results.
+ * @description Pagina de inicio principal de la aplicacion Broom AirLine. Renderiza un banner hero,
+ * un formulario de busqueda de vuelos con autocompletado de origen/destino, selector de cantidad de
+ * pasajeros, calendarios duales interactivos que resaltan las fechas de vuelos disponibles obtenidas
+ * de la API, y una grilla de destinos destacados provenientes de aeropuertos con imagen almacenada.
+ * Envia una busqueda de vuelos a la API y navega a la pagina de Vuelos con los resultados.
  */
   import '../styles/home.css';
   import logoHero from '../assets/BroomHero1.png';
   import { onMount } from 'svelte';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion usada para navegar entre paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** Optional airport object pre-filled as the destination when arriving from a featured destination card or the flying plane animation. @type {object|null} */
+  /** Objeto de aeropuerto opcional pre-rellenado como destino al llegar desde una tarjeta de destino destacado o la animacion del avion en vuelo. @type {object|null} */
   export let suggestedAeropuerto = null;
 
   import { API } from '../lib/api.js';
 
-  /** Trip type selection: 'roundtrip' for round trip or 'oneway' for one way. @type {string} */
+  /** Seleccion del tipo de viaje: 'roundtrip' para ida y vuelta o 'oneway' para solo ida. @type {string} */
   let tripType      = 'roundtrip';
 
-  /** Selected departure date in YYYY-MM-DD format. @type {string} */
+  /** Fecha de salida seleccionada en formato YYYY-MM-DD. @type {string} */
   let departureDate = '';
 
-  /** Selected return date in YYYY-MM-DD format, only used when tripType is 'roundtrip'. @type {string} */
+  /** Fecha de regreso seleccionada en formato YYYY-MM-DD, usada solo cuando tripType es 'roundtrip'. @type {string} */
   let returnDate    = '';
 
-  /** Number of passengers selected by the user (1-9). @type {number} */
+  /** Numero de pasajeros seleccionado por el usuario (1-9). @type {number} */
   let passengers    = 1;
 
-  /** Full list of airport objects fetched from the API on mount. @type {Array<object>} */
+  /** Lista completa de objetos de aeropuerto obtenidos de la API al montar. @type {Array<object>} */
   let aeropuertos        = [];
 
-  /** True while the airport list is being fetched from the API. @type {boolean} */
+  /** True mientras se obtiene la lista de aeropuertos de la API. @type {boolean} */
   let loadingAeropuertos = true;
 
-  /** Current text value in the origin autocomplete input. @type {string} */
+  /** Texto actual en el input de autocompletado de origen. @type {string} */
   let fromQuery          = '';
 
-  /** Filtered list of airports matching the origin query, limited to 5 results. @type {Array<object>} */
+  /** Lista filtrada de aeropuertos que coinciden con la consulta de origen, limitada a 5 resultados. @type {Array<object>} */
   let fromSugeridos      = [];
 
-  /** The airport object selected as the origin, or null if not yet chosen. @type {object|null} */
+  /** El objeto de aeropuerto seleccionado como origen, o null si aun no se ha elegido. @type {object|null} */
   let fromSeleccionado   = null;
 
-  /** Current text value in the destination autocomplete input. @type {string} */
+  /** Texto actual en el input de autocompletado de destino. @type {string} */
   let toQuery            = '';
 
-  /** Filtered list of airports matching the destination query, limited to 5 results. @type {Array<object>} */
+  /** Lista filtrada de aeropuertos que coinciden con la consulta de destino, limitada a 5 resultados. @type {Array<object>} */
   let toSugeridos        = [];
 
-  /** The airport object selected as the destination, or null if not yet chosen. @type {object|null} */
+  /** El objeto de aeropuerto seleccionado como destino, o null si aun no se ha elegido. @type {object|null} */
   let toSeleccionado     = null;
 
-  /** Array of date strings (YYYY-MM-DD) with outbound flights available for the selected route. @type {Array<string>} */
+  /** Arreglo de cadenas de fecha (YYYY-MM-DD) con vuelos de ida disponibles para la ruta seleccionada. @type {Array<string>} */
   let fechasDisponiblesIda    = [];
 
-  /** Array of date strings (YYYY-MM-DD) with return flights available for the inverse route. @type {Array<string>} */
+  /** Arreglo de cadenas de fecha (YYYY-MM-DD) con vuelos de regreso disponibles para la ruta inversa. @type {Array<string>} */
   let fechasDisponiblesVuelta = [];
 
-  /** True while available flight dates are being fetched from the API. @type {boolean} */
+  /** True mientras se obtienen las fechas de vuelos disponibles de la API. @type {boolean} */
   let loadingFechas      = false;
 
-  /** True after both origin and destination are selected and dates have been fetched. @type {boolean} */
+  /** True despues de que se han seleccionado origen y destino y se han obtenido las fechas. @type {boolean} */
   let mostrarCalendarios = false;
 
-  /** Date object representing the currently displayed month in the outbound calendar. @type {Date} */
+  /** Objeto Date que representa el mes actualmente mostrado en el calendario de ida. @type {Date} */
   let mesIda    = new Date();
 
-  /** Date object representing the currently displayed month in the return calendar. @type {Date} */
+  /** Objeto Date que representa el mes actualmente mostrado en el calendario de regreso. @type {Date} */
   let mesVuelta = new Date();
 
-  /** Validation or search error message shown below the search form. @type {string} */
+  /** Mensaje de error de validacion o busqueda mostrado debajo del formulario de busqueda. @type {string} */
   let searchError = '';
 
-  /** True while the flight search POST request is in progress, disables the submit button. @type {boolean} */
+  /** True mientras la solicitud POST de busqueda de vuelos esta en progreso, deshabilita el boton de envio. @type {boolean} */
   let buscando    = false;
 
-  /** Abbreviated weekday labels used as column headers in the calendar grid. @type {Array<string>} */
+  /** Etiquetas abreviadas de dias de la semana usadas como encabezados de columna en la grilla del calendario. @type {Array<string>} */
   const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
 
-  /** Full month name list used to build calendar titles. @type {Array<string>} */
+  /** Lista completa de nombres de meses usada para construir los titulos del calendario. @type {Array<string>} */
   const mesesNombre = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // Airports that have a base64 image stored, used to populate the featured destinations grid.
+  // Aeropuertos con imagen en base64 almacenada, usados para poblar la grilla de destinos destacados.
   $: destinosConImagen = aeropuertos.filter(a => a.imagenBase64);
 
   onMount(async () => {
@@ -100,8 +100,8 @@
     }
   });
 
-  // When a suggested airport arrives (e.g. from a flying plane animation), auto-select it as the destination
-  // and briefly highlight the destination input field with a CSS class.
+  // Cuando llega un aeropuerto sugerido (por ejemplo, de la animacion del avion en vuelo), se selecciona
+  // automaticamente como destino y se resalta brevemente el campo de destino con una clase CSS.
   $: if (suggestedAeropuerto) {
     /** @type {any} */
     const ap = suggestedAeropuerto;
@@ -120,12 +120,12 @@
     }
   }
 
-  // Automatically reload available dates whenever passengers, origin, or destination change.
+  // Recarga automaticamente las fechas disponibles cada vez que cambian los pasajeros, el origen o el destino.
   $: if (passengers && fromSeleccionado && toSeleccionado) cargarFechasDisponibles();
 
   /**
-   * Filters the airport list based on the current fromQuery text and updates fromSugeridos.
-   * Clears the selected origin and resets calendars if the user edits the field after a selection.
+   * Filtra la lista de aeropuertos segun el texto actual de fromQuery y actualiza fromSugeridos.
+   * Limpia el origen seleccionado y reinicia los calendarios si el usuario edita el campo despues de una seleccion.
    */
   function onFromInput() {
     const q = fromQuery.toLowerCase();
@@ -140,9 +140,9 @@
   }
 
   /**
-   * Confirms an airport as the selected origin, fills the input text, clears the suggestion
-   * dropdown, and triggers a date availability reload.
-   * @param {object} a - The airport object chosen from the autocomplete list.
+   * Confirma un aeropuerto como origen seleccionado, rellena el texto del input, limpia el
+   * dropdown de sugerencias y activa una recarga de disponibilidad de fechas.
+   * @param {object} a - El objeto de aeropuerto elegido de la lista de autocompletado.
    */
   function seleccionarOrigen(a) {
     fromSeleccionado = a;
@@ -152,9 +152,9 @@
   }
 
   /**
-   * Filters the airport list based on the current toQuery text and updates toSugeridos,
-   * excluding the currently selected origin airport from suggestions.
-   * Clears the selected destination and resets calendars if the user edits the field.
+   * Filtra la lista de aeropuertos segun el texto actual de toQuery y actualiza toSugeridos,
+   * excluyendo el aeropuerto de origen actualmente seleccionado de las sugerencias.
+   * Limpia el destino seleccionado y reinicia los calendarios si el usuario edita el campo.
    */
   function onToInput() {
     const q = toQuery.toLowerCase();
@@ -170,9 +170,9 @@
   }
 
   /**
-   * Confirms an airport as the selected destination, fills the input text, clears the
-   * suggestion dropdown, and triggers a date availability reload.
-   * @param {object} a - The airport object chosen from the autocomplete list.
+   * Confirma un aeropuerto como destino seleccionado, rellena el texto del input, limpia el
+   * dropdown de sugerencias y activa una recarga de disponibilidad de fechas.
+   * @param {object} a - El objeto de aeropuerto elegido de la lista de autocompletado.
    */
   function seleccionarDestino(a) {
     toSeleccionado = a;
@@ -182,8 +182,8 @@
   }
 
   /**
-   * Resets all calendar-related state: clears available date arrays, clears selected dates,
-   * and hides the calendar panels.
+   * Reinicia todo el estado relacionado con el calendario: limpia los arreglos de fechas disponibles,
+   * limpia las fechas seleccionadas y oculta los paneles del calendario.
    */
   function resetCalendarios() {
     fechasDisponiblesIda = []; fechasDisponiblesVuelta = [];
@@ -192,10 +192,10 @@
   }
 
   /**
-   * Fetches available flight dates for both the outbound (origin→destination) and return
-   * (destination→origin) directions in parallel using the aeropuertos/fechas-disponibles endpoint.
-   * Parses the response dates and sets the calendar starting month to the first available date.
-   * Shows the calendar panels once data is loaded.
+   * Obtiene las fechas de vuelos disponibles para ambas direcciones de ida (origen-destino) y regreso
+   * (destino-origen) en paralelo usando el endpoint aeropuertos/fechas-disponibles.
+   * Parsea las fechas de la respuesta y establece el mes inicial del calendario a la primera fecha disponible.
+   * Muestra los paneles del calendario una vez cargados los datos.
    * @async
    * @returns {Promise<void>}
    */
@@ -232,24 +232,24 @@
   }
 
   /**
-   * Returns true if the given YYYY-MM-DD date string is in the outbound available dates list.
-   * @param {string} f - Date string to check.
-   * @returns {boolean} True if the date has available outbound flights.
+   * Retorna true si la cadena de fecha YYYY-MM-DD dada esta en la lista de fechas de ida disponibles.
+   * @param {string} f - Cadena de fecha a verificar.
+   * @returns {boolean} True si la fecha tiene vuelos de ida disponibles.
    */
   function esFechaDisponibleIda(f)    { return fechasDisponiblesIda.includes(f); }
 
   /**
-   * Returns true if the given YYYY-MM-DD date string is in the return available dates list.
-   * @param {string} f - Date string to check.
-   * @returns {boolean} True if the date has available return flights.
+   * Retorna true si la cadena de fecha YYYY-MM-DD dada esta en la lista de fechas de regreso disponibles.
+   * @param {string} f - Cadena de fecha a verificar.
+   * @returns {boolean} True si la fecha tiene vuelos de regreso disponibles.
    */
   function esFechaDisponibleVuelta(f) { return fechasDisponiblesVuelta.includes(f); }
 
   /**
-   * Builds the array of day cells for a given month, prepending null placeholders for
-   * the weekday offset so the first day of the month falls in the correct column.
-   * @param {Date} fecha - A Date object set to any day within the target month.
-   * @returns {Array<null|{dia: number, fecha: string}>} Array of null or day descriptor objects.
+   * Construye el arreglo de celdas de dias para un mes dado, agregando al inicio marcadores null
+   * para el desplazamiento del dia de la semana de modo que el primer dia del mes caiga en la columna correcta.
+   * @param {Date} fecha - Un objeto Date apuntando a cualquier dia dentro del mes objetivo.
+   * @returns {Array<null|{dia: number, fecha: string}>} Arreglo de null u objetos descriptores de dia.
    */
   function getDias(fecha) {
     const y = fecha.getFullYear(), m = fecha.getMonth();
@@ -263,32 +263,32 @@
     return dias;
   }
 
-  // Day cell arrays for the outbound and return calendars, rebuilt when the displayed month changes.
+  // Arreglos de celdas de dias para los calendarios de ida y regreso, reconstruidos cuando cambia el mes mostrado.
   $: diasIda    = getDias(mesIda);
   $: diasVuelta = getDias(mesVuelta);
 
-  // Title string shown above the outbound calendar, e.g. 'Abril 2026'.
+  // Cadena de titulo mostrada encima del calendario de ida, por ejemplo 'Abril 2026'.
   $: titIda     = `${mesesNombre[mesIda.getMonth()]} ${mesIda.getFullYear()}`;
 
-  // Title string shown above the return calendar.
+  // Cadena de titulo mostrada encima del calendario de regreso.
   $: titVuelta  = `${mesesNombre[mesVuelta.getMonth()]} ${mesVuelta.getFullYear()}`;
 
-  /** Navigates the outbound calendar one month backward. */
+  /** Navega el calendario de ida un mes hacia atras. */
   function prevIda()    { mesIda    = new Date(mesIda.getFullYear(),    mesIda.getMonth()    - 1, 1); }
 
-  /** Navigates the outbound calendar one month forward. */
+  /** Navega el calendario de ida un mes hacia adelante. */
   function nextIda()    { mesIda    = new Date(mesIda.getFullYear(),    mesIda.getMonth()    + 1, 1); }
 
-  /** Navigates the return calendar one month backward. */
+  /** Navega el calendario de regreso un mes hacia atras. */
   function prevVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() - 1, 1); }
 
-  /** Navigates the return calendar one month forward. */
+  /** Navega el calendario de regreso un mes hacia adelante. */
   function nextVuelta() { mesVuelta = new Date(mesVuelta.getFullYear(), mesVuelta.getMonth() + 1, 1); }
 
   /**
-   * Selects an outbound flight date if it is available; clears any existing search error.
-   * Does nothing if the clicked date is not in the available list.
-   * @param {string} f - Date string in YYYY-MM-DD format.
+   * Selecciona una fecha de vuelo de ida si esta disponible; limpia cualquier error de busqueda existente.
+   * No hace nada si la fecha clickeada no esta en la lista de disponibles.
+   * @param {string} f - Cadena de fecha en formato YYYY-MM-DD.
    */
   function pickIda(f) {
     if (!esFechaDisponibleIda(f)) return;
@@ -296,9 +296,9 @@
   }
 
   /**
-   * Selects a return flight date if it is available and not earlier than the departure date.
-   * Does nothing if the date is blocked or unavailable.
-   * @param {string} f - Date string in YYYY-MM-DD format.
+   * Selecciona una fecha de vuelo de regreso si esta disponible y no es anterior a la fecha de salida.
+   * No hace nada si la fecha esta bloqueada o no disponible.
+   * @param {string} f - Cadena de fecha en formato YYYY-MM-DD.
    */
   function pickVuelta(f) {
     if (departureDate && f < departureDate) return;
@@ -307,10 +307,10 @@
   }
 
   /**
-   * Validates the search form fields, then posts the search to /api/vuelos/buscar for both
-   * outbound and (if roundtrip) return legs in sequence. On success, navigates to the 'vuelos'
-   * page passing the results and all search parameters. Sets searchError on validation failures
-   * or API errors.
+   * Valida los campos del formulario de busqueda, luego envia la busqueda a /api/vuelos/buscar para ambos
+   * tramos de ida y (si es ida y vuelta) regreso en secuencia. Al tener exito navega a la pagina 'vuelos'
+   * pasando los resultados y todos los parametros de busqueda. Establece searchError en fallos de validacion
+   * o errores de la API.
    * @async
    * @returns {Promise<void>}
    */

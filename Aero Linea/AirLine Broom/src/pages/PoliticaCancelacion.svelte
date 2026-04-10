@@ -1,16 +1,16 @@
 <script>
 /**
  * @file PoliticaCancelacion.svelte
- * @description Static informational page describing the cancellation policy for Broom AirLine
- * reservations. Covers client-initiated cancellations (steps and conditions), airline-initiated
- * cancellations with automatic passenger notification, and a numbered step-by-step guide for
- * cancelling a reservation via the Mis Reservas section. Accessible from the main navigation
- * with a back button that returns to the home page.
+ * @description Pagina informativa estatica que describe la politica de cancelacion de reservas
+ * de Broom AirLine. Cubre cancelaciones iniciadas por el cliente (pasos y condiciones),
+ * cancelaciones iniciadas por la aerolinea con notificacion automatica al pasajero, y una guia
+ * numerada paso a paso para cancelar una reserva desde la seccion Mis Reservas. Accesible desde
+ * la navegacion principal con un boton de regreso al inicio.
  */
 // @ts-nocheck
   import '../styles/info-pages.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 </script>
 

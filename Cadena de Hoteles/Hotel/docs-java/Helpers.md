@@ -1,5 +1,20 @@
 ﻿# Helpers
 
+## AerolineaAuthMiddleware
+
+> Middleware de autenticacion para rutas protegidas de aerolineas aliadas. Valida el token enviado en el header X-Aerolinea-Token e inyecta la identidad de la aerolinea en el contexto de la peticion.
+
+```java
+public static boolean verificar(Context ctx)
+```
+
+Verifica el token de aerolinea en el header de la peticion. Si el token es valido, inyecta el ID, nombre y URL de la aerolinea como atributos del contexto para que los controllers puedan usarlos. a ninguna aerolinea activa, escribiendo ya la respuesta 401.
+
+- **Param** `ctx` - contexto de la peticion HTTP de Javalin.
+- **Returns** - true si el token es valido; false si falta o no corresponde
+
+---
+
 ## AgenciaAuthMiddleware
 
 > Middleware de autenticacion para rutas protegidas de agencias externas. Valida el token enviado en el header X-Agencia-Token e inyecta la identidad de la agencia en el contexto de la peticion.
@@ -23,7 +38,7 @@ Verifica el token de agencia en el header de la peticion. Si el token es valido,
 public static void registrar(Javalin app)
 ```
 
-Registra el middleware de autenticacion en la instancia de Javalin. Se ejecuta antes de cada peticion. Si la ruta es publica o pertenece al prefijo /agencia/, la deja pasar sin validar. De lo contrario, exige un cookie auth_token valido y extrae los claims del usuario para inyectarlos en el contexto.
+Registra el middleware de autenticacion en la instancia de Javalin. Se ejecuta antes de cada peticion. Si la ruta es publica o pertenece al prefijo /agencia/, la deja pasar sin validar. De lo contrario, exige un cookie auth_token valido y extrae los claims del usuario para inyectarlos en el contexto. (misma situacion para /aerolinea/)
 
 - **Param** `app` - instancia de Javalin donde se registra el middleware.
 

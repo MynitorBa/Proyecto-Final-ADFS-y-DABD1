@@ -1,71 +1,71 @@
 <script>
 /**
  * @file AdminAeropuertos.svelte
- * @description Admin panel section for managing airports. Displays a table of all registered
- * airports with their IATA code, name, city, country and optional image. Allows creating new
- * airports and editing existing ones through a modal form. The form integrates a live IATA
- * database (fetched from GitHub) for autocomplete, a timezone picker backed by the WorldTimeAPI,
- * and a country name resolver that tries restcountries.com first and falls back to a local
- * ISO-2 map. Dispatches 'aeropuertosActualizados' to the parent after any successful mutation.
+ * @description Seccion del panel de administracion para gestionar aeropuertos. Muestra una tabla de todos
+ * los aeropuertos registrados con su codigo IATA, nombre, ciudad, pais e imagen opcional. Permite crear
+ * nuevos aeropuertos y editar los existentes mediante un formulario modal. El formulario integra una base
+ * de datos IATA en vivo (obtenida de GitHub) para autocompletado, un selector de zona horaria respaldado
+ * por la WorldTimeAPI, y un resolvedor de nombres de paises que primero intenta restcountries.com y recurre
+ * a un mapa ISO-2 local. Despacha 'aeropuertosActualizados' al padre tras cualquier mutacion exitosa.
  */
 // @ts-nocheck
   import { createEventDispatcher, onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
   const dispatch = createEventDispatcher();
 
-  /** List of airports currently registered in the system, loaded from the backend API. @type {any[]} */
+  /** Lista de aeropuertos registrados actualmente en el sistema, cargada desde la API del backend. @type {any[]} */
   let aeropuertos        = [];
 
-  /** Whether the airport list fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la lista de aeropuertos esta en progreso. @type {boolean} */
   let loadingAeropuertos = false;
 
-  /** True when the modal is editing an existing airport, false when creating a new one. @type {boolean} */
+  /** Verdadero cuando el modal esta editando un aeropuerto existente, falso cuando crea uno nuevo. @type {boolean} */
   let modoEdicion        = false;
 
-  /** Whether the create/edit modal form is visible. @type {boolean} */
+  /** Indica si el formulario modal de creacion/edicion esta visible. @type {boolean} */
   let mostrarFormulario       = false;
 
   /**
-   * Form data object bound to the create/edit form fields.
+   * Objeto de datos del formulario vinculado a los campos del formulario de creacion/edicion.
    * @type {{ id: number|null, codigo: string, nombre: string, ciudad: string, pais: string, zonaHoraria: string }}
    */
   let aeropuertoForm          = { id: null, codigo: '', nombre: '', ciudad: '', pais: '', zonaHoraria: '' };
 
-  /** Data URL of the selected image preview, shown before saving. @type {string|null} */
+  /** URL de datos de la vista previa de imagen seleccionada, mostrada antes de guardar. @type {string|null} */
   let aeropuertoImagenPreview = null;
 
-  /** Base64-encoded image string sent to the backend on form submission. @type {string|null} */
+  /** Cadena de imagen en base64 enviada al backend al enviar el formulario. @type {string|null} */
   let aeropuertoImagenBase64  = null;
 
   /**
-   * Full IATA airport database keyed by ICAO code, fetched from the mwgg/Airports GitHub repo.
+   * Base de datos completa de aeropuertos IATA indexada por codigo ICAO, obtenida del repositorio mwgg/Airports en GitHub.
    * @type {Record<string, any>}
    */
   let todosLosAeropuertosIATA = {};
 
-  /** Whether the IATA database fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la base de datos IATA esta en progreso. @type {boolean} */
   let loadingIATA             = false;
 
-  /** Current text in the IATA code/name search input. @type {string} */
+  /** Texto actual en el input de busqueda de codigo/nombre IATA. @type {string} */
   let iataQuery               = '';
 
-  /** Whether the IATA autocomplete dropdown is open. @type {boolean} */
+  /** Indica si el dropdown de autocompletado IATA esta abierto. @type {boolean} */
   let mostrarDropdownIATA     = false;
 
-  /** True after the user has picked an airport from the IATA dropdown, locking dependent fields. @type {boolean} */
+  /** Verdadero tras seleccionar un aeropuerto del dropdown IATA, bloqueando los campos dependientes. @type {boolean} */
   let iataSeleccionado        = false;
 
-  // Filters the IATA database by the current iataQuery against IATA code, name, city or state.
-  // Returns up to 15 results. Shows nothing if fewer than 1 character typed.
+  // Filtra la base de datos IATA por el iataQuery actual contra codigo IATA, nombre, ciudad o estado.
+  // Devuelve hasta 15 resultados. No muestra nada si se ha escrito menos de 1 caracter.
   $: iataResultados = iataQuery.length < 1 ? [] :
     Object.entries(todosLosAeropuertosIATA)
       .filter(([icao, ap]) =>
@@ -78,20 +78,20 @@
       )
       .slice(0, 15);
 
-  /** All IANA timezone strings fetched from WorldTimeAPI. @type {string[]} */
+  /** Todas las cadenas de zona horaria IANA obtenidas de WorldTimeAPI. @type {string[]} */
   let todosLosTimezones  = [];
 
-  /** Current text in the timezone search input. @type {string} */
+  /** Texto actual en el input de busqueda de zona horaria. @type {string} */
   let busquedaTimezone   = '';
 
-  /** Whether the timezone autocomplete dropdown is open. @type {boolean} */
+  /** Indica si el dropdown de autocompletado de zona horaria esta abierto. @type {boolean} */
   let mostrarDropdownTZ  = false;
 
-  /** Whether the timezone list fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la lista de zonas horarias esta en progreso. @type {boolean} */
   let loadingTimezones   = false;
 
-  // Returns the first 6 timezones when the search query is shorter than 2 chars,
-  // otherwise filters the full list by the query (case-insensitive), capped at 20.
+  // Devuelve las primeras 6 zonas horarias cuando la consulta tiene menos de 2 caracteres,
+  // de lo contrario filtra la lista completa por la consulta (sin distinguir mayusculas), limitado a 20.
   $: timezonesFiltrados = busquedaTimezone.length < 2
     ? todosLosTimezones.slice(0, 6)
     : todosLosTimezones
@@ -99,8 +99,8 @@
         .slice(0, 20);
 
   /**
-   * Local fallback map of ISO-2 country codes to English country names.
-   * Used when the restcountries.com API call fails.
+   * Mapa local de respaldo de codigos de pais ISO-2 a nombres de pais en ingles.
+   * Se usa cuando la llamada a la API de restcountries.com falla.
    * @type {Record<string, string>}
    */
   const ISO_PAISES = {
@@ -135,12 +135,12 @@
   };
 
   /**
-   * Resolves a 2-letter ISO country code to its English name. First attempts a fetch to
-   * restcountries.com; if that fails it looks up the code in the local ISO_PAISES map;
-   * if still not found it returns the raw code string.
+   * Resuelve un codigo de pais ISO de 2 letras a su nombre en ingles. Primero intenta una solicitud a
+   * restcountries.com; si falla busca el codigo en el mapa local ISO_PAISES;
+   * si aun no se encuentra devuelve la cadena del codigo original.
    * @async
-   * @param {string} isoCode - Two-letter ISO country code (e.g. 'GT', 'US').
-   * @returns {Promise<string>} The resolved country name or the original code as fallback.
+   * @param {string} isoCode - Codigo de pais ISO de dos letras (por ejemplo, 'GT', 'US').
+   * @returns {Promise<string>} El nombre del pais resuelto o el codigo original como respaldo.
    */
   async function resolverPais(isoCode) {
     if (!isoCode) return '';
@@ -160,8 +160,8 @@
   }
 
   /**
-   * On mount: triggers parallel loading of the system airport list, the IANA timezone list,
-   * and the full IATA airport database.
+   * Al montar: activa la carga en paralelo de la lista de aeropuertos del sistema, la lista de zonas horarias IANA
+   * y la base de datos completa de aeropuertos IATA.
    * @async
    * @returns {Promise<void>}
    */
@@ -170,8 +170,8 @@
   });
 
   /**
-   * Fetches the IATA airport database JSON from the mwgg/Airports GitHub repository and
-   * stores it in todosLosAeropuertosIATA. Sets loadingIATA while the request is in flight.
+   * Obtiene el JSON de la base de datos de aeropuertos IATA del repositorio mwgg/Airports en GitHub y
+   * lo almacena en todosLosAeropuertosIATA. Establece loadingIATA mientras la solicitud esta en vuelo.
    * @async
    * @returns {Promise<void>}
    */
@@ -185,12 +185,12 @@
   }
 
   /**
-   * Called when the user selects an entry from the IATA autocomplete dropdown. Fills in
-   * the form fields (codigo, nombre, ciudad, zonaHoraria) from the IATA record and resolves
-   * the country name via resolverPais. Closes the dropdown and marks iataSeleccionado as true.
+   * Se llama cuando el usuario selecciona una entrada del dropdown de autocompletado IATA. Rellena
+   * los campos del formulario (codigo, nombre, ciudad, zonaHoraria) desde el registro IATA y resuelve
+   * el nombre del pais mediante resolverPais. Cierra el dropdown y marca iataSeleccionado como verdadero.
    * @async
-   * @param {string} icao - The ICAO key of the selected airport entry.
-   * @param {any} ap - The airport data object from the IATA database.
+   * @param {string} icao - La clave ICAO de la entrada de aeropuerto seleccionada.
+   * @param {any} ap - El objeto de datos del aeropuerto de la base de datos IATA.
    * @returns {Promise<void>}
    */
   async function seleccionarIATA(icao, ap) {
@@ -211,8 +211,8 @@
   }
 
   /**
-   * Fetches the full list of IANA timezone strings from WorldTimeAPI and stores them in
-   * todosLosTimezones. Sets loadingTimezones while the request is in flight.
+   * Obtiene la lista completa de cadenas de zona horaria IANA desde WorldTimeAPI y las almacena en
+   * todosLosTimezones. Establece loadingTimezones mientras la solicitud esta en vuelo.
    * @async
    * @returns {Promise<void>}
    */
@@ -226,8 +226,8 @@
   }
 
   /**
-   * Sets the selected timezone on the form and closes the timezone dropdown.
-   * @param {string} tz - The IANA timezone string selected by the user (e.g. 'America/Guatemala').
+   * Establece la zona horaria seleccionada en el formulario y cierra el dropdown de zona horaria.
+   * @param {string} tz - La cadena de zona horaria IANA seleccionada por el usuario (por ejemplo, 'America/Guatemala').
    */
   function seleccionarTimezone(tz) {
     aeropuertoForm.zonaHoraria = tz;
@@ -236,7 +236,7 @@
   }
 
   /**
-   * Clears the timezone fields on the form, allowing the user to select a different one.
+   * Limpia los campos de zona horaria en el formulario, permitiendo al usuario seleccionar una diferente.
    */
   function limpiarTimezone() {
     aeropuertoForm.zonaHoraria = '';
@@ -244,8 +244,8 @@
   }
 
   /**
-   * Fetches the list of airports from the backend API and stores them in the aeropuertos array.
-   * Shows a toast on error and sets loadingAeropuertos during the request.
+   * Obtiene la lista de aeropuertos desde la API del backend y los almacena en el arreglo aeropuertos.
+   * Muestra un toast en caso de error y establece loadingAeropuertos durante la solicitud.
    * @async
    * @returns {Promise<void>}
    */
@@ -260,9 +260,9 @@
   }
 
   /**
-   * Reads the file selected in the image input, converts it to a base64 data URL and stores
-   * it in both aeropuertoImagenBase64 (for submission) and aeropuertoImagenPreview (for display).
-   * @param {Event} e - The change event from the file input element.
+   * Lee el archivo seleccionado en el input de imagen, lo convierte a una URL de datos base64 y lo almacena
+   * en aeropuertoImagenBase64 (para envio) y aeropuertoImagenPreview (para visualizacion).
+   * @param {Event} e - El evento de cambio del elemento input de archivo.
    */
   function onImagenChange(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -272,7 +272,7 @@
   }
 
   /**
-   * Resets the form to an empty state and opens the modal in creation mode.
+   * Reinicia el formulario a un estado vacio y abre el modal en modo de creacion.
    */
   function abrirNuevo() {
     modoEdicion = false;
@@ -284,10 +284,10 @@
   }
 
   /**
-   * Fetches the full airport record by ID from the backend, pre-fills the form fields and
-   * opens the modal in edit mode. Shows a toast on error.
+   * Obtiene el registro completo del aeropuerto por ID desde el backend, pre-rellena los campos del
+   * formulario y abre el modal en modo de edicion. Muestra un toast en caso de error.
    * @async
-   * @param {any} aeropuerto - The airport row object from the table (must have an id property).
+   * @param {any} aeropuerto - El objeto fila del aeropuerto de la tabla (debe tener una propiedad id).
    * @returns {Promise<void>}
    */
   async function abrirEditar(aeropuerto) {
@@ -311,7 +311,7 @@
   }
 
   /**
-   * Closes the modal and resets all form state, image previews and dropdown states.
+   * Cierra el modal y reinicia todo el estado del formulario, vistas previas de imagen y estados de dropdown.
    */
   function cerrar() {
     mostrarFormulario = false;
@@ -322,10 +322,9 @@
   }
 
   /**
-   * Validates the form fields (IATA code length, nombre, pais, ciudad) then sends a POST or
-   * PUT request to the backend. On success reloads the airport list, dispatches
-   * 'aeropuertosActualizados', and closes the modal. Shows error toasts for validation
-   * failures or API errors.
+   * Valida los campos del formulario (longitud del codigo IATA, nombre, pais, ciudad) y luego envia una solicitud
+   * POST o PUT al backend. Si tiene exito recarga la lista de aeropuertos, despacha 'aeropuertosActualizados'
+   * y cierra el modal. Muestra toasts de error para fallos de validacion o errores de la API.
    * @async
    * @returns {Promise<void>}
    */
@@ -364,10 +363,10 @@
   }
 
   /**
-   * Asks for confirmation and then sends a DELETE request to remove the image from an airport
-   * record. On success reloads the airport list and dispatches 'aeropuertosActualizados'.
+   * Pide confirmacion y luego envia una solicitud DELETE para eliminar la imagen de un registro de aeropuerto.
+   * Si tiene exito recarga la lista de aeropuertos y despacha 'aeropuertosActualizados'.
    * @async
-   * @param {number} aeropuertoId - The ID of the airport whose image should be removed.
+   * @param {number} aeropuertoId - El ID del aeropuerto cuya imagen debe eliminarse.
    * @returns {Promise<void>}
    */
   async function handleEliminarImagen(aeropuertoId) {

@@ -1,6 +1,8 @@
-/* confirmacion.css - Booking confirmation page styles including hero section with animated icon, invoice cards, PDF and email buttons, action panel, and toast notifications */
+/* confirmacion.css - Estilos de la pagina de confirmacion de reserva, incluyendo la seccion hero
+   con icono animado, tarjetas de factura, botones de PDF y correo, grilla de hoteles aliados con
+   botones de redireccion de descuento de un solo uso, panel de acciones y notificaciones toast */
 
-/* Full-page wrapper with project background color and generous bottom padding */
+/* Contenedor de pagina completa con el color de fondo del proyecto y relleno inferior generoso */
 .confirmacion {
     width: 100%;
     min-height: 100vh;
@@ -8,13 +10,13 @@
     padding: 2rem 1rem 8rem;
 }
 
-/* Centered content column capped at 860px */
+/* Columna de contenido centrada con un maximo de 860px */
 .confirmacion__container {
     max-width: 860px;
     margin: 0 auto;
 }
 
-/* Centered hero banner: white card with large asymmetric radius and deep padding */
+/* Banner hero centrado: tarjeta blanca con radio asimetrico grande y relleno profundo */
 .confirmacion__hero {
     text-align: center;
     padding: 4rem 2rem 3rem;
@@ -25,14 +27,14 @@
     margin-bottom: 2.5rem;
 }
 
-/* Centered flex container for the confirmation success icon */
+/* Contenedor flex centrado para el icono de exito de la confirmacion */
 .confirmacion__icono-wrap {
     display: flex;
     justify-content: center;
     margin-bottom: 1.75rem;
 }
 
-/* Gold gradient circular icon badge with a pop-in spring animation */
+/* Insignia de icono circular con degradado dorado y animacion de resorte al aparecer */
 .confirmacion__icono {
     width: 80px;
     height: 80px;
@@ -46,13 +48,13 @@
     animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Spring-loaded scale animation for the confirmation icon */
+/* Animacion de escala con resorte para el icono de confirmacion */
 @keyframes popIn {
     from { transform: scale(0) rotate(-10deg); opacity: 0; }
     to   { transform: scale(1) rotate(0deg);   opacity: 1; }
 }
 
-/* Fluid confirmation title from 1.8rem to 2.5rem, light weight */
+/* Titulo de confirmacion fluido de 1.8rem a 2.5rem con peso de fuente liviano */
 .confirmacion__titulo {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: 300;
@@ -60,7 +62,7 @@
     margin: 0 0 0.75rem;
 }
 
-/* Muted subtitle capped at 520px with relaxed line height */
+/* Subtitulo apagado con maximo de 520px y altura de linea relajada */
 .confirmacion__subtitulo {
     font-size: 0.95rem;
     color: var(--text-muted);
@@ -69,7 +71,7 @@
     line-height: 1.7;
 }
 
-/* Short gold horizontal rule centered below the subtitle */
+/* Linea horizontal dorada corta centrada debajo del subtitulo */
 .confirmacion__linea-deco {
     width: 60px;
     height: 2px;
@@ -78,7 +80,7 @@
     border-radius: 2px;
 }
 
-/* Vertical stack of invoice cards with 1.5rem gap */
+/* Pila vertical de tarjetas de factura con separacion de 1.5rem */
 .confirmacion__facturas {
     display: flex;
     flex-direction: column;
@@ -86,7 +88,7 @@
     margin-bottom: 2.5rem;
 }
 
-/* Invoice card: white card with asymmetric radius and a slide-up entry animation */
+/* Tarjeta de factura: tarjeta blanca con radio asimetrico y animacion de entrada deslizante */
 .factura-card {
     background: var(--white);
     border: 1px solid rgba(235,230,224,0.8);
@@ -96,13 +98,13 @@
     animation: slideUp 0.45s ease-out both;
 }
 
-/* Entrance animation: card slides up 18px while fading in */
+/* Animacion de entrada: la tarjeta sube 18px mientras aparece con fundido */
 @keyframes slideUp {
     from { opacity: 0; transform: translateY(18px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Dark gradient header bar of the invoice card */
+/* Barra de encabezado con degradado oscuro de la tarjeta de factura */
 .factura-card__header {
     background: linear-gradient(135deg, #1C1A18 0%, #3A3531 100%);
     color: #F2EFEA;
@@ -113,14 +115,14 @@
     gap: 1rem;
 }
 
-/* Left column of the header: stacked etiqueta and invoice number */
+/* Columna izquierda del encabezado: etiqueta y numero de factura apilados */
 .factura-card__header-left {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
 }
 
-/* Tiny semi-transparent label above the invoice number */
+/* Etiqueta pequena semitransparente encima del numero de factura */
 .factura-card__etiqueta {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -128,7 +130,7 @@
     color: rgba(242,239,234,0.5);
 }
 
-/* Bold gold invoice number */
+/* Numero de factura en dorado y negrita */
 .factura-card__nro {
     font-size: 1rem;
     font-weight: 700;
@@ -136,10 +138,10 @@
     letter-spacing: 0.5px;
 }
 
-/* Right-aligned header column for the status badge */
+/* Columna derecha del encabezado alineada a la derecha para la insignia de estado */
 .factura-card__header-right { flex-shrink: 0; }
 
-/* Status pill: translucent gold background with gold border and text */
+/* Pastilla de estado: fondo dorado translucido con borde y texto dorado */
 .factura-card__estado {
     background: rgba(201,169,110,0.15);
     color: var(--primary-color);
@@ -152,12 +154,12 @@
     letter-spacing: 1px;
 }
 
-/* White body section of the invoice card with comfortable padding */
+/* Seccion del cuerpo blanco de la tarjeta de factura con relleno comodo */
 .factura-card__body {
     padding: 1.75rem 2rem;
 }
 
-/* Auto-fit grid of invoice data cells */
+/* Grilla auto-ajustable de celdas de datos de la factura */
 .factura-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -165,14 +167,14 @@
     margin-bottom: 1.25rem;
 }
 
-/* Each invoice datum: stacked label and value */
+/* Cada dato de la factura: etiqueta y valor apilados */
 .factura-dato {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
 }
 
-/* Tiny all-caps bold muted label */
+/* Etiqueta en mayusculas pequena, negrita y apagada */
 .factura-dato__label {
     font-size: 0.65rem;
     text-transform: uppercase;
@@ -181,28 +183,28 @@
     font-weight: 700;
 }
 
-/* Medium-weight secondary color value */
+/* Valor en color secundario con peso medio */
 .factura-dato__valor {
     font-size: 0.9rem;
     color: var(--secondary-color);
     font-weight: 600;
 }
 
-/* Larger bold gold value for price/total fields */
+/* Valor dorado mas grande y en negrita para campos de precio o total */
 .factura-dato__valor--gold {
     color: var(--primary-color);
     font-size: 1.15rem;
     font-weight: 700;
 }
 
-/* Thin warm-toned horizontal separator within the invoice body */
+/* Separador horizontal delgado en tonos calidos dentro del cuerpo de la factura */
 .factura-card__separador {
     height: 1px;
     background: #f0e8da;
     margin: 1.25rem 0;
 }
 
-/* Small all-caps section heading inside the invoice body */
+/* Encabezado de seccion pequeno en mayusculas dentro del cuerpo de la factura */
 .factura-card__subtitulo {
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -212,14 +214,14 @@
     margin-bottom: 0.75rem;
 }
 
-/* Vertical stack of individual ticket rows */
+/* Pila vertical de filas de boletos individuales */
 .factura-boletos {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-/* Single ticket row: space-between flex with seat number, passenger name, and price */
+/* Fila de boleto unico: flex con espacio entre elementos para asiento, pasajero y precio */
 .factura-boleto {
     display: flex;
     justify-content: space-between;
@@ -230,33 +232,33 @@
     gap: 1rem;
 }
 
-/* Left info column inside a ticket row */
+/* Columna de informacion izquierda dentro de una fila de boleto */
 .factura-boleto__col {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
 }
 
-/* Bold seat code in secondary color */
+/* Codigo de asiento en negrita y color secundario */
 .factura-boleto__asiento {
     font-size: 0.88rem;
     font-weight: 700;
     color: var(--secondary-color);
 }
 
-/* Passenger name in regular secondary color */
+/* Nombre del pasajero en color secundario regular */
 .factura-boleto__pasajero {
     font-size: 0.82rem;
     color: var(--secondary-color);
 }
 
-/* Flight identifier in small muted text */
+/* Identificador del vuelo en texto pequeno y apagado */
 .factura-boleto__vuelo {
     font-size: 0.75rem;
     color: var(--text-muted);
 }
 
-/* Right-aligned bold gold ticket price */
+/* Precio del boleto alineado a la derecha, en dorado y negrita */
 .factura-boleto__precio {
     font-size: 0.9rem;
     font-weight: 700;
@@ -265,7 +267,7 @@
     flex-shrink: 0;
 }
 
-/* Footer row of invoice action buttons aligned to the right */
+/* Fila inferior de botones de accion de la factura alineados a la derecha */
 .factura-card__footer {
     margin-top: 1.5rem;
     display: flex;
@@ -274,7 +276,7 @@
     flex-wrap: wrap;
 }
 
-/* Dark gradient PDF download button with asymmetric radius */
+/* Boton de descarga de PDF con degradado oscuro y radio asimetrico */
 .btn-pdf {
     display: inline-flex;
     align-items: center;
@@ -292,13 +294,13 @@
     transition: all 0.2s ease;
 }
 
-/* PDF button lifts and deepens shadow on hover */
+/* El boton de PDF sube y profundiza la sombra al pasar el cursor */
 .btn-pdf:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
-/* Transparent outline email button with asymmetric radius */
+/* Boton de correo con contorno transparente y radio asimetrico */
 .btn-correo {
     display: inline-flex;
     align-items: center;
@@ -316,7 +318,7 @@
     transition: all 0.2s ease;
 }
 
-/* Email button fills dark and lifts on hover */
+/* El boton de correo se rellena de oscuro y sube al pasar el cursor */
 .btn-correo:hover {
     background: var(--secondary-color);
     color: var(--white);
@@ -324,24 +326,24 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
-/* Both buttons reduce opacity and block cursor when disabled */
+/* Ambos botones reducen la opacidad y bloquean el cursor cuando estan deshabilitados */
 .btn-correo:disabled,
 .btn-pdf:disabled {
     opacity: 0.7;
     cursor: not-allowed;
 }
 
-/* Email button loading state: faint dark background */
+/* Estado de carga del boton de correo: fondo oscuro tenue */
 .btn-correo--loading {
     background: rgba(28,26,24,0.05);
 }
 
-/* PDF button loading state: slightly lighter dark gradient */
+/* Estado de carga del boton de PDF: degradado oscuro ligeramente mas claro */
 .btn-pdf--loading {
     background: linear-gradient(135deg, #3A3531, #2a2520);
 }
 
-/* Centered CTA card below the invoices with asymmetric radius */
+/* Tarjeta de CTA centrada debajo de las facturas con radio asimetrico */
 .confirmacion__acciones {
     background: var(--white);
     border: 1px solid rgba(235,230,224,0.6);
@@ -351,7 +353,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.02);
 }
 
-/* Light-weight heading inside the action card */
+/* Encabezado liviano dentro de la tarjeta de acciones */
 .confirmacion__acciones-titulo {
     font-size: 1.3rem;
     font-weight: 300;
@@ -359,7 +361,7 @@
     margin-bottom: 1.75rem;
 }
 
-/* Centered flex row of CTA buttons with wrapping */
+/* Fila flex centrada de botones CTA con ajuste automatico */
 .confirmacion__btns {
     display: flex;
     gap: 1rem;
@@ -367,7 +369,7 @@
     flex-wrap: wrap;
 }
 
-/* Gold primary CTA button with asymmetric radius */
+/* Boton CTA primario dorado con radio asimetrico */
 .btn-primary {
     padding: 1rem 2.5rem;
     background: var(--primary-color);
@@ -382,14 +384,14 @@
     font-size: 0.9rem;
 }
 
-/* Primary button turns dark and lifts on hover */
+/* El boton primario se vuelve oscuro y sube al pasar el cursor */
 .btn-primary:hover {
     background: var(--secondary-color);
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
-/* Transparent outline secondary CTA button */
+/* Boton CTA secundario con contorno transparente */
 .btn-secondary {
     padding: 1rem 2.5rem;
     background: transparent;
@@ -404,14 +406,14 @@
     font-size: 0.9rem;
 }
 
-/* Secondary button fills dark and lifts on hover */
+/* El boton secundario se rellena de oscuro y sube al pasar el cursor */
 .btn-secondary:hover {
     background: var(--secondary-color);
     color: var(--white);
     transform: translateY(-3px);
 }
 
-/* Fixed toast container at the bottom-right corner */
+/* Contenedor fijo de toast en la esquina inferior derecha */
 .conf-toast-container {
     position: fixed;
     bottom: 1.5rem;
@@ -423,7 +425,7 @@
     pointer-events: none;
 }
 
-/* Individual toast notification: icon plus message in a rounded pill */
+/* Notificacion toast individual: icono mas mensaje en una pastilla redondeada */
 .conf-toast {
     display: flex;
     align-items: center;
@@ -438,21 +440,206 @@
     pointer-events: auto;
 }
 
-/* Success toast: green background */
+/* Toast de exito: fondo verde */
 .conf-toast--success { background: #27ae60; }
-/* Error toast: red background */
+/* Toast de error: fondo rojo */
 .conf-toast--error   { background: #c0392b; }
 
-/* Fixed-size icon inside the toast */
+/* Icono de tamano fijo dentro del toast */
 .conf-toast__icon { width: 18px; height: 18px; flex-shrink: 0; }
 
-/* Toast slides in from the right while fading in */
+/* El toast se desliza desde la derecha mientras aparece con fundido */
 @keyframes confToastIn {
     from { opacity: 0; transform: translateX(30px); }
     to   { opacity: 1; transform: translateX(0); }
 }
 
-/* At 600px: tighter hero, stacked invoice header, full-width buttons */
+/* Tarjeta de seccion blanca que envuelve la grilla de hoteles aliados con radio asimetrico */
+.confirmacion__hoteles {
+    background: var(--white);
+    border: 1px solid rgba(235,230,224,0.6);
+    border-radius: 4px 30px 4px 30px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+}
+
+/* Encabezado de fila con icono de casa y titulo de seccion apilados */
+.confirmacion__hoteles-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    color: var(--secondary-color);
+}
+
+/* Titulo de seccion en negrita junto al icono de casa */
+.confirmacion__hoteles-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+/* Subtitulo promocional pequeno y apagado debajo del titulo de seccion */
+.confirmacion__hoteles-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0.15rem 0 0;
+}
+
+/* Grilla auto-ajustable de tarjetas de hotel con un ancho minimo de columna de 260px */
+.confirmacion__hoteles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+/* Fila de carga en linea mostrada mientras la solicitud de busqueda de hoteles esta en progreso */
+.confirmacion__hoteles-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 0;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin-bottom: 2rem;
+}
+
+/* Tarjeta de hotel individual: fondo blanco calido con borde sutil */
+.hotel-card {
+    border: 1px solid rgba(235,230,224,0.8);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+    background: #fdfaf7;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* La tarjeta de hotel sube ligeramente al pasar el cursor */
+.hotel-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+    transform: translateY(-2px);
+}
+
+/* Fila superior: nombre de la cadena aliada a la izquierda, calificacion de estrellas a la derecha */
+.hotel-card__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Etiqueta dorada pequena en mayusculas que muestra el nombre de la cadena aliada */
+.hotel-card__aliado {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Icono de estrella mas calificacion numerica en dorado */
+.hotel-card__rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #D4A056;
+}
+
+/* Nombre del hotel en negrita y color secundario */
+.hotel-card__nombre {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin: 0;
+}
+
+/* Descripcion corta y apagada con altura de linea relajada */
+.hotel-card__desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Icono de pin mas texto de direccion en una fila flex ajustada */
+.hotel-card__direccion {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 0.2rem;
+}
+
+/* Boton CTA dentro de cada tarjeta de hotel que enlaza a la pagina de descuento del aliado */
+.hotel-card__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    padding: 0.55rem 1rem;
+    background: linear-gradient(135deg, #1C1A18, #3A3531);
+    color: #F2EFEA;
+    border: none;
+    border-radius: 0 8px 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+/* El boton sube al pasar el cursor cuando no esta deshabilitado */
+.hotel-card__btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+/* Estado usado: fondo dorado que indica que el token ya fue generado para este aliado */
+.hotel-card__btn--usado {
+    background: linear-gradient(135deg, #b89860, #c9a96e);
+    cursor: not-allowed;
+}
+
+/* Estado de carga: opacidad reducida mientras la solicitud de token esta en proceso */
+.hotel-card__btn--cargando {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+/* Spinner usado en la fila de carga de hoteles y dentro del boton de redireccion */
+.conf-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(235,230,224,0.8);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+/* Variante de spinner en linea pequeno usado dentro del boton de redireccion del hotel */
+.conf-spinner--sm {
+    width: 13px;
+    height: 13px;
+    border-width: 2px;
+    border-top-color: #F2EFEA;
+}
+
+/* Rotacion continua en sentido horario para todos los elementos spinner */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* A 600px: hero mas ajustado, encabezado de factura apilado, botones de ancho completo, grilla de hotel de una columna */
 @media (max-width: 600px) {
     .confirmacion__hero { padding: 3rem 1.25rem 2rem; }
     .factura-card__header { flex-direction: column; align-items: flex-start; }
@@ -463,4 +650,6 @@
     .confirmacion__btns { flex-direction: column; }
     .btn-primary, .btn-secondary { width: 100%; text-align: center; }
     .conf-toast-container { bottom: 1rem; right: 0.5rem; left: 0.5rem; }
+    .confirmacion__hoteles { padding: 1.25rem; }
+    .confirmacion__hoteles-grid { grid-template-columns: 1fr; }
 }

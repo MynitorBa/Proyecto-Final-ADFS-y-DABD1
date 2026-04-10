@@ -209,3 +209,59 @@ body { font-family: 'Inter', sans-serif; }
   border-radius: 6px !important;
   background: var(--brand-teal) !important;
 }
+
+
+/* Botón flotante de exportación PDF en la esquina inferior derecha */
+.pdf-download-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.4rem;
+  background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(15,118,110,0.45);
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  user-select: none;
+}
+
+/* Elevación al pasar el cursor sobre el botón PDF */
+.pdf-download-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(15,118,110,0.55);
+}
+
+/* Estado presionado del botón PDF */
+.pdf-download-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Estado deshabilitado mientras se genera el PDF */
+.pdf-download-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+/* Spinner animado visible únicamente mientras se genera el PDF */
+.pdf-btn-spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: pdf-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Animación de rotación del spinner */
+@keyframes pdf-spin { to { transform: rotate(360deg); } }

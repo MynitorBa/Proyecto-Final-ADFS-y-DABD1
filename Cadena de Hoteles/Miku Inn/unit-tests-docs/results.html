@@ -48,7 +48,7 @@
     }
     .card-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #718096; }
     .card-value { font-size: 2rem; font-weight: 700; line-height: 1; }
-    .card.status .card-value { color: #16a34a; }
+    .card.status .card-value { color: #dc2626; }
     .card.pass   .card-value { color: var(--pass); }
     .card.fail   .card-value { color: #718096; }
     .card.time   .card-value { color: var(--teal); font-size: 1.5rem; }
@@ -78,7 +78,7 @@
     .footer { margin-top: 2.5rem; text-align: center; font-size: 0.8rem; color: #a0aec0; }
     .status-bar {
       padding: 0.6rem 1.5rem; text-align: center; font-weight: 600; font-size: 0.875rem;
-      background: #dcfce7; color: #16a34a; border-bottom: 2px solid #16a34a;
+      background: #fee2e2; color: #dc2626; border-bottom: 2px solid #dc2626;
     }
 
     /* Banner de cierre */
@@ -114,19 +114,19 @@
   </div>
 
   <div class="status-bar">
-    Todos los tests pasaron correctamente
-    &nbsp;&middot;&nbsp; Ejecutado el 5/4/2026, 7:26:29 p. m.
+    0 test(s) fallaron
+    &nbsp;&middot;&nbsp; Ejecutado el 9/4/2026, 12:53:19 a. m.
   </div>
 
   <div class="container">
     <div class="summary">
       <div class="card status">
         <span class="card-label">Estado</span>
-        <span class="card-value">PASS</span>
+        <span class="card-value">FAIL</span>
       </div>
       <div class="card pass">
         <span class="card-label">Pasaron</span>
-        <span class="card-value">2</span>
+        <span class="card-value">0</span>
       </div>
       <div class="card fail">
         <span class="card-label">Fallaron</span>
@@ -134,7 +134,7 @@
       </div>
       <div class="card">
         <span class="card-label">Total</span>
-        <span class="card-value" style="color:var(--teal-dark)">2</span>
+        <span class="card-value" style="color:var(--teal-dark)">0</span>
       </div>
       <div class="card time">
         <span class="card-label">Duracion</span>
@@ -155,23 +155,7 @@
           </tr>
         </thead>
         <tbody>
-          
-      <tr class="row-pass">
-        <td class="icon-cell">OK</td>
-        <td class="suite-name">validarFechas.test.js</td>
-        <td>retorna valido:true cuando check-out es después del check-in</td>
-        <td><span class="badge pass">PASS</span></td>
-        <td class="dur">21 ms</td>
-      </tr>
-      
-      <tr class="row-pass">
-        <td class="icon-cell">OK</td>
-        <td class="suite-name">validarFechas.test.js</td>
-        <td>retorna error cuando check-out es anterior al check-in</td>
-        <td><span class="badge pass">PASS</span></td>
-        <td class="dur">2 ms</td>
-      </tr>
-      
+          <tr><td colspan="5" style="text-align:center;color:#718096;padding:2rem">No se encontraron tests.</td></tr>
         </tbody>
       </table>
     </div>

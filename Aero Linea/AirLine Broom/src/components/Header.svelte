@@ -1,12 +1,12 @@
 <script>
 /**
  * @file Header.svelte
- * @description Main site header for Broom AirLine. Renders the logo, desktop inline nav links,
- * a searchable flight-search bar (desktop and mobile variants), a cart icon with pending-ticket
- * count, a profile icon, and a hamburger menu for mobile navigation. Integrates with the session
- * store to show role-specific links (admin panel, agency panel, reservations). Performs a
- * full-page navigation using window.location.href to ensure stores and state are reset on each
- * route change.
+ * @description Cabecera principal del sitio para Broom AirLine. Renderiza el logo, enlaces de navegacion
+ * en linea para escritorio, una barra de busqueda de vuelos con autocompletado (variantes desktop y movil),
+ * un icono de carrito con contador de boletos pendientes, un icono de perfil y un menu hamburguesa
+ * para navegacion movil. Se integra con el almacen de sesion para mostrar enlaces segun el rol
+ * (panel admin, panel agencia, reservas). Realiza navegacion de pagina completa usando window.location.href
+ * para asegurar que los almacenes y el estado se reinicien en cada cambio de ruta.
  */
   // @ts-nocheck
   import '../styles/header.css';
@@ -14,45 +14,45 @@
   import { sesion, logout } from '../stores/sesion.js';
   import { onMount } from 'svelte';
 
-  /** Function provided by the parent to navigate to a named page. @type {(page: string, params?: any) => void} */
+  /** Funcion proporcionada por el padre para navegar a una pagina nombrada. @type {(page: string, params?: any) => void} */
   export let navigateTo;
 
-  /** The currently active page name, used to apply active styles to nav links. @type {string} */
+  /** El nombre de la pagina actualmente activa, usado para aplicar estilos activos a los enlaces de navegacion. @type {string} */
   export let currentPage = 'home';
 
   import { API } from '../lib/api.js';
 
-  /** Whether the mobile hamburger navigation menu is open. @type {boolean} */
+  /** Indica si el menu de navegacion hamburguesa movil esta abierto. @type {boolean} */
   let menuActive = false;
 
-  /** Number of pending-status tickets in the user's cart, shown as a badge on the cart icon. @type {number} */
+  /** Numero de boletos en estado pendiente en el carrito del usuario, mostrado como insignia en el icono del carrito. @type {number} */
   let cartCount = 0;
 
-  /** Full list of airports fetched on mount, used as the source for the search autocomplete. @type {any[]} */
+  /** Lista completa de aeropuertos obtenida al montar, usada como fuente para el autocompletado de busqueda. @type {any[]} */
   let aeropuertos = [];
 
-  /** Current text value of the search input shared between desktop and mobile inputs. @type {string} */
+  /** Valor de texto actual del campo de busqueda compartido entre los inputs de desktop y movil. @type {string} */
   let searchQuery = '';
 
-  /** Filtered subset of airports matching the current searchQuery, capped at 8 results. @type {any[]} */
+  /** Subconjunto filtrado de aeropuertos que coinciden con el searchQuery actual, limitado a 8 resultados. @type {any[]} */
   let searchResults = [];
 
-  /** Whether the autocomplete dropdown should be visible. @type {boolean} */
+  /** Indica si el dropdown de autocompletado debe estar visible. @type {boolean} */
   let showSearchResults = false;
 
-  /** Bound reference to the desktop search input element, used for focus management. @type {HTMLInputElement|null} */
+  /** Referencia vinculada al elemento input de busqueda en desktop, usada para gestion del foco. @type {HTMLInputElement|null} */
   let searchInputDesktop = null;
 
-  /** Bound reference to the mobile search input element, used for focus management. @type {HTMLInputElement|null} */
+  /** Referencia vinculada al elemento input de busqueda en movil, usada para gestion del foco. @type {HTMLInputElement|null} */
   let searchInputMobile = null;
 
-  /** Whether an API flight-search request is currently in progress. @type {boolean} */
+  /** Indica si una solicitud de busqueda de vuelos a la API esta en progreso. @type {boolean} */
   let searching = false;
 
   /**
-   * On mount: fetches all airports for the search autocomplete, updates the cart count,
-   * and registers a document click listener to close the dropdown when clicking outside.
-   * Returns a cleanup function that removes the listener on component destruction.
+   * Al montar: obtiene todos los aeropuertos para el autocompletado de busqueda, actualiza el conteo del carrito
+   * y registra un listener de clic en el documento para cerrar el dropdown al hacer clic fuera.
+   * Devuelve una funcion de limpieza que elimina el listener al destruir el componente.
    * @async
    * @returns {Promise<void>}
    */
@@ -69,9 +69,9 @@
   });
 
   /**
-   * Fetches the user's reservations from the API and counts all tickets that have
-   * estadoReservaId === 1 (pending). Sets cartCount to 0 if the user is not logged in
-   * or if the request fails.
+   * Obtiene las reservaciones del usuario desde la API y cuenta todos los boletos con
+   * estadoReservaId igual a 1 (pendiente). Establece cartCount en 0 si el usuario no
+   * ha iniciado sesion o si la solicitud falla.
    * @async
    * @returns {Promise<void>}
    */
@@ -87,16 +87,16 @@
     } catch { cartCount = 0; }
   }
 
-  // Updates cart count whenever the session becomes truthy.
+  // Actualiza el conteo del carrito cada vez que la sesion se vuelve verdadera.
   $: if ($sesion) actualizarCartCount();
 
-  // Resets cart count to zero when the user logs out.
+  // Reinicia el conteo del carrito a cero cuando el usuario cierra sesion.
   $: if (!$sesion) cartCount = 0;
 
   /**
-   * Closes the search autocomplete dropdown when the user clicks anywhere outside
-   * an element with the broom-header__search class.
-   * @param {MouseEvent} e - The document-level click event.
+   * Cierra el dropdown de autocompletado de busqueda cuando el usuario hace clic
+   * fuera de un elemento con la clase broom-header__search.
+   * @param {MouseEvent} e - El evento de clic a nivel de documento.
    */
   function handleClickOutside(e) {
     const isInSearch = e.target.closest('.broom-header__search');
@@ -104,8 +104,8 @@
   }
 
   /**
-   * Filters the airports list against the current searchQuery (city, name, code, or country)
-   * and updates searchResults. Hides the dropdown if the query is shorter than 1 character.
+   * Filtra la lista de aeropuertos contra el searchQuery actual (ciudad, nombre, codigo o pais)
+   * y actualiza searchResults. Oculta el dropdown si la consulta tiene menos de 1 caracter.
    */
   function onSearchInput() {
     const q = searchQuery.toLowerCase().trim();
@@ -120,12 +120,12 @@
   }
 
   /**
-   * Calls the general flight search API endpoint with the provided query text, then navigates
-   * to the vuelos page passing the results. If the query is shorter than 2 characters, returns
-   * early. On network error it still navigates with an empty results array. Resets the search
-   * input and closes the mobile menu on completion.
+   * Llama al endpoint general de busqueda de vuelos de la API con el texto de consulta proporcionado,
+   * luego navega a la pagina de vuelos pasando los resultados. Si la consulta tiene menos de 2 caracteres,
+   * retorna de inmediato. En caso de error de red igual navega con un arreglo de resultados vacio.
+   * Reinicia el input de busqueda y cierra el menu movil al finalizar.
    * @async
-   * @param {string} queryText - The search text to send to the API.
+   * @param {string} queryText - El texto de busqueda a enviar a la API.
    * @returns {Promise<void>}
    */
   async function buscarYNavegar(queryText) {
@@ -159,9 +159,9 @@
   }
 
   /**
-   * Selects an airport from the autocomplete dropdown and triggers a flight search using
-   * that airport's city name as the query.
-   * @param {any} aeropuerto - The airport object selected from the dropdown.
+   * Selecciona un aeropuerto del dropdown de autocompletado y activa una busqueda de vuelos
+   * usando el nombre de ciudad de ese aeropuerto como consulta.
+   * @param {any} aeropuerto - El objeto de aeropuerto seleccionado del dropdown.
    */
   function selectSearchResult(aeropuerto) {
     showSearchResults = false;
@@ -169,9 +169,9 @@
   }
 
   /**
-   * Handles keyboard events on the search input. Enter triggers a search using the first
-   * result or the raw query. Escape closes the dropdown.
-   * @param {KeyboardEvent} e - The keydown event from the search input.
+   * Maneja eventos de teclado en el input de busqueda. Enter activa una busqueda usando el primer
+   * resultado o la consulta directa. Escape cierra el dropdown.
+   * @param {KeyboardEvent} e - El evento keydown del input de busqueda.
    */
   function handleSearchKeydown(e) {
     if (e.key === 'Enter') {
@@ -183,14 +183,14 @@
   }
 
   /**
-   * Toggles the mobile hamburger navigation menu open or closed.
+   * Alterna el menu de navegacion hamburguesa movil entre abierto y cerrado.
    */
   function toggleMenu() { menuActive = !menuActive; }
 
   /**
-   * Closes the mobile menu and navigates to the given page using a full page reload via
-   * window.location.href so that all component state is reset.
-   * @param {string} page - The route segment to navigate to (e.g. 'home', 'admin').
+   * Cierra el menu movil y navega a la pagina indicada mediante una recarga completa con
+   * window.location.href para que todo el estado del componente se reinicie.
+   * @param {string} page - El segmento de ruta al que navegar (por ejemplo, 'home', 'admin').
    */
   function handleNavigation(page) {
     menuActive = false;
@@ -198,7 +198,7 @@
   }
 
   /**
-   * Calls the logout store action and then redirects the browser to the home page.
+   * Llama a la accion de logout del almacen y luego redirige el navegador a la pagina de inicio.
    * @async
    * @returns {Promise<void>}
    */
@@ -207,13 +207,13 @@
     window.location.href = '/home';
   }
 
-  // True when a session object is present in the store.
+  // Verdadero cuando hay un objeto de sesion presente en el almacen.
   $: isLoggedIn   = !!$sesion;
 
-  // True when the logged-in user has the Administrador role.
+  // Verdadero cuando el usuario autenticado tiene el rol Administrador.
   $: isAdmin      = $sesion?.rolNombre === 'Administrador';
 
-  // True when the logged-in user has rolId 3 (Webservice / agency).
+  // Verdadero cuando el usuario autenticado tiene rolId 3 (Webservice / agencia).
   $: isWebservice = $sesion?.rolId === 3;
 </script>
 

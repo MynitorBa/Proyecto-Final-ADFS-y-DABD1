@@ -1,6 +1,6 @@
-/* Loading.css - Full-screen loading overlay with a floating airplane animation, a soft elliptical shadow that pulses beneath it, a muted loading message, and a sliding progress bar */
+/* Loading.css - Superposicion de carga a pantalla completa con una animacion de avion flotante, una sombra eliptica suave que pulsa debajo de el, un mensaje de carga apagado y una barra de progreso deslizante */
 
-/* Full-screen fixed overlay: white background, top z-index, wait cursor */
+/* Superposicion fija a pantalla completa: fondo blanco, z-index maximo, cursor de espera */
 .broom-loader__overlay {
     position: fixed;
     inset: 0;
@@ -13,7 +13,7 @@
     cursor: wait;
 }
 
-/* Centered column containing the plane, text, and progress bar */
+/* Columna centrada que contiene el avion, el texto y la barra de progreso */
 .broom-loader__content {
     position: relative;
     display: flex;
@@ -22,7 +22,7 @@
     z-index: 10;
 }
 
-/* Plane image container: 140px wide, continuously floating via broom-fly animation */
+/* Contenedor de imagen del avion: 140px de ancho, flotando continuamente mediante la animacion broom-fly */
 .broom-loader__plane-container {
     width: 140px;
     position: relative;
@@ -30,11 +30,11 @@
     animation: broom-fly 2.5s ease-in-out infinite;
 }
 
-/* Size modifiers: small (90px) and large (200px) plane variants */
+/* Modificadores de tamano: variantes pequena (90px) y grande (200px) del avion */
 .broom-loader__plane-container--small { width: 90px;  }
 .broom-loader__plane-container--large { width: 200px; }
 
-/* Plane image: full width with a subtle drop shadow */
+/* Imagen del avion: ancho completo con una sombra sutil */
 .broom-loader__plane-img {
     width: 100%;
     height: auto;
@@ -42,7 +42,7 @@
     filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.05));
 }
 
-/* Elliptical shadow beneath the plane: blurred and animated to pulse with broom-shadow */
+/* Sombra eliptica debajo del avion: difuminada y animada para pulsar con broom-shadow */
 .broom-loader__plane-shadow {
     width: 60%;
     height: 6px;
@@ -53,12 +53,12 @@
     animation: broom-shadow 2.5s ease-in-out infinite;
 }
 
-/* Text info block centered below the plane */
+/* Bloque de texto informativo centrado debajo del avion */
 .broom-loader__info {
     text-align: center;
 }
 
-/* All-caps loading message in warm dark brown */
+/* Mensaje de carga en mayusculas con marron oscuro calido */
 .broom-loader__message {
     color: #6b5744;
     font-size: 1rem;
@@ -68,7 +68,7 @@
     margin-bottom: 1rem;
 }
 
-/* Progress bar track: 180px wide, 2px tall, light grey */
+/* Pista de la barra de progreso: 180px de ancho, 2px de alto, gris claro */
 .broom-loader__track {
     width: 180px;
     height: 2px;
@@ -78,7 +78,7 @@
     overflow: hidden;
 }
 
-/* Progress bar fill: 60px wide dark brown block sliding from left to right infinitely */
+/* Relleno de la barra de progreso: bloque marron oscuro de 60px que se desliza de izquierda a derecha infinitamente */
 .broom-loader__progress {
     position: absolute;
     height: 100%;
@@ -87,7 +87,7 @@
     animation: broom-progress 1.5s infinite linear;
 }
 
-/* Decorative blurred cloud blobs positioned in the background */
+/* Manchas de nubes decorativas difuminadas posicionadas en el fondo */
 .broom-loader__cloud {
     position: absolute;
     background-color: #4d2e2e;
@@ -96,24 +96,24 @@
     z-index: 1;
 }
 
-/* Cloud variant 1: wide blob top-left at 50% opacity */
+/* Variante de nube 1: mancha ancha arriba a la izquierda con 50% de opacidad */
 .broom-loader__cloud--1 { width: 300px; height: 100px; top: 15%;    left: -10%; opacity: 0.5; }
-/* Cloud variant 2: larger blob bottom-right at 30% opacity */
+/* Variante de nube 2: mancha mas grande abajo a la derecha con 30% de opacidad */
 .broom-loader__cloud--2 { width: 400px; height: 150px; bottom: 10%; right: -5%; opacity: 0.3; }
 
-/* Plane float: oscillates 25px up while tilting from -1deg to 3deg */
+/* Flotacion del avion: oscila 25px hacia arriba inclinandose de -1deg a 3deg */
 @keyframes broom-fly {
     0%, 100% { transform: translateY(0)    rotate(-1deg); }
     50%       { transform: translateY(-25px) rotate(3deg); }
 }
 
-/* Shadow pulse: shrinks to 70% and fades to 40% opacity at mid-cycle */
+/* Pulso de la sombra: se encoge al 70% y se desvanece al 40% de opacidad en el punto medio */
 @keyframes broom-shadow {
     0%, 100% { transform: scale(1);   opacity: 1;   }
     50%       { transform: scale(0.7); opacity: 0.4; }
 }
 
-/* Progress bar slides from -100% to 150% horizontally */
+/* La barra de progreso se desliza horizontalmente de -100% a 150% */
 @keyframes broom-progress {
     from { left: -100%; }
     to   { left:  150%; }

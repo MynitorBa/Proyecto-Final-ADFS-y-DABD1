@@ -1,105 +1,105 @@
 <script>
 /**
  * @file AdminAgencias.svelte
- * @description Admin panel section for managing travel agencies. Displays a summary stats bar
- * (total, active, inactive, without assigned user) and a table of all agencies. Provides four
- * modal dialogs: one to create a new agency (with name, email, URL, webservice user and initial
- * discount), one to assign an available webservice user to an existing agency, one to edit an
- * agency's discount percentage, and one to edit its public URL. Agency status can also be changed
- * inline through a select element in the table row. All mutations call the backend API and refresh
- * the local state on success.
+ * @description Seccion del panel de administracion para gestionar agencias de viaje. Muestra una barra de
+ * estadisticas de resumen (total, activas, inactivas, sin usuario asignado) y una tabla de todas las agencias.
+ * Proporciona cuatro dialogos modales: uno para crear una nueva agencia (con nombre, correo, URL, usuario
+ * webservice y descuento inicial), uno para asignar un usuario webservice disponible a una agencia existente,
+ * uno para editar el porcentaje de descuento de una agencia y uno para editar su URL publica. El estado de
+ * la agencia tambien puede cambiarse inline mediante un elemento select en la fila de la tabla. Todas las
+ * mutaciones llaman a la API del backend y actualizan el estado local al tener exito.
  */
 // @ts-nocheck
   import { onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
-  /** List of agencies loaded from the backend. @type {any[]} */
+  /** Lista de agencias cargadas desde el backend. @type {any[]} */
   let agencias           = [];
 
-  /** Webservice-role users that have no entity assigned yet, used to populate the user selectors. @type {any[]} */
+  /** Usuarios con rol webservice que aun no tienen ninguna entidad asignada, usados para poblar los selectores de usuario. @type {any[]} */
   let usuariosDisponibles = [];
 
-  /** Whether the main data fetch is in progress. @type {boolean} */
+  /** Indica si la carga principal de datos esta en progreso. @type {boolean} */
   let cargando           = false;
 
-  // ── Create modal state ────────────────────────────────────────────────
+  // -- Estado del modal de creacion --
 
-  /** Controls visibility of the create-agency modal. @type {boolean} */
+  /** Controla la visibilidad del modal de creacion de agencia. @type {boolean} */
   let modalCrear         = false;
 
-  /** Whether the create-agency API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para crear agencia esta en vuelo. @type {boolean} */
   let creando            = false;
 
-  /** Agency name field value for the create form. @type {string} */
+  /** Valor del campo nombre de agencia para el formulario de creacion. @type {string} */
   let crearNombre        = '';
 
-  /** Agency email field value for the create form. @type {string} */
+  /** Valor del campo correo de agencia para el formulario de creacion. @type {string} */
   let crearCorreo        = '';
 
-  /** Public URL of the agency for the create form. @type {string} */
+  /** URL publica de la agencia para el formulario de creacion. @type {string} */
   let crearUrl           = '';
 
-  /** Selected webservice user ID for the create form. @type {string} */
+  /** ID de usuario webservice seleccionado para el formulario de creacion. @type {string} */
   let crearUsuarioId     = '';
 
-  /** Initial discount percentage value for the create form. @type {number} */
+  /** Valor de porcentaje de descuento inicial para el formulario de creacion. @type {number} */
   let crearDescuento     = 0;
 
-  /** Field-level validation errors for the create form. @type {Record<string, string>} */
+  /** Errores de validacion a nivel de campo para el formulario de creacion. @type {Record<string, string>} */
   let crearErrores       = {};
 
-  // ── Assign-user modal state ───────────────────────────────────────────
+  // -- Estado del modal de asignacion de usuario --
 
-  /** Controls visibility of the assign-user modal. @type {boolean} */
+  /** Controla la visibilidad del modal de asignacion de usuario. @type {boolean} */
   let modalAsignar       = false;
 
-  /** Whether the assign-user API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para asignar usuario esta en vuelo. @type {boolean} */
   let asignando          = false;
 
-  /** The agency row currently selected for user assignment. @type {any} */
+  /** La fila de agencia actualmente seleccionada para asignacion de usuario. @type {any} */
   let agenciaSeleccionada = null;
 
-  /** Selected webservice user ID in the assign-user modal. @type {string} */
+  /** ID de usuario webservice seleccionado en el modal de asignacion de usuario. @type {string} */
   let asignarUsuarioId   = '';
 
-  // ── Edit-discount modal state ─────────────────────────────────────────
+  // -- Estado del modal de edicion de descuento --
 
-  /** Controls visibility of the edit-discount modal. @type {boolean} */
+  /** Controla la visibilidad del modal de edicion de descuento. @type {boolean} */
   let modalDescuento     = false;
 
-  /** Whether the save-discount API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para guardar descuento esta en vuelo. @type {boolean} */
   let guardandoDescuento = false;
 
-  /** Current discount percentage value being edited. @type {number} */
+  /** Valor actual del porcentaje de descuento que se esta editando. @type {number} */
   let descuentoEditando  = 0;
 
-  /** The agency row being edited in the discount modal. @type {any} */
+  /** La fila de agencia que se esta editando en el modal de descuento. @type {any} */
   let agenciaDescuento   = null;
 
-  // ── Edit-URL modal state ──────────────────────────────────────────────
+  // -- Estado del modal de edicion de URL --
 
-  /** Controls visibility of the edit-URL modal. @type {boolean} */
+  /** Controla la visibilidad del modal de edicion de URL. @type {boolean} */
   let modalUrl           = false;
 
-  /** Whether the save-URL API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para guardar URL esta en vuelo. @type {boolean} */
   let guardandoUrl       = false;
 
-  /** URL value being edited in the URL modal. @type {string} */
+  /** Valor de URL que se esta editando en el modal de URL. @type {string} */
   let urlEditando        = '';
 
-  /** The agency row being edited in the URL modal. @type {any} */
+  /** La fila de agencia que se esta editando en el modal de URL. @type {any} */
   let agenciaUrl         = null;
 
   /**
-   * Status option definitions used to render the inline status select and badge styles.
+   * Definiciones de opciones de estado usadas para renderizar el select de estado inline y los estilos de insignia.
    * @type {{ id: number, label: string, class: string }[]}
    */
   const estadoOpciones = [
@@ -109,20 +109,20 @@
   ];
 
   /**
-   * Returns the status option object matching the given status ID, or a default unknown object.
-   * @param {number} id - The estadoAgenciaID value from an agency record.
-   * @returns {{ id: number, label: string, class: string }} The matching status option.
+   * Devuelve el objeto de opcion de estado que coincide con el ID de estado dado, o un objeto desconocido por defecto.
+   * @param {number} id - El valor estadoAgenciaID de un registro de agencia.
+   * @returns {{ id: number, label: string, class: string }} La opcion de estado coincidente.
    */
   const estadoInfo = (id) => estadoOpciones.find(e => e.id === id) ?? { label: 'Desconocido', class: '' };
 
   /**
-   * On mount: loads agencies and available webservice users in parallel.
+   * Al montar: carga las agencias y los usuarios webservice disponibles en paralelo.
    */
   onMount(() => { cargarTodo(); });
 
   /**
-   * Fetches the full agency list and the list of unassigned webservice users in parallel.
-   * Updates agencias and usuariosDisponibles on success. Shows toasts on errors.
+   * Obtiene la lista completa de agencias y la lista de usuarios webservice sin asignar en paralelo.
+   * Actualiza agencias y usuariosDisponibles al tener exito. Muestra toasts en caso de errores.
    * @async
    * @returns {Promise<void>}
    */
@@ -141,8 +141,8 @@
   }
 
   /**
-   * Refreshes only the list of available webservice users without reloading the full agency list.
-   * Used after operations that may change user availability.
+   * Actualiza solo la lista de usuarios webservice disponibles sin recargar la lista completa de agencias.
+   * Se usa despues de operaciones que pueden cambiar la disponibilidad de usuarios.
    * @async
    * @returns {Promise<void>}
    */
@@ -154,7 +154,7 @@
   }
 
   /**
-   * Resets the create-agency form fields and errors, then opens the create modal.
+   * Reinicia los campos del formulario de creacion de agencia y los errores, luego abre el modal de creacion.
    */
   function abrirModalCrear() {
     crearNombre = ''; crearCorreo = ''; crearUrl = ''; crearUsuarioId = ''; crearDescuento = 0;
@@ -163,9 +163,9 @@
   }
 
   /**
-   * Validates all fields in the create-agency form. Populates crearErrores with any
-   * field-level messages and returns false if validation fails.
-   * @returns {boolean} True when all fields are valid.
+   * Valida todos los campos del formulario de creacion de agencia. Puebla crearErrores con cualquier
+   * mensaje a nivel de campo y devuelve false si la validacion falla.
+   * @returns {boolean} Verdadero cuando todos los campos son validos.
    */
   function validarCrear() {
     crearErrores = {};
@@ -180,8 +180,8 @@
   }
 
   /**
-   * Validates the create form and, if valid, POSTs the new agency to the backend.
-   * On success closes the modal and reloads all data. On failure shows an error toast.
+   * Valida el formulario de creacion y, si es valido, envia la nueva agencia al backend con POST.
+   * Si tiene exito cierra el modal y recarga todos los datos. Si falla muestra un toast de error.
    * @async
    * @returns {Promise<void>}
    */
@@ -213,8 +213,8 @@
   }
 
   /**
-   * Sets the selected agency and resets the user selector, then opens the assign-user modal.
-   * @param {any} agencia - The agency row object from the table.
+   * Establece la agencia seleccionada y reinicia el selector de usuario, luego abre el modal de asignacion de usuario.
+   * @param {any} agencia - El objeto fila de agencia de la tabla.
    */
   function abrirModalAsignar(agencia) {
     agenciaSeleccionada = agencia;
@@ -223,8 +223,8 @@
   }
 
   /**
-   * Validates that a user is selected and PUTs the assignment to the backend. On success
-   * closes the modal and reloads all data. Shows validation or error toasts as needed.
+   * Valida que se haya seleccionado un usuario y envia la asignacion al backend con PUT. Si tiene exito
+   * cierra el modal y recarga todos los datos. Muestra toasts de validacion o error segun sea necesario.
    * @async
    * @returns {Promise<void>}
    */
@@ -250,8 +250,8 @@
   }
 
   /**
-   * Pre-fills the discount modal with the agency's current discount and opens it.
-   * @param {any} agencia - The agency row object from the table.
+   * Pre-rellena el modal de descuento con el descuento actual de la agencia y lo abre.
+   * @param {any} agencia - El objeto fila de agencia de la tabla.
    */
   function abrirModalDescuento(agencia) {
     agenciaDescuento  = agencia;
@@ -260,8 +260,8 @@
   }
 
   /**
-   * Validates the discount value (0–100) and PUTs the updated discount to the backend.
-   * On success closes the modal and reloads all data. Shows error toasts on failures.
+   * Valida el valor del descuento (0-100) y envia el descuento actualizado al backend con PUT.
+   * Si tiene exito cierra el modal y recarga todos los datos. Muestra toasts de error en caso de fallos.
    * @async
    * @returns {Promise<void>}
    */
@@ -289,8 +289,8 @@
   }
 
   /**
-   * Pre-fills the URL modal with the agency's current URL and opens it.
-   * @param {any} agencia - The agency row object from the table.
+   * Pre-rellena el modal de URL con la URL actual de la agencia y lo abre.
+   * @param {any} agencia - El objeto fila de agencia de la tabla.
    */
   function abrirModalUrl(agencia) {
     agenciaUrl  = agencia;
@@ -299,8 +299,8 @@
   }
 
   /**
-   * Validates the URL value and PUTs the updated URL to the backend.
-   * On success closes the modal and reloads all data. Shows error toasts on failures.
+   * Valida el valor de la URL y envia la URL actualizada al backend con PUT.
+   * Si tiene exito cierra el modal y recarga todos los datos. Muestra toasts de error en caso de fallos.
    * @async
    * @returns {Promise<void>}
    */
@@ -327,11 +327,11 @@
   }
 
   /**
-   * Sends a PUT request to change an agency's status. On success updates the local agencias
-   * array optimistically without a full reload. On failure reloads the full list to revert.
+   * Envia una solicitud PUT para cambiar el estado de una agencia. Si tiene exito actualiza el arreglo
+   * local de agencias de forma optimista sin una recarga completa. Si falla recarga la lista completa para revertir.
    * @async
-   * @param {any} agencia - The agency row object whose status is being changed.
-   * @param {string|number} nuevoEstadoId - The new status ID to apply.
+   * @param {any} agencia - El objeto fila de agencia cuyo estado se esta cambiando.
+   * @param {string|number} nuevoEstadoId - El nuevo ID de estado a aplicar.
    * @returns {Promise<void>}
    */
   async function handleCambiarEstado(agencia, nuevoEstadoId) {

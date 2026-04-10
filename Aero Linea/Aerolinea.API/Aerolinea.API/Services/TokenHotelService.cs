@@ -15,6 +15,11 @@ namespace Aerolinea.API.Services
         private readonly HttpClient _httpClient;
         private readonly HotelAliadoRepository _repository;
 
+        // Host que reemplaza 'localhost' cuando el backend corre dentro de Docker.
+        // Se lee de HANDSHAKE_HOST_OVERRIDE (ej: "host.docker.internal").
+        private static readonly string? _hostOverride =
+            Environment.GetEnvironmentVariable("HANDSHAKE_HOST_OVERRIDE");
+
         /// <summary>
         /// Inicializa el servicio con el repositorio de hoteles aliados.
         /// </summary>
@@ -25,17 +30,22 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
+        /// Si HANDSHAKE_HOST_OVERRIDE esta definido, reemplaza 'localhost' en la URL
+        /// por el override para que las llamadas salgan del contenedor Docker hacia el host.
+        /// </summary>
+        private static string AplicarHostOverride(string url)
+        {
+            if (string.IsNullOrEmpty(_hostOverride)) return url;
+            return url.Replace("localhost", _hostOverride);
+        }
+
+        /// <summary>
         /// Busca el hotel aliado por su ID en la BD, llama a su endpoint
         /// POST /aerolinea/token con el TokenHASH y retorna el token generado
         /// junto con la URL de redireccion para el usuario.
         /// </summary>
-        /// <param name="aliadoId">ID del registro HotelAliado en la BD de aerolineas.</param>
-        /// <param name="dto">Ciudad y pais destino del pasajero.</param>
-        /// <returns>TokenHotelResponseDTO con token, URL y fecha de expiracion.</returns>
-        /// <exception cref="Exception">Si el aliado no existe, no esta activo o el hotel responde con error.</exception>
         public async Task<TokenHotelResponseDTO> SolicitarToken(int aliadoId, TokenHotelRequestDTO dto)
         {
-            // Busca el aliado especifico por ID en la BD
             var aliado = await _repository.ObtenerHotelActivoPorId(aliadoId);
             if (aliado == null)
                 throw new Exception("Hotel aliado no encontrado o no activo");
@@ -52,10 +62,12 @@ namespace Aerolinea.API.Services
                 "application/json"
             );
 
-            // Autentica con el TokenHASH del aliado registrado en la BD
+            // Aplica el override para salir del contenedor si es necesario
+            var urlDestino = AplicarHostOverride(aliado.Url);
+
             var request = new HttpRequestMessage(
                 HttpMethod.Post,
-                $"{aliado.Url}/aerolinea/token"
+                $"{urlDestino}/aerolinea/token"
             );
             request.Headers.Add("X-Aerolinea-Token", aliado.TokenHash);
             request.Content = content;

@@ -1,6 +1,6 @@
-/* infoasiento.css - Seat class information page styles including header with left border accent, seat type cards with image gallery, feature list, detail items, entry animation, and responsive breakpoints */
+/* infoasiento.css - Estilos de la pagina de informacion de clases de asiento, incluyendo encabezado con acento de borde izquierdo, tarjetas de tipo de asiento con galeria de imagenes, lista de caracteristicas, elementos de detalle, animacion de entrada y puntos de quiebre responsivos */
 
-/* Full-page wrapper with warm beige background and generous bottom padding */
+/* Contenedor de pagina completa con fondo beige calido y relleno inferior generoso */
 .info-asientos {
     width: 100%;
     min-height: 100vh;
@@ -8,20 +8,20 @@
     padding: 3rem 1rem 6rem;
 }
 
-/* Centered content column capped at 1400px */
+/* Columna de contenido centrada limitada a 1400px */
 .info-asientos__container {
     max-width: 1400px;
     margin: 0 auto;
 }
 
-/* Page header with a thick warm-gold left border accent */
+/* Encabezado de pagina con un acento de borde izquierdo dorado calido grueso */
 .info-asientos__header {
     margin-bottom: 4rem;
     border-left: 6px solid #B89A7A;
     padding-left: 2rem;
 }
 
-/* Transparent back button with muted brown text that shifts left on hover */
+/* Boton de regreso transparente con texto marron apagado que se desplaza a la izquierda al pasar el cursor */
 .info-asientos__back {
     background: transparent;
     border: none;
@@ -38,13 +38,13 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Back button darkens and slides 5px left on hover */
+/* El boton de regreso se oscurece y se desliza 5px a la izquierda al pasar el cursor */
 .info-asientos__back:hover {
     color: #1C1A18;
     transform: translateX(-5px);
 }
 
-/* Fluid page title from 2rem to 3rem, light weight */
+/* Titulo de pagina fluido de 2rem a 3rem con peso ligero */
 .info-asientos__title {
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 300;
@@ -53,7 +53,7 @@
     line-height: 1.1;
 }
 
-/* Muted subtitle capped at 600px with relaxed line height */
+/* Subtitulo apagado limitado a 600px con interlineado relajado */
 .info-asientos__subtitle {
     color: #6B5D52;
     letter-spacing: 0.5px;
@@ -63,14 +63,14 @@
     line-height: 1.6;
 }
 
-/* Auto-fit grid of seat class cards, minimum 500px wide */
+/* Grilla de ajuste automatico de tarjetas de clase de asiento, minimo 500px de ancho */
 .asientos-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
     gap: 3rem;
 }
 
-/* Seat class card: white, large asymmetric radius, fades in and slides up on load */
+/* Tarjeta de clase de asiento: blanca, radio asimetrico grande, aparece con fundido y sube al cargar */
 .asiento-card {
     background: #FFFFFF;
     border-radius: 4px 32px 4px 32px;
@@ -84,20 +84,20 @@
     opacity: 0;
 }
 
-/* Card lifts and deepens shadow on hover */
+/* La tarjeta se eleva y profundiza la sombra al pasar el cursor */
 .asiento-card:hover {
     transform: translateY(-10px);
     box-shadow: 0 25px 50px rgba(28, 26, 24, 0.12);
 }
 
-/* Card header section: gradient beige background with a bottom separator */
+/* Seccion de encabezado de tarjeta: fondo beige con gradiente y separador inferior */
 .asiento-card__header {
     padding: 2rem 2.5rem 1.5rem;
     border-bottom: 1px solid #E6E1DA;
     background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
 }
 
-/* Large light-weight class name heading */
+/* Nombre de clase grande y ligero */
 .asiento-card__name {
     font-size: 2.2rem;
     font-weight: 300;
@@ -106,7 +106,7 @@
     letter-spacing: -0.5px;
 }
 
-/* Three-column image gallery fixed at 260px height */
+/* Galeria de imagenes de tres columnas con altura fija de 260px */
 .asiento-card__gallery {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -114,14 +114,14 @@
     height: 260px;
 }
 
-/* Individual gallery cell: positioned for overflow control */
+/* Celda de galeria individual: posicionada para controlar el desbordamiento */
 .gallery-item {
     position: relative;
     overflow: hidden;
     height: 100%;
 }
 
-/* Gallery image fills its cell with cover fit and scales on card hover */
+/* La imagen de galeria llena su celda con ajuste de cobertura y escala al pasar el cursor sobre la tarjeta */
 .gallery-item__image {
     width: 100%;
     height: 100%;
@@ -129,18 +129,18 @@
     transition: transform 0.6s ease;
 }
 
-/* All gallery images scale to 110% when the parent card is hovered */
+/* Todas las imagenes de galeria escalan al 110% cuando se pasa el cursor sobre la tarjeta padre */
 .asiento-card:hover .gallery-item__image {
     transform: scale(1.1);
 }
 
-/* White description section below the gallery */
+/* Seccion de descripcion blanca debajo de la galeria */
 .asiento-card__description {
     padding: 2rem 2.5rem;
     background: #FFFFFF;
 }
 
-/* Unstacked feature list with checkmark bullets */
+/* Lista de caracteristicas sin apilar con viñetas de marca de verificacion */
 .description-list {
     list-style: none;
     padding: 0;
@@ -150,7 +150,7 @@
     gap: 0.8rem;
 }
 
-/* Feature item: flex row with a checkmark bullet on the left */
+/* Elemento de caracteristica: fila flex con viñeta de marca de verificacion a la izquierda */
 .description-list__item {
     color: #1C1A18;
     font-size: 1.05rem;
@@ -160,7 +160,7 @@
     font-weight: 500;
 }
 
-/* Gold checkmark bullet before each feature item */
+/* Viñeta de marca de verificacion dorada antes de cada elemento de caracteristica */
 .description-list__item::before {
     content: '✓';
     color: #B89A7A;
@@ -169,14 +169,14 @@
     flex-shrink: 0;
 }
 
-/* Gradient beige details section at the bottom of the card with a top separator */
+/* Seccion de detalles con gradiente beige en la parte inferior de la tarjeta con separador superior */
 .asiento-card__details {
     padding: 2rem 2.5rem 2.5rem;
     background: linear-gradient(135deg, #fcfbf9 0%, #f8f6f3 100%);
     border-top: 1px solid #E6E1DA;
 }
 
-/* Small all-caps heading above the detail items */
+/* Encabezado pequeno en mayusculas encima de los elementos de detalle */
 .asiento-card__details-title {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -186,14 +186,14 @@
     margin: 0 0 1.5rem 0;
 }
 
-/* Vertical stack of detail rows with a separator below each */
+/* Pila vertical de filas de detalle con separador debajo de cada una */
 .details-list {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
-/* Each detail item: stacked label and value with a bottom separator */
+/* Cada elemento de detalle: etiqueta y valor apilados con separador inferior */
 .detail-item {
     display: flex;
     flex-direction: column;
@@ -202,13 +202,13 @@
     border-bottom: 1px solid #E6E1DA;
 }
 
-/* Last detail item removes the bottom border and padding */
+/* El ultimo elemento de detalle elimina el borde inferior y el relleno */
 .detail-item:last-child {
     border-bottom: none;
     padding-bottom: 0;
 }
 
-/* Small all-caps muted label above the detail value */
+/* Etiqueta pequena en mayusculas apagada encima del valor del detalle */
 .detail-item__label {
     font-size: 0.75rem;
     color: #6B5D52;
@@ -218,7 +218,7 @@
     margin: 0;
 }
 
-/* Detail value in regular dark text with comfortable line height */
+/* Valor del detalle en texto oscuro regular con interlineado comodo */
 .detail-item__value {
     font-size: 0.95rem;
     color: #1C1A18;
@@ -227,7 +227,7 @@
     margin: 0;
 }
 
-/* Card entry animation: slides up 30px while fading in */
+/* Animacion de entrada de tarjeta: sube 30px mientras aparece con fundido */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -239,7 +239,7 @@
     }
 }
 
-/* At 1200px: card minimum column width reduces to 450px */
+/* A 1200px: el ancho minimo de columna de tarjeta se reduce a 450px */
 @media (max-width: 1200px) {
     .asientos-grid {
         grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -247,7 +247,7 @@
     }
 }
 
-/* At 1024px: single-column layout; gallery height reduces to 240px */
+/* A 1024px: disposicion de una columna; la altura de la galeria se reduce a 240px */
 @media (max-width: 1024px) {
     .info-asientos {
         padding: 2.5rem 1rem 5rem;
@@ -263,7 +263,7 @@
     }
 }
 
-/* At 768px: page padding and header reduce; title shrinks */
+/* A 768px: el relleno y el encabezado de la pagina se reducen; el titulo se encoge */
 @media (max-width: 768px) {
     .info-asientos {
         padding: 2rem 1rem 4rem;
@@ -303,21 +303,21 @@
     }
 }
 
-/* At 600px: gallery collapses to single image by hiding the 2nd and 3rd items */
+/* A 600px: la galeria colapsa a una sola imagen ocultando el 2do y 3er elemento */
 @media (max-width: 600px) {
     .asiento-card__gallery {
         grid-template-columns: 1fr;
         height: 220px;
     }
 
-    /* Second and third gallery images hidden on small screens */
+    /* Las imagenes segunda y tercera de la galeria se ocultan en pantallas pequenas */
     .gallery-item:nth-child(2),
     .gallery-item:nth-child(3) {
         display: none;
     }
 }
 
-/* At 480px: tighter padding throughout */
+/* A 480px: relleno mas ajustado en toda la tarjeta */
 @media (max-width: 480px) {
     .info-asientos {
         padding: 1.5rem 0.5rem 3rem;
@@ -361,7 +361,7 @@
     }
 }
 
-/* At 380px: all card sections tighten their padding further */
+/* A 380px: todas las secciones de la tarjeta ajustan su relleno aun mas */
 @media (max-width: 380px) {
     .asiento-card__header {
         padding: 1.25rem 1.25rem 1rem;

@@ -2,94 +2,94 @@
   // @ts-nocheck
 /**
  * @file DatosPasajeros.svelte
- * @description Passenger data entry page shown after a user creates a reservation with pending
- * tickets that have no passenger assigned. On mount it fetches the user's pending reservations,
- * flattens all tickets into a single list, and checks whether all tickets already have a
- * passenger — if so it redirects directly to the seat-selection page. Otherwise it presents
- * a stepped form (one tab per ticket) that collects nombre, apellido, pasaporte (digits only),
- * pais, ciudad, and telefono for each passenger. Country and city fields use autocomplete
- * dropdowns powered by the countriesnow.space API. The phone field dynamically sets the
- * expected digit count and dial code prefix based on the selected country using the
- * restcountries.com API combined with a local knownDigits lookup table. On final submission,
- * all passenger records are sent in parallel PUT requests to the API grouped by reservationId,
- * then the user is forwarded to the seat-selection page with the flight grouping data.
+ * @description Pagina de ingreso de datos de pasajeros mostrada despues de que un usuario crea una reservacion
+ * con boletos pendientes sin pasajero asignado. Al montar obtiene las reservaciones pendientes del usuario,
+ * aplana todos los boletos en una sola lista y verifica si todos los boletos ya tienen pasajero asignado;
+ * de ser asi redirige directamente a la pagina de seleccion de asientos. De lo contrario presenta un formulario
+ * paso a paso (una pestana por boleto) que recopila nombre, apellido, pasaporte (solo digitos), pais, ciudad y
+ * telefono para cada pasajero. Los campos de pais y ciudad usan dropdowns de autocompletado impulsados por la
+ * API de countriesnow.space. El campo de telefono establece dinamicamente el conteo de digitos esperado y el
+ * prefijo de codigo de marcado segun el pais seleccionado usando la API de restcountries.com combinada con una
+ * tabla de busqueda knownDigits local. En el envio final, todos los registros de pasajeros se envian en solicitudes
+ * PUT paralelas a la API agrupadas por reservacionId, luego el usuario es redirigido a la pagina de seleccion
+ * de asientos con los datos de agrupacion de vuelos.
  */
 
   import '../styles/pasajeros.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
-  /** Navigation function provided by the app router to switch pages. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar paginas. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
+  /** ID del usuario autenticado actualmente, leido del store de sesion. @type {number|null} */
   let usuarioId = null;
 
-  /** Unsubscribe handle for the session store subscription. @type {Function} */
+  /** Manejador de desuscripcion para la suscripcion al store de sesion. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
-  /** Indicates whether the initial reservation data is still being loaded. @type {boolean} */
+  /** Indica si los datos iniciales de reservacion aun se estan cargando. @type {boolean} */
   let loading = true;
 
-  /** Error message set when the reservation fetch fails. @type {string|null} */
+  /** Mensaje de error establecido cuando la obtencion de reservaciones falla. @type {string|null} */
   let error = null;
 
-  /** Array of pending reservations fetched from the API, filtered to estadoReservaId === 1. @type {Array} */
+  /** Arreglo de reservaciones pendientes obtenidas de la API, filtradas a estadoReservaId === 1. @type {Array} */
   let reservacionesPendientes = [];
 
-  /** Flat array of all ticket objects across all pending reservations, each augmented with reservacionId and noReservacion. @type {Array} */
+  /** Arreglo plano de todos los objetos de boleto de todas las reservaciones pendientes, cada uno aumentado con reservacionId y noReservacion. @type {Array} */
   let todosLosBoletos = [];
 
-  /** Map of boletoId to passenger form data objects containing nombre, apellido, pasaporte, telefono, pais, and ciudad. @type {object} */
+  /** Mapa de boletoId a objetos de datos del formulario de pasajero que contienen nombre, apellido, pasaporte, telefono, pais y ciudad. @type {object} */
   let passengerData = {};
 
-  /** Zero-based index of the ticket currently shown in the stepped form UI. @type {number} */
+  /** Indice basado en cero del boleto actualmente mostrado en la UI del formulario paso a paso. @type {number} */
   let currentPassengerIndex = 0;
 
-  /** Indicates whether the passenger data submission is in progress. @type {boolean} */
+  /** Indica si el envio de datos de pasajeros esta en progreso. @type {boolean} */
   let submitting = false;
 
-  /** Full list of countries fetched from countriesnow.space, each entry containing country name and cities array. @type {Array} */
+  /** Lista completa de paises obtenida de countriesnow.space, cada entrada contiene nombre de pais y arreglo de ciudades. @type {Array} */
   let todosLosPaises = [];
 
-  /** Map of boletoId to the current text typed in the country autocomplete input. @type {object} */
+  /** Mapa de boletoId al texto actual escrito en el input de autocompletado de pais. @type {object} */
   let paisQueries = {};
 
-  /** Map of boletoId to the filtered country suggestion list shown in the dropdown. @type {object} */
+  /** Mapa de boletoId a la lista filtrada de sugerencias de pais mostrada en el dropdown. @type {object} */
   let paisesSugeridos = {};
 
-  /** Map of boletoId to the selected country object (with country name and cities), or null if not yet selected. @type {object} */
+  /** Mapa de boletoId al objeto de pais seleccionado (con nombre de pais y ciudades), o null si aun no se ha seleccionado. @type {object} */
   let paisesSeleccionados = {};
 
-  /** Map of boletoId to the current text typed in the city autocomplete input. @type {object} */
+  /** Mapa de boletoId al texto actual escrito en el input de autocompletado de ciudad. @type {object} */
   let ciudadQueries = {};
 
-  /** Map of boletoId to the filtered city suggestion list shown in the dropdown. @type {object} */
+  /** Mapa de boletoId a la lista filtrada de sugerencias de ciudad mostrada en el dropdown. @type {object} */
   let ciudadesSugeridas = {};
 
-  /** Map of boletoId to a boolean indicating whether a city has been confirmed from the suggestion list. @type {object} */
+  /** Mapa de boletoId a un booleano que indica si se ha confirmado una ciudad de la lista de sugerencias. @type {object} */
   let ciudadesSeleccionadas = {};
 
-  /** Map of boletoId to the international dial code string (e.g. '+502') for the selected country. @type {object} */
+  /** Mapa de boletoId a la cadena de codigo de marcado internacional (por ejemplo '+502') para el pais seleccionado. @type {object} */
   let dialCodes = {};
 
-  /** Map of boletoId to the expected number of local phone digits for the selected country. @type {object} */
+  /** Mapa de boletoId al numero esperado de digitos de telefono local para el pais seleccionado. @type {object} */
   let phoneDigitCounts = {};
 
-  /** Map of boletoId to phone validation error strings displayed below the phone input. @type {object} */
+  /** Mapa de boletoId a cadenas de error de validacion de telefono mostradas debajo del input de telefono. @type {object} */
   let phoneErrors = {};
 
-  /** Map of boletoId to passport validation error strings displayed below the passport input. @type {object} */
+  /** Mapa de boletoId a cadenas de error de validacion de pasaporte mostradas debajo del input de pasaporte. @type {object} */
   let pasaporteErrors = {};
 
-  /** Map of lowercase country name to its dial code and expected digit count, populated from restcountries.com. @type {object} */
+  /** Mapa de nombre de pais en minusculas a su codigo de marcado y conteo de digitos esperado, poblado desde restcountries.com. @type {object} */
   let dialCodesMap = {};
 
   /**
-   * Lookup table of international dial codes to their standard local digit counts.
-   * Used as a fallback when the restcountries API does not provide digit information.
+   * Tabla de busqueda de codigos de marcado internacional a sus conteos de digitos locales estandar.
+   * Usada como alternativa cuando la API de restcountries no proporciona informacion de digitos.
    * @type {object}
    */
   const knownDigits = {
@@ -137,12 +137,12 @@
   };
 
   /**
-   * Formats a string of raw phone digits into a localized display format based on the expected
-   * digit count. Groups of digits are separated by spaces using different patterns per length
-   * (e.g. 8 digits → XXXX XXXX, 9 digits → XXX XXX XXX, 10 digits → XXX XXX XXXX).
-   * @param {string} digits - Raw digit string without spaces.
-   * @param {number} total - Expected total number of digits for the selected country.
-   * @returns {string} Formatted phone string with spaces inserted.
+   * Formatea una cadena de digitos de telefono sin procesar en un formato de visualizacion localizado segun el conteo
+   * de digitos esperado. Los grupos de digitos se separan por espacios usando diferentes patrones por longitud
+   * (por ejemplo 8 digitos - XXXX XXXX, 9 digitos - XXX XXX XXX, 10 digitos - XXX XXX XXXX).
+   * @param {string} digits - Cadena de digitos sin procesar sin espacios.
+   * @param {number} total - Numero total esperado de digitos para el pais seleccionado.
+   * @returns {string} Cadena de telefono formateada con espacios insertados.
    */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
@@ -153,11 +153,11 @@
   }
 
   /**
-   * Handles phone field input for a specific ticket. Strips non-digits, caps at the expected
-   * digit count for the selected country, formats the value using formatLocalPhone, updates
-   * passengerData and clears the phone error for that ticket.
-   * @param {Event} e - The input event from the phone field.
-   * @param {number} boletoId - The ticket ID this phone input belongs to.
+   * Maneja el input del campo de telefono para un boleto especifico. Elimina los no-digitos, limita al conteo
+   * de digitos esperado del pais seleccionado, formatea el valor usando formatLocalPhone, actualiza
+   * passengerData y limpia el error de telefono para ese boleto.
+   * @param {Event} e - El evento de input del campo de telefono.
+   * @param {number} boletoId - El ID del boleto al que pertenece este input de telefono.
    */
   function onPhoneInput(e, boletoId) {
     const raw = e.target.value.replace(/\D/g, '');
@@ -170,10 +170,10 @@
   }
 
   /**
-   * Generates a placeholder phone number string by repeating '5' to the expected digit count
-   * and then formatting it with formatLocalPhone to show the spacing pattern.
-   * @param {number} digits - The expected number of digits for the selected country.
-   * @returns {string} A formatted sample phone placeholder such as "5555 5555".
+   * Genera una cadena de placeholder de telefono de muestra repitiendo '5' hasta el conteo de digitos esperado
+   * y luego formateandola con formatLocalPhone para mostrar el patron de espaciado.
+   * @param {number} digits - El numero esperado de digitos para el pais seleccionado.
+   * @returns {string} Una muestra formateada de placeholder de telefono como "5555 5555".
    */
   function getPhonePlaceholder(digits) {
     const sample = '5'.repeat(digits);
@@ -181,9 +181,9 @@
   }
 
   /**
-   * Groups a flat array of ticket objects by vueloId to produce the flight grouping structure
-   * required by the seat-selection page. Each group contains flight metadata and a boletos array.
-   * @param {Array} boletos - Flat array of ticket objects, each with a vueloId field.
+   * Agrupa un arreglo plano de objetos de boleto por vueloId para producir la estructura de agrupacion de vuelos
+   * requerida por la pagina de seleccion de asientos. Cada grupo contiene metadata de vuelo y un arreglo de boletos.
+   * @param {Array} boletos - Arreglo plano de objetos de boleto, cada uno con un campo vueloId.
    * @returns {Array<{vueloId: number, numeroVuelo: string, avionModelo: string, avionMarca: string, clase: string, boletos: Array}>}
    */
   function construirGruposVuelo(boletos) {
@@ -205,10 +205,10 @@
   }
 
   /**
-   * Lifecycle hook that runs after the component mounts. Redirects to login if unauthenticated.
-   * Fetches the country list from countriesnow.space and builds the dialCodesMap from
-   * restcountries.com, combining the root and suffix fields with the knownDigits fallback.
-   * Then loads pending reservations. Returns the session unsubscribe function for cleanup.
+   * Hook de ciclo de vida que se ejecuta tras el montaje del componente. Redirige al login si no esta autenticado.
+   * Obtiene la lista de paises desde countriesnow.space y construye el dialCodesMap desde
+   * restcountries.com, combinando los campos root y suffix con el fallback de knownDigits.
+   * Luego carga las reservaciones pendientes. Retorna la funcion de desuscripcion de sesion para limpieza.
    * @async
    * @returns {Promise<Function>}
    */
@@ -248,10 +248,11 @@
   });
 
   /**
-   * Fetches all of the user's reservations, filters to pending ones, flattens all tickets,
-   * and checks if all tickets already have a passenger assigned. If so, redirects immediately
-   * to the seat-selection page with the grouped flight data. Otherwise, initializes the
-   * passengerData, autocomplete, dial code, and error maps for each ticket and renders the form.
+   * Obtiene todas las reservaciones del usuario, filtra las pendientes, aplana todos los boletos
+   * y verifica si todos ya tienen un pasajero asignado. De ser asi, redirige inmediatamente
+   * a la pagina de seleccion de asientos con los grupos de vuelo. De lo contrario, inicializa
+   * los mapas de passengerData, autocompletado, codigo de marcacion y errores para cada boleto
+   * y muestra el formulario.
    * @async
    * @returns {Promise<void>}
    */
@@ -324,10 +325,10 @@
   }
 
   /**
-   * Handles input changes in the country autocomplete field for a specific ticket.
-   * Filters todosLosPaises by case-insensitive match (minimum 2 characters) and shows
-   * up to 6 suggestions. Clears passengerData.pais if the user types without selecting.
-   * @param {number} boletoId - The ticket ID whose country field changed.
+   * Maneja los cambios de entrada en el campo de autocompletado de pais para un boleto especifico.
+   * Filtra todosLosPaises por coincidencia sin distinguir mayusculas (minimo 2 caracteres) y muestra
+   * hasta 6 sugerencias. Limpia passengerData.pais si el usuario escribe sin seleccionar.
+   * @param {number} boletoId - El ID del boleto cuyo campo de pais cambio.
    */
   function onPaisInput(boletoId) {
     const q = paisQueries[boletoId].toLowerCase();
@@ -339,12 +340,12 @@
   }
 
   /**
-   * Confirms a country selection for a specific ticket. Updates paisesSeleccionados,
-   * paisQueries, and passengerData.pais; clears city fields; and resolves the dial code and
-   * expected digit count from dialCodesMap, resetting the phone field in the process.
-   * Triggers reactive updates by spreading all affected maps.
-   * @param {number} boletoId - The ticket ID whose country is being selected.
-   * @param {object} pais - The selected country object from todosLosPaises, with country and cities.
+   * Confirma la seleccion de un pais para un boleto especifico. Actualiza paisesSeleccionados,
+   * paisQueries y passengerData.pais; limpia los campos de ciudad; y resuelve el codigo de
+   * marcacion y la cantidad de digitos esperada desde dialCodesMap, reiniciando el campo
+   * de telefono en el proceso. Dispara actualizaciones reactivas propagando todos los mapas afectados.
+   * @param {number} boletoId - El ID del boleto cuyo pais esta siendo seleccionado.
+   * @param {object} pais - El objeto de pais seleccionado de todosLosPaises, con country y cities.
    */
   function seleccionarPais(boletoId, pais) {
     paisesSeleccionados[boletoId]   = pais;
@@ -370,9 +371,9 @@
   }
 
   /**
-   * Blur handler for the country input. If the user has typed but has not selected a country
-   * from the list, resets the query string to empty so no invalid value is stored.
-   * @param {number} boletoId - The ticket ID whose country field lost focus.
+   * Manejador de blur para el campo de pais. Si el usuario escribio pero no selecciono un pais
+   * de la lista, restablece la cadena de busqueda a vacio para que no se almacene un valor invalido.
+   * @param {number} boletoId - El ID del boleto cuyo campo de pais perdio el foco.
    */
   function validarPaisSeleccionado(boletoId) {
     if (paisQueries[boletoId] && !paisesSeleccionados[boletoId]) {
@@ -382,11 +383,11 @@
   }
 
   /**
-   * Handles input changes in the city autocomplete field for a specific ticket.
-   * Only runs if a country has been selected. Filters the selected country's cities array
-   * by case-insensitive match (minimum 2 characters), shows up to 6 suggestions, and
-   * clears passengerData.ciudad if the user types without selecting.
-   * @param {number} boletoId - The ticket ID whose city field changed.
+   * Maneja los cambios de entrada en el campo de autocompletado de ciudad para un boleto especifico.
+   * Solo se ejecuta si ya se selecciono un pais. Filtra el arreglo de ciudades del pais seleccionado
+   * por coincidencia sin distinguir mayusculas (minimo 2 caracteres), muestra hasta 6 sugerencias
+   * y limpia passengerData.ciudad si el usuario escribe sin seleccionar.
+   * @param {number} boletoId - El ID del boleto cuyo campo de ciudad cambio.
    */
   function onCiudadInput(boletoId) {
     if (!paisesSeleccionados[boletoId]) return;
@@ -399,10 +400,10 @@
   }
 
   /**
-   * Confirms a city selection for a specific ticket. Updates ciudadQueries, passengerData.ciudad,
-   * and marks ciudadesSeleccionadas as true, then clears the suggestion list.
-   * @param {number} boletoId - The ticket ID whose city is being selected.
-   * @param {string} ciudad - The city name string that was clicked in the dropdown.
+   * Confirma la seleccion de una ciudad para un boleto especifico. Actualiza ciudadQueries,
+   * passengerData.ciudad y marca ciudadesSeleccionadas como true, luego limpia la lista de sugerencias.
+   * @param {number} boletoId - El ID del boleto cuya ciudad esta siendo seleccionada.
+   * @param {string} ciudad - El nombre de la ciudad que fue clickeada en el desplegable.
    */
   function seleccionarCiudad(boletoId, ciudad) {
     ciudadQueries[boletoId]         = ciudad;
@@ -414,9 +415,9 @@
   }
 
   /**
-   * Blur handler for the city input. If the user has typed but has not selected a city
-   * from the list, resets the query string to empty so no invalid value is stored.
-   * @param {number} boletoId - The ticket ID whose city field lost focus.
+   * Manejador de blur para el campo de ciudad. Si el usuario escribio pero no selecciono una ciudad
+   * de la lista, restablece la cadena de busqueda a vacio para que no se almacene un valor invalido.
+   * @param {number} boletoId - El ID del boleto cuyo campo de ciudad perdio el foco.
    */
   function validarCiudadSeleccionada(boletoId) {
     if (ciudadQueries[boletoId] && !ciudadesSeleccionadas[boletoId]) {
@@ -426,22 +427,23 @@
   }
 
   /**
-   * Advances the stepped form to the next ticket if not already on the last one.
+   * Avanza el formulario escalonado al siguiente boleto si no esta en el ultimo.
    */
   function handleNext()     { if (currentPassengerIndex < todosLosBoletos.length - 1) currentPassengerIndex++; }
 
   /**
-   * Returns the stepped form to the previous ticket if not already on the first one.
+   * Regresa el formulario escalonado al boleto anterior si no esta en el primero.
    */
   function handlePrevious() { if (currentPassengerIndex > 0) currentPassengerIndex--; }
 
   /**
-   * Validates and submits all passenger data. Groups tickets by reservacionId, checks that all
-   * required fields are filled, validates that pasaporte contains only digits, and verifies that
-   * the phone digit count matches the expected count for the selected country. On successful
-   * validation, sends parallel PUT requests to /api/reservaciones/:id/pasajeros for each
-   * reservation. On full success, builds the flight groups and navigates to 'seleccion-asientos'.
-   * On validation or API failure, surfaces an alert and/or focuses the offending passenger tab.
+   * Valida y envia todos los datos de los pasajeros. Agrupa los boletos por reservacionId, verifica
+   * que todos los campos requeridos esten llenos, valida que pasaporte contenga solo digitos y
+   * verifica que la cantidad de digitos del telefono coincida con la esperada para el pais
+   * seleccionado. Con validacion exitosa, envia solicitudes PUT en paralelo a
+   * /api/reservaciones/:id/pasajeros para cada reservacion. Con exito total, construye los grupos
+   * de vuelo y navega a seleccion-asientos. Ante fallo de validacion o de la API, muestra una alerta
+   * y enfoca la pestana del pasajero con error.
    * @async
    * @returns {Promise<void>}
    */
@@ -527,10 +529,10 @@
   }
 
   /**
-   * Formats a date string into a localized date using es-ES locale with two-digit day, month, and year.
-   * Returns an empty string if the input is falsy.
-   * @param {string|null} d - ISO date string to format.
-   * @returns {string} Formatted date such as "15/01/2025" or "".
+   * Formatea una cadena de fecha en una fecha localizada usando el locale es-ES con dia, mes y
+   * anio de dos digitos. Retorna una cadena vacia si el input es falsy.
+   * @param {string|null} d - Cadena de fecha ISO a formatear.
+   * @returns {string} Fecha formateada como "15/01/2025" o "".
    */
   function formatDate(d) {
     if (!d) return '';
@@ -538,10 +540,10 @@
   }
 
   /**
-   * Extracts and returns the HH:MM portion from a time string in HH:MM:SS format.
-   * Returns an empty string if the input is falsy.
-   * @param {string|null} t - Time string to shorten.
-   * @returns {string} The HH:MM portion or "".
+   * Extrae y retorna la porcion HH:MM de una cadena de hora en formato HH:MM:SS.
+   * Retorna una cadena vacia si el input es falsy.
+   * @param {string|null} t - Cadena de hora a acortar.
+   * @returns {string} La porcion HH:MM o "".
    */
   function formatTime(t) {
     if (!t) return '';
@@ -549,13 +551,13 @@
     return `${p[0]}:${p[1]}`;
   }
 
-  // Reactively resolves the ticket object currently displayed in the stepped form.
+  // Resuelve reactivamente el objeto de boleto que se muestra actualmente en el formulario escalonado.
   $: currentBoleto    = todosLosBoletos[currentPassengerIndex];
 
-  // True when the user is viewing the first ticket, disables the Previous button.
+  // Verdadero cuando el usuario ve el primer boleto, deshabilita el boton Anterior.
   $: isFirstPassenger = currentPassengerIndex === 0;
 
-  // True when the user is viewing the last ticket, switches the Next button to the Submit button.
+  // Verdadero cuando el usuario ve el ultimo boleto, cambia el boton Siguiente por el de Enviar.
   $: isLastPassenger  = currentPassengerIndex === todosLosBoletos.length - 1;
 </script>
 

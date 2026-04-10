@@ -20,7 +20,7 @@ Registra los controllers de la API para que ASP.NET los descubra automaticamente
 builder.Services.AddSingleton<DbConnectionFactory>();
 ```
 
-Conexion a Oracle como Singleton: una sola instancia para toda la aplicacion.
+Conexion a SQL Server como Singleton: una sola instancia para toda la aplicacion.
 
 ```csharp
 builder.Services.AddScoped<PaisRepository>();
@@ -149,6 +149,18 @@ builder.Services.AddScoped<RutaAgenciaRepository>();
 Repositorios de agencias - Rutas disponibles para agencias.
 
 ```csharp
+builder.Services.AddScoped<HotelAliadoRepository>();
+```
+
+Repositorios de hotel - Hoteles aliados registrados en el sistema.
+
+```csharp
+builder.Services.AddScoped<TokenHotelService>();
+```
+
+Servicio de hotel - Obtener token de descuentos al redireccionar.
+
+```csharp
 builder.Services.AddHealthChecks();
 ```
 
@@ -257,10 +269,16 @@ builder.Services.AddScoped<PerfilService>();
 Servicios de usuarios - Consulta y actualizacion de datos personales del perfil.
 
 ```csharp
+builder.Services.AddScoped<PdfService>();
+```
+
+Servicios de pagos - Generacion de facturas. PDF deshabilitado temporalmente mientras la libreria nativa wkhtmltopdf no este disponible en el entorno.
+
+```csharp
 builder.Services.AddScoped<FacturaService>();
 ```
 
-Servicios de pagos - Generacion de facturas en PDF con DinkToPdf.
+Servicios de pagos - Generacion y consulta de facturas por reservacion.
 
 ```csharp
 builder.Services.AddScoped<MetricasService>();
@@ -290,7 +308,7 @@ Servicios de agencias - Registro, handshake y gestion de estado de agencias.
 builder.Services.AddScoped<HandshakeService>();
 ```
 
-Servicios de agencias - Intercambio de tokens con agencias externas.
+Servicios de agencias - Intercambio de tokens con agencias externas (handshake).
 
 ```csharp
 builder.Services.AddScoped<AgenciaAuthMiddleware>();
@@ -329,40 +347,22 @@ builder.Services.AddScoped<ConfirmarReservacionAgenciaService>();
 Servicios de agencias - Confirmar reservaciones creadas por agencias externas.
 
 ```csharp
-var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+builder.Services.AddScoped<HotelAliadoService>();
 ```
 
-Carpeta de la libreria nativa segun el sistema operativo: linux-x64 o win-x64.
+Servicios de Hotel Aliado - Consulta y agregacion de resultados de hoteles aliados.
 
 ```csharp
-var wkHtmlPath = Path.Combine(
+builder.Services.AddHttpClient();
 ```
 
-Ruta absoluta a la libreria nativa wkhtmltopdf para generacion de PDF.
+IHttpClientFactory - Habilita llamadas HTTP salientes hacia sistemas externos (hotel aliado). Requerido por HandshakeHotelService para el proceso de handshake.
 
 ```csharp
-var context = new CustomAssemblyLoadContext();
+builder.Services.AddScoped<HandshakeHotelService>();
 ```
 
-Carga la libreria nativa wkhtmltopdf en un contexto de ensamblaje personalizado.
-
-```csharp
-context.LoadUnmanagedLibrary(wkHtmlPath);
-```
-
-Carga la libreria nativa en memoria para habilitar la conversion de HTML a PDF.
-
-```csharp
-builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
-```
-
-Convertidor HTML a PDF como Singleton - una sola instancia, thread-safe.
-
-```csharp
-builder.Services.AddScoped<PdfService>();
-```
-
-Servicio de generacion de PDF para facturas.
+Servicios de Hotel Aliado - Inicia el handshake de autenticacion con un hotel aliado y guarda el token de sesion resultante en HotelAliado.TokenHASH.
 
 ```csharp
 builder.Services.AddSingleton<BusquedaTemporalService>();
@@ -397,8 +397,6 @@ CORS para permitir peticiones del frontend Svelte. Acepta origenes configurados 
 ```csharp
 var corsOrigins = builder.Configuration
 ```
-
-Lee los origenes permitidos desde appsettings.json o usa los puertos de Vite por defecto.
 
 ```csharp
 var app = builder.Build();

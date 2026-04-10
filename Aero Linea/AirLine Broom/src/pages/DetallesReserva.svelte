@@ -1,34 +1,35 @@
 <script>
 /**
  * @file DetallesReserva.svelte
- * @description Modal component that displays full details of a single reservation.
- * Shows flight segments grouped by route, passenger information, payment summary,
- * and a rating/comment form for completed reservations. Appears as an overlay on top
- * of the MisReservas page when the user clicks a reservation card.
+ * @description Componente modal que muestra los detalles completos de una sola reservacion.
+ * Muestra segmentos de vuelo agrupados por ruta, informacion de pasajeros, resumen de pago
+ * y un formulario de calificacion/comentario para reservaciones completadas. Aparece como
+ * una superposicion sobre la pagina MisReservas cuando el usuario hace clic en una tarjeta
+ * de reservacion.
  */
   import '../styles/detallereserva.css';
   import { onMount } from 'svelte';
   import { API } from '../lib/api.js';
 
-  /** The reservation object to display, containing boletos, estado, total and metadata. @type {object} */
+  /** El objeto de reservacion a mostrar, que contiene boletos, estado, total y metadatos. @type {object} */
   export let reservation;
 
-  /** Callback function invoked when the modal should be closed. @type {function} */
+  /** Funcion de callback invocada cuando el modal debe cerrarse. @type {function} */
   export let onClose;
 
-  /** ID of the currently authenticated user, read from sessionStorage on mount. @type {number|null} */
+  /** ID del usuario autenticado actualmente, leido desde sessionStorage al montar. @type {number|null} */
   let usuarioId = null;
 
-  /** Existing comment object for the route if the user already commented, otherwise null. @type {object|null} */
+  /** Objeto de comentario existente para la ruta si el usuario ya comento, de lo contrario null. @type {object|null} */
   let comentarioExistente = null;
 
-  /** True while the existing comment is being fetched from the API. @type {boolean} */
+  /** Verdadero mientras se obtiene el comentario existente desde la API. @type {boolean} */
   let cargandoComentario = false;
 
-  /** True while a new comment POST request is in progress. @type {boolean} */
+  /** Verdadero mientras una solicitud POST de nuevo comentario esta en progreso. @type {boolean} */
   let enviandoComentario = false;
 
-  /** Draft state for a new comment being composed by the user. @type {{cantidadEstrellas: number, contenido: string}} */
+  /** Estado borrador de un nuevo comentario que el usuario esta redactando. @type {{cantidadEstrellas: number, contenido: string}} */
   let nuevoComentario = {
     cantidadEstrellas: 5,
     contenido: ''
@@ -43,9 +44,9 @@
   });
 
   /**
-   * Fetches all comments for the route of the first boleto and checks whether
-   * the current user has already posted one. Sets comentarioExistente if found.
-   * Requires at least one boleto in the reservation to extract the rutaId.
+   * Obtiene todos los comentarios para la ruta del primer boleto y verifica si el usuario
+   * actual ya publico uno. Establece comentarioExistente si se encuentra. Requiere al menos
+   * un boleto en la reservacion para extraer el rutaId.
    * @async
    * @returns {Promise<void>}
    */
@@ -80,9 +81,9 @@
   }
 
   /**
-   * Submits the new comment composed in nuevoComentario to the API endpoint POST /api/comentarios.
-   * Validates that the contenido field is not empty before sending. On success, sets
-   * comentarioExistente to the newly created comment and resets the draft form.
+   * Envia el nuevo comentario redactado en nuevoComentario al endpoint de la API POST /api/comentarios.
+   * Valida que el campo contenido no este vacio antes de enviar. En caso de exito, establece
+   * comentarioExistente en el comentario recien creado y restablece el formulario borrador.
    * @async
    * @returns {Promise<void>}
    */
@@ -132,10 +133,10 @@
   }
 
   /**
-   * Maps a reservation status string to its corresponding CSS modifier class
-   * used to style the status badge.
-   * @param {string} estadoReserva - The status label such as 'Pendiente', 'Confirmada', etc.
-   * @returns {string} A CSS class string like 'status--confirmed', or empty string if unknown.
+   * Mapea una cadena de estado de reservacion a su clase CSS modificadora correspondiente
+   * usada para dar estilo al badge de estado.
+   * @param {string} estadoReserva - La etiqueta de estado como 'Pendiente', 'Confirmada', etc.
+   * @returns {string} Una cadena de clase CSS como 'status--confirmed', o cadena vacia si es desconocido.
    */
   function getStatusClass(estadoReserva) {
     const statusMap = {
@@ -148,10 +149,10 @@
   }
 
   /**
-   * Formats an ISO date string into a localized DD/MM/YYYY string using the es-ES locale.
-   * Returns an empty string if the input is falsy.
-   * @param {string} dateString - ISO date string to format.
-   * @returns {string} Formatted date or empty string.
+   * Formatea una cadena ISO de fecha en una cadena DD/MM/YYYY localizada usando el locale es-ES.
+   * Retorna una cadena vacia si el input es falsy.
+   * @param {string} dateString - Cadena ISO de fecha a formatear.
+   * @returns {string} Fecha formateada o cadena vacia.
    */
   function formatDate(dateString) {
     if (!dateString) return '';
@@ -164,10 +165,10 @@
   }
 
   /**
-   * Extracts the HH:MM portion from a time span string formatted as HH:MM:SS.
-   * Returns an empty string if the input is falsy.
-   * @param {string} timeSpan - Time string in HH:MM:SS format.
-   * @returns {string} Time in HH:MM format or empty string.
+   * Extrae la porcion HH:MM de una cadena de tiempo en formato HH:MM:SS.
+   * Retorna una cadena vacia si el input es falsy.
+   * @param {string} timeSpan - Cadena de tiempo en formato HH:MM:SS.
+   * @returns {string} Hora en formato HH:MM o cadena vacia.
    */
   function formatTime(timeSpan) {
     if (!timeSpan) return '';
@@ -176,9 +177,9 @@
   }
 
   /**
-   * Converts a duration expressed in total minutes to a human-readable Xh Ym string.
-   * @param {number} minutes - Total duration in minutes.
-   * @returns {string} Formatted duration string such as '2h 30m'.
+   * Convierte una duracion expresada en minutos totales a una cadena legible Xh Ym.
+   * @param {number} minutes - Duracion total en minutos.
+   * @returns {string} Cadena de duracion formateada como '2h 30m'.
    */
   function formatDuration(minutes) {
     const hours = Math.floor(minutes / 60);
@@ -187,11 +188,11 @@
   }
 
   /**
-   * Groups individual boleto objects by their unique flight key (vueloId + origin + destination).
-   * Each group accumulates seat numbers from all boletos belonging to the same flight segment.
-   * Returns an array of flight objects each containing route, schedule, aircraft and seat information.
-   * @param {Array<object>} boletos - Array of boleto objects from the reservation.
-   * @returns {Array<object>} Array of grouped flight objects with an asientos array.
+   * Agrupa objetos de boleto individuales por su clave de vuelo unica (vueloId + origen + destino).
+   * Cada grupo acumula numeros de asiento de todos los boletos pertenecientes al mismo segmento de vuelo.
+   * Retorna un arreglo de objetos de vuelo cada uno con informacion de ruta, horario, avion y asientos.
+   * @param {Array<object>} boletos - Arreglo de objetos de boleto de la reservacion.
+   * @returns {Array<object>} Arreglo de objetos de vuelo agrupados con un arreglo asientos.
    */
   function agruparVuelosPorRuta(boletos) {
     if (!boletos || boletos.length === 0) return [];
@@ -229,10 +230,10 @@
   }
 
   /**
-   * Deduplicates passengers across all boletos using a Map keyed by passenger ID.
-   * Returns each unique passenger object only once, even if they appear in multiple boletos.
-   * @param {Array<object>} boletos - Array of boleto objects, each potentially containing a pasajero sub-object.
-   * @returns {Array<object>} Array of unique passenger objects.
+   * Deduplica pasajeros de todos los boletos usando un Map indexado por ID de pasajero.
+   * Retorna cada objeto de pasajero unico una sola vez, incluso si aparece en multiples boletos.
+   * @param {Array<object>} boletos - Arreglo de objetos de boleto, cada uno potencialmente con un sub-objeto pasajero.
+   * @returns {Array<object>} Arreglo de objetos de pasajero unicos.
    */
   function obtenerPasajerosUnicos(boletos) {
     if (!boletos || boletos.length === 0) return [];
@@ -251,9 +252,9 @@
   }
 
   /**
-   * Handles clicks on the semi-transparent modal backdrop. Invokes onClose only when
-   * the click target is the backdrop element itself, not a child element inside the modal.
-   * @param {MouseEvent} event - The DOM click event from the backdrop div.
+   * Maneja los clics en el fondo semitransparente del modal. Invoca onClose solo cuando
+   * el objetivo del clic es el propio elemento de fondo, no un elemento hijo dentro del modal.
+   * @param {MouseEvent} event - El evento clic del DOM del div de fondo.
    */
   function handleBackdropClick(event) {
     if (event.target === event.currentTarget) {
@@ -262,20 +263,20 @@
   }
 
   /**
-   * Placeholder handler for the ticket download button. Currently logs a message
-   * indicating the feature is not yet implemented.
+   * Manejador de marcador de posicion para el boton de descarga de boleto. Actualmente registra
+   * un mensaje indicando que la funcionalidad aun no esta implementada.
    */
   function handleDownloadTicket() {
     console.log('Descargar boleto - proximamente');
   }
 
-  // Groups boletos by flight route to display each flight segment once.
+  // Agrupa boletos por ruta de vuelo para mostrar cada segmento de vuelo una sola vez.
   $: vuelos = agruparVuelosPorRuta(reservation.boletos);
 
-  // Produces a deduplicated list of passenger objects from all boletos.
+  // Produce una lista deduplicada de objetos de pasajero de todos los boletos.
   $: pasajeros = obtenerPasajerosUnicos(reservation.boletos);
 
-  // True when the reservation is in confirmed state (id 2) and has at least one flight, enabling the comment section.
+  // Verdadero cuando la reservacion esta en estado confirmado (id 2) y tiene al menos un vuelo, habilitando la seccion de comentarios.
   $: puedeComentarYCalificar = reservation.estadoReservaId === 2 && vuelos.length > 0;
 </script>
 

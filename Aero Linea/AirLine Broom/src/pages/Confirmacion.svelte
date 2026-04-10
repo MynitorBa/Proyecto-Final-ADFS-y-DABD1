@@ -2,54 +2,63 @@
   // @ts-nocheck
 /**
  * @file Confirmacion.svelte
- * @description Post-payment confirmation page shown after a successful checkout. Receives the
- * list of paid reservations and their corresponding invoice objects as props from the checkout
- * page. Displays a success hero section followed by invoice cards that include billing details,
- * per-ticket breakdown, and action buttons to download or email the PDF receipt for each
- * reservation. Also handles the fallback case where facturas is empty by rendering basic
- * reservation summary cards instead. Provides navigation actions to search for more flights
- * or view the user's reservations. Redirects unauthenticated users to the login page on mount.
+ * @description Pagina de confirmacion post-pago mostrada tras un checkout exitoso. Recibe la
+ * lista de reservaciones pagadas y sus objetos de factura correspondientes como props desde la
+ * pagina de checkout. Muestra una seccion hero de exito seguida de tarjetas de factura con
+ * detalles de facturacion, desglose por boleto y botones de accion para descargar o enviar por
+ * correo el recibo PDF de cada reservacion. Tambien maneja el caso de reserva cuando facturas
+ * esta vacio mostrando tarjetas de resumen de reservacion basicas. Despues de las facturas,
+ * muestra una seccion promocional de hoteles aliados disponibles en la ciudad destino para la
+ * noche posterior a la fecha del vuelo, resolviendo el pais destino desde el codigo IATA del
+ * boleto mediante un mapa de busqueda local. Cada tarjeta de hotel expone un boton de
+ * redireccion de un solo uso que solicita un token de descuento al backend y navega
+ * inmediatamente al usuario al sitio del hotel aliado. Solo se puede generar un token por aliado
+ * por sesion de compra para prevenir el abuso de tokens. Proporciona acciones de navegacion para
+ * buscar mas vuelos o ver las reservaciones del usuario. Redirige a usuarios no autenticados a
+ * la pagina de login al montar.
  */
 
   import '../styles/confirmacion.css';
   import { onMount } from 'svelte';
   import { sesion } from '../stores/sesion.js';
 
-  /** Navigation function provided by the app router to switch pages. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar la pagina. @type {Function} */
   export let navigateTo;
 
-  /** Array of reservation objects passed from the checkout page after successful payment. @type {Array} */
+  /** Arreglo de objetos de reservacion pasado desde la pagina de checkout tras el pago exitoso. @type {Array} */
   export let reservaciones = [];
 
-  /** Array of invoice objects returned by the API after payment, one per reservation. @type {Array} */
+  /** Arreglo de objetos de factura retornados por la API tras el pago, uno por reservacion. @type {Array} */
   export let facturas      = [];
 
   import { API } from '../lib/api.js';
 
-  /** ID of the currently authenticated user, read from the session store. @type {number|null} */
+  /** ID del usuario autenticado actualmente, leido del store de sesion. @type {number|null} */
   let usuarioId = null;
 
-  /** Unsubscribe handle for the session store subscription. @type {Function} */
+  /** Manejador de desuscripcion para la suscripcion al store de sesion. @type {Function} */
   const unsubscribe = sesion.subscribe(s => { usuarioId = s?.usuarioId ?? null; });
 
   /**
-   * Lifecycle hook that runs after the component mounts.
-   * Redirects to login if no user session exists.
-   * Returns the unsubscribe function for session store cleanup.
+   * Hook de ciclo de vida que se ejecuta tras el montaje del componente.
+   * Redirige al login si no existe sesion de usuario, luego dispara la busqueda de hoteles
+   * aliados en la ciudad destino del primer boleto.
+   * Retorna la funcion de desuscripcion para limpieza del store de sesion.
    * @returns {Function}
    */
   onMount(() => {
     if (!usuarioId) { navigateTo('login'); return; }
+    buscarHoteles();
     return () => unsubscribe();
   });
 
-  /** Array of active toast notification objects, each containing id, msg, and tipo. @type {Array} */
+  /** Arreglo de objetos de notificacion toast activos, cada uno con id, msg y tipo. @type {Array} */
   let toasts = [];
 
   /**
-   * Adds a toast notification to the stack and auto-removes it after 4 seconds.
-   * @param {string} msg - The message text to display in the toast.
-   * @param {string} [tipo='success'] - Visual style: 'success' or 'error'.
+   * Agrega una notificacion toast a la pila y la elimina automaticamente despues de 4 segundos.
+   * @param {string} msg - El texto del mensaje a mostrar en el toast.
+   * @param {string} [tipo='success'] - Estilo visual: 'success' o 'error'.
    */
   function addToast(msg, tipo = 'success') {
     const id = Date.now();
@@ -58,10 +67,10 @@
   }
 
   /**
-   * Formats a date/time string into a localized long-form date with time using the es-GT locale.
-   * Returns an em dash if the input is falsy.
-   * @param {string|null} f - ISO date-time string to format.
-   * @returns {string} Formatted string such as "15 de enero de 2025, 10:30" or "—".
+   * Formatea una cadena de fecha/hora en una fecha larga localizada con hora usando el locale es-GT.
+   * Retorna un guion si el input es falsy.
+   * @param {string|null} f - Cadena ISO de fecha y hora a formatear.
+   * @returns {string} Cadena formateada como "15 de enero de 2025, 10:30" o "-".
    */
   function formatFecha(f) {
     if (!f) return '—';
@@ -72,28 +81,27 @@
   }
 
   /**
-   * Formats a numeric price into a USD string with two decimal places.
-   * @param {number} p - The price value to format.
-   * @returns {string} Formatted price string such as "$ 1,250.00".
+   * Formatea un precio numerico en una cadena USD con dos decimales.
+   * @param {number} p - El valor del precio a formatear.
+   * @returns {string} Cadena de precio formateada como "$ 1,250.00".
    */
   function formatPrecio(p) {
     return `$ ${Number(p).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   }
 
-  /** Map of reservacionId to boolean tracking which receipts are currently being downloaded. @type {object} */
+  /** Mapa de reservacionId a booleano que rastrea que comprobantes se estan descargando actualmente. @type {object} */
   let descargando = {};
 
-  /** Map of reservacionId to boolean tracking which receipts are currently being emailed. @type {object} */
+  /** Mapa de reservacionId a booleano que rastrea que comprobantes se estan enviando por correo actualmente. @type {object} */
   let enviando = {};
 
   /**
-   * Downloads the PDF receipt for a specific reservation by calling the comprobante endpoint.
-   * Guards against concurrent calls using the descargando map. Creates a temporary anchor element
-   * to trigger a browser file download, then revokes the object URL and shows a success or
-   * error toast depending on the outcome.
+   * Descarga el recibo PDF de una reservacion especifica llamando al endpoint de comprobante.
+   * Protege contra llamadas concurrentes usando el mapa descargando. Abre el comprobante en una nueva
+   * pestana del navegador y muestra un toast de exito o error segun el resultado.
    * @async
-   * @param {number} reservacionId - The ID of the reservation whose receipt to download.
-   * @param {string} noReservacion - The human-readable reservation number used as the filename.
+   * @param {number} reservacionId - El ID de la reservacion cuyo recibo descargar.
+   * @param {string} noReservacion - El numero de reservacion legible usado como nombre de archivo.
    * @returns {Promise<void>}
    */
   async function descargarComprobante(reservacionId, noReservacion) {
@@ -113,11 +121,11 @@
   }
 
   /**
-   * Sends the PDF receipt for a specific reservation to the user's registered email by calling
-   * the enviar-comprobante endpoint. Guards against concurrent calls using the enviando map.
-   * Shows a success toast on 200 OK, or an error toast with the API message on failure.
+   * Envia el recibo PDF de una reservacion especifica al correo registrado del usuario llamando
+   * al endpoint enviar-comprobante. Protege contra llamadas concurrentes usando el mapa enviando.
+   * Muestra un toast de exito en 200 OK, o un toast de error con el mensaje de la API ante fallo.
    * @async
-   * @param {number} reservacionId - The ID of the reservation whose receipt to email.
+   * @param {number} reservacionId - El ID de la reservacion cuyo recibo enviar por correo.
    * @returns {Promise<void>}
    */
   async function enviarComprobantePorCorreo(reservacionId) {
@@ -145,14 +153,144 @@
   }
 
   /**
-   * Finds a reservation in the reservaciones prop array by its ID and returns its boletos array.
-   * Returns an empty array if no matching reservation is found.
-   * @param {number} reservacionId - The ID of the reservation to look up.
-   * @returns {Array} The boletos array of the matching reservation, or an empty array.
+   * Busca una reservacion en el arreglo prop reservaciones por su ID y retorna su arreglo de boletos.
+   * Retorna un arreglo vacio si no se encuentra ninguna reservacion coincidente.
+   * @param {number} reservacionId - El ID de la reservacion a buscar.
+   * @returns {Array} El arreglo de boletos de la reservacion coincidente, o un arreglo vacio.
    */
   function getBoletos(reservacionId) {
     const reserva = reservaciones.find(r => r.reservacionId === reservacionId);
     return reserva?.boletos ?? [];
+  }
+
+  /** Arreglo de objetos de hotel aliado retornados por el endpoint de busqueda de hoteles. @type {Array} */
+  let hoteles = [];
+
+  /** Verdadero mientras la solicitud POST de busqueda de hoteles aliados esta en progreso. @type {boolean} */
+  let hotelesCargando = false;
+
+  /**
+   * Mapa de busqueda de codigo IATA de aeropuerto a nombre de pais, usado para resolver el campo
+   * Pais requerido por los endpoints de busqueda de hoteles y de token. Usa destinoCiudad como
+   * respaldo si el codigo no esta en el mapa. Ampliar este mapa para que coincida con las rutas
+   * manejadas por la aerolinea.
+   * @type {Record<string, string>}
+   */
+  const paisPorIATA = {
+    GUA: 'Guatemala',        FRS: 'Guatemala',        HUG: 'Guatemala',
+    MEX: 'Mexico',           CUN: 'Mexico',           GDL: 'Mexico',           MTY: 'Mexico',
+    LAX: 'United States',    JFK: 'United States',    MIA: 'United States',
+    ORD: 'United States',    SFO: 'United States',    DFW: 'United States',
+    BOG: 'Colombia',         MDE: 'Colombia',
+    LIM: 'Peru',
+    SCL: 'Chile',
+    EZE: 'Argentina',        AEP: 'Argentina',
+    GRU: 'Brazil',           GIG: 'Brazil',
+    MAD: 'Spain',            BCN: 'Spain',
+    CDG: 'France',
+    LHR: 'United Kingdom',
+    FCO: 'Italy',
+    AMS: 'Netherlands',
+    FRA: 'Germany',
+    SVO: 'Russia',           DME: 'Russia',
+    NRT: 'Japan',            HND: 'Japan',
+    PEK: 'China',            PVG: 'China',
+    DXB: 'United Arab Emirates',
+    SYD: 'Australia',
+  };
+
+  /**
+   * Busca hoteles aliados disponibles en la ciudad destino del primer boleto. Resuelve el campo
+   * Pais requerido desde el codigo IATA destino usando paisPorIATA, usando destinoCiudad como
+   * respaldo si el codigo no esta mapeado. Usa la fecha del vuelo mas un dia como check-in y
+   * el dia siguiente como check-out, cubriendo una noche promocional. La cantidad de personas
+   * coincide con el total de boletos de la primera reservacion. Ignora errores silenciosamente
+   * ya que la seccion es promocional y no critica para el flujo.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function buscarHoteles() {
+    if (!reservaciones.length) return;
+    const primerBoleto = reservaciones[0]?.boletos?.[0];
+    if (!primerBoleto) return;
+
+    const fechaVuelo = new Date(primerBoleto.fechaVuelo);
+    const checkIn    = new Date(fechaVuelo); checkIn.setDate(checkIn.getDate() + 1);
+    const checkOut   = new Date(fechaVuelo); checkOut.setDate(checkOut.getDate() + 2);
+    const fmt        = d => d.toISOString().split('T')[0];
+    const pais       = paisPorIATA[primerBoleto.destinoCodigo] ?? primerBoleto.destinoCiudad;
+
+    hotelesCargando = true;
+    try {
+      const res = await fetch(`${API}/api/hoteles-aliados/busqueda`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ciudad:           primerBoleto.destinoCiudad,
+          pais:             pais,
+          fechaCheckIn:     fmt(checkIn),
+          fechaCheckOut:    fmt(checkOut),
+          cantidadPersonas: reservaciones[0].boletos.length
+        })
+      });
+      if (res.ok) hoteles = await res.json();
+    } catch { /* seccion promocional, error silencioso */ }
+    finally { hotelesCargando = false; }
+  }
+
+  /**
+   * Conjunto de valores aliadoId ya usados en esta sesion de confirmacion para prevenir la
+   * generacion duplicada de tokens para el mismo aliado dentro de un solo flujo de compra.
+   * @type {Set<number>}
+   */
+  let tokenUsados = new Set();
+
+  /** Mapa de aliadoId a booleano que rastrea que solicitudes de token estan actualmente en progreso. @type {object} */
+  let tokenCargando = {};
+
+  /**
+   * Solicita un token de redireccion de un solo uso al endpoint del hotel aliado y navega
+   * inmediatamente al usuario al sitio del hotel con el descuento aplicado. Protege contra
+   * llamadas duplicadas por aliado dentro de la misma sesion de confirmacion usando tokenUsados.
+   * Solo se puede generar un token por aliado por compra para prevenir el abuso de tokens.
+   * @async
+   * @param {object} hotel - El objeto de hotel aliado que contiene aliadoId y datos del destino.
+   * @returns {Promise<void>}
+   */
+  async function irAlHotel(hotel) {
+    if (tokenUsados.has(hotel.aliadoId) || tokenCargando[hotel.aliadoId]) return;
+
+    tokenCargando[hotel.aliadoId] = true;
+    tokenCargando = { ...tokenCargando };
+
+    const primerBoleto = reservaciones[0]?.boletos?.[0];
+    const pais         = paisPorIATA[primerBoleto?.destinoCodigo] ?? primerBoleto?.destinoCiudad ?? '';
+
+    try {
+      const res = await fetch(`${API}/api/hoteles-aliados/${hotel.aliadoId}/token`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ciudad: primerBoleto?.destinoCiudad ?? '',
+          pais:   pais
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        tokenUsados = new Set([...tokenUsados, hotel.aliadoId]);
+        window.location.href = data.urlRedireccion;
+      } else {
+        addToast('No se pudo generar el enlace al hotel', 'error');
+      }
+    } catch {
+      addToast('Error de conexion con el hotel', 'error');
+    } finally {
+      tokenCargando[hotel.aliadoId] = false;
+      tokenCargando = { ...tokenCargando };
+    }
   }
 </script>
 
@@ -339,6 +477,70 @@
           </div>
         {/each}
       </div>
+    {/if}
+
+    <!-- Hoteles aliados disponibles en la ciudad destino para la noche posterior al vuelo -->
+    {#if hotelesCargando}
+      <div class="confirmacion__hoteles-loading">
+        <div class="conf-spinner"></div>
+        <p>Buscando hoteles disponibles en tu destino...</p>
+      </div>
+    {:else if hoteles.length > 0}
+      <section class="confirmacion__hoteles">
+        <div class="confirmacion__hoteles-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <div>
+            <h2 class="confirmacion__hoteles-titulo">Hoteles aliados en tu destino</h2>
+            <p class="confirmacion__hoteles-sub">Hospedaje disponible para tu llegada — oferta de una noche</p>
+          </div>
+        </div>
+
+        <!-- Grid de tarjetas de hotel con nombre, aliado, rating, descripcion, direccion y boton de redireccion con token -->
+        <div class="confirmacion__hoteles-grid">
+          {#each hoteles as hotel}
+            <div class="hotel-card">
+              <div class="hotel-card__top">
+                <span class="hotel-card__aliado">{hotel.aliadoNombre}</span>
+                <div class="hotel-card__rating">
+                  <svg viewBox="0 0 24 24" fill="#D4A056" stroke="none" width="14" height="14">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                  <span>{hotel.rating}</span>
+                </div>
+              </div>
+              <h3 class="hotel-card__nombre">{hotel.nombre}</h3>
+              <p class="hotel-card__desc">{hotel.descripcion}</p>
+              <div class="hotel-card__direccion">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span>{hotel.direccion}</span>
+              </div>
+              <button
+                class="hotel-card__btn"
+                class:hotel-card__btn--usado={tokenUsados.has(hotel.aliadoId)}
+                class:hotel-card__btn--cargando={tokenCargando[hotel.aliadoId]}
+                disabled={tokenUsados.has(hotel.aliadoId) || tokenCargando[hotel.aliadoId]}
+                on:click={() => irAlHotel(hotel)}
+                type="button">
+                {#if tokenCargando[hotel.aliadoId]}
+                  <span class="conf-spinner conf-spinner--sm"></span> Generando enlace...
+                {:else if tokenUsados.has(hotel.aliadoId)}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  Oferta aplicada
+                {:else}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Ver oferta con descuento
+                {/if}
+              </button>
+            </div>
+          {/each}
+        </div>
+      </section>
     {/if}
 
     <!-- Botones de navegacion para buscar mas vuelos o ver reservaciones -->

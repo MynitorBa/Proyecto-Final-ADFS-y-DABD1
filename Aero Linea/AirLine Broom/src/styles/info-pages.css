@@ -1,6 +1,6 @@
-/* info-pages.css - Shared styles for informational pages (about, security, contact, FAQ) including hero section, content cards, prose, lists, highlight boxes, badges, contact grid, contact form, FAQ accordion, and numbered steps */
+/* info-pages.css - Estilos compartidos para paginas informativas (sobre nosotros, seguridad, contacto, preguntas frecuentes), incluyendo seccion hero, tarjetas de contenido, prosa, listas, cuadros destacados, insignias, grilla de contacto, formulario de contacto, acordeon de preguntas frecuentes y pasos numerados */
 
-/* Full-viewport page wrapper with warm off-white background */
+/* Contenedor de pagina de pantalla completa con fondo beige calido */
 .info-page {
   min-height: 100vh;
   background-color: #F2EFEA;
@@ -8,7 +8,7 @@
   color: #1C1A18;
 }
 
-/* Dark diagonal gradient hero with an SVG dot pattern overlay */
+/* Hero oscuro con degradado diagonal y una capa de patron de puntos SVG */
 .info-hero {
   background: linear-gradient(135deg, #1C1A18 0%, #3A3531 50%, #8B6B4A 100%);
   padding: 5rem 2rem 4rem;
@@ -17,7 +17,7 @@
   overflow: hidden;
 }
 
-/* Translucent cross-hatch pattern overlay on the hero background */
+/* Capa de patron de cuadricula translucida sobre el fondo del hero */
 .info-hero::before {
   content: '';
   position: absolute;
@@ -25,7 +25,7 @@
   background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* Hero content column centered and capped at 700px, above the pattern overlay */
+/* Columna de contenido del hero centrada y limitada a 700px, encima de la capa del patron */
 .info-hero__content {
   position: relative;
   z-index: 1;
@@ -33,7 +33,7 @@
   margin: 0 auto;
 }
 
-/* Centered warm-gold icon with a subtle drop shadow */
+/* Icono dorado calido centrado con una leve sombra */
 .info-hero__icon {
   margin-bottom: 1.25rem;
   display: flex;
@@ -42,12 +42,12 @@
   color: #B89A7A;
 }
 
-/* SVG icon gets a dark drop shadow for depth against the hero background */
+/* El icono SVG recibe una sombra oscura para dar profundidad sobre el fondo del hero */
 .info-hero__icon svg {
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
 }
 
-/* Small uppercase eyebrow label in muted gold above the title */
+/* Pequena etiqueta en mayusculas con color dorado apagado encima del titulo */
 .info-hero__eyebrow {
   font-size: 0.78rem;
   letter-spacing: 3px;
@@ -57,7 +57,7 @@
   margin-bottom: 0.75rem;
 }
 
-/* Fluid hero title from 2rem to 3rem, light weight in white */
+/* Titulo del hero fluido de 2rem a 3rem, peso ligero en blanco */
 .info-hero__title {
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 300;
@@ -67,7 +67,7 @@
   line-height: 1.2;
 }
 
-/* Hero subtitle in near-white with relaxed line height */
+/* Subtitulo del hero en casi blanco con altura de linea relajada */
 .info-hero__subtitle {
   font-size: 1rem;
   color: #E6E1DA;
@@ -75,14 +75,14 @@
   opacity: 0.9;
 }
 
-/* Centered content container capped at 860px with comfortable padding */
+/* Contenedor de contenido centrado limitado a 860px con relleno comodo */
 .info-container {
   max-width: 860px;
   margin: 0 auto;
   padding: 3rem 2rem 5rem;
 }
 
-/* Inline-flex back button with brown text and a gap-increasing hover effect */
+/* Boton de regreso en linea flex con texto marron y efecto de aumento de separacion al pasar el cursor */
 .info-back {
   display: inline-flex;
   align-items: center;
@@ -99,13 +99,13 @@
   transition: color 0.2s, gap 0.2s;
 }
 
-/* Back button turns dark and increases the gap to the arrow icon on hover */
+/* El boton de regreso se oscurece y aumenta la separacion al icono de flecha al pasar el cursor */
 .info-back:hover {
   color: #1C1A18;
   gap: 0.75rem;
 }
 
-/* White info card with asymmetric radius and a brown left border accent */
+/* Tarjeta de informacion blanca con radio asimetrico y borde izquierdo marron de acento */
 .info-card {
   background: #ffffff;
   border-radius: 4px 16px 4px 16px;
@@ -115,7 +115,7 @@
   border-left: 4px solid #8B6B4A;
 }
 
-/* Auto-fit grid of info cards, minimum 220px wide */
+/* Grilla de ajuste automatico de tarjetas de informacion, con un minimo de 220px de ancho */
 .info-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -123,7 +123,7 @@
   margin-top: 1.25rem;
 }
 
-/* Icon badge inside an info card: 52px square with a translucent brown background */
+/* Insignia de icono dentro de una tarjeta de informacion: cuadrado de 52px con fondo marron translucido */
 .info-card__icon {
   display: flex;
   align-items: center;
@@ -136,7 +136,7 @@
   color: #8B6B4A;
 }
 
-/* Bold card title in dark color */
+/* Titulo de tarjeta en negrita con color oscuro */
 .info-card__title {
   font-size: 1rem;
   font-weight: 600;
@@ -144,14 +144,14 @@
   margin-bottom: 0.5rem;
 }
 
-/* Card descriptive text in muted dark color with comfortable line height */
+/* Texto descriptivo de la tarjeta en color oscuro apagado con altura de linea comoda */
 .info-card__text {
   font-size: 0.88rem;
   color: #5C5752;
   line-height: 1.6;
 }
 
-/* Section heading with a thick bottom border separator */
+/* Encabezado de seccion con un separador de borde inferior grueso */
 .info-section-title {
   font-size: 1.2rem;
   font-weight: 600;
@@ -161,7 +161,7 @@
   border-bottom: 2px solid #E6E1DA;
 }
 
-/* Body prose paragraph in dark warm color with relaxed line height */
+/* Parrafo de prosa corporal en color calido oscuro con altura de linea relajada */
 .info-prose {
   font-size: 0.95rem;
   color: #3A3531;
@@ -169,7 +169,7 @@
   margin-bottom: 1rem;
 }
 
-/* Unstacked list with a plane bullet character added via pseudo-element */
+/* Lista sin apilar con un caracter de viñeta de avion agregado mediante pseudoelemento */
 .info-list {
   list-style: none;
   padding: 0;
@@ -179,7 +179,7 @@
   margin: 0.75rem 0;
 }
 
-/* Each list item in a flex row with the bullet and text side by side */
+/* Cada elemento de la lista en una fila flex con la viñeta y el texto uno al lado del otro */
 .info-list li {
   display: flex;
   align-items: flex-start;
@@ -189,7 +189,7 @@
   line-height: 1.6;
 }
 
-/* Brown airplane emoji bullet before each list item */
+/* Viñeta de avion en marron antes de cada elemento de la lista */
 .info-list li::before {
   content: '✈';
   color: #8B6B4A;
@@ -198,7 +198,7 @@
   font-size: 0.8rem;
 }
 
-/* Brown-tinted highlight block with a solid brown left border */
+/* Bloque destacado con tono marron y un borde izquierdo marron solido */
 .info-highlight {
   background: rgba(139, 107, 74, 0.08);
   border-left: 4px solid #8B6B4A;
@@ -210,7 +210,7 @@
   line-height: 1.6;
 }
 
-/* Brown pill badge for labeling categories or statuses */
+/* Insignia tipo pastilla marron para etiquetar categorias o estados */
 .info-badge {
   display: inline-block;
   background: #8B6B4A;
@@ -223,7 +223,7 @@
   letter-spacing: 0.5px;
 }
 
-/* Auto-fit contact info grid, minimum 200px wide */
+/* Grilla de informacion de contacto de ajuste automatico, con un minimo de 200px de ancho */
 .info-contact-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -231,7 +231,7 @@
   margin-bottom: 2rem;
 }
 
-/* White contact card with a brown top border and an icon beside the text */
+/* Tarjeta de contacto blanca con borde superior marron e icono junto al texto */
 .info-contact-item {
   background: #ffffff;
   border-radius: 4px 12px 4px 12px;
@@ -243,7 +243,7 @@
   border-top: 3px solid #8B6B4A;
 }
 
-/* Rounded-square icon container inside the contact card */
+/* Contenedor de icono de esquinas redondeadas dentro de la tarjeta de contacto */
 .info-contact-item__icon {
   display: flex;
   align-items: center;
@@ -256,7 +256,7 @@
   color: #8B6B4A;
 }
 
-/* Tiny bold uppercase label above the contact value */
+/* Etiqueta muy pequena en negrita y mayusculas encima del valor de contacto */
 .info-contact-item__label {
   font-size: 0.72rem;
   font-weight: 700;
@@ -266,7 +266,7 @@
   margin-bottom: 0.2rem;
 }
 
-/* Primary contact value in bold dark color */
+/* Valor de contacto principal en negrita y color oscuro */
 .info-contact-item__value {
   font-size: 0.95rem;
   font-weight: 600;
@@ -274,34 +274,34 @@
   margin-bottom: 0.1rem;
 }
 
-/* Secondary sub-label in muted tone below the primary value */
+/* Sub-etiqueta secundaria en tono apagado debajo del valor principal */
 .info-contact-item__sub {
   font-size: 0.78rem;
   color: #8B7E76;
 }
 
-/* Flex column contact form with a gap between fields */
+/* Formulario de contacto en columna flex con separacion entre los campos */
 .info-contacto-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-/* Two-column field grid for name/email pairs */
+/* Grilla de dos columnas para pares de nombre y correo electronico */
 .info-contacto-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
 }
 
-/* Stacked label-input pair */
+/* Par de etiqueta e input apilados */
 .info-contacto-field {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
-/* Small bold label above each contact form field */
+/* Etiqueta pequena en negrita encima de cada campo del formulario de contacto */
 .info-contacto-label {
   font-size: 0.82rem;
   font-weight: 600;
@@ -309,12 +309,12 @@
   letter-spacing: 0.3px;
 }
 
-/* Required field asterisk in brown */
+/* Asterisco de campo requerido en marron */
 .info-contacto-req {
   color: #8B6B4A;
 }
 
-/* Text input with asymmetric radius, beige background, and a brown focus ring */
+/* Campo de texto con radio asimetrico, fondo beige y anillo de enfoque marron */
 .info-contacto-input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -328,38 +328,38 @@
   outline: none;
 }
 
-/* Input turns brown border with a soft brown glow on focus */
+/* El campo obtiene borde marron con un resplandor suave al recibir el enfoque */
 .info-contacto-input:focus {
   border-color: #8B6B4A;
   box-shadow: 0 0 0 3px rgba(139,107,74,0.12);
   background: #ffffff;
 }
 
-/* Error state: red border */
+/* Estado de error: borde rojo */
 .info-contacto-input--error {
   border-color: #ef4444;
 }
 
-/* Textarea variant: resizable vertically with minimum height */
+/* Variante de area de texto: redimensionable verticalmente con altura minima */
 .info-contacto-textarea {
   resize: vertical;
   min-height: 120px;
 }
 
-/* Small red inline error message below the field */
+/* Pequeno mensaje de error en rojo en linea debajo del campo */
 .info-contacto-error {
   font-size: 0.78rem;
   color: #ef4444;
 }
 
-/* Small muted right-aligned character counter for the textarea */
+/* Contador de caracteres pequeno y apagado alineado a la derecha para el area de texto */
 .info-contacto-helper {
   font-size: 0.75rem;
   color: #8B7E76;
   text-align: right;
 }
 
-/* Dark submit button with asymmetric radius, turns brown and lifts on hover */
+/* Boton de envio oscuro con radio asimetrico; se vuelve marron y se eleva al pasar el cursor */
 .info-contacto-submit {
   display: inline-flex;
   align-items: center;
@@ -378,37 +378,37 @@
   align-self: flex-start;
 }
 
-/* Submit button turns brown and lifts on hover when enabled */
+/* El boton de envio se vuelve marron y se eleva al pasar el cursor cuando esta habilitado */
 .info-contacto-submit:hover:not(:disabled) {
   background: #8B6B4A;
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(139,107,74,0.3);
 }
 
-/* Disabled submit: faded and not-allowed cursor */
+/* Envio deshabilitado: desvanecido y cursor no permitido */
 .info-contacto-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Spinning loading icon inside the submit button */
+/* Icono de carga giratorio dentro del boton de envio */
 .info-contacto-spinner {
   animation: spin 1s linear infinite;
 }
 
-/* Full 360-degree rotation keyframes for the spinner */
+/* Fotogramas clave de rotacion completa de 360 grados para el indicador de carga */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 
-/* Centered success message area shown after form submission */
+/* Area del mensaje de exito centrado que se muestra despues del envio del formulario */
 .info-contacto-success {
   text-align: center;
   padding: 1.5rem;
 }
 
-/* Centered success checkmark icon container */
+/* Contenedor del icono de verificacion de exito centrado */
 .info-contacto-success__icon {
   display: flex;
   align-items: center;
@@ -416,7 +416,7 @@
   margin: 0 auto 1rem;
 }
 
-/* FAQ accordion card: white with asymmetric radius and a subtle shadow */
+/* Tarjeta de acordeon de preguntas frecuentes: blanca con radio asimetrico y sombra sutil */
 .info-faq {
   background: #ffffff;
   border-radius: 4px 12px 4px 12px;
@@ -425,7 +425,7 @@
   overflow: hidden;
 }
 
-/* FAQ question button: full-width with space-between layout for chevron */
+/* Boton de pregunta del acordeon: ancho completo con disposicion espacio-entre para el chevron */
 .info-faq__q {
   width: 100%;
   background: none;
@@ -444,25 +444,25 @@
   transition: background 0.2s;
 }
 
-/* FAQ question button turns brown-tinted on hover or when open */
+/* El boton de pregunta se vuelve con tono marron al pasar el cursor o cuando esta abierto */
 .info-faq__q:hover,
 .info-faq__q.open {
   background: rgba(139,107,74,0.06);
   color: #8B6B4A;
 }
 
-/* Chevron icon that rotates 180deg when the accordion is open */
+/* Icono de chevron que rota 180 grados cuando el acordeon esta abierto */
 .info-faq__chevron {
   flex-shrink: 0;
   transition: transform 0.25s;
 }
 
-/* Chevron flips when the FAQ item is expanded */
+/* El chevron se invierte cuando el elemento de preguntas frecuentes esta expandido */
 .info-faq__q.open .info-faq__chevron {
   transform: rotate(180deg);
 }
 
-/* FAQ answer body with a top border separator and comfortable padding */
+/* Cuerpo de respuesta del acordeon con un separador de borde superior y relleno comodo */
 .info-faq__a {
   padding: 0 1.5rem 1.1rem;
   font-size: 0.9rem;
@@ -472,7 +472,7 @@
   padding-top: 0.75rem;
 }
 
-/* At 640px: container padding reduces, cards tighten, form grid collapses */
+/* A 640px: el relleno del contenedor se reduce, las tarjetas se ajustan, la grilla del formulario colapsa */
 @media (max-width: 640px) {
   .info-container {
     padding: 2rem 1.25rem 4rem;
@@ -480,21 +480,21 @@
   .info-card {
     padding: 1.5rem;
   }
-  /* Contact form field grid becomes single-column */
+  /* La grilla de campos del formulario de contacto pasa a una sola columna */
   .info-contacto-grid {
     grid-template-columns: 1fr;
   }
-  /* Submit button stretches full-width on mobile */
+  /* El boton de envio se extiende a ancho completo en movil */
   .info-contacto-submit {
     align-self: stretch;
   }
-  /* Contact info grid becomes single-column */
+  /* La grilla de informacion de contacto pasa a una sola columna */
   .info-contact-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* Vertical stack of numbered process steps */
+/* Pila vertical de pasos de proceso numerados */
 .info-steps {
   display: flex;
   flex-direction: column;
@@ -502,7 +502,7 @@
   margin: 1.25rem 0;
 }
 
-/* Individual step row: brown-tinted background with a brown left border and numbered badge */
+/* Fila de paso individual: fondo con tono marron, borde izquierdo marron e insignia numerada */
 .info-step {
   display: flex;
   align-items: flex-start;
@@ -513,7 +513,7 @@
   border-left: 3px solid #8B6B4A;
 }
 
-/* Circular brown number badge for the step */
+/* Insignia circular marron con el numero del paso */
 .info-step__num {
   min-width: 32px;
   height: 32px;
@@ -528,7 +528,7 @@
   flex-shrink: 0;
 }
 
-/* Step description text in muted dark color with comfortable line height */
+/* Texto de descripcion del paso en color oscuro apagado con altura de linea comoda */
 .info-step p {
   margin: 0.25rem 0 0;
   color: #3A3531;

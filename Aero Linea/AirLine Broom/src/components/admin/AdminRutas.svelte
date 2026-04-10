@@ -1,69 +1,68 @@
 <script>
 /**
  * @file AdminRutas.svelte
- * @description Admin panel section for managing flight routes between airports. Displays a table
- * of all registered routes showing origin, destination, timezone availability for each airport,
- * estimated duration, and total flight count. The estimated duration of any route can be edited
- * inline directly in the table row. New routes can be created through a modal with searchable
- * airport dropdowns that exclude the already-selected origin from the destination list. The
- * component receives the airports list from the parent and dispatches 'rutaCreada' after a
- * successful route creation.
+ * @description Seccion del panel de administracion para gestionar rutas de vuelo entre aeropuertos. Muestra
+ * una tabla de todas las rutas registradas con origen, destino, disponibilidad de zona horaria de cada
+ * aeropuerto, duracion estimada y total de vuelos. La duracion estimada de cualquier ruta puede editarse
+ * directamente en la fila de la tabla. Las nuevas rutas se pueden crear mediante un modal con dropdowns
+ * de busqueda de aeropuerto que excluyen el origen ya seleccionado de la lista de destinos. El componente
+ * recibe la lista de aeropuertos del padre y despacha 'rutaCreada' tras una creacion de ruta exitosa.
  */
 // @ts-nocheck
   import { createEventDispatcher, onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** List of all airports, provided by the parent, used to populate origin and destination dropdowns. @type {any[]} */
+  /** Lista de todos los aeropuertos, proporcionada por el padre, usada para poblar los dropdowns de origen y destino. @type {any[]} */
   export let aeropuertos = [];
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
   const dispatch = createEventDispatcher();
 
-  /** List of routes loaded from the backend. @type {any[]} */
+  /** Lista de rutas cargadas desde el backend. @type {any[]} */
   let rutas        = [];
 
-  /** Whether the route list fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la lista de rutas esta en progreso. @type {boolean} */
   let loadingRutas = false;
 
-  /** ID of the route row currently in inline duration-edit mode, or null if none. @type {number|null} */
+  /** ID de la fila de ruta actualmente en modo de edicion de duracion inline, o null si ninguna. @type {number|null} */
   let editandoRutaId   = null;
 
-  /** Current value of the duration input while editing inline. @type {string} */
+  /** Valor actual del input de duracion durante la edicion inline. @type {string} */
   let rutaDuracionEdit = '';
 
-  /** Whether the save-duration API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para guardar duracion esta en vuelo. @type {boolean} */
   let guardandoDuracion = false;
 
-  /** Whether the create-route modal is visible. @type {boolean} */
+  /** Indica si el modal de creacion de ruta esta visible. @type {boolean} */
   let mostrarModalCrearRuta = false;
 
   /**
-   * Form data for the new route being created in the modal.
+   * Datos del formulario para la nueva ruta que se esta creando en el modal.
    * @type {{ origenId: string, destinoId: string, duracion: number }}
    */
   let nuevaRuta  = { origenId: '', destinoId: '', duracion: 120 };
 
-  /** Whether the create-route API request is in flight. @type {boolean} */
+  /** Indica si la solicitud de la API para crear ruta esta en vuelo. @type {boolean} */
   let creandoRuta = false;
 
-  /** Current text in the origin airport search input inside the modal. @type {string} */
+  /** Texto actual en el input de busqueda de aeropuerto de origen dentro del modal. @type {string} */
   let busquedaOrigenModal  = '';
 
-  /** Current text in the destination airport search input inside the modal. @type {string} */
+  /** Texto actual en el input de busqueda de aeropuerto de destino dentro del modal. @type {string} */
   let busquedaDestinoModal = '';
 
-  /** Whether the origin airport dropdown inside the modal is open. @type {boolean} */
+  /** Indica si el dropdown de aeropuerto de origen dentro del modal esta abierto. @type {boolean} */
   let mostrarDropdownOrigenModal  = false;
 
-  /** Whether the destination airport dropdown inside the modal is open. @type {boolean} */
+  /** Indica si el dropdown de aeropuerto de destino dentro del modal esta abierto. @type {boolean} */
   let mostrarDropdownDestinoModal = false;
 
-  // Filters airports for the origin dropdown in the modal.
-  // Shows first 5 when query is shorter than 2 chars; otherwise filters by name, code or city.
+  // Filtra aeropuertos para el dropdown de origen en el modal.
+  // Muestra los primeros 5 cuando la consulta tiene menos de 2 caracteres, de lo contrario filtra por nombre, codigo o ciudad.
   $: aeropuertosFiltradosOrigenModal = busquedaOrigenModal.length < 2
     ? aeropuertos.slice(0, 5)
     : aeropuertos.filter(a =>
@@ -72,8 +71,8 @@
         a.ciudad.toLowerCase().includes(busquedaOrigenModal.toLowerCase())
       ).slice(0, 10);
 
-  // Filters airports for the destination dropdown in the modal.
-  // Excludes the currently selected origin airport. Shows first 5 when query is shorter than 2.
+  // Filtra aeropuertos para el dropdown de destino en el modal.
+  // Excluye el aeropuerto de origen actualmente seleccionado. Muestra los primeros 5 cuando la consulta tiene menos de 2 caracteres.
   $: aeropuertosFiltradosDestinoModal = busquedaDestinoModal.length < 2
     ? aeropuertos.filter(a => a.id !== parseInt(nuevaRuta.origenId)).slice(0, 5)
     : aeropuertos.filter(a =>
@@ -84,16 +83,16 @@
         )
       ).slice(0, 10);
 
-  // Resolves the currently selected origin airport object for the confirmation label.
+  // Resuelve el objeto del aeropuerto de origen actualmente seleccionado para la etiqueta de confirmacion.
   $: aeropuertoOrigenSeleccionado  = aeropuertos.find(a => a.id === parseInt(nuevaRuta.origenId));
 
-  // Resolves the currently selected destination airport object for the confirmation label.
+  // Resuelve el objeto del aeropuerto de destino actualmente seleccionado para la etiqueta de confirmacion.
   $: aeropuertoDestinoSeleccionado = aeropuertos.find(a => a.id === parseInt(nuevaRuta.destinoId));
 
   /**
-   * Sets the origin airport from the modal dropdown, updates the search text, closes the
-   * dropdown, and clears the destination if it was the same airport.
-   * @param {any} a - The airport object selected from the origin dropdown.
+   * Establece el aeropuerto de origen desde el dropdown del modal, actualiza el texto de busqueda, cierra
+   * el dropdown y limpia el destino si era el mismo aeropuerto.
+   * @param {any} a - El objeto de aeropuerto seleccionado del dropdown de origen.
    */
   function seleccionarOrigenModal(a) {
     nuevaRuta.origenId = a.id;
@@ -106,8 +105,8 @@
   }
 
   /**
-   * Sets the destination airport from the modal dropdown and closes the dropdown.
-   * @param {any} a - The airport object selected from the destination dropdown.
+   * Establece el aeropuerto de destino desde el dropdown del modal y cierra el dropdown.
+   * @param {any} a - El objeto de aeropuerto seleccionado del dropdown de destino.
    */
   function seleccionarDestinoModal(a) {
     nuevaRuta.destinoId = a.id;
@@ -116,13 +115,13 @@
   }
 
   /**
-   * On mount: loads the route list from the backend.
+   * Al montar: carga la lista de rutas desde el backend.
    */
   onMount(() => { cargarRutas(); });
 
   /**
-   * Fetches all routes from the backend API and stores them in rutas. Shows a toast on error
-   * and sets loadingRutas during the request.
+   * Obtiene todas las rutas desde la API del backend y las almacena en rutas. Muestra un toast en caso
+   * de error y establece loadingRutas durante la solicitud.
    * @async
    * @returns {Promise<void>}
    */
@@ -137,9 +136,9 @@
   }
 
   /**
-   * Validates the modal form (origin, destination, valid duration, origin != destination) then
-   * POSTs the new route to the backend. On success closes the modal, resets form state,
-   * reloads routes and dispatches 'rutaCreada'. Shows error toasts for validation or API errors.
+   * Valida el formulario del modal (origen, destino, duracion valida, origen diferente a destino) y luego
+   * envia la nueva ruta al backend con POST. Si tiene exito cierra el modal, reinicia el estado del formulario,
+   * recarga las rutas y despacha 'rutaCreada'. Muestra toasts de error para fallos de validacion o de la API.
    * @async
    * @returns {Promise<void>}
    */
@@ -176,11 +175,11 @@
   }
 
   /**
-   * Validates that the inline-edited duration is a positive integer, then PUTs the updated
-   * value to the backend. On success resets the inline edit state and reloads routes.
-   * Shows error toasts for validation or API errors.
+   * Valida que la duracion editada inline sea un entero positivo, luego envia el valor actualizado al backend
+   * con PUT. Si tiene exito reinicia el estado de edicion inline y recarga las rutas.
+   * Muestra toasts de error para fallos de validacion o de la API.
    * @async
-   * @param {number} rutaId - The ID of the route whose duration is being updated.
+   * @param {number} rutaId - El ID de la ruta cuya duracion se esta actualizando.
    * @returns {Promise<void>}
    */
   async function guardarDuracionRuta(rutaId) {
@@ -206,7 +205,7 @@
   }
 
   /**
-   * Resets the create-route form and opens the modal.
+   * Reinicia el formulario de creacion de ruta y abre el modal.
    */
   function abrirModalCrearRuta() {
     nuevaRuta = { origenId: '', destinoId: '', duracion: 120 };

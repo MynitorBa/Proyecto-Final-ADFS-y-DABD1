@@ -1,24 +1,24 @@
 <script>
 /**
  * @file Register.svelte
- * @description Full user registration page for Broom AirLine. On mount it clears the form and
- * loads country/city data from countriesnow.space and nationality demonyms plus international
- * dial codes from restcountries.com. Provides autocomplete inputs for country (which also sets
- * the dial code and digit count), city (dependent on selected country), and one or more
- * nationalities with add/remove controls. The phone input uses a dial-code prefix and formats
- * digits based on the selected country's expected count. Password strength is shown live with
- * three requirements (length, uppercase, digit). Before registration, the form calls
- * POST /api/usuarios/verificar to check for duplicate email, username, or passport. On passing,
- * it submits to POST /api/usuarios and redirects to login after 2 seconds.
+ * @description Pagina completa de registro de usuario de Broom AirLine. Al montar limpia el formulario y
+ * carga datos de paises/ciudades desde countriesnow.space y demonimos de nacionalidad mas codigos de
+ * marcado internacional desde restcountries.com. Proporciona inputs de autocompletado para pais (que tambien
+ * establece el codigo de marcado y el conteo de digitos), ciudad (dependiente del pais seleccionado) y una
+ * o mas nacionalidades con controles para agregar/quitar. El input de telefono usa un prefijo de codigo de
+ * marcado y formatea los digitos segun el conteo esperado del pais. La fortaleza de la contrasena se muestra
+ * en tiempo real con tres requisitos (longitud, mayuscula, digito). Antes del registro, el formulario llama a
+ * POST /api/usuarios/verificar para verificar correo, username o pasaporte duplicados. Al pasar,
+ * envia a POST /api/usuarios y redirige al login despues de 2 segundos.
  */
   import '../styles/Register.css';
   import { onMount } from 'svelte';
   import { API } from '../lib/api.js';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion usada para navegar entre paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** Registration form data object bound to all form inputs. @type {{correo: string, contrasena: string, confirmPassword: string, pasaporte: string, username: string, nombre: string, apellido: string, telefono: string, fechaNacimiento: string, ciudad: string, pais: string}} */
+  /** Objeto de datos del formulario de registro vinculado a todos los inputs del formulario. @type {{correo: string, contrasena: string, confirmPassword: string, pasaporte: string, username: string, nombre: string, apellido: string, telefono: string, fechaNacimiento: string, ciudad: string, pais: string}} */
   let registerData = {
     correo: '',
     contrasena: '',
@@ -33,82 +33,82 @@
     pais: ''
   };
 
-  /** True when the user has checked the terms and conditions checkbox. @type {boolean} */
+  /** True cuando el usuario ha marcado el checkbox de terminos y condiciones. @type {boolean} */
   let acceptTerms = false;
 
-  /** True when the user has checked the receive promotions checkbox. @type {boolean} */
+  /** True cuando el usuario ha marcado el checkbox de recibir promociones. @type {boolean} */
   let receivePromotions = false;
 
-  /** True when the user has checked the CAPTCHA checkbox. @type {boolean} */
+  /** True cuando el usuario ha marcado el checkbox de CAPTCHA. @type {boolean} */
   let captchaVerified = false;
 
-  /** Global submission error message shown below the form. @type {string} */
+  /** Mensaje de error global de envio mostrado debajo del formulario. @type {string} */
   let submitError = '';
 
-  /** True after the registration API call succeeds, triggers the success message and redirect. @type {boolean} */
+  /** True despues de que la llamada a la API de registro tiene exito, activa el mensaje de exito y la redireccion. @type {boolean} */
   let submitSuccess = false;
 
-  /** True while the registration API call is in progress. @type {boolean} */
+  /** True mientras la llamada a la API de registro esta en progreso. @type {boolean} */
   let submitting = false;
 
-  /** Field-level validation error messages keyed by field name. @type {{correo: string, username: string, pasaporte: string, contrasena: string, pais: string, ciudad: string, nacionalidad: string, telefono: string}} */
+  /** Mensajes de error de validacion por campo, indexados por nombre de campo. @type {{correo: string, username: string, pasaporte: string, contrasena: string, pais: string, ciudad: string, nacionalidad: string, telefono: string}} */
   let errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '', telefono: '' };
 
-  // Computed password strength flags for the contrasena field.
+  // Indicadores de fortaleza de contrasena calculados para el campo contrasena.
   $: ps = {
     length:    registerData.contrasena.length >= 8,
     uppercase: /[A-Z]/.test(registerData.contrasena),
     number:    /[0-9]/.test(registerData.contrasena)
   };
 
-  // True when all three password strength requirements are satisfied.
+  // True cuando los tres requisitos de fortaleza de contrasena se cumplen.
   $: passwordValid = ps.length && ps.uppercase && ps.number;
 
-  /** All countries with their city lists loaded from countriesnow.space. @type {Array<{country: string, cities: string[]}>} */
+  /** Todos los paises con sus listas de ciudades cargadas desde countriesnow.space. @type {Array<{country: string, cities: string[]}>} */
   let todosLosPaises = [];
 
-  /** Current text in the country autocomplete input. @type {string} */
+  /** Texto actual en el input de autocompletado de pais. @type {string} */
   let paisQuery = '';
 
-  /** Country suggestions filtered from todosLosPaises by paisQuery. @type {Array<object>} */
+  /** Sugerencias de paises filtradas de todosLosPaises por paisQuery. @type {Array<object>} */
   let paisesSugeridos = [];
 
-  /** The selected country object from todosLosPaises, or null if none selected yet. @type {object|null} */
+  /** El objeto de pais seleccionado de todosLosPaises, o null si aun no se ha seleccionado ninguno. @type {object|null} */
   let paisSeleccionado = null;
 
-  /** Current text in the city autocomplete input. @type {string} */
+  /** Texto actual en el input de autocompletado de ciudad. @type {string} */
   let ciudadQuery = '';
 
-  /** City name suggestions filtered from paisSeleccionado.cities by ciudadQuery. @type {string[]} */
+  /** Sugerencias de nombre de ciudad filtradas de paisSeleccionado.cities por ciudadQuery. @type {string[]} */
   let ciudadesSugeridas = [];
 
-  /** True once the user has clicked a city suggestion from the dropdown. @type {boolean} */
+  /** True una vez que el usuario ha clickeado una sugerencia de ciudad del dropdown. @type {boolean} */
   let ciudadSeleccionada = false;
 
-  /** Array of nationality text values, one per nationality row (at least one). @type {string[]} */
+  /** Arreglo de valores de texto de nacionalidad, uno por fila de nacionalidad (al menos uno). @type {string[]} */
   let nacionalidades = [''];
 
-  /** Array of suggestion arrays for each nationality input, indexed parallel to nacionalidades. @type {Array<Array<{pais: string, demonym: string}>>} */
+  /** Arreglo de arreglos de sugerencias para cada input de nacionalidad, indexado en paralelo a nacionalidades. @type {Array<Array<{pais: string, demonym: string}>>} */
   let sugerenciasNac = [[]];
 
-  /** All nationality demonym entries loaded from restcountries.com. @type {Array<{pais: string, demonym: string}>} */
+  /** Todas las entradas de demonimos de nacionalidad cargadas desde restcountries.com. @type {Array<{pais: string, demonym: string}>} */
   let todosNacionalidades = [];
 
-  /** Array of booleans indicating whether each nationality has been selected from the suggestions. @type {boolean[]} */
+  /** Arreglo de booleanos que indican si cada nacionalidad ha sido seleccionada de las sugerencias. @type {boolean[]} */
   let nacionalidadesSeleccionadas = [false];
 
-  /** International dial code prefix for the selected country, e.g. '+502'. @type {string} */
+  /** Prefijo de codigo de marcado internacional para el pais seleccionado, por ejemplo '+502'. @type {string} */
   let dialCode = '';
 
-  /** Map of country name (lowercased) to dial code and digit count. @type {Object.<string, {code: string, digits: number}>} */
+  /** Mapa de nombre de pais (en minusculas) a codigo de marcado y conteo de digitos. @type {Object.<string, {code: string, digits: number}>} */
   let dialCodesMap = {};
 
-  /** Number of local digits required for phone numbers in the selected country. @type {number} */
+  /** Numero de digitos locales requeridos para numeros de telefono en el pais seleccionado. @type {number} */
   let phoneDigitCount = 8;
 
   /**
-   * Static lookup map of international dial codes to expected local digit counts.
-   * Keys are dial code strings (e.g. '+502'), values are digit counts.
+   * Mapa de busqueda estatico de codigos de marcado internacional a conteos de digitos locales esperados.
+   * Las claves son cadenas de codigo de marcado (por ejemplo '+502'), los valores son conteos de digitos.
    * @type {Object.<string, number>}
    */
   const knownDigits = {
@@ -156,11 +156,11 @@
   };
 
   /**
-   * Formats a raw digit string into a human-readable local phone number using space-separated
-   * groups whose sizes depend on the total expected digit count for the country.
-   * @param {string} digits - Raw digit string to format.
-   * @param {number} total - Total expected digit count for the country.
-   * @returns {string} Formatted phone string with spaces between digit groups.
+   * Formatea una cadena de digitos sin procesar en un numero de telefono local legible usando
+   * grupos separados por espacios cuyo tamano depende del conteo total de digitos esperado del pais.
+   * @param {string} digits - Cadena de digitos sin procesar a formatear.
+   * @param {number} total - Conteo total de digitos esperado para el pais.
+   * @returns {string} Cadena de telefono formateada con espacios entre grupos de digitos.
    */
   function formatLocalPhone(digits, total) {
     if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
@@ -171,9 +171,9 @@
   }
 
   /**
-   * Handles the phone input event by stripping non-digits, capping to phoneDigitCount, formatting
-   * with formatLocalPhone, and assigning the result to registerData.telefono. Clears errores.telefono.
-   * @param {Event} e - The input event from the phone text field.
+   * Maneja el evento de input del telefono eliminando los no-digitos, limitando a phoneDigitCount, formateando
+   * con formatLocalPhone y asignando el resultado a registerData.telefono. Limpia errores.telefono.
+   * @param {Event} e - El evento de input del campo de texto del telefono.
    */
   function onPhoneInput(e) {
     const raw = e.target.value.replace(/\D/g, '');
@@ -183,10 +183,10 @@
   }
 
   /**
-   * Generates a sample placeholder phone number string by formatting a repeated '5' digit string
-   * to show the expected format for the current country.
-   * @param {number} digits - Total digit count expected for the country.
-   * @returns {string} A formatted placeholder string.
+   * Genera una cadena de placeholder de telefono de muestra formateando una cadena de digito '5' repetido
+   * para mostrar el formato esperado del pais actual.
+   * @param {number} digits - Conteo total de digitos esperado para el pais.
+   * @returns {string} Una cadena de placeholder formateada.
    */
   function getPhonePlaceholder(digits) {
     const sample = '5'.repeat(digits);
@@ -228,8 +228,8 @@
   });
 
   /**
-   * Resets all form fields, error messages, autocomplete state, and nationality rows to their
-   * initial empty state. Called on mount to ensure a clean form even if the component is reused.
+   * Reinicia todos los campos del formulario, mensajes de error, estado de autocompletado y filas de
+   * nacionalidad a su estado vacio inicial. Se llama al montar para asegurar un formulario limpio aunque el componente se reutilice.
    */
   function limpiarFormulario() {
     registerData = {
@@ -257,24 +257,24 @@
   }
 
   /**
-   * Handles the correo input event by forcing the value to lowercase before assignment.
-   * @param {Event} e - The input event from the correo text field.
+   * Maneja el evento de input del correo convirtiendo el valor a minusculas antes de asignarlo.
+   * @param {Event} e - El evento de input del campo de texto de correo.
    */
   function onCorreoInput(e) {
     registerData.correo = e.target.value.toLowerCase();
   }
 
   /**
-   * Handles the pasaporte input event by stripping all non-numeric characters from the value.
-   * @param {Event} e - The input event from the pasaporte text field.
+   * Maneja el evento de input del pasaporte eliminando todos los caracteres no numericos del valor.
+   * @param {Event} e - El evento de input del campo de texto del pasaporte.
    */
   function onPasaporteInput(e) {
     registerData.pasaporte = e.target.value.replace(/[^0-9]/g, '');
   }
 
   /**
-   * Filters todosLosPaises by the current paisQuery (minimum 2 characters) to populate
-   * paisesSugeridos. Clears registerData.pais if the query has changed and no country is selected.
+   * Filtra todosLosPaises por el paisQuery actual (minimo 2 caracteres) para poblar
+   * paisesSugeridos. Limpia registerData.pais si la consulta ha cambiado y no hay pais seleccionado.
    */
   function onPaisInput() {
     const q = paisQuery.toLowerCase();
@@ -286,9 +286,9 @@
   }
 
   /**
-   * Sets the selected country, updates registerData.pais, resets city state, and resolves the
-   * dial code and digit count for the selected country from dialCodesMap.
-   * @param {{country: string, cities: string[]}} p - The selected country object.
+   * Establece el pais seleccionado, actualiza registerData.pais, reinicia el estado de ciudad y resuelve
+   * el codigo de marcado y el conteo de digitos del pais seleccionado desde dialCodesMap.
+   * @param {{country: string, cities: string[]}} p - El objeto de pais seleccionado.
    */
   function seleccionarPais(p) {
     paisSeleccionado = p;
@@ -309,8 +309,8 @@
   }
 
   /**
-   * On blur of the country input, if text was typed but no country was selected from the list,
-   * sets errores.pais and clears paisQuery to force a valid selection.
+   * Al perder el foco del input de pais, si se escribio texto pero no se selecciono ningun pais de la lista,
+   * establece errores.pais y limpia paisQuery para forzar una seleccion valida.
    */
   function validarPaisSeleccionado() {
     if (paisQuery && !paisSeleccionado) {
@@ -320,9 +320,9 @@
   }
 
   /**
-   * Filters the selected country's city list by ciudadQuery (minimum 2 characters) to populate
-   * ciudadesSugeridas. Clears registerData.ciudad if the query has changed and no city is selected.
-   * Does nothing if no country has been selected yet.
+   * Filtra la lista de ciudades del pais seleccionado por ciudadQuery (minimo 2 caracteres) para poblar
+   * ciudadesSugeridas. Limpia registerData.ciudad si la consulta ha cambiado y no hay ciudad seleccionada.
+   * No hace nada si aun no se ha seleccionado ningun pais.
    */
   function onCiudadInput() {
     if (!paisSeleccionado) return;
@@ -335,9 +335,9 @@
   }
 
   /**
-   * Sets the selected city string into ciudadQuery and registerData.ciudad, marks ciudadSeleccionada
-   * as true, clears ciudadesSugeridas, and clears errores.ciudad.
-   * @param {string} c - The city name selected from the dropdown.
+   * Asigna la cadena de ciudad seleccionada a ciudadQuery y registerData.ciudad, marca ciudadSeleccionada
+   * como true, limpia ciudadesSugeridas y limpia errores.ciudad.
+   * @param {string} c - El nombre de ciudad seleccionado del dropdown.
    */
   function seleccionarCiudad(c) {
     ciudadQuery = c;
@@ -348,8 +348,8 @@
   }
 
   /**
-   * On blur of the city input, if text was typed but no city was selected from the list, sets
-   * errores.ciudad and clears ciudadQuery to force a valid selection.
+   * Al perder el foco del input de ciudad, si se escribio texto pero no se selecciono ninguna ciudad de la lista,
+   * establece errores.ciudad y limpia ciudadQuery para forzar una seleccion valida.
    */
   function validarCiudadSeleccionada() {
     if (ciudadQuery && !ciudadSeleccionada) {
@@ -359,10 +359,10 @@
   }
 
   /**
-   * Filters todosNacionalidades by the text at index i in the nacionalidades array (matching
-   * country name or demonym) to populate sugerenciasNac[i]. Clears errores.nacionalidad if
-   * text is typed without a confirmed selection.
-   * @param {number} i - The index of the nationality row to filter suggestions for.
+   * Filtra todosNacionalidades por el texto en el indice i del arreglo nacionalidades (coincidiendo
+   * nombre de pais o demonimo) para poblar sugerenciasNac[i]. Limpia errores.nacionalidad si
+   * se escribe texto sin una seleccion confirmada.
+   * @param {number} i - El indice de la fila de nacionalidad para filtrar sugerencias.
    */
   function onNacInput(i) {
     const q = nacionalidades[i].toLowerCase();
@@ -376,10 +376,10 @@
   }
 
   /**
-   * Assigns the chosen demonym string to nacionalidades[i], marks it as selected, clears its
-   * suggestion list, and clears errores.nacionalidad.
-   * @param {number} i - The index of the nationality row.
-   * @param {string} demonym - The demonym string from the selected suggestion.
+   * Asigna la cadena de demonimo elegida a nacionalidades[i], la marca como seleccionada, limpia su
+   * lista de sugerencias y limpia errores.nacionalidad.
+   * @param {number} i - El indice de la fila de nacionalidad.
+   * @param {string} demonym - La cadena de demonimo de la sugerencia seleccionada.
    */
   function seleccionarNac(i, demonym) {
     nacionalidades[i] = demonym;
@@ -392,9 +392,9 @@
   }
 
   /**
-   * On blur of a nationality input, if text was typed at index i but no suggestion was selected,
-   * sets errores.nacionalidad and clears the text at that index to force a valid selection.
-   * @param {number} i - The index of the nationality row to validate.
+   * Al perder el foco de un input de nacionalidad, si se escribio texto en el indice i pero no se selecciono
+   * ninguna sugerencia, establece errores.nacionalidad y limpia el texto en ese indice para forzar una seleccion valida.
+   * @param {number} i - El indice de la fila de nacionalidad a validar.
    */
   function validarNacionalidadSeleccionada(i) {
     if (nacionalidades[i] && !nacionalidadesSeleccionadas[i]) {
@@ -405,8 +405,8 @@
   }
 
   /**
-   * Appends a new empty nationality row with an empty suggestion list and an unselected flag
-   * to the parallel nacionalidades, sugerenciasNac, and nacionalidadesSeleccionadas arrays.
+   * Agrega una nueva fila de nacionalidad vacia con una lista de sugerencias vacia y una bandera
+   * no seleccionada a los arreglos paralelos nacionalidades, sugerenciasNac y nacionalidadesSeleccionadas.
    */
   function agregarNac() {
     nacionalidades = [...nacionalidades, ''];
@@ -415,8 +415,8 @@
   }
 
   /**
-   * Removes the nationality row at index i from all three parallel arrays by filtering out that index.
-   * @param {number} i - The index of the nationality row to remove.
+   * Elimina la fila de nacionalidad en el indice i de los tres arreglos paralelos filtrando ese indice.
+   * @param {number} i - El indice de la fila de nacionalidad a eliminar.
    */
   function quitarNac(i) {
     nacionalidades = nacionalidades.filter((_, idx) => idx !== i);
@@ -425,10 +425,10 @@
   }
 
   /**
-   * Validates all form fields, checks for duplicate email/username/passport via
-   * POST /api/usuarios/verificar, then submits the registration to POST /api/usuarios.
-   * On success sets submitSuccess and schedules navigation to 'login' after 2 seconds.
-   * On validation or API failure sets the appropriate errores or submitError messages.
+   * Valida todos los campos del formulario, verifica duplicados de correo/username/pasaporte via
+   * POST /api/usuarios/verificar, luego envia el registro a POST /api/usuarios.
+   * Al tener exito establece submitSuccess y programa la navegacion a 'login' despues de 2 segundos.
+   * En fallo de validacion o API establece los mensajes correspondientes de errores o submitError.
    * @async
    * @returns {Promise<void>}
    */

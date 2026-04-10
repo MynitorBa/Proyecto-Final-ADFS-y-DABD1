@@ -15,6 +15,12 @@ namespace Aerolinea.API.Services
         private readonly HttpClient _httpClient;
         private readonly HotelAliadoRepository _repository;
 
+        // Host que reemplaza 'localhost' cuando el backend corre dentro de Docker.
+        // Se lee de HANDSHAKE_HOST_OVERRIDE (ej: "host.docker.internal").
+        // Si la variable no esta definida, las URLs se usan tal cual (entorno local).
+        private static readonly string? _hostOverride =
+            Environment.GetEnvironmentVariable("HANDSHAKE_HOST_OVERRIDE");
+
         /// <summary>
         /// Inicializa el servicio con el repositorio de hoteles aliados.
         /// </summary>
@@ -22,6 +28,17 @@ namespace Aerolinea.API.Services
         {
             _httpClient = new HttpClient();
             _repository = repository;
+        }
+
+        /// <summary>
+        /// Si HANDSHAKE_HOST_OVERRIDE esta definido, reemplaza el host 'localhost'
+        /// en la URL por el valor del override para que las llamadas salgan del
+        /// contenedor Docker hacia el host de la maquina anfitriona.
+        /// </summary>
+        private static string AplicarHostOverride(string url)
+        {
+            if (string.IsNullOrEmpty(_hostOverride)) return url;
+            return url.Replace("localhost", _hostOverride);
         }
 
         /// <summary>
@@ -59,10 +76,12 @@ namespace Aerolinea.API.Services
                         "application/json"
                     );
 
-                    // Cada aliado tiene su propio token y URL registrados en la BD
+                    // Aplica el override de host para que la llamada salga del contenedor
+                    var urlDestino = AplicarHostOverride(aliado.Url);
+
                     var request = new HttpRequestMessage(
                         HttpMethod.Post,
-                        $"{aliado.Url}/aerolinea/busqueda"
+                        $"{urlDestino}/aerolinea/busqueda"
                     );
                     request.Headers.Add("X-Aerolinea-Token", aliado.TokenHash);
                     request.Content = content;
@@ -157,7 +176,6 @@ namespace Aerolinea.API.Services
             if (yaExisteHotel)
                 throw new Exception("El usuario ya tiene un hotel aliado registrado.");
 
-            // Verificar que el usuario no tenga tampoco una agencia
             bool yaExisteAgencia = await _repository.UsuarioYaTieneAgencia(dto.UsuarioWEBIs);
             if (yaExisteAgencia)
                 throw new Exception("El usuario ya tiene una agencia registrada. Un usuario Webservice solo puede tener una entidad.");
@@ -189,11 +207,9 @@ namespace Aerolinea.API.Services
             if (rolId == 0) throw new Exception("El usuario no existe.");
             if (rolId != 3) throw new Exception("El usuario debe tener rol Webservice.");
 
-            // Verificar que no tenga ya otro hotel
             bool tieneHotel = await _repository.UsuarioYaTieneHotelAliado(usuarioId);
             if (tieneHotel) throw new Exception("Ese usuario ya está asignado a otro hotel aliado.");
 
-            // Verificar que no tenga tampoco una agencia
             bool tieneAgencia = await _repository.UsuarioYaTieneAgencia(usuarioId);
             if (tieneAgencia) throw new Exception("Ese usuario ya tiene una agencia registrada.");
 

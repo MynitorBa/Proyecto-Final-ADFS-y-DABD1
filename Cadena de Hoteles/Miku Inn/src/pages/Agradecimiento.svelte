@@ -67,7 +67,7 @@
   /**
    * Formatea un numero como moneda USD con dos decimales.
    * @param {number} p - Valor numerico a formatear.
-   * @returns {string} Cadena con formato de moneda, p.ej. "$1,250.00".
+   * @returns {string}
    */
   const fmt = (p) =>
     new Intl.NumberFormat('es-GT', {
@@ -79,7 +79,7 @@
   /**
    * Formatea una cadena de fecha ISO en formato legible en espanol.
    * @param {string} str - Fecha en formato ISO o cadena de fecha.
-   * @returns {string} Fecha formateada, p.ej. "15 de enero de 2025", o "—" si no hay valor.
+   * @returns {string}
    */
   function fmtDate(str) {
     if (!str) return '—';
@@ -131,9 +131,13 @@
             <!-- Cabecera de la factura: nombre del hotel y estado -->
             <div class="ag-factura__head">
               <span class="ag-factura__hotel">
-                🏨 {f._reservacion?.nombreHotel ?? 'Hotel'}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                {f._reservacion?.nombreHotel ?? 'Hotel'}
               </span>
-              <span class="ag-badge">✓ {f.estado ?? 'Pagada'}</span>
+              <span class="ag-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align:-1px;margin-right:2px"><polyline points="20 6 9 17 4 12"/></svg>
+                {f.estado ?? 'Pagada'}
+              </span>
             </div>
 
             <!-- Cuerpo con los campos de detalle de la factura -->
@@ -246,10 +250,12 @@
     <!-- Acciones finales: volver al inicio o ir a mis reservaciones -->
     <div class="ag-actions">
       <button class="ag-btn ag-btn--primary" on:click={() => navigateTo('home')}>
-        🏠 Volver al inicio
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Volver al inicio
       </button>
       <button class="ag-btn ag-btn--outline" on:click={() => navigateTo('reservations')}>
-        📋 Mis reservaciones
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="12" y2="15"/></svg>
+        Mis reservaciones
       </button>
     </div>
 

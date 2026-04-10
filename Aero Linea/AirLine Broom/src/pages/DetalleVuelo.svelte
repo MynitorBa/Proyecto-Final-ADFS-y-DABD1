@@ -1,12 +1,13 @@
 <script>
 /**
  * @file DetalleVuelo.svelte
- * @description Modal component that shows detailed information for a single flight or a
- * multi-leg (escala) itinerary. Displays the full route hero section, individual tramo
- * breakdowns for connecting flights, crew information, available seat classes with pricing
- * and amenities, and a threaded comment/review system for the route. Handles upvoting and
- * downvoting of comments, inline reply forms, and tree-based comment nesting via ComentarioNodo.
- * Appears as an overlay triggered from the Vuelos page when the user clicks "Ver Detalles".
+ * @description Componente modal que muestra informacion detallada de un vuelo individual o un
+ * itinerario de multiples tramos (escala). Muestra la seccion hero de ruta completa, desglose
+ * individual de tramos para vuelos de conexion, informacion de tripulacion, clases de asiento
+ * disponibles con precios y amenidades, y un sistema de comentarios/resenas en hilo para la ruta.
+ * Maneja votos positivos y negativos en comentarios, formularios de respuesta en linea y anidacion
+ * de comentarios basada en arbol mediante ComentarioNodo. Aparece como superposicion disparada
+ * desde la pagina Vuelos cuando el usuario hace clic en "Ver Detalles".
  */
   // @ts-nocheck
   import '../styles/detallesv.css';
@@ -14,15 +15,15 @@
   import { sesion } from '../stores/sesion.js';
   import ComentarioNodo from './ComentarioNodo.svelte';
 
-  /** The flight or escala object to display. Direct flights have flat fields; escalas have a tramos array. @type {object} */
+  /** El objeto de vuelo o escala a mostrar. Los vuelos directos tienen campos planos; las escalas tienen un arreglo tramos. @type {object} */
   export let flight;
 
-  /** Callback function to close this modal from the parent component. @type {function} */
+  /** Funcion de callback para cerrar este modal desde el componente padre. @type {function} */
   export let onClose;
 
   import { API } from '../lib/api.js';
 
-  $: esEscala  = Array.isArray(flight?.tramos) && flight.tramos.length > 0; /* True cuando el vuelo tiene tramos, indicando itinerario con escala */
+  $: esEscala  = Array.isArray(flight?.tramos) && flight.tramos.length > 0; /* Verdadero cuando el vuelo tiene tramos, indicando itinerario con escala */
 
   $: tramos    = esEscala ? flight.tramos : (flight ? [flight] : []); /* Lista normalizada de tramos: un elemento para vuelo directo, todos los tramos para escala */
 
@@ -46,16 +47,16 @@
 
   $: totalAsientos = asientosTurista + asientosEjecutiva; /* Suma de asientos de ambas clases, mostrado en el panel de especificaciones */
 
-  /** Currently selected class tab, either 'economico' or 'ejecutivo'. @type {string} */
+  /** Pestana de clase seleccionada actualmente, ya sea 'economico' o 'ejecutivo'. @type {string} */
   let selectedClass = 'economico';
 
   $: precioMostrado    = selectedClass === 'economico' ? precioTurista    : precioEjecutiva; /* Precio mostrado en el sidebar segun la clase seleccionada */
 
   $: asientosMostrados = selectedClass === 'economico' ? asientosTurista  : asientosEjecutiva; /* Cantidad de asientos mostrada en el sidebar segun la clase seleccionada */
 
-  $: turistaDisponible   = precioTurista   > 0 && asientosTurista   > 0; /* True cuando la clase turista tiene precio positivo y al menos un asiento disponible */
+  $: turistaDisponible   = precioTurista   > 0 && asientosTurista   > 0; /* Verdadero cuando la clase turista tiene precio positivo y al menos un asiento disponible */
 
-  $: ejecutivaDisponible = precioEjecutiva > 0 && asientosEjecutiva > 0; /* True cuando la clase ejecutiva tiene precio positivo y al menos un asiento disponible */
+  $: ejecutivaDisponible = precioEjecutiva > 0 && asientosEjecutiva > 0; /* Verdadero cuando la clase ejecutiva tiene precio positivo y al menos un asiento disponible */
 
   $: tripulantes = (() => { /* Lista deduplicada de tripulantes de todos los tramos, identificados por id */
     const vistos = new Set(), lista = [];
@@ -65,22 +66,22 @@
     return lista;
   })();
 
-  /** Static amenity lists for each cabin class shown in the class selection cards. @type {object} */
+  /** Listas estaticas de amenidades para cada clase de cabina mostradas en las tarjetas de seleccion de clase. @type {object} */
   const amenidades = {
     economico: ['Equipaje de mano incluido (8kg)','Asiento estandar','Comida y bebida incluida','Entretenimiento a bordo','USB en asiento'],
     ejecutivo: ['Equipaje de mano incluido (12kg)','Equipaje facturado incluido (32kg x2)','Asiento cama totalmente reclinable','Menu gourmet y bar completo','Entretenimiento premium','Kit de amenidades de lujo','Acceso a sala VIP','Embarque prioritario']
   };
 
-  /** Flat array of all comment objects fetched from the API for the current route. @type {Array<object>} */
+  /** Arreglo plano de todos los objetos de comentario obtenidos de la API para la ruta actual. @type {Array<object>} */
   let comentariosPlanos = [];
 
-  /** True while the comments are being fetched from the API. @type {boolean} */
+  /** Verdadero mientras se obtienen los comentarios de la API. @type {boolean} */
   let loadingComentarios = true;
 
-  /** Map of per-comment UI state keyed by comment id, tracking expanded/form/reply/vote state. @type {object} */
+  /** Mapa de estado de UI por comentario indexado por id de comentario, rastreando estado expandido/formulario/respuesta/voto. @type {object} */
   let estadoNodos = {};
 
-  $: haySession = !!$sesion; /* True cuando el usuario tiene sesion activa, controla si se muestran controles de respuesta y voto */
+  $: haySession = !!$sesion; /* Verdadero cuando el usuario tiene sesion activa, controla si se muestran controles de respuesta y voto */
 
   $: raices    = comentariosPlanos.filter(c => !c.comentarioPadreId); /* Comentarios raiz sin padre, usados como puntos de entrada del arbol de comentarios */
 
@@ -91,9 +92,9 @@
   })();
 
   /**
-   * Returns the direct child comments of a given parent comment id.
-   * @param {number} id - The parent comment id to look up.
-   * @returns {Array<object>} Array of child comment objects, or empty array if none exist.
+   * Retorna los comentarios hijos directos de un id de comentario padre dado.
+   * @param {number} id - El id de comentario padre a buscar.
+   * @returns {Array<object>} Arreglo de objetos de comentario hijo, o arreglo vacio si no existen.
    */
   function getHijos(id) { return hijosMap[id] ?? []; }
 
@@ -106,9 +107,9 @@
   onDestroy(() => { document.body.classList.remove('modal-open'); });
 
   /**
-   * Loads comments for the current route from the API. When the user has a session,
-   * fetches the extended endpoint that includes the user's existing vote on each comment.
-   * Initializes estadoNodos with default UI state for each comment returned.
+   * Carga los comentarios de la ruta actual desde la API. Cuando el usuario tiene sesion,
+   * obtiene el endpoint extendido que incluye el voto existente del usuario en cada comentario.
+   * Inicializa estadoNodos con el estado de UI por defecto para cada comentario retornado.
    * @async
    * @returns {Promise<void>}
    */
@@ -132,13 +133,13 @@
   }
 
   /**
-   * Toggles an upvote or downvote on a comment. If the user already voted with the same
-   * value, the vote is removed via DELETE /api/votos/:id. Otherwise a new vote is submitted
-   * via POST /api/votos. Updates estadoNodos and comentariosPlanos with the new vote state
-   * and updated downvote count from the server response.
+   * Alterna un voto positivo o negativo en un comentario. Si el usuario ya voto con el mismo
+   * valor, el voto se elimina mediante DELETE /api/votos/:id. De lo contrario, se envia un nuevo
+   * voto mediante POST /api/votos. Actualiza estadoNodos y comentariosPlanos con el nuevo estado
+   * de voto y la cantidad de votos negativos actualizada desde la respuesta del servidor.
    * @async
-   * @param {number} comentarioId - ID of the comment to vote on.
-   * @param {number} valor - Vote value (1 for upvote, -1 for downvote).
+   * @param {number} comentarioId - ID del comentario en el que votar.
+   * @param {number} valor - Valor del voto (1 para positivo, -1 para negativo).
    * @returns {Promise<void>}
    */
   async function votar(comentarioId, valor) {
@@ -156,12 +157,12 @@
   }
 
   /**
-   * Updates the local vote state for a comment without re-fetching from the API.
-   * Replaces the votoActual in estadoNodos and updates the downs count in comentariosPlanos.
-   * Forces Svelte reactivity by reassigning both objects.
-   * @param {number} id - Comment id to update.
-   * @param {number|null} nuevoVoto - The new vote value, or null if the vote was removed.
-   * @param {number} downs - The updated downvote count from the server.
+   * Actualiza el estado de voto local de un comentario sin volver a obtenerlo desde la API.
+   * Reemplaza el votoActual en estadoNodos y actualiza la cantidad de votos negativos en comentariosPlanos.
+   * Fuerza la reactividad de Svelte reasignando ambos objetos.
+   * @param {number} id - Id del comentario a actualizar.
+   * @param {number|null} nuevoVoto - El nuevo valor de voto, o null si el voto fue eliminado.
+   * @param {number} downs - La cantidad de votos negativos actualizada desde el servidor.
    */
   function _actualizarVoto(id, nuevoVoto, downs) {
     estadoNodos[id] = { ...estadoNodos[id], votoActual: nuevoVoto };
@@ -170,31 +171,31 @@
   }
 
   /**
-   * Toggles the reply form visibility for a comment and clears any draft text.
-   * @param {number} id - Comment id whose reply form should be toggled.
+   * Alterna la visibilidad del formulario de respuesta de un comentario y limpia el texto borrador.
+   * @param {number} id - Id del comentario cuyo formulario de respuesta debe alternarse.
    */
   function toggleForm(id)     { estadoNodos[id] = { ...estadoNodos[id], mostrandoForm: !estadoNodos[id].mostrandoForm, textoRespuesta: '' }; estadoNodos = { ...estadoNodos }; }
 
   /**
-   * Toggles the expanded/collapsed state of child replies for a comment.
-   * @param {number} id - Comment id whose children should be shown or hidden.
+   * Alterna el estado expandido/colapsado de las respuestas hijas de un comentario.
+   * @param {number} id - Id del comentario cuyos hijos deben mostrarse u ocultarse.
    */
   function toggleExpandido(id){ estadoNodos[id] = { ...estadoNodos[id], expandido: !estadoNodos[id].expandido }; estadoNodos = { ...estadoNodos }; }
 
   /**
-   * Updates the draft reply text in estadoNodos for a specific comment node.
-   * @param {number} id - Comment id whose reply draft is being updated.
-   * @param {string} v - The new text value from the textarea.
+   * Actualiza el texto borrador de respuesta en estadoNodos para un nodo de comentario especifico.
+   * @param {number} id - Id del comentario cuyo borrador de respuesta se esta actualizando.
+   * @param {string} v - El nuevo valor de texto del textarea.
    */
   function onTextoChange(id, v){ estadoNodos[id] = { ...estadoNodos[id], textoRespuesta: v }; estadoNodos = { ...estadoNodos }; }
 
   /**
-   * Submits a reply to a parent comment via POST /api/comentarios/respuesta. Validates that
-   * the reply text is non-empty before sending. On success, appends the new comment to
-   * comentariosPlanos, initializes its estadoNodo, collapses the reply form on the parent
-   * and auto-expands the parent's children to show the new reply.
+   * Envia una respuesta a un comentario padre mediante POST /api/comentarios/respuesta. Valida que
+   * el texto de respuesta no este vacio antes de enviar. En caso de exito, agrega el nuevo comentario
+   * a comentariosPlanos, inicializa su estadoNodo, colapsa el formulario de respuesta en el padre
+   * y expande automaticamente los hijos del padre para mostrar la nueva respuesta.
    * @async
-   * @param {number} padreId - ID of the parent comment being replied to.
+   * @param {number} padreId - ID del comentario padre al que se responde.
    * @returns {Promise<void>}
    */
   async function enviarRespuesta(padreId) {
@@ -213,44 +214,44 @@
   }
 
   /**
-   * Trims a time string to its HH:MM portion for display in the UI.
-   * @param {string} h - Time string in HH:MM or HH:MM:SS format.
-   * @returns {string} First five characters of the string, or '--:--' if falsy.
+   * Recorta una cadena de hora a su porcion HH:MM para mostrar en la UI.
+   * @param {string} h - Cadena de hora en formato HH:MM o HH:MM:SS.
+   * @returns {string} Los primeros cinco caracteres de la cadena, o '--:--' si es falsy.
    */
   function formatHora(h)    { return h ? h.substring(0,5) : '--:--'; }
 
   /**
-   * Converts a duration in minutes to a human-readable Xh Ym string.
-   * @param {number} m - Duration in minutes.
-   * @returns {string} Formatted duration or 'N/A' if the value is falsy.
+   * Convierte una duracion en minutos a una cadena legible Xh Ym.
+   * @param {number} m - Duracion en minutos.
+   * @returns {string} Duracion formateada o 'N/A' si el valor es falsy.
    */
   function formatDur(m)     { if (!m) return 'N/A'; return `${Math.floor(m/60)}h ${m%60}m`; }
 
   /**
-   * Formats a numeric price as a USD string with two decimal places using en-US locale.
-   * @param {number} p - Price value to format.
-   * @returns {string} Formatted price string, or 'No disponible' if falsy.
+   * Formatea un precio numerico como cadena USD con dos decimales usando el locale en-US.
+   * @param {number} p - Valor de precio a formatear.
+   * @returns {string} Cadena de precio formateada, o 'No disponible' si es falsy.
    */
   function formatPrecio(p)  { if (!p) return 'No disponible'; return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
   /**
-   * Converts a star count to a boolean array of length 5 for rendering filled/empty stars.
-   * @param {number} n - Number of filled stars (0-5).
-   * @returns {Array<boolean>} Array where true means the star at that index is filled.
+   * Convierte una cantidad de estrellas a un arreglo booleano de longitud 5 para renderizar estrellas llenas/vacias.
+   * @param {number} n - Cantidad de estrellas llenas (0-5).
+   * @returns {Array<boolean>} Arreglo donde verdadero significa que la estrella en ese indice esta llena.
    */
   function getEstrellas(n)  { return Array.from({ length: 5 }, (_, i) => i < (n ?? 0)); }
 
   /**
-   * Formats an ISO date string into a short localized date using es-ES locale.
-   * @param {string} f - ISO date string.
-   * @returns {string} Localized date string such as '3 abr 2026', or empty string if falsy.
+   * Formatea una cadena ISO de fecha en una fecha corta localizada usando el locale es-ES.
+   * @param {string} f - Cadena ISO de fecha.
+   * @returns {string} Cadena de fecha localizada como '3 abr 2026', o cadena vacia si es falsy.
    */
   function formatFecha(f)   { if (!f) return ''; return new Date(f).toLocaleDateString('es-ES', { year:'numeric', month:'short', day:'numeric' }); }
 
   /**
-   * Handles clicks on the modal backdrop and closes the modal when the click
-   * target is the backdrop itself rather than a child element.
-   * @param {MouseEvent} e - The DOM click event.
+   * Maneja los clics en el fondo del modal y lo cierra cuando el objetivo del clic
+   * es el propio fondo en lugar de un elemento hijo.
+   * @param {MouseEvent} e - El evento clic del DOM.
    */
   function handleBackdrop(e) { if (e.target === e.currentTarget) onClose(); }
 </script>

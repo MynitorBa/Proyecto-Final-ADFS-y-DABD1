@@ -1,64 +1,64 @@
 <script>
 /**
  * @file AdminCrearVuelo.svelte
- * @description Admin panel section for creating a new flight. Provides a multi-section form
- * covering basic info (flight number, date), route (origin and destination airports with
- * searchable dropdowns), schedule (departure time and an auto-calculated estimated arrival
- * preview), aircraft selection (filtered by availability on the selected date), seat distribution
- * with a visual capacity bar, pricing for tourist and executive classes, and crew assignment.
- * Validates all fields before posting to the backend API. Checks route existence and real-time
- * availability of aircraft and crew members for the chosen date. Dispatches 'vueloCreado' on
- * success and 'irARutas' when the user requests to create a missing route.
+ * @description Seccion del panel de administracion para crear un nuevo vuelo. Proporciona un formulario
+ * de multiples secciones que cubre informacion basica (numero de vuelo, fecha), ruta (aeropuertos de origen
+ * y destino con dropdowns de busqueda), horarios (hora de salida y vista previa de llegada estimada calculada
+ * automaticamente), seleccion de aeronave (filtrada por disponibilidad en la fecha seleccionada), distribucion
+ * de asientos con una barra visual de capacidad, precios para clases turista y ejecutiva, y asignacion de
+ * tripulacion. Valida todos los campos antes de enviar al backend. Verifica la existencia de la ruta y la
+ * disponibilidad en tiempo real de aviones y tripulantes para la fecha elegida. Despacha 'vueloCreado' al
+ * tener exito e 'irARutas' cuando el usuario solicita crear una ruta faltante.
  */
 // @ts-nocheck
   import { createEventDispatcher } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** List of all available airports, used to populate origin and destination dropdowns. @type {any[]} */
+  /** Lista de todos los aeropuertos disponibles, usada para poblar los dropdowns de origen y destino. @type {any[]} */
   export let aeropuertos  = [];
 
-  /** List of all aircraft in the fleet, used to populate the aircraft selection dropdown. @type {any[]} */
+  /** Lista de todos los aviones de la flota, usada para poblar el dropdown de seleccion de aeronave. @type {any[]} */
   export let aviones      = [];
 
-  /** List of all crew members, used to populate the crew assignment dropdown. @type {any[]} */
+  /** Lista de todos los tripulantes, usada para poblar el dropdown de asignacion de tripulacion. @type {any[]} */
   export let tripulantes  = [];
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
   const dispatch = createEventDispatcher();
 
-  /** Current text in the origin airport search input. @type {string} */
+  /** Texto actual en el input de busqueda del aeropuerto de origen. @type {string} */
   let busquedaOrigen        = '';
 
-  /** Current text in the destination airport search input. @type {string} */
+  /** Texto actual en el input de busqueda del aeropuerto de destino. @type {string} */
   let busquedaDestino       = '';
 
-  /** Current text in the aircraft search input. @type {string} */
+  /** Texto actual en el input de busqueda del avion. @type {string} */
   let busquedaAvion         = '';
 
-  /** Current text in the crew member search input. @type {string} */
+  /** Texto actual en el input de busqueda del tripulante. @type {string} */
   let busquedaTripulante    = '';
 
-  /** Whether the origin airport dropdown is open. @type {boolean} */
+  /** Indica si el dropdown de aeropuerto de origen esta abierto. @type {boolean} */
   let mostrarDropdownOrigen     = false;
 
-  /** Whether the destination airport dropdown is open. @type {boolean} */
+  /** Indica si el dropdown de aeropuerto de destino esta abierto. @type {boolean} */
   let mostrarDropdownDestino    = false;
 
-  /** Whether the aircraft dropdown is open. @type {boolean} */
+  /** Indica si el dropdown de aeronave esta abierto. @type {boolean} */
   let mostrarDropdownAvion      = false;
 
-  /** Whether the crew member dropdown is open. @type {boolean} */
+  /** Indica si el dropdown de tripulante esta abierto. @type {boolean} */
   let mostrarDropdownTripulante = false;
 
   /**
-   * Object holding all form field values for the new flight being created.
+   * Objeto que contiene todos los valores de los campos del formulario para el nuevo vuelo que se esta creando.
    * @type {{
    *   numeroVuelo: string,
    *   aeropuertoOrigenId: string,
@@ -87,47 +87,47 @@
     tripulantesSeleccionados: []
   };
 
-  /** Arrival time preview object returned by the calcular-llegada API endpoint. @type {any} */
+  /** Objeto de vista previa de hora de llegada devuelto por el endpoint calcular-llegada de la API. @type {any} */
   let previewLlegada       = null;
 
-  /** Whether the arrival preview API call is in progress. @type {boolean} */
+  /** Indica si la llamada a la API de vista previa de llegada esta en progreso. @type {boolean} */
   let loadingPreview       = false;
 
-  /** Debounce timer ID for the arrival preview calculation. @type {any} */
+  /** ID del temporizador de debounce para el calculo de vista previa de llegada. @type {any} */
   let previewDebounceTimer = null;
 
   /**
-   * Current route existence check status.
-   * Values: null (not checked), 'checking', 'ok', 'missing'.
+   * Estado actual de verificacion de existencia de ruta.
+   * Valores: null (no verificado), 'checking', 'ok', 'missing'.
    * @type {string|null}
    */
   let rutaExisteStatus     = null;
 
-  /** Debounce timer ID for the route existence check. @type {any} */
+  /** ID del temporizador de debounce para la verificacion de existencia de ruta. @type {any} */
   let rutaCheckTimer       = null;
 
-  /** Last origin airport ID used in a route existence check, to avoid redundant calls. @type {string|null} */
+  /** Ultimo ID de aeropuerto de origen usado en una verificacion de ruta, para evitar llamadas redundantes. @type {string|null} */
   let lastOrigenId         = null;
 
-  /** Last destination airport ID used in a route existence check, to avoid redundant calls. @type {string|null} */
+  /** Ultimo ID de aeropuerto de destino usado en una verificacion de ruta, para evitar llamadas redundantes. @type {string|null} */
   let lastDestinoId        = null;
 
-  /** Set of aircraft IDs already assigned to another flight on the selected date. @type {Set<number>} */
+  /** Conjunto de IDs de aviones ya asignados a otro vuelo en la fecha seleccionada. @type {Set<number>} */
   let avionesOcupadosIds     = new Set();
 
-  /** Set of crew member IDs already assigned to another flight on the selected date and time. @type {Set<number>} */
+  /** Conjunto de IDs de tripulantes ya asignados a otro vuelo en la fecha y hora seleccionadas. @type {Set<number>} */
   let tripulantesOcupadosIds = new Set();
 
-  /** Whether the availability fetch for aircraft and crew is in progress. @type {boolean} */
+  /** Indica si la carga de disponibilidad de aviones y tripulantes esta en progreso. @type {boolean} */
   let cargandoDisponibilidad = false;
 
-  /** Today's date formatted as YYYY-MM-DD, used as the minimum allowed flight date. @type {string} */
+  /** Fecha de hoy formateada como YYYY-MM-DD, usada como la fecha minima permitida de vuelo. @type {string} */
   const hoyStr = new Date().toISOString().split('T')[0];
 
   /**
-   * Formats the flight number input: forces 2 uppercase letters + space + digits.
-   * Updates nuevoVuelo.numeroVuelo and the input element value in place.
-   * @param {Event} e - The input event from the flight number text field.
+   * Formatea el input del numero de vuelo: fuerza 2 letras mayusculas + espacio + digitos.
+   * Actualiza nuevoVuelo.numeroVuelo y el valor del elemento input en el lugar.
+   * @param {Event} e - El evento de input del campo de texto de numero de vuelo.
    */
   function formatearNumeroVuelo(e) {
     let val = e.target.value.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
@@ -142,9 +142,9 @@
   }
 
   /**
-   * Returns true when the date string is 10 characters long and has a year between the
-   * current year and 2099.
-   * @param {string} fecha - Date string in YYYY-MM-DD format.
+   * Devuelve verdadero cuando la cadena de fecha tiene 10 caracteres y un ano entre el
+   * ano actual y 2099.
+   * @param {string} fecha - Cadena de fecha en formato YYYY-MM-DD.
    * @returns {boolean}
    */
   function fechaEsValida(fecha) {
@@ -155,8 +155,8 @@
   }
 
   /**
-   * Returns true when the date string represents a date before today (midnight local time).
-   * @param {string} fecha - Date string in YYYY-MM-DD format.
+   * Devuelve verdadero cuando la cadena de fecha representa una fecha anterior a hoy (medianoche hora local).
+   * @param {string} fecha - Cadena de fecha en formato YYYY-MM-DD.
    * @returns {boolean}
    */
   function fechaEsPasada(fecha) {
@@ -166,8 +166,8 @@
     return new Date(fecha) < hoy;
   }
 
-  // Filters airports for the origin dropdown. Shows first 5 when query < 2 chars; otherwise
-  // filters by name, code or city, capped at 10.
+  // Filtra aeropuertos para el dropdown de origen. Muestra los primeros 5 cuando la consulta tiene menos de 2 caracteres,
+  // de lo contrario filtra por nombre, codigo o ciudad, limitado a 10.
   $: aeropuertosFiltradosOrigen = busquedaOrigen.length < 2
     ? aeropuertos.slice(0, 5)
     : aeropuertos.filter(a =>
@@ -176,8 +176,8 @@
         a.ciudad.toLowerCase().includes(busquedaOrigen.toLowerCase())
       ).slice(0, 10);
 
-  // Filters airports for the destination dropdown. Shows first 5 when query < 2 chars; otherwise
-  // filters by name, code or city, capped at 10.
+  // Filtra aeropuertos para el dropdown de destino. Muestra los primeros 5 cuando la consulta tiene menos de 2 caracteres,
+  // de lo contrario filtra por nombre, codigo o ciudad, limitado a 10.
   $: aeropuertosFiltradosDestino = busquedaDestino.length < 2
     ? aeropuertos.slice(0, 5)
     : aeropuertos.filter(a =>
@@ -186,7 +186,7 @@
         a.ciudad.toLowerCase().includes(busquedaDestino.toLowerCase())
       ).slice(0, 10);
 
-  // Filters aircraft by name/brand/model match AND excludes IDs in avionesOcupadosIds.
+  // Filtra aviones por coincidencia de nombre/marca/modelo Y excluye IDs en avionesOcupadosIds.
   $: avionesFiltrados = aviones.filter(a => {
     const coincide =
       a.nombreCompleto.toLowerCase().includes(busquedaAvion.toLowerCase()) ||
@@ -195,7 +195,7 @@
     return coincide && !avionesOcupadosIds.has(a.id);
   });
 
-  // Filters crew members by name/role match, excludes already-selected and busy IDs.
+  // Filtra tripulantes por coincidencia de nombre/rol, excluye IDs ya seleccionados y ocupados.
   $: tripulantesFiltrados = tripulantes.filter(t => {
     const yaSeleccionado = nuevoVuelo.tripulantesSeleccionados.some(ts => ts.id === t.id);
     const coincide =
@@ -204,39 +204,39 @@
     return !yaSeleccionado && !tripulantesOcupadosIds.has(t.id) && coincide;
   });
 
-  // Resolves the selected origin airport object from the aeropuertos list.
+  // Resuelve el objeto del aeropuerto de origen seleccionado desde la lista de aeropuertos.
   $: aeropuertoOrigen  = aeropuertos.find(a => a.id === parseInt(nuevoVuelo.aeropuertoOrigenId));
 
-  // Resolves the selected destination airport object from the aeropuertos list.
+  // Resuelve el objeto del aeropuerto de destino seleccionado desde la lista de aeropuertos.
   $: aeropuertoDestino = aeropuertos.find(a => a.id === parseInt(nuevoVuelo.aeropuertoDestinoId));
 
-  // Resolves the selected aircraft object from the aviones list.
+  // Resuelve el objeto del avion seleccionado desde la lista de aviones.
   $: avionSeleccionado = aviones.find(a => a.id === parseInt(nuevoVuelo.avionId));
 
-  // Sums tourist and executive seat counts to check against aircraft capacity.
+  // Suma los conteos de asientos turista y ejecutivo para verificar contra la capacidad del avion.
   $: totalBoletosAsignados = (parseInt(nuevoVuelo.boletosTurista)   || 0) +
                              (parseInt(nuevoVuelo.boletosEjecutivo) || 0);
 
-  // Passenger capacity of the currently selected aircraft (0 if none selected).
+  // Capacidad de pasajeros del avion actualmente seleccionado (0 si no hay ninguno seleccionado).
   $: capacidadAvion    = avionSeleccionado?.capacidadPasajeros ?? 0;
 
-  // True when the assigned seat total exceeds the aircraft capacity.
+  // Verdadero cuando el total de asientos asignados supera la capacidad del avion.
   $: excedeLimite      = capacidadAvion > 0 && totalBoletosAsignados > capacidadAvion;
 
-  // Percentage of capacity occupied, capped at 100, used to drive the capacity progress bar.
+  // Porcentaje de capacidad ocupada, limitado a 100, usado para impulsar la barra de progreso de capacidad.
   $: porcentajeOcupado = capacidadAvion > 0
     ? Math.min(100, Math.round(totalBoletosAsignados / capacidadAvion * 100))
     : 0;
 
-  // True when origin, destination, a valid non-past date, and departure time are all set.
+  // Verdadero cuando origen, destino, una fecha valida no pasada, y hora de salida estan todos establecidos.
   $: camposListos = !!nuevoVuelo.aeropuertoOrigenId &&
                     !!nuevoVuelo.aeropuertoDestinoId &&
                     fechaEsValida(nuevoVuelo.fecha) &&
                     !fechaEsPasada(nuevoVuelo.fecha) &&
                     !!nuevoVuelo.horaSalida;
 
-  // When an aircraft is selected and no seat counts have been entered yet, auto-fills
-  // 25% executive and 75% tourist based on total capacity.
+  // Cuando se selecciona un avion y aun no se han ingresado conteos de asientos, auto-rellena
+  // 25% ejecutivo y 75% turista basado en la capacidad total.
   $: if (avionSeleccionado && !nuevoVuelo.boletosTurista && !nuevoVuelo.boletosEjecutivo) {
     const cap = avionSeleccionado.capacidadPasajeros;
     const eje = Math.floor(cap * 0.25);
@@ -244,17 +244,17 @@
     nuevoVuelo.boletosTurista   = cap - eje;
   }
 
-  // Triggers a route existence check whenever the origin or destination airport changes.
+  // Activa una verificacion de existencia de ruta cuando cambia el aeropuerto de origen o destino.
   $: { nuevoVuelo.aeropuertoOrigenId; nuevoVuelo.aeropuertoDestinoId; verificarRutaSiCambioAeropuerto(); }
 
-  // Triggers an arrival preview calculation whenever date or departure time changes and both are valid.
+  // Activa un calculo de vista previa de llegada cuando cambia la fecha o la hora de salida y ambas son validas.
   $: {
     nuevoVuelo.fecha; nuevoVuelo.horaSalida;
     if (fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha)) actualizarPreviewLlegada();
     else previewLlegada = null;
   }
 
-  // Triggers an availability check for aircraft and crew when the date or time changes.
+  // Activa una verificacion de disponibilidad de aviones y tripulantes cuando cambia la fecha o la hora.
   $: {
     nuevoVuelo.fecha; nuevoVuelo.horaSalida;
     if (fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha)) cargarDisponibilidad();
@@ -262,9 +262,10 @@
   }
 
   /**
-   * Checks whether a route exists between the currently selected origin and destination airports.
-   * Debounces the check by 300ms and only runs when both airports are set and at least one of
-   * them changed since the last check. Sets rutaExisteStatus to 'checking', then 'ok' or 'missing'.
+   * Verifica si existe una ruta entre los aeropuertos de origen y destino actualmente seleccionados.
+   * Hace debounce de la verificacion por 300ms y solo se ejecuta cuando ambos aeropuertos estan establecidos
+   * y al menos uno de ellos cambio desde la ultima verificacion. Establece rutaExisteStatus en 'checking',
+   * luego 'ok' o 'missing'.
    */
   function verificarRutaSiCambioAeropuerto() {
     const origenId  = nuevoVuelo.aeropuertoOrigenId;
@@ -286,7 +287,7 @@
   }
 
   /**
-   * Triggers the arrival preview calculation only when the route has been confirmed to exist.
+   * Activa el calculo de vista previa de llegada solo cuando se ha confirmado que la ruta existe.
    */
   function actualizarPreviewLlegada() {
     if (rutaExisteStatus !== 'ok') return;
@@ -294,9 +295,9 @@
   }
 
   /**
-   * Debounces and then calls the calcular-llegada API endpoint with origin, destination, date
-   * and departure time. Stores the result in previewLlegada. Aborts the request after 8 seconds
-   * using AbortController. Requires all fields to be valid and non-past before sending.
+   * Hace debounce y luego llama al endpoint calcular-llegada de la API con origen, destino, fecha
+   * y hora de salida. Almacena el resultado en previewLlegada. Cancela la solicitud despues de 8 segundos
+   * usando AbortController. Requiere que todos los campos sean validos y no pasados antes de enviar.
    * @async
    */
   function calcularPreviewLlegada() {
@@ -332,9 +333,9 @@
   }
 
   /**
-   * Fetches the IDs of aircraft and crew members already assigned to flights on the selected
-   * date (+/-  departure time). Removes any currently selected aircraft or crew that become
-   * unavailable. Clears the sets if the date is invalid or in the past.
+   * Obtiene los IDs de aviones y tripulantes ya asignados a vuelos en la fecha seleccionada
+   * (segun la hora de salida). Elimina cualquier avion o tripulante actualmente seleccionado
+   * que quede no disponible. Limpia los conjuntos si la fecha es invalida o en el pasado.
    * @async
    * @returns {Promise<void>}
    */
@@ -365,39 +366,39 @@
   }
 
   /**
-   * Sets the origin airport on the form, updates the search text and closes the dropdown.
-   * @param {any} a - The airport object selected from the dropdown.
+   * Establece el aeropuerto de origen en el formulario, actualiza el texto de busqueda y cierra el dropdown.
+   * @param {any} a - El objeto de aeropuerto seleccionado del dropdown.
    */
   function seleccionarAeropuertoOrigen(a)  { nuevoVuelo.aeropuertoOrigenId  = a.id; busquedaOrigen  = `${a.codigo} - ${a.nombre}`; mostrarDropdownOrigen  = false; }
 
   /**
-   * Sets the destination airport on the form, updates the search text and closes the dropdown.
-   * @param {any} a - The airport object selected from the dropdown.
+   * Establece el aeropuerto de destino en el formulario, actualiza el texto de busqueda y cierra el dropdown.
+   * @param {any} a - El objeto de aeropuerto seleccionado del dropdown.
    */
   function seleccionarAeropuertoDestino(a) { nuevoVuelo.aeropuertoDestinoId = a.id; busquedaDestino = `${a.codigo} - ${a.nombre}`; mostrarDropdownDestino = false; }
 
   /**
-   * Sets the aircraft on the form, updates the search text, closes the dropdown and resets
-   * the seat count fields so they can be auto-filled based on the new aircraft capacity.
-   * @param {any} a - The aircraft object selected from the dropdown.
+   * Establece el avion en el formulario, actualiza el texto de busqueda, cierra el dropdown y reinicia
+   * los campos de conteo de asientos para que puedan auto-rellenarse segun la nueva capacidad del avion.
+   * @param {any} a - El objeto de avion seleccionado del dropdown.
    */
   function seleccionarAvion(a)   { nuevoVuelo.avionId = a.id; busquedaAvion = a.nombreCompleto; mostrarDropdownAvion = false; nuevoVuelo.boletosTurista = ''; nuevoVuelo.boletosEjecutivo = ''; }
 
   /**
-   * Adds a crew member to the selected crew list and resets the crew search input.
-   * @param {any} t - The crew member object selected from the dropdown.
+   * Agrega un tripulante a la lista de tripulacion seleccionada y reinicia el input de busqueda de tripulantes.
+   * @param {any} t - El objeto de tripulante seleccionado del dropdown.
    */
   function agregarTripulante(t)  { nuevoVuelo.tripulantesSeleccionados = [...nuevoVuelo.tripulantesSeleccionados, t]; busquedaTripulante = ''; mostrarDropdownTripulante = false; }
 
   /**
-   * Removes a crew member from the selected crew list by their ID.
-   * @param {number} id - The ID of the crew member to remove.
+   * Elimina un tripulante de la lista de tripulacion seleccionada por su ID.
+   * @param {number} id - El ID del tripulante a eliminar.
    */
   function quitarTripulante(id)  { nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== id); }
 
   /**
-   * Resets the entire flight creation form back to its initial empty state, including all
-   * search inputs, dropdown states, preview data and availability sets.
+   * Reinicia todo el formulario de creacion de vuelo a su estado inicial vacio, incluyendo todos
+   * los inputs de busqueda, estados de dropdown, datos de vista previa y conjuntos de disponibilidad.
    */
   function limpiarFormularioVuelo() {
     nuevoVuelo = { numeroVuelo: '', aeropuertoOrigenId: '', aeropuertoDestinoId: '', avionId: '', fecha: '', horaSalida: '', boletosTurista: '', boletosEjecutivo: '', precioTurista: '', precioEjecutiva: '', tripulantesSeleccionados: [] };
@@ -407,9 +408,9 @@
   }
 
   /**
-   * Validates all required fields, verifies the route exists via the API, then POSTs the new
-   * flight to the backend. On success clears the form and dispatches 'vueloCreado'. Shows
-   * specific error toasts for each validation failure or API error.
+   * Valida todos los campos requeridos, verifica que la ruta existe mediante la API, luego envia el nuevo
+   * vuelo al backend con POST. Si tiene exito limpia el formulario y despacha 'vueloCreado'. Muestra
+   * toasts de error especificos para cada fallo de validacion o error de la API.
    * @async
    * @returns {Promise<void>}
    */

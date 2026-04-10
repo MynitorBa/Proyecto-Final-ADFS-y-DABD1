@@ -1,40 +1,40 @@
 <script>
 /**
  * @file Vuelos.svelte
- * @description Main flight listing and selection page for Broom AirLine. Supports two entry
- * modes: a global keyword search (fromGlobalSearch flag) that shows a flat list of direct
- * flights with a re-search input, and a standard origin/destination/date search that shows
- * outbound and return flight steps with direct and escala tabs. Filters (price range, class,
- * flight type tab) are shown only in standard mode and are applied via POST /api/vuelos/buscar.
- * Global re-search uses GET /api/vuelos/busqueda-general. Each flight card renders schedule
- * info and class-option buttons for Turista and Ejecutiva; escala cards additionally render
- * a layover timeline with connection wait times. Selecting a flight and clicking the next-step
- * button calls POST /api/reservaciones and navigates to 'datos-pasajeros'. The DetalleVuelo
- * component is mounted as a modal when the user clicks "Ver Detalles".
+ * @description Pagina principal de listado y seleccion de vuelos de Broom AirLine. Soporta dos modos de
+ * entrada: una busqueda global por palabra clave (bandera fromGlobalSearch) que muestra una lista plana de
+ * vuelos directos con un input de re-busqueda, y una busqueda estandar por origen/destino/fecha que muestra
+ * pasos de vuelo de ida y regreso con pestanas de directo y escala. Los filtros (rango de precio, clase,
+ * pestana de tipo de vuelo) se muestran solo en modo estandar y se aplican via POST /api/vuelos/buscar.
+ * La re-busqueda global usa GET /api/vuelos/busqueda-general. Cada tarjeta de vuelo renderiza informacion
+ * de horario y botones de opcion de clase para Turista y Ejecutiva; las tarjetas de escala adicionalmente
+ * renderizan una linea de tiempo de escala con tiempos de espera de conexion. Seleccionar un vuelo y hacer
+ * clic en el boton de siguiente paso llama a POST /api/reservaciones y navega a 'datos-pasajeros'. El componente
+ * DetalleVuelo se monta como modal cuando el usuario hace clic en "Ver Detalles".
  */
 // @ts-nocheck
   import '../styles/vuelos.css';
   import DetalleVueloModal from './DetalleVuelo.svelte';
   import { sesion } from '../stores/sesion.js';
 
-  /** Function used to navigate between application pages. @type {function} */
+  /** Funcion usada para navegar entre paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
-  /** Search parameters object passed from the home or header search. @type {object|null} */
+  /** Objeto de parametros de busqueda pasado desde la pagina de inicio o la busqueda del header. @type {object|null} */
   export let searchParams = null;
 
   import { API } from '../lib/api.js';
 
-  /** True when the page was opened from a global keyword search via the header. @type {boolean} */
+  /** True cuando la pagina fue abierta desde una busqueda global por palabra clave via el header. @type {boolean} */
   let isGlobalSearch = false;
 
-  /** The original query string for the current global search session. @type {string} */
+  /** La cadena de consulta original de la sesion de busqueda global actual. @type {string} */
   let globalSearchQuery = '';
 
-  /** The current value of the inline re-search input in global search mode. @type {string} */
+  /** El valor actual del input de re-busqueda inline en modo de busqueda global. @type {string} */
   let newGlobalQuery = '';
 
-  /** Search parameters object with origin/destination IDs, names, codes, dates, passenger count, and trip type. @type {object} */
+  /** Objeto de parametros de busqueda con IDs de origen/destino, nombres, codigos, fechas, conteo de pasajeros y tipo de viaje. @type {object} */
   let searchData = {
     origenId: null, destinoId: null,
     origenNombre: '', destinoNombre: '',
@@ -44,53 +44,53 @@
     flightMode: 'todos'
   };
 
-  /** Current step being displayed, either 'outbound' or 'return'. @type {string} */
+  /** Paso que se esta mostrando actualmente, ya sea 'outbound' o 'return'. @type {string} */
   let currentView = 'outbound';
 
-  /** Currently selected outbound flight/escala and class, or all-null before selection. @type {{type: string|null, flight: object|null, escala: object|null, clase: object|null}} */
+  /** Vuelo de ida/escala y clase actualmente seleccionados, o todos null antes de la seleccion. @type {{type: string|null, flight: object|null, escala: object|null, clase: object|null}} */
   let selectedOutbound = { type: null, flight: null, escala: null, clase: null };
 
-  /** Currently selected return flight/escala and class, or all-null before selection. @type {{type: string|null, flight: object|null, escala: object|null, clase: object|null}} */
+  /** Vuelo de regreso/escala y clase actualmente seleccionados, o todos null antes de la seleccion. @type {{type: string|null, flight: object|null, escala: object|null, clase: object|null}} */
   let selectedReturn   = { type: null, flight: null, escala: null, clase: null };
 
-  /** True when the flight detail modal is open. @type {boolean} */
+  /** True cuando el modal de detalle de vuelo esta abierto. @type {boolean} */
   let showDetailModal = false;
 
-  /** Flight or escala object currently displayed in the detail modal. @type {object|null} */
+  /** Objeto de vuelo o escala actualmente mostrado en el modal de detalle. @type {object|null} */
   let detailFlight    = null;
 
-  /** Flight lists for the outbound direction with directos and conEscala arrays. @type {{directos: object[], conEscala: object[]}} */
+  /** Listas de vuelos para la direccion de ida con arreglos directos y conEscala. @type {{directos: object[], conEscala: object[]}} */
   let vuelosIda    = { directos: [], conEscala: [] };
 
-  /** Flight lists for the return direction with directos and conEscala arrays. @type {{directos: object[], conEscala: object[]}} */
+  /** Listas de vuelos para la direccion de regreso con arreglos directos y conEscala. @type {{directos: object[], conEscala: object[]}} */
   let vuelosVuelta = { directos: [], conEscala: [] };
 
-  /** True while outbound flights are being fetched. @type {boolean} */
+  /** True mientras se obtienen los vuelos de ida. @type {boolean} */
   let loadingIda   = false;
 
-  /** True while return flights are being fetched. @type {boolean} */
+  /** True mientras se obtienen los vuelos de regreso. @type {boolean} */
   let loadingVuelta = false;
 
-  /** Error message for outbound flight fetch failures. @type {string} */
+  /** Mensaje de error para fallos al obtener los vuelos de ida. @type {string} */
   let errorIda     = '';
 
-  /** Error message for return flight fetch failures. @type {string} */
+  /** Mensaje de error para fallos al obtener los vuelos de regreso. @type {string} */
   let errorVuelta  = '';
 
-  /** True while the reservation creation POST request is in progress. @type {boolean} */
+  /** True mientras la solicitud POST de creacion de reservacion esta en progreso. @type {boolean} */
   let creandoReserva = false;
 
-  /** Error message shown if the reservation creation fails. @type {string} */
+  /** Mensaje de error mostrado si la creacion de la reservacion falla. @type {string} */
   let errorReserva   = '';
 
-  /** Active tab for the outbound view, 'directos' or 'escalas'. @type {string} */
+  /** Pestana activa para la vista de ida, 'directos' o 'escalas'. @type {string} */
   let tabIda    = 'directos';
 
-  /** Active tab for the return view, 'directos' or 'escalas'. @type {string} */
+  /** Pestana activa para la vista de regreso, 'directos' o 'escalas'. @type {string} */
   let tabVuelta = 'directos';
 
   /**
-   * Static seat class options available for selection.
+   * Opciones estaticas de clase de asiento disponibles para seleccion.
    * @type {Array<{id: number, tipoDeClase: string}>}
    */
   const clases = [
@@ -98,13 +98,13 @@
     { id: 2, tipoDeClase: 'Ejecutiva' }
   ];
 
-  /** Minimum price filter value string (empty means no minimum). @type {string} */
+  /** Cadena de valor minimo del filtro de precio (vacia significa sin minimo). @type {string} */
   let precioMin = '';
 
-  /** Maximum price filter value string (empty means no maximum). @type {string} */
+  /** Cadena de valor maximo del filtro de precio (vacia significa sin maximo). @type {string} */
   let precioMax = '';
 
-  /** Selected class ID string for the class filter (empty means all classes). @type {string} */
+  /** Cadena de ID de clase seleccionado para el filtro de clase (vacia significa todas las clases). @type {string} */
   let claseSeleccionada = '';
 
   if (searchParams?.fromGlobalSearch) {
@@ -133,58 +133,58 @@
     errorIda = 'No se encontro informacion de busqueda. Realiza una nueva busqueda.';
   }
 
-  // Flight lists for the currently active direction (outbound or return).
+  // Listas de vuelos para la direccion activa actualmente (ida o regreso).
   $: currentVuelos    = currentView === 'outbound' ? vuelosIda : vuelosVuelta;
 
-  // Active tab for the currently displayed direction.
+  // Pestana activa para la direccion actualmente mostrada.
   $: currentTab       = currentView === 'outbound' ? tabIda    : tabVuelta;
 
-  // True while the currently displayed direction is loading.
+  // True mientras la direccion actualmente mostrada esta cargando.
   $: loading          = currentView === 'outbound' ? loadingIda    : loadingVuelta;
 
-  // Error message for the currently displayed direction.
+  // Mensaje de error para la direccion actualmente mostrada.
   $: errorActual      = currentView === 'outbound' ? errorIda      : errorVuelta;
 
-  // Direct flight list for the current direction.
+  // Lista de vuelos directos para la direccion actual.
   $: listaDirectos    = currentVuelos.directos  ?? [];
 
-  // Escala itinerary list for the current direction.
+  // Lista de itinerarios con escala para la direccion actual.
   $: listaEscalas     = currentVuelos.conEscala ?? [];
 
-  // List rendered in the main content area based on currentTab.
+  // Lista renderizada en el area de contenido principal segun currentTab.
   $: listaActiva      = currentTab === 'directos' ? listaDirectos : listaEscalas;
 
-  // Total number of results (direct + escala) for the current direction.
+  // Total de resultados (directos + escalas) para la direccion actual.
   $: totalResultados  = listaDirectos.length + listaEscalas.length;
 
-  // True when a flight has been selected for the currently active step.
+  // True cuando se ha seleccionado un vuelo para el paso activo actual.
   $: canProceed       = currentView === 'outbound'
       ? selectedOutbound.type !== null
       : selectedReturn.type   !== null;
 
-  // Filtered direct list (currently passes through unchanged; API returns pre-filtered data).
+  // Lista filtrada de directos (actualmente pasa sin cambios; la API devuelve datos pre-filtrados).
   $: listaDirectosFiltrada = filtrarSegunMode(listaDirectos);
 
-  // Filtered escala list (currently passes through unchanged).
+  // Lista filtrada de escalas (actualmente pasa sin cambios).
   $: listaEscalasFiltrada  = filtrarSegunMode(listaEscalas);
 
   /**
-   * Placeholder filter function; the API already filters by flight mode so this returns the
-   * list unchanged. Tab visibility is determined by the flightMode value in searchData.
-   * @param {object[]} lista - Flight list array to filter.
-   * @returns {object[]} The same lista array unchanged.
+   * Funcion de filtro de marcador; la API ya filtra por modo de vuelo por lo que retorna la lista sin cambios.
+   * La visibilidad de las pestanas esta determinada por el valor flightMode en searchData.
+   * @param {object[]} lista - Arreglo de lista de vuelos a filtrar.
+   * @returns {object[]} El mismo arreglo lista sin cambios.
    */
   function filtrarSegunMode(lista) { return lista; }
 
-  // True when the Directos tab should be shown based on flightMode and available results.
+  // True cuando la pestana Directos debe mostrarse segun flightMode y los resultados disponibles.
   $: mostrarTabDirectos = (searchData.flightMode === 'todos' || searchData.flightMode === 'directo') && listaDirectos.length > 0;
 
-  // True when the Escalas tab should be shown based on flightMode and available results.
+  // True cuando la pestana Escalas debe mostrarse segun flightMode y los resultados disponibles.
   $: mostrarTabEscalas  = (searchData.flightMode === 'todos' || searchData.flightMode === 'escalas')  && listaEscalas.length  > 0;
 
   /**
-   * Sets the active tab for the current direction to the given value ('directos' or 'escalas').
-   * @param {string} tab - The tab identifier to activate.
+   * Establece la pestana activa para la direccion actual al valor dado ('directos' o 'escalas').
+   * @param {string} tab - El identificador de pestana a activar.
    */
   function setTab(tab) {
     if (currentView === 'outbound') tabIda = tab;
@@ -192,9 +192,9 @@
   }
 
   /**
-   * Sends a GET request to /api/vuelos/busqueda-general with the newGlobalQuery string and
-   * replaces vuelosIda.directos with the results. Updates globalSearchQuery and resets the
-   * outbound selection. Requires at least 2 characters to proceed.
+   * Envia una solicitud GET a /api/vuelos/busqueda-general con la cadena newGlobalQuery y
+   * reemplaza vuelosIda.directos con los resultados. Actualiza globalSearchQuery y reinicia la
+   * seleccion de ida. Requiere al menos 2 caracteres para proceder.
    * @async
    * @returns {Promise<void>}
    */
@@ -220,12 +220,12 @@
   }
 
   /**
-   * Constructs a filter body from precioMin, precioMax, claseSeleccionada, and searchData, then
-   * sends a POST request to /api/vuelos/buscar for either the outbound or return direction.
-   * Updates the appropriate vuelosIda or vuelosVuelta and auto-selects the first available tab.
-   * Does nothing in global search mode.
+   * Construye un cuerpo de filtro desde precioMin, precioMax, claseSeleccionada y searchData, luego
+   * envia una solicitud POST a /api/vuelos/buscar para la direccion de ida o regreso.
+   * Actualiza el vuelosIda o vuelosVuelta correspondiente y auto-selecciona la primera pestana disponible.
+   * No hace nada en modo de busqueda global.
    * @async
-   * @param {boolean} esIda - True to search outbound flights, false to search return flights.
+   * @param {boolean} esIda - True para buscar vuelos de ida, false para buscar vuelos de regreso.
    * @returns {Promise<void>}
    */
   async function buscarVuelos(esIda) {
@@ -269,8 +269,8 @@
   }
 
   /**
-   * Applies the current filter values by calling reBuscarGlobal in global mode or buscarVuelos
-   * for the current direction in standard mode.
+   * Aplica los valores de filtro actuales llamando a reBuscarGlobal en modo global o buscarVuelos
+   * para la direccion actual en modo estandar.
    * @async
    * @returns {Promise<void>}
    */
@@ -280,7 +280,7 @@
   }
 
   /**
-   * Clears the price and class filter fields then immediately applies filters to refresh results.
+   * Limpia los campos de filtro de precio y clase, luego aplica los filtros inmediatamente para actualizar resultados.
    */
   function limpiarFiltros() {
     precioMin = ''; precioMax = ''; claseSeleccionada = '';
@@ -288,9 +288,9 @@
   }
 
   /**
-   * Sets the outbound or return selection to a direct flight with the given class.
-   * @param {object} vuelo - The direct flight object to select.
-   * @param {object} clase - The class object ({ id, tipoDeClase }) to select.
+   * Establece la seleccion de ida o regreso a un vuelo directo con la clase dada.
+   * @param {object} vuelo - El objeto de vuelo directo a seleccionar.
+   * @param {object} clase - El objeto de clase ({ id, tipoDeClase }) a seleccionar.
    */
   function selectDirecto(vuelo, clase) {
     if (currentView === 'outbound') selectedOutbound = { type: 'directo', flight: vuelo, escala: null, clase };
@@ -298,11 +298,11 @@
   }
 
   /**
-   * Returns true if the given direct flight and class combination is currently selected for the
-   * active direction.
-   * @param {object} vuelo - The direct flight object to check.
-   * @param {object} clase - The class object to check.
-   * @returns {boolean} Whether this flight+class is the active selection.
+   * Retorna true si la combinacion de vuelo directo y clase dada esta actualmente seleccionada para la
+   * direccion activa.
+   * @param {object} vuelo - El objeto de vuelo directo a verificar.
+   * @param {object} clase - El objeto de clase a verificar.
+   * @returns {boolean} Si este vuelo+clase es la seleccion activa.
    */
   function isSelectedDirecto(vuelo, clase) {
     const s = currentView === 'outbound' ? selectedOutbound : selectedReturn;
@@ -310,9 +310,9 @@
   }
 
   /**
-   * Sets the outbound or return selection to a layover itinerary with the given class.
-   * @param {object} escala - The escala itinerary object to select.
-   * @param {object} clase - The class object ({ id, tipoDeClase }) to select.
+   * Establece la seleccion de ida o regreso a un itinerario con escala con la clase dada.
+   * @param {object} escala - El objeto de itinerario de escala a seleccionar.
+   * @param {object} clase - El objeto de clase ({ id, tipoDeClase }) a seleccionar.
    */
   function selectEscala(escala, clase) {
     if (currentView === 'outbound') selectedOutbound = { type: 'escala', flight: null, escala, clase };
@@ -320,11 +320,11 @@
   }
 
   /**
-   * Returns true if the given escala itinerary and class combination is currently selected for the
-   * active direction, matched by the first tramo's ID.
-   * @param {object} escala - The escala itinerary object to check.
-   * @param {object} clase - The class object to check.
-   * @returns {boolean} Whether this escala+class is the active selection.
+   * Retorna true si la combinacion de itinerario de escala y clase dada esta actualmente seleccionada para la
+   * direccion activa, emparejada por el ID del primer tramo.
+   * @param {object} escala - El objeto de itinerario de escala a verificar.
+   * @param {object} clase - El objeto de clase a verificar.
+   * @returns {boolean} Si esta escala+clase es la seleccion activa.
    */
   function isSelectedEscala(escala, clase) {
     const s = currentView === 'outbound' ? selectedOutbound : selectedReturn;
@@ -334,20 +334,20 @@
   }
 
   /**
-   * Opens the flight detail modal by setting detailFlight and showDetailModal.
-   * @param {object} vuelo - The flight or escala object to display in the modal.
+   * Abre el modal de detalle de vuelo estableciendo detailFlight y showDetailModal.
+   * @param {object} vuelo - El objeto de vuelo o escala a mostrar en el modal.
    */
   function viewDetails(vuelo) { detailFlight = vuelo; showDetailModal = true; }
 
   /**
-   * Closes the flight detail modal by clearing showDetailModal and detailFlight.
+   * Cierra el modal de detalle de vuelo limpiando showDetailModal y detailFlight.
    */
   function closeModal()       { showDetailModal = false; detailFlight = null; }
 
   /**
-   * Handles the next-step button. For a round-trip outbound selection, switches currentView to
-   * 'return' and fetches return flights if not already loaded. For one-way or return completion,
-   * calls crearReserva directly.
+   * Maneja el boton de siguiente paso. Para una seleccion de ida en viaje de ida y vuelta, cambia currentView a
+   * 'return' y obtiene vuelos de regreso si no se han cargado aun. Para solo ida o finalizacion del regreso,
+   * llama a crearReserva directamente.
    * @async
    * @returns {Promise<void>}
    */
@@ -368,10 +368,10 @@
   }
 
   /**
-   * Builds the vuelos payload from selectedOutbound and selectedReturn using _agregarVuelos, then
-   * posts it to POST /api/reservaciones. On success navigates to 'datos-pasajeros' with the
-   * reservation response and searchData. Redirects to login if no session is active. On failure
-   * sets errorReserva with the server or connection error message.
+   * Construye el payload de vuelos desde selectedOutbound y selectedReturn usando _agregarVuelos, luego
+   * lo publica en POST /api/reservaciones. Al tener exito navega a 'datos-pasajeros' con la respuesta
+   * de reservacion y searchData. Redirige al login si no hay sesion activa. En caso de fallo
+   * establece errorReserva con el mensaje del servidor o de conexion.
    * @async
    * @returns {Promise<void>}
    */
@@ -404,12 +404,12 @@
   }
 
   /**
-   * Appends flight entry objects to the arr array from a selection object. For directo selections,
-   * adds one entry with vueloId, claseId, and cantidadPasajeros. For escala selections, adds one
-   * entry per tramo in the itinerary.
-   * @param {Array<object>} arr - The target array to push flight entries into.
-   * @param {{type: string, flight: object|null, escala: object|null, clase: object}} sel - Selection object.
-   * @param {number} pasajeros - Number of passengers for each entry.
+   * Agrega objetos de entrada de vuelo al arreglo arr desde un objeto de seleccion. Para selecciones de directo,
+   * agrega una entrada con vueloId, claseId y cantidadPasajeros. Para selecciones de escala, agrega una
+   * entrada por tramo en el itinerario.
+   * @param {Array<object>} arr - El arreglo destino al que se agregan las entradas de vuelo.
+   * @param {{type: string, flight: object|null, escala: object|null, clase: object}} sel - Objeto de seleccion.
+   * @param {number} pasajeros - Numero de pasajeros para cada entrada.
    */
   function _agregarVuelos(arr, sel, pasajeros) {
     if (sel.type === 'directo') {
@@ -421,8 +421,8 @@
   }
 
   /**
-   * Navigates back: switches from 'return' to 'outbound' with smooth scroll, or returns to 'home'
-   * if already on the outbound step.
+   * Navega hacia atras: cambia de 'return' a 'outbound' con scroll suave, o regresa a 'home'
+   * si ya se esta en el paso de ida.
    */
   function goBack() {
     if (currentView === 'return') { currentView = 'outbound'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -430,9 +430,9 @@
   }
 
   /**
-   * Formats a duration in minutes as a human-readable string such as '2h 30m'.
-   * @param {number} min - Duration in minutes.
-   * @returns {string} Formatted duration string, or empty string if min is falsy.
+   * Formatea una duracion en minutos como una cadena legible como '2h 30m'.
+   * @param {number} min - Duracion en minutos.
+   * @returns {string} Cadena de duracion formateada, o cadena vacia si min es falsy.
    */
   function formatDuracion(min) {
     if (!min) return '';
@@ -440,9 +440,9 @@
   }
 
   /**
-   * Extracts the HH:MM portion from a time string, or returns empty string if falsy.
-   * @param {string} h - Time string in HH:MM:SS or HH:MM format.
-   * @returns {string} The first 5 characters (HH:MM), or empty string.
+   * Extrae la porcion HH:MM de una cadena de hora, o retorna cadena vacia si es falsy.
+   * @param {string} h - Cadena de hora en formato HH:MM:SS o HH:MM.
+   * @returns {string} Los primeros 5 caracteres (HH:MM), o cadena vacia.
    */
   function formatHora(h) { return h ? h.substring(0, 5) : ''; }
 

@@ -84,6 +84,41 @@
   let destinationSuggestion = null;
 
   /**
+   * Token de alianza extraido de los query params de la URL (?token=...).
+   * Se pasa al Home para que valide con el backend si el usuario esta logueado.
+   * @type {string|null}
+   */
+  let alianzaToken = null;
+
+  /**
+   * Datos de pais y ciudad ya validados tras un login con token pendiente.
+   * Se pasan directamente al Home para evitar una segunda llamada al backend.
+   * @type {{ pais: string, ciudad: string }|null}
+   */
+  let alianzaAutocompletarData = null;
+
+  /**
+   * Porcentaje de descuento de alianza. Se actualiza cuando Home valida un token
+   * (flujo URL directa logueado) o cuando handleLogin valida el token pendiente.
+   * Se pasa directo a SearchResults como prop para que muestre el banner.
+   * @type {number|null}
+   */
+  let alianzaDescuento = null;
+
+  /**
+   * Callback que Home invoca cuando valida un token exitosamente.
+   * Actualiza alianzaDescuento para que SearchResults lo reciba como prop.
+   * @param {number|null} descuento
+   */
+  function onAlianzaValidada(descuento) {
+    alianzaDescuento = descuento;
+  }
+
+  function onAlianzaAutocompletarConsumida() {
+  alianzaAutocompletarData = null;
+}
+
+  /**
    * Llave que cambia con cada navegacion para forzar el re-mount
    * de paginas que necesitan reiniciarse por completo.
    * @type {number}
@@ -106,8 +141,8 @@
    */
   let sessionChecked = false;
 
-  onMount(() => {
-    checkSession();
+  onMount(async () => {
+    await checkSession();
     syncFromURL();
     window.addEventListener('popstate', syncFromURL);
     return () => window.removeEventListener('popstate', syncFromURL);
@@ -142,11 +177,38 @@
   }
 
   /**
+   * Bandera que indica si es la primera carga de la app.
+   * Solo en esa carga se limpia el sessionStorage de alianza si no hay token.
+   * @type {boolean}
+   */
+  let initialLoad = true;
+
+  /**
    * Sincroniza la pagina activa con el path de la URL actual.
+   * Tambien extrae el query param ?token= si existe.
    * Si el path no existe en VALID_ROUTES lo manda a home.
    */
   function syncFromURL() {
-    const path = window.location.pathname.slice(1) || 'home';
+    const path   = window.location.pathname.slice(1) || 'home';
+    const params = new URLSearchParams(window.location.search);
+    alianzaToken = params.get('token') || null;
+
+    // Solo en la carga inicial: si no hay token en la URL, limpiar datos
+    // de alianza que puedan haber quedado de una sesion anterior en sessionStorage.
+    // En navegaciones posteriores dentro de la app NO se limpia para preservar
+    // el descuento activo mientras el usuario navega sin haber pagado aun.
+    if (initialLoad) {
+      initialLoad = false;
+      if (!alianzaToken) {
+        sessionStorage.removeItem('alianzaDescuento');
+        sessionStorage.removeItem('alianzaTokenActivo');
+        sessionStorage.removeItem('alianzaCiudad');
+        sessionStorage.removeItem('alianzaPais');
+        sessionStorage.removeItem('alianzaPct');
+        alianzaDescuento = null;
+      }
+    }
+
     if (!VALID_ROUTES.has(path)) {
       currentPage = 'home';
       pageKey = Date.now();
@@ -170,6 +232,9 @@
     if (page === 'administrador' && userRolId !== 2) { showAccesoDenegado(); return; }
     if (page === 'webservice'    && userRolId !== 3) { showAccesoDenegado(); return; }
 
+    // Al navegar manualmente se descarta el token de alianza
+    alianzaToken = null;
+
     currentPage = page;
     pageKey     = Date.now();
     window.history.pushState({}, '', `/${page}`);
@@ -177,7 +242,18 @@
     if (page === 'hotel-detail')   currentHotelData   = data;
     if (page === 'search-results') searchParams       = data;
     if (page === 'checkout')       checkoutData       = data;
-    if (page === 'agradecimiento') agradecimientoData = data;
+    if (page === 'agradecimiento') {
+      agradecimientoData       = data;
+      // El Checkout ya limpio el sessionStorage de alianza si el token fue usado.
+      // Aqui solo limpiamos el estado reactivo de App si el token fue consumido
+      // (si alianzaDescuento sigue activo despues del pago, significa que el token
+      // no se uso y sigue valido para la ciudad correcta).
+      if (!sessionStorage.getItem('alianzaTokenActivo')) {
+        alianzaDescuento         = null;
+        alianzaToken             = null;
+        alianzaAutocompletarData = null;
+      }
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -194,14 +270,39 @@
 
   /**
    * Maneja el evento de login exitoso disparado por Login o Register.
-   * Actualiza el estado de sesion y redirige al inicio.
+   * Actualiza el estado de sesion. Si habia un token de alianza pendiente
+   * guardado en sessionStorage lo valida contra el backend y pasa los datos
+   * de pais y ciudad directamente al Home como prop, evitando que Home
+   * tenga que hacer otra llamada y evitando flashes en los campos.
    * @param {CustomEvent} event - Evento con detail: { name, email, rolId }.
    */
-  function handleLogin(event) {
+  async function handleLogin(event) {
     const name  = event.detail?.name  ?? event.detail?.email ?? 'Usuario';
     const rolId = event.detail?.rolId ?? null;
     isLoggedIn = true; userName = name; userRolId = rolId;
-    navigateTo('home');
+
+    const pendingToken = sessionStorage.getItem('pendingAlianzaToken');
+    if (pendingToken) {
+      sessionStorage.removeItem('pendingAlianzaToken');
+      try {
+        const res = await fetch(`${API}/alianza/validar?token=${pendingToken}`, {
+          method: 'GET', credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          alianzaAutocompletarData = { pais: data.pais, ciudad: data.ciudad, porcentajeDescuento: data.porcentajeDescuento ?? null, token: pendingToken };
+          alianzaDescuento = data.porcentajeDescuento ?? null;
+          if (alianzaDescuento) sessionStorage.setItem('alianzaTokenActivo', pendingToken);
+        }
+      } catch (_) {}
+      alianzaToken = null;
+      currentPage  = 'home';
+      pageKey      = Date.now();
+      window.history.pushState({}, '', '/home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigateTo('home');
+    }
   }
 
   /**
@@ -213,6 +314,14 @@
   async function handleLogout() {
     try { await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' }); } catch (_) {}
     isLoggedIn = false; userName = ''; userRolId = null;
+    alianzaDescuento         = null;
+    alianzaToken             = null;
+    alianzaAutocompletarData = null;
+    sessionStorage.removeItem('alianzaDescuento');
+    sessionStorage.removeItem('alianzaTokenActivo');
+    sessionStorage.removeItem('alianzaCiudad');
+    sessionStorage.removeItem('alianzaPais');
+    sessionStorage.removeItem('alianzaPct');
     navigateTo('home');
   }
 
@@ -243,10 +352,10 @@
     <!-- Area de contenido principal donde se renderiza la pagina activa -->
     <main class="app-main">
       {#if currentPage === 'home'}
-        {#key pageKey}<Home {navigateTo} {destinationSuggestion} />{/key}
+        {#key pageKey}<Home {navigateTo} {destinationSuggestion} {alianzaToken} {isLoggedIn} {alianzaAutocompletarData} {onAlianzaValidada} {onAlianzaAutocompletarConsumida}/>{/key}
 
       {:else if currentPage === 'search-results'}
-        <SearchResults {navigateTo} {searchParams} />
+        <SearchResults {navigateTo} {searchParams} {alianzaDescuento} />
 
       {:else if currentPage === 'hotel-detail'}
         <!-- Se pasan los datos del hotel seleccionado desde la busqueda -->
@@ -256,6 +365,7 @@
           cantidadPersonas={currentHotelData?.cantidadPersonas ?? 1}
           fechaCheckIn={currentHotelData?.fechaCheckIn ?? ''}
           fechaCheckOut={currentHotelData?.fechaCheckOut ?? ''}
+          porcentajeDescuento={currentHotelData?.porcentajeDescuento ?? alianzaDescuento}
         />
 
       {:else if currentPage === 'checkout'}

@@ -2,39 +2,41 @@
   // @ts-nocheck
 /**
  * @file Contactanos.svelte
- * @description Contact form page for Broom AirLine. Displays the company's phone, email,
- * and office address alongside a form that lets any visitor send a support message. The
- * form collects nombre, correo, asunto (optional), and mensaje fields. Client-side
- * validation checks for required fields, a valid email format, and a minimum 10-character
- * message length. On successful submission, posts the data to the /api/contacto endpoint
- * and replaces the form with a success confirmation panel. On API error, displays the
- * server message inline. Accessible from the main navigation and the CentroAyuda page.
+ * @description Pagina de formulario de contacto de Broom AirLine. Muestra el telefono, correo
+ * y direccion de oficina de la empresa junto con un formulario que permite a cualquier visitante
+ * enviar un mensaje de soporte. El formulario recopila los campos nombre, correo, asunto
+ * (opcional) y mensaje. La validacion del lado del cliente verifica los campos obligatorios,
+ * un formato de correo valido y una longitud minima de 10 caracteres en el mensaje. En un envio
+ * exitoso, publica los datos en el endpoint /api/contacto y reemplaza el formulario con un panel
+ * de confirmacion de exito. En caso de error de la API, muestra el mensaje del servidor en linea.
+ * Accesible desde la navegacion principal y la pagina CentroAyuda.
  */
 
   import '../styles/info-pages.css';
 
-  /** Navigation function provided by the app router to change the current page. @type {Function} */
+  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion para cambiar la pagina actual. @type {Function} */
   export let navigateTo;
 
   import { API } from '../lib/api.js';
 
-  /** Object holding the current values of all contact form fields. @type {{nombre: string, correo: string, asunto: string, mensaje: string}} */
+  /** Objeto que contiene los valores actuales de todos los campos del formulario de contacto. @type {{nombre: string, correo: string, asunto: string, mensaje: string}} */
   let formData = { nombre: '', correo: '', asunto: '', mensaje: '' };
 
-  /** Current submission status: '' (idle), 'sending', 'success', or 'error'. @type {string} */
+  /** Estado actual del envio: '' (inactivo), 'sending', 'success' o 'error'. @type {string} */
   let status = '';
 
-  /** Error message returned by the server when status is 'error'. @type {string} */
+  /** Mensaje de error devuelto por el servidor cuando el estado es 'error'. @type {string} */
   let statusMsg = '';
 
-  /** Object mapping field names to their validation error strings. @type {object} */
+  /** Objeto que mapea nombres de campo a sus cadenas de error de validacion. @type {object} */
   let errors = {};
 
   /**
-   * Validates all required contact form fields. Checks that nombre and mensaje are non-empty,
-   * that correo matches a basic email pattern, and that mensaje has at least 10 characters.
-   * Populates the errors object with specific messages for each invalid field.
-   * @returns {boolean} True if all validations pass (errors object is empty), false otherwise.
+   * Valida todos los campos obligatorios del formulario de contacto. Verifica que nombre y
+   * mensaje no esten vacios, que correo coincida con un patron de correo basico y que mensaje
+   * tenga al menos 10 caracteres. Rellena el objeto errors con mensajes especificos para cada
+   * campo invalido.
+   * @returns {boolean} Verdadero si todas las validaciones pasan (objeto errors vacio), falso en caso contrario.
    */
   function validate() {
     errors = {};
@@ -47,10 +49,11 @@
   }
 
   /**
-   * Validates the form and then POSTs the trimmed form data to the /api/contacto endpoint.
-   * Sets status to 'sending' while the request is in flight. On success, sets status to
-   * 'success' and resets formData to empty strings, revealing the success panel. On API
-   * or network error, sets status to 'error' and populates statusMsg with the error detail.
+   * Valida el formulario y luego envia mediante POST los datos del formulario sin espacios
+   * al endpoint /api/contacto. Establece status en 'sending' mientras la solicitud esta en vuelo.
+   * En caso de exito, establece status en 'success' y restablece formData a cadenas vacias,
+   * mostrando el panel de exito. En caso de error de la API o de red, establece status en 'error'
+   * y rellena statusMsg con el detalle del error.
    * @async
    * @returns {Promise<void>}
    */

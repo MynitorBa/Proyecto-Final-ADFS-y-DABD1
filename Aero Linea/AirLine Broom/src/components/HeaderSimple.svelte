@@ -1,15 +1,15 @@
 <script>
 /**
  * @file HeaderSimple.svelte
- * @description Minimal header variant used on pages that do not require full navigation
- * (e.g. login, register). Shows only the Broom AirLine logo which, when clicked, navigates
- * the user back to the home page via the parent-supplied navigateTo function. Applies styles
- * from HeaderSimple.css and adds a spacer div below to prevent content overlap.
+ * @description Variante minimalista de cabecera usada en paginas que no requieren navegacion completa
+ * (por ejemplo, login, registro). Muestra solo el logo de Broom AirLine que, al hacer clic, navega
+ * al usuario de regreso a la pagina de inicio usando la funcion navigateTo proporcionada por el padre.
+ * Aplica estilos de HeaderSimple.css y agrega un div espaciador debajo para evitar superposicion de contenido.
  */
   import '../styles/HeaderSimple.css';
   import logoPath from '../assets/logBAL.png';
 
-  /** Function provided by the parent to navigate to a named page within the SPA. @type {(page: string) => void} */
+  /** Funcion proporcionada por el padre para navegar a una pagina nombrada dentro del SPA. @type {(page: string) => void} */
   export let navigateTo;
 </script>
 

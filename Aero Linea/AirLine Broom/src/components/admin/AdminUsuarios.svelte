@@ -1,30 +1,30 @@
 <script>
 /**
  * @file AdminUsuarios.svelte
- * @description Admin panel section for managing registered users. Displays a table of all
- * users in the system with their ID, full name, email, username and current role. The role
- * of each user can be changed inline through a select element that immediately sends a POST
- * request to the cambiar-rol endpoint. On API failure the user list is reloaded to visually
- * revert the select to the server-side role. Provides a manual refresh button that re-fetches
- * the user list.
+ * @description Seccion del panel de administracion para gestionar usuarios registrados. Muestra una tabla
+ * de todos los usuarios del sistema con su ID, nombre completo, correo, nombre de usuario y rol actual.
+ * El rol de cada usuario puede cambiarse inline mediante un elemento select que envia inmediatamente una
+ * solicitud POST al endpoint cambiar-rol. Si la API falla, la lista de usuarios se recarga para revertir
+ * visualmente el select al rol del lado del servidor. Proporciona un boton de actualizacion manual que
+ * vuelve a obtener la lista de usuarios.
  */
 // @ts-nocheck
   import { onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** List of all users loaded from the backend. @type {any[]} */
+  /** Lista de todos los usuarios cargados desde el backend. @type {any[]} */
   let usuarios        = [];
 
-  /** Whether the user list fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la lista de usuarios esta en progreso. @type {boolean} */
   let loadingUsuarios = false;
 
   /**
-   * Static list of available role options rendered in the inline role select for each user row.
+   * Lista estatica de opciones de rol disponibles renderizadas en el select de rol inline para cada fila de usuario.
    * @type {{ id: number, nombre: string }[]}
    */
   const rolesDisponibles = [
@@ -34,13 +34,13 @@
   ];
 
   /**
-   * On mount: loads the user list from the backend.
+   * Al montar: carga la lista de usuarios desde el backend.
    */
   onMount(() => { cargarUsuarios(); });
 
   /**
-   * Fetches all registered users from the backend API and stores them in the usuarios array.
-   * Shows a toast on error and sets loadingUsuarios during the request.
+   * Obtiene todos los usuarios registrados desde la API del backend y los almacena en el arreglo usuarios.
+   * Muestra un toast en caso de error y establece loadingUsuarios durante la solicitud.
    * @async
    * @returns {Promise<void>}
    */
@@ -55,12 +55,12 @@
   }
 
   /**
-   * POSTs a role change request to the backend for the given user. On success shows a success
-   * toast. On failure shows an error toast and reloads the user list so the select reverts
-   * to the current server-side role visually.
+   * Envia con POST una solicitud de cambio de rol al backend para el usuario indicado. Si tiene exito muestra
+   * un toast de exito. Si falla muestra un toast de error y recarga la lista de usuarios para que el select
+   * revierta visualmente al rol del lado del servidor.
    * @async
-   * @param {number} userId - The ID of the user whose role is being changed.
-   * @param {string|number} nuevoRolId - The ID of the new role to assign.
+   * @param {number} userId - El ID del usuario cuyo rol se esta cambiando.
+   * @param {string|number} nuevoRolId - El ID del nuevo rol a asignar.
    * @returns {Promise<void>}
    */
   async function handleCambiarRol(userId, nuevoRolId) {

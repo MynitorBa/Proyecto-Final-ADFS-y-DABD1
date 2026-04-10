@@ -28,6 +28,7 @@ public class AuthMiddleware {
             "/busqueda",
             "/sesion",
             "/api/agencias/handshake",
+            "/api/aerolineas/handshake",   // endpoint publico de handshake para aerolineas aliadas
             "/api/hoteles-agencia",
             "/agencia/busqueda",
             "/agencia/reservaciones"
@@ -38,7 +39,7 @@ public class AuthMiddleware {
      * Se ejecuta antes de cada peticion. Si la ruta es publica o pertenece
      * al prefijo /agencia/, la deja pasar sin validar. De lo contrario,
      * exige un cookie auth_token valido y extrae los claims del usuario
-     * para inyectarlos en el contexto. (misma situación para /aerolinea/)
+     * para inyectarlos en el contexto. (misma situacion para /aerolinea/)
      *
      * @param app instancia de Javalin donde se registra el middleware.
      */

@@ -48,6 +48,8 @@ respuesta JSON al cliente.
 
 
 
+
+
 ## FUNCTIONS
 
 ```go
@@ -364,6 +366,33 @@ func (ctrl *ComentarioController) ObtenerComentariosVuelo(c *gin.Context)
 
       - HTTP 200 OK: JSON con la lista de comentarios del vuelo
       - HTTP 400 Bad Request: si proveedorId o rutaId no son enteros validos
+
+type ConfiguracionController struct {
+    ConfiguracionController
+
+    Controlador encargado de exponer la configuracion global de la agencia,
+    incluyendo el porcentaje de descuento aplicado a reservaciones de tipo
+    paquete.
+
+func NewConfiguracionController(db *sql.DB) *ConfiguracionController
+    NewConfiguracionController
+
+    Crea e inicializa un nuevo ConfiguracionController con la conexion a la base
+    de datos.
+
+      - db: conexion activa a la base de datos
+
+      - *ConfiguracionController: puntero al controlador creado
+
+func (ctrl *ConfiguracionController) ObtenerDescuento(c *gin.Context)
+    ObtenerDescuento
+
+    Handler HTTP publico que retorna el porcentaje de descuento configurado para
+    reservaciones de tipo paquete. Si la consulta falla retorna 0.
+
+      - HTTP 200: JSON con el campo porcentaje_descuento
+
+      - Ruta esperada: GET /api/configuracion/descuento
 
 type DetalleReservacionController struct {
     DetalleReservacionController
@@ -775,7 +804,8 @@ type UsuarioController struct {
     UsuarioController
 
     Controlador que maneja los endpoints de gestion de usuarios, incluyendo el
-    registro de nuevas cuentas en la plataforma.
+    registro de nuevas cuentas y la consulta del listado completo para el panel
+    de administracion.
 
 func NewUsuarioController(service *services.UsuarioService) *UsuarioController
     NewUsuarioController
@@ -786,6 +816,17 @@ func NewUsuarioController(service *services.UsuarioService) *UsuarioController
       - service: puntero al servicio de usuario
 
       - *UsuarioController: puntero a la nueva instancia
+
+func (ctrl *UsuarioController) ObtenerTodos(c *gin.Context)
+    ObtenerTodos
+
+    Retorna la lista completa de usuarios registrados en el sistema con sus
+    datos basicos y rol asignado. Usado por el panel de administracion para
+    gestion de roles y asignacion de usuarios WebService a proveedores.
+
+
+      - HTTP 200 OK: JSON con el listado de usuarios
+      - HTTP 500 Internal Server Error: si ocurre un error al consultar la base
 
 func (ctrl *UsuarioController) Registrar(c *gin.Context)
     Registrar

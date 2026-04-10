@@ -1,6 +1,6 @@
-/* checkout.css - Checkout page styles including payment form, visual card preview, security badges, order summary sidebar, form fields, and responsive layout */
+/* checkout.css - Estilos de la pagina de pago, incluyendo formulario de pago, vista previa visual de tarjeta, insignias de seguridad, barra lateral de resumen de pedido, campos de formulario y disposicion responsiva */
 
-/* Full-page wrapper with project background color and generous bottom padding */
+/* Contenedor de pagina completa con el color de fondo del proyecto y relleno inferior generoso */
 .checkout {
     width: 100%;
     min-height: 100vh;
@@ -8,20 +8,20 @@
     padding: 2rem 1rem 8rem;
 }
 
-/* Centered content column capped at 1200px */
+/* Columna de contenido centrada limitada a 1200px */
 .checkout__container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* Page header with a thick gold left border accent */
+/* Encabezado de pagina con un acento de borde izquierdo dorado grueso */
 .checkout__header {
     margin-bottom: 3rem;
     border-left: 6px solid var(--primary-color);
     padding-left: 2rem;
 }
 
-/* Borderless transparent back button displayed as block element */
+/* Boton de regreso transparente sin borde mostrado como elemento de bloque */
 .checkout__back {
     background: transparent;
     border: none;
@@ -35,12 +35,12 @@
     display: block;
 }
 
-/* Back button text turns gold on hover */
+/* El texto del boton de regreso se vuelve dorado al pasar el cursor */
 .checkout__back:hover {
     color: var(--primary-color);
 }
 
-/* Fluid page title from 2rem to 2.5rem using clamp, light weight */
+/* Titulo de pagina fluido de 2rem a 2.5rem usando clamp, peso ligero */
 .checkout__title {
     font-size: clamp(2rem, 5vw, 2.5rem);
     font-weight: 300;
@@ -48,7 +48,7 @@
     margin: 0;
 }
 
-/* Two-column grid: form sections on left, order summary on right */
+/* Grilla de dos columnas: secciones de formulario a la izquierda, resumen de pedido a la derecha */
 .checkout__content {
     display: grid;
     grid-template-columns: 1fr 400px;
@@ -56,7 +56,7 @@
     align-items: start;
 }
 
-/* White section card with large asymmetric radius and a subtle shadow */
+/* Tarjeta de seccion blanca con radio asimetrico grande y sombra sutil */
 .checkout-section {
     background: var(--white);
     padding: 2.5rem;
@@ -66,7 +66,7 @@
     border: 1px solid rgba(235, 230, 224, 0.5);
 }
 
-/* Section heading with an auto-expanding right line via flex pseudo-element */
+/* Encabezado de seccion con una linea derecha de expansion automatica via pseudoelemento flex */
 .checkout-section__title {
     font-size: 1.25rem;
     color: var(--secondary-color);
@@ -77,7 +77,7 @@
     gap: 1rem;
 }
 
-/* Thin horizontal divider line that expands to fill remaining space after the title */
+/* Linea divisoria horizontal delgada que se expande para llenar el espacio restante despues del titulo */
 .checkout-section__title::after {
     content: '';
     flex: 1;
@@ -85,7 +85,7 @@
     background: var(--perla-dark);
 }
 
-/* Two-column grid row inside the card payment form */
+/* Fila de grilla de dos columnas dentro del formulario de tarjeta de pago */
 .card-form__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -93,19 +93,19 @@
     margin-bottom: 1.5rem;
 }
 
-/* Individual form field: flex column stacking the label above the input */
+/* Campo de formulario individual: columna flex que apila la etiqueta sobre el input */
 .card-form__field {
     display: flex;
     flex-direction: column;
     margin-bottom: 1.5rem;
 }
 
-/* Full-width field spanning both columns of the grid row */
+/* Campo de ancho completo que abarca ambas columnas de la fila de la grilla */
 .card-form__field--full {
     grid-column: span 2;
 }
 
-/* Small all-caps bold label above each input */
+/* Etiqueta pequena en mayusculas y negrita encima de cada input */
 .form-field__label {
     display: block;
     font-size: 0.75rem;
@@ -116,7 +116,7 @@
     font-weight: 700;
 }
 
-/* Input with beige background, asymmetric radius, and gold border on focus */
+/* Input con fondo beige, radio asimetrico y borde dorado al enfocar */
 .form-field__input {
     width: 100%;
     padding: 1rem;
@@ -128,7 +128,7 @@
     transition: var(--transition);
 }
 
-/* Input gains a gold border and white background with a faint gold glow on focus */
+/* El input gana borde dorado y fondo blanco con un brillo dorado tenue al enfocar */
 .form-field__input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -136,7 +136,7 @@
     box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.05);
 }
 
-/* Dark gradient card preview with a circular decorative highlight in the top right */
+/* Vista previa de tarjeta con gradiente oscuro y un resaltado circular decorativo en la esquina superior derecha */
 .card-visual {
     background: linear-gradient(135deg, #1C1A18 0%, #3A3531 100%);
     border-radius: 16px;
@@ -149,7 +149,7 @@
     box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
 
-/* Semi-transparent circular decoration in the top-right corner of the card preview */
+/* Decoracion circular semitransparente en la esquina superior derecha de la vista previa de tarjeta */
 .card-visual::before {
     content: '';
     position: absolute;
@@ -159,7 +159,7 @@
     background: rgba(201, 169, 110, 0.08);
 }
 
-/* Gold gradient chip icon sized 40x30px with rounded corners */
+/* Icono de chip con gradiente dorado de 40x30px con esquinas redondeadas */
 .card-visual__chip {
     width: 40px; height: 30px;
     background: linear-gradient(135deg, #c9a96e, #b89860);
@@ -167,7 +167,7 @@
     margin-bottom: 1.5rem;
 }
 
-/* Monospaced card number with wide letter spacing */
+/* Numero de tarjeta en monoespacio con espaciado amplio */
 .card-visual__number {
     font-size: 1.1rem;
     letter-spacing: 4px;
@@ -176,14 +176,14 @@
     color: #F2EFEA;
 }
 
-/* Bottom row of the card preview: cardholder name on left, logo on right */
+/* Fila inferior de la vista previa: nombre del titular a la izquierda, logo a la derecha */
 .card-visual__bottom {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
 }
 
-/* Tiny semi-transparent uppercase label above each card detail value */
+/* Etiqueta en mayusculas semitransparente muy pequena encima de cada valor de la tarjeta */
 .card-visual__label {
     font-size: 0.6rem;
     text-transform: uppercase;
@@ -193,14 +193,14 @@
     margin-bottom: 0.2rem;
 }
 
-/* Card detail value in the same cream color as the card text */
+/* Valor de la tarjeta en el mismo color crema que el texto de la tarjeta */
 .card-visual__value {
     font-size: 0.85rem;
     color: #F2EFEA;
     text-transform: uppercase;
 }
 
-/* Bold gold logo text at the bottom right of the card preview */
+/* Texto del logo dorado y en negrita en la esquina inferior derecha de la vista previa */
 .card-visual__logo {
     font-size: 1.2rem;
     font-weight: 800;
@@ -208,7 +208,7 @@
     letter-spacing: 1px;
 }
 
-/* Flex row of small security badge pills with wrap */
+/* Fila flex de pastillas de insignia de seguridad pequenas con ajuste de linea */
 .security-badges {
     display: flex;
     gap: 0.75rem;
@@ -216,7 +216,7 @@
     flex-wrap: wrap;
 }
 
-/* Individual security badge: pill shape with light border and muted icon+text */
+/* Insignia de seguridad individual: forma de pastilla con borde claro e icono y texto apagados */
 .security-badge-item {
     display: flex;
     align-items: center;
@@ -229,7 +229,7 @@
     border: 1px solid var(--perla-dark);
 }
 
-/* Dark sticky order summary panel with inverted asymmetric radius */
+/* Panel de resumen de pedido oscuro y fijo con radio asimetrico invertido */
 .order-summary {
     background: var(--secondary-color);
     color: var(--white);
@@ -239,21 +239,21 @@
     top: 2rem;
 }
 
-/* Light-weight order summary heading */
+/* Encabezado del resumen de pedido con peso ligero */
 .order-summary__title {
     font-size: 1.4rem;
     font-weight: 300;
     margin-bottom: 2rem;
 }
 
-/* Each booked flight item with a faint white bottom border */
+/* Cada elemento de vuelo reservado con un borde inferior blanco tenue */
 .order-item {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Item header: flight type badge and price on opposite ends, tiny uppercase text */
+/* Encabezado del elemento: insignia del tipo de vuelo y precio en extremos opuestos, texto pequeno en mayusculas */
 .order-item__header {
     display: flex;
     justify-content: space-between;
@@ -263,12 +263,12 @@
     margin-bottom: 0.5rem;
 }
 
-/* Gold uppercase flight type label */
+/* Etiqueta de tipo de vuelo dorada en mayusculas */
 .order-item__type  { color: var(--primary-color); font-weight: 700; }
-/* Route text in slightly larger secondary size */
+/* Texto de ruta en tamano secundario ligeramente mayor */
 .order-item__route { font-size: 0.95rem; margin-bottom: 0.5rem; }
 
-/* Small details row (date, passengers) in muted semi-transparent text */
+/* Fila de detalles pequenos (fecha, pasajeros) en texto semitransparente apagado */
 .order-item__details {
     display: flex;
     justify-content: space-between;
@@ -276,21 +276,21 @@
     color: rgba(255,255,255,0.5);
 }
 
-/* Gold bold subtotal for this item */
+/* Subtotal dorado y en negrita para este elemento */
 .order-item__price {
     margin-top: 0.8rem;
     font-weight: 700;
     color: var(--primary-color);
 }
 
-/* Thin horizontal divider within the order summary */
+/* Divisor horizontal delgado dentro del resumen de pedido */
 .order-summary__divider {
     height: 1px;
     background: rgba(255,255,255,0.1);
     margin: 2rem 0;
 }
 
-/* Grand total row in the order summary */
+/* Fila de total general en el resumen de pedido */
 .order-summary__total {
     display: flex;
     justify-content: space-between;
@@ -298,12 +298,12 @@
     margin: 2rem 0;
 }
 
-/* Light-weight total label */
+/* Etiqueta de total con peso ligero */
 .order-summary__total-label { font-size: 1.1rem; font-weight: 300; }
-/* Large bold gold total amount */
+/* Monto total grande y dorado en negrita */
 .order-summary__total-value { font-size: 2rem; font-weight: 700; color: var(--primary-color); }
 
-/* Full-width gold pay button with asymmetric radius */
+/* Boton de pago dorado de ancho completo con radio asimetrico */
 .order-summary__btn-pay {
     width: 100%;
     padding: 1.2rem;
@@ -320,25 +320,25 @@
     font-size: 1rem;
 }
 
-/* Pay button inverts to white with dark text and lifts on hover when enabled */
+/* El boton de pago se invierte a blanco con texto oscuro y se eleva al pasar el cursor cuando esta habilitado */
 .order-summary__btn-pay:hover:not(:disabled) {
     background: var(--white);
     color: var(--secondary-color);
     transform: translateY(-3px);
 }
 
-/* Disabled pay button: reduced opacity and not-allowed cursor */
+/* Boton de pago desactivado: opacidad reducida y cursor no permitido */
 .order-summary__btn-pay:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-/* Centered security text block below the pay button */
+/* Bloque de texto de seguridad centrado debajo del boton de pago */
 .order-security {
     text-align: center;
 }
 
-/* Bold gold security badge label */
+/* Etiqueta de insignia de seguridad dorada y en negrita */
 .order-security__badge {
     font-size: 0.8rem;
     font-weight: 700;
@@ -347,28 +347,28 @@
     margin-bottom: 0.4rem;
 }
 
-/* Small semi-transparent security disclaimer text */
+/* Texto de aviso de seguridad pequeno y semitransparente */
 .order-security__note {
     font-size: 0.7rem;
     opacity: 0.4;
     line-height: 1.4;
 }
 
-/* Grouped reservation section with a faint white bottom separator */
+/* Seccion de reserva agrupada con un separador inferior blanco tenue */
 .reserva-group {
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
-/* Small muted header label for the reservation group */
+/* Etiqueta de encabezado apagada pequena para el grupo de reserva */
 .reserva-group__header {
     font-size: 0.8rem;
     color: rgba(255,255,255,0.5);
     margin-bottom: 0.75rem;
 }
 
-/* Right-aligned gold subtotal for the reservation group */
+/* Subtotal dorado alineado a la derecha para el grupo de reserva */
 .reserva-group__total {
     font-size: 0.85rem;
     font-weight: 600;
@@ -377,7 +377,7 @@
     text-align: right;
 }
 
-/* Centered loading and error placeholders in muted text */
+/* Marcadores de posicion de carga y error centrados en texto apagado */
 .checkout-loading,
 .checkout-error {
     text-align: center;
@@ -385,30 +385,30 @@
     color: var(--text-muted);
 }
 
-/* Error state overrides to red text */
+/* El estado de error anula el texto a rojo */
 .checkout-error { color: #dc2626; }
 
-/* At 992px: single-column layout; order summary panel loses sticky position */
+/* A 992px: disposicion de una columna; el panel de resumen de pedido pierde el posicionamiento fijo */
 @media (max-width: 992px) {
     .checkout__content { grid-template-columns: 1fr; }
     .order-summary { position: relative; top: 0; }
 }
 
-/* At 600px: card form collapses to single column */
+/* A 600px: el formulario de tarjeta colapsa a una columna */
 @media (max-width: 600px) {
     .card-form__row { grid-template-columns: 1fr; }
     .card-form__field--full { grid-column: span 1; }
     .checkout-section { padding: 1.5rem; }
 }
 
-/* Alternate form field using a thicker border and slightly more padding */
+/* Campo de formulario alternativo con borde mas grueso y relleno ligeramente mayor */
 .form-campo {
     display: flex;
     flex-direction: column;
     margin-bottom: 1.25rem;
 }
 
-/* Small all-caps bold label for the alternate field */
+/* Etiqueta en mayusculas y negrita pequena para el campo alternativo */
 .form-campo__label {
     font-size: 0.7rem;
     font-weight: 700;
@@ -418,7 +418,7 @@
     margin-bottom: 0.5rem;
 }
 
-/* Inline optional hint appended to the field label */
+/* Indicacion opcional en linea adjunta a la etiqueta del campo */
 .form-campo__opcional {
     font-weight: 400;
     text-transform: none;
@@ -426,7 +426,7 @@
     color: #bbb;
 }
 
-/* Alternate field input: beige background with 1.5px border and asymmetric radius */
+/* Input del campo alternativo: fondo beige con borde de 1.5px y radio asimetrico */
 .form-campo__input {
     padding: 0.9rem 1.1rem;
     background: #fcfbf9;
@@ -438,20 +438,20 @@
     width: 100%;
 }
 
-/* Input border turns gold on focus, background turns white */
+/* El borde del input se vuelve dorado al enfocar, el fondo se vuelve blanco */
 .form-campo__input:focus {
     outline: none;
     border-color: var(--primary-color);
     background: var(--white);
 }
 
-/* Error state: red border with light red background */
+/* Estado de error: borde rojo con fondo rojo claro */
 .form-campo__input--error {
     border-color: #dc2626 !important;
     background: #fff8f8;
 }
 
-/* Inline error message below the input in bold red */
+/* Mensaje de error en linea debajo del input en rojo y negrita */
 .form-campo__error {
     margin-top: 0.35rem;
     font-size: 0.75rem;
@@ -462,14 +462,14 @@
     gap: 0.3rem;
 }
 
-/* Two-column grid row for pairing related form fields */
+/* Fila de grilla de dos columnas para emparejar campos de formulario relacionados */
 .form-fila {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
 }
 
-/* Flex row of small checkout security badges with wrapping */
+/* Fila flex de insignias de seguridad de pago pequenas con ajuste de linea */
 .checkout-seguridad {
     display: flex;
     gap: 0.75rem;
@@ -477,7 +477,7 @@
     flex-wrap: wrap;
 }
 
-/* Individual security badge pill with light border and muted icon+text */
+/* Insignia de seguridad individual en forma de pastilla con borde claro e icono y texto apagados */
 .checkout-seguridad__item {
     display: inline-flex;
     align-items: center;
@@ -490,24 +490,24 @@
     border: 1px solid var(--perla-dark);
 }
 
-/* Rotating spinner icon used inside the pay button during processing */
+/* Icono giratorio utilizado dentro del boton de pago durante el procesamiento */
 .btn-spinner {
     animation: spin 1s linear infinite;
 }
 
-/* Full 360-degree rotation keyframes for the spinner */
+/* Fotogramas clave de rotacion completa de 360 grados para el giratorio */
 @keyframes spin {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
 
-/* Very small semi-transparent class label inside order items */
+/* Etiqueta de clase muy pequena y semitransparente dentro de los elementos del pedido */
 .order-item__clase {
     font-size: 0.7rem;
     color: rgba(255,255,255,0.4);
 }
 
-/* At 500px: form row collapses to single column */
+/* A 500px: la fila del formulario colapsa a una columna */
 @media (max-width: 500px) {
     .form-fila { grid-template-columns: 1fr; }
 }

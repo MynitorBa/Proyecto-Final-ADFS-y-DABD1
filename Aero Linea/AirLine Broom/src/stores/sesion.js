@@ -1,27 +1,27 @@
 /**
  * @file sesion.js
- * @description Svelte writable store that holds the current user session state
- * for the AirLine Broom application. Exposes helper async functions to load,
- * create and destroy a session by communicating with the backend auth API.
- * The store value follows a three-state convention:
- *   null  = session check not yet completed (initial loading state),
- *   false = no active session (unauthenticated),
- *   object = authenticated user data ({ usuarioId, nombre, correo, rolId, rolNombre }).
+ * @description Almacen reactivo (writable) de Svelte que contiene el estado de la sesion del usuario
+ * para la aplicacion AirLine Broom. Expone funciones async auxiliares para cargar,
+ * crear y destruir una sesion comunicandose con la API de autenticacion del backend.
+ * El valor del almacen sigue una convencion de tres estados:
+ *   null  = verificacion de sesion aun no completada (estado de carga inicial),
+ *   false = sin sesion activa (no autenticado),
+ *   object = datos del usuario autenticado ({ usuarioId, nombre, correo, rolId, rolNombre }).
  */
 
 import { writable } from 'svelte/store';
 
-/** Reactive store holding the current session state. @type {import('svelte/store').Writable<null|false|{usuarioId: number, nombre: string, correo: string, rolId: number, rolNombre: string}>} */
+/** Almacen reactivo que contiene el estado de la sesion actual. @type {import('svelte/store').Writable<null|false|{usuarioId: number, nombre: string, correo: string, rolId: number, rolNombre: string}>} */
 export const sesion = writable(null);
 
 import { API } from '../lib/api.js';
 
 /**
- * Calls GET /api/auth/sesion with credentials to check whether a valid session
- * cookie already exists on the browser. If the server responds with 200 the
- * parsed JSON (user data object) is written into the store; any other status or
- * network failure sets the store to false, marking the user as unauthenticated.
- * Intended to be called once at application startup inside onMount.
+ * Llama a GET /api/auth/sesion con credenciales para verificar si ya existe una cookie de sesion
+ * valida en el navegador. Si el servidor responde con 200, el JSON parseado (objeto de datos del usuario)
+ * se escribe en el almacen; cualquier otro estado o fallo de red establece el almacen en false,
+ * marcando al usuario como no autenticado.
+ * Se recomienda llamar esta funcion una vez al inicio de la aplicacion dentro de onMount.
  * @async
  * @returns {Promise<void>}
  */
@@ -43,16 +43,16 @@ export async function cargarSesion() {
 }
 
 /**
- * Sends a POST request to /api/auth/login with the provided credentials.
- * On success the server sets a session cookie and returns the user data object,
- * which is immediately written into the sesion store. On failure the store is
- * set to false and the function returns { ok: false } so the caller can display
- * an appropriate error message.
+ * Envia una solicitud POST a /api/auth/login con las credenciales proporcionadas.
+ * Si tiene exito, el servidor establece una cookie de sesion y devuelve el objeto de datos del usuario,
+ * que se escribe inmediatamente en el almacen sesion. Si falla, el almacen se
+ * establece en false y la funcion devuelve { ok: false } para que el llamador pueda mostrar
+ * un mensaje de error apropiado.
  * @async
- * @param {string} correoOUsername - The user's email address or username.
- * @param {string} contrasena - The user's plain-text password.
- * @returns {Promise<{ok: boolean, data?: object}>} Object with ok flag and, on
- *   success, the user data returned by the server.
+ * @param {string} correoOUsername - El correo electronico o nombre de usuario del usuario.
+ * @param {string} contrasena - La contrasena en texto plano del usuario.
+ * @returns {Promise<{ok: boolean, data?: object}>} Objeto con indicador ok y, si tuvo exito,
+ *   los datos del usuario devueltos por el servidor.
  */
 export async function login(correoOUsername, contrasena) {
     const res = await fetch(`${API}/api/auth/login`, {
@@ -73,9 +73,9 @@ export async function login(correoOUsername, contrasena) {
 }
 
 /**
- * Sends a POST request to /api/auth/logout to invalidate the session cookie on
- * the server side. Regardless of the server response the sesion store is set to
- * false, effectively logging the user out on the client immediately.
+ * Envia una solicitud POST a /api/auth/logout para invalidar la cookie de sesion en
+ * el servidor. Independientemente de la respuesta del servidor, el almacen sesion se establece en
+ * false, cerrando la sesion del usuario en el cliente inmediatamente.
  * @async
  * @returns {Promise<void>}
  */

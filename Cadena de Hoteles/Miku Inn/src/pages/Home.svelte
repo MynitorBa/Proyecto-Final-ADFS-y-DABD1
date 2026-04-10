@@ -24,7 +24,48 @@
    */
   export let destinationSuggestion = null;
 
-  /** URL base del backend. @type {string} */
+  /**
+   * Token de alianza proveniente del query param ?token= de la URL.
+   * Si existe y el usuario esta logueado se valida contra el backend
+   * para autocompletar pais y ciudad en el buscador.
+   * @type {string|null}
+   */
+  export let alianzaToken = null;
+
+  /**
+   * Indica si el usuario tiene sesion activa. Se usa para decidir si
+   * validar el token o redirigir al login.
+   * @type {boolean}
+   */
+  export let isLoggedIn = false;
+
+  /**
+   * Datos de pais y ciudad ya validados por App tras login con token pendiente.
+   * Cuando llegan, los campos se setean reactivamente sin llamada adicional.
+   * @type {{ pais: string, ciudad: string }|null}
+   */
+  export let alianzaAutocompletarData = null;
+
+  /**
+   * Callback inyectado por App. Se llama cuando el token de alianza es validado
+   * exitosamente para que App actualice alianzaDescuento y lo pase a SearchResults.
+   * @type {Function|null}
+   */
+  export let onAlianzaValidada = null;
+
+  /**
+   * Callback para avisar a App que los datos de autocompletado ya fueron consumidos.
+   * App limpiara alianzaAutocompletarData para que no vuelva a autocomplete al remontar.
+   * @type {function|null}
+   */
+  export let onAlianzaAutocompletarConsumida = null;
+
+  /**
+   * Porcentaje de descuento de alianza obtenido al validar el token.
+   * Se pasa a search-results en el navigateTo del handleSearch.
+   * @type {number|null}
+   */
+  let porcentajeDescuento = null;
   const API = 'http://localhost:7000';
 
   /** Fecha de check-in seleccionada en el formulario. @type {string} */
@@ -99,7 +140,7 @@
     return toLocalDateStr(d);
   })();
 
-  onMount(() => {
+  onMount(async () => {
     const todayDate = new Date();
     const tomorrow  = new Date(todayDate);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -108,10 +149,82 @@
 
     // Si llega una sugerencia de destino desde otra pagina, la pre-rellena
     if (destinationSuggestion) ciudadQuery = destinationSuggestion;
+
+    // Logica de token de alianza
+    if (alianzaToken) {
+      if (!isLoggedIn) {
+        sessionStorage.setItem('pendingAlianzaToken', alianzaToken);
+        navigateTo('login');
+        return;
+      }
+      await validarAlianzaToken();
+    }
   });
 
   // Sincroniza el campo de ciudad si llega una nueva sugerencia en tiempo real
   $: if (destinationSuggestion) ciudadQuery = destinationSuggestion;
+
+  // Cuando App ya valido el token (caso post-login), setea los campos directamente
+  $: if (alianzaAutocompletarData) {
+    paisSeleccionado   = { country: alianzaAutocompletarData.pais };
+    paisQuery          = alianzaAutocompletarData.pais;
+    ciudadQuery        = alianzaAutocompletarData.ciudad;
+    ciudadSeleccionada = true;
+    porcentajeDescuento = alianzaAutocompletarData.porcentajeDescuento ?? null;
+    if (porcentajeDescuento) {
+      sessionStorage.setItem('alianzaDescuento', String(porcentajeDescuento));
+      sessionStorage.setItem('alianzaPct', String(porcentajeDescuento));
+    }
+    if (alianzaAutocompletarData.token) {
+      sessionStorage.setItem('alianzaTokenActivo', alianzaAutocompletarData.token);
+      sessionStorage.setItem('alianzaCiudad', alianzaAutocompletarData.ciudad);
+      sessionStorage.setItem('alianzaPais',   alianzaAutocompletarData.pais);
+    }
+    if (onAlianzaValidada) onAlianzaValidada(porcentajeDescuento);
+    // Avisar a App que los datos fueron consumidos para que no vuelvan a
+    // autocomplete la proxima vez que Home remonte.
+    if (onAlianzaAutocompletarConsumida) onAlianzaAutocompletarConsumida();
+  }
+
+  /**
+   * Valida el token de alianza contra el backend. Si es valido autocompleta
+   * los campos de pais y ciudad directamente en el estado sin pasar por la
+   * API externa de countriesnow, evitando resets intermedios en los campos.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function validarAlianzaToken() {
+    try {
+      const res = await fetch(`${API}/alianza/validar?token=${alianzaToken}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[alianza] respuesta backend:', data);
+        paisSeleccionado  = { country: data.pais };
+        paisQuery         = data.pais;
+        ciudadQuery       = data.ciudad;
+        ciudadSeleccionada = true;
+        porcentajeDescuento = data.porcentajeDescuento ?? null;
+        if (porcentajeDescuento) sessionStorage.setItem('alianzaDescuento', String(porcentajeDescuento));
+        // alianzaPct guarda el porcentaje original del token y nunca se borra
+        // mientras el token sigue activo — permite restaurar el descuento
+        // si el usuario vuelve a buscar en la ciudad correcta.
+        if (porcentajeDescuento) sessionStorage.setItem('alianzaPct', String(porcentajeDescuento));
+        // Guardar ciudad/país del token para validar que la búsqueda sea en esa misma ubicación
+        sessionStorage.setItem('alianzaCiudad', data.ciudad);
+        sessionStorage.setItem('alianzaPais',   data.pais);
+        sessionStorage.setItem('alianzaTokenActivo', alianzaToken);
+        if (onAlianzaValidada) onAlianzaValidada(porcentajeDescuento);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        searchError = err.mensaje || 'Token de alianza inválido o expirado.';
+      }
+    } catch (_) {
+      searchError = 'Error al validar el token de alianza.';
+    }
+  }
 
   // --- Logica del autocomplete de pais ---
 
@@ -228,6 +341,39 @@
 
     isSearching = true;
     try {
+      // Verificar si la busqueda es en la misma ciudad del token de alianza.
+      // Si es diferente: suprimir el descuento visualmente pero CONSERVAR el token
+      // para que si el usuario regresa a la ciudad correcta, el descuento vuelva.
+      const alianzaCiudad = sessionStorage.getItem('alianzaCiudad');
+      const alianzaPais   = sessionStorage.getItem('alianzaPais');
+      let descuentoParaEstasBusqueda = porcentajeDescuento;
+
+      if (alianzaCiudad && alianzaPais) {
+        const mismaCiudad = ciudadQuery.trim().toLowerCase() === alianzaCiudad.toLowerCase();
+        const mismoPais   = paisQuery.trim().toLowerCase() === alianzaPais.toLowerCase();
+
+        if (!mismaCiudad || !mismoPais) {
+          // Ciudad diferente: suprimir descuento en esta busqueda.
+          // Se borra alianzaDescuento del sessionStorage para que SearchResults
+          // no lo recupere como fallback, pero el token y su ciudad/pais se conservan
+          // para que si el usuario regresa a la ciudad correcta, el descuento vuelva.
+          descuentoParaEstasBusqueda = null;
+          sessionStorage.removeItem('alianzaDescuento');
+          if (onAlianzaValidada) onAlianzaValidada(null);
+
+        } else {
+          // Ciudad correcta: restaurar el descuento si habia sido suprimido.
+          // alianzaPct nunca se borra mientras el token siga activo.
+          const pct = porcentajeDescuento
+            ?? (sessionStorage.getItem('alianzaPct') ? Number(sessionStorage.getItem('alianzaPct')) : null);
+          if (pct) {
+            porcentajeDescuento = pct;
+            descuentoParaEstasBusqueda = pct;
+            sessionStorage.setItem('alianzaDescuento', String(pct));
+            if (onAlianzaValidada) onAlianzaValidada(pct);
+          }
+        }
+      }
       const res = await fetch(`${API}/busqueda`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -251,7 +397,8 @@
       navigateTo('search-results', {
         pais: paisQuery.trim(), ciudad: ciudadQuery.trim(),
         fechaCheckIn: checkIn, fechaCheckOut: checkOut,
-        cantidadPersonas: Number(cantidadPersonas), hotels
+        cantidadPersonas: Number(cantidadPersonas), hotels,
+        porcentajeDescuento: descuentoParaEstasBusqueda ?? null
       });
     } catch (err) {
       searchError = 'Error de conexión: ' + err.message;
@@ -309,11 +456,11 @@
               <div class="home__autocomplete-wrap">
                 <input type="text" id="h-pais" class="home__form-input"
                   bind:value={paisQuery} on:input={onPaisInput} on:blur={blurPais}
-                  placeholder="Escribe un país..." autocomplete="off" />
+                  placeholder="Escribe un país..." autocomplete="off" translate="no" />
                 {#if paisLoading}
                   <div class="home__autocomplete-loading">Buscando...</div>
                 {:else if paisesSugeridos.length > 0}
-                  <ul class="home__autocomplete-list">
+                  <ul class="home__autocomplete-list" translate="no">
                     {#each paisesSugeridos as p}
                       <li><button type="button" class="home__autocomplete-btn" on:click={() => seleccionarPais(p)}>{p.country}</button></li>
                     {/each}
@@ -336,9 +483,9 @@
                   bind:value={ciudadQuery} on:input={onCiudadInput} on:blur={blurCiudad}
                   placeholder={!paisSeleccionado ? 'Primero selecciona un país' : ciudadLoading ? 'Cargando ciudades...' : 'Escribe una ciudad...'}
                   disabled={!paisSeleccionado || ciudadLoading}
-                  autocomplete="off" />
+                  autocomplete="off" translate="no" />
                 {#if ciudadesSugeridas.length > 0}
-                  <ul class="home__autocomplete-list">
+                  <ul class="home__autocomplete-list" translate="no">
                     {#each ciudadesSugeridas as c}
                       <li><button type="button" class="home__autocomplete-btn" on:click={() => seleccionarCiudad(c)}>{c}</button></li>
                     {/each}

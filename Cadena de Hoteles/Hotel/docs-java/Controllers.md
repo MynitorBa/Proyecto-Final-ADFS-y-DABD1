@@ -14,6 +14,34 @@ Registra las rutas del modulo de reportes de busquedas en la aplicacion Javalin.
 
 ---
 
+## AerolineaAdminController
+
+> Controller que registra las rutas HTTP de aerolineas aliadas para el panel de administracion. Expone endpoints exclusivamente para el rol Administrador (rol 2). Tambien expone el endpoint de usuarios webservice libres, usado al crear entidades.
+
+```java
+public void registerRoutes(Javalin app)
+```
+
+Registra todas las rutas de administracion de aerolineas en la aplicacion Javalin. Todas las rutas requieren rol Administrador (rol 2).
+
+- **Param** `app` - instancia de Javalin donde se registran las rutas.
+
+---
+
+## AerolineaWebserviceController
+
+> Controller que registra las rutas HTTP relacionadas con aerolineas aliadas para el portal webservice. Expone endpoints exclusivamente para el rol Webservice (rol 3).
+
+```java
+public void registerRoutes(Javalin app)
+```
+
+Registra todas las rutas de aerolineas aliadas para el webservice en la aplicacion Javalin. Todas las rutas requieren rol Webservice (rol 3).
+
+- **Param** `app` - instancia de Javalin donde se registran las rutas.
+
+---
+
 ## AgenciaController
 
 > Controller que registra las rutas HTTP relacionadas con agencias. Expone endpoints para el rol Webservice (rol 3) y para el rol Administrador (rol 2).
@@ -39,6 +67,20 @@ public void registerRoutes(Javalin app)
 Registra las rutas de autenticacion en la aplicacion Javalin.
 
 - **Param** `app` - instancia de Javalin donde se registran las rutas.
+
+---
+
+## BusquedaAerolineaController
+
+> Controller que expone el endpoint de busqueda para aerolineas aliadas. Las peticiones se autentican mediante el header X-Aerolinea-Token.
+
+```java
+public void registerRoutes(Javalin app)
+```
+
+Registra la ruta de busqueda de aerolineas en la aplicacion Javalin.
+
+- **Param** `app` - instancia de Javalin donde se registra la ruta.
 
 ---
 
@@ -149,6 +191,20 @@ public void registerRoutes(Javalin app)
 ```
 
 Registra todas las rutas de correo en la aplicacion Javalin.
+
+- **Param** `app` - instancia de Javalin donde se registran las rutas.
+
+---
+
+## HandshakeAerolineaController
+
+> Controller que expone el endpoint publico de handshake para aerolineas aliadas. Permite a una aerolinea externa autenticarse ante el sistema hotelero presentando su URL y un token de entrada, y recibir un token de sesion para sus comunicaciones posteriores. El endpoint no requiere autenticacion previa ya que es el primer punto de contacto.
+
+```java
+public void registerRoutes(Javalin app)
+```
+
+Registra las rutas publicas del handshake de aerolineas en el servidor Javalin.
 
 - **Param** `app` - instancia de Javalin donde se registran las rutas.
 
@@ -275,6 +331,34 @@ public void registerRoutes(Javalin app)
 ```
 
 Registra la ruta de sesion en la aplicacion Javalin.
+
+- **Param** `app` - instancia de Javalin donde se registra la ruta.
+
+---
+
+## TokenAerolineaController
+
+> Controller que expone el endpoint de generacion de tokens de alianza. Solo aerolineas autenticadas mediante X-Aerolinea-Token pueden acceder.
+
+```java
+public void registerRoutes(Javalin app)
+```
+
+Registra la ruta de generacion de tokens en la aplicacion Javalin. <p>Endpoint: POST /aerolinea/token</p> <p>Header requerido: X-Aerolinea-Token</p> <p>Body esperado: { "ciudad": "Paris", "pais": "Francia" }</p> <p>Respuesta exitosa 201: token generado, URL de redireccion y fecha de expiracion.</p>
+
+- **Param** `app` - instancia de Javalin donde se registra la ruta.
+
+---
+
+## TokenValidacionController
+
+> Controller que expone el endpoint de validacion de tokens de alianza. Requiere sesion activa del usuario; el token de alianza se recibe como query parameter en la URL.
+
+```java
+public void registerRoutes(Javalin app)
+```
+
+Registra la ruta de validacion de tokens en la aplicacion Javalin. <p>Endpoint: GET /alianza/validar?token=uuid</p> <p>Requiere JWT activo en el header Authorization.</p> <p>Respuesta exitosa 200: ciudad, pais, porcentaje de descuento y fecha de expiracion.</p> <p>Respuesta 400: si el token no existe, ya fue usado o expiro.</p>
 
 - **Param** `app` - instancia de Javalin donde se registra la ruta.
 

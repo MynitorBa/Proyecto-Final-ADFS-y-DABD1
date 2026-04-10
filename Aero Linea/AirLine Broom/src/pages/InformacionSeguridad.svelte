@@ -1,21 +1,22 @@
 <script>
 /**
  * @file InformacionSeguridad.svelte
- * @description Static informational page covering security and travel process guidelines
- * for Broom AirLine passengers. Organized into three sections: allowed baggage (carry-on
- * and checked luggage with weight limits and prohibited items), the check-in process as a
- * numbered step list, and boarding order rules including priority groups and general regulations.
- * Accessible from the main navigation with a back button that returns to the home page.
+ * @description Pagina informativa estatica que cubre las pautas de seguridad y proceso de viaje
+ * para pasajeros de Broom AirLine. Organizada en tres secciones: equipaje permitido (de mano
+ * y documentado con limites de peso y articulos prohibidos), el proceso de check-in como lista
+ * de pasos numerados y las reglas de orden de abordaje que incluyen grupos prioritarios y
+ * reglamento general. Accesible desde la navegacion principal con un boton de regreso al inicio.
  */
   import '../styles/infoseguridad.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 
   /**
-   * Static content sections array. Each section has an id, title, and type-specific data:
-   * the baggage section has subsections with item arrays and a note, the check-in section
-   * has a steps array, and the boarding section has orderGroups and rules arrays.
+   * Arreglo estatico de secciones de contenido. Cada seccion tiene un id, titulo y datos
+   * especificos por tipo: la seccion de equipaje tiene subsecciones con arreglos de elementos
+   * y una nota, la seccion de check-in tiene un arreglo de pasos, y la seccion de abordaje
+   * tiene arreglos de orderGroups y reglas.
    * @type {Array<object>}
    */
   const sections = [

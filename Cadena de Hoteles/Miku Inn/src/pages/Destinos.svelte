@@ -44,7 +44,7 @@
   /** Fecha minima seleccionable (hoy). @type {string} */
   const minDate = new Date().toISOString().split('T')[0];
 
-  /** Fecha maxima seleccionable (100 años en el futuro). @type {string} */
+  /** Fecha maxima seleccionable (100 anos en el futuro). @type {string} */
   const maxDate = new Date(new Date().setFullYear(new Date().getFullYear() + 100)).toISOString().split('T')[0];
 
   /**

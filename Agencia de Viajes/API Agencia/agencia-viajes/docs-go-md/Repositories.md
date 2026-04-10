@@ -30,13 +30,43 @@ de la aplicacion.
 
 
 
+
+
 ## TYPES
 
 ```go
 
-type BusquedaRepository struct {
+type AgenciaConfiguracionRepository struct {
 	// Has unexported fields.
 }
+    AgenciaConfiguracionRepository
+
+    Repositorio que gestiona la lectura de la configuracion global de la
+    agencia, incluyendo el porcentaje de descuento aplicado a reservaciones de
+    tipo paquete (vuelo + hotel).
+
+func NewAgenciaConfiguracionRepository(db *sql.DB) *AgenciaConfiguracionRepository
+    NewAgenciaConfiguracionRepository
+
+    Crea e inicializa una nueva instancia de AgenciaConfiguracionRepository.
+
+    Parametros:
+      - db: conexion activa a la base de datos
+
+    Retorna:
+      - *AgenciaConfiguracionRepository: instancia lista para usar
+
+func (r *AgenciaConfiguracionRepository) ObtenerPorcentajeDescuento() (float64, error)
+    ObtenerPorcentajeDescuento
+
+    Retorna el porcentaje de descuento configurado para paquetes. Lee siempre el
+    primer registro de la tabla Agencia_Configuracion. Si la tabla esta vacia o
+    falla la consulta, retorna 0.
+
+      - float64: porcentaje de descuento (ej. 5.00 = 5%)
+      - error: error de base de datos, nil si la operacion fue exitosa
+
+type BusquedaRepository struct {
     BusquedaRepository
 
     Repositorio encargado de las consultas de busqueda de ciudades y proveedores
@@ -47,10 +77,7 @@ func NewBusquedaRepository(db *sql.DB) *BusquedaRepository
 
     Crea e inicializa una nueva instancia de BusquedaRepository.
 
-    Parametros:
-      - db: conexion activa a la base de datos
 
-    Retorna:
       - *BusquedaRepository: instancia lista para usar
 
 func (r *BusquedaRepository) BuscarCiudadID(ciudad, pais string) (*int, error)
@@ -63,7 +90,6 @@ func (r *BusquedaRepository) BuscarCiudadID(ciudad, pais string) (*int, error)
       - pais: nombre del pais al que pertenece la ciudad
 
       - *int: puntero al ID de la ciudad encontrada, nil si no existe
-      - error: error de base de datos, nil si la operacion fue exitosa
 
 func (r *BusquedaRepository) ObtenerAerolineasPorRuta(
 	ciudadOrigenID, ciudadDestinoID int,
@@ -413,22 +439,25 @@ func NewPagoRepository(db *sql.DB) *PagoRepository
 
       - *PagoRepository: instancia lista para usar
 
-func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total float64, nit string, codigoPostal string) error
+func (r *PagoRepository) ConfirmarReservaYFacturar(reservacionID int, total float64, nit string, codigoPostal string, porcentajeDescuento float64) error
     ConfirmarReservaYFacturar
 
-    Ejecuta dentro de una transaccion atomica los tres pasos del proceso de
-    confirmacion: cambia el estado de la reservacion a confirmada (2), cambia el
-    estado de todos sus detalles a confirmados (2) y crea el registro de factura
-    asociado.
+    Ejecuta dentro de una transaccion atomica los pasos del proceso de
+    confirmacion: aplica el descuento de paquete si corresponde, actualiza el
+    total de la reservacion, cambia el estado a confirmada (2), confirma todos
+    sus detalles y crea la factura. El descuento es absorbido por la agencia y
+    se aplica unicamente a reservaciones de tipo paquete (Tipo_Reserva_ID = 3).
 
       - reservacionID: ID de la reservacion a confirmar
-      - total: monto total a registrar en la factura
+      - total: monto total original de la reservacion antes del descuento
       - nit: numero de identificacion tributaria del cliente para la factura
       - codigoPostal: codigo postal del cliente para la factura
+      - porcentajeDescuento: porcentaje de descuento a aplicar (0 si no aplica)
 
 
       - Si cualquier paso falla, se realiza rollback automatico de toda la
         transaccion
+      - El descuento se redondea a 2 decimales antes de aplicarse
 
 func (r *PagoRepository) ContarDetallesPorTipo(reservacionID int) (vuelos int, hoteles int, err error)
     ContarDetallesPorTipo
@@ -837,5 +866,16 @@ func (r *UsuarioRepository) ObtenerNombreYEmail(usuarioID int) (nombre, email st
 
       - nombre: nombre completo del usuario (Nombre + Apellido)
       - email: correo electronico del usuario
+
+func (r *UsuarioRepository) ObtenerTodos() ([]dto.UsuarioResumen, error)
+    ObtenerTodos
+
+    Recupera la lista completa de usuarios registrados en el sistema, incluyendo
+    su rol asignado mediante un JOIN con la tabla rol. Usado por el panel de
+    administracion para gestion de roles y asignacion de usuarios WebService a
+    proveedores.
+
+      - []dto.UsuarioResumen: lista de usuarios con id, nombre, apellido,
+        correo y rol
 
 ```

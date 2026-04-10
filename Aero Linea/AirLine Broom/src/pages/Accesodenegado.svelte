@@ -1,19 +1,19 @@
 <script>
 /**
  * @file Accesodenegado.svelte
- * @description Displays an access-denied page when a user attempts to reach a protected route
- * without the required authentication or permissions. It checks sessionStorage to determine
- * whether the user is logged in and renders a contextual message accordingly. Provides
- * navigation buttons to redirect the user to the login page or back to the home page.
+ * @description Muestra una pagina de acceso denegado cuando un usuario intenta acceder a una ruta
+ * protegida sin la autenticacion o los permisos requeridos. Verifica sessionStorage para determinar
+ * si el usuario ha iniciado sesion y renderiza un mensaje contextual en consecuencia. Proporciona
+ * botones de navegacion para redirigir al usuario a la pagina de inicio de sesion o al inicio.
  */
 
   import '../styles/Accesodenegado.css';
   import pasajerosImg from '../assets/pasajeros.png';
 
-  /** Navigation function received from the app router to switch pages. @type {Function} */
+  /** Funcion de navegacion recibida del enrutador de la aplicacion para cambiar de pagina. @type {Function} */
   export let navigateTo;
 
-  /** True when a userId exists in sessionStorage, indicating an active session. @type {boolean} */
+  /** Verdadero cuando existe un usuarioId en sessionStorage, lo que indica una sesion activa. @type {boolean} */
   const isLoggedIn = !!sessionStorage.getItem('usuarioId');
 </script>
 

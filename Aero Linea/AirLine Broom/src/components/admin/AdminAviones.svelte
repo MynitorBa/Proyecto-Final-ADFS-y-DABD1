@@ -1,60 +1,60 @@
 <script>
 /**
  * @file AdminAviones.svelte
- * @description Admin panel section for managing the aircraft fleet. Displays a table showing
- * all registered planes with their image thumbnail, ID, brand, model, and passenger capacity.
- * Allows creating new planes and editing existing ones via a modal form. The brand field is
- * restricted to letters only (first letter capitalized), and the model field is formatted to the
- * [0-2 letters][2-4 digits][-suffix] pattern (e.g. A380-800, 737-MAX). An optional image can
- * be uploaded as base64. Dispatches 'avionesActualizados' to the parent after any successful
- * create, update, or image deletion.
+ * @description Seccion del panel de administracion para gestionar la flota de aviones. Muestra una tabla con
+ * todos los aviones registrados con su miniatura de imagen, ID, marca, modelo y capacidad de pasajeros.
+ * Permite crear nuevos aviones y editar los existentes mediante un formulario modal. El campo de marca
+ * esta restringido solo a letras (primera letra en mayuscula), y el campo de modelo tiene formato
+ * [0-2 letras][2-4 digitos][-sufijo] (por ejemplo, A380-800, 737-MAX). Se puede subir una imagen
+ * opcional en base64. Despacha 'avionesActualizados' al padre tras cualquier creacion, actualizacion
+ * o eliminacion de imagen exitosa.
  */
 // @ts-nocheck
   import { createEventDispatcher, onMount } from 'svelte';
 
-  /** Base API URL used for all backend requests. @type {string} */
+  /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
 
-  /** Function to show a toast notification. Signature: (type: string, message: string) => void. @type {Function} */
+  /** Funcion para mostrar una notificacion toast. Firma: (type: string, message: string) => void. @type {Function} */
   export let mostrarToast;
 
-  /** Function to show a confirmation dialog. Signature: (msg, sub, type) => Promise<boolean>. @type {Function} */
+  /** Funcion para mostrar un dialogo de confirmacion. Firma: (msg, sub, type) => Promise<boolean>. @type {Function} */
   export let mostrarConfirm;
 
   const dispatch = createEventDispatcher();
 
-  /** List of aircraft currently registered in the system, loaded from the backend API. @type {any[]} */
+  /** Lista de aviones registrados actualmente en el sistema, cargada desde la API del backend. @type {any[]} */
   let aviones        = [];
 
-  /** Whether the aircraft list fetch is in progress. @type {boolean} */
+  /** Indica si la carga de la lista de aviones esta en progreso. @type {boolean} */
   let loadingAviones = false;
 
-  /** True when the modal is editing an existing plane, false when creating a new one. @type {boolean} */
+  /** Verdadero cuando el modal esta editando un avion existente, falso cuando crea uno nuevo. @type {boolean} */
   let modoEdicion    = false;
 
-  /** Whether the create/edit modal form is visible. @type {boolean} */
+  /** Indica si el formulario modal de creacion/edicion esta visible. @type {boolean} */
   let mostrarFormulario  = false;
 
   /**
-   * Form data object bound to the create/edit form fields.
+   * Objeto de datos del formulario vinculado a los campos del formulario de creacion/edicion.
    * @type {{ id: number|null, marca: string, modelo: string, capacidadPasajeros: string|number }}
    */
   let avionForm          = { id: null, marca: '', modelo: '', capacidadPasajeros: '' };
 
-  /** Data URL of the selected image preview shown before saving. @type {string|null} */
+  /** URL de datos de la vista previa de imagen seleccionada mostrada antes de guardar. @type {string|null} */
   let avionImagenPreview = null;
 
-  /** Base64-encoded image string sent to the backend on form submission. @type {string|null} */
+  /** Cadena de imagen en base64 enviada al backend al enviar el formulario. @type {string|null} */
   let avionImagenBase64  = null;
 
   /**
-   * On mount: loads the list of aircraft from the backend.
+   * Al montar: carga la lista de aviones desde el backend.
    */
   onMount(() => { cargarAviones(); });
 
   /**
-   * Fetches the list of aircraft from the backend API and stores them in aviones.
-   * Shows a toast on error and sets loadingAviones during the request.
+   * Obtiene la lista de aviones desde la API del backend y los almacena en aviones.
+   * Muestra un toast en caso de error y establece loadingAviones durante la solicitud.
    * @async
    * @returns {Promise<void>}
    */
@@ -69,9 +69,9 @@
   }
 
   /**
-   * Handles input on the brand field. Strips any non-letter and non-space characters and
-   * capitalizes the first letter before updating avionForm.marca and the input element value.
-   * @param {Event} e - The input event from the brand text field.
+   * Maneja el input en el campo de marca. Elimina cualquier caracter que no sea letra ni espacio y
+   * pone en mayuscula la primera letra antes de actualizar avionForm.marca y el valor del elemento input.
+   * @param {Event} e - El evento de input del campo de texto de marca.
    */
   function formatearMarca(e) {
     let val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
@@ -81,11 +81,11 @@
   }
 
   /**
-   * Handles input on the model field. Enforces the real aircraft model format:
-   * up to 2 uppercase letters followed by up to 4 digits, optionally with a hyphen and
-   * up to 5 alphanumeric suffix characters (e.g. A380-800, 737-MAX, E195-E2, B787-9).
-   * Updates avionForm.modelo and the input element value.
-   * @param {Event} e - The input event from the model text field.
+   * Maneja el input en el campo de modelo. Aplica el formato real de modelo de avion:
+   * hasta 2 letras mayusculas seguidas de hasta 4 digitos, opcionalmente con un guion y
+   * hasta 5 caracteres alfanumericos de sufijo (por ejemplo, A380-800, 737-MAX, E195-E2, B787-9).
+   * Actualiza avionForm.modelo y el valor del elemento input.
+   * @param {Event} e - El evento de input del campo de texto de modelo.
    */
   function formatearModelo(e) {
     let val = e.target.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '');
@@ -107,9 +107,9 @@
   }
 
   /**
-   * Reads the file selected in the image input, converts it to a base64 data URL and stores
-   * it in both avionImagenBase64 (for submission) and avionImagenPreview (for display).
-   * @param {Event} e - The change event from the file input element.
+   * Lee el archivo seleccionado en el input de imagen, lo convierte a una URL de datos base64 y lo almacena
+   * en avionImagenBase64 (para envio) y avionImagenPreview (para visualizacion).
+   * @param {Event} e - El evento de cambio del elemento input de archivo.
    */
   function onImagenChange(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -119,7 +119,7 @@
   }
 
   /**
-   * Resets the form to empty values and opens the modal in creation mode.
+   * Reinicia el formulario a valores vacios y abre el modal en modo de creacion.
    */
   function abrirNuevo() {
     modoEdicion = false;
@@ -129,8 +129,8 @@
   }
 
   /**
-   * Pre-fills the form with the selected aircraft's data and opens the modal in edit mode.
-   * @param {any} avion - The aircraft row object from the table.
+   * Pre-rellena el formulario con los datos del avion seleccionado y abre el modal en modo de edicion.
+   * @param {any} avion - El objeto fila del avion de la tabla.
    */
   function abrirEditar(avion) {
     modoEdicion = true;
@@ -140,7 +140,7 @@
   }
 
   /**
-   * Closes the modal and resets all form state and image previews.
+   * Cierra el modal y reinicia todo el estado del formulario y las vistas previas de imagen.
    */
   function cerrar() {
     mostrarFormulario = false;
@@ -149,10 +149,10 @@
   }
 
   /**
-   * Validates the form (marca required, modelo required and must have at least 2 digits,
-   * capacidadPasajeros must be >= 1) then sends a POST or PUT request to the backend.
-   * On success reloads the aircraft list, dispatches 'avionesActualizados' and closes the modal.
-   * Shows error toasts for validation failures or API errors.
+   * Valida el formulario (marca requerida, modelo requerido y debe tener al menos 2 digitos,
+   * capacidadPasajeros debe ser mayor o igual a 1) y luego envia una solicitud POST o PUT al backend.
+   * Si tiene exito recarga la lista de aviones, despacha 'avionesActualizados' y cierra el modal.
+   * Muestra toasts de error para fallos de validacion o errores de la API.
    * @async
    * @returns {Promise<void>}
    */
@@ -191,10 +191,10 @@
   }
 
   /**
-   * Asks for confirmation and then sends a DELETE request to remove the image from an aircraft
-   * record. On success reloads the aircraft list and dispatches 'avionesActualizados'.
+   * Pide confirmacion y luego envia una solicitud DELETE para eliminar la imagen de un registro de avion.
+   * Si tiene exito recarga la lista de aviones y despacha 'avionesActualizados'.
    * @async
-   * @param {number} avionId - The ID of the aircraft whose image should be removed.
+   * @param {number} avionId - El ID del avion cuya imagen debe eliminarse.
    * @returns {Promise<void>}
    */
   async function handleEliminarImagen(avionId) {

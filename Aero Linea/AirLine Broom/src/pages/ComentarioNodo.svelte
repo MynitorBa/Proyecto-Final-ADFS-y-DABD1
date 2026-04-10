@@ -2,58 +2,59 @@
   // @ts-nocheck
 /**
  * @file ComentarioNodo.svelte
- * @description Recursive comment node component that renders a single comment and all its
- * nested replies in a Reddit-style threaded layout. Each node displays the author avatar
- * (first letter of their name), username, post date, an optional star rating, and the
- * comment body. Authenticated users can upvote or downvote the comment (+1 / -1) and
- * submit text replies. Child comments are revealed or hidden via a toggle button. The
- * component uses svelte:self to recursively render child nodes at increasing profundidad
- * levels. All interactive callbacks (votar, toggleForm, toggleExpandido, enviarRespuesta,
- * onTextoChange) are passed in as props from the parent page so state is managed centrally.
+ * @description Componente de nodo de comentario recursivo que renderiza un comentario individual
+ * y todas sus respuestas anidadas en un diseño en hilo estilo Reddit. Cada nodo muestra el avatar
+ * del autor (primera letra de su nombre), nombre de usuario, fecha de publicacion, una calificacion
+ * de estrellas opcional y el cuerpo del comentario. Los usuarios autenticados pueden dar voto
+ * positivo o negativo al comentario (+1 / -1) y enviar respuestas de texto. Los comentarios hijo
+ * se revelan u ocultan mediante un boton de alternancia. El componente usa svelte:self para
+ * renderizar recursivamente nodos hijo con niveles de profundidad crecientes. Todos los callbacks
+ * interactivos (votar, toggleForm, toggleExpandido, enviarRespuesta, onTextoChange) se pasan como
+ * props desde la pagina padre para que el estado se administre de forma centralizada.
  */
 
-  /** The comment object to render, including id, nombreCompleto, username, fecha, contenido, cantidadEstrellas, and downs. @type {object} */
+  /** El objeto de comentario a renderizar, incluyendo id, nombreCompleto, username, fecha, contenido, cantidadEstrellas y downs. @type {object} */
   export let comentario;
 
-  /** Function that returns an array of child comment objects for a given comment id. @type {Function} */
+  /** Funcion que devuelve un arreglo de comentarios hijo para un id de comentario dado. @type {Function} */
   export let getHijos;
 
-  /** Map of per-comment UI state objects keyed by comment id, each containing expandido, mostrandoForm, textoRespuesta, enviando, and votoActual. @type {object} */
+  /** Mapa de objetos de estado de interfaz por comentario indexados por id, cada uno con expandido, mostrandoForm, textoRespuesta, enviando y votoActual. @type {object} */
   export let estadoNodos;
 
-  /** Whether the current user has an active session, controls visibility of voting and reply actions. @type {boolean} */
+  /** Indica si el usuario actual tiene sesion activa, controla la visibilidad de las acciones de voto y respuesta. @type {boolean} */
   export let haySession;
 
-  /** Function that formats a date value into a localized display string. @type {Function} */
+  /** Funcion que formatea un valor de fecha en una cadena de visualizacion localizada. @type {Function} */
   export let formatFecha;
 
-  /** Function that returns an array of boolean values (true = filled star) for a given star count. @type {Function} */
+  /** Funcion que devuelve un arreglo de booleanos (true = estrella llena) para una cantidad de estrellas dada. @type {Function} */
   export let getEstrellas;
 
-  /** Function called when the user clicks an upvote or downvote arrow, receives commentId and value (+1 or -1). @type {Function} */
+  /** Funcion llamada cuando el usuario hace clic en una flecha de voto positivo o negativo, recibe el id del comentario y el valor (+1 o -1). @type {Function} */
   export let votar;
 
-  /** Function that toggles the reply form visibility for a given comment id. @type {Function} */
+  /** Funcion que alterna la visibilidad del formulario de respuesta para un id de comentario dado. @type {Function} */
   export let toggleForm;
 
-  /** Function that toggles the expanded state (show/hide children) for a given comment id. @type {Function} */
+  /** Funcion que alterna el estado expandido (mostrar/ocultar hijos) para un id de comentario dado. @type {Function} */
   export let toggleExpandido;
 
-  /** Async function that submits the reply text for a given comment id. @type {Function} */
+  /** Funcion asincrona que envia el texto de respuesta para un id de comentario dado. @type {Function} */
   export let enviarRespuesta;
 
-  /** Function called on textarea input, receives commentId and the new text value. @type {Function} */
+  /** Funcion llamada al ingresar texto en el textarea, recibe el id del comentario y el nuevo valor de texto. @type {Function} */
   export let onTextoChange;
 
-  /** Current nesting depth of this node, incremented by 1 for each recursive child render. @type {number} */
+  /** Nivel de anidamiento actual de este nodo, se incrementa en 1 por cada renderizado recursivo de un hijo. @type {number} */
   export let profundidad = 0;
 
   import ComentarioNodo from './ComentarioNodo.svelte';
 
-  // Reactively retrieves the array of direct child comments for this node whenever comentario.id changes.
+  // Obtiene de forma reactiva el arreglo de comentarios hijo directos de este nodo cada vez que comentario.id cambia.
   $: hijos  = getHijos(comentario.id);
 
-  // Reactively retrieves this comment's UI state from estadoNodos, falling back to a default empty state object.
+  // Obtiene de forma reactiva el estado de interfaz de este comentario desde estadoNodos, usando un objeto de estado vacio por defecto.
   $: estado = estadoNodos[comentario.id] ?? {
     expandido: false,
     mostrandoForm: false,
@@ -62,13 +63,13 @@
     votoActual: null
   };
 
-  // Tracks the user's current vote for this comment (+1, -1, or null) for active arrow styling.
+  // Registra el voto actual del usuario para este comentario (+1, -1 o null) para aplicar el estilo activo a la flecha.
   $: votoActual = estado.votoActual;
 
-  // The API field `downs` stores the net score; a positive value shows +score, negative shows -score.
+  // El campo de la API "downs" almacena la puntuacion neta; un valor positivo muestra +puntuacion, negativo muestra -puntuacion.
   $: score = comentario.downs ?? 0;
 
-  // Determines the CSS class applied to the score display based on whether it is positive, negative, or zero.
+  // Determina la clase CSS aplicada a la visualizacion de puntuacion segun sea positiva, negativa o cero.
   $: scoreClass = score > 0 ? 'score-pos' : score < 0 ? 'score-neg' : 'score-zero';
 </script>
 

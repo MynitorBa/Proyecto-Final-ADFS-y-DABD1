@@ -1,21 +1,21 @@
 <script>
 /**
  * @file InformacionAsientos.svelte
- * @description Informational page that explains the two available seat classes offered by
- * Broom AirLine: Turista and Business. For each class it renders a photo gallery with
- * three images, a brief description list, and a detailed specs table covering legroom,
- * baggage allowance, and on-board services. Accessible from the main navigation and
- * contains a back button that returns the user to the home page.
+ * @description Pagina informativa que explica las dos clases de asiento disponibles ofrecidas
+ * por Broom AirLine: Turista y Business. Para cada clase renderiza una galeria de fotos con
+ * tres imagenes, una breve lista de descripcion y una tabla de especificaciones detallada
+ * que cubre espacio entre asientos, equipaje permitido y servicios a bordo. Accesible desde
+ * la navegacion principal y contiene un boton de regreso que devuelve al usuario al inicio.
  */
   import '../styles/infoasiento.css';
 
-  /** Function used to navigate to another page in the application. @type {function} */
+  /** Funcion utilizada para navegar a otra pagina en la aplicacion. @type {function} */
   export let navigateTo;
 
   /**
-   * Static data array describing each seat class. Each entry contains the class name,
-   * an array of image URLs for the gallery, a short description list, and a details
-   * array with labeled specification rows.
+   * Arreglo de datos estaticos que describe cada clase de asiento. Cada entrada contiene el
+   * nombre de la clase, un arreglo de URLs de imagenes para la galeria, una breve lista de
+   * descripcion y un arreglo de detalles con filas de especificacion etiquetadas.
    * @type {Array<{name: string, images: Array<string>, description: Array<string>, details: Array<{label: string, value: string}>}>}
    */
   const seatTypes = [
