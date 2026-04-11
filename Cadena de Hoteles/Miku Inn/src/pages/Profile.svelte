@@ -177,7 +177,7 @@
       const res = await fetch(`${API}/usuarios/perfil`, { credentials: 'include' });
       if (!res.ok) { serverError = 'No se pudo cargar el perfil.'; loading = false; return; }
       perfil = await res.json();
-      nuevoTelefono = perfil.telefono ?? '';
+      nuevoTelefono = '';
     } catch { serverError = 'Error de conexión.'; }
     finally { loading = false; }
 
@@ -213,6 +213,12 @@
           phoneDigitCount = info.digits;
           paisQuery = perfil.pais;
           paisSeleccionado = perfil.pais;
+          // Extraer solo los digitos locales sin el codigo de marcado
+          if (perfil.telefono) {
+            const sinCodigo = perfil.telefono.replace(info.code, '').trim();
+            const soloDigitos = sinCodigo.replace(/\D/g, '').slice(0, info.digits);
+            nuevoTelefono = formatLocalPhone(soloDigitos, info.digits);
+          }
         }
       }
     } catch { console.error('Error cargando dial codes'); }

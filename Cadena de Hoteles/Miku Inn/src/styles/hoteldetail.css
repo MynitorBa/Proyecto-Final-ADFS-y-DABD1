@@ -1267,3 +1267,25 @@
   .hdet__login-prompt-title { font-size: 1.25rem; }
   .hdet__login-prompt-text { font-size: .875rem; }
 }
+
+/* Imagen de amenidad con tamaño fijo para mantener el layout uniforme */
+.amenity-image {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Icono SVG de amenidad con tamaño fijo igual a la imagen */
+.amenity-icon-large {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  background: rgba(102,126,234,.08);
+  border-radius: 8px;
+}

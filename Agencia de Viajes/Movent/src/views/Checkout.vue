@@ -549,6 +549,8 @@ async function confirmarPago() {
       headers: { 'Content-Type': 'application/json' },
     }).catch(() => {})
 
+    cd.value.porcentajeDescuento = tipoItem.value === 'paquete' ? porcentajeDescuento.value : 0
+    sessionStorage.setItem('checkout_data', JSON.stringify(cd.value))
     router.push({
       path:  '/confirmacion',
       query: { noReservacion: cd.value.noReservacion },

@@ -435,8 +435,13 @@ onMounted(async () => {
       const th = cd.detalleHotel?.total_con_ganancia ?? 0
       if      (cd.tipoItem === 'vuelo')   totalPagado.value = tv > 0      ? `$${tv.toFixed(2)}`       : '--'
       else if (cd.tipoItem === 'hotel')   totalPagado.value = th > 0      ? `$${th.toFixed(2)}`       : '--'
-      else if (cd.tipoItem === 'paquete') totalPagado.value = (tv+th) > 0 ? `$${(tv+th).toFixed(2)}` : '--'
-    } catch { /**/ }
+      else if (cd.tipoItem === 'paquete') {
+              const descuento = cd.porcentajeDescuento ?? 0
+              const bruto = tv + th
+              const neto = descuento > 0 ? Math.round(bruto * (1 - descuento / 100) * 100) / 100 : bruto
+              totalPagado.value = neto > 0 ? `$${neto.toFixed(2)}` : '--'
+            }
+          } catch { /**/ }
   }
 
   // 2. Fallback: leer _reserva_id si checkout_data no tenía el ID
