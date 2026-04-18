@@ -30,6 +30,20 @@
         <!-- Formulario principal de registro, oculto tras registro exitoso -->
         <form v-else @submit.prevent="handleRegister" class="register-form">
 
+          <!-- Banner elegante para mostrar errores devueltos por el backend -->
+          <div v-if="serverError" class="server-error-banner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div>
+              <strong>{{ serverErrorTitle }}</strong>
+              <p>{{ serverError }}</p>
+            </div>
+            <button type="button" class="banner-close" @click="serverError = ''" aria-label="Cerrar">✕</button>
+          </div>
+
           <!-- Sección: información personal del usuario -->
           <div class="form-section">
             <h3 class="section-title">
@@ -53,13 +67,13 @@
               </div>
             </div>
 
-            <!-- Fecha de nacimiento con indicador de edad y número de pasaporte -->
+            <!-- Fecha de nacimiento con indicador informativo y número de pasaporte -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>Fecha de Nacimiento <span class="req">*</span></label>
                 <input type="date" v-model="formData.birthDate" :class="{ error: errors.birthDate }" />
                 <span v-if="formData.birthDate && userAge >= 18" class="match-ok">✓ {{ userAge }} años</span>
-                <span v-else-if="formData.birthDate && userAge < 18" class="match-no">✗ Debes tener al menos 18 años</span>
+                <span v-else-if="formData.birthDate && userAge < 18 && userAge >= 0" class="hint-text">ℹ Edad: {{ userAge }} años</span>
                 <span v-if="errors.birthDate" class="error-text">{{ errors.birthDate }}</span>
               </div>
               <div class="form-field">
@@ -88,11 +102,11 @@
                 <span v-if="errors.country" class="error-text">{{ errors.country }}</span>
               </div>
 
-              <!-- Teléfono deshabilitado hasta que se elija un país -->
+              <!-- Teléfono deshabilitado hasta que se elija un país (UX pura) -->
               <div class="form-field">
                 <label>
                   Teléfono <span class="req">*</span>
-                  <span v-if="dialCode" class="label-hint">— {{ phoneDigitCount }} dígitos requeridos</span>
+                  <span v-if="dialCode" class="label-hint">— {{ phoneDigitCount }} dígitos sugeridos</span>
                 </label>
                 <div class="phone-field" :class="{ error: errors.phone }">
                   <span v-if="dialCode" class="phone-prefix">{{ dialCode }}</span>
@@ -100,15 +114,13 @@
                     :placeholder="dialCode ? getPhonePlaceholder(phoneDigitCount) : 'Selecciona un país primero'"
                     :disabled="!dialCode" autocomplete="tel" />
                 </div>
-                <span v-if="formData.phone && !errors.phone">
-                  <span v-if="phoneDigits === phoneDigitCount" class="match-ok">✓ Número completo</span>
-                  <span v-else class="match-no">{{ phoneDigits }}/{{ phoneDigitCount }} dígitos</span>
-                </span>
+                <span v-if="formData.phone && phoneDigits === phoneDigitCount" class="match-ok">✓ Número completo</span>
+                <span v-else-if="formData.phone" class="hint-text">ℹ {{ phoneDigits }}/{{ phoneDigitCount }} dígitos</span>
                 <span v-if="errors.phone" class="error-text">{{ errors.phone }}</span>
               </div>
             </div>
 
-            <!-- Ciudad: autocompletado dependiente del país seleccionado -->
+            <!-- Ciudad: autocompletado dependiente del país seleccionado (UX pura) -->
             <div class="form-field">
               <label>Ciudad <span class="req">*</span>
                 <span v-if="ciudadLoading" class="label-hint">— Cargando ciudades...</span>
@@ -127,7 +139,7 @@
               <span v-if="errors.city" class="error-text">{{ errors.city }}</span>
             </div>
 
-            <!-- Nacionalidades: permite agregar múltiples con autocompletado -->
+            <!-- Nacionalidades: permite agregar múltiples con autocompletado (UX pura) -->
             <div class="form-field">
               <label>Nacionalidad(es) <span class="req">*</span></label>
               <div v-for="(nac, i) in nacionalidades" :key="i" class="nac-row">
@@ -135,7 +147,6 @@
                   <input type="text" v-model="nacionalidades[i].query"
                     @input="onNacInput(i)" @blur="blurNac(i)"
                     placeholder="Ej: Guatemalteca"
-                    :class="{ error: errors.nacionalidades && !nacionalidades[i].seleccionada }"
                     autocomplete="off" />
                   <ul v-if="nacionalidades[i].sugerencias.length > 0" class="autocomplete-list">
                     <li v-for="s in nacionalidades[i].sugerencias" :key="s.pais">
@@ -161,7 +172,7 @@
               Credenciales de Acceso
             </h3>
 
-            <!-- Nombre de usuario con sanitización automática -->
+            <!-- Nombre de usuario con sanitización automática (UX) -->
             <div class="form-field">
               <label>Nombre de Usuario <span class="req">*</span></label>
               <div class="input-icon-wrap">
@@ -184,7 +195,7 @@
               <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
             </div>
 
-            <!-- Contraseña con barra de fortaleza e indicadores de requisitos -->
+            <!-- Contraseña con barra de fortaleza e indicadores de requisitos (UX) -->
             <div class="form-grid-2">
               <div class="form-field">
                 <label>Contraseña <span class="req">*</span></label>
@@ -196,12 +207,12 @@
                     <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                   </button>
                 </div>
-                <!-- Barra de fortaleza de contraseña -->
+                <!-- Barra de fortaleza de contraseña (indicador visual UX) -->
                 <div v-if="formData.password" class="strength-bar-wrap">
                   <div class="strength-bar"><div class="strength-fill" :style="{ width: passwordStrength.width, background: passwordStrength.color }"></div></div>
                   <span class="strength-label" :style="{ color: passwordStrength.color }">{{ passwordStrength.text }}</span>
                 </div>
-                <!-- Indicadores de requisitos de contraseña -->
+                <!-- Indicadores de requisitos de contraseña (visual UX) -->
                 <div class="requirements">
                   <span :class="['req-item', { met: passVal.minLength }]">✓ 8 caracteres</span>
                   <span :class="['req-item', { met: passVal.hasUpperCase }]">✓ Mayúscula</span>
@@ -211,7 +222,7 @@
                 <span v-if="errors.password" class="error-text">{{ errors.password }}</span>
               </div>
 
-              <!-- Campo de confirmación de contraseña -->
+              <!-- Campo de confirmación de contraseña (UX) -->
               <div class="form-field">
                 <label>Confirmar Contraseña <span class="req">*</span></label>
                 <div class="password-wrap">
@@ -223,31 +234,26 @@
                   </button>
                 </div>
                 <span v-if="formData.confirmPassword && formData.password === formData.confirmPassword" class="match-ok">✓ Contraseñas coinciden</span>
-                <span v-else-if="formData.confirmPassword" class="match-no">✗ No coinciden</span>
+                <span v-else-if="formData.confirmPassword" class="hint-text">ℹ Aún no coinciden</span>
                 <span v-if="errors.confirmPassword" class="error-text">{{ errors.confirmPassword }}</span>
               </div>
             </div>
           </div>
 
-          <!-- Aceptación de términos y política de privacidad -->
+          <!-- Aceptación de términos y política de privacidad (solo UX, no se envía al backend) -->
           <div class="terms-section">
             <label class="checkbox-label">
               <input type="checkbox" v-model="acceptTerms" />
               <span class="checkbox-custom"></span>
               <span>Acepto los <button type="button" class="link-btn">Términos y Condiciones</button> <span class="req">*</span></span>
             </label>
-            <span v-if="errors.terms" class="error-text">{{ errors.terms }}</span>
 
             <label class="checkbox-label">
               <input type="checkbox" v-model="acceptPrivacy" />
               <span class="checkbox-custom"></span>
               <span>Acepto la <button type="button" class="link-btn">Política de Privacidad</button> <span class="req">*</span></span>
             </label>
-            <span v-if="errors.privacy" class="error-text">{{ errors.privacy }}</span>
           </div>
-
-          <!-- Error general del servidor al intentar enviar el formulario -->
-          <span v-if="errors.submit" class="error-text" style="text-align:center;">{{ errors.submit }}</span>
 
           <!-- Botón de envío con spinner mientras procesa -->
           <button type="submit" class="submit-btn" :disabled="isSubmitting">
@@ -271,9 +277,12 @@
 /**
  * @file Registrarse.vue
  * @description Formulario de registro de nuevos usuarios en Movent.
- * Recopila información personal, ubicación, teléfono con prefijo internacional,
- * nacionalidades múltiples y credenciales de acceso. Valida todo del lado del cliente
- * antes de enviar al backend.
+ * IMPORTANTE: Este formulario NO valida los datos en el cliente - todas las
+ * validaciones se delegan al backend como fuente de verdad. El frontend
+ * mantiene solo los indicadores visuales (barra de contraseña, autocompletado,
+ * formato de teléfono) como ayuda de UX, pero deja que el backend decida
+ * si un registro es válido o no. Los errores del servidor se muestran en
+ * un banner elegante arriba del formulario.
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -287,7 +296,7 @@ const router   = useRouter()
 
 /**
  * Mapa de cantidad de dígitos locales por código de marcación internacional (ITU).
- * Usado para validar y limitar el input del teléfono.
+ * Se usa solo para formatear el teléfono, no para validar (eso lo hace el backend).
  * @type {Record<string, number>}
  */
 const knownDigits = {
@@ -364,14 +373,20 @@ const showPassword        = ref(false)
 /** Controla la visibilidad del campo de confirmación de contraseña. @type {import('vue').Ref<boolean>} */
 const showConfirmPassword = ref(false)
 
-/** Estado del checkbox de términos y condiciones. @type {import('vue').Ref<boolean>} */
+/** Estado del checkbox de términos y condiciones (UX, no se envía al backend). @type {import('vue').Ref<boolean>} */
 const acceptTerms         = ref(false)
 
-/** Estado del checkbox de política de privacidad. @type {import('vue').Ref<boolean>} */
+/** Estado del checkbox de política de privacidad (UX, no se envía al backend). @type {import('vue').Ref<boolean>} */
 const acceptPrivacy       = ref(false)
 
-/** Errores de validación del formulario por campo. @type {import('vue').Ref<object>} */
+/** Errores devueltos por el backend en respuestas 409 (por campo). @type {import('vue').Ref<object>} */
 const errors              = ref({})
+
+/** Mensaje de error general del backend (HTTP 400 o similar). @type {import('vue').Ref<string>} */
+const serverError         = ref('')
+
+/** Título del banner de error (se adapta al tipo de error del backend). @type {import('vue').Ref<string>} */
+const serverErrorTitle    = ref('Error al registrar')
 
 /** Previene el doble envío mientras la petición está en curso. @type {import('vue').Ref<boolean>} */
 const isSubmitting        = ref(false)
@@ -406,7 +421,7 @@ const todasLasCiudades   = ref([])
 /** Código de marcación del país seleccionado (ej. '+502'). @type {import('vue').Ref<string>} */
 const dialCode        = ref('')
 
-/** Cantidad de dígitos locales requeridos según el país. @type {import('vue').Ref<number>} */
+/** Cantidad de dígitos locales sugeridos según el país. @type {import('vue').Ref<number>} */
 const phoneDigitCount = ref(9)
 
 /**
@@ -417,7 +432,7 @@ const phoneDigitCount = ref(9)
 const nacionalidades = ref([{ query: '', seleccionada: false, sugerencias: [] }])
 
 /**
- * Calcula la edad del usuario a partir de su fecha de nacimiento.
+ * Calcula la edad del usuario a partir de su fecha de nacimiento (solo visual).
  * @type {import('vue').ComputedRef<number>}
  */
 const userAge = computed(() => {
@@ -433,7 +448,7 @@ const userAge = computed(() => {
 const phoneDigits = computed(() => formData.value.phone.replace(/\D/g, '').length)
 
 /**
- * Verifica qué requisitos de la contraseña ya se cumplen.
+ * Verifica qué requisitos de la contraseña ya se cumplen (solo visual).
  * @type {import('vue').ComputedRef<{minLength: boolean, hasUpperCase: boolean, hasLowerCase: boolean, hasNumber: boolean}>}
  */
 const passVal = computed(() => ({
@@ -445,6 +460,7 @@ const passVal = computed(() => ({
 
 /**
  * Devuelve el nivel de fortaleza de la contraseña con texto, color y ancho de barra.
+ * Solo informativo, no bloquea el envío.
  * @type {import('vue').ComputedRef<{text: string, color: string, width: string}>}
  */
 const passwordStrength = computed(() => {
@@ -458,7 +474,7 @@ const passwordStrength = computed(() => {
 /**
  * Aplica formato de espacios al número local según su longitud total esperada.
  * @param {string} digits - Solo dígitos
- * @param {number} total  - Cantidad total requerida
+ * @param {number} total  - Cantidad total esperada
  * @returns {string}
  */
 function formatLocalPhone(digits, total) {
@@ -487,7 +503,8 @@ function onPhoneInput(e) {
 
 /**
  * Sanitiza el username: solo permite letras, números, puntos y guion bajo.
- * También limpia el error si ya no aplica.
+ * Esta sanitización sigue existiendo porque es más amigable que dejar al usuario escribir
+ * caracteres que el backend va a rechazar.
  */
 function onUsernameInput() {
   formData.value.username = formData.value.username.replace(/[^a-zA-Z0-9_.]/g, '')
@@ -513,7 +530,6 @@ function onPaisInput() {
  */
 function seleccionarPais(p) {
   paisSeleccionado.value = p; paisQuery.value = p.country; paisesSugeridos.value = []
-  errors.value.country = ''
   ciudadQuery.value = ''; ciudadSeleccionada.value = false; ciudadesSugeridas.value = []
   formData.value.phone = ''
   todasLasCiudades.value = p.cities || []
@@ -523,16 +539,11 @@ function seleccionarPais(p) {
 }
 
 /**
- * Al perder el foco en el campo de país, valida que se haya elegido uno de la lista.
- * Si el texto no corresponde a ningún país seleccionado, lo limpia.
+ * Al perder el foco en el campo de país, solo oculta la lista de sugerencias.
+ * Ya NO limpia el texto — se deja lo que el usuario escribió para que el backend lo reciba.
  */
 function blurPais() {
-  setTimeout(() => {
-    if (paisQuery.value && !paisSeleccionado.value) {
-      errors.value.country = 'Selecciona un país de la lista'
-      paisQuery.value = ''; paisesSugeridos.value = []
-    } else { paisesSugeridos.value = [] }
-  }, 200)
+  setTimeout(() => { paisesSugeridos.value = [] }, 200)
 }
 
 /** Filtra ciudades del país seleccionado según lo escrito. */
@@ -544,24 +555,19 @@ function onCiudadInput() {
 }
 
 /**
- * Confirma la ciudad seleccionada y limpia el error.
+ * Confirma la ciudad seleccionada.
  * @param {string} c - Nombre de la ciudad
  */
 function seleccionarCiudad(c) {
   ciudadQuery.value = c; ciudadSeleccionada.value = true
-  ciudadesSugeridas.value = []; errors.value.city = ''
+  ciudadesSugeridas.value = []
 }
 
 /**
- * Al perder el foco en ciudad, valida que se haya seleccionado de la lista.
+ * Al perder el foco en ciudad, solo oculta la lista. No limpia el texto.
  */
 function blurCiudad() {
-  setTimeout(() => {
-    if (ciudadQuery.value && !ciudadSeleccionada.value) {
-      errors.value.city = 'Selecciona una ciudad de la lista'
-      ciudadQuery.value = ''; ciudadesSugeridas.value = []
-    } else { ciudadesSugeridas.value = [] }
-  }, 200)
+  setTimeout(() => { ciudadesSugeridas.value = [] }, 200)
 }
 
 /**
@@ -584,20 +590,15 @@ function onNacInput(i) {
  */
 function seleccionarNac(i, s) {
   nacionalidades.value[i].query = s.demonym; nacionalidades.value[i].seleccionada = true
-  nacionalidades.value[i].sugerencias = []; errors.value.nacionalidades = ''
+  nacionalidades.value[i].sugerencias = []
 }
 
 /**
- * Valida que la nacionalidad se haya elegido de la lista al perder el foco.
+ * Al perder el foco en nacionalidad, solo oculta sugerencias. No limpia.
  * @param {number} i - Índice del campo
  */
 function blurNac(i) {
-  setTimeout(() => {
-    if (nacionalidades.value[i].query && !nacionalidades.value[i].seleccionada) {
-      errors.value.nacionalidades = 'Selecciona una nacionalidad de la lista'
-      nacionalidades.value[i].query = ''; nacionalidades.value[i].sugerencias = []
-    } else { nacionalidades.value[i].sugerencias = [] }
-  }, 200)
+  setTimeout(() => { nacionalidades.value[i].sugerencias = [] }, 200)
 }
 
 /** Agrega un nuevo campo de nacionalidad al array. */
@@ -610,73 +611,37 @@ function agregarNac() { nacionalidades.value.push({ query: '', seleccionada: fal
 function quitarNac(i) { nacionalidades.value.splice(i, 1) }
 
 /**
- * Ejecuta todas las validaciones del formulario y llena el objeto `errors`.
- * @returns {boolean} true si el formulario es válido
- */
-function validateForm() {
-  errors.value = {}
-  if (!formData.value.firstName.trim() || formData.value.firstName.trim().length < 2)
-    errors.value.firstName = !formData.value.firstName.trim() ? 'Nombre requerido' : 'Mínimo 2 caracteres'
-  if (!formData.value.lastName.trim() || formData.value.lastName.trim().length < 2)
-    errors.value.lastName = !formData.value.lastName.trim() ? 'Apellidos requeridos' : 'Mínimo 2 caracteres'
-  if (!formData.value.birthDate)  errors.value.birthDate = 'Fecha de nacimiento requerida'
-  else if (userAge.value < 18)    errors.value.birthDate = 'Debes tener al menos 18 años'
-  if (!formData.value.pasaporte.trim() || formData.value.pasaporte.trim().length < 5)
-    errors.value.pasaporte = !formData.value.pasaporte.trim() ? 'Pasaporte requerido' : 'Número de pasaporte inválido'
-  if (!paisSeleccionado.value)   errors.value.country = 'Selecciona un país de la lista'
-  if (!ciudadSeleccionada.value) errors.value.city    = 'Selecciona una ciudad de la lista'
-  if (!formData.value.phone.trim()) {
-    errors.value.phone = 'Teléfono requerido'
-  } else if (phoneDigits.value !== phoneDigitCount.value) {
-    errors.value.phone = `Número incompleto: se requieren ${phoneDigitCount.value} dígitos (ingresaste ${phoneDigits.value})`
-  }
-  const nacsValidas = nacionalidades.value.filter(n => n.query.trim() && n.seleccionada)
-  if (nacsValidas.length === 0) errors.value.nacionalidades = 'Selecciona al menos una nacionalidad'
-  if (!formData.value.username.trim()) errors.value.username = 'Usuario requerido'
-  else if (formData.value.username.length < 3) errors.value.username = 'Mínimo 3 caracteres'
-  else if (!/^[a-zA-Z0-9_.]+$/.test(formData.value.username)) errors.value.username = 'Solo letras, números, puntos y guion bajo'
-  if (!formData.value.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email))
-    errors.value.email = 'Email inválido'
-  if (!formData.value.password) errors.value.password = 'Contraseña requerida'
-  else if (!passVal.value.minLength || !passVal.value.hasUpperCase || !passVal.value.hasLowerCase || !passVal.value.hasNumber)
-    errors.value.password = 'La contraseña no cumple los requisitos'
-  if (!formData.value.confirmPassword) errors.value.confirmPassword = 'Confirma tu contraseña'
-  else if (formData.value.password !== formData.value.confirmPassword) errors.value.confirmPassword = 'Las contraseñas no coinciden'
-  if (!acceptTerms.value)   errors.value.terms   = 'Debes aceptar los términos'
-  if (!acceptPrivacy.value) errors.value.privacy = 'Debes aceptar la política de privacidad'
-  return Object.keys(errors.value).length === 0
-}
-
-/**
- * Maneja el envío del formulario: valida, construye el payload y hace POST al backend.
- * Trata errores de duplicado (409) por correo, pasaporte o username individualmente.
- * Tras éxito, muestra la pantalla de confirmación y redirige al login en 2 segundos.
+ * Envía los datos del formulario al backend SIN VALIDACIONES LOCALES.
+ * El backend es la fuente de verdad y responde con el error específico si algo está mal.
+ * Los errores se muestran en un banner elegante o en los campos específicos (duplicados).
  */
 async function handleRegister() {
-  if (!validateForm()) {
-    document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    return
-  }
+  // Limpiar errores previos antes de intentar de nuevo
+  errors.value   = {}
+  serverError.value = ''
+
   isSubmitting.value = true
   try {
-    const nacsValidas = nacionalidades.value
-      .filter(n => n.query.trim() && n.seleccionada)
+    // Construir el payload tal como lo espera el backend.
+    // Se mandan los valores tal cual — aunque estén vacíos o mal — para que el backend valide.
+    const nacsEnviar = nacionalidades.value
       .map(n => n.query.trim())
+      .filter(q => q.length > 0)
 
     const payload = {
-      correo:           formData.value.email.toLowerCase().trim(),
-      pasaporte:        formData.value.pasaporte.trim().toUpperCase(),
-      username:         formData.value.username.trim(),
-      nombre:           formData.value.firstName.trim(),
-      apellido:         formData.value.lastName.trim(),
-      contrasena:       formData.value.password,
+      correo:           (formData.value.email || '').toLowerCase().trim(),
+      pasaporte:        (formData.value.pasaporte || '').trim().toUpperCase(),
+      username:         (formData.value.username || '').trim(),
+      nombre:           (formData.value.firstName || '').trim(),
+      apellido:         (formData.value.lastName || '').trim(),
+      contrasena:       formData.value.password || '',
       telefono: dialCode.value
-                        ? dialCode.value + ' ' + formData.value.phone.replace(/\s/g, '')
-                        : formData.value.phone.replace(/\s/g, ''),
-      fecha_nacimiento: formData.value.birthDate,
-      ciudad:           ciudadQuery.value,
-      pais:             paisQuery.value,
-      nacionalidades:   nacsValidas,
+                        ? dialCode.value + ' ' + (formData.value.phone || '').replace(/\s/g, '')
+                        : (formData.value.phone || '').replace(/\s/g, ''),
+      fecha_nacimiento: formData.value.birthDate || '',
+      ciudad:           (ciudadQuery.value || '').trim(),
+      pais:             (paisQuery.value || '').trim(),
+      nacionalidades:   nacsEnviar,
     }
 
     const res  = await fetch(`${API_BASE}/api/usuarios/registro`, {
@@ -688,15 +653,30 @@ async function handleRegister() {
     let data = null
     try { data = JSON.parse(text) } catch { /**/ }
 
+    // HTTP 409: datos duplicados — marcar el campo específico (UX amigable)
     if (res.status === 409 && data) {
       if (data.correo)    errors.value.email     = 'Este correo ya está registrado.'
       if (data.pasaporte) errors.value.pasaporte = 'Este pasaporte ya está registrado.'
       if (data.username)  errors.value.username  = 'Este nombre de usuario ya está en uso.'
-      document.querySelector('.error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      serverErrorTitle.value = 'Datos ya registrados'
+      serverError.value = 'Algunos datos ya están en uso. Revisa los campos marcados.'
+      scrollToTop()
       return
     }
+
+    // HTTP 400: falla de validación del backend — mostrar banner con el mensaje exacto
+    if (res.status === 400 && data) {
+      serverErrorTitle.value = 'Datos inválidos'
+      serverError.value = data.error || 'Hay un problema con los datos enviados.'
+      scrollToTop()
+      return
+    }
+
+    // Otros errores (500 etc.)
     if (!res.ok) {
-      errors.value.submit = data?.error || data?.mensaje || `Error del servidor (${res.status})`
+      serverErrorTitle.value = 'Error del servidor'
+      serverError.value = data?.error || data?.mensaje || `Error del servidor (${res.status})`
+      scrollToTop()
       return
     }
 
@@ -705,9 +685,22 @@ async function handleRegister() {
     setTimeout(() => router.push('/ingreso'), 2000)
 
   } catch {
-    errors.value.submit = 'Error de conexión. Verifica que el servidor esté activo.'
+    serverErrorTitle.value = 'Error de conexión'
+    serverError.value = 'No se pudo conectar con el servidor. Verifica que esté activo.'
+    scrollToTop()
   } finally {
     isSubmitting.value = false
   }
+}
+
+/**
+ * Hace scroll suave al inicio del formulario para que el usuario vea el banner de error.
+ */
+function scrollToTop() {
+  setTimeout(() => {
+    document.querySelector('.server-error-banner')?.scrollIntoView({
+      behavior: 'smooth', block: 'center'
+    })
+  }, 100)
 }
 </script>

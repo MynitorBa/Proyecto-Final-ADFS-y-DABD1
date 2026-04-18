@@ -57,7 +57,7 @@ func (r *LoginRepository) ObtenerPorUsernameOCorreo(login string) (models.Usuari
 
 	var usuario models.Usuario
 	err = conn.QueryRowContext(context.Background(), `
-		SELECT ID, Nombre, Apellido, Correo, Username, Contrasena, RolID
+		SELECT ID, Nombre, Apellido, Correo, Username, Contrasena, RolID, EstadoID
 		FROM Usuario
 		WHERE Username = ? OR Correo = ?`, login, login).
 		Scan(
@@ -68,6 +68,7 @@ func (r *LoginRepository) ObtenerPorUsernameOCorreo(login string) (models.Usuari
 			&usuario.Username,
 			&usuario.Contrasena,
 			&usuario.RolID,
+			&usuario.EstadoID,
 		)
 
 	if err == sql.ErrNoRows {

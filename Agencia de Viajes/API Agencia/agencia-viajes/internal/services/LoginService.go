@@ -39,8 +39,9 @@ func NewLoginService(db *sql.DB) *LoginService {
 }
 
 var (
-	ErrUsuarioNoEncontrado = errors.New("usuario no encontrado")
-	ErrContrasenaInvalida  = errors.New("contraseña inválida")
+	ErrUsuarioNoEncontrado   = errors.New("usuario no encontrado")
+	ErrContrasenaInvalida    = errors.New("contraseña inválida")
+	ErrUsuarioDeshabilitado  = errors.New("usuario deshabilitado")
 )
 
 var ErrCredencialesInvalidas = errors.New("credenciales inválidas")
@@ -64,7 +65,15 @@ func (s *LoginService) Login(req dto.LoginRequest) (dto.LoginResponse, error) {
 		return dto.LoginResponse{}, err
 	}
 
-	if usuario.ID == 0 || !helpers.CheckPassword(req.Contrasena, usuario.Contrasena) {
+	if usuario.ID == 0 {
+		return dto.LoginResponse{}, ErrCredencialesInvalidas
+	}
+
+	if usuario.EstadoID != 1 {
+		return dto.LoginResponse{}, ErrUsuarioDeshabilitado
+	}
+
+	if !helpers.CheckPassword(req.Contrasena, usuario.Contrasena) {
 		return dto.LoginResponse{}, ErrCredencialesInvalidas
 	}
 

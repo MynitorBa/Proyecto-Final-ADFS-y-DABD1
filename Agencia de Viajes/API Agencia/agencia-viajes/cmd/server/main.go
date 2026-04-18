@@ -13,6 +13,7 @@ import (
 	"agencia-viajes/internal/services"
 	"agencia-viajes/pkg/database"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,11 @@ import (
 //   - El servicio de expiracion se detiene de forma ordenada al cerrar
 func main() {
 	cfg := config.Load()
+
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET no está definido en .env — abortando por seguridad")
+	}
+
 	db := database.Connect(cfg)
 	defer db.Close()
 
@@ -48,6 +54,9 @@ func main() {
 		}
 		c.Next()
 	})
+
+	logSesionRepo    := repositories.NewLogSesionRepository(db)
+	logSesionService := services.NewLogSesionService(logSesionRepo)
 
 	ubicacionService          := services.NewUbicacionService(db)
 	usuarioService            := services.NewUsuarioService(db, ubicacionService)
@@ -78,8 +87,8 @@ func main() {
 	pdfService              := services.NewPdfReservacionService(misReservacionesService, usuarioRepo)
 	emailService            := services.NewEmailReservacionService(misReservacionesService, pdfService, usuarioRepo)
 
-	usuarioController            := controllers.NewUsuarioController(usuarioService)
-	loginController              := controllers.NewLoginController(loginService)
+	usuarioController            := controllers.NewUsuarioController(usuarioService, logSesionService)
+	loginController              := controllers.NewLoginController(loginService, logSesionService)
 	sesionController             := controllers.NewSesionController()
 	proveedorController          := controllers.NewProveedorController(proveedorService)
 	handshakeController          := controllers.NewHandshakeController(handshakeService)
