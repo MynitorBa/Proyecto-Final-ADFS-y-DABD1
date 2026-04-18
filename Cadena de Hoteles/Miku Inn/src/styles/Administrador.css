@@ -798,3 +798,26 @@
   .adm__rep-filters-grid { grid-template-columns: 1fr; }
   .adm__rep-tabs { overflow-x: auto; }
 }
+
+/* Textarea de edicion inline de descripcion de amenidad */
+.adm__amenidad-desc-input {
+  width: 100%;
+  background: #2d3450;
+  border: 1.5px solid #4a527a;
+  border-radius: 8px;
+  color: #ffffff;
+  padding: .65rem .9rem;
+  font-size: .875rem;
+  font-weight: 500;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 70px;
+  box-sizing: border-box;
+  transition: border-color 0.15s, background 0.15s;
+}
+.adm__amenidad-desc-input:focus {
+  outline: none;
+  border-color: #7b93ff;
+  background: #323b5c;
+  box-shadow: 0 0 0 3px rgba(123,147,255,.2);
+}

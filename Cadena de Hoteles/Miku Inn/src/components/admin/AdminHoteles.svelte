@@ -527,11 +527,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
       mensajeHabitacion = { tipo: 'ok', texto: 'Habitación actualizada.' };
-      const tipoNombre  = tiposHabitacion.find(t => t.id === Number(editHabitacion.tipoHabitacionId))?.nombre ?? '';
-      const estadoNombre = editHabitacion.estadoId == 1 ? 'Activa' : 'Cerrada';
-      habitaciones = habitaciones.map(h => h.id === habitacionEditando.id
-        ? { ...h, ...editHabitacion, tipoHabitacion: tipoNombre, estado: estadoNombre }
-        : h);
+      await cargarHabitacionesDetalle(hotelDetalle.id);
     } catch (e) { mensajeHabitacion = { tipo: 'error', texto: e.message }; }
     finally { guardandoHabitacion = false; }
   }
@@ -638,9 +634,9 @@
         const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}/habitaciones`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
-        habitaciones = [...habitaciones, { ...payload, id: data.id, tipoHabitacion: tipoNom, estado: estNom, imagenesIds: [] }];
         creadas++;
       }
+      await cargarHabitacionesDetalle(hotelDetalle.id);
       mensajeNuevaHab = { tipo: 'ok', texto: `${creadas} habitación(es) ${tipoNom} creada(s). Número asignado automáticamente.` };
     } catch (e) { mensajeNuevaHab = { tipo: 'error', texto: e.message }; }
     finally { guardandoNuevaHab = false; creandoMasivo = false; }
@@ -1010,5 +1006,42 @@
       <div class="adm__cancel-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Se eliminarán <strong>todas</strong> las habitaciones, amenidades e imágenes.</span></div>
     </div>
     <div class="adm__cancel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button><button class="adm__btn--cancel-confirm" on:click={() => _eliminarHotel(vistaHoteles === 'detalle')} disabled={eliminandoHotel}>{#if eliminandoHotel}Eliminando...{:else}Sí, eliminar hotel{/if}</button></div>
+  </div>
+{/if}
+
+<!-- Modal de confirmacion para eliminar un hotel completo -->
+{#if showModalEliminarHotel && hotelEliminando}
+  <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
+  <div class="adm__rol-modal" style="max-width:460px">
+    <div class="adm__cancel-modal__header"><div class="adm__cancel-modal__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div><div><p class="adm__cancel-modal__title">Eliminar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelEliminando.nombre} — ID #{hotelEliminando.id}</p></div><button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="adm__cancel-modal__body">
+      <div class="adm__cancel-info-box"><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Hotel</span><span class="adm__cancel-info-row__value">{hotelEliminando.nombre}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Ubicación</span><span class="adm__cancel-info-row__value">{hotelEliminando.ciudad}, {hotelEliminando.pais}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitaciones</span><span class="adm__cancel-info-row__value">{hotelEliminando.cantidadHabitaciones ?? 0}</span></div></div>
+      <!-- Advertencia: se eliminan tambien todas las habitaciones, amenidades e imagenes -->
+      <div class="adm__cancel-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Se eliminarán <strong>todas</strong> las habitaciones, amenidades e imágenes.</span></div>
+    </div>
+    <div class="adm__cancel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button><button class="adm__btn--cancel-confirm" on:click={() => _eliminarHotel(vistaHoteles === 'detalle')} disabled={eliminandoHotel}>{#if eliminandoHotel}Eliminando...{:else}Sí, eliminar hotel{/if}</button></div>
+  </div>
+{/if}
+
+<!-- Modal de confirmacion generico para acciones destructivas (eliminar imagenes y amenidades) -->
+{#if confirmDialog}
+  <div class="adm__overlay" on:click={cerrarConfirm} on:keydown={(e) => e.key === 'Escape' && cerrarConfirm()} role="button" tabindex="-1" aria-label="Cerrar"></div>
+  <div class="adm__rol-modal" style="max-width:420px">
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <p class="adm__cancel-modal__title">{confirmDialog.titulo}</p>
+        <p class="adm__cancel-modal__subtitle">{confirmDialog.mensaje}</p>
+      </div>
+      <button class="adm__cancel-modal__close" on:click={cerrarConfirm}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarConfirm}>Cancelar</button>
+      <button class="adm__btn--cancel-confirm" on:click={ejecutarConfirm}>Sí, eliminar</button>
+    </div>
   </div>
 {/if}

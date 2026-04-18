@@ -92,10 +92,15 @@
 <!-- Pagina completa de contacto -->
 <div class="info-page">
 
-  <!-- Hero con icono y titulo de la seccion -->
+  <!-- Hero con icono SVG y titulo de la seccion -->
   <div class="info-hero">
     <div class="info-hero__content">
-      <div class="info-hero__icon">✉️</div>
+      <div class="info-hero__icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
       <p class="info-hero__eyebrow">Miku Inn</p>
       <h1 class="info-hero__title">Contáctanos</h1>
       <p class="info-hero__subtitle">¿Tienes alguna duda o comentario? Envíanos un mensaje y te responderemos lo antes posible.</p>
@@ -110,24 +115,43 @@
 
     <!-- Grid con los datos de contacto de la empresa -->
     <div class="info-contact-grid">
+      <!-- Canal: telefono y whatsapp -->
       <div class="info-contact-item">
-        <div class="info-contact-item__icon">📞</div>
+        <div class="info-contact-item__icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </div>
         <div>
           <p class="info-contact-item__label">Atención 24/7</p>
           <p class="info-contact-item__value">+502 4276-8687</p>
           <p class="info-contact-item__sub">Llamadas y WhatsApp</p>
         </div>
       </div>
+
+      <!-- Canal: correo electronico -->
       <div class="info-contact-item">
-        <div class="info-contact-item__icon">✉️</div>
+        <div class="info-contact-item__icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </div>
         <div>
           <p class="info-contact-item__label">Email</p>
           <p class="info-contact-item__value">info@mikuinn.com</p>
           <p class="info-contact-item__sub">Respuesta en menos de 24h</p>
         </div>
       </div>
+
+      <!-- Canal: ubicacion de oficina central -->
       <div class="info-contact-item">
-        <div class="info-contact-item__icon">📍</div>
+        <div class="info-contact-item__icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
         <div>
           <p class="info-contact-item__label">Oficina Central</p>
           <p class="info-contact-item__value">Guatemala City</p>
@@ -140,7 +164,13 @@
     {#if status === 'success'}
       <div class="info-card">
         <div class="info-contacto-success">
-          <div class="info-contacto-success__icon">✅</div>
+          <!-- Icono SVG de exito -->
+          <div class="info-contacto-success__icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
           <h2 class="info-section-title" style="border:none;text-align:center;margin:0 0 0.5rem;">¡Mensaje Enviado!</h2>
           <p class="info-prose" style="text-align:center;">Hemos recibido tu mensaje. Te responderemos a la brevedad posible.</p>
           <button class="info-back" style="margin:1rem auto 0;display:flex;"

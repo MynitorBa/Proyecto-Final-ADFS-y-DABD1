@@ -355,7 +355,7 @@
         {#key pageKey}<Home {navigateTo} {destinationSuggestion} {alianzaToken} {isLoggedIn} {alianzaAutocompletarData} {onAlianzaValidada} {onAlianzaAutocompletarConsumida}/>{/key}
 
       {:else if currentPage === 'search-results'}
-        <SearchResults {navigateTo} {searchParams} {alianzaDescuento} />
+      {#key pageKey}<SearchResults {navigateTo} {searchParams} {alianzaDescuento} />{/key}
 
       {:else if currentPage === 'hotel-detail'}
         <!-- Se pasan los datos del hotel seleccionado desde la busqueda -->

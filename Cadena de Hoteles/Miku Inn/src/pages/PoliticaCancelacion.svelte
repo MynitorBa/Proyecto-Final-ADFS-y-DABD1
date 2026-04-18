@@ -14,10 +14,16 @@
 </script>
 
 <div class="info-page">
-  <!-- Hero de la pagina con icono y titulo principal -->
+  <!-- Hero de la pagina con icono SVG y titulo principal -->
   <div class="info-hero">
     <div class="info-hero__content">
-      <div class="info-hero__icon">❌</div>
+      <div class="info-hero__icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
       <p class="info-hero__eyebrow">Miku Inn</p>
       <h1 class="info-hero__title">Política de Cancelación</h1>
       <p class="info-hero__subtitle">Conoce las condiciones y plazos para cancelar o modificar tus reservaciones.</p>
@@ -33,7 +39,14 @@
 
     <!-- Bloque: cancelacion iniciada por el cliente -->
     <div class="info-card">
-      <span class="info-badge">📋 Política vigente 2026</span>
+      <!-- Badge con icono SVG de documento -->
+      <span class="info-badge">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Política vigente 2026
+      </span>
       <h2 class="info-section-title">Cancelación por parte del cliente</h2>
       <p class="info-prose">Los clientes pueden cancelar sus reservaciones directamente desde su perfil en la sección "Mis Reservaciones" hasta <strong>24 horas antes del check-in</strong>.</p>
       <ul class="info-list">
