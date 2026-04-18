@@ -9,26 +9,45 @@ import (
 	"agencia-viajes/internal/dto"
 	"agencia-viajes/internal/repositories"
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
+	"time"
 )
+
+// TipoBusquedaVuelos es el ID del tipo de busqueda de vuelos en la tabla TipoBusqueda.
+const TipoBusquedaVuelos = 1
+
+// TipoBusquedaHoteles es el ID del tipo de busqueda de hoteles en la tabla TipoBusqueda.
+const TipoBusquedaHoteles = 2
+
+// timeoutProveedor es el tiempo maximo que se espera la respuesta de un proveedor
+// externo antes de cancelar la peticion y continuar con el siguiente.
+const timeoutProveedor = 10 * time.Second
 
 // BusquedaService
 //
 // Servicio encargado de realizar busquedas de vuelos y hoteles consultando
 // los proveedores externos registrados en el catalogo. Aplica el margen de
-// ganancia configurado por proveedor sobre los precios retornados.
+// ganancia configurado por proveedor sobre los precios retornados y registra
+// un historico de cada busqueda, ya sea de un usuario autenticado o anonimo.
+//
+// Si uno o mas proveedores fallan o no responden a tiempo, sus errores se
+// incluyen en la respuesta como resultados parciales sin interrumpir las
+// consultas a los demas proveedores.
 type BusquedaService struct {
-	repo *repositories.BusquedaRepository
+	repo   *repositories.BusquedaRepository
+	client *http.Client
 }
 
 // NewBusquedaService
 //
 // Crea e inicializa una nueva instancia de BusquedaService con su repositorio
-// de busqueda.
+// de busqueda y un cliente HTTP con timeout configurado por proveedor.
 //
 // Parametros:
 //   - db: conexion activa a la base de datos SQL
@@ -38,6 +57,47 @@ type BusquedaService struct {
 func NewBusquedaService(db *sql.DB) *BusquedaService {
 	return &BusquedaService{
 		repo: repositories.NewBusquedaRepository(db),
+		client: &http.Client{
+			Timeout: timeoutProveedor,
+		},
+	}
+}
+
+// registrarBusqueda
+//
+// Serializa los parametros de busqueda a JSON y llama al repositorio para
+// insertar el registro historico. Si el INSERT falla, imprime el error en
+// el log del servidor pero NO interrumpe el flujo principal: la busqueda
+// sigue retornando resultados aunque el historico no se haya podido guardar.
+//
+// Parametros:
+//   - tipoBusquedaID: ID del tipo (TipoBusquedaVuelos o TipoBusquedaHoteles)
+//   - usuarioID: puntero al ID del usuario autenticado; nil para busquedas anonimas
+//   - params: struct con los parametros de busqueda a serializar como JSON
+//   - ciudadOrigenID: puntero al ID de la ciudad origen; nil para hoteles
+//   - ciudadDestinoID: ID de la ciudad destino
+func (s *BusquedaService) registrarBusqueda(
+	tipoBusquedaID int,
+	usuarioID *int,
+	params interface{},
+	ciudadOrigenID *int,
+	ciudadDestinoID int,
+) {
+	parametrosJSON, err := json.Marshal(params)
+	if err != nil {
+		log.Printf("[BusquedaService] ERROR al serializar parametros (tipo=%d): %v", tipoBusquedaID, err)
+		return
+	}
+
+	if err := s.repo.RegistrarBusqueda(
+		tipoBusquedaID,
+		usuarioID,
+		string(parametrosJSON),
+		ciudadOrigenID,
+		ciudadDestinoID,
+	); err != nil {
+		log.Printf("[BusquedaService] ERROR al guardar busqueda en BD (tipo=%d, usuarioID=%v): %v",
+			tipoBusquedaID, usuarioID, err)
 	}
 }
 
@@ -46,16 +106,20 @@ func NewBusquedaService(db *sql.DB) *BusquedaService {
 // Busca vuelos disponibles entre dos ciudades consultando todos los proveedores
 // aerolineas registrados para esa ruta en el catalogo. Resuelve los IDs de
 // ciudad para origen y destino, obtiene la lista de proveedores activos y
-// llama a cada uno de forma individual. Si un proveedor falla, se incluye
-// su error en la respuesta sin interrumpir las demas consultas.
+// llama a cada uno de forma individual.
+//
+// Si un proveedor falla o no responde dentro de timeoutProveedor, su error
+// queda registrado en la respuesta y la busqueda continua con los demas
+// proveedores, garantizando resultados parciales en lugar de un fallo total.
 //
 // Parametros:
 //   - req: datos de busqueda incluyendo ciudad/pais de origen, destino y demas filtros
+//   - usuarioID: puntero al ID del usuario autenticado; nil si es anonimo
 //
 // Retorna:
 //   - []dto.BusquedaVuelosResponse: lista de respuestas por proveedor, con datos o error
-//   - error: si falla la resolucion de ciudades o la consulta de proveedores en BD
-func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.BusquedaVuelosResponse, error) {
+//   - error: solo si falla la resolucion de ciudades o la consulta de proveedores en BD
+func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest, usuarioID *int) ([]dto.BusquedaVuelosResponse, error) {
 	origenID, err := s.repo.BuscarCiudadID(req.Origen, req.OrigenPais)
 	if err != nil {
 		return nil, err
@@ -72,6 +136,10 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.Bus
 		return nil, fmt.Errorf("ciudad destino '%s, %s' no encontrada en catálogo", req.Destino, req.DestinoPais)
 	}
 
+	// Registro sincrono: si falla, el error aparece en el log del servidor
+	// pero NO impide que el usuario reciba sus resultados de busqueda.
+	s.registrarBusqueda(TipoBusquedaVuelos, usuarioID, req, origenID, *destinoID)
+
 	proveedores, err := s.repo.ObtenerAerolineasPorRuta(*origenID, *destinoID)
 	if err != nil {
 		return nil, err
@@ -84,6 +152,7 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.Bus
 	for _, p := range proveedores {
 		datos, err := s.llamarVuelos(p, req)
 		if err != nil {
+			log.Printf("[BusquedaService] Proveedor '%s' (ID=%d) no disponible: %v", p.Nombre, p.ProveedorID, err)
 			resultados = append(resultados, dto.BusquedaVuelosResponse{
 				ProveedorID: p.ProveedorID,
 				Proveedor:   p.Nombre,
@@ -104,7 +173,8 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.Bus
 //
 // Realiza la llamada HTTP POST al endpoint de busqueda de vuelos de un proveedor
 // aerolinea especifico y aplica el porcentaje de ganancia configurado sobre
-// los precios retornados.
+// los precios retornados. Usa un contexto con timeout para que el proveedor
+// no bloquee la busqueda mas alla de timeoutProveedor segundos.
 //
 // Parametros:
 //   - p: datos del proveedor incluyendo URL, token y porcentaje de ganancia
@@ -112,20 +182,23 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest) ([]dto.Bus
 //
 // Retorna:
 //   - interface{}: datos de vuelos con precios ajustados por margen de ganancia
-//   - error: si la peticion HTTP falla o el proveedor retorna un estado no exitoso
+//   - error: si la peticion HTTP falla, expira el timeout o el proveedor retorna un estado no exitoso
 func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.BusquedaVuelosRequest) (interface{}, error) {
 	body, _ := json.Marshal(req)
 
-	httpReq, err := http.NewRequest(http.MethodPost, p.URLApi+"/api/vuelos-agencia/buscar", bytes.NewBuffer(body))
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutProveedor)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, p.URLApi+"/api/vuelos-agencia/buscar", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("X-Agencia-Token", p.TokenEntrada)
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := s.client.Do(httpReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("proveedor no disponible: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -147,16 +220,20 @@ func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.Busqueda
 // Busca hoteles disponibles en una ciudad consultando todos los proveedores
 // hoteleras registrados para esa ubicacion en el catalogo. Resuelve el ID
 // de ciudad, obtiene la lista de proveedores de tipo hotelera y llama a
-// cada uno de forma individual. Si un proveedor falla, se incluye su error
-// en la respuesta sin interrumpir las demas consultas.
+// cada uno de forma individual.
+//
+// Si un proveedor falla o no responde dentro de timeoutProveedor, su error
+// queda registrado en la respuesta y la busqueda continua con los demas
+// proveedores, garantizando resultados parciales en lugar de un fallo total.
 //
 // Parametros:
 //   - req: datos de busqueda incluyendo ciudad, pais y demas filtros de hospedaje
+//   - usuarioID: puntero al ID del usuario autenticado; nil si es anonimo
 //
 // Retorna:
 //   - []dto.BusquedaHotelesResponse: lista de respuestas por proveedor, con datos o error
-//   - error: si falla la resolucion de ciudad o la consulta de proveedores en BD
-func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.BusquedaHotelesResponse, error) {
+//   - error: solo si falla la resolucion de ciudad o la consulta de proveedores en BD
+func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest, usuarioID *int) ([]dto.BusquedaHotelesResponse, error) {
 	ciudadID, err := s.repo.BuscarCiudadID(req.Ciudad, req.Pais)
 	if err != nil {
 		return nil, err
@@ -164,6 +241,10 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.B
 	if ciudadID == nil {
 		return nil, fmt.Errorf("ciudad '%s, %s' no encontrada en catálogo", req.Ciudad, req.Pais)
 	}
+
+	// Registro sincrono: si falla, el error aparece en el log del servidor
+	// pero NO impide que el usuario reciba sus resultados de busqueda.
+	s.registrarBusqueda(TipoBusquedaHoteles, usuarioID, req, nil, *ciudadID)
 
 	proveedores, err := s.repo.ObtenerProveedoresPorOrigenYTipo(*ciudadID, 2)
 	if err != nil {
@@ -177,6 +258,7 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.B
 	for _, p := range proveedores {
 		datos, err := s.llamarHoteles(p, req)
 		if err != nil {
+			log.Printf("[BusquedaService] Proveedor '%s' (ID=%d) no disponible: %v", p.Nombre, p.ProveedorID, err)
 			resultados = append(resultados, dto.BusquedaHotelesResponse{
 				ProveedorID: p.ProveedorID,
 				Proveedor:   p.Nombre,
@@ -197,7 +279,8 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.B
 //
 // Realiza la llamada HTTP POST al endpoint de busqueda de hoteles de un proveedor
 // hotelera especifico y aplica el porcentaje de ganancia configurado sobre
-// los precios retornados.
+// los precios retornados. Usa un contexto con timeout para que el proveedor
+// no bloquee la busqueda mas alla de timeoutProveedor segundos.
 //
 // Parametros:
 //   - p: datos del proveedor incluyendo URL, token y porcentaje de ganancia
@@ -205,20 +288,23 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest) ([]dto.B
 //
 // Retorna:
 //   - interface{}: datos de hoteles con precios ajustados por margen de ganancia
-//   - error: si la peticion HTTP falla o el proveedor retorna un estado no exitoso
+//   - error: si la peticion HTTP falla, expira el timeout o el proveedor retorna un estado no exitoso
 func (s *BusquedaService) llamarHoteles(p dto.ProveedorCatalogo, req dto.BusquedaHotelesRequest) (interface{}, error) {
 	body, _ := json.Marshal(req)
 
-	httpReq, err := http.NewRequest(http.MethodPost, p.URLApi+"/agencia/busqueda", bytes.NewBuffer(body))
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutProveedor)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, p.URLApi+"/agencia/busqueda", bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("X-Agencia-Token", p.TokenEntrada)
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := s.client.Do(httpReq)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("proveedor no disponible: %w", err)
 	}
 	defer resp.Body.Close()
 

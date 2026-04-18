@@ -13,8 +13,10 @@ import (
 
 // BusquedaRepository
 //
-// Repositorio encargado de las consultas de busqueda de ciudades
-// y proveedores disponibles segun origen, destino y tipo de servicio.
+// Repositorio encargado de las consultas de busqueda de ciudades,
+// proveedores disponibles segun origen, destino y tipo de servicio,
+// y del registro historico de busquedas realizadas por usuarios
+// autenticados o anonimos.
 type BusquedaRepository struct {
 	db *sql.DB
 }
@@ -159,4 +161,56 @@ func (r *BusquedaRepository) ObtenerAerolineasPorRuta(
 		proveedores = append(proveedores, p)
 	}
 	return proveedores, nil
+}
+
+// RegistrarBusqueda
+//
+// Inserta un registro historico en la tabla Busqueda cada vez que se realiza
+// una consulta de vuelos o hoteles. Soporta tanto usuarios autenticados como
+// busquedas anonimas: si usuarioID es nil, la columna UsuarioID se guarda
+// como NULL en la base de datos.
+//
+// Parametros:
+//   - tipoBusquedaID: ID del tipo de busqueda (1=Vuelos, 2=Hoteles)
+//   - usuarioID: puntero al ID del usuario autenticado; nil para busquedas anonimas
+//   - parametrosJSON: representacion JSON de los parametros de busqueda enviados
+//   - ciudadOrigenID: puntero al ID de la ciudad de origen; nil para busquedas de hoteles
+//   - ciudadDestinoID: ID de la ciudad de destino, siempre requerido
+//
+// Retorna:
+//   - error: error de base de datos, nil si el registro fue exitoso
+//
+// Notas:
+//   - La tabla Busqueda debe tener UsuarioID definido como INT NULL para admitir anonimos
+func (r *BusquedaRepository) RegistrarBusqueda(
+	tipoBusquedaID int,
+	usuarioID *int,
+	parametrosJSON string,
+	ciudadOrigenID *int,
+	ciudadDestinoID int,
+) error {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// Convertir *int a sql.NullInt64 para que el driver maneje el NULL correctamente
+	// cuando usuarioID o ciudadOrigenID sean nil.
+	var sqlUsuarioID sql.NullInt64
+	if usuarioID != nil {
+		sqlUsuarioID = sql.NullInt64{Int64: int64(*usuarioID), Valid: true}
+	}
+
+	var sqlCiudadOrigenID sql.NullInt64
+	if ciudadOrigenID != nil {
+		sqlCiudadOrigenID = sql.NullInt64{Int64: int64(*ciudadOrigenID), Valid: true}
+	}
+
+	_, err = conn.ExecContext(context.Background(), `
+		INSERT INTO Busqueda (Tipo_Busqueda_ID, UsuarioID, parametros_json, CiudadOrigenID, CiudadDestinoID)
+		VALUES (?, ?, ?, ?, ?)
+	`, tipoBusquedaID, sqlUsuarioID, parametrosJSON, sqlCiudadOrigenID, ciudadDestinoID)
+
+	return err
 }

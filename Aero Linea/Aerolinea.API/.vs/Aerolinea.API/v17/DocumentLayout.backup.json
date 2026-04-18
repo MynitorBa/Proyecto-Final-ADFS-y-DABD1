@@ -557,6 +557,15 @@
         {
           "DockedWidth": 200,
 <<<<<<< HEAD
+<<<<<<< HEAD
+          "SelectedChildIndex": 7,
+          "Children": [
+            {
+              "$type": "Document",
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> f317404fe147ea6154a48bbc8abcdde22b02d2ac
           "SelectedChildIndex": 5,
           "Children": [
             {
@@ -589,6 +598,7 @@
             },
             {
               "$type": "Document",
+>>>>>>> f317404fe147ea6154a48bbc8abcdde22b02d2ac
               "DocumentIndex": 5,
               "Title": "HandshakeHotelService.cs",
               "DocumentMoniker": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\HandshakeHotelService.cs",
@@ -694,9 +704,22 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Services\\AgenciaService.cs",
               "ToolTip": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\AgenciaService.cs",
               "RelativeToolTip": "Aerolinea.API\\Services\\AgenciaService.cs",
-              "ViewState": "AgIAAIEAAAAAAAAAAAAAwKMAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAIwAAAAAAAAAAAAwwKMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-07T04:09:06.849Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "TokenHotelService.cs",
+              "DocumentMoniker": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\TokenHotelService.cs",
+              "RelativeDocumentMoniker": "Aerolinea.API\\Services\\TokenHotelService.cs",
+              "ToolTip": "C:\\Users\\mynit\\OneDrive\\Escritorio\\UNIS\\Primer semestre 2026\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\TokenHotelService.cs",
+              "RelativeToolTip": "Aerolinea.API\\Services\\TokenHotelService.cs",
+              "ViewState": "AgIAAEEAAAAAAAAAAADwv1oAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-09T16:22:03.925Z",
               "EditorCaption": ""
             },
             {
