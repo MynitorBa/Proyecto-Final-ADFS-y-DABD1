@@ -664,10 +664,24 @@ async function cancelarDesdeCarrito() {
 }
 
 /**
- * Cierra la sesión del usuario: limpia sessionStorage, resetea estados y
- * redirige al inicio.
+ * Cierra la sesión del usuario: llama al backend para limpiar la cookie HTTP
+ * de sesión, luego limpia sessionStorage, resetea estados y redirige al inicio.
+ * Es importante llamar al backend primero para que la cookie no persista en el
+ * navegador después del logout, evitando que búsquedas anónimas posteriores
+ * queden asociadas al usuario que acababa de cerrar sesión.
  */
-function cerrarSesion()    { sessionStorage.removeItem('usuario_sesion'); sesion.value = null; showUserMenu.value = false; showMobileMenu.value = false; limpiarEstadoCarrito(); closeCartDropdown(); router.push('/principal') }
+async function cerrarSesion() {
+  try {
+    await fetch(`${API}/api/usuarios/logout`, { method: 'POST', credentials: 'include' })
+  } catch { /* si el backend no responde igual se limpia el estado local */ }
+  sessionStorage.removeItem('usuario_sesion')
+  sesion.value = null
+  showUserMenu.value = false
+  showMobileMenu.value = false
+  limpiarEstadoCarrito()
+  closeCartDropdown()
+  router.push('/principal')
+}
 
 /** Alterna la visibilidad del menú móvil, cerrando el dropdown de usuario. */
 const toggleMobileMenu = () => { showMobileMenu.value = !showMobileMenu.value; showUserMenu.value = false }
