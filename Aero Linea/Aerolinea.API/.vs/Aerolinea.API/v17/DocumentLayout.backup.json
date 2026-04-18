@@ -557,12 +557,15 @@
         {
           "DockedWidth": 200,
 <<<<<<< HEAD
+<<<<<<< HEAD
           "SelectedChildIndex": 7,
           "Children": [
             {
               "$type": "Document",
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> f317404fe147ea6154a48bbc8abcdde22b02d2ac
           "SelectedChildIndex": 5,
           "Children": [
             {
