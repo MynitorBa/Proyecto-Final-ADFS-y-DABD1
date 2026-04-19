@@ -60,7 +60,7 @@ func (ctrl *BusquedaController) BuscarVuelos(c *gin.Context) {
 		return
 	}
 
-	resultados, err := ctrl.service.BuscarVuelos(req, obtenerUsuarioOpcional(c))
+	resultados, err := ctrl.service.BuscarVuelos(c, req, obtenerUsuarioOpcional(c))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -78,7 +78,7 @@ func (ctrl *BusquedaController) BuscarHoteles(c *gin.Context) {
 		return
 	}
 
-	resultados, err := ctrl.service.BuscarHoteles(req, obtenerUsuarioOpcional(c))
+	resultados, err := ctrl.service.BuscarHoteles(c, req, obtenerUsuarioOpcional(c))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

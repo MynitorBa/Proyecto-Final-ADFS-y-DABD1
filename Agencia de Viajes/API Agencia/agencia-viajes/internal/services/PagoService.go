@@ -6,12 +6,15 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // PagoService
@@ -23,6 +26,7 @@ type PagoService struct {
 	repo        *repositories.PagoRepository
 	reservaRepo *repositories.ReservacionRepository
 	configRepo  *repositories.AgenciaConfiguracionRepository
+	logSesion   *LogSesionService
 }
 
 // NewPagoService
@@ -30,9 +34,10 @@ type PagoService struct {
 // Crea e inicializa una nueva instancia de PagoService con sus dependencias.
 //
 // Parametros:
-//   - repo: repositorio de pagos para operaciones en base de datos
-//   - rr: repositorio de reservaciones para consultar detalles
-//   - cr: repositorio de configuracion de la agencia para leer el descuento de paquetes
+//   - repo:      repositorio de pagos para operaciones en base de datos
+//   - rr:        repositorio de reservaciones para consultar detalles
+//   - cr:        repositorio de configuracion de la agencia para leer el descuento de paquetes
+//   - logSesion: servicio de auditoria para registrar eventos REST salientes
 //
 // Retorna:
 //   - *PagoService: instancia inicializada del servicio de pagos
@@ -40,8 +45,9 @@ func NewPagoService(
 	repo *repositories.PagoRepository,
 	rr *repositories.ReservacionRepository,
 	cr *repositories.AgenciaConfiguracionRepository,
+	logSesion *LogSesionService,
 ) *PagoService {
-	return &PagoService{repo: repo, reservaRepo: rr, configRepo: cr}
+	return &PagoService{repo: repo, reservaRepo: rr, configRepo: cr, logSesion: logSesion}
 }
 
 // ProcesarPago
@@ -63,7 +69,7 @@ func NewPagoService(
 //   - error: error si la tarjeta es invalida, la reserva no existe o ya fue pagada,
 //     si los detalles no cumplen la estructura del tipo de reserva,
 //     o si algun proveedor rechaza el pago
-func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest) (noReservacion string, err error) {
+func (s *PagoService) ProcesarPago(c *gin.Context, usuarioID int, req dto.PagoReservacionRequest) (noReservacion string, err error) {
 	// 1. Validar tarjeta
 	if len(req.TarjetaNumero) < 16 {
 		return "", errors.New("número de tarjeta inválido")
@@ -113,9 +119,10 @@ func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest
 	}
 
 	// 5. Notificar a proveedores
+	uid := usuarioID
 	detalles, _ := s.reservaRepo.ObtenerDetallesDeReservacion(req.ReservacionID)
 	for _, d := range detalles {
-		if err := s.notificarProveedor(d, req.Nit, req.CodigoPostal); err != nil {
+		if err := s.notificarProveedor(c, &uid, d, req.Nit, req.CodigoPostal); err != nil {
 			return "", fmt.Errorf("error al confirmar con proveedor: %w", err)
 		}
 	}
@@ -137,8 +144,14 @@ func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest
 //
 // Retorna:
 //   - error: error si la solicitud falla o el proveedor responde con un codigo HTTP 400 o superior
-func (s *PagoService) notificarProveedor(d dto.DetalleProveedor, nit, cp string) error {
+func (s *PagoService) notificarProveedor(c *gin.Context, usuarioID *int, d dto.DetalleProveedor, nit, cp string) error {
+	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
 	body, _ := json.Marshal(dto.PagoProveedorBody{Nit: nit, CodigoPostal: cp})
+
+	nombreProv := "Broom"
+	if d.TipoDetalleID == 2 {
+		nombreProv = "Miku"
+	}
 
 	var url string
 	if d.TipoDetalleID == 1 {
@@ -152,8 +165,20 @@ func (s *PagoService) notificarProveedor(d dto.DetalleProveedor, nit, cp string)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode >= 400 {
+	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutPagoProveedorFallido, usuarioID, "pago-proveedor",
+			fmt.Sprintf("%s status=ERR reservaId=%s msg='%s'", nombreProv, d.IDReservaProveedor, err.Error()))
 		return errors.New("el proveedor rechazó el pago")
 	}
+	if resp.StatusCode >= 400 {
+		msg := fmt.Sprintf("%s status=%d reservaId=%s msg='%s'",
+			nombreProv, resp.StatusCode, d.IDReservaProveedor, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutPagoProveedorFallido, usuarioID, "pago-proveedor", msg)
+		return errors.New("el proveedor rechazó el pago")
+	}
+
+	s.logSesion.Registrar(c, helpers.TipoOutPagoProveedorExitoso, usuarioID, "pago-proveedor",
+		fmt.Sprintf("%s: pago confirmado reservaId=%s", nombreProv, d.IDReservaProveedor))
+
 	return nil
 }

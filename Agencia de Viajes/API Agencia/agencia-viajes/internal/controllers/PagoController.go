@@ -73,7 +73,7 @@ func (ctrl *PagoController) Pagar(c *gin.Context) {
 	}
 	usuarioID := usuarioIDRaw.(int)
 
-	noReservacion, err := ctrl.service.ProcesarPago(usuarioID, req)
+	noReservacion, err := ctrl.service.ProcesarPago(c, usuarioID, req)
 	if err != nil {
 		uid := usuarioID
 		loginInt := fmt.Sprintf("reserva_id=%d", req.ReservacionID)

@@ -735,7 +735,7 @@ async function apiFetch(url, opts = {}) {
  * 1=Pendiente  2=Confirmada  3=Cancelada  4=Expirada  5=Completada  6=En Curso
  * @type {Object<number, string>}
  */
-const ESTADO_ID_MAP = { 1:'Pendiente', 2:'Confirmada', 3:'Cancelada', 4:'Expirada', 5:'Completada', 6:'En Curso' }
+const ESTADO_ID_MAP = { 1:'Pendiente', 2:'Confirmada', 3:'Cancelada', 4:'Expirada', 5:'Completada', 6:'En Curso', 7:'Retenida' }
 
 /**
  * Mapas de ID de estado_detalle a etiqueta legible, diferenciados por tipo de detalle.
@@ -774,6 +774,19 @@ function estadoDetalleLabel(id, tipoDetalleId) {
   const estadoReserva = panelReserva.value?.estadoReserva?.toLowerCase()
   if (estadoReserva === 'cancelada') return 'Cancelada'
   if (estadoReserva === 'expirada')  return 'Expirada'
+
+  // Si la reserva padre está retenida → mostrar el estado REAL del detalle
+  // Los detalles cancelados por proveedor tienen estado_detalle_id = 3 (Cancelada)
+  // según el backend. El hotel "Completada" era porque su ID 3 en el mapa de hotel
+  // significa Completada (no Cancelada como en vuelo).
+  if (estadoReserva === 'retenida') {
+    // En hotel (tipo 2), el estado 3 es Completada según tu mapa,
+    // pero cuando viene de una cancelación por proveedor, realmente está Cancelada.
+    // Fuerza "Cancelada" si la reserva padre está retenida Y el detalle es hotel con ID 3.
+    if (tipoDetalleId === 2 && id === 3) return 'Cancelada'
+    if (tipoDetalleId === 2 && id === 4) return 'Cancelada'
+    if (tipoDetalleId === 1 && id === 3) return 'Cancelada'
+  }
 
   return ESTADO_DETALLE_MAP[tipoDetalleId]?.[id] ?? 'Desconocido'
 }
@@ -1069,6 +1082,7 @@ const filtros = [
   { key: 'completada', label: 'Completadas', campo: 'completadas' },
   { key: 'cancelada',  label: 'Canceladas',  campo: 'canceladas' },
   { key: 'expirada',   label: 'Expiradas',   campo: 'expiradas' },
+  { key: 'retenida',   label: 'Retenidas',   campo: 'retenidas' },
 ]
 
 /**
@@ -1198,6 +1212,7 @@ function estadoClase(e) {
   if (s === 'completada') return 'mv-badge--completada'
   if (s === 'expirada')   return 'mv-badge--expirada'
   if (s === 'en curso')   return 'mv-badge--encurso'
+  if (s === 'retenida')   return 'mv-badge--retenida'
   return 'mv-badge--pendiente'
 }
 
@@ -1336,6 +1351,7 @@ function calcularResumen() {
     completadas: list.filter(r => r.estadoReserva?.toLowerCase() === 'completada').length,
     canceladas:  list.filter(r => r.estadoReserva?.toLowerCase() === 'cancelada').length,
     expiradas:   list.filter(r => r.estadoReserva?.toLowerCase() === 'expirada').length,
+    retenidas:   list.filter(r => r.estadoReserva?.toLowerCase() === 'retenida').length,
     vuelos:   list.filter(r => r._categoria === 'vuelo').length,
     hoteles:  list.filter(r => r._categoria === 'hotel').length,
     paquetes: list.filter(r => r._categoria === 'paquete').length,

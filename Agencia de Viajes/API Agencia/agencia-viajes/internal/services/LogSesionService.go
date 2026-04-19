@@ -82,7 +82,23 @@ func (s *LogSesionService) Registrar(c *gin.Context, tipoEventoID int, usuarioID
 		tipoEventoID == helpers.TipoProveedorCreado ||
 		tipoEventoID == helpers.TipoProveedorEditado ||
 		tipoEventoID == helpers.TipoProveedorEstadoCambiado ||
-		tipoEventoID == helpers.TipoRolUsuarioActualizado
+		tipoEventoID == helpers.TipoRolUsuarioActualizado ||
+		// Flujo A: búsquedas (44-45, 47-48 son exitosos; SIN_RESULTADOS es OK técnico)
+		tipoEventoID == helpers.TipoOutBusquedaVuelosExitosa ||
+		tipoEventoID == helpers.TipoOutBusquedaVuelosSinResultados ||
+		tipoEventoID == helpers.TipoOutBusquedaHotelesExitosa ||
+		tipoEventoID == helpers.TipoOutBusquedaHotelesSinResultados ||
+		// Flujo B: reserva temporal exitosa (50, 52)
+		tipoEventoID == helpers.TipoOutReservaVueloProveedorExitosa ||
+		tipoEventoID == helpers.TipoOutReservaHotelProveedorExitosa ||
+		// Flujo C: pasajeros exitoso (54)
+		tipoEventoID == helpers.TipoOutPasajerosProveedorExitosa ||
+		// Flujo D: cargar asientos exitoso (56)
+		tipoEventoID == helpers.TipoOutAsientosCargarExitosa ||
+		// Flujo E: cambio asiento exitoso (58)
+		tipoEventoID == helpers.TipoOutAsientoCambiarExitosa ||
+		// Flujo F: pago proveedor exitoso (60)
+		tipoEventoID == helpers.TipoOutPagoProveedorExitoso
 
 	var uid sql.NullInt64
 	if usuarioID != nil {
@@ -147,7 +163,23 @@ func (s *LogSesionService) RegistrarSistema(tipoEventoID int, usuarioID *int, lo
 		tipoEventoID == helpers.TipoProveedorCreado ||
 		tipoEventoID == helpers.TipoProveedorEditado ||
 		tipoEventoID == helpers.TipoProveedorEstadoCambiado ||
-		tipoEventoID == helpers.TipoRolUsuarioActualizado
+		tipoEventoID == helpers.TipoRolUsuarioActualizado ||
+		// Flujo A: búsquedas (44-45, 47-48 son exitosos; SIN_RESULTADOS es OK técnico)
+		tipoEventoID == helpers.TipoOutBusquedaVuelosExitosa ||
+		tipoEventoID == helpers.TipoOutBusquedaVuelosSinResultados ||
+		tipoEventoID == helpers.TipoOutBusquedaHotelesExitosa ||
+		tipoEventoID == helpers.TipoOutBusquedaHotelesSinResultados ||
+		// Flujo B: reserva temporal exitosa (50, 52)
+		tipoEventoID == helpers.TipoOutReservaVueloProveedorExitosa ||
+		tipoEventoID == helpers.TipoOutReservaHotelProveedorExitosa ||
+		// Flujo C: pasajeros exitoso (54)
+		tipoEventoID == helpers.TipoOutPasajerosProveedorExitosa ||
+		// Flujo D: cargar asientos exitoso (56)
+		tipoEventoID == helpers.TipoOutAsientosCargarExitosa ||
+		// Flujo E: cambio asiento exitoso (58)
+		tipoEventoID == helpers.TipoOutAsientoCambiarExitosa ||
+		// Flujo F: pago proveedor exitoso (60)
+		tipoEventoID == helpers.TipoOutPagoProveedorExitoso
 
 	var uid sql.NullInt64
 	if usuarioID != nil {

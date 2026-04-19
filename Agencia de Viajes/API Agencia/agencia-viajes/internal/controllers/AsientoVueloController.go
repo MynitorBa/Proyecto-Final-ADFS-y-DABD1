@@ -60,7 +60,7 @@ func (ctrl *AsientoVueloController) ObtenerAsientos(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.service.ObtenerAsientosVuelo(usuarioID, req)
+	resp, err := ctrl.service.ObtenerAsientosVuelo(c, usuarioID, req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -96,7 +96,7 @@ func (ctrl *AsientoVueloController) CambiarAsiento(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.service.CambiarAsientoVuelo(usuarioID, req); err != nil {
+	if err := ctrl.service.CambiarAsientoVuelo(c, usuarioID, req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

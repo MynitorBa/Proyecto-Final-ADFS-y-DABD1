@@ -60,7 +60,7 @@ func (ctrl *DetalleReservacionController) AgregarDetalleVuelo(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.service.AgregarDetalleVuelo(usuarioID.(int), req)
+	resp, err := ctrl.service.AgregarDetalleVuelo(c, usuarioID.(int), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -89,7 +89,7 @@ func (ctrl *DetalleReservacionController) AgregarDetalleHotel(c *gin.Context) {
 		return
 	}
 
-	resp, err := ctrl.service.AgregarDetalleHotel(usuarioID.(int), req)
+	resp, err := ctrl.service.AgregarDetalleHotel(c, usuarioID.(int), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -123,7 +123,7 @@ func (ctrl *DetalleReservacionController) AgregarPasajerosVuelo(c *gin.Context) 
 		return
 	}
 
-	err := ctrl.service.AgregarPasajerosVuelo(usuarioID.(int), req)
+	err := ctrl.service.AgregarPasajerosVuelo(c, usuarioID.(int), req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -7,6 +7,7 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
 	"database/sql"
@@ -14,6 +15,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 // AsientoVueloService
@@ -22,7 +25,8 @@ import (
 // de aerolinea. Permite consultar los asientos disponibles y realizar cambios
 // de asiento para boletos especificos de una reservacion.
 type AsientoVueloService struct {
-	repo *repositories.DetalleReservacionRepository
+	repo      *repositories.DetalleReservacionRepository
+	logSesion *LogSesionService
 }
 
 // NewAsientoVueloService
@@ -31,13 +35,15 @@ type AsientoVueloService struct {
 // de detalle de reservacion.
 //
 // Parametros:
-//   - db: conexion activa a la base de datos SQL
+//   - db:        conexion activa a la base de datos SQL
+//   - logSesion: servicio de auditoria para registrar eventos REST salientes
 //
 // Retorna:
 //   - *AsientoVueloService: instancia lista para usar
-func NewAsientoVueloService(db *sql.DB) *AsientoVueloService {
+func NewAsientoVueloService(db *sql.DB, logSesion *LogSesionService) *AsientoVueloService {
 	return &AsientoVueloService{
-		repo: repositories.NewDetalleReservacionRepository(db),
+		repo:      repositories.NewDetalleReservacionRepository(db),
+		logSesion: logSesion,
 	}
 }
 
@@ -55,6 +61,7 @@ func NewAsientoVueloService(db *sql.DB) *AsientoVueloService {
 //   - *dto.AsientosVueloResponse: lista de vuelos con sus boletos y asientos
 //   - error: si la reservacion no existe, no pertenece al usuario o falla la API del proveedor
 func (s *AsientoVueloService) ObtenerAsientosVuelo(
+	c *gin.Context,
 	usuarioID int,
 	req dto.ObtenerAsientosVueloRequest,
 ) (*dto.AsientosVueloResponse, error) {
@@ -66,7 +73,8 @@ func (s *AsientoVueloService) ObtenerAsientosVuelo(
 		return nil, err
 	}
 
-	return s.llamarGetAsientos(urlAPI, token, idReservaAerolinea)
+	uid := usuarioID
+	return s.llamarGetAsientos(c, &uid, urlAPI, token, idReservaAerolinea)
 }
 
 // CambiarAsientoVuelo
@@ -82,6 +90,7 @@ func (s *AsientoVueloService) ObtenerAsientosVuelo(
 // Retorna:
 //   - error: si el boleto no pertenece a la reservacion o falla la API del proveedor
 func (s *AsientoVueloService) CambiarAsientoVuelo(
+	c *gin.Context,
 	usuarioID int,
 	req dto.CambiarAsientoVueloRequest,
 ) error {
@@ -93,7 +102,10 @@ func (s *AsientoVueloService) CambiarAsientoVuelo(
 		return err
 	}
 
-	asientos, err := s.llamarGetAsientos(urlAPI, token, idReservaAerolinea)
+	uid := usuarioID
+	// Llamada interna de validación: no genera evento de Flujo D,
+	// los eventos 56/57 solo se disparan desde ObtenerAsientosVuelo.
+	asientos, err := s.llamarGetAsientosInterno(urlAPI, token, idReservaAerolinea)
 	if err != nil {
 		return err
 	}
@@ -115,7 +127,7 @@ func (s *AsientoVueloService) CambiarAsientoVuelo(
 		return errors.New("el boleto no pertenece a esta reservación")
 	}
 
-	return s.llamarCambiarAsiento(urlAPI, token, req.BoletoID, req.NuevoAsiento)
+	return s.llamarCambiarAsiento(c, &uid, urlAPI, token, req.BoletoID, req.NuevoAsiento)
 }
 
 // llamarGetAsientos
@@ -132,7 +144,28 @@ func (s *AsientoVueloService) CambiarAsientoVuelo(
 // Retorna:
 //   - *dto.AsientosVueloResponse: respuesta con la lista de vuelos y sus asientos
 //   - error: si la peticion HTTP falla o la respuesta tiene formato incompatible
+// llamarGetAsientos realiza el GET al proveedor y registra eventos 56/57 (Flujo D).
+// Solo debe llamarse desde ObtenerAsientosVuelo.
 func (s *AsientoVueloService) llamarGetAsientos(
+	c *gin.Context,
+	usuarioID *int,
+	urlAPI, token, idReservaProveedor string,
+) (*dto.AsientosVueloResponse, error) {
+	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
+	resultado, err := s.llamarGetAsientosInterno(urlAPI, token, idReservaProveedor)
+	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutAsientosCargarFallida, usuarioID, "asientos-cargar",
+			fmt.Sprintf("Broom status=ERR msg='%s'", err.Error()))
+		return nil, err
+	}
+	s.logSesion.Registrar(c, helpers.TipoOutAsientosCargarExitosa, usuarioID, "asientos-cargar",
+		fmt.Sprintf("Broom: mapa cargado para reservaId=%s", idReservaProveedor))
+	return resultado, nil
+}
+
+// llamarGetAsientosInterno realiza el GET al proveedor sin registrar eventos de auditoría.
+// Usado internamente por CambiarAsientoVuelo para validar la pertenencia del boleto.
+func (s *AsientoVueloService) llamarGetAsientosInterno(
 	urlAPI, token, idReservaProveedor string,
 ) (*dto.AsientosVueloResponse, error) {
 
@@ -175,11 +208,13 @@ func (s *AsientoVueloService) llamarGetAsientos(
 // Retorna:
 //   - error: si la serializacion falla, la peticion HTTP falla o el proveedor rechaza el cambio
 func (s *AsientoVueloService) llamarCambiarAsiento(
+	c *gin.Context,
+	usuarioID *int,
 	urlAPI, token string,
 	boletoID int,
 	nuevoAsiento string,
 ) error {
-
+	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
 	bodyReq := dto.CambiarAsientoAerolineaBody{NuevoAsiento: nuevoAsiento}
 	bodyBytes, err := json.Marshal(bodyReq)
 	if err != nil {
@@ -197,18 +232,20 @@ func (s *AsientoVueloService) llamarCambiarAsiento(
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarFallida, usuarioID, "asiento-cambiar",
+			fmt.Sprintf("Broom status=ERR boletoId=%d msg='%s'", boletoID, err.Error()))
 		return fmt.Errorf("error contactando aerolínea: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		var errResp map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&errResp)
-		if msg, ok := errResp["message"].(string); ok {
-			return fmt.Errorf("aerolínea rechazó el cambio: %s", msg)
-		}
+		msg := fmt.Sprintf("Broom status=%d boletoId=%d msg='%s'", resp.StatusCode, boletoID, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarFallida, usuarioID, "asiento-cambiar", msg)
 		return fmt.Errorf("aerolínea respondió con status %d", resp.StatusCode)
 	}
+
+	s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarExitosa, usuarioID, "asiento-cambiar",
+		fmt.Sprintf("Broom: asiento cambiado boletoId=%d → %s", boletoID, nuevoAsiento))
 
 	return nil
 }

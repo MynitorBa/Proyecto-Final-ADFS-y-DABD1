@@ -7,6 +7,7 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
 	"database/sql"
@@ -18,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -37,7 +40,8 @@ const (
 // recalcula el total de la reservacion. Tambien gestiona el alta de pasajeros
 // en el sistema de la aerolinea.
 type DetalleReservacionService struct {
-	repo *repositories.DetalleReservacionRepository
+	repo      *repositories.DetalleReservacionRepository
+	logSesion *LogSesionService
 }
 
 // NewDetalleReservacionService
@@ -46,13 +50,15 @@ type DetalleReservacionService struct {
 // repositorio de detalle de reservacion.
 //
 // Parametros:
-//   - db: conexion activa a la base de datos SQL
+//   - db:        conexion activa a la base de datos SQL
+//   - logSesion: servicio de auditoria para registrar eventos REST salientes
 //
 // Retorna:
 //   - *DetalleReservacionService: instancia lista para usar
-func NewDetalleReservacionService(db *sql.DB) *DetalleReservacionService {
+func NewDetalleReservacionService(db *sql.DB, logSesion *LogSesionService) *DetalleReservacionService {
 	return &DetalleReservacionService{
-		repo: repositories.NewDetalleReservacionRepository(db),
+		repo:      repositories.NewDetalleReservacionRepository(db),
+		logSesion: logSesion,
 	}
 }
 
@@ -71,7 +77,7 @@ func NewDetalleReservacionService(db *sql.DB) *DetalleReservacionService {
 // Retorna:
 //   - interface{}: mapa con mensaje, IDs, total base, total con ganancia y detalle del proveedor
 //   - error: si la reservacion no existe, no es valida, falla el proveedor o la BD
-func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.AgregarDetalleVueloRequest) (interface{}, error) {
+func (s *DetalleReservacionService) AgregarDetalleVuelo(c *gin.Context, usuarioID int, req dto.AgregarDetalleVueloRequest) (interface{}, error) {
 
 	reservacion, err := s.repo.ObtenerReservacionParaDetalle(req.ReservacionID, usuarioID)
 	if err != nil {
@@ -92,7 +98,8 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 		return nil, err
 	}
 
-	respAerolinea, err := s.llamarReservacionAerolinea(urlAPI, tokenEntrada, req.Vuelos)
+	uid := usuarioID
+	respAerolinea, err := s.llamarReservacionAerolinea(c, &uid, urlAPI, tokenEntrada, req.Vuelos)
 	if err != nil {
 		return nil, fmt.Errorf("error al reservar en aerolínea: %w", err)
 	}
@@ -157,7 +164,7 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(usuarioID int, req dto.A
 // Retorna:
 //   - interface{}: mapa con mensaje, IDs, total base, total con ganancia y detalle del proveedor
 //   - error: si la reservacion no existe, no es valida, falla el proveedor o la BD
-func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.AgregarDetalleHotelRequest) (interface{}, error) {
+func (s *DetalleReservacionService) AgregarDetalleHotel(c *gin.Context, usuarioID int, req dto.AgregarDetalleHotelRequest) (interface{}, error) {
 
 	reservacion, err := s.repo.ObtenerReservacionParaDetalle(req.ReservacionID, usuarioID)
 	if err != nil {
@@ -178,7 +185,8 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.A
 		return nil, err
 	}
 
-	respHotel, err := s.llamarReservacionHotel(urlAPI, tokenEntrada, req.Habitaciones)
+	uid := usuarioID
+	respHotel, err := s.llamarReservacionHotel(c, &uid, urlAPI, tokenEntrada, req.Habitaciones)
 	if err != nil {
 		return nil, fmt.Errorf("error al reservar en hotelera: %w", err)
 	}
@@ -263,7 +271,8 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(usuarioID int, req dto.A
 // Retorna:
 //   - map[string]interface{}: respuesta del proveedor con reservacionId, total y detalle
 //   - error: si la serializacion falla, la peticion HTTP falla o la respuesta es invalida
-func (s *DetalleReservacionService) llamarReservacionAerolinea(urlAPI, token string, vuelos []dto.SeleccionVuelo) (map[string]interface{}, error) {
+func (s *DetalleReservacionService) llamarReservacionAerolinea(c *gin.Context, usuarioID *int, urlAPI, token string, vuelos []dto.SeleccionVuelo) (map[string]interface{}, error) {
+	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
 	body, err := json.Marshal(map[string]interface{}{
 		"vuelos": vuelos,
 	})
@@ -280,18 +289,27 @@ func (s *DetalleReservacionService) llamarReservacionAerolinea(urlAPI, token str
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutReservaVueloProveedorFallida, usuarioID, "reserva-vuelo-proveedor",
+			fmt.Sprintf("Broom status=ERR msg='%s'", err.Error()))
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		msg := fmt.Sprintf("Broom status=%d msg='%s'", resp.StatusCode, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutReservaVueloProveedorFallida, usuarioID, "reserva-vuelo-proveedor", msg)
 		return nil, fmt.Errorf("aerolínea respondió con status %d", resp.StatusCode)
 	}
 
 	var resultado map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&resultado); err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutReservaVueloProveedorFallida, usuarioID, "reserva-vuelo-proveedor",
+			fmt.Sprintf("Broom decode_error='%s'", err.Error()))
 		return nil, errors.New("respuesta inválida de la aerolínea")
 	}
+
+	s.logSesion.Registrar(c, helpers.TipoOutReservaVueloProveedorExitosa, usuarioID, "reserva-vuelo-proveedor",
+		fmt.Sprintf("Broom: reservacionId=%v total=%v", resultado["reservacionId"], resultado["total"]))
 
 	return resultado, nil
 }
@@ -310,7 +328,8 @@ func (s *DetalleReservacionService) llamarReservacionAerolinea(urlAPI, token str
 // Retorna:
 //   - map[string]interface{}: respuesta del proveedor con id, total y detalle de habitaciones
 //   - error: si la serializacion falla, la peticion HTTP falla o la respuesta es invalida
-func (s *DetalleReservacionService) llamarReservacionHotel(urlAPI, token string, habitaciones []dto.SeleccionHabitacion) (map[string]interface{}, error) {
+func (s *DetalleReservacionService) llamarReservacionHotel(c *gin.Context, usuarioID *int, urlAPI, token string, habitaciones []dto.SeleccionHabitacion) (map[string]interface{}, error) {
+	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
 	body, err := json.Marshal(map[string]interface{}{
 		"habitaciones": habitaciones,
 	})
@@ -327,18 +346,27 @@ func (s *DetalleReservacionService) llamarReservacionHotel(urlAPI, token string,
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutReservaHotelProveedorFallida, usuarioID, "reserva-hotel-proveedor",
+			fmt.Sprintf("Miku status=ERR msg='%s'", err.Error()))
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		msg := fmt.Sprintf("Miku status=%d msg='%s'", resp.StatusCode, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutReservaHotelProveedorFallida, usuarioID, "reserva-hotel-proveedor", msg)
 		return nil, fmt.Errorf("hotelera respondió con status %d", resp.StatusCode)
 	}
 
 	var resultado map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&resultado); err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutReservaHotelProveedorFallida, usuarioID, "reserva-hotel-proveedor",
+			fmt.Sprintf("Miku decode_error='%s'", err.Error()))
 		return nil, errors.New("respuesta inválida de la hotelera")
 	}
+
+	s.logSesion.Registrar(c, helpers.TipoOutReservaHotelProveedorExitosa, usuarioID, "reserva-hotel-proveedor",
+		fmt.Sprintf("Miku: id=%v total=%v", resultado["id"], resultado["total"]))
 
 	return resultado, nil
 }
@@ -356,6 +384,7 @@ func (s *DetalleReservacionService) llamarReservacionHotel(urlAPI, token string,
 // Retorna:
 //   - error: si el pasaporte es invalido, falla la obtencion del detalle o falla el proveedor
 func (s *DetalleReservacionService) AgregarPasajerosVuelo(
+	c *gin.Context,
 	usuarioID int,
 	req dto.AgregarPasajerosVueloRequest,
 ) error {
@@ -386,7 +415,8 @@ func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 		return fmt.Errorf("id de reservación de aerolínea inválido: %w", err)
 	}
 
-	return s.llamarPasajerosAerolinea(urlAPI, token, reservacionAerolineaID, req.Pasajeros)
+	uid := usuarioID
+	return s.llamarPasajerosAerolinea(c, &uid, urlAPI, token, reservacionAerolineaID, req.Pasajeros)
 }
 
 // llamarPasajerosAerolinea
@@ -404,11 +434,13 @@ func (s *DetalleReservacionService) AgregarPasajerosVuelo(
 // Retorna:
 //   - error: si la serializacion falla, la peticion HTTP falla o la aerolinea rechaza la solicitud
 func (s *DetalleReservacionService) llamarPasajerosAerolinea(
+	c *gin.Context,
+	usuarioID *int,
 	urlAPI, token string,
 	reservacionID int,
 	pasajeros []dto.PasajeroVueloDTO,
 ) error {
-
+	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
 	bodyReq := dto.AgregarPasajerosVueloAerolineaBody{
 		ReservacionID: reservacionID,
 		Pasajeros:     pasajeros,
@@ -432,18 +464,20 @@ func (s *DetalleReservacionService) llamarPasajerosAerolinea(
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutPasajerosProveedorFallida, usuarioID, "pasajeros-proveedor",
+			fmt.Sprintf("Broom status=ERR msg='%s'", err.Error()))
 		return fmt.Errorf("error contactando aerolínea: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		var errResp map[string]interface{}
-		json.NewDecoder(resp.Body).Decode(&errResp)
-		if msg, ok := errResp["message"].(string); ok {
-			return fmt.Errorf("aerolínea rechazó la solicitud: %s", msg)
-		}
+		msg := fmt.Sprintf("Broom status=%d msg='%s'", resp.StatusCode, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutPasajerosProveedorFallida, usuarioID, "pasajeros-proveedor", msg)
 		return fmt.Errorf("aerolínea respondió con status %d", resp.StatusCode)
 	}
+
+	s.logSesion.Registrar(c, helpers.TipoOutPasajerosProveedorExitosa, usuarioID, "pasajeros-proveedor",
+		fmt.Sprintf("Broom: %d pasajero(s) registrados, reservaId=%d", len(pasajeros), reservacionID))
 
 	return nil
 }

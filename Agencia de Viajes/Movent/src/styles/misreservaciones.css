@@ -188,6 +188,8 @@
 .mv-estado--cancelada  svg { color: #D40511; }
 .mv-estado--expirada   { border-top-color: #8b5cf6; }
 .mv-estado--expirada   svg { color: #8b5cf6; }
+.mv-estado--retenida   { border-top-color: #f97316; }
+.mv-estado--retenida   svg { color: #f97316; }
 
 .mv-estado__num {
   font-size: 1.6rem;
@@ -577,6 +579,7 @@
 .mv-badge--completada { background: #dbeafe; color: #1d4ed8; }
 .mv-badge--cancelada  { background: #fee2e2; color: #b91c1c; }
 .mv-badge--expirada   { background: #ede9fe; color: #6d28d9; }
+.mv-badge--retenida   { background: #fff3e0; color: #c2410c; }
 
 /* Overlay semi-transparente que bloquea la pantalla al abrir el panel */
 .mv-overlay {

@@ -56,3 +56,52 @@ const (
 	TipoProveedorEstadoCambiado         = 42
 	TipoRolUsuarioActualizado           = 43
 )
+
+// ==========================================
+// EVENTOS DE COMUNICACIÓN REST AGENCIA → PROVEEDOR
+// IDs 44-61 — Ver matriz de inserción en docs
+// Importante: seguir el patrón Tipo* (no Evento*) para mantener consistencia
+// con las 43 constantes existentes
+// ==========================================
+
+// Flujo A: Búsquedas (44-49)
+const (
+	TipoOutBusquedaVuelosExitosa        = 44
+	TipoOutBusquedaVuelosSinResultados  = 45
+	TipoOutBusquedaVuelosFallida        = 46
+	TipoOutBusquedaHotelesExitosa       = 47
+	TipoOutBusquedaHotelesSinResultados = 48
+	TipoOutBusquedaHotelesFallida       = 49
+)
+
+// Flujo B: Reserva temporal en proveedor (50-53)
+const (
+	TipoOutReservaVueloProveedorExitosa = 50
+	TipoOutReservaVueloProveedorFallida = 51
+	TipoOutReservaHotelProveedorExitosa = 52
+	TipoOutReservaHotelProveedorFallida = 53
+)
+
+// Flujo C: Pasajeros al proveedor (54-55)
+const (
+	TipoOutPasajerosProveedorExitosa = 54
+	TipoOutPasajerosProveedorFallida = 55
+)
+
+// Flujo D: Cargar mapa de asientos (56-57)
+const (
+	TipoOutAsientosCargarExitosa = 56
+	TipoOutAsientosCargarFallida = 57
+)
+
+// Flujo E: Cambio de asiento (58-59)
+const (
+	TipoOutAsientoCambiarExitosa = 58
+	TipoOutAsientoCambiarFallida = 59
+)
+
+// Flujo F: Pago al proveedor (60-61)
+const (
+	TipoOutPagoProveedorExitoso = 60
+	TipoOutPagoProveedorFallido = 61
+)

@@ -7,6 +7,7 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
 	"context"
@@ -17,6 +18,8 @@ import (
 	"math"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // TipoBusquedaVuelos es el ID del tipo de busqueda de vuelos en la tabla TipoBusqueda.
@@ -40,8 +43,9 @@ const timeoutProveedor = 10 * time.Second
 // incluyen en la respuesta como resultados parciales sin interrumpir las
 // consultas a los demas proveedores.
 type BusquedaService struct {
-	repo   *repositories.BusquedaRepository
-	client *http.Client
+	repo      *repositories.BusquedaRepository
+	client    *http.Client
+	logSesion *LogSesionService
 }
 
 // NewBusquedaService
@@ -50,13 +54,15 @@ type BusquedaService struct {
 // de busqueda y un cliente HTTP con timeout configurado por proveedor.
 //
 // Parametros:
-//   - db: conexion activa a la base de datos SQL
+//   - db:        conexion activa a la base de datos SQL
+//   - logSesion: servicio de auditoria para registrar eventos REST salientes
 //
 // Retorna:
 //   - *BusquedaService: instancia lista para usar
-func NewBusquedaService(db *sql.DB) *BusquedaService {
+func NewBusquedaService(db *sql.DB, logSesion *LogSesionService) *BusquedaService {
 	return &BusquedaService{
-		repo: repositories.NewBusquedaRepository(db),
+		repo:      repositories.NewBusquedaRepository(db),
+		logSesion: logSesion,
 		client: &http.Client{
 			Timeout: timeoutProveedor,
 		},
@@ -119,7 +125,7 @@ func (s *BusquedaService) registrarBusqueda(
 // Retorna:
 //   - []dto.BusquedaVuelosResponse: lista de respuestas por proveedor, con datos o error
 //   - error: solo si falla la resolucion de ciudades o la consulta de proveedores en BD
-func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest, usuarioID *int) ([]dto.BusquedaVuelosResponse, error) {
+func (s *BusquedaService) BuscarVuelos(c *gin.Context, req dto.BusquedaVuelosRequest, usuarioID *int) ([]dto.BusquedaVuelosResponse, error) {
 	origenID, err := s.repo.BuscarCiudadID(req.Origen, req.OrigenPais)
 	if err != nil {
 		return nil, err
@@ -150,7 +156,7 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest, usuarioID 
 
 	var resultados []dto.BusquedaVuelosResponse
 	for _, p := range proveedores {
-		datos, err := s.llamarVuelos(p, req)
+		datos, err := s.llamarVuelos(c, usuarioID, p, req)
 		if err != nil {
 			log.Printf("[BusquedaService] Proveedor '%s' (ID=%d) no disponible: %v", p.Nombre, p.ProveedorID, err)
 			resultados = append(resultados, dto.BusquedaVuelosResponse{
@@ -183,7 +189,7 @@ func (s *BusquedaService) BuscarVuelos(req dto.BusquedaVuelosRequest, usuarioID 
 // Retorna:
 //   - interface{}: datos de vuelos con precios ajustados por margen de ganancia
 //   - error: si la peticion HTTP falla, expira el timeout o el proveedor retorna un estado no exitoso
-func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.BusquedaVuelosRequest) (interface{}, error) {
+func (s *BusquedaService) llamarVuelos(c *gin.Context, usuarioID *int, p dto.ProveedorCatalogo, req dto.BusquedaVuelosRequest) (interface{}, error) {
 	body, _ := json.Marshal(req)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutProveedor)
@@ -198,20 +204,50 @@ func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.Busqueda
 
 	resp, err := s.client.Do(httpReq)
 	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaVuelosFallida, usuarioID, "busqueda-vuelos",
+			fmt.Sprintf("%s status=ERR msg='%s'", p.Nombre, err.Error()))
 		return nil, fmt.Errorf("proveedor no disponible: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		msg := fmt.Sprintf("%s status=%d msg='%s'", p.Nombre, resp.StatusCode, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaVuelosFallida, usuarioID, "busqueda-vuelos", msg)
 		return nil, fmt.Errorf("aerolinea respondió con status %d", resp.StatusCode)
 	}
 
 	var datos interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&datos); err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaVuelosFallida, usuarioID, "busqueda-vuelos",
+			fmt.Sprintf("%s status=%d decode_error='%s'", p.Nombre, resp.StatusCode, err.Error()))
 		return nil, err
 	}
 
 	datos = aplicarGanancia(datos, p.PorcentajeGanancia)
+
+	count := 0
+	switch v := datos.(type) {
+	case map[string]interface{}:
+		// Broom devuelve { directos: [...], conEscala: [...] }
+		if directos, ok := v["directos"].([]interface{}); ok {
+			count += len(directos)
+		}
+		if conEscala, ok := v["conEscala"].([]interface{}); ok {
+			count += len(conEscala)
+		}
+	case []interface{}:
+		// Fallback por si algún proveedor futuro devuelve array plano
+		count = len(v)
+	}
+
+	if count > 0 {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaVuelosExitosa, usuarioID, "busqueda-vuelos",
+			fmt.Sprintf("%s: %d resultado(s) para %s→%s fecha=%s", p.Nombre, count, req.Origen, req.Destino, req.Fecha))
+	} else {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaVuelosSinResultados, usuarioID, "busqueda-vuelos",
+			fmt.Sprintf("%s: 0 resultados para %s→%s fecha=%s", p.Nombre, req.Origen, req.Destino, req.Fecha))
+	}
+
 	return datos, nil
 }
 
@@ -233,7 +269,7 @@ func (s *BusquedaService) llamarVuelos(p dto.ProveedorCatalogo, req dto.Busqueda
 // Retorna:
 //   - []dto.BusquedaHotelesResponse: lista de respuestas por proveedor, con datos o error
 //   - error: solo si falla la resolucion de ciudad o la consulta de proveedores en BD
-func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest, usuarioID *int) ([]dto.BusquedaHotelesResponse, error) {
+func (s *BusquedaService) BuscarHoteles(c *gin.Context, req dto.BusquedaHotelesRequest, usuarioID *int) ([]dto.BusquedaHotelesResponse, error) {
 	ciudadID, err := s.repo.BuscarCiudadID(req.Ciudad, req.Pais)
 	if err != nil {
 		return nil, err
@@ -256,7 +292,7 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest, usuarioI
 
 	var resultados []dto.BusquedaHotelesResponse
 	for _, p := range proveedores {
-		datos, err := s.llamarHoteles(p, req)
+		datos, err := s.llamarHoteles(c, usuarioID, p, req)
 		if err != nil {
 			log.Printf("[BusquedaService] Proveedor '%s' (ID=%d) no disponible: %v", p.Nombre, p.ProveedorID, err)
 			resultados = append(resultados, dto.BusquedaHotelesResponse{
@@ -289,7 +325,7 @@ func (s *BusquedaService) BuscarHoteles(req dto.BusquedaHotelesRequest, usuarioI
 // Retorna:
 //   - interface{}: datos de hoteles con precios ajustados por margen de ganancia
 //   - error: si la peticion HTTP falla, expira el timeout o el proveedor retorna un estado no exitoso
-func (s *BusquedaService) llamarHoteles(p dto.ProveedorCatalogo, req dto.BusquedaHotelesRequest) (interface{}, error) {
+func (s *BusquedaService) llamarHoteles(c *gin.Context, usuarioID *int, p dto.ProveedorCatalogo, req dto.BusquedaHotelesRequest) (interface{}, error) {
 	body, _ := json.Marshal(req)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutProveedor)
@@ -304,20 +340,40 @@ func (s *BusquedaService) llamarHoteles(p dto.ProveedorCatalogo, req dto.Busqued
 
 	resp, err := s.client.Do(httpReq)
 	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaHotelesFallida, usuarioID, "busqueda-hoteles",
+			fmt.Sprintf("%s status=ERR msg='%s'", p.Nombre, err.Error()))
 		return nil, fmt.Errorf("proveedor no disponible: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		msg := fmt.Sprintf("%s status=%d msg='%s'", p.Nombre, resp.StatusCode, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaHotelesFallida, usuarioID, "busqueda-hoteles", msg)
 		return nil, fmt.Errorf("hotelera respondió con status %d", resp.StatusCode)
 	}
 
 	var datos interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&datos); err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaHotelesFallida, usuarioID, "busqueda-hoteles",
+			fmt.Sprintf("%s status=%d decode_error='%s'", p.Nombre, resp.StatusCode, err.Error()))
 		return nil, err
 	}
 
 	datos = aplicarGanancia(datos, p.PorcentajeGanancia)
+
+	count := 0
+	if arr, ok := datos.([]interface{}); ok {
+		count = len(arr)
+	}
+
+	if count > 0 {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaHotelesExitosa, usuarioID, "busqueda-hoteles",
+			fmt.Sprintf("%s: %d resultado(s) para %s check-in=%s", p.Nombre, count, req.Ciudad, req.FechaCheckIn))
+	} else {
+		s.logSesion.Registrar(c, helpers.TipoOutBusquedaHotelesSinResultados, usuarioID, "busqueda-hoteles",
+			fmt.Sprintf("%s: 0 resultados para %s check-in=%s", p.Nombre, req.Ciudad, req.FechaCheckIn))
+	}
+
 	return datos, nil
 }
 

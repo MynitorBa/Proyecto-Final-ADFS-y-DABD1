@@ -65,11 +65,11 @@ func main() {
 	handshakeService := services.NewHandshakeService(db, cfg)
 	handshakeHoteleraService := services.NewHandshakeHoteleraService(db, cfg)
 	catalogoService := services.NewCatalogoService(db, ubicacionService)
-	busquedaService := services.NewBusquedaService(db)
+	busquedaService := services.NewBusquedaService(db, logSesionService)
 	expiracionService := services.NewExpiracionService(db, logSesionService)
 	reservacionService := services.NewReservacionService(db, expiracionService)
-	detalleReservacionService := services.NewDetalleReservacionService(db)
-	asientoVueloService := services.NewAsientoVueloService(db)
+	detalleReservacionService := services.NewDetalleReservacionService(db, logSesionService)
+	asientoVueloService := services.NewAsientoVueloService(db, logSesionService)
 	perfilService := services.NewPerfilService(db)
 
 	pagoRepo := repositories.NewPagoRepository(db)
@@ -83,7 +83,7 @@ func main() {
 	actualizacionProveedorRepo := repositories.NewActualizacionProveedorRepository(db)
 	notificacionesRepo := repositories.NewNotificacionesRepository(db)
 
-	pagoService := services.NewPagoService(pagoRepo, reservacionRepo, configRepo)
+	pagoService := services.NewPagoService(pagoRepo, reservacionRepo, configRepo, logSesionService)
 	misReservacionesService := services.NewMisReservacionesService(misReservacionesRepo)
 	cancelacionService := services.NewCancelacionService(cancelacionRepo)
 	comentarioService := services.NewComentarioService(proveedorRepo)
