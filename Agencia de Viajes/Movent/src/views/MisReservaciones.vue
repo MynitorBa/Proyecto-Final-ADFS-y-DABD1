@@ -1669,5 +1669,19 @@ async function enviarResenaHotel() {
   }
 }
 
-onMounted(() => cargarTodo())
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+onMounted(async () => {
+  await cargarTodo()
+  
+  const verReserva = route.query.ver
+  if (verReserva) {
+    setTimeout(() => {
+      const r = reservas.value.find(x => x.noReservacion === verReserva)
+      if (r) abrirPanel(r)
+    }, 300)
+  }
+})
 </script>

@@ -1,3 +1,8 @@
+// # Package main
+//
+// Punto de entrada del servidor HTTP de la agencia de viajes Movent.
+// Inicializa la configuracion, la base de datos, todos los servicios,
+// repositorios y controladores, y registra las rutas de la API REST.
 package main
 
 import (
@@ -8,12 +13,31 @@ import (
 	"agencia-viajes/internal/services"
 	"agencia-viajes/pkg/database"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
+// main
+//
+// Funcion principal del servidor. Carga la configuracion desde variables
+// de entorno, conecta con la base de datos MySQL, instancia todos los
+// servicios y controladores, configura los middlewares CORS y de
+// autenticacion, registra las rutas publicas y protegidas de la API,
+// arranca el servicio de expiracion de reservaciones en segundo plano
+// y levanta el servidor HTTP en el puerto configurado.
+//
+// Notas:
+//   - Las rutas bajo /api/ son publicas excepto las agrupadas en "protegido"
+//   - Las rutas bajo el grupo "admin" requieren rol 2 (administrador)
+//   - El servicio de expiracion se detiene de forma ordenada al cerrar
 func main() {
 	cfg := config.Load()
+
+	if os.Getenv("JWT_SECRET") == "" {
+		log.Fatal("JWT_SECRET no está definido en .env — abortando por seguridad")
+	}
+
 	db := database.Connect(cfg)
 	defer db.Close()
 
@@ -31,6 +55,9 @@ func main() {
 		c.Next()
 	})
 
+	logSesionRepo := repositories.NewLogSesionRepository(db)
+	logSesionService := services.NewLogSesionService(logSesionRepo)
+
 	ubicacionService := services.NewUbicacionService(db)
 	usuarioService := services.NewUsuarioService(db, ubicacionService)
 	loginService := services.NewLoginService(db)
@@ -39,7 +66,7 @@ func main() {
 	handshakeHoteleraService := services.NewHandshakeHoteleraService(db, cfg)
 	catalogoService := services.NewCatalogoService(db, ubicacionService)
 	busquedaService := services.NewBusquedaService(db)
-	expiracionService := services.NewExpiracionService(db)
+	expiracionService := services.NewExpiracionService(db, logSesionService)
 	reservacionService := services.NewReservacionService(db, expiracionService)
 	detalleReservacionService := services.NewDetalleReservacionService(db)
 	asientoVueloService := services.NewAsientoVueloService(db)
@@ -66,27 +93,27 @@ func main() {
 	actualizacionProveedorService := services.NewActualizacionProveedorService(actualizacionProveedorRepo)
 	notificacionesService := services.NewNotificacionesService(notificacionesRepo)
 
-	usuarioController := controllers.NewUsuarioController(usuarioService)
-	loginController := controllers.NewLoginController(loginService)
+	usuarioController := controllers.NewUsuarioController(usuarioService, logSesionService)
+	loginController := controllers.NewLoginController(loginService, logSesionService)
 	sesionController := controllers.NewSesionController()
-	proveedorController := controllers.NewProveedorController(proveedorService)
-	handshakeController := controllers.NewHandshakeController(handshakeService)
-	handshakeHoteleraController := controllers.NewHandshakeHoteleraController(handshakeHoteleraService)
-	catalogoController := controllers.NewCatalogoController(catalogoService)
+	proveedorController := controllers.NewProveedorController(proveedorService, logSesionService)
+	handshakeController := controllers.NewHandshakeController(handshakeService, logSesionService)
+	handshakeHoteleraController := controllers.NewHandshakeHoteleraController(handshakeHoteleraService, logSesionService)
+	catalogoController := controllers.NewCatalogoController(catalogoService, logSesionService)
 	busquedaController := controllers.NewBusquedaController(busquedaService)
-	reservacionController := controllers.NewReservacionController(reservacionService, pdfService, emailService)
+	reservacionController := controllers.NewReservacionController(reservacionService, pdfService, emailService, logSesionService)
 	detalleReservacionController := controllers.NewDetalleReservacionController(detalleReservacionService)
 	asientoVueloController := controllers.NewAsientoVueloController(asientoVueloService)
-	pagoController := controllers.NewPagoController(pagoService)
+	pagoController := controllers.NewPagoController(pagoService, logSesionService)
 	misReservacionesController := controllers.NewMisReservacionesController(misReservacionesService)
-	cancelacionController := controllers.NewCancelacionController(cancelacionService)
+	cancelacionController := controllers.NewCancelacionController(cancelacionService, logSesionService)
 	comentarioController := controllers.NewComentarioController(comentarioService)
 	statsController := controllers.NewStatsController(db)
-	adminController := controllers.NewAdminController(db)
-	perfilController := controllers.NewPerfilController(perfilService)
+	adminController := controllers.NewAdminController(db, logSesionService)
+	perfilController := controllers.NewPerfilController(perfilService, logSesionService)
 	configuracionController := controllers.NewConfiguracionController(db)
-	cancelacionProveedorController := controllers.NewCancelacionProveedorController(cancelacionProveedorService)
-	actualizacionProveedorController := controllers.NewActualizacionProveedorController(actualizacionProveedorService)
+	cancelacionProveedorController := controllers.NewCancelacionProveedorController(cancelacionProveedorService, logSesionService, db)
+	actualizacionProveedorController := controllers.NewActualizacionProveedorController(actualizacionProveedorService, logSesionService, db)
 	notificacionesController := controllers.NewNotificacionesController(notificacionesService)
 
 	expiracionService.Iniciar()

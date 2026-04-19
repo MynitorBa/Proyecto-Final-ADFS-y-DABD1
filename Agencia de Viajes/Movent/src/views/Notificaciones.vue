@@ -263,7 +263,7 @@ async function marcarTodasLeidas() {
  */
 async function verReservacion(n) {
   if (!n.leido) await marcarLeida(n.id)
-  router.push('/mis-reservaciones')
+  router.push(`/mis-reservaciones?ver=${n.no_reservacion}`)
 }
 
 /**

@@ -345,8 +345,8 @@
   height: 40px;
   border-radius: 10px;
   background: transparent;
-  border: 1.5px solid rgba(255,255,255,.15);
-  color: #fff;
+  border: 2px solid #1C1A18;
+  color: #1C1A18;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -355,13 +355,15 @@
 }
 
 .notif-bell-btn:hover {
-  border-color: rgba(255,204,0,.5);
-  background: rgba(255,204,0,.08);
+  background: #1C1A18;
+  color: #FFCC00;
 }
 
 .notif-bell-btn--active {
-  border-color: rgba(255,204,0,.6);
-  background: rgba(255,204,0,.1);
+  background: #1C1A18;
+  color: #FFCC00;
+  border-color: #1C1A18;
+  box-shadow: 0 0 0 3px rgba(28,26,24,0.15);
 }
 
 .notif-bell-badge {

@@ -1,10 +1,3 @@
-/**
- * @file router/index.js
- * @description Configuración de rutas de la aplicación Movent usando Vue Router.
- * Define todas las rutas públicas, de usuario y de administración.
- * @module router
- */
-
 import { createRouter, createWebHistory } from 'vue-router'
 import Principal           from '../views/Principal.vue'
 import Reserva             from '../views/Reserva.vue'
@@ -32,32 +25,25 @@ import GestionFinanzas     from '../views/admin/GestionFinanzas.vue'
 import WebService          from '../views/WebService.vue'
 import Profile             from '../views/Profile.vue'
 import Notificaciones      from '../views/Notificaciones.vue'
+import AccessDenied        from '../views/AccessDenied.vue'
 
-/**
- * Definición de todas las rutas de la aplicación.
- * Incluye rutas públicas, de usuario autenticado y panel de administración.
- * @type {Array}
- */
 const routes = [
   { path: '/', redirect: '/principal', name: 'raiz' },
+  { path: '/acceso-denegado', component: AccessDenied, name: 'accessDenied' },
 
-  // Página principal
   { path: '/principal', component: Principal, name: 'principal' },
 
-  // Flujo de reserva
   { path: '/reservar',           component: Reserva,           name: 'reservar' },
   { path: '/seleccion-asientos', component: SeleccionAsientos, name: 'seleccionAsientos' },
   { path: '/checkout',           component: Checkout,          name: 'checkout' },
   { path: '/confirmacion',       component: Confirmacion,      name: 'confirmacion' },
 
-  // Área del usuario
   { path: '/mis-reservaciones',  component: MisReservaciones,  name: 'misReservaciones' },
   { path: '/perfil',             component: Profile,           name: 'perfil' },
   { path: '/notificaciones',     component: Notificaciones,    name: 'notificaciones' },
   { path: '/ingreso',            component: IniciarSesion,     name: 'ingreso' },
   { path: '/registro',           component: Registrarse,       name: 'registro' },
 
-  // Páginas informativas
   { path: '/informacion',          component: Informacion,         name: 'informacion' },
   { path: '/sobre-movent',         component: SobreMovent,         name: 'sobreMovent' },
   { path: '/centro-ayuda',         component: CentroAyuda,         name: 'centroAyuda' },
@@ -67,12 +53,10 @@ const routes = [
   { path: '/terminos',             component: Terminos,            name: 'terminos' },
   { path: '/contacto',             component: Contacto,            name: 'contacto' },
 
-  // Resultados de búsqueda
   { path: '/resultados-vuelos',   component: ResultadosVuelos,   name: 'resultadosVuelos' },
   { path: '/resultados-hoteles',  component: ResultadosHoteles,  name: 'resultadosHoteles' },
   { path: '/resultados-paquetes', component: ResultadosPaquetes, name: 'resultadosPaquetes' },
 
-  // Panel de administración
   { path: '/admin',             redirect: '/admin/dashboard', name: 'admin' },
   { path: '/admin/dashboard',   component: Dashboard,         name: 'dashboard' },
   { path: '/admin/roles',       component: GestionRoles,      name: 'gestionRoles' },
@@ -80,24 +64,43 @@ const routes = [
   { path: '/admin/paquetes',    component: GestionFinanzas,   name: 'gestionFinanzas' },
   { path: '/admin/webservice',  component: WebService,        name: 'webService' },
 
-  // Ruta comodín
   { path: '/:pathMatch(.*)*', redirect: '/principal', name: 'notFound' },
 ]
 
-/**
- * Instancia del router configurada con historial HTML5.
- * Incluye scroll suave al cambiar de ruta.
- * @type {Object}
- */
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
-
-  /**
-   * Regresa al tope de la página con animación suave al navegar.
-   * @returns {{ top: number, behavior: string }}
-   */
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }
   },
 })
+
+router.beforeEach((to, from, next) => {
+  const esRutaAdmin = to.path.startsWith('/admin')
+  
+  if (esRutaAdmin) {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    
+    if (!token) {
+      next('/ingreso')
+      return
+    }
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const rolID = payload.rol_id
+      
+      if (rolID !== 2) {
+        next('/acceso-denegado')
+        return
+      }
+    } catch {
+      next('/ingreso')
+      return
+    }
+  }
+  
+  next()
+})
+
+export default router
