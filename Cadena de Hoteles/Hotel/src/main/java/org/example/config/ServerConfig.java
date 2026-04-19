@@ -32,12 +32,19 @@ public class ServerConfig {
                 ? List.of()
                 : Arrays.asList(extraOriginsEnv.split(","));
 
+        //lee dinamicamente los peurtos del .env relacionados al frontend
+        String dynamicFrontPort = System.getenv().getOrDefault("FRONTEND_PORT", "4001");
+        String dynamicOrigin = "http://localhost:" + dynamicFrontPort;
+
         return Javalin.create(config -> {
             config.showJavalinBanner = false;
             config.plugins.enableCors(cors -> {
                 cors.add(it -> {
                     it.allowHost("http://localhost:5173"); // hotel frontend propio
                     it.allowHost("http://localhost:5174"); // hotel frontend dev
+
+                    it.allowHost(dynamicOrigin); //puertos de frontend
+
                     for (String origin : extraOrigins) {
                         it.allowHost(origin.trim());       // frontends de aerolineas aliadas
                     }

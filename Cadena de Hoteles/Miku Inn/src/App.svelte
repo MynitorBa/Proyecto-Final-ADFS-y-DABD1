@@ -50,7 +50,7 @@
   import './styles/info-pages.css';
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+  import { API } from './lib/api.js';
 
   /**
    * Conjunto de rutas validas en la aplicacion.

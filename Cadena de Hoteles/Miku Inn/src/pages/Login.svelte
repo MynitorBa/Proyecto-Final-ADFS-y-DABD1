@@ -15,7 +15,8 @@
   const dispatch = createEventDispatcher();
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /**
    * Datos del formulario de inicio de sesion.

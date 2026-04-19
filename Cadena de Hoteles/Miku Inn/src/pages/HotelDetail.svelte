@@ -10,7 +10,7 @@
 
   import { onMount } from 'svelte';
   import '../styles/hoteldetail.css';
-  import CommentNode from './Commentnode.svelte';
+  import CommentNode from './CommentNode.svelte';
 
   /** Funcion de navegacion inyectada por el router. @type {Function} */
   export let navigateTo = (page, data = null) => {};
@@ -35,7 +35,8 @@
   export let porcentajeDescuento = null;
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Fecha de check-in activa en el sidebar (editable por el usuario). @type {string} */
   let checkInDate  = fechaCheckIn  || '';

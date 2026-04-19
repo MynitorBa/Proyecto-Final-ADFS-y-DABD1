@@ -13,7 +13,8 @@
   import { onMount } from 'svelte';
 
   /** URL base de la API del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Datos del perfil cargados desde el servidor. @type {any} */
   let perfil = null;

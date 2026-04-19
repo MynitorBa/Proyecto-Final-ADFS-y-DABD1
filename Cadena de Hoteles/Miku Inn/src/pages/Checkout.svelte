@@ -19,7 +19,8 @@
   export let checkoutData = null;
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Indica si las reservaciones aun estan cargando. @type {boolean} */
   let loading = true;

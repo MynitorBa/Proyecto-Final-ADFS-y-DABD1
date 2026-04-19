@@ -66,7 +66,8 @@
    * @type {number|null}
    */
   let porcentajeDescuento = null;
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Fecha de check-in seleccionada en el formulario. @type {string} */
   let checkIn = '';

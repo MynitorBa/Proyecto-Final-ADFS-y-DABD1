@@ -11,8 +11,21 @@ import java.util.Set;
  * Middleware de autenticacion global para la aplicacion Javalin.
  * Intercepta todas las peticiones entrantes y valida el token JWT
  * antes de permitir el acceso a rutas protegidas.
+ *
+ * El nombre de la cookie se lee de la variable de entorno COOKIE_NAME para
+ * que cada instancia del servidor identifique y valide unicamente su propia
+ * cookie, evitando colisiones cuando multiples hoteles corren en paralelo.
  */
 public class AuthMiddleware {
+
+    /**
+     * Nombre de la cookie de sesion leido desde la variable de entorno COOKIE_NAME.
+     * Debe coincidir exactamente con el nombre usado en AuthController al emitir la cookie.
+     * Si la variable no esta definida, se usa "auth_token" como valor por defecto.
+     * Ejemplo: COOKIE_NAME=auth_token_hotel1
+     */
+    private static final String COOKIE_NAME =
+            System.getenv().getOrDefault("COOKIE_NAME", "auth_token");
 
     /**
      * Conjunto de rutas que no requieren autenticacion.
@@ -37,22 +50,26 @@ public class AuthMiddleware {
     /**
      * Registra el middleware de autenticacion en la instancia de Javalin.
      * Se ejecuta antes de cada peticion. Si la ruta es publica o pertenece
-     * al prefijo /agencia/, la deja pasar sin validar. De lo contrario,
-     * exige un cookie auth_token valido y extrae los claims del usuario
-     * para inyectarlos en el contexto. (misma situacion para /aerolinea/)
+     * al prefijo /agencia/ o /aerolinea/, la deja pasar sin validar.
+     * De lo contrario, exige una cookie valida con el nombre configurado
+     * en COOKIE_NAME y extrae los claims del usuario para inyectarlos
+     * en el contexto de la peticion.
      *
      * @param app instancia de Javalin donde se registra el middleware.
      */
     public static void registrar(Javalin app) {
         app.before(ctx -> {
+            // Rutas publicas no requieren token
             if (esRutaPublica(ctx)) return;
 
             // Las rutas de agencia usan su propio middleware de token
             if (ctx.path().startsWith("/agencia/")) return;
-            // Las rutas de Aerolineas usan su propio middleware de token
+
+            // Las rutas de aerolineas usan su propio middleware de token
             if (ctx.path().startsWith("/aerolinea/")) return;
 
-            String token = ctx.cookie("auth_token");
+            // Lee la cookie por el nombre dinamico de esta instancia
+            String token = ctx.cookie(COOKIE_NAME);
 
             if (token == null || token.isBlank()) {
                 ctx.status(401).json(Map.of("mensaje", "No autenticado"));
@@ -64,7 +81,8 @@ public class AuthMiddleware {
                 return;
             }
 
-            // Extraer claims y dejarlos disponibles para los controllers
+            // Extrae los claims del token y los inyecta en el contexto
+            // para que los controllers puedan acceder a ellos sin re-parsear el token
             Claims claims = JwtHelper.verificarToken(token);
             ctx.attribute("usuarioId", JwtHelper.getUsuarioId(claims));
             ctx.attribute("username",  JwtHelper.getUsername(claims));
@@ -83,10 +101,13 @@ public class AuthMiddleware {
     private static boolean esRutaPublica(Context ctx) {
         // Rutas exactas registradas como publicas
         if (RUTAS_PUBLICAS.contains(ctx.path())) return true;
+
         // GET de comentarios por hotel es publica
         if (ctx.method().name().equals("GET") && ctx.path().startsWith("/comentarios/hotel/")) return true;
+
         // GET de imagenes siempre es publica
         if (ctx.method().name().equals("GET") && ctx.path().startsWith("/imagenes/")) return true;
+
         return false;
     }
 }

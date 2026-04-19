@@ -10,7 +10,8 @@
   import { onMount } from 'svelte';
 
   /** URL base de la API del backend. @type {string} */
-  const API_BASE = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo = (page, data = null) => {};
@@ -72,7 +73,7 @@
    */
   async function cargarSesion() {
     try {
-      const res = await fetch(`${API_BASE}/sesion`, { credentials: 'include' });
+      const res = await fetch(`${API}/sesion`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         username  = data.username ?? '';
@@ -95,8 +96,8 @@
     errorCarga = null;
     try {
       const [resAgencias, resAerolineas] = await Promise.all([
-        fetch(`${API_BASE}/webservice/agencias`,   { credentials: 'include' }),
-        fetch(`${API_BASE}/webservice/aerolineas`, { credentials: 'include' })
+        fetch(`${API}/webservice/agencias`,   { credentials: 'include' }),
+        fetch(`${API}/webservice/aerolineas`, { credentials: 'include' })
       ]);
 
       // Redirige al login si la sesion expiro o el rol no corresponde a webservice
@@ -186,7 +187,7 @@
             urlParaUsuario: nuevaEntidad.urlParaUsuario.trim()
           };
 
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API}${endpoint}`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -224,7 +225,7 @@
     const texto       = nuevoEstado === 1 ? 'Activo' : 'Cerrado';
     mensajeTabla = null;
     try {
-      const res = await fetch(`${API_BASE}/webservice/agencias/${ag.id}/estado`, {
+      const res = await fetch(`${API}/webservice/agencias/${ag.id}/estado`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -254,7 +255,7 @@
     const texto       = nuevoEstado === 1 ? 'Activo' : 'Cerrado';
     mensajeTabla = null;
     try {
-      const res = await fetch(`${API_BASE}/webservice/aerolineas/${ae.id}/estado`, {
+      const res = await fetch(`${API}/webservice/aerolineas/${ae.id}/estado`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

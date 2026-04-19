@@ -12,7 +12,8 @@
   import '../styles/destinos.css';
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Indica si hay una busqueda en progreso. @type {boolean} */
   let loading = false;

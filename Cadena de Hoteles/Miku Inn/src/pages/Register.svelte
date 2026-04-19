@@ -9,6 +9,7 @@
    */
 
   import logo from '../assets/mikuinn-logo.png';
+  import { API } from '../lib/api.js';
 
   /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
@@ -507,7 +508,7 @@
     };
 
     try {
-      const res = await fetch('http://localhost:7000/usuarios/registrar', {
+      const res = await fetch(`${API}/usuarios/registrar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -19,7 +19,8 @@
   import AdminReportes    from '../components/admin/AdminReportes.svelte';
 
   /** URL base del backend usada por todos los sub-componentes de admin. @type {string} */
-  const API_BASE = 'http://localhost:7000';
+  import { API } from '../lib/api.js';
+
 
   /** Funcion de navegacion para redirigir fuera del panel si es necesario. @type {Function} */
   export let navigateTo = (page, data = null) => {};
@@ -176,29 +177,29 @@
     <div class="adm__content">
 
       {#if activeSection === 'dashboard'}
-        <AdminDashboard {API_BASE} {badge} {setSection} />
+        <AdminDashboard {API} {badge} {setSection} />
 
       {:else if activeSection === 'usuarios'}
-        <AdminUsuarios {API_BASE} {badge} bind:count={countUsuarios} />
+        <AdminUsuarios {API} {badge} bind:count={countUsuarios} />
 
       {:else if activeSection === 'hoteles'}
-        <AdminHoteles {API_BASE} {badge} {fileToBase64} {tiposHabitacion} bind:count={countHoteles} />
+        <AdminHoteles {API} {badge} {fileToBase64} {tiposHabitacion} bind:count={countHoteles} />
 
       {:else if activeSection === 'crear-hotel'}
-        <AdminCrearHotel {API_BASE} {badge} {fileToBase64} {tiposHabitacion} onFinish={() => setSection('hoteles')} />
+        <AdminCrearHotel {API} {badge} {fileToBase64} {tiposHabitacion} onFinish={() => setSection('hoteles')} />
 
       {:else if activeSection === 'reservas'}
-        <AdminReservas {API_BASE} {badge} bind:count={countReservas} />
+        <AdminReservas {API} {badge} bind:count={countReservas} />
 
       {:else if activeSection === 'agencias'}
-        <AdminAgencias {API_BASE} {badge} bind:count={countAgencias} />
+        <AdminAgencias {API} {badge} bind:count={countAgencias} />
 
       <!-- Seccion de aerolineas aliadas: listado, creacion y edicion -->
       {:else if activeSection === 'aerolineas'}
-        <AdminAerolineas {API_BASE} {badge} bind:count={countAerolineas} />
+        <AdminAerolineas {API} {badge} bind:count={countAerolineas} />
 
       {:else if activeSection === 'reportes'}
-        <AdminReportes {API_BASE} {badge} />
+        <AdminReportes {API} {badge} />
 
       {/if}
 

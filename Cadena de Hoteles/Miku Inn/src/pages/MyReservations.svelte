@@ -13,7 +13,8 @@
   export let navigateTo = (/** @type {string} */ _page, /** @type {any} */ _data = null) => {};
 
   /** URL base de la API del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Lista de reservaciones agrupadas del usuario. @type {any[]} */
   let reservations        = [];

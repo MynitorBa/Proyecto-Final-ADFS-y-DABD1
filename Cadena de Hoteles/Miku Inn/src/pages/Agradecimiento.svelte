@@ -20,7 +20,8 @@
   export let agradecimientoData = null;
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** ID de la reservacion cuya factura PDF se esta descargando en este momento. @type {number|null} */
   let downloadingId = null;

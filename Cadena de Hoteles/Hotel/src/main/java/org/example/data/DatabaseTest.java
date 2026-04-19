@@ -15,14 +15,12 @@ public class DatabaseTest {
      */
     public static void testConnection() {
 
-        String url = "jdbc:oracle:thin:@localhost:1521/XEPDB1";
-        String user = "system";
-        String password = "meme1234";
+        String url  = System.getenv().getOrDefault("DB_URL",  "jdbc:oracle:thin:@localhost:1521/XEPDB1");
+        String user = System.getenv().getOrDefault("DB_USER", "system");
+        String password = System.getenv().getOrDefault("DB_PASS", "meme1234");
 
         try (Connection connection = DriverManager.getConnection(url, user, password)) {
-
             System.out.println("Conexión exitosa a Oracle!");
-
         } catch (Exception e) {
             System.out.println("Error de conexión");
             e.printStackTrace();

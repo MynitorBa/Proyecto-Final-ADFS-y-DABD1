@@ -29,7 +29,8 @@
   import '../styles/searchresults.css';
 
   /** URL base de la API del backend. @type {string} */
-  const API = 'http://localhost:7000';
+      import { API } from '../lib/api.js';
+
 
   /** Indica si hay una carga en proceso (skeleton). @type {boolean} */
   let isLoading    = false;

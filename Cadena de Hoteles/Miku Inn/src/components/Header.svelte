@@ -29,7 +29,8 @@
   export let userRolId = null;
 
   /** URL base del backend. @type {string} */
-  const API = 'http://localhost:7000';
+  import { API } from '../lib/api.js';
+
 
   /** Controla la visibilidad del dropdown de usuario. @type {boolean} */
   let showUserMenu = false;

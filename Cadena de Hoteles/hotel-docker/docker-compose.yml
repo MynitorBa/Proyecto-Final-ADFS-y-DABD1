@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      context: ../Hotel
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-backend
+    environment:
+      - BACKEND_PORT=${BACKEND_PORT}
+      - PORT=${BACKEND_PORT}   
+      - FRONTEND_PORT=${FRONTEND_PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - COOKIE_NAME=${COOKIE_NAME}
+      - CORS_EXTRA_ORIGINS=http://localhost:${AGENCY_PORT},http://localhost:${AIRLINE_PORT}
+      - DB_URL=jdbc:oracle:thin:@host.docker.internal:1521/${DB_SERVICE}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: "../Miku Inn"
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:${BACKEND_PORT}
+    container_name: ${COMPOSE_PROJECT_NAME}-frontend
+    ports:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
