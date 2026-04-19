@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
 {
-    /// <summary>
-    /// Controlador REST para la gestion administrativa de reservaciones.
-    /// Todos los endpoints requieren autenticacion y rol Administrador.
-    /// </summary>
     [ApiController]
     [Route("api/admin/reservaciones")]
     [Authorize(Roles = "Administrador")]
@@ -24,86 +20,40 @@ namespace Aerolinea.API.Controllers
             _logger = logger;
         }
 
-        // GET /api/admin/reservaciones/vuelos
-        /// <summary>
-        /// Retorna todos los vuelos que tienen al menos una reservacion con conteos
-        /// por estado. Usado para la vista agrupada del panel administrativo.
-        /// </summary>
         [HttpGet("vuelos")]
         public async Task<IActionResult> ObtenerVuelos()
         {
-            try
-            {
-                var vuelos = await _svc.ObtenerVuelosConReservacionesAsync();
-                return Ok(vuelos);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener vuelos con reservaciones (admin)");
-                return StatusCode(500, new { message = ex.Message });
-            }
+            try { return Ok(await _svc.ObtenerVuelosConReservacionesAsync()); }
+            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
-        // GET /api/admin/reservaciones/vuelo/{vueloId}
-        /// <summary>
-        /// Retorna las reservaciones que tienen boletos para el vuelo indicado.
-        /// </summary>
         [HttpGet("vuelo/{vueloId:int}")]
         public async Task<IActionResult> ObtenerPorVuelo(int vueloId)
         {
-            try
-            {
-                var reservaciones = await _svc.ObtenerPorVueloAsync(vueloId);
-                return Ok(reservaciones);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener reservaciones del vuelo {VueloId} (admin)", vueloId);
-                return StatusCode(500, new { message = ex.Message });
-            }
+            try { return Ok(await _svc.ObtenerPorVueloAsync(vueloId)); }
+            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
-        // GET /api/admin/reservaciones
-        /// <summary>Listado completo de todas las reservaciones.</summary>
         [HttpGet]
         public async Task<IActionResult> ObtenerTodas()
         {
-            try
-            {
-                var reservaciones = await _svc.ObtenerTodasAsync();
-                return Ok(reservaciones);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener listado de reservaciones (admin)");
-                return StatusCode(500, new { message = ex.Message });
-            }
+            try { return Ok(await _svc.ObtenerTodasAsync()); }
+            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
-        // GET /api/admin/reservaciones/{id}
-        /// <summary>Detalle completo de una reservacion por su ID.</summary>
         [HttpGet("{id:int}")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             try
             {
-                var detalle = await _svc.ObtenerPorIdAsync(id);
-                if (detalle == null)
-                    return NotFound(new { message = $"La reservacion con ID {id} no fue encontrada." });
-                return Ok(detalle);
+                var d = await _svc.ObtenerPorIdAsync(id);
+                return d == null
+                    ? NotFound(new { message = $"Reservacion {id} no encontrada." })
+                    : Ok(d);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener detalle de reservacion {Id} (admin)", id);
-                return StatusCode(500, new { message = ex.Message });
-            }
+            catch (Exception ex) { return StatusCode(500, new { message = ex.Message }); }
         }
 
-        // POST /api/admin/reservaciones/{id}/cancelar
-        /// <summary>
-        /// Cancela administrativamente una reservacion: cambia estado a Cancelada (3),
-        /// cancela boletos, devuelve disponibilidad en el vuelo y notifica al usuario.
-        /// </summary>
         [HttpPost("{id:int}/cancelar")]
         public async Task<IActionResult> Cancelar(int id, [FromBody] CancelarRequestDto body)
         {
@@ -112,22 +62,33 @@ namespace Aerolinea.API.Controllers
 
             try
             {
-                var (ok, mensaje) = await _svc.CancelarAsync(id, body.Motivo);
-                if (!ok)
-                {
-                    if (mensaje.Contains("no fue encontrada"))
-                        return NotFound(new { message = mensaje });
-                    return BadRequest(new { message = mensaje });
-                }
+                var (ok, mensaje, agencia) = await _svc.CancelarAsync(id, body.Motivo);
 
-                _logger.LogInformation(
-                    "Reservacion {Id} cancelada administrativamente. Motivo: {Motivo}", id, body.Motivo);
-                return Ok(new { message = mensaje });
+                if (!ok)
+                    return mensaje.Contains("no fue encontrada")
+                        ? NotFound(new { message = mensaje })
+                        : BadRequest(new { message = mensaje });
+
+                _logger.LogInformation("Reservacion {Id} cancelada. Motivo: {Motivo}", id, body.Motivo);
+
+                // Devolver tambien la respuesta de la agencia para que puedas verla
+                return Ok(new
+                {
+                    message = mensaje,
+                    notificacionAgencia = agencia == null ? null : new
+                    {
+                        esReservaDeAgencia = agencia.EsReservaDeAgencia,
+                        nombreAgencia = agencia.NombreAgencia,
+                        enviado = agencia.Enviado,
+                        httpStatus = agencia.HttpStatus,
+                        respuestaAgencia = agencia.RespuestaAgencia,
+                        error = agencia.Error,
+                    }
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cancelar reservacion {Id} (admin)", id);
-                return StatusCode(500, new { message = "Error interno al cancelar la reservacion." });
+                return StatusCode(500, new { message = "Error interno al cancelar." });
             }
         }
 

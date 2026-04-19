@@ -89,7 +89,6 @@ public class Main {
 
         // Services
         AdminBusquedaService      adminBusquedaService      = new AdminBusquedaService(adminBusquedaRepository);
-        AdminReservacionService   adminReservacionService   = new AdminReservacionService(adminReservacionRepository);
         AgenciaService            agenciaService            = new AgenciaService(agenciaRepository);
         AuthService               authService               = new AuthService(authRepository);
         BusquedaAgenciaService    busquedaAgenciaService    = new BusquedaAgenciaService(busquedaAgenciaRepository);
@@ -122,6 +121,15 @@ public class Main {
 
         // Service de handshake con aerolineas aliadas externas
         HandshakeAerolineaService  handshakeAerolineaService  = new HandshakeAerolineaService(aerolineaAliadaRepository);
+
+        // Service de notificacion a agencias externas (usado por AdminReservacionService)
+        AgenciaNotificadorExternoService agenciaNotificadorExternoService =
+                new AgenciaNotificadorExternoService();
+
+        // AdminReservacionService recibe el notificador para enviar aviso a la agencia
+        // y el correo al usuario al cancelar una reservacion desde el panel admin
+        AdminReservacionService adminReservacionService =
+                new AdminReservacionService(adminReservacionRepository, agenciaNotificadorExternoService);
 
         // Hilo de expiracion de reservaciones pendientes
         expiracionService.iniciar();

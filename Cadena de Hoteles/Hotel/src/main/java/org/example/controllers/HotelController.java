@@ -6,6 +6,7 @@ import org.example.dtos.*;
 import org.example.services.AdminReservacionService;
 import org.example.services.HotelService;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -235,11 +236,14 @@ public class HotelController {
             ctx.json(adminReservacionService.listarTodas());
         });
 
-        // Cancela una reservacion con un motivo opcional; usa motivo por defecto si no se proporciona
+        // Cancela una reservacion con un motivo opcional.
+        // Notifica al sistema externo de la agencia (si corresponde) y envia correo al usuario.
+        // Respuesta: { mensaje, notificacionAgencia: { esReservaDeAgencia, nombreAgencia,
+        //              enviado, httpStatus, respuestaAgencia, error } }
         app.patch("/admin/reservaciones/{id}/cancelar", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
-            int reservacionId = id(ctx, "id");
-            String motivo = "Cancelada por administrador";
+            int    reservacionId = id(ctx, "id");
+            String motivo        = "Cancelada por administrador";
 
             // Intenta leer el motivo del cuerpo; si falla o no viene, conserva el valor por defecto
             try {
@@ -249,8 +253,15 @@ public class HotelController {
             } catch (Exception ignored) {}
 
             try {
-                adminReservacionService.cancelarReservacion(reservacionId, motivo);
-                ctx.json(Map.of("mensaje", "Reservacion cancelada correctamente"));
+                ResultadoNotificacionDTO resultadoAgencia =
+                        adminReservacionService.cancelarReservacion(reservacionId, motivo);
+
+                // Construye respuesta enriquecida para que el admin vea el estado de la agencia
+                Map<String, Object> respuesta = new LinkedHashMap<>();
+                respuesta.put("mensaje", "Reservacion cancelada correctamente");
+                respuesta.put("notificacionAgencia", resultadoAgencia);
+
+                ctx.json(respuesta);
             } catch (IllegalArgumentException e) {
                 ctx.status(400).json(Map.of("mensaje", e.getMessage()));
             }
