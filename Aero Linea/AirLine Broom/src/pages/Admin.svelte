@@ -28,6 +28,9 @@
   // Modulo de gestion de hoteles aliados para el panel de administracion
   import AdminHotelAliados  from '../components/admin/AdminHotelAliados.svelte';
 
+  // Modulo de gestion de reservaciones: listado, detalle y cancelacion con notificacion por correo
+  import AdminReservas      from '../components/admin/AdminReservas.svelte';
+
   /** Funcion de navegacion proporcionada por el enrutador de la aplicacion. Acepta un payload de datos opcional. @type {Function} */
   export let navigateTo = (page, data = null) => {};
 
@@ -215,6 +218,9 @@
 
     // Modulo de hoteles aliados: gestion de hoteles vinculados via Webservice
     { id: 'hoteles-aliados',      label: 'Hoteles Aliados',      icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4z' },
+
+    // Modulo de reservaciones: lista global, detalle de boletos y cancelacion administrativa
+    { id: 'reservaciones',        label: 'Reservaciones',        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   ];
 
   /**
@@ -333,6 +339,7 @@
             {:else if activeSection === 'metricas'}Métricas y Analíticos
             {:else if activeSection === 'agencias'}Agencias
             {:else if activeSection === 'hoteles-aliados'}Hoteles Aliados
+            {:else if activeSection === 'reservaciones'}Gestión de Reservaciones
             {/if}
           </h2>
           <p style="font-size:.8rem;color:var(--text-muted);margin:0">
@@ -416,6 +423,14 @@
         <!-- Modulo de gestion de hoteles aliados; mismo contrato de props que AdminAgencias -->
         {:else if activeSection === 'hoteles-aliados'}
           <AdminHotelAliados
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+          />
+
+        <!-- Modulo de reservaciones: lista global de todas las reservaciones con cancelacion admin -->
+        {:else if activeSection === 'reservaciones'}
+          <AdminReservas
             {API}
             {mostrarToast}
             {mostrarConfirm}
