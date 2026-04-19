@@ -279,6 +279,44 @@ func (r *ReservacionRepository) ObtenerIDsPendientesExpirados() ([]int, error) {
 	return ids, nil
 }
 
+// ObtenerPendientesExpirablesCompletos
+//
+// Retorna todas las reservaciones en estado pendiente (EstadoID = 1) cuya fecha
+// de expiracion ya paso, incluyendo usuario_id y no_reservacion para poder
+// registrar correctamente el evento en log_sesion al momento de expirarlas.
+//
+// Retorna:
+//   - []dto.ReservacionExpirable: lista de reservaciones con los campos necesarios
+//   - error: error de base de datos, nil si la operacion fue exitosa
+func (r *ReservacionRepository) ObtenerPendientesExpirablesCompletos() ([]dto.ReservacionExpirable, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	rows, err := conn.QueryContext(context.Background(), `
+		SELECT ID, Usuario_ID, No_Reservacion
+		FROM Reservacion
+		WHERE EstadoID = 1
+		  AND Fecha_Expiracion <= NOW()
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var resultado []dto.ReservacionExpirable
+	for rows.Next() {
+		var res dto.ReservacionExpirable
+		if err := rows.Scan(&res.ID, &res.UsuarioID, &res.NoReservacion); err != nil {
+			return nil, err
+		}
+		resultado = append(resultado, res)
+	}
+	return resultado, nil
+}
+
 // ObtenerDetallesDeReservacion
 //
 // Recupera todos los detalles de una reservacion junto con los datos de conexion

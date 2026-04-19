@@ -67,7 +67,13 @@ func (s *LogSesionService) Registrar(c *gin.Context, tipoEventoID int, usuarioID
 		mensaje = mensaje[:500]
 	}
 
-	exitoso := tipoEventoID == helpers.TipoLoginExitoso || tipoEventoID == helpers.TipoRegistroExitoso
+	exitoso := tipoEventoID == helpers.TipoLoginExitoso ||
+		tipoEventoID == helpers.TipoRegistroExitoso ||
+		tipoEventoID == helpers.TipoLogout ||
+		tipoEventoID == helpers.TipoCompraExitosa ||
+		tipoEventoID == helpers.TipoReservaCreada ||
+		tipoEventoID == helpers.TipoCancelacionUsuario ||
+		tipoEventoID == helpers.TipoCancelacionProveedor
 
 	var uid sql.NullInt64
 	if usuarioID != nil {
@@ -87,6 +93,62 @@ func (s *LogSesionService) Registrar(c *gin.Context, tipoEventoID int, usuarioID
 	go func() {
 		if err := s.repo.Insertar(entry); err != nil {
 			log.Printf("[LOG_SESION] error: %v", err)
+		}
+	}()
+}
+
+// RegistrarSistema
+//
+// Variante de Registrar para eventos generados por procesos en background
+// (scheduler, jobs, etc.) que no tienen un *gin.Context disponible. Usa
+// "SYSTEM" como IP_Origen y describe el proceso en User_Agent.
+//
+// Parametros:
+//   - tipoEventoID: ID del tipo de evento segun la tabla tipo_evento_sesion
+//   - usuarioID: puntero al ID del usuario afectado; nil si no aplica
+//   - loginIntentado: texto a guardar en Login_Intentado (ej: no_reservacion)
+//   - mensaje: descripcion corta del evento
+//   - origen: identificador del proceso que genera el evento (ej: "ExpiracionService")
+//
+// Notas:
+//   - El campo Exitoso se deriva automaticamente: true para IDs 25 (COMPRA_EXITOSA)
+//     y 27 (RESERVA_CREADA), false para cualquier otro tipo de evento
+//   - User-Agent y Mensaje se truncan a 500 caracteres si exceden ese limite
+//   - El error de insercion se loggea internamente sin propagarse al llamador
+func (s *LogSesionService) RegistrarSistema(tipoEventoID int, usuarioID *int, loginIntentado, mensaje, origen string) {
+	if len(origen) > 500 {
+		origen = origen[:500]
+	}
+	if len(mensaje) > 500 {
+		mensaje = mensaje[:500]
+	}
+
+	exitoso := tipoEventoID == helpers.TipoLoginExitoso ||
+		tipoEventoID == helpers.TipoRegistroExitoso ||
+		tipoEventoID == helpers.TipoLogout ||
+		tipoEventoID == helpers.TipoCompraExitosa ||
+		tipoEventoID == helpers.TipoReservaCreada ||
+		tipoEventoID == helpers.TipoCancelacionUsuario ||
+		tipoEventoID == helpers.TipoCancelacionProveedor
+
+	var uid sql.NullInt64
+	if usuarioID != nil {
+		uid = sql.NullInt64{Int64: int64(*usuarioID), Valid: true}
+	}
+
+	entry := models.LogSesion{
+		TipoEventoID:   tipoEventoID,
+		UsuarioID:      uid,
+		LoginIntentado: sql.NullString{String: loginIntentado, Valid: loginIntentado != ""},
+		Exitoso:        exitoso,
+		IPOrigen:       sql.NullString{String: "SYSTEM", Valid: true},
+		UserAgent:      sql.NullString{String: origen, Valid: origen != ""},
+		Mensaje:        sql.NullString{String: mensaje, Valid: mensaje != ""},
+	}
+
+	go func() {
+		if err := s.repo.Insertar(entry); err != nil {
+			log.Printf("[LOG_SESION] error sistema: %v", err)
 		}
 	}()
 }

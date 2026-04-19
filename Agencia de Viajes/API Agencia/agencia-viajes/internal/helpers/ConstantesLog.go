@@ -31,4 +31,16 @@ const (
 	TipoRegistroFallidoUsernameInvalido  = 17
 	TipoRegistroFallidoPasaporteInvalido = 18
 	TipoRegistroFallidoTelefonoInvalido  = 19
+	TipoLoginFallidoCampos              = 20
+	TipoLoginFallidoCaptchaAusente      = 21
+	TipoLoginFallidoCaptchaInvalido     = 22
+	TipoLogout                          = 23
+	TipoLogoutSinSesionActiva           = 24
+	TipoCompraExitosa                   = 25
+	TipoCompraFallidaPago               = 26
+	TipoReservaCreada                   = 27
+	TipoReservaExpirada                 = 28
+	TipoCancelacionUsuario              = 29
+	TipoCancelacionProveedor            = 30
+	TipoCancelacionFallida              = 31
 )

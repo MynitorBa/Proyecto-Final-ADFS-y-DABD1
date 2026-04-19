@@ -11,6 +11,7 @@ package dto
 type LoginRequest struct {
 	Login      string `json:"login"`      // Correo electronico o nombre de usuario
 	Contrasena string `json:"contrasena"` // Contrasena del usuario
+	Captcha    string `json:"captcha"`    // Token de verificacion de reCAPTCHA v2
 }
 
 // LoginResponse

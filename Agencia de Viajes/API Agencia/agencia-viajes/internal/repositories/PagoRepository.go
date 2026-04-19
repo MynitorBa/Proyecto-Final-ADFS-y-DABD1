@@ -79,6 +79,24 @@ func (r *PagoRepository) ContarDetallesPorTipo(reservacionID int) (vuelos int, h
 	return
 }
 
+// ObtenerNoReservacion
+//
+// Retorna el numero de reservacion legible (No_Reservacion) para el ID indicado.
+// Se usa en ProcesarPago para incluir el no_reservacion en el log de auditoria
+// sin modificar la firma de ObtenerReservaParaPago.
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion a consultar
+//
+// Retorna:
+//   - string: numero de reservacion (ej: "A1B2C3D4")
+//   - error: error si la reservacion no existe o falla la consulta
+func (r *PagoRepository) ObtenerNoReservacion(reservacionID int) (string, error) {
+	var no string
+	err := r.db.QueryRow(`SELECT No_Reservacion FROM Reservacion WHERE ID = ?`, reservacionID).Scan(&no)
+	return no, err
+}
+
 // ConfirmarReservaYFacturar
 //
 // Ejecuta dentro de una transaccion atomica los pasos del proceso de confirmacion:

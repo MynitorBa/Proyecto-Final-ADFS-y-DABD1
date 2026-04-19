@@ -6,7 +6,9 @@ package controllers
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/services"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -22,17 +24,19 @@ type ReservacionController struct {
 	service      *services.ReservacionService
 	pdfService   *services.PdfReservacionService
 	emailService *services.EmailReservacionService
+	logSesion    *services.LogSesionService
 }
 
 // NewReservacionController
 //
 // Constructor que retorna una nueva instancia de ReservacionController
-// con los servicios de reservacion, PDF y correo inyectados.
+// con los servicios de reservacion, PDF, correo y log inyectados.
 //
 // Parametros:
 //   - service: servicio principal de reservaciones
 //   - pdfService: servicio de generacion de PDF
 //   - emailService: servicio de envio de correo de confirmacion
+//   - logSesion: servicio de log de sesion para auditoria de reservaciones
 //
 // Retorna:
 //   - *ReservacionController: puntero a la nueva instancia
@@ -40,11 +44,13 @@ func NewReservacionController(
 	service *services.ReservacionService,
 	pdfService *services.PdfReservacionService,
 	emailService *services.EmailReservacionService,
+	logSesion *services.LogSesionService,
 ) *ReservacionController {
 	return &ReservacionController{
 		service:      service,
 		pdfService:   pdfService,
 		emailService: emailService,
+		logSesion:    logSesion,
 	}
 }
 
@@ -85,6 +91,12 @@ func (ctrl *ReservacionController) CrearReservacion(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Log de reserva creada (evento pre-compra, antes de pasar a pago)
+	uid := usuarioID.(int)
+	ctrl.logSesion.Registrar(c, helpers.TipoReservaCreada,
+		&uid, resp.NoReservacion,
+		fmt.Sprintf("Reservación %s creada (tipo %d)", resp.NoReservacion, req.TipoReservaID))
 
 	c.JSON(http.StatusCreated, resp)
 }

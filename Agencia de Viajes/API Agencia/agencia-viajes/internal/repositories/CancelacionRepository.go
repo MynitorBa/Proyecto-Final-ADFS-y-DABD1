@@ -37,7 +37,7 @@ func NewCancelacionRepository(db *sql.DB) *CancelacionRepository {
 // ObtenerReservacionParaCancelar
 //
 // Verifica que una reservacion exista, pertenezca al usuario indicado
-// y retorna su estado actual para validar si es cancelable.
+// y retorna su estado actual y numero de reservacion para validar y auditar.
 //
 // Parametros:
 //   - reservacionID: ID de la reservacion a consultar
@@ -45,21 +45,22 @@ func NewCancelacionRepository(db *sql.DB) *CancelacionRepository {
 //
 // Retorna:
 //   - estadoID: identificador del estado actual de la reservacion
+//   - noReservacion: numero de reservacion (ej. "RES-000123")
 //   - error: error si la reservacion no existe, no pertenece al usuario o falla la consulta
-func (r *CancelacionRepository) ObtenerReservacionParaCancelar(reservacionID, usuarioID int) (estadoID int, err error) {
+func (r *CancelacionRepository) ObtenerReservacionParaCancelar(reservacionID, usuarioID int) (estadoID int, noReservacion string, err error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	defer conn.Close()
 
 	err = conn.QueryRowContext(context.Background(), `
-		SELECT EstadoID FROM Reservacion
+		SELECT EstadoID, No_Reservacion FROM Reservacion
 		WHERE ID = ? AND Usuario_ID = ?
-	`, reservacionID, usuarioID).Scan(&estadoID)
+	`, reservacionID, usuarioID).Scan(&estadoID, &noReservacion)
 
 	if err == sql.ErrNoRows {
-		return 0, fmt.Errorf("reservación no encontrada o no pertenece al usuario")
+		return 0, "", fmt.Errorf("reservación no encontrada o no pertenece al usuario")
 	}
 	return
 }

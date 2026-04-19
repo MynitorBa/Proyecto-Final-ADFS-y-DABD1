@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -86,4 +87,29 @@ func VerificarToken(tokenStr string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+// ExtraerUsuarioIDDeCookie
+//
+// Intenta extraer el ID y username del usuario desde la cookie de sesion
+// sin propagar errores. Si la cookie no existe, esta expirada o es invalida,
+// retorna ceros y cadena vacia. Disenada para usarse en el logout donde
+// la ausencia de sesion no es un error fatal sino un evento a registrar.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - usuarioID: ID del usuario extraido del JWT, o 0 si no hay sesion valida
+//   - username: nombre de usuario extraido del JWT, o cadena vacia si no hay sesion valida
+func ExtraerUsuarioIDDeCookie(c *gin.Context) (usuarioID int, username string) {
+	tokenStr, err := c.Cookie("session")
+	if err != nil {
+		return 0, ""
+	}
+	claims, err := VerificarToken(tokenStr)
+	if err != nil {
+		return 0, ""
+	}
+	return claims.UsuarioID, claims.Username
 }

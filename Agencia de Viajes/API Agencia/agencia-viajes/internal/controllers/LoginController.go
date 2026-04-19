@@ -50,8 +50,9 @@ func NewLoginController(service *services.LoginService, logSesion *services.LogS
 //
 // Retorna:
 //   - HTTP 200: datos del usuario autenticado y cookie de sesion establecida
-//   - HTTP 400: error si el body JSON es invalido
+//   - HTTP 400: error si el body JSON es invalido, campos vacios, o captcha falla
 //   - HTTP 401: error si las credenciales son incorrectas
+//   - HTTP 403: error si el usuario esta deshabilitado
 //   - HTTP 500: error interno al generar el token JWT o al procesar el login
 func (ctrl *LoginController) Login(c *gin.Context) {
 	var req dto.LoginRequest
@@ -72,6 +73,21 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 		if err == services.ErrUsuarioDeshabilitado {
 			ctrl.logSesion.Registrar(c, helpers.TipoLoginFallidoDeshabilitado, nil, req.Login, "Usuario deshabilitado intentó iniciar sesión")
 			c.JSON(http.StatusForbidden, gin.H{"error": "Cuenta deshabilitada. Contacta al administrador."})
+			return
+		}
+		if err == services.ErrCamposVacios {
+			ctrl.logSesion.Registrar(c, helpers.TipoLoginFallidoCampos, nil, req.Login, "Login o contraseña vacíos")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Ingresa tu usuario y contraseña"})
+			return
+		}
+		if err == services.ErrCaptchaAusente {
+			ctrl.logSesion.Registrar(c, helpers.TipoLoginFallidoCaptchaAusente, nil, req.Login, "Login sin token de captcha")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Completa el CAPTCHA para continuar"})
+			return
+		}
+		if err == services.ErrCaptchaInvalido {
+			ctrl.logSesion.Registrar(c, helpers.TipoLoginFallidoCaptchaInvalido, nil, req.Login, "Token de captcha rechazado por Google")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Verificación de CAPTCHA falló. Intenta de nuevo."})
 			return
 		}
 		ctrl.logSesion.Registrar(c, helpers.TipoLoginErrorInterno, nil, req.Login, err.Error())
@@ -113,6 +129,13 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 // Retorna:
 //   - HTTP 200: mensaje confirmando que la sesion fue cerrada
 func (ctrl *LoginController) Logout(c *gin.Context) {
+	usuarioID, username := helpers.ExtraerUsuarioIDDeCookie(c)
+	if usuarioID > 0 {
+		uid := usuarioID
+		ctrl.logSesion.Registrar(c, helpers.TipoLogout, &uid, username, "Usuario cerró sesión correctamente")
+	} else {
+		ctrl.logSesion.Registrar(c, helpers.TipoLogoutSinSesionActiva, nil, "", "Logout sin cookie de sesión válida")
+	}
 	c.SetCookie("session", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Sesión cerrada"})
 }

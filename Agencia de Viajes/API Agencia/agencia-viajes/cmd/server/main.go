@@ -66,7 +66,7 @@ func main() {
 	handshakeHoteleraService  := services.NewHandshakeHoteleraService(db, cfg)
 	catalogoService           := services.NewCatalogoService(db, ubicacionService)
 	busquedaService           := services.NewBusquedaService(db)
-	expiracionService         := services.NewExpiracionService(db)
+	expiracionService         := services.NewExpiracionService(db, logSesionService)
 	reservacionService        := services.NewReservacionService(db, expiracionService)
 	detalleReservacionService := services.NewDetalleReservacionService(db)
 	asientoVueloService       := services.NewAsientoVueloService(db)
@@ -95,12 +95,13 @@ func main() {
 	handshakeHoteleraController  := controllers.NewHandshakeHoteleraController(handshakeHoteleraService)
 	catalogoController           := controllers.NewCatalogoController(catalogoService)
 	busquedaController           := controllers.NewBusquedaController(busquedaService)
-	reservacionController        := controllers.NewReservacionController(reservacionService, pdfService, emailService)
+	reservacionController        := controllers.NewReservacionController(reservacionService, pdfService, emailService, logSesionService)
 	detalleReservacionController := controllers.NewDetalleReservacionController(detalleReservacionService)
 	asientoVueloController       := controllers.NewAsientoVueloController(asientoVueloService)
-	pagoController               := controllers.NewPagoController(pagoService)
+	pagoController               := controllers.NewPagoController(pagoService, logSesionService)
 	misReservacionesController   := controllers.NewMisReservacionesController(misReservacionesService)
-	cancelacionController        := controllers.NewCancelacionController(cancelacionService)
+	cancelacionController        := controllers.NewCancelacionController(cancelacionService, logSesionService)
+	webserviceController         := controllers.NewWebserviceController(db, logSesionService)
 	comentarioController         := controllers.NewComentarioController(comentarioService)
 	statsController              := controllers.NewStatsController(db)
 	adminController              := controllers.NewAdminController(db)
@@ -169,6 +170,13 @@ func main() {
 				admin.GET("/admin/usuarios",                      usuarioController.ObtenerTodos)
 			}
 		}
+	}
+
+	// Rutas para proveedores externos (autenticados con X-Proveedor-Token)
+	webservice := router.Group("/api/webservice")
+	webservice.Use(middlewares.ProveedorRequerido(db))
+	{
+		webservice.POST("/notificacion", webserviceController.RecibirNotificacion)
 	}
 
 	log.Println("Servidor corriendo en puerto " + cfg.ServerPort)

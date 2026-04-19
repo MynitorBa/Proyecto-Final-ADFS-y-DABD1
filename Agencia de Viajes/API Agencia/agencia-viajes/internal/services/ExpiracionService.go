@@ -7,6 +7,7 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
 	"database/sql"
@@ -24,24 +25,28 @@ import (
 // pendientes de un usuario especifico. Notifica a cada proveedor externo
 // antes de actualizar el estado en la base de datos local.
 type ExpiracionService struct {
-	repo   *repositories.ReservacionRepository
-	stopCh chan struct{}
+	repo      *repositories.ReservacionRepository
+	stopCh    chan struct{}
+	logSesion *LogSesionService
 }
 
 // NewExpiracionService
 //
 // Crea e inicializa una nueva instancia de ExpiracionService con su repositorio
-// de reservaciones y el canal de control para detener el proceso en segundo plano.
+// de reservaciones, el canal de control para detener el proceso en segundo plano
+// y el servicio de log para registrar cada expiracion en auditoria.
 //
 // Parametros:
 //   - db: conexion activa a la base de datos SQL
+//   - logSesion: servicio de log para registrar eventos de expiracion de reservaciones
 //
 // Retorna:
 //   - *ExpiracionService: instancia lista para usar, aun no iniciada
-func NewExpiracionService(db *sql.DB) *ExpiracionService {
+func NewExpiracionService(db *sql.DB, logSesion *LogSesionService) *ExpiracionService {
 	return &ExpiracionService{
-		repo:   repositories.NewReservacionRepository(db),
-		stopCh: make(chan struct{}),
+		repo:      repositories.NewReservacionRepository(db),
+		stopCh:    make(chan struct{}),
+		logSesion: logSesion,
 	}
 }
 
@@ -59,11 +64,8 @@ func (s *ExpiracionService) Iniciar() {
 		for {
 			select {
 			case <-ticker.C:
-				if err := s.expirarPendientes(); err != nil {
-					log.Println("[EXPIRACION] Error:", err)
-				} else {
-					log.Println("[EXPIRACION] Revisión completada")
-				}
+				s.expirarPendientes()
+				log.Println("[EXPIRACION] Revisión completada")
 			case <-s.stopCh:
 				log.Println("[EXPIRACION] Servicio detenido")
 				return
@@ -107,28 +109,35 @@ func (s *ExpiracionService) ExpirarReservacionesDeUsuario(usuarioID int) error {
 
 // expirarPendientes
 //
-// Obtiene todos los IDs de reservaciones pendientes expiradas a nivel global
-// y llama a expirarUna para cada una. Los errores individuales se registran
-// en log sin interrumpir el proceso.
-//
-// Retorna:
-//   - error: si falla la consulta de IDs pendientes expirados en BD
-func (s *ExpiracionService) expirarPendientes() error {
-	ids, err := s.repo.ObtenerIDsPendientesExpirados()
+// Obtiene todas las reservaciones pendientes expiradas a nivel global con sus
+// datos completos (ID, usuario_id, no_reservacion) y llama a expirarUna para
+// cada una. Por cada expiracion exitosa registra el evento en log_sesion.
+// Los errores individuales se registran en log sin interrumpir el proceso.
+func (s *ExpiracionService) expirarPendientes() {
+	reservas, err := s.repo.ObtenerPendientesExpirablesCompletos()
 	if err != nil {
-		return err
+		log.Printf("[EXPIRACION] Error al obtener pendientes: %v", err)
+		return
 	}
-	for _, id := range ids {
-		detalles, err := s.repo.ObtenerDetallesDeReservacion(id)
+	for _, res := range reservas {
+		detalles, err := s.repo.ObtenerDetallesDeReservacion(res.ID)
 		if err != nil {
-			log.Printf("[EXPIRACION] Error obteniendo detalles de reservacion %d: %v", id, err)
+			log.Printf("[EXPIRACION] Error detalles reserva %d: %v", res.ID, err)
 			continue
 		}
-		if err := s.expirarUna(id, detalles); err != nil {
-			log.Printf("[EXPIRACION] Error expirando reservacion %d: %v", id, err)
+		if err := s.expirarUna(res.ID, detalles); err != nil {
+			log.Printf("[EXPIRACION] Error al expirar %d: %v", res.ID, err)
+			continue
 		}
+		uid := res.UsuarioID
+		s.logSesion.RegistrarSistema(
+			helpers.TipoReservaExpirada,
+			&uid,
+			res.NoReservacion,
+			fmt.Sprintf("Reservación %s expiró por falta de pago", res.NoReservacion),
+			"ExpiracionService",
+		)
 	}
-	return nil
 }
 
 // expirarUna

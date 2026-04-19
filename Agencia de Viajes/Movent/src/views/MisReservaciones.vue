@@ -43,6 +43,9 @@
               <div class="mv-panel__hero-right">
                 <p class="mv-panel__hero-lbl">Total pagado</p>
                 <p class="mv-panel__hero-monto">${{ panelReserva.total?.toFixed(2) }}</p>
+                <p v-if="montoImpuestos > 0" class="mv-panel__hero-sub">
+                  Incluye ${{ montoImpuestos.toFixed(2) }} de impuestos
+                </p>
               </div>
             </div>
 
@@ -128,6 +131,23 @@
                       </div>
                     </div>
                   </div>
+
+<!-- Desglose de precios de vuelos con estado de cada detalle -->
+                  <div v-if="detallesVuelos.length > 0" class="mv-desglose">
+                    <div v-for="d in detallesVuelos" :key="d.id" class="mv-desglose__row">
+                      <span style="display:inline-flex;align-items:center;gap:0.4rem;">
+                        Vuelo
+                        <span :class="['mv-badge', 'mv-badge--sm', estadoClase(estadoDetalleLabel(d.estado_detalle_id, 1))]">
+                          {{ estadoDetalleLabel(d.estado_detalle_id, 1) }}
+                        </span>
+                      </span>
+                      <span>${{ (d.parametros_json?.total ?? d.total ?? 0).toFixed(2) }}</span>
+                    </div>
+                    <div class="mv-desglose__total">
+                      <span>Total vuelos</span>
+                      <strong>${{ detallesVuelos.reduce((s,d)=>s+(d.parametros_json?.total ?? d.total ?? 0),0).toFixed(2) }}</strong>
+                    </div>
+                  </div>
                 </div>
               </template>
 
@@ -156,18 +176,46 @@
                       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> {{ h.cantidadPersonas }} huésped{{ h.cantidadPersonas !== 1 ? 'es' : '' }}</span>
                     </div>
                   </div>
-                  <!-- Desglose de costos por habitación -->
-                  <div class="mv-desglose">
-                    <div v-for="h in panelReserva.habitaciones" :key="h.detalleId" class="mv-desglose__row">
-                      <span>{{ h.tipoHabitacion }}</span><span>${{ h.totalDetalle?.toFixed(2) }}</span>
+<!-- Desglose de costos por habitación con estado de cada detalle -->
+                  <div v-if="detallesHoteles.length > 0" class="mv-desglose">
+                    <div v-for="d in detallesHoteles" :key="d.id" class="mv-desglose__row">
+                      <span style="display:inline-flex;align-items:center;gap:0.4rem;">
+                        {{ etiquetaHabitacion(d) }}
+                        <span :class="['mv-badge', 'mv-badge--sm', estadoClase(estadoDetalleLabel(d.estado_detalle_id, 2))]">
+                          {{ estadoDetalleLabel(d.estado_detalle_id, 2) }}
+                        </span>
+                      </span>
+                      <span>${{ (d.parametros_json?.total ?? d.total ?? 0).toFixed(2) }}</span>
                     </div>
                     <div class="mv-desglose__total">
                       <span>Total hospedaje</span>
-                      <strong>${{ panelReserva.habitaciones.reduce((s,h)=>s+(h.totalDetalle??0),0).toFixed(2) }}</strong>
+                      <strong>${{ detallesHoteles.reduce((s,d)=>s+(d.parametros_json?.total ?? d.total ?? 0),0).toFixed(2) }}</strong>
                     </div>
                   </div>
                 </div>
               </template>
+
+              <!-- Resumen de cobros: subtotal, impuestos (ganancia agencia) y total -->
+              <div v-if="montoImpuestos > 0" class="mv-panel__section">
+                <h4 class="mv-panel__stitle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  Resumen de cobros
+                </h4>
+                <div class="mv-desglose">
+                  <div class="mv-desglose__row">
+                    <span>Subtotal</span>
+                    <span>${{ subtotalReserva.toFixed(2) }}</span>
+                  </div>
+                  <div class="mv-desglose__row">
+                    <span>Impuestos</span>
+                    <span>${{ montoImpuestos.toFixed(2) }}</span>
+                  </div>
+                  <div class="mv-desglose__total">
+                    <span>Total pagado</span>
+                    <strong>${{ panelReserva.total?.toFixed(2) }}</strong>
+                  </div>
+                </div>
+              </div>
 
               <!-- COMENTARIOS DEL PROVEEDOR (solo lectura, reservas completadas) -->
               <div
@@ -690,12 +738,45 @@ async function apiFetch(url, opts = {}) {
 const ESTADO_ID_MAP = { 1:'Pendiente', 2:'Confirmada', 3:'Cancelada', 4:'Expirada', 5:'Completada', 6:'En Curso' }
 
 /**
+ * Mapas de ID de estado_detalle a etiqueta legible, diferenciados por tipo de detalle.
+ * Cada proveedor maneja un orden distinto de estados:
+ *   - Vuelo (tipo_detalle_id=1): 1=Pendiente, 2=Confirmada, 3=Cancelada, 4=Expirada, 5=Completada
+ *   - Hotel (tipo_detalle_id=2): 1=Pendiente, 2=Confirmada, 3=Completada, 4=Cancelada, 5=Expirada
+ */
+const ESTADO_DETALLE_MAP = {
+  1: { 1:'Pendiente', 2:'Confirmada', 3:'Cancelada',  4:'Expirada',  5:'Completada' }, // Vuelo
+  2: { 1:'Pendiente', 2:'Confirmada', 3:'Completada', 4:'Cancelada', 5:'Expirada'   }, // Hotel
+}
+
+/**
  * Convierte el ID numérico de estado en su etiqueta de texto.
  *
  * @param {number} id - ID del estado.
  * @returns {string}
  */
 function estadoLabel(id) { return ESTADO_ID_MAP[id] ?? 'Pendiente' }
+
+/**
+ * Convierte el ID numérico de estado_detalle a etiqueta legible según el tipo.
+ * Los IDs tienen significados diferentes entre vuelos (1) y hoteles (2).
+ *
+ * REGLA ESPECIAL: si la reserva padre está cancelada o expirada, todos sus
+ * detalles se muestran con ese mismo estado, independientemente del ID que
+ * el backend haya guardado. Esto cubre casos donde el backend no actualiza
+ * correctamente el estado de los detalles al cancelar/expirar la reserva.
+ *
+ * @param {number} id - ID del estado del detalle.
+ * @param {number} tipoDetalleId - 1 para vuelo, 2 para hotel.
+ * @returns {string}
+ */
+function estadoDetalleLabel(id, tipoDetalleId) {
+  // Si la reserva padre está cancelada → todos los detalles son "Cancelada"
+  const estadoReserva = panelReserva.value?.estadoReserva?.toLowerCase()
+  if (estadoReserva === 'cancelada') return 'Cancelada'
+  if (estadoReserva === 'expirada')  return 'Expirada'
+
+  return ESTADO_DETALLE_MAP[tipoDetalleId]?.[id] ?? 'Desconocido'
+}
 
 /**
  * Convierte el tipo de reserva numérico en su categoría de texto.
@@ -768,6 +849,7 @@ function fromLista(r) {
 function fromDetalle(r) {
   const boletos      = []
   const habitaciones = []
+  const detallesRaw  = r.detalles ?? []
   let nombreHotel = null, hotelId = null
   let usuarioNombre = null, usuarioEmail = null
   let fechaCancelacion = null, motivoCancelacion = null
@@ -797,13 +879,14 @@ function fromDetalle(r) {
     }
   }
 
-  return {
+return {
     id: r.id, reservacionId: r.id,
     noReservacion: r.no_reservacion,
     estadoReserva, total: r.total,
     fechaCreacion: r.fecha_creacion, fechaExpiracion: r.fecha_expiracion,
     _categoria: tipoLabel(r.tipo_reserva),
     _preview: false,
+    _detallesRaw: detallesRaw,
     boletos, _habitacionesPreview: [],
     habitaciones, nombreHotel, hotelId,
     proveedorIdVuelo, proveedorIdHotel,
@@ -998,6 +1081,70 @@ const tabs = [
   { key: 'hotel',   label: 'Hoteles',  icon: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
   { key: 'paquete', label: 'Paquetes', icon: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>' },
 ]
+
+/**
+ * Lista cruda de detalles de la reserva activa (del endpoint /mias/:id).
+ * Se usa para filtrar por tipo y calcular subtotales + estado de cada detalle.
+ * @type {import('vue').ComputedRef<Array>}
+ */
+const detallesRaw = computed(() => panelReserva.value?._detallesRaw ?? [])
+
+/**
+ * Detalles del panel activo que son de tipo vuelo (tipo_detalle_id === 1).
+ * @type {import('vue').ComputedRef<Array>}
+ */
+const detallesVuelos = computed(() => detallesRaw.value.filter(d => d.tipo_detalle_id === 1))
+
+/**
+ * Detalles del panel activo que son de tipo hotel (tipo_detalle_id === 2).
+ * @type {import('vue').ComputedRef<Array>}
+ */
+const detallesHoteles = computed(() => detallesRaw.value.filter(d => d.tipo_detalle_id === 2))
+
+/**
+ * Subtotal de la reserva calculado desde los detalles del backend.
+ * Es la suma de los campos `total` de cada detalle antes de aplicar impuestos.
+ * @type {import('vue').ComputedRef<number>}
+ */
+/**
+ * Subtotal de la reserva calculado desde los detalles del backend.
+ * Usa el total SIN impuestos guardado en parametros_json.total (el precio real
+ * del proveedor antes de aplicar la ganancia de la agencia). Si no existe,
+ * usa d.total como fallback.
+ * @type {import('vue').ComputedRef<number>}
+ */
+const subtotalReserva = computed(() =>
+  detallesRaw.value.reduce((s, d) => {
+    const sinImpuestos = d.parametros_json?.total ?? d.total ?? 0
+    return s + sinImpuestos
+  }, 0)
+)
+
+/**
+ * Monto de impuestos mostrado al usuario (internamente es la ganancia de la agencia).
+ * Se calcula como la diferencia entre el total pagado y la suma de los detalles.
+ * Si la diferencia es negativa (no debería pasar), retorna 0.
+ * @type {import('vue').ComputedRef<number>}
+ */
+const montoImpuestos = computed(() => {
+  const total = panelReserva.value?.total ?? 0
+  const sub   = subtotalReserva.value
+  const diff  = total - sub
+  return diff > 0 ? diff : 0
+})
+
+/**
+ * Etiqueta descriptiva de una habitación para mostrar en el desglose.
+ * Usa el tipo de habitación del data_proveedor si está disponible,
+ * o un genérico "Habitación" si el proveedor no respondió.
+ *
+ * @param {Object} d - Detalle crudo del backend.
+ * @returns {string}
+ */
+function etiquetaHabitacion(d) {
+  const hab = panelReserva.value?.habitaciones?.find(h => h.detalleId === d.id)
+  return hab?.tipoHabitacion ?? 'Habitación'
+}
 
 /**
  * Lista de reservaciones filtradas por estado activo, tab de categoría y búsqueda por código.

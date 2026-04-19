@@ -11,6 +11,7 @@ import (
 	"agencia-viajes/internal/repositories"
 	"database/sql"
 	"errors"
+	"strings"
 )
 
 // LoginService
@@ -39,9 +40,12 @@ func NewLoginService(db *sql.DB) *LoginService {
 }
 
 var (
-	ErrUsuarioNoEncontrado   = errors.New("usuario no encontrado")
-	ErrContrasenaInvalida    = errors.New("contraseña inválida")
-	ErrUsuarioDeshabilitado  = errors.New("usuario deshabilitado")
+	ErrUsuarioNoEncontrado  = errors.New("usuario no encontrado")
+	ErrContrasenaInvalida   = errors.New("contraseña inválida")
+	ErrUsuarioDeshabilitado = errors.New("usuario deshabilitado")
+	ErrCamposVacios         = errors.New("login o contraseña vacíos")
+	ErrCaptchaAusente       = errors.New("token de captcha no proporcionado")
+	ErrCaptchaInvalido      = errors.New("token de captcha rechazado por google")
 )
 
 var ErrCredencialesInvalidas = errors.New("credenciales inválidas")
@@ -60,6 +64,21 @@ var ErrCredencialesInvalidas = errors.New("credenciales inválidas")
 //   - dto.LoginResponse: datos del usuario autenticado (ID, nombre, apellido, correo, username, rol)
 //   - error: ErrCredencialesInvalidas si el usuario no existe o la contrasena es incorrecta
 func (s *LoginService) Login(req dto.LoginRequest) (dto.LoginResponse, error) {
+	// 1. Validar que login y contraseña no vengan vacíos
+	if strings.TrimSpace(req.Login) == "" || req.Contrasena == "" {
+		return dto.LoginResponse{}, ErrCamposVacios
+	}
+
+	// 2. Validar que venga el token de captcha
+	if strings.TrimSpace(req.Captcha) == "" {
+		return dto.LoginResponse{}, ErrCaptchaAusente
+	}
+
+	// 3. Verificar el captcha con Google
+	if valido, _ := helpers.VerificarCaptcha(req.Captcha); !valido {
+		return dto.LoginResponse{}, ErrCaptchaInvalido
+	}
+
 	usuario, err := s.repo.ObtenerPorUsernameOCorreo(req.Login)
 	if err != nil {
 		return dto.LoginResponse{}, err

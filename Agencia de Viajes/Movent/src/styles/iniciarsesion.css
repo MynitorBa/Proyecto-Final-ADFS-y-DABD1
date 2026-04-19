@@ -385,3 +385,28 @@
   .login-brand { display: none; }
   .login-form-panel { padding: 2rem 1.5rem; }
 }
+
+/* Widget reCAPTCHA - prevenir textos sobrepuestos */
+.captcha-wrap {
+  min-height: 90px;
+  position: relative;
+}
+
+.captcha-wrap > div:first-child {
+  position: relative;
+  transform-origin: 0 0;
+}
+
+/* Textos de advertencia de Google bien separados y legibles */
+.captcha-wrap .rc-anchor-pt,
+.captcha-wrap .rc-anchor-normal-footer {
+  white-space: normal !important;
+  line-height: 1.3 !important;
+}
+
+/* Responsive: escalar en pantallas pequeñas */
+@media (max-width: 400px) {
+  .captcha-wrap > div:first-child {
+    transform: scale(0.85);
+  }
+}

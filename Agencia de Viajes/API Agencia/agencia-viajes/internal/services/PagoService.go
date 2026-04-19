@@ -48,33 +48,40 @@ func NewPagoService(
 //
 // Ejecuta el flujo completo de pago de una reservacion: valida los datos de la
 // tarjeta, verifica que la reserva pertenezca al usuario y este pendiente,
-// valida la integridad de los detalles segun el tipo de reserva,
-// notifica a cada proveedor externo y finalmente confirma la reserva en la
-// base de datos. Si el tipo de reserva es paquete (3), aplica el porcentaje
-// de descuento configurado en Agencia_Configuracion sobre el total final.
-// El descuento es absorbido por la agencia, no por los proveedores.
+// obtiene el no_reservacion para auditoria, valida la integridad de los detalles
+// segun el tipo de reserva, notifica a cada proveedor externo y finalmente
+// confirma la reserva en la base de datos. Si el tipo de reserva es paquete (3),
+// aplica el porcentaje de descuento configurado en Agencia_Configuracion sobre
+// el total final. El descuento es absorbido por la agencia, no por los proveedores.
 //
 // Parametros:
 //   - usuarioID: identificador del usuario que realiza el pago
 //   - req: datos del pago incluyendo numero de tarjeta, CVV, NIT y codigo postal
 //
 // Retorna:
+//   - noReservacion: numero de reservacion legible para incluir en el log de auditoria
 //   - error: error si la tarjeta es invalida, la reserva no existe o ya fue pagada,
 //     si los detalles no cumplen la estructura del tipo de reserva,
 //     o si algun proveedor rechaza el pago
-func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest) error {
+func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest) (noReservacion string, err error) {
 	// 1. Validar tarjeta
 	if len(req.TarjetaNumero) < 16 {
-		return errors.New("número de tarjeta inválido")
+		return "", errors.New("número de tarjeta inválido")
 	}
 	if len(req.TarjetaCVV) != 3 {
-		return errors.New("CVV inválido")
+		return "", errors.New("CVV inválido")
 	}
 
 	// 2. Verificar existencia, dueño y estado pendiente
 	tipoReserva, total, err := s.repo.ObtenerReservaParaPago(req.ReservacionID, usuarioID)
 	if err != nil {
-		return errors.New("reservación no encontrada, ya pagada o no le pertenece")
+		return "", errors.New("reservación no encontrada, ya pagada o no le pertenece")
+	}
+
+	// 2b. Obtener no_reservacion para auditoria
+	noReservacion, err = s.repo.ObtenerNoReservacion(req.ReservacionID)
+	if err != nil {
+		return "", fmt.Errorf("error obteniendo número de reservación: %w", err)
 	}
 
 	// 3. Validar integridad de detalles (1=Vuelo, 2=Hotel, 3=Paquete)
@@ -83,15 +90,15 @@ func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest
 	switch tipoReserva {
 	case 1: // Aerolínea
 		if vuelos != 1 || hoteles != 0 {
-			return errors.New("la reserva debe tener exactamente 1 vuelo")
+			return "", errors.New("la reserva debe tener exactamente 1 vuelo")
 		}
 	case 2: // Hotelera
 		if hoteles != 1 || vuelos != 0 {
-			return errors.New("la reserva debe tener exactamente 1 hotel")
+			return "", errors.New("la reserva debe tener exactamente 1 hotel")
 		}
 	case 3: // Paquete
 		if vuelos != 1 || hoteles != 1 {
-			return errors.New("el paquete debe tener exactamente 1 vuelo y 1 hotel")
+			return "", errors.New("el paquete debe tener exactamente 1 vuelo y 1 hotel")
 		}
 	}
 
@@ -109,12 +116,12 @@ func (s *PagoService) ProcesarPago(usuarioID int, req dto.PagoReservacionRequest
 	detalles, _ := s.reservaRepo.ObtenerDetallesDeReservacion(req.ReservacionID)
 	for _, d := range detalles {
 		if err := s.notificarProveedor(d, req.Nit, req.CodigoPostal); err != nil {
-			return fmt.Errorf("error al confirmar con proveedor: %w", err)
+			return "", fmt.Errorf("error al confirmar con proveedor: %w", err)
 		}
 	}
 
 	// 6. Finalizar en BD agencia (estado 2, descuento aplicado y factura)
-	return s.repo.ConfirmarReservaYFacturar(req.ReservacionID, total, req.Nit, req.CodigoPostal, porcentajeDescuento)
+	return noReservacion, s.repo.ConfirmarReservaYFacturar(req.ReservacionID, total, req.Nit, req.CodigoPostal, porcentajeDescuento)
 }
 
 // notificarProveedor

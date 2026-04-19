@@ -129,8 +129,10 @@
 /**
  * @file IniciarSesion.vue
  * @description Vista de autenticación de Movent. Maneja login con
- * usuario/correo + contraseña + reCAPTCHA v2. Redirige según el rol
- * del usuario autenticado (registrado, administrador o webservice).
+ * usuario/correo + contraseña + reCAPTCHA v2. El token de reCAPTCHA se
+ * envía al backend para su verificación contra Google (defensa contra
+ * bypass via Postman/curl). Redirige según el rol del usuario autenticado
+ * (registrado, administrador o webservice).
  */
 
 import { ref, onMounted, onUnmounted } from 'vue'
@@ -170,7 +172,7 @@ const destino = ref('/principal')
 /** Token generado por el widget de reCAPTCHA v2 al ser resuelto por el usuario. @type {string} */
 const captchaToken = ref('')
 
-/** Clave pública del sitio para reCAPTCHA v2 de Google. @type {string} */
+/** Clave pública del sitio para reCAPTCHA v2 de Google (clave de testing). @type {string} */
 const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
 
 /** ID del widget renderizado, necesario para poder resetearlo en intentos fallidos. @type {number|null} */
@@ -261,8 +263,9 @@ const calcularDestino = (rolId) => {
 
 /**
  * Maneja el submit del formulario de login.
- * Valida los datos, llama al endpoint /api/usuarios/login,
- * persiste la sesión en sessionStorage y redirige según el rol recibido.
+ * Valida los datos, llama al endpoint /api/usuarios/login enviando el token
+ * de reCAPTCHA para que el backend lo verifique contra Google. Persiste la
+ * sesión en sessionStorage y redirige según el rol recibido.
  *
  * @async
  * @returns {Promise<void>}
@@ -280,6 +283,7 @@ const handleLogin = async () => {
       body: JSON.stringify({
         login:      formData.value.login.trim(),
         contrasena: formData.value.password,
+        captcha:    captchaToken.value,
       }),
     })
 

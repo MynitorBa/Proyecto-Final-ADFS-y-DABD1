@@ -57,7 +57,7 @@ func NewCancelacionService(repo *repositories.CancelacionRepository) *Cancelacio
 //   - error: si la reservacion no existe, no pertenece al usuario o falla la BD
 func (s *CancelacionService) VerificarCancelacion(reservacionID, usuarioID int) (*dto.VerificarCancelacionResponse, error) {
 	// 1. Verificar que existe y pertenece al usuario
-	estadoID, err := s.repo.ObtenerReservacionParaCancelar(reservacionID, usuarioID)
+	estadoID, _, err := s.repo.ObtenerReservacionParaCancelar(reservacionID, usuarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -121,43 +121,44 @@ func (s *CancelacionService) VerificarCancelacion(reservacionID, usuarioID int) 
 //   - motivo: descripcion del motivo de cancelacion
 //
 // Retorna:
+//   - noReservacion: numero de reservacion cancelada (ej. "RES-000123"), vacio si falla
 //   - error: si la reservacion no es cancelable, algun proveedor rechaza o falla la BD
-func (s *CancelacionService) CancelarReservacion(reservacionID, usuarioID int, motivo string) error {
+func (s *CancelacionService) CancelarReservacion(reservacionID, usuarioID int, motivo string) (noReservacion string, err error) {
 	// 1. Verificar que existe, pertenece al usuario y estado es cancelable
-	estadoID, err := s.repo.ObtenerReservacionParaCancelar(reservacionID, usuarioID)
+	estadoID, noReservacion, err := s.repo.ObtenerReservacionParaCancelar(reservacionID, usuarioID)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if estadoID != 1 && estadoID != 2 {
-		return errors.New("la reservación no puede cancelarse en su estado actual")
+		return "", errors.New("la reservación no puede cancelarse en su estado actual")
 	}
 
 	// 2. Obtener detalles
 	detalles, err := s.repo.ObtenerDetallesParaCancelar(reservacionID)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// 3. Verificar TODOS antes de cancelar (rollback lógico)
 	for _, d := range detalles {
 		resultado, err := s.consultarPuedeCancelar(d)
 		if err != nil {
-			return fmt.Errorf("error verificando proveedor: %w", err)
+			return "", fmt.Errorf("error verificando proveedor: %w", err)
 		}
 		if !resultado.PuedeCancelar {
-			return fmt.Errorf("no se puede cancelar: %s", resultado.Razon)
+			return "", fmt.Errorf("no se puede cancelar: %s", resultado.Razon)
 		}
 	}
 
 	// 4. Cancelar en cada proveedor
 	for _, d := range detalles {
 		if err := s.cancelarEnProveedor(d, motivo); err != nil {
-			return fmt.Errorf("error cancelando en proveedor: %w", err)
+			return "", fmt.Errorf("error cancelando en proveedor: %w", err)
 		}
 	}
 
 	// 5. Cancelar en BD local
-	return s.repo.CancelarReservacion(reservacionID, motivo)
+	return noReservacion, s.repo.CancelarReservacion(reservacionID, motivo)
 }
 
 // consultarPuedeCancelar

@@ -5,9 +5,13 @@
 package controllers
 
 import (
+	"agencia-viajes/internal/helpers"
+	"agencia-viajes/internal/services"
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,21 +22,23 @@ import (
 // permitiendo a proveedores autenticados notificar cambios de estado
 // sobre reservaciones mediante un token de proveedor.
 type WebserviceController struct {
-	db *sql.DB
+	db        *sql.DB
+	logSesion *services.LogSesionService
 }
 
 // NewWebserviceController
 //
 // Constructor que retorna una nueva instancia de WebserviceController
-// con la conexion a la base de datos inyectada.
+// con la conexion a la base de datos y el servicio de auditoria inyectados.
 //
 // Parametros:
 //   - db: puntero a la conexion de base de datos SQL
+//   - logSesion: instancia del servicio de auditoria de sesion
 //
 // Retorna:
 //   - *WebserviceController: puntero a la nueva instancia
-func NewWebserviceController(db *sql.DB) *WebserviceController {
-	return &WebserviceController{db: db}
+func NewWebserviceController(db *sql.DB, logSesion *services.LogSesionService) *WebserviceController {
+	return &WebserviceController{db: db, logSesion: logSesion}
 }
 
 // RecibirNotificacion
@@ -41,7 +47,7 @@ func NewWebserviceController(db *sql.DB) *WebserviceController {
 // autenticado via header X-Proveedor-Token. Busca la reservacion interna
 // usando el ID de reserva del proveedor y actualiza su estado en la base de datos.
 // Si el nuevo estado es cancelada, guarda el motivo en el campo parametros_json
-// del detalle de la reservacion.
+// del detalle de la reservacion y registra el evento CANCELACION_PROVEEDOR (30).
 //
 // Parametros:
 //   - c: contexto de Gin con la solicitud HTTP
@@ -54,12 +60,14 @@ func NewWebserviceController(db *sql.DB) *WebserviceController {
 //   - HTTP 500 Internal Server Error: si ocurre un error de conexion o al actualizar
 //
 // Notas:
-//   - La identidad del proveedor (proveedor_id) es inyectada por el middleware ProveedorRequerido
+//   - La identidad del proveedor (proveedor_id, proveedor_nombre) es inyectada por el middleware ProveedorRequerido
 //   - Los estados validos son: cancelada, confirmada, completada, en curso
 //   - El motivo es obligatorio cuando nuevoEstado es cancelada
 func (ctrl *WebserviceController) RecibirNotificacion(c *gin.Context) {
 	// ── Identidad del proveedor (inyectada por ProveedorRequerido) ────────
 	proveedorID := c.GetInt("proveedor_id")
+	proveedorNombre, _ := c.Get("proveedor_nombre")
+	provStr, _ := proveedorNombre.(string)
 
 	// ── Body ─────────────────────────────────────────────────────────────
 	var req struct {
@@ -129,16 +137,41 @@ func (ctrl *WebserviceController) RecibirNotificacion(c *gin.Context) {
 		return
 	}
 
-	// ── Si es cancelación, guardar motivo en parametros_json del detalle ─
-	if req.NuevoEstado == "cancelada" && req.Motivo != "" {
-		conn.ExecContext(context.Background(), `
-			UPDATE detalles_reservacion
-			SET Parametros_JSON = JSON_SET(
-				COALESCE(Parametros_JSON, '{}'),
-				'$.motivoCancelacion', ?
-			)
-			WHERE ID_Reserva_Proveedor = ? AND Proveedor_ID = ?
-		`, req.Motivo, req.ReservacionProveedorID, proveedorID)
+	// ── Si es cancelación, guardar motivo y registrar log de auditoria ────
+	if strings.ToLower(req.NuevoEstado) == "cancelada" {
+		// Guardar motivo en parametros_json del detalle
+		if req.Motivo != "" {
+			conn.ExecContext(context.Background(), `
+				UPDATE detalles_reservacion
+				SET Parametros_JSON = JSON_SET(
+					COALESCE(Parametros_JSON, '{}'),
+					'$.motivoCancelacion', ?
+				)
+				WHERE ID_Reserva_Proveedor = ? AND Proveedor_ID = ?
+			`, req.Motivo, req.ReservacionProveedorID, proveedorID)
+		}
+
+		// Obtener usuario_id y no_reservacion para el log de auditoria
+		var usuarioID int
+		var noReservacion string
+		_ = ctrl.db.QueryRow(
+			`SELECT Usuario_ID, No_Reservacion FROM Reservacion WHERE ID = ?`,
+			reservacionID,
+		).Scan(&usuarioID, &noReservacion)
+
+		// Log ID 30: CANCELACION_PROVEEDOR
+		uid := usuarioID
+		mensaje := fmt.Sprintf("Proveedor %s canceló reserva %s", provStr, noReservacion)
+		if req.Motivo != "" {
+			mensaje += fmt.Sprintf(" — motivo: %s", req.Motivo)
+		}
+		ctrl.logSesion.RegistrarSistema(
+			helpers.TipoCancelacionProveedor,
+			&uid,
+			noReservacion,
+			mensaje,
+			fmt.Sprintf("WebserviceController:%s", provStr),
+		)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
