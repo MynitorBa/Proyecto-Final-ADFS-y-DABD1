@@ -218,6 +218,18 @@ builder.Services.AddScoped<TripulacionService>();
 builder.Services.AddScoped<GestionReservacionService>();
 
 /// <summary>
+/// Repositorio administrativo - Listado, detalle y cancelacion de reservaciones con
+/// liberacion de asientos para el modulo de reservaciones del panel de administracion.
+/// </summary>
+builder.Services.AddScoped<AdminReservacionesRepository>();
+
+/// <summary>
+/// Servicio administrativo - Cancelacion de reservaciones con notificacion por correo
+/// al usuario afectado y liberacion de asientos desde el panel de administracion.
+/// </summary>
+builder.Services.AddScoped<AdminReservacionesService>();
+
+/// <summary>
 /// Servicios administrativos - Crear, editar y cancelar vuelos.
 /// </summary>
 builder.Services.AddScoped<AdminVueloService>();
