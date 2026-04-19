@@ -72,6 +72,7 @@ func main() {
 	usuarioRepo := repositories.NewUsuarioRepository(db)
 	cancelacionProveedorRepo := repositories.NewCancelacionProveedorRepository(db)
 	actualizacionProveedorRepo := repositories.NewActualizacionProveedorRepository(db)
+	notificacionesRepo       := repositories.NewNotificacionesRepository(db)
 
 	pagoService := services.NewPagoService(pagoRepo, reservacionRepo, configRepo)
 	misReservacionesService := services.NewMisReservacionesService(misReservacionesRepo)
@@ -81,6 +82,7 @@ func main() {
 	emailService := services.NewEmailReservacionService(misReservacionesService, pdfService, usuarioRepo)
 	cancelacionProveedorService := services.NewCancelacionProveedorService(cancelacionProveedorRepo)
 	actualizacionProveedorService := services.NewActualizacionProveedorService(actualizacionProveedorRepo)
+	notificacionesService    := services.NewNotificacionesService(notificacionesRepo)
 
 	usuarioController := controllers.NewUsuarioController(usuarioService)
 	loginController := controllers.NewLoginController(loginService)
@@ -103,6 +105,7 @@ func main() {
 	configuracionController := controllers.NewConfiguracionController(db)
 	cancelacionProveedorController := controllers.NewCancelacionProveedorController(cancelacionProveedorService)
 	actualizacionProveedorController := controllers.NewActualizacionProveedorController(actualizacionProveedorService)
+	notificacionesController := controllers.NewNotificacionesController(notificacionesService)
 
 	expiracionService.Iniciar()
 	defer expiracionService.Detener()
@@ -157,6 +160,9 @@ func main() {
 			protegido.GET("/reservaciones/:id/pdf", reservacionController.DescargarPDF)
 			protegido.POST("/reservaciones/:id/correo", reservacionController.EnviarCorreo)
 
+			protegido.GET("/notificaciones",          notificacionesController.ObtenerTodas)
+			protegido.PATCH("/notificaciones/:id/leida", notificacionesController.MarcarComoLeida)
+		
 			admin := protegido.Group("/")
 			admin.Use(middlewares.RolRequerido(2))
 			{
