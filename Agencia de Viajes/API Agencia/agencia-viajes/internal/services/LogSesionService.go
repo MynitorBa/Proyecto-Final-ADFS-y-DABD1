@@ -73,7 +73,16 @@ func (s *LogSesionService) Registrar(c *gin.Context, tipoEventoID int, usuarioID
 		tipoEventoID == helpers.TipoCompraExitosa ||
 		tipoEventoID == helpers.TipoReservaCreada ||
 		tipoEventoID == helpers.TipoCancelacionUsuario ||
-		tipoEventoID == helpers.TipoCancelacionProveedor
+		tipoEventoID == helpers.TipoCancelacionProveedor ||
+		tipoEventoID == helpers.TipoActualizacionProveedor ||
+		tipoEventoID == helpers.TipoCambioPassword ||
+		tipoEventoID == helpers.TipoHandshakeProveedorExitoso ||
+		tipoEventoID == helpers.TipoCatalogoActualizadoExitoso ||
+		tipoEventoID == helpers.TipoCambioPerfil ||
+		tipoEventoID == helpers.TipoProveedorCreado ||
+		tipoEventoID == helpers.TipoProveedorEditado ||
+		tipoEventoID == helpers.TipoProveedorEstadoCambiado ||
+		tipoEventoID == helpers.TipoRolUsuarioActualizado
 
 	var uid sql.NullInt64
 	if usuarioID != nil {
@@ -129,7 +138,16 @@ func (s *LogSesionService) RegistrarSistema(tipoEventoID int, usuarioID *int, lo
 		tipoEventoID == helpers.TipoCompraExitosa ||
 		tipoEventoID == helpers.TipoReservaCreada ||
 		tipoEventoID == helpers.TipoCancelacionUsuario ||
-		tipoEventoID == helpers.TipoCancelacionProveedor
+		tipoEventoID == helpers.TipoCancelacionProveedor ||
+		tipoEventoID == helpers.TipoActualizacionProveedor ||
+		tipoEventoID == helpers.TipoCambioPassword ||
+		tipoEventoID == helpers.TipoHandshakeProveedorExitoso ||
+		tipoEventoID == helpers.TipoCatalogoActualizadoExitoso ||
+		tipoEventoID == helpers.TipoCambioPerfil ||
+		tipoEventoID == helpers.TipoProveedorCreado ||
+		tipoEventoID == helpers.TipoProveedorEditado ||
+		tipoEventoID == helpers.TipoProveedorEstadoCambiado ||
+		tipoEventoID == helpers.TipoRolUsuarioActualizado
 
 	var uid sql.NullInt64
 	if usuarioID != nil {

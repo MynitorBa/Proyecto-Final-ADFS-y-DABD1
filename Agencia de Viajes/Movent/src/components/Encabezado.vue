@@ -63,6 +63,25 @@
       </div>
 
       <div class="user-actions">
+        <!-- Campana de notificaciones con badge de no leídas -->
+        <div v-if="sesion" class="notif-bell-wrap">
+          <button
+            class="notif-bell-btn"
+            :class="{ 'notif-bell-btn--active': notifNoLeidas > 0 }"
+            @click="irANotificaciones"
+            aria-label="Ver notificaciones"
+            type="button"
+          >
+            <svg viewBox="0 0 24 24" fill="none" :stroke="notifNoLeidas > 0 ? '#FFCC00' : 'currentColor'" stroke-width="1.8" width="20" height="20">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span v-if="notifNoLeidas > 0" class="notif-bell-badge">
+              {{ notifNoLeidas > 9 ? '9+' : notifNoLeidas }}
+            </span>
+          </button>
+        </div>
+
         <!-- Botón de carrito con indicador de reserva pendiente de pago -->
         <div class="cart-wrap" ref="cartWrapRef">
           <button
@@ -310,6 +329,10 @@
         <router-link to="/principal"        class="mobile-nav-link" @click="showMobileMenu=false">Inicio</router-link>
         <router-link to="/informacion"       class="mobile-nav-link" @click="showMobileMenu=false">Información</router-link>
         <router-link to="/mis-reservaciones" class="mobile-nav-link" @click="showMobileMenu=false">Mis Reservas</router-link>
+        <router-link v-if="sesion" to="/notificaciones" class="mobile-nav-link" @click="showMobileMenu=false">
+          Notificaciones
+          <span v-if="notifNoLeidas > 0" class="notif-filtro__n">{{ notifNoLeidas }}</span>
+        </router-link>
 
         <!-- Acceso directo al checkout si hay reserva activa -->
         <button v-if="reservaActiva" class="mobile-nav-link mobile-nav-link--pagar" @click="handleCartClick; showMobileMenu=false" type="button">
@@ -362,6 +385,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import '../styles/encabezado.css'
+import '../styles/notificaciones.css'
 
 /** URL base del backend. @type {string} */
 const API = 'http://localhost:8080'
@@ -458,6 +482,12 @@ const cancelLoadingCart   = ref(false)
 /** Error de cancelación mostrado dentro del formulario del carrito. @type {import('vue').Ref<string>} */
 const cancelErrorCart     = ref('')
 
+/** Cantidad de notificaciones no leídas del usuario. @type {import('vue').Ref<number>} */
+const notifNoLeidas       = ref(0)
+
+/** Timer del polling de notificaciones cada 60 segundos. */
+let   notifPollTimer      = null
+
 /**
  * Lee y parsea la sesión guardada en sessionStorage.
  * Determina si el usuario es admin (rolId 2) o WebService (rolId 3).
@@ -474,6 +504,33 @@ function cargarSesion() {
 }
 
 /**
+ * Consulta el backend para obtener la cantidad de notificaciones no leídas
+ * del usuario autenticado. Si no hay sesión, deja el contador en 0.
+ */
+async function cargarNotifNoLeidas() {
+  if (!sesion.value) { notifNoLeidas.value = 0; return }
+  try {
+    const res = await fetch(`${API}/api/notificaciones`, { credentials: 'include' })
+    if (!res.ok) { notifNoLeidas.value = 0; return }
+    const data = await res.json()
+    const lista = data.notificaciones || []
+    notifNoLeidas.value = lista.filter(n => !n.leido).length
+  } catch {
+    notifNoLeidas.value = 0
+  }
+}
+
+/**
+ * Cierra cualquier dropdown abierto y navega a la vista completa de notificaciones.
+ */
+function irANotificaciones() {
+  showMobileMenu.value = false
+  showUserMenu.value   = false
+  closeCartDropdown()
+  router.push('/notificaciones')
+}
+
+/**
  * Observa cambios de ruta para recargar la sesión y verificar si hay reserva activa.
  * En la ruta '/confirmacion' solo limpia el UI del carrito.
  */
@@ -485,6 +542,7 @@ watch(() => route.path, (path) => {
   } else {
     verificarReservaActiva()
   }
+  cargarNotifNoLeidas()
 }, { immediate: true })
 
 /**
@@ -714,6 +772,8 @@ onMounted(() => {
   cargarSesion()
   // En confirmacion no se verifica: checkout_data aún no fue borrado por Confirmacion.vue
   if (route.path !== '/confirmacion') verificarReservaActiva()
+  cargarNotifNoLeidas()
+  notifPollTimer = setInterval(cargarNotifNoLeidas, 60000)
   window.addEventListener('scroll',  handleScroll)
   window.addEventListener('click',   handleGlobalClick)
   window.addEventListener('storage', onStorageChange)
@@ -721,6 +781,7 @@ onMounted(() => {
 
 /** Elimina los listeners globales al desmontar para evitar memory leaks. */
 onUnmounted(() => {
+  if (notifPollTimer) clearInterval(notifPollTimer)
   window.removeEventListener('scroll',  handleScroll)
   window.removeEventListener('click',   handleGlobalClick)
   window.removeEventListener('storage', onStorageChange)

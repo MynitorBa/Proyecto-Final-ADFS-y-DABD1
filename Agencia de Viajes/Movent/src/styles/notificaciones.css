@@ -1,0 +1,384 @@
+/* Página de notificaciones con fondo crema consistente */
+.notif-page {
+  background: #F5F2EC;
+  min-height: 100vh;
+  padding: 2.5rem 1rem 4rem;
+}
+
+.notif-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Encabezado con título a la izquierda y acción global a la derecha */
+.notif-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.notif-page__titulo {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1C1A18;
+  margin: 0 0 .3rem;
+}
+
+.notif-page__sub {
+  font-size: .9rem;
+  color: #6a6058;
+  margin: 0;
+}
+
+/* Botón para marcar todas las notificaciones como leídas */
+.notif-page__mark-all {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .65rem 1.2rem;
+  border: 2px solid #1C1A18;
+  border-radius: 10px;
+  background: #FFCC00;
+  color: #000;
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.notif-page__mark-all:hover:not(:disabled) {
+  background: #000;
+  color: #FFCC00;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+
+.notif-page__mark-all:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Chips de filtro de estado */
+.notif-page__filtros {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.notif-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  color: #6a6058;
+  font-size: .82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.notif-filtro:hover {
+  border-color: #9a9089;
+  color: #1C1A18;
+}
+
+.notif-filtro--active {
+  background: #1C1A18;
+  border-color: #1C1A18;
+  color: #FFCC00;
+}
+
+.notif-filtro__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 .4rem;
+  background: rgba(255,204,0,.2);
+  border-radius: 11px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.notif-filtro--active .notif-filtro__n {
+  background: #FFCC00;
+  color: #000;
+}
+
+/* Lista de tarjetas de notificaciones */
+.notif-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+/* Tarjeta individual de notificación */
+.notif-card {
+  display: flex;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  transition: all .2s;
+  position: relative;
+}
+
+.notif-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,.06);
+  transform: translateY(-1px);
+}
+
+.notif-card--unread {
+  border-left: 4px solid #FFCC00;
+  background: #fffbea;
+}
+
+/* Icono de la notificación con color según tipo */
+.notif-card__icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Tipo 3: Cancelación por proveedor (rojo) */
+.notif-card__icon--tipo-3 { background: #D40511; }
+
+/* Tipo 4: Actualización por proveedor (azul) */
+.notif-card__icon--tipo-4 { background: #3b82f6; }
+
+/* Tipo 1 y 2 (fallback): confirmación/cancelación general */
+.notif-card__icon--tipo-1,
+.notif-card__icon--tipo-2 { background: #1C1A18; color: #FFCC00; }
+
+/* Cuerpo de la tarjeta con información */
+.notif-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-card__head {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .4rem;
+}
+
+.notif-card__tipo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1C1A18;
+  margin: 0;
+}
+
+/* Badge "Nueva" para notificaciones no leídas */
+.notif-card__badge {
+  display: inline-block;
+  padding: .15rem .55rem;
+  background: #FFCC00;
+  border: 1px solid #000;
+  border-radius: 12px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.notif-card__reserva,
+.notif-card__mensaje,
+.notif-card__fecha {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin: .3rem 0;
+  font-size: .85rem;
+}
+
+.notif-card__reserva { color: #1C1A18; }
+
+.notif-card__mensaje {
+  color: #6a6058;
+  font-style: italic;
+  padding: .5rem .75rem;
+  background: rgba(0,0,0,.03);
+  border-radius: 8px;
+  border-left: 3px solid #e2e8f0;
+  line-height: 1.4;
+}
+
+.notif-card__fecha {
+  color: #9a9089;
+  font-size: .78rem;
+}
+
+/* Acciones a la derecha de la tarjeta */
+.notif-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.notif-card__btn-leer,
+.notif-card__btn-ver {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  padding: .5rem .9rem;
+  border-radius: 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+
+.notif-card__btn-leer {
+  background: transparent;
+  border: 2px solid #e2e8f0;
+  color: #6a6058;
+}
+
+.notif-card__btn-leer:hover {
+  border-color: #16a34a;
+  color: #16a34a;
+}
+
+.notif-card__btn-ver {
+  background: #1C1A18;
+  color: #FFCC00;
+  border: 2px solid #1C1A18;
+}
+
+.notif-card__btn-ver:hover {
+  background: #FFCC00;
+  color: #000;
+  border-color: #000;
+}
+
+/* Estado vacío y estado de carga con spinner */
+.notif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.notif-empty__titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1C1A18;
+  margin: 0;
+}
+
+.notif-empty__sub {
+  font-size: .88rem;
+  color: #9a9089;
+  margin: 0;
+  max-width: 360px;
+}
+
+.notif-spin {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: notif-spin .7s linear infinite;
+  flex-shrink: 0;
+}
+
+.notif-spin--lg {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #FFCC00;
+}
+
+@keyframes notif-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive: stack vertical en móvil */
+@media (max-width: 700px) {
+  .notif-page__head { flex-direction: column; align-items: flex-start; }
+  .notif-card { flex-direction: column; }
+  .notif-card__actions { flex-direction: row; width: 100%; }
+  .notif-card__btn-leer,
+  .notif-card__btn-ver { flex: 1; }
+}
+
+/* Estilos de la campana en el Encabezado (botón al lado del carrito) */
+.notif-bell-wrap {
+  position: relative;
+}
+
+.notif-bell-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,.15);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+}
+
+.notif-bell-btn:hover {
+  border-color: rgba(255,204,0,.5);
+  background: rgba(255,204,0,.08);
+}
+
+.notif-bell-btn--active {
+  border-color: rgba(255,204,0,.6);
+  background: rgba(255,204,0,.1);
+}
+
+.notif-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 .35rem;
+  border-radius: 9px;
+  background: #D40511;
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #1C1A18;
+  line-height: 1;
+}

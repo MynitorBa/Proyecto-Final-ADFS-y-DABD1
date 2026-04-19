@@ -1,7 +1,11 @@
 package controllers
 
 import (
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/services"
+	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,10 +15,13 @@ import (
 //
 // Controlador que expone el endpoint para que los proveedores externos
 // notifiquen una actualizacion sobre un componente de una reservacion.
-// No modifica estados: solo registra la notificacion y dispara el correo.
+// No modifica estados: solo registra la notificacion, dispara el correo
+// y registra el evento ACTUALIZACION_PROVEEDOR (ID 32) en log_sesion.
 // Requiere autenticacion via middleware ProveedorAuthRequerido.
 type ActualizacionProveedorController struct {
-	service *services.ActualizacionProveedorService
+	service   *services.ActualizacionProveedorService
+	logSesion *services.LogSesionService
+	db        *sql.DB
 }
 
 // NewActualizacionProveedorController
@@ -22,12 +29,18 @@ type ActualizacionProveedorController struct {
 // Crea e inicializa una nueva instancia del controller.
 //
 // Parametros:
-//   - service: servicio de actualizacion por proveedor ya inicializado
+//   - service:   servicio de actualizacion por proveedor ya inicializado
+//   - logSesion: servicio de auditoria de sesion
+//   - db:        conexion a la base de datos para la consulta de auditoria
 //
 // Retorna:
 //   - *ActualizacionProveedorController: instancia lista para registrar rutas
-func NewActualizacionProveedorController(service *services.ActualizacionProveedorService) *ActualizacionProveedorController {
-	return &ActualizacionProveedorController{service: service}
+func NewActualizacionProveedorController(
+	service *services.ActualizacionProveedorService,
+	logSesion *services.LogSesionService,
+	db *sql.DB,
+) *ActualizacionProveedorController {
+	return &ActualizacionProveedorController{service: service, logSesion: logSesion, db: db}
 }
 
 // actualizacionProveedorRequest
@@ -44,7 +57,8 @@ type actualizacionProveedorRequest struct {
 //
 // Recibe la notificacion de actualizacion de un proveedor externo sobre
 // un componente especifico de una reservacion. No cambia ningun estado:
-// solo registra la notificacion en BD y envia un correo al usuario.
+// solo registra la notificacion en BD, envia un correo al usuario y
+// registra el evento ACTUALIZACION_PROVEEDOR (ID 32) en log_sesion.
 //
 // Headers requeridos:
 //   - X-Agencia-Token: token de entrada del proveedor (validado por middleware)
@@ -76,13 +90,16 @@ func (ctrl *ActualizacionProveedorController) NotificarActualizacion(c *gin.Cont
 		return
 	}
 
-	// 3. Recuperar proveedor_id inyectado por el middleware ProveedorAuthRequerido
+	// 3. Recuperar proveedor_id y proveedor_nombre inyectados por ProveedorAuthRequerido
 	proveedorIDRaw, exists := c.Get("proveedor_id")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno: proveedor no identificado"})
 		return
 	}
 	proveedorID := proveedorIDRaw.(int)
+
+	proveedorNombreRaw, _ := c.Get("proveedor_nombre")
+	provStr, _ := proveedorNombreRaw.(string)
 
 	// 4. Delegar al servicio
 	if err := ctrl.service.NotificarActualizacion(idReservaProveedor, proveedorID, req.Mensaje); err != nil {
@@ -93,6 +110,32 @@ func (ctrl *ActualizacionProveedorController) NotificarActualizacion(c *gin.Cont
 		}
 		return
 	}
+
+	// 5. Obtener Usuario_ID y No_Reservacion para el log de auditoria.
+	//    El detalle sigue existiendo con el mismo Reservacion_ID.
+	var usuarioID int
+	var noReservacion string
+	_ = ctrl.db.QueryRowContext(context.Background(), `
+		SELECT r.Usuario_ID, r.No_Reservacion
+		FROM Reservacion r
+		JOIN detalles_reservacion d ON d.Reservacion_ID = r.ID
+		WHERE d.ID_Reserva_Proveedor = ? AND d.Proveedor_ID = ?
+		LIMIT 1
+	`, idReservaProveedor, proveedorID).Scan(&usuarioID, &noReservacion)
+
+	// 6. Registrar evento ACTUALIZACION_PROVEEDOR (ID 32) en log_sesion
+	uid := usuarioID
+	mensaje := fmt.Sprintf("Proveedor %s actualizó detalle de reserva %s", provStr, noReservacion)
+	if req.Mensaje != "" {
+		mensaje += fmt.Sprintf(" — %s", req.Mensaje)
+	}
+	ctrl.logSesion.RegistrarSistema(
+		helpers.TipoActualizacionProveedor,
+		&uid,
+		noReservacion,
+		mensaje,
+		fmt.Sprintf("ActualizacionProveedorController:%s", provStr),
+	)
 
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Notificacion registrada correctamente"})
 }

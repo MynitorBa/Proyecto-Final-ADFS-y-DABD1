@@ -163,6 +163,40 @@ func (r *PerfilRepository) ObtenerHash(usuarioID int) (string, error) {
 	return hash, err
 }
 
+// ObtenerTelefonoYPais
+//
+// Recupera el telefono actual y el nombre del pais del usuario en una sola
+// consulta. Se usa para validar que el nuevo telefono sea distinto al actual
+// y que tenga la cantidad de digitos correcta segun el pais.
+//
+// Parametros:
+//   - usuarioID: ID del usuario
+//
+// Retorna:
+//   - telefono: numero de telefono actual (cadena vacia si NULL)
+//   - pais: nombre del pais segun Pais.Nombre (cadena vacia si no tiene ciudad)
+//   - err: error de base de datos, nil si la operacion fue exitosa
+func (r *PerfilRepository) ObtenerTelefonoYPais(usuarioID int) (telefono, pais string, err error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return "", "", err
+	}
+	defer conn.Close()
+
+	var tel, paisNull sql.NullString
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT u.Telefono, p.Nombre
+		FROM Usuario u
+		LEFT JOIN Ciudad c ON u.CiudadID = c.ID
+		LEFT JOIN Pais   p ON c.PaisID   = p.ID
+		WHERE u.ID = ?
+	`, usuarioID).Scan(&tel, &paisNull)
+	if err != nil {
+		return "", "", err
+	}
+	return tel.String, paisNull.String, nil
+}
+
 // ActualizarContrasena
 //
 // Actualiza el hash de la contrasena del usuario en la base de datos.

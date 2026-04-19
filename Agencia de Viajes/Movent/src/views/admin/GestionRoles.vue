@@ -333,7 +333,8 @@ function cerrarModal() {
 
 /**
  * Envía la petición PUT al backend para actualizar el rol del usuario.
- * Si tiene éxito, actualiza la lista local sin recargar desde el servidor.
+ * Si el backend devuelve un error con mensaje específico (ej: auto-degradación),
+ * se muestra ese mensaje al usuario en lugar del genérico.
  * @returns {Promise<void>}
  */
 async function guardarRol() {
@@ -349,7 +350,11 @@ async function guardarRol() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rolId }),
     })
-    if (!res.ok) throw new Error(`Error ${res.status}`)
+    // Si la respuesta no es OK, leer el mensaje específico del backend
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(data.error || `Error ${res.status}`)
+    }
 
     // Actualizar localmente para no tener que recargar toda la lista
     const idx = usuarios.value.findIndex(u => u.id === modalUsuario.value.id)
@@ -359,8 +364,9 @@ async function guardarRol() {
     }
     mostrarToast('ok', `Rol actualizado a "${nuevoRol.value}"`)
     cerrarModal()
-  } catch {
-    modalError.value = 'Error al actualizar el rol. Intenta de nuevo.'
+  } catch (err) {
+    // Mostrar el mensaje específico del backend si viene, si no usar genérico
+    modalError.value = err.message || 'Error al actualizar el rol. Intenta de nuevo.'
   } finally {
     guardando.value = false
   }

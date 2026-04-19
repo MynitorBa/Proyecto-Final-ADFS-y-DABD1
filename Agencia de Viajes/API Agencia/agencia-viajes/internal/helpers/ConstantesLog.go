@@ -43,4 +43,16 @@ const (
 	TipoCancelacionUsuario              = 29
 	TipoCancelacionProveedor            = 30
 	TipoCancelacionFallida              = 31
+	TipoActualizacionProveedor          = 32
+	TipoCambioPassword                  = 33
+	TipoCambioPasswordFallido           = 34
+	TipoHandshakeProveedorExitoso       = 35
+	TipoHandshakeProveedorFallido       = 36
+	TipoCatalogoActualizadoExitoso      = 37
+	TipoCatalogoActualizadoFallido      = 38
+	TipoCambioPerfil                    = 39
+	TipoProveedorCreado                 = 40
+	TipoProveedorEditado                = 41
+	TipoProveedorEstadoCambiado         = 42
+	TipoRolUsuarioActualizado           = 43
 )

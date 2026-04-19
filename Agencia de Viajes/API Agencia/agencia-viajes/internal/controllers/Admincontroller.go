@@ -5,8 +5,11 @@
 package controllers
 
 import (
+	"agencia-viajes/internal/helpers"
+	"agencia-viajes/internal/services"
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -19,21 +22,23 @@ import (
 // incluyendo gestion de usuarios, roles, proveedores, reservaciones
 // recientes y metricas financieras.
 type AdminController struct {
-	db *sql.DB
+	db        *sql.DB
+	logSesion *services.LogSesionService
 }
 
 // NewAdminController
 //
 // Constructor que retorna una nueva instancia de AdminController
-// con la conexion a la base de datos inyectada.
+// con la conexion a la base de datos y el servicio de auditoria inyectados.
 //
 // Parametros:
-//   - db: puntero a la conexion de base de datos SQL
+//   - db:        puntero a la conexion de base de datos SQL
+//   - logSesion: instancia del servicio de auditoria de sesion
 //
 // Retorna:
 //   - *AdminController: puntero a la nueva instancia
-func NewAdminController(db *sql.DB) *AdminController {
-	return &AdminController{db: db}
+func NewAdminController(db *sql.DB, logSesion *services.LogSesionService) *AdminController {
+	return &AdminController{db: db, logSesion: logSesion}
 }
 
 // ListarUsuarios
@@ -120,6 +125,16 @@ func (ctrl *AdminController) ActualizarRol(c *gin.Context) {
 		return
 	}
 
+	// FIX: admin no puede degradarse a sí mismo
+	adminIDRaw, _ := c.Get("usuario_id")
+	adminID, _ := adminIDRaw.(int)
+	if adminID == id {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "No puedes cambiar tu propio rol. Pide a otro administrador que lo haga.",
+		})
+		return
+	}
+
 	conn, err := ctrl.db.Conn(context.Background())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de conexión"})
@@ -127,12 +142,25 @@ func (ctrl *AdminController) ActualizarRol(c *gin.Context) {
 	}
 	defer conn.Close()
 
+	// Consultar rol anterior para incluirlo en el mensaje de auditoría
+	var rolAnterior int
+	_ = conn.QueryRowContext(context.Background(),
+		"SELECT RolID FROM Usuario WHERE ID = ?", id,
+	).Scan(&rolAnterior)
+
 	_, err = conn.ExecContext(context.Background(),
 		"UPDATE Usuario SET RolID = ? WHERE ID = ?", req.RolID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando rol"})
 		return
 	}
+
+	// Log de cambio de rol exitoso (ID 43)
+	ctrl.logSesion.Registrar(c, helpers.TipoRolUsuarioActualizado,
+		&adminID, fmt.Sprintf("usuario_objetivo=%d", id),
+		fmt.Sprintf("Admin (ID=%d) cambió rol del usuario ID=%d: rol_anterior=%d → rol_nuevo=%d",
+			adminID, id, rolAnterior, req.RolID))
+
 	c.JSON(http.StatusOK, gin.H{"mensaje": "rol actualizado"})
 }
 
@@ -241,12 +269,31 @@ func (ctrl *AdminController) ToggleEstadoProveedor(c *gin.Context) {
 	}
 	defer conn.Close()
 
+	// Consultar nombre del proveedor para mensaje de auditoría más descriptivo
+	var nombreProv string
+	_ = conn.QueryRowContext(context.Background(),
+		"SELECT Nombre FROM Proveedor WHERE ID = ?", id,
+	).Scan(&nombreProv)
+
 	_, err = conn.ExecContext(context.Background(),
 		"UPDATE Proveedor SET EstadoID = ? WHERE ID = ?", estadoID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando estado"})
 		return
 	}
+
+	// Log de cambio de estado de proveedor (ID 42)
+	adminIDRaw, _ := c.Get("usuario_id")
+	adminID, _ := adminIDRaw.(int)
+
+	estadoTxt := "desactivó"
+	if req.Activo {
+		estadoTxt = "activó"
+	}
+	ctrl.logSesion.Registrar(c, helpers.TipoProveedorEstadoCambiado,
+		&adminID, fmt.Sprintf("proveedor_id=%d", id),
+		fmt.Sprintf("Admin %s proveedor '%s' (ID=%d)", estadoTxt, nombreProv, id))
+
 	c.JSON(http.StatusOK, gin.H{"mensaje": "estado actualizado"})
 }
 
@@ -293,6 +340,16 @@ func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando proveedor"})
 		return
 	}
+
+	// Log de edición de proveedor (ID 41) — cubre también cambios de % de ganancia
+	adminIDRaw, _ := c.Get("usuario_id")
+	adminID, _ := adminIDRaw.(int)
+
+	ctrl.logSesion.Registrar(c, helpers.TipoProveedorEditado,
+		&adminID, fmt.Sprintf("proveedor_id=%d", id),
+		fmt.Sprintf("Admin editó proveedor ID=%d: nombre='%s' url='%s' ganancia=%.2f%%",
+			id, req.Nombre, req.URL, req.PorcentajeGanancia))
+
 	c.JSON(http.StatusOK, gin.H{"mensaje": "proveedor actualizado"})
 }
 

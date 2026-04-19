@@ -1,7 +1,11 @@
 package controllers
 
 import (
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/services"
+	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +18,9 @@ import (
 // Requiere autenticacion via middleware ProveedorAuthRequerido, que ya
 // valida el token y deposita proveedor_id y proveedor_tipo en el contexto.
 type CancelacionProveedorController struct {
-	service *services.CancelacionProveedorService
+	service   *services.CancelacionProveedorService
+	logSesion *services.LogSesionService
+	db        *sql.DB
 }
 
 // NewCancelacionProveedorController
@@ -22,12 +28,18 @@ type CancelacionProveedorController struct {
 // Crea e inicializa una nueva instancia del controller.
 //
 // Parametros:
-//   - service: servicio de cancelacion por proveedor ya inicializado
+//   - service:   servicio de cancelacion por proveedor ya inicializado
+//   - logSesion: servicio de auditoria de sesion
+//   - db:        conexion a la base de datos para la consulta de auditoria
 //
 // Retorna:
 //   - *CancelacionProveedorController: instancia lista para registrar rutas
-func NewCancelacionProveedorController(service *services.CancelacionProveedorService) *CancelacionProveedorController {
-	return &CancelacionProveedorController{service: service}
+func NewCancelacionProveedorController(
+	service *services.CancelacionProveedorService,
+	logSesion *services.LogSesionService,
+	db *sql.DB,
+) *CancelacionProveedorController {
+	return &CancelacionProveedorController{service: service, logSesion: logSesion, db: db}
 }
 
 // cancelacionProveedorRequest
@@ -49,8 +61,9 @@ type cancelacionProveedorRequest struct {
 // El proveedor ya cancelo en su sistema y este endpoint sincroniza el estado:
 //   - Localiza el detalle por ID_Reserva_Proveedor + Proveedor_ID (del token)
 //   - Marca el detalle como Cancelado (estado 3)
-//   - Pone la reservacion padre en Retenido (estado 7)
+//   - Pone la reservacion padre en Retenido (estado 7) o Cancelado (estado 3)
 //   - Registra una notificacion con el mensaje del proveedor
+//   - Registra el evento CANCELACION_PROVEEDOR (ID 30) en log_sesion
 //
 // Headers requeridos:
 //   - X-Agencia-Token: token de entrada del proveedor (validado por middleware)
@@ -83,13 +96,16 @@ func (ctrl *CancelacionProveedorController) CancelarDetalle(c *gin.Context) {
 		return
 	}
 
-	// 3. Recuperar proveedor_id inyectado por el middleware ProveedorAuthRequerido
+	// 3. Recuperar proveedor_id y proveedor_nombre inyectados por ProveedorAuthRequerido
 	proveedorIDRaw, exists := c.Get("proveedor_id")
 	if !exists {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error interno: proveedor no identificado"})
 		return
 	}
 	proveedorID := proveedorIDRaw.(int)
+
+	proveedorNombreRaw, _ := c.Get("proveedor_nombre")
+	provStr, _ := proveedorNombreRaw.(string)
 
 	// 4. Delegar la logica al servicio
 	if err := ctrl.service.CancelarDetallePorProveedor(idReservaProveedor, proveedorID, req.Mensaje); err != nil {
@@ -105,6 +121,33 @@ func (ctrl *CancelacionProveedorController) CancelarDetalle(c *gin.Context) {
 		}
 		return
 	}
+
+	// 5. Obtener Usuario_ID y No_Reservacion para el log de auditoria.
+	//    El detalle sigue existiendo (estado 3) con el mismo Reservacion_ID,
+	//    por lo que la consulta es segura despues de la cancelacion.
+	var usuarioID int
+	var noReservacion string
+	_ = ctrl.db.QueryRowContext(context.Background(), `
+		SELECT r.Usuario_ID, r.No_Reservacion
+		FROM Reservacion r
+		JOIN detalles_reservacion d ON d.Reservacion_ID = r.ID
+		WHERE d.ID_Reserva_Proveedor = ? AND d.Proveedor_ID = ?
+		LIMIT 1
+	`, idReservaProveedor, proveedorID).Scan(&usuarioID, &noReservacion)
+
+	// 6. Registrar evento CANCELACION_PROVEEDOR (ID 30) en log_sesion
+	uid := usuarioID
+	mensaje := fmt.Sprintf("Proveedor %s canceló detalle de reserva %s", provStr, noReservacion)
+	if req.Mensaje != "" {
+		mensaje += fmt.Sprintf(" — motivo: %s", req.Mensaje)
+	}
+	ctrl.logSesion.RegistrarSistema(
+		helpers.TipoCancelacionProveedor,
+		&uid,
+		noReservacion,
+		mensaje,
+		fmt.Sprintf("CancelacionProveedorController:%s", provStr),
+	)
 
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Detalle cancelado y reservación retenida correctamente"})
 }

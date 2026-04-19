@@ -74,6 +74,23 @@ func (s *PerfilService) ObtenerHash(usuarioID int) (string, error) {
 	return s.repo.ObtenerHash(usuarioID)
 }
 
+// ObtenerTelefonoYPais
+//
+// Recupera el telefono actual y el nombre del pais del usuario para validar
+// que el nuevo numero sea distinto al actual y tenga los digitos correctos
+// segun el pais antes de persistir el cambio.
+//
+// Parametros:
+//   - usuarioID: identificador del usuario
+//
+// Retorna:
+//   - telefono: numero de telefono actual (cadena vacia si no tiene)
+//   - pais: nombre del pais (cadena vacia si no tiene ciudad asignada)
+//   - error: error si falla la consulta a la base de datos
+func (s *PerfilService) ObtenerTelefonoYPais(usuarioID int) (telefono, pais string, err error) {
+	return s.repo.ObtenerTelefonoYPais(usuarioID)
+}
+
 // CambiarContrasena
 //
 // Genera el hash bcrypt de la nueva contrasena y lo persiste en la base de datos

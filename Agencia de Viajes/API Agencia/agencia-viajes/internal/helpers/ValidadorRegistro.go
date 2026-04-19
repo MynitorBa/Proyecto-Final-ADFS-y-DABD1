@@ -8,6 +8,7 @@ package helpers
 
 import (
 	"agencia-viajes/internal/dto"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -17,12 +18,11 @@ import (
 // Se compilan una sola vez al iniciar el proceso, evitando el costo
 // de compilacion en cada llamada a ValidarRegistro.
 var (
-	regexEmail       = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-	regexUsername    = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
-	regexSoloDigitos = regexp.MustCompile(`[^0-9]`)
-	regexMayuscula   = regexp.MustCompile(`[A-Z]`)
-	regexMinuscula   = regexp.MustCompile(`[a-z]`)
-	regexNumero      = regexp.MustCompile(`[0-9]`)
+	regexEmail     = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	regexUsername  = regexp.MustCompile(`^[a-zA-Z0-9_.]+$`)
+	regexMayuscula = regexp.MustCompile(`[A-Z]`)
+	regexMinuscula = regexp.MustCompile(`[a-z]`)
+	regexNumero    = regexp.MustCompile(`[0-9]`)
 )
 
 // calcularEdad
@@ -159,12 +159,20 @@ func ValidarRegistro(req dto.RegistroUsuarioRequest) (tipoEvento int, mensaje st
 	if telefonoTrim == "" {
 		return TipoRegistroFallidoTelefonoInvalido, "Teléfono requerido", false
 	}
-	if len(telefonoTrim) > 20 {
-		return TipoRegistroFallidoTelefonoInvalido, "Teléfono demasiado largo", false
+	if len(telefonoTrim) > 25 {
+		return TipoRegistroFallidoTelefonoInvalido, "Teléfono demasiado largo (máximo 25 caracteres)", false
 	}
-	soloDigitos := regexSoloDigitos.ReplaceAllString(telefonoTrim, "")
-	if len(soloDigitos) < 7 {
-		return TipoRegistroFallidoTelefonoInvalido, "Teléfono debe contener al menos 7 dígitos", false
+
+	// Usar el validador compartido por país (misma fuente de verdad que ActualizarTelefono)
+	ok, digitosDetectados, esperados := ValidarDigitosTelefono(telefonoTrim, req.Pais)
+	if !ok {
+		if req.Pais == "" {
+			return TipoRegistroFallidoTelefonoInvalido,
+				fmt.Sprintf("Teléfono debe tener al menos %d dígitos", esperados), false
+		}
+		return TipoRegistroFallidoTelefonoInvalido,
+			fmt.Sprintf("Teléfono para %s debe tener exactamente %d dígitos locales (detectados: %d)",
+				req.Pais, esperados, digitosDetectados), false
 	}
 
 	// ── 6. Edad mínima ────────────────────────────────────────────────────────

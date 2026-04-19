@@ -96,7 +96,7 @@
               <div class="prf-field">
                 <label class="prf-label">
                   Nuevo número
-                  <span class="prf-hint">{{ telPrefijo }} · {{ telDigitCount }} dígitos requeridos</span>
+                  <span class="prf-hint">{{ telPrefijo }} · {{ telDigitCount }} dígitos</span>
                 </label>
                 <!-- Input con prefijo fijo según el país de registro -->
                 <div class="prf-input-wrap" :class="{ 'prf-input-wrap--focus': focusTel, 'prf-input-wrap--error': telError }">
@@ -107,10 +107,6 @@
                     :placeholder="telPlaceholder"
                     inputmode="numeric" type="text" />
                 </div>
-                <span v-if="telNumero && !telError">
-                  <span v-if="telDigitsCount === telDigitCount" class="prf-success">✓ Número completo</span>
-                  <span v-else class="prf-warn">{{ telDigitsCount }}/{{ telDigitCount }} dígitos</span>
-                </span>
                 <span v-if="telError" class="prf-error">{{ telError }}</span>
               </div>
               <button class="prf-btn prf-btn--primary" @click="guardarTelefono" :disabled="savingTel" type="button">
@@ -212,6 +208,9 @@
  * @file Profile.vue
  * @description Vista del perfil de usuario autenticado. Muestra su información personal
  * de solo lectura y permite editar el número de teléfono y cambiar la contraseña.
+ * Todas las validaciones de datos (formato, longitud, unicidad) las hace el backend;
+ * este archivo solo limita la entrada (solo dígitos, máximo según país) y muestra
+ * los errores que devuelve el servidor.
  */
 import { ref, computed, onMounted, reactive } from 'vue'
 import Encabezado from '../components/Encabezado.vue'
@@ -222,62 +221,61 @@ import '../styles/Profile.css'
 const API = 'http://localhost:8080'
 
 /** Datos del perfil cargados desde el servidor. @type {import('vue').Ref<object|null>} */
-const perfil   = ref(null)
+const perfil = ref(null)
 
 /** Indica si la petición de perfil sigue en curso. @type {import('vue').Ref<boolean>} */
-const loading  = ref(true)
+const loading = ref(true)
 
 /** Lista de notificaciones activas en pantalla. @type {import('vue').Ref<Array>} */
-const toasts   = ref([])
+const toasts = ref([])
 
 /** Prefijo telefónico del país con que se registró el usuario (ej. '+502'). @type {import('vue').Ref<string>} */
 const telPrefijo = ref('+502')
 
 /** Número local que el usuario escribe en el campo de teléfono. @type {import('vue').Ref<string>} */
-const telNumero   = ref('')
+const telNumero = ref('')
 
-/** Mensaje de error del campo teléfono. @type {import('vue').Ref<string>} */
-const telError    = ref('')
+/** Mensaje de error del campo teléfono (viene del backend). @type {import('vue').Ref<string>} */
+const telError = ref('')
 
 /** Controla el estado de foco visual del input de teléfono. @type {import('vue').Ref<boolean>} */
-const focusTel    = ref(false)
+const focusTel = ref(false)
 
 /** Previene doble click en el botón guardar teléfono. @type {import('vue').Ref<boolean>} */
-const savingTel   = ref(false)
+const savingTel = ref(false)
 
-/** Cantidad de dígitos requeridos según el prefijo del país. @type {import('vue').ComputedRef<number>} */
-const telDigitCount  = computed(() => getDigitCount(telPrefijo.value))
+/** Cantidad de dígitos requeridos según el prefijo del país (solo para limitar entrada). @type {import('vue').ComputedRef<number>} */
+const telDigitCount = computed(() => getDigitCount(telPrefijo.value))
 
-/** Cantidad de dígitos que el usuario ya ingresó (solo numéricos). @type {import('vue').ComputedRef<number>} */
-const telDigitsCount = computed(() => telNumero.value.replace(/\D/g, '').length)
-
-/** Placeholder con el formato esperado según la cantidad de dígitos. @type {import('vue').ComputedRef<string>} */
+/** Placeholder visual con el formato esperado. @type {import('vue').ComputedRef<string>} */
 const telPlaceholder = computed(() => formatLocalPhone('5'.repeat(telDigitCount.value), telDigitCount.value))
 
 /**
- * Maneja el evento input del campo de teléfono: limpia no numéricos,
- * recorta al máximo de dígitos y aplica formato visual.
+ * Maneja el evento input del campo teléfono: solo permite dígitos y aplica
+ * formato visual. No valida nada — el backend se encarga de eso.
  * @param {Event} e
  */
 function onTelInput(e) {
   const raw = e.target.value.replace(/\D/g, '').slice(0, telDigitCount.value)
   telNumero.value = formatLocalPhone(raw, telDigitCount.value)
+  // Limpiar error al empezar a escribir de nuevo
+  if (telError.value) telError.value = ''
 }
 
 /** Campos de la nueva contraseña agrupados en un objeto reactivo. */
-const pwd      = reactive({ actual: '', nueva: '', confirma: '' })
+const pwd = reactive({ actual: '', nueva: '', confirma: '' })
 
-/** Errores de validación del formulario de contraseña por campo. @type {import('vue').Ref<object>} */
+/** Errores de validación del formulario de contraseña por campo (vienen del backend). @type {import('vue').Ref<object>} */
 const pwdErrors = ref({})
 
-/** Campo que actualmente tiene el foco en el bloque de contraseña ('actual' | 'nueva' | 'confirma'). @type {import('vue').Ref<string>} */
-const focusPwd  = ref('')
+/** Campo que actualmente tiene el foco en el bloque de contraseña. @type {import('vue').Ref<string>} */
+const focusPwd = ref('')
 
 /** Previene doble envío al guardar la contraseña. @type {import('vue').Ref<boolean>} */
 const savingPwd = ref(false)
 
 /** Controla la visibilidad de cada campo de contraseña. */
-const showPwd   = reactive({ actual: false, nueva: false, confirma: false })
+const showPwd = reactive({ actual: false, nueva: false, confirma: false })
 
 /**
  * Genera las iniciales del usuario a partir de nombre y apellido.
@@ -290,6 +288,7 @@ const iniciales = computed(() => {
 
 /**
  * Mapa de prefijos telefónicos internacionales por nombre de país en minúsculas.
+ * Se usa solo para mostrar el prefijo; el backend revalida el formato completo.
  * @type {Record<string, string>}
  */
 const DIAL_CODES = {
@@ -308,7 +307,8 @@ const DIAL_CODES = {
 }
 
 /**
- * Cantidad de dígitos locales requeridos por código de marcación.
+ * Cantidad de dígitos locales por código (solo para limitar entrada en UI).
+ * El backend revalida con su propio mapa.
  * @type {Record<string, number>}
  */
 const DIGIT_COUNTS = {
@@ -320,7 +320,6 @@ const DIGIT_COUNTS = {
 
 /**
  * Devuelve el prefijo de marcación para un país dado.
- * Si no se reconoce el país, devuelve '+502' (Guatemala) como fallback.
  * @param {string} pais
  * @returns {string}
  */
@@ -330,8 +329,8 @@ function getDialCode(pais) {
 }
 
 /**
- * Devuelve la cantidad de dígitos locales que requiere un código de marcación.
- * @param {string} code - Ej. '+502'
+ * Devuelve la cantidad de dígitos locales que requiere un código.
+ * @param {string} code
  * @returns {number}
  */
 function getDigitCount(code) {
@@ -340,7 +339,6 @@ function getDigitCount(code) {
 
 /**
  * Formatea una cadena de dígitos como número local según su longitud total.
- * El formato es el mismo que en Registrarse.vue para mantener consistencia.
  * @param {string} digits - Solo dígitos
  * @param {number} total  - Cantidad total esperada
  * @returns {string}
@@ -355,7 +353,7 @@ function formatLocalPhone(digits, total) {
 
 /**
  * Agrega un toast a la pila y lo elimina automáticamente a los 4 segundos.
- * @param {string} msg   - Texto del mensaje
+ * @param {string} msg
  * @param {'success'|'error'} tipo
  */
 function addToast(msg, tipo = 'success') {
@@ -366,7 +364,7 @@ function addToast(msg, tipo = 'success') {
 
 /**
  * Formatea una fecha ISO como texto legible en español guatemalteco.
- * @param {string} f - Fecha en formato ISO
+ * @param {string} f
  * @returns {string}
  */
 function formatFecha(f) {
@@ -375,7 +373,7 @@ function formatFecha(f) {
 }
 
 /**
- * Wrapper genérico para fetch que incluye credenciales y lanza error si la respuesta no es ok.
+ * Wrapper de fetch que incluye credenciales y lanza error con el mensaje del backend.
  * @param {string} url
  * @param {RequestInit} opts
  * @returns {Promise<any>}
@@ -395,9 +393,7 @@ async function cargarPerfil() {
   loading.value = true
   try {
     perfil.value = await apiFetch(`${API}/api/perfil`)
-    // Prefijo fijo según el país con que se registró — no se puede cambiar
     telPrefijo.value = getDialCode(perfil.value.pais)
-    // Separar el número del prefijo si ya tiene teléfono guardado
     if (perfil.value.telefono) {
       const code = telPrefijo.value
       let soloNumero = ''
@@ -406,7 +402,6 @@ async function cargarPerfil() {
       } else {
         soloNumero = perfil.value.telefono.replace(/^\+\d+\s*/, '').replace(/\D/g, '')
       }
-      // Aplicar formato visual al número existente
       telNumero.value = formatLocalPhone(soloNumero, getDigitCount(code))
     }
   } catch {
@@ -417,21 +412,15 @@ async function cargarPerfil() {
 }
 
 /**
- * Valida y envía el nuevo número de teléfono al servidor mediante PUT.
- * Muestra un toast de éxito o asigna el error al campo correspondiente.
+ * Envía el nuevo número de teléfono al servidor. No valida localmente;
+ * el backend se encarga de todas las reglas (formato, longitud, unicidad,
+ * que sea distinto al actual).
  */
 async function guardarTelefono() {
   telError.value = ''
-  const numero = telNumero.value.trim()
-  if (!numero) { telError.value = 'Ingresa el número de teléfono'; return }
-  if (telDigitsCount.value !== telDigitCount.value) {
-    telError.value = `Número incompleto: se requieren ${telDigitCount.value} dígitos (ingresaste ${telDigitsCount.value})`
-    return
-  }
-
   savingTel.value = true
   try {
-    const telefonoCompleto = `${telPrefijo.value} ${numero}`
+    const telefonoCompleto = `${telPrefijo.value} ${telNumero.value.trim()}`
     await apiFetch(`${API}/api/perfil/telefono`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -447,19 +436,12 @@ async function guardarTelefono() {
 }
 
 /**
- * Valida los tres campos de contraseña y envía el cambio al servidor.
- * Si el servidor devuelve que la contraseña actual es incorrecta, lo muestra en campo.
+ * Envía el cambio de contraseña al servidor. El backend valida todas las
+ * reglas y devuelve el error correspondiente que se muestra en el campo
+ * apropiado.
  */
 async function cambiarContrasena() {
   pwdErrors.value = {}
-  const e = {}
-  if (!pwd.actual)           e.actual   = 'Ingresa tu contraseña actual'
-  if (!pwd.nueva)            e.nueva    = 'Ingresa la nueva contraseña'
-  else if (pwd.nueva.length < 8) e.nueva = 'Mínimo 8 caracteres'
-  if (!pwd.confirma)         e.confirma = 'Confirma la nueva contraseña'
-  else if (pwd.nueva !== pwd.confirma) e.confirma = 'Las contraseñas no coinciden'
-  if (Object.keys(e).length) { pwdErrors.value = e; return }
-
   savingPwd.value = true
   try {
     await apiFetch(`${API}/api/perfil/contrasena`, {
@@ -470,8 +452,14 @@ async function cambiarContrasena() {
     pwd.actual = ''; pwd.nueva = ''; pwd.confirma = ''
     addToast('Contraseña actualizada correctamente')
   } catch (err) {
-    if (err.message?.toLowerCase().includes('incorrecta')) {
-      pwdErrors.value = { actual: 'La contraseña actual es incorrecta' }
+    const msg = (err.message || '').toLowerCase()
+    // Asignar el error al campo correspondiente según lo que dice el backend
+    if (msg.includes('actual') || msg.includes('incorrecta')) {
+      pwdErrors.value = { actual: err.message }
+    } else if (msg.includes('nueva') || msg.includes('mínimo') || msg.includes('minimo')) {
+      pwdErrors.value = { nueva: err.message }
+    } else if (msg.includes('coinciden') || msg.includes('confirma')) {
+      pwdErrors.value = { confirma: err.message }
     } else {
       addToast(err.message || 'Error al cambiar la contraseña', 'error')
     }

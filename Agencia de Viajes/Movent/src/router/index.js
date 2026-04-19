@@ -31,6 +31,7 @@ import GestionProveedores  from '../views/admin/GestionProveedores.vue'
 import GestionFinanzas     from '../views/admin/GestionFinanzas.vue'
 import WebService          from '../views/WebService.vue'
 import Profile             from '../views/Profile.vue'
+import Notificaciones      from '../views/Notificaciones.vue'
 
 /**
  * Definición de todas las rutas de la aplicación.
@@ -52,6 +53,7 @@ const routes = [
   // Área del usuario
   { path: '/mis-reservaciones',  component: MisReservaciones,  name: 'misReservaciones' },
   { path: '/perfil',             component: Profile,           name: 'perfil' },
+  { path: '/notificaciones',     component: Notificaciones,    name: 'notificaciones' },
   { path: '/ingreso',            component: IniciarSesion,     name: 'ingreso' },
   { path: '/registro',           component: Registrarse,       name: 'registro' },
 
