@@ -105,6 +105,37 @@ public class AdminReservacionRepository {
     }
 
     /**
+     * Retorna los datos del usuario y de la reservacion necesarios para enviar
+     * el correo de cancelacion al cliente.
+     *
+     * @param reservacionId ID de la reservacion cancelada.
+     * @return arreglo con {correo, nombreCompleto, noReservacion, total (Double)}
+     *         o null si la reservacion no existe.
+     */
+    public Object[] obtenerDatosUsuarioPorReservacion(int reservacionId) {
+        String sql =
+                "SELECT u.Correo, " +
+                        "       u.Nombre || ' ' || u.Apellido AS NombreCompleto, " +
+                        "       r.No_Reservacion, " +
+                        "       r.Total " +
+                        "FROM   Reservacion r " +
+                        "JOIN   Usuario     u ON r.Usuario_ID = u.ID " +
+                        "WHERE  r.ID = ?";
+
+        List<Object[]> res = DatabaseManager.executeQuery(
+                sql,
+                rs -> new Object[]{
+                        rs.getString("Correo"),
+                        rs.getString("NombreCompleto"),
+                        rs.getString("No_Reservacion"),
+                        rs.getDouble("Total")
+                },
+                reservacionId
+        );
+        return res.isEmpty() ? null : res.get(0);
+    }
+
+    /**
      * Actualiza el estado de una reservacion a Cancelada (EstadoID = 4) y registra el motivo.
      * Si el motivo es nulo o vacio, se guarda un texto por defecto.
      * @param reservacionId ID de la reservacion a cancelar.

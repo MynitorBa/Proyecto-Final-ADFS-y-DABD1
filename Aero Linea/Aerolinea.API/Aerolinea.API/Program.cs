@@ -218,18 +218,6 @@ builder.Services.AddScoped<TripulacionService>();
 builder.Services.AddScoped<GestionReservacionService>();
 
 /// <summary>
-/// Repositorio administrativo - Listado, detalle y cancelacion de reservaciones con
-/// liberacion de asientos para el modulo de reservaciones del panel de administracion.
-/// </summary>
-builder.Services.AddScoped<AdminReservacionesRepository>();
-
-/// <summary>
-/// Servicio administrativo - Cancelacion de reservaciones con notificacion por correo
-/// al usuario afectado y liberacion de asientos desde el panel de administracion.
-/// </summary>
-builder.Services.AddScoped<AdminReservacionesService>();
-
-/// <summary>
 /// Servicios administrativos - Crear, editar y cancelar vuelos.
 /// </summary>
 builder.Services.AddScoped<AdminVueloService>();
@@ -321,6 +309,16 @@ builder.Services.AddHttpClient();
 /// y guarda el token de sesion resultante en HotelAliado.TokenHASH.
 /// </summary>
 builder.Services.AddScoped<HandshakeHotelService>();
+
+/// <summary>
+/// Admin Reservaciones - Repositorio, notificador de agencia y servicio para gestion
+/// administrativa de reservaciones agrupadas por vuelo. El notificador llama al sistema
+/// externo de la agencia via POST /api/proveedores-ext/detalles/{id}/cancelar cuando
+/// el admin cancela una reservacion creada por un usuario webservice de agencia.
+/// </summary>
+builder.Services.AddScoped<AdminReservacionesRepository>();
+builder.Services.AddScoped<AgenciaNotificadorExternoService>();
+builder.Services.AddScoped<AdminReservacionesService>();
 
 // --- wkhtmltopdf comentado: DLL nativa no disponible en este entorno ---
 // var architectureFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux-x64" : "win-x64";
