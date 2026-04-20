@@ -140,7 +140,7 @@ import { useRouter } from 'vue-router'
 import '../styles/iniciarsesion.css'
 
 /** URL base del backend Go/Gin. @type {string} */
-const API_BASE = 'http://localhost:8080'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Instancia del router para navegación programática. */
 const router = useRouter()

@@ -20,7 +20,8 @@ import (
 // provenientes de proveedores externos (aerolineas y hoteleras).
 //
 // La autenticacion se basa en el header "X-Agencia-Token", cuyo valor
-// es comparado contra el campo Token_HASH_Entrada de la tabla proveedor.
+// es comparado contra el campo Token_HASH_Salida de la tabla proveedor.
+// El proveedor envia este token en cada callback a la agencia para autenticarse.
 // Si el token coincide con un proveedor activo, se inyectan en el contexto
 // de Gin los datos del proveedor para que los controladores puedan usarlos
 // sin necesidad de volver a consultar la base de datos.
@@ -49,7 +50,7 @@ func ProveedorAuthRequerido(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// 2. Buscar el proveedor por Token_HASH_Entrada en la BD
+		// 2. Buscar el proveedor por Token_HASH_Salida en la BD
 		//    Solo se considera valido si el proveedor esta Activo (EstadoID = 1)
 		var (
 			proveedorID     int

@@ -15,8 +15,8 @@ import (
 // StatsController
 //
 // Controlador que maneja los endpoints de estadisticas generales de la
-// plataforma, incluyendo conteos de proveedores, usuarios, reservaciones
-// e ingresos totales. Es de acceso publico, no requiere autenticacion.
+// plataforma, incluyendo conteos de proveedores, usuarios y reservaciones.
+// Es de acceso publico, no requiere autenticacion.
 type StatsController struct {
 	db *sql.DB
 }
@@ -38,8 +38,8 @@ func NewStatsController(db *sql.DB) *StatsController {
 // ObtenerStats
 //
 // Retorna un resumen estadistico de la plataforma consultando directamente
-// la base de datos. Incluye conteos de aerolineas, hoteles, usuarios,
-// reservaciones por estado y por tipo, asi como los ingresos totales.
+// la base de datos. Incluye conteos de aerolineas, hoteles, usuarios
+// y reservaciones por estado y por tipo.
 //
 // Parametros:
 //   - c: contexto de Gin con la solicitud HTTP
@@ -49,8 +49,10 @@ func NewStatsController(db *sql.DB) *StatsController {
 //   - HTTP 500 Internal Server Error: si ocurre un error de conexion a la base de datos
 //
 // Notas:
-//   - Este endpoint es publico y no requiere autenticacion
-//   - Los ingresos totales se calculan sumando el campo Total de detalles_reservacion
+//   - Este endpoint es publico y devuelve contadores generales del sistema
+//     (aerolineas, hoteles, usuarios, reservaciones).
+//   - Los datos financieros sensibles estan en /api/admin/metricas,
+//     protegido con rol de administrador.
 func (ctrl *StatsController) ObtenerStats(c *gin.Context) {
 	conn, err := ctrl.db.Conn(context.Background())
 	if err != nil {
@@ -61,11 +63,6 @@ func (ctrl *StatsController) ObtenerStats(c *gin.Context) {
 
 	scanInt := func(q string) int {
 		var n int
-		conn.QueryRowContext(context.Background(), q).Scan(&n)
-		return n
-	}
-	scanFloat := func(q string) float64 {
-		var n float64
 		conn.QueryRowContext(context.Background(), q).Scan(&n)
 		return n
 	}
@@ -80,9 +77,6 @@ func (ctrl *StatsController) ObtenerStats(c *gin.Context) {
 
 		// Reservaciones totales
 		"reservaciones": scanInt("SELECT COUNT(*) FROM Reservacion"),
-
-		// Ingresos — misma fuente que Finanzas (suma de detalles_reservacion.Total)
-		"ingresosTotales": scanFloat("SELECT COALESCE(SUM(Total), 0) FROM detalles_reservacion"),
 
 		// Por estado
 		"pendientes":  scanInt("SELECT COUNT(*) FROM Reservacion WHERE EstadoID = 1"),

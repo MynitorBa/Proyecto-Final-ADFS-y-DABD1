@@ -370,7 +370,7 @@ import '../styles/principal.css'
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Indica si hay una búsqueda en curso para deshabilitar el botón. @type {boolean} */
 const buscando = ref(false)

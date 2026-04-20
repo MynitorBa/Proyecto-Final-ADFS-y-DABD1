@@ -250,7 +250,7 @@ import Piepagina from '../../components/Piepagina.vue'
 import '../../styles/admin.css'
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Lista completa de proveedores cargados desde el servidor. @type {import('vue').Ref<Array>} */
 const proveedores    = ref([])

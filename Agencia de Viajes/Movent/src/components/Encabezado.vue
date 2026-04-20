@@ -388,7 +388,7 @@ import '../styles/encabezado.css'
 import '../styles/notificaciones.css'
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Instancia del router para navegación programática. */
 const router = useRouter()
@@ -712,8 +712,7 @@ async function cancelarDesdeCarrito() {
   if (!cancelMotivoCart.value.trim()) { cancelErrorCart.value = 'Escribe un motivo de cancelación.'; return }
   cancelLoadingCart.value = true; cancelErrorCart.value = ''
   try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-    const res = await fetch(`${API}/api/reservaciones/${reservacionIdActiva.value}/cancelar`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, credentials: 'include', body: JSON.stringify({ motivo: cancelMotivoCart.value.trim() }) })
+    const res = await fetch(`${API}/api/reservaciones/${reservacionIdActiva.value}/cancelar`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ motivo: cancelMotivoCart.value.trim() }) })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) { cancelErrorCart.value = data.error ?? `Error ${res.status}.`; return }
     limpiarSesionReserva(); limpiarEstadoCarrito(); closeCartDropdown(); router.push('/mis-reservaciones')

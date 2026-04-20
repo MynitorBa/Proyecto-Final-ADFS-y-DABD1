@@ -13,7 +13,7 @@
 import { onMounted } from 'vue'
 
 /** URL base del backend. @type {string} */
-const API_BASE = 'http://localhost:8080'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /**
  * Al montar la app, consulta el endpoint de sesión para validar la cookie activa.
@@ -45,7 +45,8 @@ onMounted(async () => {
       username: data.username,   // campo que usa Encabezado como fallback
       rol_id:   data.rol_id,
       isAdmin:  data.rol_id === 2,
-      rol:      data.rol_id === 2 ? 'Administrador' : 'Cliente',
+      isWS:     data.rol_id === 3,
+      rol:      data.rol_id === 2 ? 'Administrador' : data.rol_id === 3 ? 'WebService' : 'Registrado',
     }))
 
   } catch {

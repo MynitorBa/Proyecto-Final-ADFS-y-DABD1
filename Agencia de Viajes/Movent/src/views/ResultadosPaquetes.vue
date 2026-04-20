@@ -707,7 +707,7 @@ import '../styles/resultadospaquetes.css'
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Fecha de hoy en formato ISO (YYYY-MM-DD), usada como mínimo para los inputs de fecha. @type {string} */
 const hoy = new Date().toISOString().split('T')[0]

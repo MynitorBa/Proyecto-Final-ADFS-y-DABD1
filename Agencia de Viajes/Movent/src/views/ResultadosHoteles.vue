@@ -682,17 +682,16 @@ import ComentarioNodo from '../components/Comentarionodo.vue'
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /**
  * Genera los headers de autenticación incluyendo el JWT si está disponible en storage.
  * @returns {Record<string, string>}
  */
 function authHeaders() {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+  // La autenticacion viaja por cookie HttpOnly (credentials: 'include')
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
   }
 }
 /**

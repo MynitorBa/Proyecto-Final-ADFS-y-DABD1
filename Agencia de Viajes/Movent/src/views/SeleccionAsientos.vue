@@ -274,7 +274,7 @@ import '../styles/Seleccionasientos.css'
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Etiquetas de columna para el mapa de asientos (A-F). @type {string[]} */
 const COLS_LABEL = ['A','B','C','D','E','F']

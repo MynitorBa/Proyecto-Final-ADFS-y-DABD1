@@ -336,7 +336,7 @@ const route = useRoute()
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Número de reservación legible (ej. MVT-2026-XXXXXX). @type {import('vue').Ref<string>} */
 const noReservacion = ref('')
@@ -456,10 +456,8 @@ onMounted(async () => {
   // 3. Último recurso: buscar en la API por noReservacion (URL query)
   if (!reservacionId.value && noReservacion.value) {
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
       const res = await fetch(`${API}/api/reservaciones/mias`, {
         credentials: 'include',
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
       if (res.ok) {
         const lista = await res.json()

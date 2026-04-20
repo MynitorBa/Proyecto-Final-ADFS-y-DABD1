@@ -71,7 +71,7 @@ func (ctrl *HandshakeController) IniciarHandshake(c *gin.Context) {
 		uidInt = u
 	}
 
-	tokenSalida, err := ctrl.service.IniciarHandshake(proveedorID)
+	_, err = ctrl.service.IniciarHandshake(proveedorID)
 	if err != nil {
 		// Log de handshake fallido (ID 36)
 		ctrl.logSesion.Registrar(c, helpers.TipoHandshakeProveedorFallido,
@@ -88,7 +88,6 @@ func (ctrl *HandshakeController) IniciarHandshake(c *gin.Context) {
 		fmt.Sprintf("Admin completó handshake con proveedor ID %d (vuelos)", proveedorID))
 
 	c.JSON(http.StatusOK, gin.H{
-		"mensaje":      "handshake completado exitosamente",
-		"token_salida": tokenSalida,
+		"mensaje": "handshake completado exitosamente",
 	})
 }

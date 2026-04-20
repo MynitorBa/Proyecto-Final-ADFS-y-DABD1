@@ -218,7 +218,7 @@ import Piepagina from '../components/Piepagina.vue'
 import '../styles/Profile.css'
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Datos del perfil cargados desde el servidor. @type {import('vue').Ref<object|null>} */
 const perfil = ref(null)

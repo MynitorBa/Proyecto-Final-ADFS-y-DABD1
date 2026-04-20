@@ -160,7 +160,7 @@ import Piepagina from '../components/Piepagina.vue'
 import '../styles/notificaciones.css'
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Instancia del router. */
 const router = useRouter()

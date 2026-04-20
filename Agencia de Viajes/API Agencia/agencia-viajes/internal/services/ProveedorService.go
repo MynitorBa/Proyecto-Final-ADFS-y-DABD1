@@ -6,6 +6,7 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"database/sql"
 	"errors"
@@ -59,7 +60,7 @@ func (s *ProveedorService) CrearProveedor(req dto.CrearProveedorRequest) (dto.Cr
 	if rolID == 0 {
 		return dto.CrearProveedorResponse{}, errors.New("el usuario no existe")
 	}
-	if rolID != 3 {
+	if rolID != helpers.RolWebService {
 		return dto.CrearProveedorResponse{}, errors.New("el usuario debe tener rol webservice (rol 3)")
 	}
 

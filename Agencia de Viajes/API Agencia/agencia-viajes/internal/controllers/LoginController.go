@@ -10,6 +10,7 @@ import (
 	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/services"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -104,13 +105,16 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 	}
 
 	// Guardar en cookie HttpOnly
+	// Secure=true solo en produccion (ENV=production), false en desarrollo local
+	secureCookie := os.Getenv("ENV") == "production"
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(
 		"session",
 		token,
 		int(24*time.Hour.Seconds()),
 		"/",
 		"",
-		false,
+		secureCookie,
 		true,
 	)
 

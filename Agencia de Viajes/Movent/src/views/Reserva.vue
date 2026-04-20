@@ -643,7 +643,7 @@ import '../styles/reserva.css'
 const router = useRouter()
 
 /** URL base del backend. @type {string} */
-const API = 'http://localhost:8080'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /**
  * Rutas que forman parte del flujo de reserva.

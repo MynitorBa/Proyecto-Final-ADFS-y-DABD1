@@ -8,6 +8,7 @@ package main
 import (
 	"agencia-viajes/internal/config"
 	"agencia-viajes/internal/controllers"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/middlewares"
 	"agencia-viajes/internal/repositories"
 	"agencia-viajes/internal/services"
@@ -44,7 +45,11 @@ func main() {
 	router := gin.Default()
 
 	router.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
+		allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
+		if allowedOrigin == "" {
+			allowedOrigin = "http://localhost:5173" // default dev
+		}
+		c.Header("Access-Control-Allow-Origin", allowedOrigin)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		c.Header("Access-Control-Allow-Credentials", "true")
@@ -116,6 +121,10 @@ func main() {
 	actualizacionProveedorController := controllers.NewActualizacionProveedorController(actualizacionProveedorService, logSesionService, db)
 	notificacionesController := controllers.NewNotificacionesController(notificacionesService)
 
+	webServiceRepo := repositories.NewWebServiceRepository(db)
+	webServiceService := services.NewWebServiceService(webServiceRepo)
+	webServiceController := controllers.NewWebServiceController(webServiceService)
+
 	expiracionService.Iniciar()
 	defer expiracionService.Detener()
 
@@ -172,7 +181,7 @@ func main() {
 			protegido.PATCH("/notificaciones/:id/leida", notificacionesController.MarcarComoLeida)
 
 			admin := protegido.Group("/")
-			admin.Use(middlewares.RolRequerido(2))
+			admin.Use(middlewares.RolRequerido(helpers.RolAdmin))
 			{
 				admin.GET("/usuarios", adminController.ListarUsuarios)
 				admin.PUT("/usuarios/:id/rol", adminController.ActualizarRol)
@@ -186,6 +195,14 @@ func main() {
 				admin.POST("/proveedores/:id/handshake", handshakeController.IniciarHandshake)
 				admin.POST("/proveedores/:id/handshake-hotelera", handshakeHoteleraController.IniciarHandshake)
 				admin.GET("/admin/usuarios", usuarioController.ObtenerTodos)
+			}
+
+			// Endpoints del panel operacional: accesibles por Admin y WebService
+			wsAdmin := protegido.Group("/")
+			wsAdmin.Use(middlewares.RolRequerido(helpers.RolAdmin, helpers.RolWebService))
+			{
+				wsAdmin.GET("/admin/webservice/estado", webServiceController.ObtenerEstado)
+				wsAdmin.GET("/admin/webservice/notificaciones", webServiceController.ObtenerNotificaciones)
 			}
 		}
 	}

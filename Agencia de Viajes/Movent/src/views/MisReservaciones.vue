@@ -678,7 +678,7 @@ import ComentarioNodo from '../components/Comentarionodo.vue'
 const router = useRouter()
 
 /** URL base del backend Go/Gin. @type {string} */
-const BASE = 'http://localhost:8080'
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /**
  * Extrae el usuarioId del JWT guardado en localStorage o sessionStorage.
@@ -688,14 +688,8 @@ const BASE = 'http://localhost:8080'
  * @returns {number|null}
  */
 function getUsuarioIdActual() {
-  try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-    if (!token) return null
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.usuarioId ?? payload.id ?? payload.userId ?? (Number(payload.sub) || null)
-  } catch {
-    return null
-  }
+  // La autenticacion viaja por cookie HttpOnly — no hay token en storage
+  return null
 }
 
 /**
@@ -705,11 +699,8 @@ function getUsuarioIdActual() {
  * @returns {Object} Headers listo para usar en fetch.
  */
 function authHeaders() {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  }
+  // La autenticacion viaja por cookie HttpOnly (credentials: 'include')
+  return { 'Content-Type': 'application/json' }
 }
 
 /**
@@ -1502,13 +1493,9 @@ async function confirmarCancelar() {
   cancelError.value   = ''
 
   try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
     const res = await fetch(`${BASE}/api/reservaciones/${panelReserva.value.id}/cancelar`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ motivo: cancelMotivo.value.trim() })
     })
@@ -1551,9 +1538,7 @@ async function confirmarCancelar() {
 async function descargarPDF(id) {
   pdfLoading.value = true
   try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
     const res = await fetch(`${BASE}/api/reservaciones/${id}/pdf`, {
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       credentials: 'include'
     })
     if (!res.ok) throw new Error(`Error ${res.status}`)

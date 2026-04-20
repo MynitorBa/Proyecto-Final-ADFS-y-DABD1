@@ -287,7 +287,7 @@ import '../../styles/admin.css'
 const router  = useRouter()
 
 /** URL base del backend. @type {string} */
-const API     = 'http://localhost:8080'
+const API     = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Controla si los datos están siendo cargados desde el servidor. @type {import('vue').Ref<boolean>} */
 const loading = ref(true)
@@ -374,20 +374,29 @@ const barData = computed(() => {
 onMounted(() => cargarTodo())
 
 /**
- * Carga en paralelo las estadísticas, los proveedores y las reservaciones recientes.
+ * Carga en paralelo las estadísticas, los proveedores, las reservaciones recientes
+ * y las métricas financieras. ingresosTotales se obtiene de /api/admin/metricas
+ * (resumen.totalCobrado) para mantener /api/stats como endpoint público sin
+ * datos financieros sensibles.
  * @returns {Promise<void>}
  */
 async function cargarTodo() {
   loading.value = true
   try {
-    const [resStats, resProv, resRec] = await Promise.all([
+    const [resStats, resProv, resRec, resMet] = await Promise.all([
       fetch(`${API}/api/stats`,                         { credentials: 'include' }),
       fetch(`${API}/api/proveedores`,                   { credentials: 'include' }),
       fetch(`${API}/api/admin/reservaciones/recientes`, { credentials: 'include' }),
+      fetch(`${API}/api/admin/metricas`,                { credentials: 'include' }),
     ])
-    if (resStats.ok) stats.value                  = await resStats.json()
+    if (resStats.ok) stats.value = await resStats.json()
     if (resProv.ok)  proveedores.value            = await resProv.json()
     if (resRec.ok)   reservacionesRecientes.value = await resRec.json()
+    // ingresosTotales ya no está en /api/stats; lo obtenemos de /api/admin/metricas
+    if (resMet.ok) {
+      const metricas = await resMet.json()
+      stats.value = { ...stats.value, ingresosTotales: metricas.resumen?.totalCobrado ?? 0 }
+    }
   } catch (e) {
     console.error('Error cargando dashboard:', e)
   } finally {
