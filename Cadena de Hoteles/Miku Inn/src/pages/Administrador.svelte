@@ -174,35 +174,35 @@
     </header>
 
     <!-- Seccion de contenido: renderiza el componente correspondiente a la seccion activa -->
-    <div class="adm__content">
+<div class="adm__content">
 
-      {#if activeSection === 'dashboard'}
-        <AdminDashboard {API} {badge} {setSection} />
+  {#if activeSection === 'dashboard'}
+    <AdminDashboard API_BASE={API} {badge} {setSection} />
 
-      {:else if activeSection === 'usuarios'}
-        <AdminUsuarios {API} {badge} bind:count={countUsuarios} />
+  {:else if activeSection === 'usuarios'}
+    <AdminUsuarios API_BASE={API} {badge} bind:count={countUsuarios} />
 
-      {:else if activeSection === 'hoteles'}
-        <AdminHoteles {API} {badge} {fileToBase64} {tiposHabitacion} bind:count={countHoteles} />
+  {:else if activeSection === 'hoteles'}
+    <AdminHoteles API_BASE={API} {badge} {fileToBase64} {tiposHabitacion} bind:count={countHoteles} />
 
-      {:else if activeSection === 'crear-hotel'}
-        <AdminCrearHotel {API} {badge} {fileToBase64} {tiposHabitacion} onFinish={() => setSection('hoteles')} />
+  {:else if activeSection === 'crear-hotel'}
+    <AdminCrearHotel API_BASE={API} {badge} {fileToBase64} {tiposHabitacion} onFinish={() => setSection('hoteles')} />
 
-      {:else if activeSection === 'reservas'}
-        <AdminReservas {API} {badge} bind:count={countReservas} />
+  {:else if activeSection === 'reservas'}
+    <AdminReservas API_BASE={API} {badge} bind:count={countReservas} />
 
-      {:else if activeSection === 'agencias'}
-        <AdminAgencias {API} {badge} bind:count={countAgencias} />
+  {:else if activeSection === 'agencias'}
+    <AdminAgencias API_BASE={API} {badge} bind:count={countAgencias} />
 
-      <!-- Seccion de aerolineas aliadas: listado, creacion y edicion -->
-      {:else if activeSection === 'aerolineas'}
-        <AdminAerolineas {API} {badge} bind:count={countAerolineas} />
+  <!-- Seccion de aerolineas aliadas: listado, creacion y edicion -->
+  {:else if activeSection === 'aerolineas'}
+    <AdminAerolineas API_BASE={API} {badge} bind:count={countAerolineas} />
 
-      {:else if activeSection === 'reportes'}
-        <AdminReportes {API} {badge} />
+  {:else if activeSection === 'reportes'}
+    <AdminReportes API_BASE={API} {badge} />
 
-      {/if}
+  {/if}
 
-    </div>
+</div>
   </div>
 </div>
