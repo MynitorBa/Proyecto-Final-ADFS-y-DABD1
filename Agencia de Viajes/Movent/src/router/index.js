@@ -75,32 +75,31 @@ const router = createRouter({
   },
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const esRutaAdmin = to.path.startsWith('/admin')
-  
-  if (esRutaAdmin) {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-    
-    if (!token) {
-      next('/ingreso')
-      return
+  if (!esRutaAdmin) return true
+
+  const sesionRaw = sessionStorage.getItem('usuario_sesion')
+                 || localStorage.getItem('usuario_sesion')
+
+  if (!sesionRaw) return '/ingreso'
+
+  try {
+    const sesion = JSON.parse(sesionRaw)
+
+    // /admin/webservice solo para rol 3 (WebService)
+    if (to.path.startsWith('/admin/webservice')) {
+      if (!sesion.isWS) return '/acceso-denegado'
+      return true
     }
-    
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      const rolID = payload.rol_id
-      
-      if (rolID !== 2) {
-        next('/acceso-denegado')
-        return
-      }
-    } catch {
-      next('/ingreso')
-      return
-    }
+
+    // Resto de /admin/* solo para rol 2 (Administrador)
+    if (!sesion.isAdmin) return '/acceso-denegado'
+    return true
+
+  } catch {
+    return '/ingreso'
   }
-  
-  next()
 })
 
 export default router
