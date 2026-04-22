@@ -1189,7 +1189,7 @@ function mapEscala(v, b) {
     claseSeleccionada: 'economica', avionMarca: p.avionMarca || '', avionModelo: p.avionModelo || '',
     escalas: v.numeroEscalas ?? (tramos.length > 1 ? tramos.length - 1 : 1),
     paradas: tramos.slice(0, -1).map(t => ({ codigo: t.destinoCodigo || '?', ciudad: t.destinaCiudad || t.destinoCiudad || '' })),
-    tiempoEscalaMinutos: v.tiempoEscalaMinutos || 0,
+    tramos, tiempoEscalaMinutos: v.tiempoEscalaMinutos || 0,
   }
 }
 
@@ -1391,12 +1391,19 @@ function _getComboAproximado(hotel, personas) {
   const todasHabs = []
   for (const [capStr, rooms] of Object.entries(porCap)) {
     const cap = Number(capStr)
-    for (const room of rooms) todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, precioPorPersona: room.precioPorPersona, cap, tipoCama: room.tipoCama, habitacionesDisponibles: room.habitacionesDisponibles || [], cantidadDisponible: (room.habitacionesDisponibles || []).length })
+    for (const room of rooms) {
+      const stockFisico = room.habitacionesDisponibles?.length || 1
+      for (let i = 0; i < stockFisico; i++) {
+        todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, precioPorPersona: room.precioPorPersona, cap, tipoCama: room.tipoCama, habitacionesDisponibles: room.habitacionesDisponibles || [], cantidadDisponible: (room.habitacionesDisponibles || []).length })
+      }
+    }
   }
   todasHabs.sort((a, b) => b.cap - a.cap)
   let sumCap = 0; const selec = []
-  for (const hab of todasHabs) { if (sumCap >= personas) break; selec.push(hab); sumCap += hab.cap }
-  if (sumCap < personas || sumCap > personas + 2 || selec.length <= 1) return null
+  for (const hab of todasHabs) { if (sumCap >= personas) break; if (selec.length >= 3) break; selec.push(hab); sumCap += hab.cap }
+  if (!selec.length) return null
+  const minCap = Math.min(...selec.map(h => h.cap))
+  if (sumCap < personas || sumCap > personas + minCap || selec.length <= 1) return null
   return { habs: selec, capacidadTotal: sumCap, total: selec.reduce((s, h) => s + h.precio, 0) }
 }
 

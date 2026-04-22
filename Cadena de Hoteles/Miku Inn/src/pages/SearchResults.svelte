@@ -325,7 +325,10 @@
     for (const [capStr, rooms] of Object.entries(porCapacidad)) {
       const cap = Number(capStr);
       for (const room of rooms) {
-        todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, cap });
+        const stockFisico = room.habitacionesDisponibles?.length || 1;
+        for (let i = 0; i < stockFisico; i++) {
+          todasHabs.push({ tipo: room.tipoHabitacion, precio: room.precioPorNoche, cap });
+        }
       }
     }
 
@@ -333,16 +336,16 @@
 
     let sumCap   = 0;
     const selec  = [];
-    const limite = personas + 2;
-
     for (const hab of todasHabs) {
       if (sumCap >= personas) break;
+      if (selec.length >= 3) break;
       selec.push(hab);
       sumCap += hab.cap;
     }
 
-    if (sumCap < personas || sumCap > limite) return null;
-    if (selec.length <= 1) return null;
+    if (!selec.length) return null;
+    const minCap = Math.min(...selec.map(h => h.cap));
+    if (sumCap < personas || sumCap > personas + minCap || selec.length <= 1) return null;
 
     return { habs: selec, capacidadTotal: sumCap, esAproximado: true };
   }

@@ -36,7 +36,7 @@ public class ReservacionAgenciaService {
      * Crea una nueva reservacion para una agencia aplicando su descuento.
      * Valida disponibilidad de cada habitacion, calcula totales con el descuento
      * de la agencia, genera el numero de reservacion y persiste los detalles.
-     * La reservacion expira automaticamente en 15 minutos si no se paga.
+     * La reservacion expira automaticamente en 10 minutos si no se paga.
      * @param request   datos de la reservacion: lista de habitaciones con fechas y personas.
      * @param agenciaId ID de la agencia que realiza la reservacion.
      * @return DTO con los datos de la reservacion creada y el desglose por habitacion.
@@ -109,7 +109,7 @@ public class ReservacionAgenciaService {
         // Genera un numero de reservacion unico con prefijo MIKU
         String noReservacion      = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
-        Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(15));
+        Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
 
         int reservacionId = repository.crearReservacion(
                 noReservacion, totalGeneral, usuarioWebisId, fechaCreacion, fechaExpiracion

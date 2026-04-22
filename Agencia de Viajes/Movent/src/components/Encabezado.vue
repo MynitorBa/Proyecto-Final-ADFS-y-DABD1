@@ -236,9 +236,6 @@
               <router-link to="/admin/paquetes"     class="user-dropdown__item user-dropdown__item--admin" @click="showUserMenu=false">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Finanzas
               </router-link>
-              <router-link to="/admin/webservice"   class="user-dropdown__item user-dropdown__item--admin" @click="showUserMenu=false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>WebService
-              </router-link>
               <div class="user-dropdown__divider"></div>
             </template>
 
@@ -347,7 +344,6 @@
           <router-link to="/admin/roles"        class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Roles</router-link>
           <router-link to="/admin/proveedores"  class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Proveedores</router-link>
           <router-link to="/admin/paquetes"     class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">Finanzas</router-link>
-          <router-link to="/admin/webservice"   class="mobile-nav-link mobile-nav-link--admin" @click="showMobileMenu=false">WebService</router-link>
         </template>
 
         <!-- Link al panel WS en móvil, solo para rol WebService -->

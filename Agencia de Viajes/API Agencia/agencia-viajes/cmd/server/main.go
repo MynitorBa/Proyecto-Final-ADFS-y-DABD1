@@ -202,7 +202,7 @@ func main() {
 
 			// Endpoints del panel operacional: accesibles por Admin y WebService
 			wsAdmin := protegido.Group("/")
-			wsAdmin.Use(middlewares.RolRequerido(helpers.RolAdmin, helpers.RolWebService))
+			wsAdmin.Use(middlewares.RolRequerido(helpers.RolWebService))
 			{
 				wsAdmin.GET("/admin/webservice/estado", webServiceController.ObtenerEstado)
 				wsAdmin.GET("/admin/webservice/notificaciones", webServiceController.ObtenerNotificaciones)

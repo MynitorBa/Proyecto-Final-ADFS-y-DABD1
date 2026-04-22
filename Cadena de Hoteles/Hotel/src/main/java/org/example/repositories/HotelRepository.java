@@ -108,6 +108,88 @@ public class HotelRepository {
     }
 
     /**
+     * Cambia el estado del hotel a Cerrado (EstadoID = 2).
+     * No elimina ningun registro; el hotel sigue en BD pero deja de aparecer
+     * en las busquedas publicas (BusquedaRepository filtra por EstadoID = 1).
+     * @param hotelId ID del hotel a cerrar.
+     */
+    public void cerrarHotel(int hotelId) {
+        DatabaseManager.executeUpdate("UPDATE Hotel SET EstadoID = 2 WHERE ID = ?", hotelId);
+    }
+
+    /**
+     * Reactiva un hotel cerrado cambiando su EstadoID a 1 (Activo).
+     * El hotel vuelve a aparecer en las busquedas publicas.
+     * @param hotelId ID del hotel a reactivar.
+     */
+    public void reactivarHotel(int hotelId) {
+        DatabaseManager.executeUpdate("UPDATE Hotel SET EstadoID = 1 WHERE ID = ?", hotelId);
+    }
+
+    /**
+     * Cuenta las reservaciones activas (Pendiente=1 o Confirmada=2) de todas las
+     * habitaciones del hotel. Se usa para validar si el hotel puede eliminarse.
+     * @param hotelId ID del hotel a verificar.
+     * @return cantidad de reservaciones en proceso del hotel.
+     */
+    public int contarReservasActivasHotel(int hotelId) {
+        List<Integer> r = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Habitacion h  ON dr.HabitacionID   = h.ID " +
+                "JOIN Reservacion re ON dr.ReservacionID = re.ID " +
+                "WHERE h.HotelID = ? AND re.EstadoID IN (1, 2)",
+                rs -> rs.getInt(1), hotelId);
+        return r.isEmpty() ? 0 : r.get(0);
+    }
+
+    /**
+     * Retorna los datos de cada reservacion activa del hotel necesarios para
+     * cancelarlas y notificar a los usuarios por correo.
+     * Columnas: reservacionId, noReservacion, correo, nombreCompleto, total.
+     * @param hotelId ID del hotel.
+     * @return lista de Object[] con los datos de cada reservacion activa.
+     */
+    public List<Object[]> obtenerReservacionesActivasHotel(int hotelId) {
+        return DatabaseManager.executeQuery(
+                "SELECT DISTINCT re.ID, re.No_Reservacion, " +
+                "       u.Correo, " +
+                "       u.Nombre || ' ' || u.Apellido AS NombreCompleto, " +
+                "       re.Total " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Habitacion h   ON dr.HabitacionID  = h.ID " +
+                "JOIN Reservacion re ON dr.ReservacionID = re.ID " +
+                "JOIN Usuario     u  ON re.Usuario_ID    = u.ID " +
+                "WHERE h.HotelID = ? AND re.EstadoID IN (1, 2)",
+                rs -> new Object[]{
+                        rs.getInt("ID"),
+                        rs.getString("No_Reservacion"),
+                        rs.getString("Correo"),
+                        rs.getString("NombreCompleto"),
+                        rs.getDouble("Total")
+                }, hotelId);
+    }
+
+    /**
+     * Cancela todas las reservaciones activas del hotel poniendo EstadoID = 4.
+     * @param hotelId ID del hotel cuyas reservaciones se cancelan.
+     * @param motivo  texto del motivo de cancelacion.
+     */
+    public void cancelarReservacionesActivasHotel(int hotelId, String motivo) {
+        DatabaseManager.executeUpdate(
+                "UPDATE Reservacion re " +
+                "SET re.EstadoID = 4, re.Fecha_Cancelacion = SYSDATE, re.Motivo_Cancelacion = ? " +
+                "WHERE re.EstadoID IN (1, 2) " +
+                "  AND re.ID IN ( " +
+                "    SELECT DISTINCT dr.ReservacionID " +
+                "    FROM DetallesReservacion dr " +
+                "    JOIN Habitacion h ON dr.HabitacionID = h.ID " +
+                "    WHERE h.HotelID = ? " +
+                "  )",
+                motivo, hotelId);
+    }
+
+    /**
      * Elimina un hotel y todos sus registros dependientes en cascada.
      * Borra en orden: imagenes de habitaciones, habitaciones, imagenes de amenidades,
      * amenidades del hotel, imagenes del hotel y finalmente el hotel.
@@ -378,6 +460,22 @@ public class HotelRepository {
                         "SET TIPOHABITACIONID=?, NUMEROHABITACION=?, Descripcion=?, ESTADO_ID=? " +
                         "WHERE ID=?",
                 tipoHabitacionId, numeroHabitacion, descripcion, estadoId, habitacionId);
+    }
+
+    /**
+     * Cuenta las reservaciones activas (Pendiente=1 o Confirmada=2) que incluyen la habitacion.
+     * Se usa para validar si una habitacion puede eliminarse de forma segura.
+     * @param habitacionId ID de la habitacion a verificar.
+     * @return cantidad de reservaciones en proceso que referencian esta habitacion.
+     */
+    public int contarReservasActivasHabitacion(int habitacionId) {
+        List<Integer> r = DatabaseManager.executeQuery(
+                "SELECT COUNT(*) " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Reservacion re ON dr.ReservacionID = re.ID " +
+                "WHERE dr.HabitacionID = ? AND re.EstadoID IN (1, 2)",
+                rs -> rs.getInt(1), habitacionId);
+        return r.isEmpty() ? 0 : r.get(0);
     }
 
     /**

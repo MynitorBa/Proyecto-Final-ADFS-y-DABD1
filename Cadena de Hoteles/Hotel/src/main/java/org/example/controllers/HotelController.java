@@ -85,12 +85,53 @@ public class HotelController {
             }
         });
 
-        // Elimina un hotel del sistema por su ID
+        // Elimina un hotel del sistema por su ID (rechaza si tiene reservas activas)
         app.delete("/admin/hoteles/{id}", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }
             try {
                 hotelService.eliminarHotel(id(ctx, "id"));
                 ctx.json(Map.of("mensaje", "Hotel eliminado"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // Retorna el recuento y datos de las reservaciones activas del hotel
+        app.get("/admin/hoteles/{id}/reservas-activas", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                ctx.json(hotelService.obtenerReservasActivasHotel(id(ctx, "id")));
+            } catch (IllegalArgumentException e) {
+                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // Cancela todas las reservas activas del hotel y notifica a usuarios por correo.
+        // Si eliminarDefinitivo=true  → elimina el hotel fisicamente (comportamiento previo).
+        // Si eliminarDefinitivo=false → cambia EstadoID a 2 (Cerrado), hotel permanece en BD.
+        // Body: { "hotelNombre": "...", "eliminarDefinitivo": false }
+        app.post("/admin/hoteles/{id}/cerrar-con-cancelaciones", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                Map<?, ?> body = ctx.bodyAsClass(Map.class);
+                String hotelNombre = body != null && body.get("hotelNombre") != null
+                        ? body.get("hotelNombre").toString() : "Hotel";
+                boolean eliminarDefinitivo = body != null && body.get("eliminarDefinitivo") != null
+                        && Boolean.parseBoolean(body.get("eliminarDefinitivo").toString());
+                Map<String, Object> resultado =
+                        hotelService.cerrarHotelConCancelaciones(id(ctx, "id"), hotelNombre, eliminarDefinitivo);
+                ctx.json(resultado);
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // Reactiva un hotel cerrado (EstadoID 2 → 1). El hotel vuelve a aparecer en busquedas.
+        app.post("/admin/hoteles/{id}/reactivar", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                hotelService.reactivarHotel(id(ctx, "id"));
+                ctx.json(Map.of("mensaje", "Hotel reactivado correctamente"));
             } catch (IllegalArgumentException e) {
                 ctx.status(404).json(Map.of("mensaje", e.getMessage()));
             }

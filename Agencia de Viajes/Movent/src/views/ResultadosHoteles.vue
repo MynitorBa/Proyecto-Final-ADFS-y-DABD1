@@ -1097,13 +1097,16 @@ function _getComboAproximado(hotel, personas) {
   for (const [capStr, rooms] of Object.entries(porCap)) {
     const cap = Number(capStr)
     for (const room of rooms) {
-      todasHabs.push({
-        tipo: room.tipoHabitacion, precio: room.precioPorNoche,
-        precioPorPersona: room.precioPorPersona, cap,
-        tipoCama: room.tipoCama, metrosCuadrados: room.metrosCuadrados || null,
-        habitacionesDisponibles: room.habitacionesDisponibles || [],
-        cantidadDisponible: (room.habitacionesDisponibles || []).length,
-      })
+      const stockFisico = room.habitacionesDisponibles?.length || 1
+      for (let i = 0; i < stockFisico; i++) {
+        todasHabs.push({
+          tipo: room.tipoHabitacion, precio: room.precioPorNoche,
+          precioPorPersona: room.precioPorPersona, cap,
+          tipoCama: room.tipoCama, metrosCuadrados: room.metrosCuadrados || null,
+          habitacionesDisponibles: room.habitacionesDisponibles || [],
+          cantidadDisponible: (room.habitacionesDisponibles || []).length,
+        })
+      }
     }
   }
   todasHabs.sort((a, b) => b.cap - a.cap)
@@ -1112,9 +1115,12 @@ function _getComboAproximado(hotel, personas) {
   const selec = []
   for (const hab of todasHabs) {
     if (sumCap >= personas) break
+    if (selec.length >= 3) break
     selec.push(hab); sumCap += hab.cap
   }
-  if (sumCap < personas || sumCap > personas + 2 || selec.length <= 1) return null
+  if (!selec.length) return null
+  const minCap = Math.min(...selec.map(h => h.cap))
+  if (sumCap < personas || sumCap > personas + minCap || selec.length <= 1) return null
   const total = selec.reduce((s, h) => s + h.precio, 0)
   return { habs: selec, capacidadTotal: sumCap, total }
 }
@@ -1423,15 +1429,24 @@ function buildHotelPayload(reservaId, itemData) {
   let habitaciones = []
 
   if (itemData.esCombo) {
+    const contadorCombo = {}
     habitaciones = (itemData.habs || [])
-      .filter(h => h.habitacionesDisponibles?.length > 0)
-      .map(h => ({
-        habitacionId:     h.habitacionesDisponibles[0].id,
-        fechaCheckIn:     b.checkIn,
-        fechaCheckOut:    b.checkOut,
-        cantidadPersonas: h.cap,
-        precioPorNoche:   h.precio,
-      }))
+      .map(h => {
+        const disponibles = h.habitacionesDisponibles || []
+        if (!disponibles.length) return null
+        const key = `${h.cap}-${h.tipo}`
+        const idx = contadorCombo[key] ?? 0
+        contadorCombo[key] = idx + 1
+        if (idx >= disponibles.length) return null
+        return {
+          habitacionId:     disponibles[idx].id,
+          fechaCheckIn:     b.checkIn,
+          fechaCheckOut:    b.checkOut,
+          cantidadPersonas: h.cap,
+          precioPorNoche:   h.precio,
+        }
+      })
+      .filter(h => h !== null)
   } else {
     const rooms = itemData.habitacionesDisponibles || []
     if (!rooms.length) return null
