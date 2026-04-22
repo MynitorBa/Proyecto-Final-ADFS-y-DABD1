@@ -105,3 +105,10 @@ const (
 	TipoOutPagoProveedorExitoso = 60
 	TipoOutPagoProveedorFallido = 61
 )
+
+// Acciones administrativas sobre reservaciones (62)
+// IMPORTANTE: el registro ID=62 debe insertarse manualmente en la tabla
+// tipo_evento_sesion de la base de datos con el nombre "Cancelacion por Admin".
+const (
+	TipoCancelacionAdmin = 62
+)

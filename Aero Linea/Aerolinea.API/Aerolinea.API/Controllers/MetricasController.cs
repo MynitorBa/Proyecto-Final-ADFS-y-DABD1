@@ -18,13 +18,15 @@ namespace Aerolinea.API.Controllers
     public class MetricasController : ControllerBase
     {
         private readonly MetricasService _service;
+        private readonly EmailHelper     _emailHelper;
 
         /// <summary>
-        /// Inicializa el controlador con el servicio de metricas.
+        /// Inicializa el controlador con el servicio de metricas y el helper de correo.
         /// </summary>
-        public MetricasController(MetricasService service)
+        public MetricasController(MetricasService service, EmailHelper emailHelper)
         {
-            _service = service;
+            _service     = service;
+            _emailHelper = emailHelper;
         }
 
         // GET api/metricas/resumen?fechaDesde=2025-01-01&fechaHasta=2025-01-31
@@ -159,7 +161,7 @@ namespace Aerolinea.API.Controllers
                 string asunto = $"📊 Airbroom — Reporte de Búsquedas ({dto.FechaDesde ?? "inicio"} → {dto.FechaHasta ?? "hoy"})";
                 string html = GenerarHtmlExporte(listado, dto);
 
-                await EmailHelper.Enviar(dto.Correo, asunto, html);
+                await _emailHelper.Enviar(dto.Correo, asunto, html);
 
                 return Ok(new { message = $"Reporte enviado a {dto.Correo} ({listado.TotalRegistros} registros)" });
             }

@@ -282,11 +282,12 @@ func (r *ReservacionRepository) ObtenerIDsPendientesExpirados() ([]int, error) {
 // ObtenerPendientesExpirablesCompletos
 //
 // Retorna todas las reservaciones en estado pendiente (EstadoID = 1) cuya fecha
-// de expiracion ya paso, incluyendo usuario_id y no_reservacion para poder
-// registrar correctamente el evento en log_sesion al momento de expirarlas.
+// de expiracion ya paso. Incluye los datos del usuario propietario (correo,
+// nombre, apellido) para poder registrar el evento en log_sesion y enviar
+// la notificacion de expiracion por correo electronico.
 //
 // Retorna:
-//   - []dto.ReservacionExpirable: lista de reservaciones con los campos necesarios
+//   - []dto.ReservacionExpirable: lista de reservaciones con todos los campos necesarios
 //   - error: error de base de datos, nil si la operacion fue exitosa
 func (r *ReservacionRepository) ObtenerPendientesExpirablesCompletos() ([]dto.ReservacionExpirable, error) {
 	conn, err := r.db.Conn(context.Background())
@@ -296,10 +297,12 @@ func (r *ReservacionRepository) ObtenerPendientesExpirablesCompletos() ([]dto.Re
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT ID, Usuario_ID, No_Reservacion
-		FROM Reservacion
-		WHERE EstadoID = 1
-		  AND Fecha_Expiracion <= NOW()
+		SELECT r.ID, r.Usuario_ID, r.No_Reservacion,
+		       u.Correo, u.Nombre, u.Apellido
+		FROM Reservacion r
+		JOIN Usuario u ON r.Usuario_ID = u.ID
+		WHERE r.EstadoID = 1
+		  AND r.Fecha_Expiracion <= NOW()
 	`)
 	if err != nil {
 		return nil, err
@@ -309,12 +312,35 @@ func (r *ReservacionRepository) ObtenerPendientesExpirablesCompletos() ([]dto.Re
 	var resultado []dto.ReservacionExpirable
 	for rows.Next() {
 		var res dto.ReservacionExpirable
-		if err := rows.Scan(&res.ID, &res.UsuarioID, &res.NoReservacion); err != nil {
+		if err := rows.Scan(
+			&res.ID, &res.UsuarioID, &res.NoReservacion,
+			&res.Correo, &res.Nombre, &res.Apellido,
+		); err != nil {
 			return nil, err
 		}
 		resultado = append(resultado, res)
 	}
 	return resultado, nil
+}
+
+// InsertarNotificacionExpiracion
+//
+// Registra una notificacion in-app de tipo "Reservacion Cancelada" (ID 2)
+// para indicar al usuario que su reservacion fue expirada por falta de pago.
+// Se llama tras completar exitosamente la expiracion en BD.
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion que fue expirada
+//
+// Retorna:
+//   - error: si falla la insercion en BD
+func (r *ReservacionRepository) InsertarNotificacionExpiracion(reservacionID int) error {
+	_, err := r.db.ExecContext(context.Background(), `
+		INSERT INTO notificaciones
+			(Reservacion_ID, Detalle_Reservacion_ID, Mensaje_Proveedor, Boleano_Leido, Tipo_Notificacion_ID)
+		VALUES (?, NULL, 'Tu reservacion expiro por falta de pago', 0, 2)
+	`, reservacionID)
+	return err
 }
 
 // ObtenerDetallesDeReservacion

@@ -17,14 +17,17 @@ namespace Aerolinea.API.Controllers
         private const string ADMIN_EMAIL = "distribuidorapine@gmail.com";
 
         private readonly GestionReservacionRepository _reservacionRepo;
+        private readonly EmailHelper                  _emailHelper;
 
         /// <summary>
-        /// Inicializa el controlador con el repositorio de reservaciones necesario para
-        /// obtener los datos del comprobante antes de enviarlo por correo.
+        /// Inicializa el controlador con el repositorio de reservaciones y el helper de correo.
         /// </summary>
-        public EmailController(GestionReservacionRepository reservacionRepo)
+        public EmailController(
+            GestionReservacionRepository reservacionRepo,
+            EmailHelper                  emailHelper)
         {
             _reservacionRepo = reservacionRepo;
+            _emailHelper     = emailHelper;
         }
 
         // ══════════════════════════════════════════════════════════════════
@@ -62,7 +65,7 @@ namespace Aerolinea.API.Controllers
                 string asunto = $"✈ Broom AirLine — Comprobante de Reservación {reservacion.NoReservacion}";
 
                 // Enviar al correo del usuario
-                await EmailHelper.Enviar(reservacion.UsuarioEmail, asunto, html);
+                await _emailHelper.Enviar(reservacion.UsuarioEmail, asunto, html);
 
                 return Ok(new { mensaje = "Correo enviado correctamente" });
             }
@@ -96,7 +99,7 @@ namespace Aerolinea.API.Controllers
                 string asunto = "📩 Nuevo mensaje de contacto — " +
                     (string.IsNullOrWhiteSpace(dto.Asunto) ? "Sin asunto" : dto.Asunto);
 
-                await EmailHelper.Enviar(ADMIN_EMAIL, asunto, html);
+                await _emailHelper.Enviar(ADMIN_EMAIL, asunto, html);
 
                 return Ok(new { mensaje = "Mensaje enviado correctamente" });
             }
@@ -127,7 +130,7 @@ namespace Aerolinea.API.Controllers
                 string html = EmailTemplates.CorreoNewsletter(dto.Correo);
                 string asunto = $"📬 Nueva suscripción al boletín — {dto.Correo}";
 
-                await EmailHelper.Enviar(ADMIN_EMAIL, asunto, html);
+                await _emailHelper.Enviar(ADMIN_EMAIL, asunto, html);
 
                 return Ok(new { mensaje = "Suscripción registrada correctamente" });
             }

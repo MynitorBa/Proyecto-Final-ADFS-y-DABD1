@@ -1498,11 +1498,17 @@ async function precrearReservacion(vueloData, vueloRegresoData) {
     // PASO 2: agregar detalle de vuelo(s)
     const pax         = busqueda.value.cantidadPersonas || 1
     const proveedorId = parseProveedorId(vueloData.id)
-    const vuelosArr   = [
-      { vueloId: parseVueloId(vueloData.id), claseId: claseToId(vueloData.clase), cantidadPasajeros: pax }
-    ]
+    const expandirVuelo = (v, clase) => {
+      if (v.tramos?.length > 1) {
+        return v.tramos
+          .filter(t => t?.id)
+          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+      }
+      return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+    }
+    const vuelosArr = expandirVuelo(vueloData, vueloData.clase)
     if (vueloRegresoData) {
-      vuelosArr.push({ vueloId: parseVueloId(vueloRegresoData.id), claseId: claseToId(vueloRegresoData.clase), cantidadPasajeros: pax })
+      vuelosArr.push(...expandirVuelo(vueloRegresoData, vueloRegresoData.clase))
     }
 
     const res2 = await fetch(`${API}/api/reservaciones/detalle/vuelo`, {
@@ -1545,6 +1551,7 @@ function seleccionarVuelo(vuelo) {
     clase: vuelo.claseSeleccionada,
     precio: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva : vuelo.precioTurista,
     asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
+    tramos: vuelo.tramos || [],
   }
 
   if (paso.value === 1) {

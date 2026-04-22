@@ -1244,12 +1244,17 @@ async function precrearReservacion(itemData) {
 
     let vuelosArr = [], proveedorId = null
     if (itemData.tipoVuelo === 'idaVuelta') {
-      const ida = itemData.ida, regreso = itemData.regreso, pax = itemData.busqueda?.cantidadPasajeros || 1
+      const { ida, regreso } = itemData, pax = itemData.busqueda?.cantidadPasajeros || 1
       proveedorId = parseProveedorId(ida.id)
-      vuelosArr = [
-        { vueloId: parseVueloId(ida.id),     claseId: claseToId(ida.clase),     cantidadPasajeros: pax },
-        { vueloId: parseVueloId(regreso.id), claseId: claseToId(regreso.clase), cantidadPasajeros: pax },
-      ]
+      const expandirVuelo = (v, clase) => {
+        if (v.tramos?.length > 1) {
+          return v.tramos
+            .filter(t => t?.id)
+            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+        }
+        return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+      }
+      vuelosArr = [...expandirVuelo(ida, ida.clase), ...expandirVuelo(regreso, regreso.clase)]
     } else {
       const pax = itemData.busqueda?.cantidadPasajeros || 1
       proveedorId = parseProveedorId(itemData.id)

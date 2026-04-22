@@ -7,18 +7,21 @@ namespace Aerolinea.API.Services
 {
     public class AdminReservacionesService
     {
-        private readonly AdminReservacionesRepository _repo;
-        private readonly AgenciaNotificadorExternoService _notificadorAgencia;
+        private readonly AdminReservacionesRepository      _repo;
+        private readonly AgenciaNotificadorExternoService  _notificadorAgencia;
+        private readonly EmailHelper                       _emailHelper;
         private readonly ILogger<AdminReservacionesService> _logger;
 
         public AdminReservacionesService(
-            AdminReservacionesRepository repo,
-            AgenciaNotificadorExternoService notificadorAgencia,
+            AdminReservacionesRepository      repo,
+            AgenciaNotificadorExternoService  notificadorAgencia,
+            EmailHelper                       emailHelper,
             ILogger<AdminReservacionesService> logger)
         {
-            _repo = repo;
+            _repo               = repo;
             _notificadorAgencia = notificadorAgencia;
-            _logger = logger;
+            _emailHelper        = emailHelper;
+            _logger             = logger;
         }
 
         public Task<List<VueloResumenDto>> ObtenerVuelosConReservacionesAsync()
@@ -60,7 +63,7 @@ namespace Aerolinea.API.Services
             // 3. Correo al usuario (best-effort)
             try
             {
-                await EmailHelper.Enviar(
+                await _emailHelper.Enviar(
                     usuario.Email,
                     $"Broom AirLine \u2013 Reservacion {detalle.NoReservacion} Cancelada",
                     ConstruirCorreoCancelacion(usuario, detalle, motivo.Trim()));

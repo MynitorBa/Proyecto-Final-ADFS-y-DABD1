@@ -21,6 +21,8 @@ namespace Aerolinea.API.DTOs
     /// <summary>
     /// DTO de respuesta devuelto tras completar exitosamente la compra de una reservacion.
     /// Contiene los datos de la factura generada y el resumen de la transaccion.
+    /// UsuarioNombre y UsuarioEmail se usan internamente para enviar el correo de confirmacion
+    /// y se incluyen en la respuesta como referencia para el frontend.
     /// </summary>
     public class CompraRealizadaDTO
     {
@@ -31,5 +33,9 @@ namespace Aerolinea.API.DTOs
         public string NIT { get; set; }
         public string CodigoPostal { get; set; }
         public decimal Total { get; set; }
+
+        // Datos del usuario propietario — necesarios para el correo de confirmacion
+        public string UsuarioNombre { get; set; }
+        public string UsuarioEmail { get; set; }
     }
 }

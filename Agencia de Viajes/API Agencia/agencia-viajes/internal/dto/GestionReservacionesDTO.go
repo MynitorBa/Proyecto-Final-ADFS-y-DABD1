@@ -42,6 +42,7 @@ type ReservacionConDetalles struct {
 type DetalleProveedor struct {
 	IDReservaProveedor string // ID de la reserva en el sistema del proveedor externo
 	ProveedorID        int    // ID del proveedor en la base de datos de la agencia
+	NombreProveedor    string // Nombre legible del proveedor para mensajes de error amigables
 	URLAPI             string // URL base de la API del proveedor
 	TokenEntrada       string // Token de autenticacion para acceder a la API del proveedor
 	TipoDetalleID      int    // ID del tipo de detalle (1=Vuelo, 2=Hotel)
@@ -49,11 +50,15 @@ type DetalleProveedor struct {
 
 // ReservacionExpirable
 //
-// Datos minimos de una reservacion pendiente que el scheduler de expiracion
-// necesita para notificar proveedores, actualizar el estado en BD y registrar
-// correctamente el evento en log_sesion.
+// Datos de una reservacion pendiente que el scheduler de expiracion
+// necesita para notificar proveedores, actualizar el estado en BD,
+// registrar el evento en log_sesion y enviar el correo de notificacion
+// al usuario.
 type ReservacionExpirable struct {
 	ID            int    // ID unico de la reservacion en la base de datos
 	UsuarioID     int    // ID del usuario propietario de la reservacion
 	NoReservacion string // Numero de reservacion legible para el usuario
+	Correo        string // Correo electronico del usuario para notificacion
+	Nombre        string // Nombre del usuario para el correo
+	Apellido      string // Apellido del usuario para el correo
 }

@@ -245,6 +245,7 @@
                       <th>Fecha</th>
                       <th>Total</th>
                       <th>Estado</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -255,6 +256,15 @@
                       <td>{{ formatFecha(r.fechaReservacion) }}</td>
                       <td><strong>${{ r.totalReservacion?.toFixed(2) }}</strong></td>
                       <td><span class="adm-badge" :class="`adm-badge--${r.estado}`">{{ r.estado }}</span></td>
+                      <td>
+                        <button
+                          v-if="puedeCancel(r)"
+                          class="adm-btn adm-btn--sm adm-btn--danger-ghost"
+                          @click="abrirModalCancelacion(r)"
+                          type="button"
+                        >Cancelar</button>
+                        <span v-else style="color:#c9c0b8;font-size:13px;">—</span>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -267,6 +277,64 @@
     </div>
 
     <Piepagina />
+
+    <!-- Modal de confirmación para cancelar una reservación desde el panel admin -->
+    <div v-if="modalCancelacion" class="adm-modal-overlay" @click.self="cerrarModalCancelacion">
+      <div class="adm-modal adm-modal--sm">
+        <div class="adm-modal__head">
+          <h3 class="adm-modal__title">Cancelar reservación</h3>
+          <button class="adm-modal__close" @click="cerrarModalCancelacion" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="adm-modal__body">
+          <p class="adm-cancel-info">
+            Vas a cancelar la reservación
+            <strong>{{ modalCancelacion.noReservacion }}</strong>
+            del usuario <strong>{{ modalCancelacion.usuario }}</strong>.
+            Esta acción notificará al cliente por correo electrónico y no se puede deshacer.
+          </p>
+
+          <p class="adm-modal__lbl" style="margin-top:16px">
+            Motivo de la cancelación <span style="color:#D40511">*</span>
+          </p>
+          <textarea
+            ref="textareaRef"
+            v-model="motivoCancelacion"
+            class="adm-field__input adm-field__textarea adm-field__textarea--cancel"
+            rows="4"
+            maxlength="500"
+            placeholder="Ej: Pago rechazado por el banco, duplicación de reservación, solicitud del cliente por teléfono..."
+          ></textarea>
+          <p
+            class="adm-field-hint"
+            :class="{ 'adm-field-hint--err': motivoCancelacion.trim().length > 0 && motivoCancelacion.trim().length < 10 }"
+          >Mínimo 10 caracteres ({{ motivoCancelacion.trim().length }}/500)</p>
+        </div>
+
+        <div class="adm-modal__foot">
+          <button class="adm-btn adm-btn--ghost" @click="cerrarModalCancelacion" type="button">Cerrar</button>
+          <button
+            class="adm-btn adm-btn--danger"
+            @click="confirmarCancelacion"
+            :disabled="motivoCancelacion.trim().length < 10 || cancelando"
+            type="button"
+          >
+            <div v-if="cancelando" class="adm-spinner adm-spinner--sm"></div>
+            <span v-else>Confirmar cancelación</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast de notificación de éxito o error -->
+    <div v-if="toast" class="adm-toast" :class="`adm-toast--${toast.tipo}`">
+      <svg v-if="toast.tipo==='ok'" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+      <svg v-else viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" width="15" height="15"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      {{ toast.msg }}
+    </div>
+
   </div>
 </template>
 
@@ -277,7 +345,7 @@
  * gráfica de estados de reservaciones (donut SVG), distribución por tipo (barras),
  * lista de proveedores y tabla de reservaciones recientes.
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../../components/Encabezado.vue'
 import Piepagina from '../../components/Piepagina.vue'
@@ -300,6 +368,21 @@ const proveedores            = ref([])
 
 /** Las últimas reservaciones realizadas por cualquier usuario. @type {import('vue').Ref<Array>} */
 const reservacionesRecientes = ref([])
+
+/** Referencia al textarea del modal para enfocar al abrir. @type {import('vue').Ref<HTMLElement|null>} */
+const textareaRef           = ref(null)
+
+/** Reservación seleccionada para cancelar (null = modal cerrado). @type {import('vue').Ref<Object|null>} */
+const modalCancelacion      = ref(null)
+
+/** Motivo de cancelación ingresado por el administrador. @type {import('vue').Ref<string>} */
+const motivoCancelacion     = ref('')
+
+/** Indica si hay una cancelación en proceso. @type {import('vue').Ref<boolean>} */
+const cancelando            = ref(false)
+
+/** Notificación temporal de éxito o error. @type {import('vue').Ref<{tipo: string, msg: string}|null>} */
+const toast                 = ref(null)
 
 /**
  * Fecha de hoy formateada al español de Guatemala para mostrar en el topbar.
@@ -370,8 +453,21 @@ const barData = computed(() => {
   ]
 })
 
-/** Carga todos los datos al montar el componente. */
-onMounted(() => cargarTodo())
+/** Cierra el modal de cancelación al presionar ESC. */
+function onKeydown(e) {
+  if (e.key === 'Escape' && modalCancelacion.value) cerrarModalCancelacion()
+}
+
+/** Carga todos los datos al montar el componente y registra el listener de teclado. */
+onMounted(() => {
+  cargarTodo()
+  window.addEventListener('keydown', onKeydown)
+})
+
+/** Limpia el listener de teclado al desmontar el componente. */
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+})
 
 /**
  * Carga en paralelo las estadísticas, los proveedores, las reservaciones recientes
@@ -402,6 +498,99 @@ async function cargarTodo() {
   } finally {
     loading.value = false
   }
+}
+
+/**
+ * Recarga solo la tabla de reservaciones recientes sin refrescar el dashboard completo.
+ * Se llama tras una cancelación exitosa para reflejar el estado actualizado.
+ * @returns {Promise<void>}
+ */
+async function cargarRecientes() {
+  try {
+    const res = await fetch(`${API}/api/admin/reservaciones/recientes`, { credentials: 'include' })
+    if (res.ok) reservacionesRecientes.value = await res.json()
+  } catch (e) {
+    console.error('Error recargando reservaciones:', e)
+  }
+}
+
+/**
+ * Retorna true si la reservación puede ser cancelada según su estado.
+ * Los estados cancelables son pendiente y confirmada. El estado retenida (7)
+ * aparece como "pendiente" en este endpoint, por lo que queda cubierto.
+ * @param {Object} r - La reservación a evaluar.
+ * @returns {boolean}
+ */
+function puedeCancel(r) {
+  return r.estado === 'pendiente' || r.estado === 'confirmada'
+}
+
+/**
+ * Abre el modal de cancelación para la reservación indicada y enfoca el textarea.
+ * @param {Object} r - La reservación a cancelar.
+ */
+function abrirModalCancelacion(r) {
+  modalCancelacion.value  = r
+  motivoCancelacion.value = ''
+  cancelando.value        = false
+  nextTick(() => textareaRef.value?.focus())
+}
+
+/**
+ * Cierra el modal de cancelación y limpia el estado. No cierra si hay un fetch activo.
+ */
+function cerrarModalCancelacion() {
+  if (cancelando.value) return
+  modalCancelacion.value  = null
+  motivoCancelacion.value = ''
+}
+
+/**
+ * Ejecuta la cancelación de la reservación seleccionada llamando al endpoint admin.
+ * Si tiene éxito: cierra el modal, muestra toast verde y refresca la tabla.
+ * Si falla: muestra toast rojo con el error específico.
+ * @returns {Promise<void>}
+ */
+async function confirmarCancelacion() {
+  if (!modalCancelacion.value || motivoCancelacion.value.trim().length < 10) return
+  cancelando.value = true
+  try {
+    const res = await fetch(
+      `${API}/api/admin/reservaciones/${modalCancelacion.value.id}/cancelar`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo: motivoCancelacion.value.trim() }),
+      }
+    )
+    if (res.ok) {
+      modalCancelacion.value  = null
+      motivoCancelacion.value = ''
+      mostrarToast('ok', 'Reservación cancelada. Correo enviado al cliente.')
+      await cargarRecientes()
+    } else {
+      const data = await res.json().catch(() => ({}))
+      if      (res.status === 404) mostrarToast('err', 'La reservación no existe.')
+      else if (res.status === 409) mostrarToast('err', 'La reservación ya estaba cancelada.')
+      else                         mostrarToast('err', data.error || 'Error al cancelar la reservación.')
+      cancelando.value = false
+    }
+  } catch (e) {
+    console.error('Error cancelando reservación:', e)
+    mostrarToast('err', 'Error de conexión al cancelar.')
+    cancelando.value = false
+  }
+}
+
+/**
+ * Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
+ * @param {'ok'|'err'} tipo - Tipo de notificación.
+ * @param {string} msg - Mensaje a mostrar.
+ */
+function mostrarToast(tipo, msg) {
+  toast.value = { tipo, msg }
+  setTimeout(() => { toast.value = null }, 3500)
 }
 
 /**

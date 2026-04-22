@@ -994,3 +994,36 @@
 @media (max-width: 900px) {
   .adm-fin-tipos { grid-template-columns: 1fr; }
 }
+
+/* ── Modal de cancelación admin ───────────────────────────────────────────── */
+
+/* Párrafo informativo dentro del modal de cancelación */
+.adm-cancel-info {
+  font-size: 13px;
+  color: #5a5047;
+  line-height: 1.6;
+  margin: 0 0 4px;
+  padding: 12px 14px;
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+}
+
+/* Textarea de cancelación con altura fija */
+.adm-field__textarea--cancel {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100px;
+  resize: vertical;
+  margin-top: 2px;
+}
+
+/* Hint de validación debajo del textarea */
+.adm-field-hint {
+  font-size: 11px;
+  color: #9a9089;
+  margin: 4px 0 0;
+  transition: color 0.2s;
+}
+
+.adm-field-hint--err { color: #D40511; }

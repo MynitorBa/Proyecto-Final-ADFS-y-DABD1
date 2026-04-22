@@ -1016,22 +1016,57 @@ function buildVuelosPayload() {
     if (item.value.tipoVuelo === 'idaVuelta') {
       const { ida, regreso } = item.value, pax = item.value.busqueda?.cantidadPasajeros || 1
       proveedorId = parseProveedorId(ida.id)
-      vuelosArr = [
-        { vueloId: parseVueloId(ida.id),     claseId: claseToId(ida.clase),     cantidadPasajeros: pax },
-        { vueloId: parseVueloId(regreso.id), claseId: claseToId(regreso.clase), cantidadPasajeros: pax },
-      ]
+      // Expande un vuelo a N entradas: una por tramo si es con escala, una si es directo.
+      // La clase se hereda del vuelo padre (seleccionada a nivel de resultado de búsqueda).
+      const expandirVuelo = (v, clase) => {
+        if (v.tramos?.length > 1) {
+          return v.tramos
+            .filter(t => {
+              if (!t?.id) { console.warn('[buildVuelosPayload idaVuelta] tramo sin id ignorado:', t); return false }
+              return true
+            })
+            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+        }
+        return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+      }
+      vuelosArr = [...expandirVuelo(ida, ida.clase), ...expandirVuelo(regreso, regreso.clase)]
     } else {
       const pax = item.value.busqueda?.cantidadPasajeros || 1
       proveedorId = parseProveedorId(item.value.id)
-      vuelosArr = [{ vueloId: parseVueloId(item.value.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }]
+      if (item.value.tramos?.length > 1) {
+        // Vuelo con escala: generar una entrada por cada tramo usando su propio vueloId.
+        // La clase se selecciona a nivel del vuelo padre y aplica a todos los tramos.
+        vuelosArr = item.value.tramos
+          .filter(t => {
+            if (!t?.id) {
+              console.warn('[buildVuelosPayload] tramo sin id ignorado:', t)
+              return false
+            }
+            return true
+          })
+          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }))
+      } else {
+        // Vuelo directo (o escala con un solo tramo): comportamiento original.
+        vuelosArr = [{ vueloId: parseVueloId(item.value.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }]
+      }
     }
   } else if (tipoItem.value === 'paquete') {
     const v = item.value.vuelo, pax = item.value.cantidadPersonas || 1
     proveedorId = parseProveedorId(v.id)
-    vuelosArr = [{ vueloId: parseVueloId(v.id), claseId: claseToId(v.clase), cantidadPasajeros: pax }]
+    const expandirVueloPaq = (vx, clase) => {
+      if (vx.tramos?.length > 1) {
+        return vx.tramos
+          .filter(t => {
+            if (!t?.id) { console.warn('[buildVuelosPayload paquete] tramo sin id ignorado:', t); return false }
+            return true
+          })
+          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+      }
+      return [{ vueloId: parseVueloId(vx.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+    }
+    vuelosArr = expandirVueloPaq(v, v.clase)
     if (item.value.vueloRegreso) {
-      const vr = item.value.vueloRegreso
-      vuelosArr.push({ vueloId: parseVueloId(vr.id), claseId: claseToId(vr.clase), cantidadPasajeros: pax })
+      vuelosArr = [...vuelosArr, ...expandirVueloPaq(item.value.vueloRegreso, item.value.vueloRegreso.clase)]
     }
   }
   return { proveedorId, vuelosArr }

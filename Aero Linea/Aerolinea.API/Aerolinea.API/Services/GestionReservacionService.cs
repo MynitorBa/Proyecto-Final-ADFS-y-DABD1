@@ -11,14 +11,22 @@ namespace Aerolinea.API.Services
     /// </summary>
     public class GestionReservacionService
     {
-        private readonly GestionReservacionRepository _repository;
+        private readonly GestionReservacionRepository      _repository;
+        private readonly EmailHelper                       _emailHelper;
+        private readonly ILogger<GestionReservacionService> _logger;
 
         /// <summary>
-        /// Inicializa el servicio con el repositorio de gestion de reservaciones.
+        /// Inicializa el servicio con el repositorio de gestion de reservaciones,
+        /// el helper de correo y el logger.
         /// </summary>
-        public GestionReservacionService(GestionReservacionRepository repository)
+        public GestionReservacionService(
+            GestionReservacionRepository      repository,
+            EmailHelper                       emailHelper,
+            ILogger<GestionReservacionService> logger)
         {
-            _repository = repository;
+            _repository  = repository;
+            _emailHelper = emailHelper;
+            _logger      = logger;
         }
 
         /// <summary>
@@ -54,10 +62,43 @@ namespace Aerolinea.API.Services
         /// <summary>
         /// Cancela una reservacion activa del usuario. Registra el motivo de cancelacion
         /// y libera los asientos y boletos asociados segun la logica del repositorio.
+        /// Tras cancelar exitosamente envia un correo de aviso al usuario (best-effort:
+        /// si el envio falla se registra en el log pero NO se revierte la cancelacion).
         /// </summary>
         public async Task CancelarReservacion(int reservacionId, int usuarioId, string motivo)
         {
-            await _repository.CancelarReservacion(reservacionId, usuarioId, motivo);
+            // El repositorio retorna los datos del usuario necesarios para el correo
+            var (noReservacion, nombreUsuario, emailUsuario) =
+                await _repository.CancelarReservacion(reservacionId, usuarioId, motivo);
+
+            // Enviar correo de cancelacion (best-effort)
+            if (!string.IsNullOrEmpty(emailUsuario))
+            {
+                try
+                {
+                    _logger.LogInformation(
+                        "Enviando correo de cancelacion para reservacion {NoReservacion} a {Email}",
+                        noReservacion, emailUsuario);
+
+                    string html = EmailTemplates.CorreoCancelacion(nombreUsuario, noReservacion);
+
+                    await _emailHelper.Enviar(
+                        emailUsuario,
+                        $"Broom AirLine - Reservacion {noReservacion} Cancelada",
+                        html);
+
+                    _logger.LogInformation(
+                        "Correo de cancelacion enviado exitosamente para reservacion {NoReservacion}",
+                        noReservacion);
+                }
+                catch (Exception ex)
+                {
+                    // El fallo del correo nunca revierte la cancelacion ya confirmada
+                    _logger.LogError(ex,
+                        "Error al enviar correo de cancelacion para reservacion {NoReservacion} a {Email}",
+                        noReservacion, emailUsuario);
+                }
+            }
         }
 
         /// <summary>
@@ -70,7 +111,7 @@ namespace Aerolinea.API.Services
 
             string html = EmailTemplates.CorreoReservacion(reservacion);
 
-            await EmailHelper.Enviar(
+            await _emailHelper.Enviar(
                 reservacion.UsuarioEmail,
                 $"Comprobante de Reservacion {reservacion.NoReservacion} — Broom AirLine",
                 html

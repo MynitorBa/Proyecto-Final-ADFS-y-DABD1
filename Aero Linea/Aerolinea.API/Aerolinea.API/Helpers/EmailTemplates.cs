@@ -469,6 +469,96 @@ namespace Aerolinea.API.Helpers
         }
 
         // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE CANCELACION DE VUELO — enviado masivamente a pasajeros
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de aviso masivo que se envia a cada pasajero
+        /// afectado cuando el administrador cancela un vuelo completo.
+        /// Incluye el numero de vuelo, la ruta, la fecha y el numero de reservacion
+        /// del pasajero para facilitar el seguimiento.
+        /// </summary>
+        public static string CorreoCancelacionVuelo(
+            string nombreUsuario,
+            string noReservacion,
+            string numeroVuelo,
+            string origenCodigo,
+            string destinoCodigo,
+            string fechaVuelo)
+        {
+            var e = EmailHelper.Esc;
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:22px;color:#F2EFEA;font-weight:700;'>Vuelo Cancelado</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Broom AirLine</p>
+    </div>
+    <div style='height:3px;background:#ef4444;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+        <p style='font-size:15px;color:#1C1A18;margin:0 0 6px;'>Hola, <strong>{e(nombreUsuario)}</strong>:</p>
+        <p style='font-size:14px;color:#3A3531;margin:0 0 24px;line-height:1.6;'>
+            Lamentamos informarte que el vuelo que incluye tu reservacion ha sido cancelado
+            por parte de la aerolinea. A continuacion encontras el detalle:
+        </p>
+
+        <!-- DETALLE DEL VUELO CANCELADO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(239,68,68,0.2);border-radius:4px 16px 4px 16px;padding:20px;border-left:4px solid #ef4444;margin-bottom:20px;'>
+            <table style='width:100%;border-collapse:collapse;table-layout:fixed;'>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;width:140px;vertical-align:top;'>N. Reservacion</td>
+                    <td style='padding:8px 0;font-size:15px;color:#1C1A18;font-weight:700;font-family:monospace;'>{e(noReservacion)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Vuelo</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(numeroVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Ruta</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(origenCodigo)} &rarr; {e(destinoCodigo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Fecha</td>
+                    <td style='padding:8px 0;font-size:14px;color:#3A3531;'>{e(fechaVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Motivo</td>
+                    <td style='padding:8px 0;font-size:14px;color:#ef4444;font-weight:600;'>Cancelacion por parte de la aerolinea</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- MENSAJE DE CONTACTO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;'>
+            <p style='margin:0;font-size:13px;color:#3A3531;line-height:1.7;'>
+                Si tienes preguntas sobre tu reservacion o deseas mas informacion,
+                contactanos a <a href='mailto:distribuidorapine@gmail.com' style='color:#8B6B4A;font-weight:600;'>distribuidorapine@gmail.com</a>.
+                Lamentamos los inconvenientes ocasionados.
+            </p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine &middot; Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         //  CORREO DE CANCELACIÓN — enviado al usuario
         // ══════════════════════════════════════════════════════════════════
         /// <summary>
