@@ -1,10 +1,12 @@
 using Aerolinea.API.Data;
 using Aerolinea.API.Helpers;
+using Aerolinea.API.Models.Config;
 using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
 // using DinkToPdf;
 // using DinkToPdf.Contracts;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using QuestPDF.Infrastructure;
 // using System.Runtime.InteropServices;
 
 /// <summary>
@@ -328,6 +330,19 @@ builder.Services.AddScoped<AdminReservacionesService>();
 // builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
 
 /// <summary>
+/// Configuracion SMTP leida desde appsettings.json (seccion EmailSettings).
+/// En Docker sobreescribir SenderPassword via variable de entorno:
+///   EmailSettings__SenderPassword=tu_app_password
+/// </summary>
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
+/// <summary>
+/// Helper de correo como Singleton: una sola instancia comparte la configuracion SMTP.
+/// </summary>
+builder.Services.AddSingleton<EmailHelper>();
+
+/// <summary>
 /// Almacena busquedas temporales en memoria - no persiste en base de datos.
 /// </summary>
 builder.Services.AddSingleton<BusquedaTemporalService>();
@@ -392,6 +407,12 @@ builder.Services.AddCors(options =>
 /// Construye la aplicacion con toda la configuracion registrada.
 /// </summary>
 var app = builder.Build();
+
+/// <summary>
+/// QuestPDF Community License - gratuita para proyectos no comerciales.
+/// Debe establecerse antes de cualquier generacion de PDF.
+/// </summary>
+QuestPDF.Settings.License = LicenseType.Community;
 
 /// <summary>
 /// Pipeline de middleware - el orden importa.

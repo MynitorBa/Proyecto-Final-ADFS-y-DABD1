@@ -110,8 +110,12 @@ func (s *ExpiracionService) ExpirarReservacionesDeUsuario(usuarioID int) error {
 // expirarPendientes
 //
 // Obtiene todas las reservaciones pendientes expiradas a nivel global con sus
-// datos completos (ID, usuario_id, no_reservacion) y llama a expirarUna para
-// cada una. Por cada expiracion exitosa registra el evento en log_sesion.
+// datos completos (ID, usuario_id, no_reservacion, correo, nombre, apellido)
+// y llama a expirarUna para cada una. Por cada expiracion exitosa:
+//   - Registra el evento en log_sesion
+//   - Inserta notificacion in-app
+//   - Dispara goroutine con correo de notificacion al usuario (no bloqueante)
+//
 // Los errores individuales se registran en log sin interrumpir el proceso.
 func (s *ExpiracionService) expirarPendientes() {
 	reservas, err := s.repo.ObtenerPendientesExpirablesCompletos()
@@ -129,6 +133,7 @@ func (s *ExpiracionService) expirarPendientes() {
 			log.Printf("[EXPIRACION] Error al expirar %d: %v", res.ID, err)
 			continue
 		}
+
 		uid := res.UsuarioID
 		s.logSesion.RegistrarSistema(
 			helpers.TipoReservaExpirada,
@@ -137,6 +142,20 @@ func (s *ExpiracionService) expirarPendientes() {
 			fmt.Sprintf("Reservación %s expiró por falta de pago", res.NoReservacion),
 			"ExpiracionService",
 		)
+
+		// Notificacion in-app
+		if errNotif := s.repo.InsertarNotificacionExpiracion(res.ID); errNotif != nil {
+			log.Printf("[EXPIRACION] Error insertando notificacion para reservacion %d: %v", res.ID, errNotif)
+		}
+
+		// Correo de notificacion (no bloqueante)
+		go func(correo, nombre, apellido, noReservacion string) {
+			htmlBody := helpers.BuildHTMLExpiracion(nombre, apellido, noReservacion)
+			asunto := fmt.Sprintf("MOVENT · Tu reservacion %s expiro", noReservacion)
+			if errEmail := helpers.EnviarEmailHTML(correo, asunto, htmlBody); errEmail != nil {
+				log.Printf("[EXPIRACION] Error enviando correo a %s: %v", correo, errEmail)
+			}
+		}(res.Correo, res.Nombre, res.Apellido, res.NoReservacion)
 	}
 }
 

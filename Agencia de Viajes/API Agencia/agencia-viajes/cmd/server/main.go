@@ -97,6 +97,7 @@ func main() {
 	cancelacionProveedorService := services.NewCancelacionProveedorService(cancelacionProveedorRepo)
 	actualizacionProveedorService := services.NewActualizacionProveedorService(actualizacionProveedorRepo)
 	notificacionesService := services.NewNotificacionesService(notificacionesRepo)
+	adminCancelacionService := services.NewAdminCancelacionService(cancelacionRepo)
 
 	usuarioController := controllers.NewUsuarioController(usuarioService, logSesionService)
 	loginController := controllers.NewLoginController(loginService, logSesionService)
@@ -120,6 +121,7 @@ func main() {
 	cancelacionProveedorController := controllers.NewCancelacionProveedorController(cancelacionProveedorService, logSesionService, db)
 	actualizacionProveedorController := controllers.NewActualizacionProveedorController(actualizacionProveedorService, logSesionService, db)
 	notificacionesController := controllers.NewNotificacionesController(notificacionesService)
+	adminCancelacionController := controllers.NewAdminCancelacionController(adminCancelacionService, logSesionService)
 
 	webServiceRepo := repositories.NewWebServiceRepository(db)
 	webServiceService := services.NewWebServiceService(webServiceRepo)
@@ -190,6 +192,7 @@ func main() {
 				admin.PUT("/proveedores/:id", adminController.EditarProveedor)
 				admin.GET("/admin/reservaciones/recientes", adminController.ReservacionesRecientes)
 				admin.GET("/admin/metricas", adminController.ObtenerMetricas)
+				admin.POST("/admin/reservaciones/:id/cancelar", adminCancelacionController.Cancelar)
 				admin.POST("/proveedores", proveedorController.CrearProveedor)
 				admin.POST("/catalogo/actualizar", catalogoController.ActualizarCatalogo)
 				admin.POST("/proveedores/:id/handshake", handshakeController.IniciarHandshake)

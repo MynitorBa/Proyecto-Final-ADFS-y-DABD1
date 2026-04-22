@@ -79,6 +79,7 @@ services:
       - ServerURL=http://localhost:${BACKEND_PORT}
       - HANDSHAKE_HOST_OVERRIDE=host.docker.internal
       - HOTEL_BACKEND_URL=http://host.docker.internal:${HOTEL_PORT}
+      - EmailSettings__SenderPassword=${EMAIL_PASSWORD}
     depends_on:
       db:
         condition: service_healthy

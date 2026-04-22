@@ -3,3 +3,13 @@ obj/
 .vs/
 *.user
 *.suo
+
+# Archivos de configuracion con credenciales sensibles
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.local.json
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local

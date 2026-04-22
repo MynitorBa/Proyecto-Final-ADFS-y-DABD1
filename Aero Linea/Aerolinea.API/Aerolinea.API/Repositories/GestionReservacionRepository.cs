@@ -193,8 +193,11 @@ namespace Aerolinea.API.Repositories
         /// reservaciones confirmadas que falten mas de 24 horas para el vuelo.
         /// Libera los boletos, devuelve disponibilidad a los vuelos y actualiza
         /// el estado de la reservacion con el motivo de cancelacion.
+        /// Retorna los datos del usuario (NoReservacion, NombreUsuario, EmailUsuario)
+        /// para que el servicio pueda enviar el correo de cancelacion.
         /// </summary>
-        public async Task CancelarReservacion(int reservacionId, int usuarioId, string motivo)
+        public async Task<(string NoReservacion, string NombreUsuario, string EmailUsuario)> CancelarReservacion(
+            int reservacionId, int usuarioId, string motivo)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
@@ -202,20 +205,33 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                // 1. Verificar que existe y pertenece al usuario
+                // 1. Verificar que existe y pertenece al usuario.
+                //    Ademas se obtiene NoReservacion y los datos del usuario para el correo.
                 string queryVerificar = @"
-                    SELECT EstadoReservaID FROM Reservacion
-                    WHERE ID = @reservacionId AND UsuarioID = @usuarioId";
+                    SELECT r.EstadoReservaID,
+                           r.NoReservacion,
+                           u.Nombre + ' ' + u.Apellido AS NombreUsuario,
+                           u.Correo
+                    FROM Reservacion r
+                    INNER JOIN Usuario u ON u.ID = r.UsuarioID
+                    WHERE r.ID = @reservacionId AND r.UsuarioID = @usuarioId";
 
-                int? estadoReserva = null;
+                int? estadoReserva      = null;
+                string noReservacion    = "";
+                string nombreUsuario    = "";
+                string emailUsuario     = "";
+
                 using (var cmd = new SqlCommand(queryVerificar, connection, transaction))
                 {
                     cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
                     cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
-                    var resultado = await cmd.ExecuteScalarAsync();
-                    if (resultado == null || resultado == DBNull.Value)
-                        throw new Exception("Reservación no encontrada o no tienes acceso a ella.");
-                    estadoReserva = (int)resultado;
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    if (!await reader.ReadAsync())
+                        throw new Exception("Reservacion no encontrada o no tienes acceso a ella.");
+                    estadoReserva = reader.GetInt32(0);
+                    noReservacion = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                    nombreUsuario = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                    emailUsuario  = reader.IsDBNull(3) ? "" : reader.GetString(3);
                 }
 
                 // 2. Solo Pendiente (1) o Confirmada (2)
@@ -309,6 +325,9 @@ namespace Aerolinea.API.Repositories
                 }
 
                 transaction.Commit();
+
+                // Retornar datos del usuario para que el service pueda enviar el correo
+                return (noReservacion, nombreUsuario, emailUsuario);
             }
             catch
             {

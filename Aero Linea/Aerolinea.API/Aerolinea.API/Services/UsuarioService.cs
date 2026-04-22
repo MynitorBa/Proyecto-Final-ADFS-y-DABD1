@@ -13,24 +13,28 @@ namespace Aerolinea.API.Services
     /// </summary>
     public class UsuarioService
     {
-        private readonly UsuarioRepository _repository;
-        private readonly PaisRepository _paisRepository;
-        private readonly CiudadRepository _ciudadRepository;
+        private readonly UsuarioRepository   _repository;
+        private readonly PaisRepository      _paisRepository;
+        private readonly CiudadRepository    _ciudadRepository;
         private readonly DbConnectionFactory _connectionFactory;
+        private readonly EmailHelper         _emailHelper;
 
         /// <summary>
-        /// Inicializa el servicio con los repositorios de usuario, pais, ciudad y la fabrica de conexiones.
+        /// Inicializa el servicio con los repositorios de usuario, pais, ciudad,
+        /// la fabrica de conexiones y el helper de correo.
         /// </summary>
         public UsuarioService(
-            UsuarioRepository repository,
-            PaisRepository paisRepository,
-            CiudadRepository ciudadRepository,
-            DbConnectionFactory connectionFactory)
+            UsuarioRepository   repository,
+            PaisRepository      paisRepository,
+            CiudadRepository    ciudadRepository,
+            DbConnectionFactory connectionFactory,
+            EmailHelper         emailHelper)
         {
-            _repository = repository;
-            _paisRepository = paisRepository;
-            _ciudadRepository = ciudadRepository;
+            _repository        = repository;
+            _paisRepository    = paisRepository;
+            _ciudadRepository  = ciudadRepository;
             _connectionFactory = connectionFactory;
+            _emailHelper       = emailHelper;
         }
 
         /// <summary>
@@ -106,8 +110,8 @@ namespace Aerolinea.API.Services
                     dto.Nacionalidades ?? new List<string>()
                 );
 
-                string asunto = "✈ Bienvenido a Broom AirLine — Cuenta creada exitosamente";
-                await EmailHelper.Enviar(dto.Correo, asunto, html);
+                string asunto = "Bienvenido a Broom AirLine - Cuenta creada exitosamente";
+                await _emailHelper.Enviar(dto.Correo, asunto, html);
             }
             catch (Exception ex)
             {

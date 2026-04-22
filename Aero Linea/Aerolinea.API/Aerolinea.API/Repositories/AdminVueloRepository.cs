@@ -360,6 +360,80 @@ namespace Aerolinea.API.Repositories
             }
         }
         // ─────────────────────────────────────────────────────────────────
+        //  USUARIOS AFECTADOS POR CANCELACION DE VUELO
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Representa los datos de un usuario afectado por la cancelacion de un vuelo.
+        /// Se usa para construir el correo masivo de notificacion.
+        /// </summary>
+        public record UsuarioAfectadoVuelo(
+            string NoReservacion,
+            string NombreUsuario,
+            string EmailUsuario,
+            string NumeroVuelo,
+            string OrigenCodigo,
+            string DestinoCodigo,
+            string FechaVuelo
+        );
+
+        /// <summary>
+        /// Retorna la lista de usuarios con reservaciones activas en el vuelo indicado,
+        /// incluyendo datos de contacto y datos del vuelo para el correo de notificacion.
+        /// Solo considera boletos en estado Activo (2) o Vendido (3) cuyas reservaciones
+        /// no esten ya canceladas o expiradas.
+        /// Debe llamarse ANTES de ejecutar la cancelacion del vuelo.
+        /// </summary>
+        public async Task<List<UsuarioAfectadoVuelo>> ObtenerAfectadosPorVuelo(int vueloId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // JOIN completo para obtener email, nombre, numero de reservacion
+            // y datos del vuelo (ruta y fecha) en una sola consulta
+            var query = @"
+                SELECT DISTINCT
+                    r.NoReservacion,
+                    u.Nombre + ' ' + u.Apellido  AS NombreUsuario,
+                    u.Correo                      AS EmailUsuario,
+                    v.NumeroVuelo,
+                    ao.Codigo                     AS OrigenCodigo,
+                    ad.Codigo                     AS DestinoCodigo,
+                    CONVERT(VARCHAR(10), v.Fecha, 120) AS FechaVuelo
+                FROM  Boleto b
+                INNER JOIN Reservacion r  ON r.ID  = b.ReservacionID
+                INNER JOIN Usuario u      ON u.ID  = r.UsuarioID
+                INNER JOIN Vuelo v        ON v.ID  = b.VueloID
+                INNER JOIN Ruta ru        ON ru.ID = v.RutaID
+                INNER JOIN Aeropuerto ao  ON ao.ID = ru.OrigenID
+                INNER JOIN Aeropuerto ad  ON ad.ID = ru.DestinoID
+                WHERE b.VueloID            = @VueloId
+                  AND b.ReservacionID      IS NOT NULL
+                  AND b.EstadoBoletoID     IN (2, 3)
+                  AND r.EstadoReservaID    NOT IN (3, 4)";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@VueloId", vueloId);
+
+            var afectados = new List<UsuarioAfectadoVuelo>();
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                afectados.Add(new UsuarioAfectadoVuelo(
+                    NoReservacion: reader.IsDBNull(0) ? "" : reader.GetString(0),
+                    NombreUsuario: reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    EmailUsuario:  reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    NumeroVuelo:   reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    OrigenCodigo:  reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    DestinoCodigo: reader.IsDBNull(5) ? "" : reader.GetString(5),
+                    FechaVuelo:    reader.IsDBNull(6) ? "" : reader.GetString(6)
+                ));
+            }
+
+            return afectados;
+        }
+
+        // ─────────────────────────────────────────────────────────────────
         //  DISPONIBILIDAD
         // ─────────────────────────────────────────────────────────────────
 

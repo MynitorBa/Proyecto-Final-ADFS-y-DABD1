@@ -1,3 +1,4 @@
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Repositories;
 
@@ -6,19 +7,29 @@ namespace Aerolinea.API.Services
     /// <summary>
     /// Servicio de administracion de vuelos. Contiene la logica de negocio para crear,
     /// cancelar y consultar vuelos, asi como verificar disponibilidad de aviones y tripulantes.
+    /// Al cancelar un vuelo notifica por correo a todos los pasajeros afectados.
     /// </summary>
     public class AdminVueloService
     {
-        private readonly AdminVueloRepository _adminVueloRepository;
-        private readonly RutaRepository _rutaRepository;
+        private readonly AdminVueloRepository      _adminVueloRepository;
+        private readonly RutaRepository            _rutaRepository;
+        private readonly EmailHelper               _emailHelper;
+        private readonly ILogger<AdminVueloService> _logger;
 
         /// <summary>
-        /// Inicializa el servicio con los repositorios necesarios para la gestion de vuelos y rutas.
+        /// Inicializa el servicio con los repositorios necesarios para la gestion de vuelos,
+        /// rutas, el helper de correo y el logger para registrar errores en notificaciones masivas.
         /// </summary>
-        public AdminVueloService(AdminVueloRepository adminVueloRepository, RutaRepository rutaRepository)
+        public AdminVueloService(
+            AdminVueloRepository      adminVueloRepository,
+            RutaRepository            rutaRepository,
+            EmailHelper               emailHelper,
+            ILogger<AdminVueloService> logger)
         {
             _adminVueloRepository = adminVueloRepository;
-            _rutaRepository = rutaRepository;
+            _rutaRepository       = rutaRepository;
+            _emailHelper          = emailHelper;
+            _logger               = logger;
         }
 
         /// <summary>
@@ -92,13 +103,70 @@ namespace Aerolinea.API.Services
         /// <summary>
         /// Cancela un vuelo existente dado su identificador. Valida que el ID sea mayor a cero
         /// antes de proceder con la cancelacion en el repositorio.
+        /// Antes de cancelar consulta los pasajeros afectados y, tras la cancelacion exitosa,
+        /// envia un correo de aviso a cada uno de forma individual (best-effort: si un correo
+        /// falla se loguea el error y se continua con los restantes sin revertir la cancelacion).
         /// </summary>
         public async Task<bool> CancelarVuelo(int vueloId)
         {
             if (vueloId <= 0)
-                throw new ArgumentException("ID de vuelo inválido");
+                throw new ArgumentException("ID de vuelo invalido");
 
-            return await _adminVueloRepository.CancelarVuelo(vueloId);
+            // 1. Obtener lista de pasajeros afectados ANTES de cancelar para tener
+            //    los datos de sus reservaciones todavia en estado activo
+            var afectados = await _adminVueloRepository.ObtenerAfectadosPorVuelo(vueloId);
+
+            _logger.LogInformation(
+                "Cancelando vuelo {VueloId}. Pasajeros afectados: {Total}",
+                vueloId, afectados.Count);
+
+            // 2. Ejecutar la cancelacion en la base de datos
+            var cancelado = await _adminVueloRepository.CancelarVuelo(vueloId);
+
+            if (!cancelado)
+                return false;
+
+            // 3. Notificar a cada pasajero afectado con try-catch individual
+            //    Un fallo de correo no revierte la cancelacion del vuelo
+            int enviados  = 0;
+            int fallidos  = 0;
+
+            foreach (var afectado in afectados)
+            {
+                if (string.IsNullOrEmpty(afectado.EmailUsuario))
+                    continue;
+
+                try
+                {
+                    string html = EmailTemplates.CorreoCancelacionVuelo(
+                        afectado.NombreUsuario,
+                        afectado.NoReservacion,
+                        afectado.NumeroVuelo,
+                        afectado.OrigenCodigo,
+                        afectado.DestinoCodigo,
+                        afectado.FechaVuelo);
+
+                    await _emailHelper.Enviar(
+                        afectado.EmailUsuario,
+                        $"Broom AirLine - Vuelo {afectado.NumeroVuelo} Cancelado",
+                        html);
+
+                    enviados++;
+                }
+                catch (Exception ex)
+                {
+                    fallidos++;
+                    _logger.LogError(ex,
+                        "Error al notificar cancelacion de vuelo {VueloId} al usuario {Email} (reservacion {NoReservacion})",
+                        vueloId, afectado.EmailUsuario, afectado.NoReservacion);
+                }
+            }
+
+            _logger.LogInformation(
+                "Notificaciones de cancelacion de vuelo {VueloId}: {Enviados} enviadas, {Fallidos} fallidas",
+                vueloId, enviados, fallidos);
+
+            return true;
         }
 
         /// <summary>

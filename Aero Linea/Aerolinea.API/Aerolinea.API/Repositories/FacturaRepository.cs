@@ -83,7 +83,27 @@ namespace Aerolinea.API.Repositories
                 if (fechaExp.HasValue && fechaExp.Value < DateTime.Now)
                     throw new Exception("La reservación ha expirado. Por favor crea una nueva.");
 
-                // ── 2. Verificar que todos los boletos tienen pasajero asignado ──
+                // ── 2. Obtener nombre y correo del usuario para el correo de confirmacion ──
+                string nombreUsuario = "";
+                string emailUsuario = "";
+
+                string queryUsuario = @"
+                    SELECT u.Nombre + ' ' + u.Apellido, u.Correo
+                    FROM Usuario u
+                    WHERE u.ID = @usuarioId";
+
+                using (var cmd = new SqlCommand(queryUsuario, connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        nombreUsuario = reader.IsDBNull(0) ? "" : reader.GetString(0);
+                        emailUsuario  = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                    }
+                }
+
+                // ── 3. Verificar que todos los boletos tienen pasajero asignado ──
                 string queryBoletos = @"
                     SELECT COUNT(*) FROM Boleto
                     WHERE ReservacionID = @reservacionId
@@ -99,7 +119,7 @@ namespace Aerolinea.API.Repositories
                             "Hay boletos sin pasajeros asignados. Completa todos los datos antes de pagar.");
                 }
 
-                // ── 3. Crear la factura ────────────────────────────────────────────
+                // ── 4. Crear la factura ────────────────────────────────────────────
                 DateTime fechaFactura = DateTime.Now;
                 int facturaId;
 
@@ -118,7 +138,7 @@ namespace Aerolinea.API.Repositories
                     facturaId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 }
 
-                // ── 4. Boletos Vendido (3) ──────────────────────────────────────
+                // ── 5. Boletos Vendido (3) ──────────────────────────────────────
                 string updateBoletos = @"
                     UPDATE Boleto
                     SET EstadoBoletoID = 3
@@ -131,7 +151,7 @@ namespace Aerolinea.API.Repositories
                     await cmd.ExecuteNonQueryAsync();
                 }
 
-                // ── 5. Reservación Confirmada (2), limpiar expiración ───────────
+                // ── 6. Reservacion Confirmada (2), limpiar expiracion ───────────
                 string updateReserva = @"
                     UPDATE Reservacion
                     SET EstadoReservaID = 2, FechaExpiracion = NULL
@@ -147,13 +167,16 @@ namespace Aerolinea.API.Repositories
 
                 return new CompraRealizadaDTO
                 {
-                    FacturaId = facturaId,
+                    FacturaId     = facturaId,
                     ReservacionId = reservacionId,
                     NoReservacion = noReservacion,
-                    Fecha = fechaFactura,
-                    NIT = dto.NIT?.Trim() ?? "CF",
-                    CodigoPostal = dto.CodigoPostal?.Trim() ?? "",
-                    Total = total
+                    Fecha         = fechaFactura,
+                    NIT           = dto.NIT?.Trim() ?? "CF",
+                    CodigoPostal  = dto.CodigoPostal?.Trim() ?? "",
+                    Total         = total,
+                    // Datos del usuario para el correo de confirmacion (consultados en paso 2)
+                    UsuarioNombre = nombreUsuario,
+                    UsuarioEmail  = emailUsuario
                 };
             }
             catch

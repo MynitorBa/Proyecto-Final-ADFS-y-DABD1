@@ -7,6 +7,7 @@ package services
 
 import (
 	"agencia-viajes/internal/dto"
+	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
 	"crypto/tls"
@@ -14,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -89,8 +91,11 @@ func (s *CancelacionService) VerificarCancelacion(reservacionID, usuarioID int) 
 		}
 
 		if err != nil {
+			log.Printf("[Cancelacion] Error verificando proveedor %s (ID=%d, tipo=%d): %v",
+				d.NombreProveedor, d.ProveedorID, d.TipoDetalleID, err)
 			detalle.PuedeCancelar = false
-			detalle.Razon = fmt.Sprintf("Error consultando proveedor: %s", err.Error())
+			detalle.Razon = helpers.ErrorProveedorUsuario(
+				d.NombreProveedor, helpers.TipoProveedorStr(d.TipoDetalleID), err, "verificar cancelacion").Error()
 		} else {
 			detalle.PuedeCancelar = resultado.PuedeCancelar
 			detalle.Razon = resultado.Razon
@@ -143,7 +148,9 @@ func (s *CancelacionService) CancelarReservacion(reservacionID, usuarioID int, m
 	for _, d := range detalles {
 		resultado, err := s.consultarPuedeCancelar(d)
 		if err != nil {
-			return "", fmt.Errorf("error verificando proveedor: %w", err)
+			log.Printf("[Cancelacion] Error verificando proveedor %s (ID=%d): %v", d.NombreProveedor, d.ProveedorID, err)
+			return "", helpers.ErrorProveedorUsuario(
+				d.NombreProveedor, helpers.TipoProveedorStr(d.TipoDetalleID), err, "verificar cancelacion")
 		}
 		if !resultado.PuedeCancelar {
 			return "", fmt.Errorf("no se puede cancelar: %s", resultado.Razon)
@@ -153,12 +160,32 @@ func (s *CancelacionService) CancelarReservacion(reservacionID, usuarioID int, m
 	// 4. Cancelar en cada proveedor
 	for _, d := range detalles {
 		if err := s.cancelarEnProveedor(d, motivo); err != nil {
-			return "", fmt.Errorf("error cancelando en proveedor: %w", err)
+			log.Printf("[Cancelacion] Error cancelando en proveedor %s (ID=%d): %v", d.NombreProveedor, d.ProveedorID, err)
+			return "", err
 		}
 	}
 
-	// 5. Cancelar en BD local
-	return noReservacion, s.repo.CancelarReservacion(reservacionID, motivo)
+	// 5. Cancelar en BD local (incluye INSERT de notificacion in-app dentro de la transaccion)
+	if err := s.repo.CancelarReservacion(reservacionID, motivo); err != nil {
+		return "", err
+	}
+
+	// 6. Enviar correo de confirmacion de cancelacion (no bloqueante)
+	//    La transaccion ya fue exitosa; si falla el correo no afecta la respuesta HTTP.
+	go func(rID int, motv string) {
+		correo, nombre, apellido, noRes, errDatos := s.repo.ObtenerDatosCorreoReservacion(rID)
+		if errDatos != nil {
+			log.Printf("[Cancelacion] error obteniendo datos de correo para reservacion %d: %v", rID, errDatos)
+			return
+		}
+		htmlBody := helpers.BuildHTMLCancelacionUsuario(nombre, apellido, noRes, motv)
+		asunto := fmt.Sprintf("MOVENT · Cancelacion de tu reservacion %s", noRes)
+		if errEmail := helpers.EnviarEmailHTML(correo, asunto, htmlBody); errEmail != nil {
+			log.Printf("[Cancelacion] error enviando correo a %s para reservacion %d: %v", correo, rID, errEmail)
+		}
+	}(reservacionID, motivo)
+
+	return noReservacion, nil
 }
 
 // consultarPuedeCancelar
@@ -186,20 +213,23 @@ func (s *CancelacionService) consultarPuedeCancelar(d dto.DetalleProveedor) (*dt
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, helpers.ErrorProveedorUsuario(
+			d.NombreProveedor, helpers.TipoProveedorStr(d.TipoDetalleID), err, "verificar cancelacion")
 	}
 	req.Header.Set("X-Agencia-Token", d.TokenEntrada)
 
 	resp, err := httpClient().Do(req)
 	if err != nil {
-		return nil, err
+		return nil, helpers.ErrorProveedorUsuario(
+			d.NombreProveedor, helpers.TipoProveedorStr(d.TipoDetalleID), err, "verificar cancelacion")
 	}
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 	var resultado dto.ProveedorPuedeCancelarResponse
 	if err := json.Unmarshal(body, &resultado); err != nil {
-		return nil, err
+		return nil, helpers.ErrorProveedorUsuario(
+			d.NombreProveedor, helpers.TipoProveedorStr(d.TipoDetalleID), err, "verificar cancelacion")
 	}
 	return &resultado, nil
 }
@@ -220,6 +250,7 @@ func (s *CancelacionService) consultarPuedeCancelar(d dto.DetalleProveedor) (*dt
 func (s *CancelacionService) cancelarEnProveedor(d dto.DetalleProveedor, motivo string) error {
 	var url, method string
 	var bodyBytes []byte
+	tipoStr := helpers.TipoProveedorStr(d.TipoDetalleID)
 
 	switch d.TipoDetalleID {
 	case 1: // Aerolínea — POST con {"motivo": "..."}
@@ -236,20 +267,22 @@ func (s *CancelacionService) cancelarEnProveedor(d dto.DetalleProveedor, motivo 
 
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
-		return err
+		return helpers.ErrorProveedorUsuario(d.NombreProveedor, tipoStr, err, "cancelar")
 	}
 	req.Header.Set("X-Agencia-Token", d.TokenEntrada)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient().Do(req)
 	if err != nil {
-		return err
+		return helpers.ErrorProveedorUsuario(d.NombreProveedor, tipoStr, err, "cancelar")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("proveedor rechazó la cancelación: %s", string(body))
+		log.Printf("[Cancelacion] HTTP %d al cancelar en proveedor %s (ID=%d): %s",
+			resp.StatusCode, d.NombreProveedor, d.ProveedorID, string(body))
+		return helpers.ErrorProveedorUsuario(d.NombreProveedor, tipoStr, nil, "cancelar")
 	}
 	return nil
 }

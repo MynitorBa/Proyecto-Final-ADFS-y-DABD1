@@ -84,7 +84,7 @@ func (r *CancelacionRepository) ObtenerDetallesParaCancelar(reservacionID int) (
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT dr.ID_Reserva_Proveedor, p.ID, p.URL_API, p.Token_HASH_Entrada, dr.Tipo_Detalle_ID
+		SELECT dr.ID_Reserva_Proveedor, p.ID, p.Nombre, p.URL_API, p.Token_HASH_Entrada, dr.Tipo_Detalle_ID
 		FROM Detalles_Reservacion dr
 		JOIN Proveedor p ON dr.Proveedor_ID = p.ID
 		WHERE dr.Reservacion_ID = ?
@@ -98,7 +98,7 @@ func (r *CancelacionRepository) ObtenerDetallesParaCancelar(reservacionID int) (
 	var detalles []dto.DetalleProveedor
 	for rows.Next() {
 		var d dto.DetalleProveedor
-		if err := rows.Scan(&d.IDReservaProveedor, &d.ProveedorID, &d.URLAPI, &d.TokenEntrada, &d.TipoDetalleID); err != nil {
+		if err := rows.Scan(&d.IDReservaProveedor, &d.ProveedorID, &d.NombreProveedor, &d.URLAPI, &d.TokenEntrada, &d.TipoDetalleID); err != nil {
 			return nil, err
 		}
 		detalles = append(detalles, d)
@@ -148,5 +148,89 @@ func (r *CancelacionRepository) CancelarReservacion(reservacionID int, motivo st
 		return err
 	}
 
+	// 3. Insertar notificacion in-app (Tipo_Notificacion_ID = 2 = Reservacion Cancelada)
+	_, err = tx.Exec(`
+		INSERT INTO notificaciones
+			(Reservacion_ID, Detalle_Reservacion_ID, Mensaje_Proveedor, Boleano_Leido, Tipo_Notificacion_ID)
+		VALUES (?, NULL, ?, 0, 2)
+	`, reservacionID, motivo)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	return tx.Commit()
+}
+
+// ObtenerReservacionParaAdmin
+//
+// Verifica que una reservacion exista y retorna su estado actual, el ID de
+// usuario propietario y el numero de reservacion. A diferencia de
+// ObtenerReservacionParaCancelar, NO verifica pertenencia al usuario,
+// por lo que es de uso exclusivo del flujo de cancelacion por administrador.
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion a consultar
+//
+// Retorna:
+//   - estadoID:      estado actual de la reservacion
+//   - usuarioID:     ID del usuario propietario (para logs y correo)
+//   - noReservacion: numero de reservacion legible
+//   - error: si la reservacion no existe o falla la BD
+func (r *CancelacionRepository) ObtenerReservacionParaAdmin(
+	reservacionID int,
+) (estadoID, usuarioID int, noReservacion string, err error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT EstadoID, Usuario_ID, No_Reservacion
+		FROM Reservacion
+		WHERE ID = ?
+	`, reservacionID).Scan(&estadoID, &usuarioID, &noReservacion)
+
+	if err == sql.ErrNoRows {
+		err = fmt.Errorf("reservacion no encontrada: %d", reservacionID)
+	}
+	return
+}
+
+// ObtenerDatosCorreoReservacion
+//
+// Recupera el correo electronico, nombre, apellido y numero de reservacion
+// del usuario dueno de una reservacion. Se usa para enviar la notificacion
+// de cancelacion por usuario tras completar la transaccion.
+//
+// Parametros:
+//   - reservacionID: ID de la reservacion de la que se quieren los datos
+//
+// Retorna:
+//   - correo:        correo electronico del usuario
+//   - nombre:        nombre del usuario
+//   - apellido:      apellido del usuario
+//   - noReservacion: numero de reservacion legible (ej: "1B037995")
+//   - error: si la reservacion no existe o falla la BD
+func (r *CancelacionRepository) ObtenerDatosCorreoReservacion(
+	reservacionID int,
+) (correo, nombre, apellido, noReservacion string, err error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT u.Correo, u.Nombre, u.Apellido, r.No_Reservacion
+		FROM Reservacion r
+		JOIN Usuario u ON r.Usuario_ID = u.ID
+		WHERE r.ID = ?
+	`, reservacionID).Scan(&correo, &nombre, &apellido, &noReservacion)
+
+	if err == sql.ErrNoRows {
+		err = fmt.Errorf("reservacion no encontrada: %d", reservacionID)
+	}
+	return
 }
