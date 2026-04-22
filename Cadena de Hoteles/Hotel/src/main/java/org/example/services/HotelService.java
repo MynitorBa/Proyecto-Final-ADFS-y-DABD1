@@ -1,13 +1,20 @@
 package org.example.services;
 
+import org.example.clients.MoventClient;
 import org.example.dtos.*;
+import org.example.helpers.EmailHelper;
 import org.example.repositories.CiudadRepository;
 import org.example.repositories.HotelRepository;
 import org.example.repositories.PaisRepository;
 
+import java.time.Year;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Service principal para la gestion de hoteles desde el panel de administracion.
@@ -15,19 +22,24 @@ import java.util.Map;
  */
 public class HotelService {
 
-    private final HotelRepository  hotelRepository;
-    private final CiudadRepository ciudadRepository;
-    private final PaisRepository   paisRepository;
+    private static final Logger LOG = Logger.getLogger(HotelService.class.getName());
+
+    private final HotelRepository                 hotelRepository;
+    private final CiudadRepository               ciudadRepository;
+    private final PaisRepository                 paisRepository;
+    private final AgenciaNotificadorExternoService agenciaNotificador;
 
     /**
      * Crea una instancia de HotelService con sus dependencias inyectadas.
      */
     public HotelService(HotelRepository hotelRepository,
                         CiudadRepository ciudadRepository,
-                        PaisRepository paisRepository) {
-        this.hotelRepository  = hotelRepository;
-        this.ciudadRepository = ciudadRepository;
-        this.paisRepository   = paisRepository;
+                        PaisRepository paisRepository,
+                        AgenciaNotificadorExternoService agenciaNotificador) {
+        this.hotelRepository   = hotelRepository;
+        this.ciudadRepository  = ciudadRepository;
+        this.paisRepository    = paisRepository;
+        this.agenciaNotificador = agenciaNotificador;
     }
 
     /**
@@ -120,7 +132,224 @@ public class HotelService {
     public void eliminarHotel(int hotelId) {
         if (!hotelRepository.existe(hotelId))
             throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        int activas = hotelRepository.contarReservasActivasHotel(hotelId);
+        if (activas > 0)
+            throw new IllegalArgumentException(
+                "Este hotel tiene " + activas +
+                " reservacion(es) en proceso (Pendientes o Confirmadas). " +
+                "Usa la opcion 'Cancelar reservas y eliminar' para cerrar el hotel.");
         hotelRepository.eliminarHotel(hotelId);
+    }
+
+    /**
+     * Retorna el recuento y los datos de las reservaciones activas del hotel.
+     * Se usa en el frontend para mostrar al admin que reservas se afectarian antes de cerrar.
+     * @param hotelId ID del hotel a consultar.
+     * @return mapa con { count, reservaciones: lista de { id, noReservacion, correo, nombre, total } }
+     */
+    public Map<String, Object> obtenerReservasActivasHotel(int hotelId) {
+        if (!hotelRepository.existe(hotelId))
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        List<Object[]> filas = hotelRepository.obtenerReservacionesActivasHotel(hotelId);
+        List<Map<String, Object>> lista = new ArrayList<>();
+        for (Object[] f : filas) {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("id",            f[0]);
+            r.put("noReservacion", f[1]);
+            r.put("correo",        f[2]);
+            r.put("nombre",        f[3]);
+            r.put("total",         f[4]);
+            lista.add(r);
+        }
+        return Map.of("count", filas.size(), "reservaciones", lista);
+    }
+
+    /**
+     * Reactiva un hotel previamente cerrado (EstadoID = 2 → 1).
+     * El hotel vuelve a aparecer en las busquedas publicas.
+     * @param hotelId ID del hotel a reactivar.
+     * @throws IllegalArgumentException si el hotel no existe.
+     */
+    public void reactivarHotel(int hotelId) {
+        if (!hotelRepository.existe(hotelId))
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+        hotelRepository.reactivarHotel(hotelId);
+    }
+
+    /**
+     * Cancela todas las reservaciones activas del hotel, notifica a cada usuario por correo
+     * y, segun el flag, elimina el hotel fisicamente o lo deja como Cerrado (EstadoID = 2).
+     * El envio de correos y la notificacion a agencias son best-effort.
+     * @param hotelId            ID del hotel a operar.
+     * @param hotelNombre        nombre del hotel (para el correo y el webhook).
+     * @param eliminarDefinitivo si true, elimina el hotel de la BD; si false, solo lo cierra.
+     * @return mapa con { cancelaciones, emailsEnviados, emailsFallidos }
+     */
+    public Map<String, Object> cerrarHotelConCancelaciones(int hotelId, String hotelNombre,
+                                                           boolean eliminarDefinitivo) {
+        if (!hotelRepository.existe(hotelId))
+            throw new IllegalArgumentException("Hotel no encontrado: " + hotelId);
+
+        // Leer reservas activas ANTES de cancelar para poder notificar
+        List<Object[]> reservas = hotelRepository.obtenerReservacionesActivasHotel(hotelId);
+
+        // Cancelar todas en un solo UPDATE
+        String motivo = "Hotel cerrado por el establecimiento. Las reservaciones han sido canceladas.";
+        hotelRepository.cancelarReservacionesActivasHotel(hotelId, motivo);
+
+        // Notificar a cada usuario por correo y a cada agencia via su endpoint externo (best-effort)
+        int emailsEnviados  = 0;
+        int emailsFallidos  = 0;
+        List<Map<String, Object>> reservasAgencia = new ArrayList<>();
+
+        for (Object[] f : reservas) {
+            int    reservacionId = ((Number) f[0]).intValue();
+            String noReservacion = (String) f[1];
+            String correo        = (String) f[2];
+            String nombreUsuario = (String) f[3];
+            double total         = ((Number) f[4]).doubleValue();
+
+            // Correo al usuario
+            try {
+                EmailHelper.enviar(
+                        correo,
+                        "Blink Hotels – Reservacion " + noReservacion + " Cancelada por cierre de hotel",
+                        construirCorreoCierreHotel(nombreUsuario, noReservacion, total, hotelNombre)
+                );
+                emailsEnviados++;
+            } catch (Exception ex) {
+                emailsFallidos++;
+                LOG.log(Level.WARNING,
+                        "Error al enviar correo de cierre de hotel. Reservacion=" + noReservacion, ex);
+            }
+
+            // Notificacion a la agencia duena de esta reservacion (si aplica)
+            try {
+                var resultado = agenciaNotificador.notificarCancelacion(reservacionId, motivo);
+                if (resultado.isEsReservaDeAgencia()) {
+                    Map<String, Object> r = new LinkedHashMap<>();
+                    r.put("noReservacion", noReservacion);
+                    r.put("correo",        correo);
+                    r.put("total",         total);
+                    reservasAgencia.add(r);
+                }
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING,
+                        "Error notificando agencia para reservacion " + reservacionId, ex);
+            }
+        }
+
+        // Webhook de resumen a Movent (best-effort, solo reservas que venian de agencia)
+        MoventClient.notificarHotelCerrado(hotelNombre, reservasAgencia);
+
+        // Finalizar: eliminar fisicamente o cambiar estado a Cerrado segun el flag
+        if (eliminarDefinitivo) {
+            hotelRepository.eliminarHotel(hotelId);
+        } else {
+            hotelRepository.cerrarHotel(hotelId);
+        }
+
+        return Map.of(
+                "cancelaciones",   reservas.size(),
+                "emailsEnviados",  emailsEnviados,
+                "emailsFallidos",  emailsFallidos
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // HTML del correo de cierre de hotel
+    // -------------------------------------------------------------------------
+
+    private static String construirCorreoCierreHotel(
+            String nombreUsuario,
+            String noReservacion,
+            double total,
+            String hotelNombre) {
+
+        int anio = Year.now().getValue();
+
+        return """
+                <!DOCTYPE html>
+                <html lang="es">
+                <head><meta charset="UTF-8"><title>Cancelacion por cierre de hotel</title></head>
+                <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+                  <table width="100%%" cellpadding="0" cellspacing="0"
+                         style="background:#F4F6F8;padding:40px 0;">
+                    <tr><td align="center">
+                      <table width="600" cellpadding="0" cellspacing="0"
+                             style="background:#ffffff;border-radius:8px;
+                                    box-shadow:0 4px 20px rgba(0,0,0,.08);overflow:hidden;">
+
+                        <!-- Cabecera -->
+                        <tr>
+                          <td style="background:#1A3C5E;padding:28px 40px;text-align:center;">
+                            <h1 style="margin:0;font-size:22px;font-weight:300;color:#ffffff;
+                                       letter-spacing:3px;">
+                              BLINK
+                              <span style="color:#F0A500;font-weight:700;">HOTELS</span>
+                            </h1>
+                          </td>
+                        </tr>
+
+                        <!-- Cuerpo -->
+                        <tr>
+                          <td style="padding:32px 40px;">
+                            <p style="margin:0 0 8px;font-size:16px;color:#1A3C5E;font-weight:600;">
+                              Hola, %s:
+                            </p>
+                            <p style="margin:0 0 24px;font-size:14px;color:#555;">
+                              Lamentamos informarte que el hotel <strong>%s</strong> ha decidido
+                              cerrar sus operaciones y, como consecuencia, tu reservacion ha sido
+                              cancelada automaticamente.
+                            </p>
+
+                            <!-- Resumen -->
+                            <table width="100%%" cellpadding="8" cellspacing="0"
+                                   style="background:#F4F6F8;border-radius:6px;margin-bottom:24px;">
+                              <tr>
+                                <td style="font-size:12px;color:#888;width:40%%;">N° Reservacion</td>
+                                <td style="font-size:14px;font-weight:700;color:#1A3C5E;
+                                           font-family:monospace;">%s</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size:12px;color:#888;">Total</td>
+                                <td style="font-size:14px;font-weight:700;">$%.2f</td>
+                              </tr>
+                            </table>
+
+                            <!-- Nota -->
+                            <div style="background:#FFF8E1;border-left:4px solid #F0A500;
+                                        padding:14px 18px;border-radius:4px;margin-bottom:24px;">
+                              <p style="margin:0 0 4px;font-size:12px;color:#F0A500;font-weight:700;">
+                                Informacion sobre reembolsos
+                              </p>
+                              <p style="margin:0;font-size:14px;color:#333;">
+                                Para consultas sobre reembolsos o compensaciones, contacta directamente
+                                al hotel. Lamentamos los inconvenientes causados.
+                              </p>
+                            </div>
+
+                            <p style="margin:0;font-size:13px;color:#777;">
+                              Si tienes alguna pregunta adicional, no dudes en contactarnos.
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Pie -->
+                        <tr>
+                          <td style="background:#1A3C5E;padding:16px 40px;text-align:center;">
+                            <p style="margin:0;font-size:11px;color:#90A4AE;">
+                              &copy; %d Blink Hotels — Todos los derechos reservados
+                            </p>
+                          </td>
+                        </tr>
+
+                      </table>
+                    </td></tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(nombreUsuario, hotelNombre, noReservacion, total, anio);
     }
 
     /**
@@ -281,6 +510,12 @@ public class HotelService {
     public void eliminarHabitacion(int habitacionId) {
         if (!hotelRepository.existeHabitacion(habitacionId))
             throw new IllegalArgumentException("Habitacion no encontrada: " + habitacionId);
+        int activas = hotelRepository.contarReservasActivasHabitacion(habitacionId);
+        if (activas > 0)
+            throw new IllegalArgumentException(
+                "Esta habitacion tiene " + activas +
+                " reservacion(es) en proceso (Pendientes o Confirmadas). " +
+                "Cancela o espera a que se completen antes de eliminarla.");
         hotelRepository.eliminarHabitacion(habitacionId);
     }
 

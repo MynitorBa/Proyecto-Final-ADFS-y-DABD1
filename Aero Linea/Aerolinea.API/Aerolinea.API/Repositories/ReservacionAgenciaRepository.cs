@@ -85,7 +85,7 @@ namespace Aerolinea.API.Repositories
                 }
 
                 string noReservacion = "RES" + DateTime.Now.ToString("yyyyMMddHHmmss") + new Random().Next(1000, 9999);
-                DateTime fechaExpiracion = DateTime.Now.AddMinutes(15);
+                DateTime fechaExpiracion = DateTime.Now.AddMinutes(10);
                 int reservacionId;
 
                 string insertReservacion = @"
@@ -191,7 +191,7 @@ namespace Aerolinea.API.Repositories
                     FechaExpiracion = fechaExpiracion,
                     Total = total,
                     Boletos = boletosReservados,
-                    MinutosRestantes = 15
+                    MinutosRestantes = 10
                 };
             }
             catch

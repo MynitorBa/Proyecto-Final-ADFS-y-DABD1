@@ -38,6 +38,7 @@ public class ServerConfig {
 
         return Javalin.create(config -> {
             config.showJavalinBanner = false;
+            config.http.maxRequestSize = 10_485_760L; // 10 MB — soporta imagenes base64 de hasta ~7 MB reales
             config.plugins.enableCors(cors -> {
                 cors.add(it -> {
                     it.allowHost("http://localhost:5173"); // hotel frontend propio

@@ -101,7 +101,13 @@ public class Main {
         ExpiracionService         expiracionService         = new ExpiracionService(reservacionRepository);
         HandshakeService          handshakeService          = new HandshakeService(agenciaRepository);
         HotelAgenciaService       hotelAgenciaService       = new HotelAgenciaService(hotelAgenciaRepository);
-        HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository);
+        // Service de notificacion a agencias externas — se crea antes de HotelService porque
+        // ambos lo necesitan: HotelService para el flujo de cierre de hotel, y
+        // AdminReservacionService para cancelaciones individuales desde el panel admin.
+        AgenciaNotificadorExternoService agenciaNotificadorExternoService =
+                new AgenciaNotificadorExternoService();
+
+        HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository, agenciaNotificadorExternoService);
         ImagenService             imagenService             = new ImagenService(imagenRepository);
         PagoAgenciaService        pagoAgenciaService        = new PagoAgenciaService(pagoAgenciaRepository);
         PagoService               pagoService               = new PagoService(pagoRepository, tokenValidacionRepository);
@@ -121,10 +127,6 @@ public class Main {
 
         // Service de handshake con aerolineas aliadas externas
         HandshakeAerolineaService  handshakeAerolineaService  = new HandshakeAerolineaService(aerolineaAliadaRepository);
-
-        // Service de notificacion a agencias externas (usado por AdminReservacionService)
-        AgenciaNotificadorExternoService agenciaNotificadorExternoService =
-                new AgenciaNotificadorExternoService();
 
         // AdminReservacionService recibe el notificador para enviar aviso a la agencia
         // y el correo al usuario al cancelar una reservacion desde el panel admin

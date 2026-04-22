@@ -187,11 +187,23 @@
   /** Controla la visibilidad del modal de confirmacion de eliminacion de hotel. @type {boolean} */
   let showModalEliminarHotel = false;
 
-  /** Hotel pendiente de eliminar. @type {Object|null} */
+  /** Controla la visibilidad del modal de cierre suave de hotel. @type {boolean} */
+  let showModalCerrarHotel = false;
+
+  /** Controla la visibilidad del modal de reactivacion de hotel. @type {boolean} */
+  let showModalReactivarHotel = false;
+
+  /** Hotel pendiente de eliminar o cerrar. @type {Object|null} */
   let hotelEliminando = null;
 
-  /** Indica si la eliminacion de hotel esta en curso. @type {boolean} */
+  /** Hotel pendiente de reactivar. @type {Object|null} */
+  let hotelReactivando = null;
+
+  /** Indica si la eliminacion o cierre de hotel esta en curso. @type {boolean} */
   let eliminandoHotel = false;
+
+  /** Indica si la reactivacion de hotel esta en curso. @type {boolean} */
+  let reactivandoHotel = false;
 
   /** Indica si hay una operacion masiva de creacion en progreso. @type {boolean} */
   let creandoMasivo = false;
@@ -272,16 +284,64 @@
   }
 
   /**
-   * Abre el modal de confirmacion de eliminacion de hotel desde la lista.
-   * @param {Object} h - Hotel a eliminar.
+   * Reservaciones activas del hotel que se esta por eliminar.
+   * Se carga al abrir el modal de confirmacion de eliminacion.
+   * @type {{ count: number, reservaciones: Array } | null}
    */
-  function abrirEliminarHotel(h) { hotelEliminando = h; showModalEliminarHotel = true; }
-
-  /** Abre el modal de eliminacion desde la vista de detalle. */
-  function abrirEliminarHotelDetalle() { hotelEliminando = hotelDetalle; showModalEliminarHotel = true; }
+  let reservasActivasHotel = null;
+  let cargandoReservasHotel = false;
 
   /**
-   * Elimina el hotel seleccionado del backend y lo quita de la lista local.
+   * Abre el modal de eliminacion definitiva del hotel y precarga sus reservas activas.
+   * @param {Object} h - Hotel a eliminar.
+   */
+  function abrirEliminarHotel(h) {
+    hotelEliminando = h; reservasActivasHotel = null; showModalEliminarHotel = true;
+    _cargarReservasHotel(h.id);
+  }
+
+  /** Atajo para abrir el modal de eliminacion desde la vista de detalle. */
+  function abrirEliminarHotelDetalle() { abrirEliminarHotel(hotelDetalle); }
+
+  /**
+   * Abre el modal de cierre suave del hotel y precarga sus reservas activas.
+   * @param {Object} h - Hotel a cerrar.
+   */
+  function abrirCerrarHotel(h) {
+    hotelEliminando = h; reservasActivasHotel = null; showModalCerrarHotel = true;
+    _cargarReservasHotel(h.id);
+  }
+
+  /** Atajo para abrir el modal de cierre suave desde la vista de detalle. */
+  function abrirCerrarHotelDetalle() { abrirCerrarHotel(hotelDetalle); }
+
+  /**
+   * Abre el modal de reactivacion del hotel.
+   * @param {Object} h - Hotel a reactivar.
+   */
+  function abrirReactivarHotel(h) { hotelReactivando = h; showModalReactivarHotel = true; }
+
+  /** Atajo para abrir el modal de reactivacion desde la vista de detalle. */
+  function abrirReactivarHotelDetalle() { abrirReactivarHotel(hotelDetalle); }
+
+  /**
+   * Carga las reservaciones activas del hotel para mostrarlas en el modal de confirmacion.
+   * @async
+   * @param {number} hotelId - ID del hotel.
+   */
+  async function _cargarReservasHotel(hotelId) {
+    cargandoReservasHotel = true;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelId}/reservas-activas`, { credentials: 'include' });
+      if (res.ok) reservasActivasHotel = await res.json();
+    } catch {}
+    finally { cargandoReservasHotel = false; }
+  }
+
+  /**
+   * Elimina el hotel seleccionado del backend de forma definitiva y lo quita de la lista local.
+   * Si el hotel no tiene reservas activas, usa DELETE normal.
+   * Si tiene reservas activas, usa POST /cerrar-con-cancelaciones con eliminarDefinitivo=true.
    * @async
    * @param {boolean} volverLista - Si es true, vuelve a la vista de lista tras eliminar.
    * @returns {Promise<void>}
@@ -290,14 +350,78 @@
     if (!hotelEliminando) return;
     eliminandoHotel = true; showModalEliminarHotel = false;
     eliminandoMasivo = true; eliminandoMasivoProgreso = `Eliminando hotel "${hotelEliminando.nombre}"...`;
+    const hayReservas = reservasActivasHotel && reservasActivasHotel.count > 0;
     try {
-      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelEliminando.id}`, { method: 'DELETE', credentials: 'include' });
+      let res;
+      if (hayReservas) {
+        // Cancelar reservas activas, enviar emails y eliminar definitivamente
+        eliminandoMasivoProgreso = `Cancelando ${reservasActivasHotel.count} reserva(s) y eliminando hotel...`;
+        res = await fetch(`${API_BASE}/admin/hoteles/${hotelEliminando.id}/cerrar-con-cancelaciones`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hotelNombre: hotelEliminando.nombre, eliminarDefinitivo: true })
+        });
+      } else {
+        res = await fetch(`${API_BASE}/admin/hoteles/${hotelEliminando.id}`, { method: 'DELETE', credentials: 'include' });
+      }
       if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.mensaje || `Error ${res.status}`); }
       hoteles = hoteles.filter(h => h.id !== hotelEliminando.id);
-      hotelEliminando = null;
+      hotelEliminando = null; reservasActivasHotel = null;
       if (volverLista) volverListaHoteles();
-    } catch (e) { alert('No se pudo eliminar: ' + e.message); }
+    } catch (e) { mensajeInfo = { tipo: 'error', texto: 'No se pudo eliminar el hotel: ' + e.message }; }
     finally { eliminandoHotel = false; eliminandoMasivo = false; }
+  }
+
+  /**
+   * Cierra el hotel (soft-close: EstadoID=2) cancelando reservas activas si las hay.
+   * El hotel permanece en BD y puede reactivarse.
+   * @async
+   * @param {boolean} volverLista - No vuelve a la lista; solo actualiza el estado local.
+   * @returns {Promise<void>}
+   */
+  async function _cerrarHotel() {
+    if (!hotelEliminando) return;
+    eliminandoHotel = true; showModalCerrarHotel = false;
+    eliminandoMasivo = true; eliminandoMasivoProgreso = `Cerrando hotel "${hotelEliminando.nombre}"...`;
+    const hayReservas = reservasActivasHotel && reservasActivasHotel.count > 0;
+    if (hayReservas) eliminandoMasivoProgreso = `Cancelando ${reservasActivasHotel.count} reserva(s) y cerrando hotel...`;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelEliminando.id}/cerrar-con-cancelaciones`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hotelNombre: hotelEliminando.nombre, eliminarDefinitivo: false })
+      });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.mensaje || `Error ${res.status}`); }
+      // Actualizar estado local: el hotel sigue en la lista pero como "Cerrado"
+      const hotelId = hotelEliminando.id;
+      hoteles = hoteles.map(h => h.id === hotelId ? { ...h, estadoId: 2, estado: 'Cerrado' } : h);
+      if (hotelDetalle?.id === hotelId) hotelDetalle = { ...hotelDetalle, estadoId: 2, estado: 'Cerrado' };
+      hotelEliminando = null; reservasActivasHotel = null;
+      mensajeInfo = { tipo: 'ok', texto: 'Hotel cerrado. Puedes reactivarlo desde el panel.' };
+    } catch (e) { mensajeInfo = { tipo: 'error', texto: 'No se pudo cerrar el hotel: ' + e.message }; }
+    finally { eliminandoHotel = false; eliminandoMasivo = false; }
+  }
+
+  /**
+   * Reactiva el hotel cerrado (EstadoID=1). El hotel vuelve a aparecer en busquedas.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function _reactivarHotel() {
+    if (!hotelReactivando) return;
+    reactivandoHotel = true; showModalReactivarHotel = false;
+    try {
+      const res = await fetch(`${API_BASE}/admin/hoteles/${hotelReactivando.id}/reactivar`, {
+        method: 'POST', credentials: 'include'
+      });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.mensaje || `Error ${res.status}`); }
+      const hotelId = hotelReactivando.id;
+      hoteles = hoteles.map(h => h.id === hotelId ? { ...h, estadoId: 1, estado: 'Activo' } : h);
+      if (hotelDetalle?.id === hotelId) hotelDetalle = { ...hotelDetalle, estadoId: 1, estado: 'Activo' };
+      hotelReactivando = null;
+      mensajeInfo = { tipo: 'ok', texto: 'Hotel reactivado. Ya aparece en búsquedas.' };
+    } catch (e) { mensajeInfo = { tipo: 'error', texto: 'No se pudo reactivar: ' + e.message }; }
+    finally { reactivandoHotel = false; }
   }
 
   /**
@@ -308,12 +432,28 @@
    */
   async function subirImagenHotel(event) {
     const file = event.target.files[0]; if (!file) return;
+    if (file.size > 7 * 1024 * 1024) {
+      mensajeImgHotel = { tipo: 'error', texto: 'La imagen excede 7 MB. Usa una imagen más pequeña.' };
+      event.target.value = ''; return;
+    }
     subiendoImgHotel = true; mensajeImgHotel = null;
     try {
       const base64 = await fileToBase64(file);
       const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64 }) });
+      if (!res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        let msg;
+        if (ct.includes('application/json')) {
+          const err = await res.json().catch(() => ({}));
+          msg = err.mensaje || `Error ${res.status}`;
+        } else {
+          msg = res.status === 413
+            ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).'
+            : (await res.text().catch(() => '') || `Error ${res.status}`);
+        }
+        throw new Error(msg);
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
       hotelDetalle = { ...hotelDetalle, imagenesIds: [...(hotelDetalle.imagenesIds ?? []), data.id] };
       hoteles = hoteles.map(h => h.id === hotelDetalle.id ? { ...h, imagenesIds: hotelDetalle.imagenesIds } : h);
       mensajeImgHotel = { tipo: 'ok', texto: 'Imagen agregada.' };
@@ -443,12 +583,28 @@
    */
   async function subirImagenAmenidad(event, haId) {
     const file = event.target.files[0]; if (!file) return;
+    if (file.size > 7 * 1024 * 1024) {
+      mensajeAmenidad = { tipo: 'error', texto: 'La imagen excede 7 MB. Usa una imagen más pequeña.' };
+      event.target.value = ''; return;
+    }
     subiendoImgAmenidadSet = new Set([...subiendoImgAmenidadSet, haId]);
     try {
       const base64 = await fileToBase64(file);
       const res = await fetch(`${API_BASE}/admin/hoteles/amenidades/${haId}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64 }) });
+      if (!res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        let msg;
+        if (ct.includes('application/json')) {
+          const err = await res.json().catch(() => ({}));
+          msg = err.mensaje || `Error ${res.status}`;
+        } else {
+          msg = res.status === 413
+            ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).'
+            : (await res.text().catch(() => '') || `Error ${res.status}`);
+        }
+        throw new Error(msg);
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(`Error ${res.status}`);
       amenidadesHotel = amenidadesHotel.map(a => a.id === haId ? { ...a, imagenesIds: [...(a.imagenesIds ?? []), data.id] } : a);
     } catch(e) { mensajeAmenidad = { tipo: 'error', texto: 'Error subiendo imagen: ' + e.message }; }
     finally { subiendoImgAmenidadSet = new Set([...subiendoImgAmenidadSet].filter(id => id !== haId)); event.target.value = ''; }
@@ -540,12 +696,28 @@
    */
   async function subirImagenHabitacion(event) {
     const file = event.target.files[0]; if (!file) return;
+    if (file.size > 7 * 1024 * 1024) {
+      mensajeImgHab = { tipo: 'error', texto: 'La imagen excede 7 MB. Usa una imagen más pequeña.' };
+      event.target.value = ''; return;
+    }
     subiendoImgHab = true; mensajeImgHab = null;
     try {
       const base64 = await fileToBase64(file);
       const res = await fetch(`${API_BASE}/admin/habitaciones/${habitacionEditando.id}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64 }) });
+      if (!res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        let msg;
+        if (ct.includes('application/json')) {
+          const err = await res.json().catch(() => ({}));
+          msg = err.mensaje || `Error ${res.status}`;
+        } else {
+          msg = res.status === 413
+            ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).'
+            : (await res.text().catch(() => '') || `Error ${res.status}`);
+        }
+        throw new Error(msg);
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
       const nuevosIds = [...(habitacionEditando.imagenesIds ?? []), data.id];
       habitacionEditando = { ...habitacionEditando, imagenesIds: nuevosIds };
       habitaciones = habitaciones.map(h => h.id === habitacionEditando.id ? { ...h, imagenesIds: nuevosIds } : h);
@@ -595,7 +767,7 @@
       if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.mensaje || `Error ${res.status}`); }
       habitaciones = habitaciones.filter(h => h.id !== habEliminando.id);
       habEliminando = null;
-    } catch (e) { alert('No se pudo eliminar: ' + e.message); }
+    } catch (e) { mensajeHabitacion = { tipo: 'error', texto: e.message }; }
     finally { eliminandoHab = false; eliminandoMasivo = false; }
   }
 
@@ -648,7 +820,8 @@
   function cerrarModales() {
     showModalHabitacion = false; showModalNuevaHab = false;
     showModalEliminarHab = false; showModalEliminarHotel = false;
-    habitacionEditando = null; habEliminando = null; hotelEliminando = null;
+    showModalCerrarHotel = false; showModalReactivarHotel = false;
+    habitacionEditando = null; habEliminando = null; hotelEliminando = null; hotelReactivando = null;
   }
 
   /**
@@ -728,7 +901,12 @@
                 <td>
                   <div style="display:flex;gap:.3rem">
                     <button class="adm__icon-btn adm__icon-btn--edit" on:click={() => abrirDetalleHotel(h)} title="Gestionar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                    <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => abrirEliminarHotel(h)} title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+                    {#if h.estadoId === 2}
+                      <button class="adm__icon-btn adm__icon-btn--success" on:click={() => abrirReactivarHotel(h)} title="Reactivar hotel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                    {:else}
+                      <button class="adm__icon-btn adm__icon-btn--close" on:click={() => abrirCerrarHotel(h)} title="Cerrar hotel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
+                    {/if}
+                    <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => abrirEliminarHotel(h)} title="Eliminar definitivamente"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
                   </div>
                 </td>
               </tr>
@@ -745,7 +923,14 @@
   <div class="adm__detalle-header">
     <button class="adm__btn adm__btn--ghost" on:click={volverListaHoteles}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Volver a hoteles</button>
     <div class="adm__detalle-title"><h2>{hotelDetalle.nombre}</h2><span class="adm__badge {badge(hotelDetalle.estado)}">{hotelDetalle.estado}</span><span class="adm__detalle-loc">{hotelDetalle.ciudad}, {hotelDetalle.pais}</span></div>
-    <button class="adm__btn adm__btn--danger" on:click={abrirEliminarHotelDetalle} style="margin-left:auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Eliminar Hotel</button>
+    <div style="display:flex;gap:.5rem;margin-left:auto">
+      {#if hotelDetalle.estadoId === 2}
+        <button class="adm__btn adm__btn--success" on:click={abrirReactivarHotelDetalle}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Reactivar Hotel</button>
+      {:else}
+        <button class="adm__btn adm__btn--warn" on:click={abrirCerrarHotelDetalle}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Cerrar Hotel</button>
+      {/if}
+      <button class="adm__btn adm__btn--danger" on:click={abrirEliminarHotelDetalle}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>Eliminar Hotel</button>
+    </div>
   </div>
 
   <!-- Pestanas: informacion, imagenes, amenidades, habitaciones -->
@@ -770,7 +955,6 @@
         <div class="adm__field adm__field--full"><label>Nombre del Hotel</label><input type="text" bind:value={editInfoHotel.nombre} /></div>
         <div class="adm__field adm__field--full"><label>Dirección</label><input type="text" bind:value={editInfoHotel.direccion} /></div>
         <div class="adm__field"><label>Rating (0–5)</label><input type="number" bind:value={editInfoHotel.rating} min="0" max="5" step="0.1" /></div>
-        <div class="adm__field"><label>Estado</label><select bind:value={editInfoHotel.estadoId}><option value={1}>Activo</option><option value={2}>Cerrado</option></select></div>
         <div class="adm__field adm__field--full"><label>Descripción</label><textarea bind:value={editInfoHotel.descripcion} rows="4"></textarea></div>
       </div>
       {#if mensajeInfo}<div class="adm__feedback adm__feedback--{mensajeInfo.tipo}" style="margin-top:1rem">{mensajeInfo.texto}</div>{/if}
@@ -998,28 +1182,124 @@
 <!-- Modal de confirmacion para eliminar un hotel completo -->
 {#if showModalEliminarHotel && hotelEliminando}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
-  <div class="adm__rol-modal" style="max-width:460px">
-    <div class="adm__cancel-modal__header"><div class="adm__cancel-modal__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div><div><p class="adm__cancel-modal__title">Eliminar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelEliminando.nombre} — ID #{hotelEliminando.id}</p></div><button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="adm__cancel-modal__body">
-      <div class="adm__cancel-info-box"><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Hotel</span><span class="adm__cancel-info-row__value">{hotelEliminando.nombre}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Ubicación</span><span class="adm__cancel-info-row__value">{hotelEliminando.ciudad}, {hotelEliminando.pais}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitaciones</span><span class="adm__cancel-info-row__value">{hotelEliminando.cantidadHabitaciones ?? 0}</span></div></div>
-      <!-- Advertencia: se eliminan tambien todas las habitaciones, amenidades e imagenes -->
-      <div class="adm__cancel-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Se eliminarán <strong>todas</strong> las habitaciones, amenidades e imágenes.</span></div>
+  <div class="adm__rol-modal" style="max-width:500px">
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+      <div><p class="adm__cancel-modal__title">Eliminar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelEliminando.nombre} — ID #{hotelEliminando.id}</p></div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="adm__cancel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button><button class="adm__btn--cancel-confirm" on:click={() => _eliminarHotel(vistaHoteles === 'detalle')} disabled={eliminandoHotel}>{#if eliminandoHotel}Eliminando...{:else}Sí, eliminar hotel{/if}</button></div>
+    <div class="adm__cancel-modal__body">
+      <div class="adm__cancel-info-box">
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Hotel</span><span class="adm__cancel-info-row__value">{hotelEliminando.nombre}</span></div>
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Ubicación</span><span class="adm__cancel-info-row__value">{hotelEliminando.ciudad}, {hotelEliminando.pais}</span></div>
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitaciones</span><span class="adm__cancel-info-row__value">{hotelEliminando.cantidadHabitaciones ?? 0}</span></div>
+      </div>
+
+      <!-- Cargando reservas activas -->
+      {#if cargandoReservasHotel}
+        <p style="font-size:13px;color:#888;margin:.75rem 0;">Verificando reservaciones activas...</p>
+      {:else if reservasActivasHotel && reservasActivasHotel.count > 0}
+        <!-- El hotel tiene reservas activas: mostrar lista y advertencia fuerte -->
+        <div class="adm__cancel-warning" style="border-left-color:#C62828;background:#FDECEA;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Este hotel tiene <strong>{reservasActivasHotel.count} reservación(es) en proceso</strong>. Se cancelarán todas y se notificará a cada usuario por correo.</span>
+        </div>
+        <div style="max-height:140px;overflow-y:auto;margin:.5rem 0;border:1px solid #e0e0e0;border-radius:6px;font-size:12px;">
+          {#each reservasActivasHotel.reservaciones as rv}
+            <div style="padding:6px 10px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;">
+              <span style="font-family:monospace;color:#1A3C5E;font-weight:600;">{rv.noReservacion}</span>
+              <span style="color:#555;">{rv.correo}</span>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <!-- Sin reservas activas: advertencia estándar -->
+        <div class="adm__cancel-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Se eliminarán <strong>todas</strong> las habitaciones, amenidades e imágenes.</span></div>
+      {/if}
+    </div>
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button>
+      <button class="adm__btn--cancel-confirm" on:click={() => _eliminarHotel(vistaHoteles === 'detalle')} disabled={eliminandoHotel || cargandoReservasHotel}>
+        {#if eliminandoHotel}
+          Procesando...
+        {:else if reservasActivasHotel && reservasActivasHotel.count > 0}
+          Cancelar reservas y eliminar hotel
+        {:else}
+          Sí, eliminar hotel
+        {/if}
+      </button>
+    </div>
   </div>
 {/if}
 
-<!-- Modal de confirmacion para eliminar un hotel completo -->
-{#if showModalEliminarHotel && hotelEliminando}
+<!-- Modal de cierre suave de hotel (soft-close: EstadoID=2, sin eliminar) -->
+{#if showModalCerrarHotel && hotelEliminando}
   <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
-  <div class="adm__rol-modal" style="max-width:460px">
-    <div class="adm__cancel-modal__header"><div class="adm__cancel-modal__icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></div><div><p class="adm__cancel-modal__title">Eliminar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelEliminando.nombre} — ID #{hotelEliminando.id}</p></div><button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="adm__cancel-modal__body">
-      <div class="adm__cancel-info-box"><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Hotel</span><span class="adm__cancel-info-row__value">{hotelEliminando.nombre}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Ubicación</span><span class="adm__cancel-info-row__value">{hotelEliminando.ciudad}, {hotelEliminando.pais}</span></div><div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitaciones</span><span class="adm__cancel-info-row__value">{hotelEliminando.cantidadHabitaciones ?? 0}</span></div></div>
-      <!-- Advertencia: se eliminan tambien todas las habitaciones, amenidades e imagenes -->
-      <div class="adm__cancel-warning"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Se eliminarán <strong>todas</strong> las habitaciones, amenidades e imágenes.</span></div>
+  <div class="adm__rol-modal" style="max-width:500px">
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;border-color:rgba(245,158,11,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <div><p class="adm__cancel-modal__title">Cerrar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelEliminando.nombre} — ID #{hotelEliminando.id}</p></div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="adm__cancel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button><button class="adm__btn--cancel-confirm" on:click={() => _eliminarHotel(vistaHoteles === 'detalle')} disabled={eliminandoHotel}>{#if eliminandoHotel}Eliminando...{:else}Sí, eliminar hotel{/if}</button></div>
+    <div class="adm__cancel-modal__body">
+      <div class="adm__cancel-info-box">
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Hotel</span><span class="adm__cancel-info-row__value">{hotelEliminando.nombre}</span></div>
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Ubicación</span><span class="adm__cancel-info-row__value">{hotelEliminando.ciudad}, {hotelEliminando.pais}</span></div>
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitaciones</span><span class="adm__cancel-info-row__value">{hotelEliminando.cantidadHabitaciones ?? 0}</span></div>
+      </div>
+
+      {#if cargandoReservasHotel}
+        <p style="font-size:13px;color:#888;margin:.75rem 0;">Verificando reservaciones activas...</p>
+      {:else if reservasActivasHotel && reservasActivasHotel.count > 0}
+        <div class="adm__cancel-warning" style="border-left-color:#f59e0b;background:rgba(245,158,11,0.08);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span style="color:#f59e0b">Este hotel tiene <strong>{reservasActivasHotel.count} reservación(es) en proceso</strong>. Se cancelarán y se notificará a cada usuario por correo. El hotel quedará cerrado, <em>no eliminado</em>.</span>
+        </div>
+        <div style="max-height:140px;overflow-y:auto;margin:.5rem 0;border:1px solid #e0e0e0;border-radius:6px;font-size:12px;">
+          {#each reservasActivasHotel.reservaciones as rv}
+            <div style="padding:6px 10px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;">
+              <span style="font-family:monospace;color:#1A3C5E;font-weight:600;">{rv.noReservacion}</span>
+              <span style="color:#555;">{rv.correo}</span>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <div class="adm__cancel-warning" style="border-left-color:#f59e0b;background:rgba(245,158,11,0.08);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span style="color:#f59e0b">El hotel quedará <strong>cerrado y oculto</strong> de las búsquedas. Puedes reactivarlo en cualquier momento.</span></div>
+      {/if}
+    </div>
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={eliminandoHotel}>Cancelar</button>
+      <button class="adm__btn--cancel-confirm adm__btn--cancel-confirm--warn" on:click={_cerrarHotel} disabled={eliminandoHotel || cargandoReservasHotel}>
+        {#if eliminandoHotel}
+          Procesando...
+        {:else if reservasActivasHotel && reservasActivasHotel.count > 0}
+          Cancelar reservas y cerrar hotel
+        {:else}
+          Cerrar hotel
+        {/if}
+      </button>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal de confirmacion de reactivacion de hotel -->
+{#if showModalReactivarHotel && hotelReactivando}
+  <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
+  <div class="adm__rol-modal" style="max-width:420px">
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon" style="background:rgba(63,185,80,0.1);color:#3fb950;border-color:rgba(63,185,80,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><p class="adm__cancel-modal__title">Reactivar Hotel</p><p class="adm__cancel-modal__subtitle">{hotelReactivando.nombre}</p></div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="adm__cancel-modal__body">
+      <div class="adm__cancel-warning" style="border-left-color:#3fb950;background:rgba(63,185,80,0.07);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#3fb950">El hotel volverá a aparecer en las búsquedas públicas y estará disponible para reservas.</span></div>
+    </div>
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={reactivandoHotel}>Cancelar</button>
+      <button class="adm__btn adm__btn--success" on:click={_reactivarHotel} disabled={reactivandoHotel} style="padding:.6rem 1.25rem;font-size:.85rem;">
+        {#if reactivandoHotel}Procesando...{:else}Sí, reactivar hotel{/if}
+      </button>
+    </div>
   </div>
 {/if}
 

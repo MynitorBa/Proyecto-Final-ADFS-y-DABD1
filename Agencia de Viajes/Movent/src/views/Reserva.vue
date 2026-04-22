@@ -1083,12 +1083,18 @@ function buildPaqueteHotelPayload(reservacionIdArg) {
   if (!h) return null
   let habitaciones = []
   if (h.tipo === 'combo') {
+    const contadorCombo = {}
     habitaciones = (h.habs || [])
-      .filter(hab => hab.habitacionesDisponibles?.length > 0)
-      .map(hab => ({
-        habitacionId: hab.habitacionesDisponibles[0].id,
-        fechaCheckIn: h.checkIn, fechaCheckOut: h.checkOut, cantidadPersonas: hab.cap,
-      }))
+      .map(hab => {
+        const disponibles = hab.habitacionesDisponibles || []
+        if (!disponibles.length) return null
+        const key = `${hab.cap}-${hab.tipo}`
+        const idx = contadorCombo[key] ?? 0
+        contadorCombo[key] = idx + 1
+        if (idx >= disponibles.length) return null
+        return { habitacionId: disponibles[idx].id, fechaCheckIn: h.checkIn, fechaCheckOut: h.checkOut, cantidadPersonas: hab.cap }
+      })
+      .filter(hab => hab !== null)
   } else {
     const rooms = h.habitacionesDisponibles || []
     if (!rooms.length) return null

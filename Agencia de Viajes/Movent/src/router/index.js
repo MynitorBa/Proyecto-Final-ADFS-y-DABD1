@@ -89,7 +89,7 @@ router.beforeEach((to, from) => {
 
     // /admin/webservice solo para rol 3 (WebService)
     if (to.path.startsWith('/admin/webservice')) {
-      if (!sesion.isWS && !sesion.isAdmin) return '/acceso-denegado'
+      if (!sesion.isWS) return '/acceso-denegado'
       return true
     }
 
