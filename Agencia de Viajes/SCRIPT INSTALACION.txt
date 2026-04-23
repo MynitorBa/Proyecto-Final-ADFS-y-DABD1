@@ -1,0 +1,10 @@
+# BACKEND - Go
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Agencia de Viajes\API Agencia\agencia-viajes"
+go mod tidy
+go get github.com/stretchr/testify/mock
+go get github.com/stretchr/testify/assert
+
+# FRONTEND - npm
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Agencia de Viajes\Movent"
+npm install
+npm install -D vitest@4 @vitest/ui@4 @testing-library/vue @testing-library/jest-dom jsdom @vue/test-utils

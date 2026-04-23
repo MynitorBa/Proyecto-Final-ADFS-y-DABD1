@@ -1,0 +1,8 @@
+# BACKEND - Maven/Java
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Cadena de Hoteles\Hotel"
+mvn clean install
+
+# FRONTEND - npm
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Cadena de Hoteles\Miku Inn"
+npm install
+npm install -D jest @testing-library/svelte @testing-library/jest-dom babel-jest @babel/preset-env

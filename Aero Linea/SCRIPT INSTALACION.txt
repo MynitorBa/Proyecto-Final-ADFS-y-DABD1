@@ -1,0 +1,13 @@
+# BACKEND - dotnet/C#
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API.Tests"
+dotnet restore
+dotnet add package xUnit --version 2.4.2
+dotnet add package Moq --version 4.20.70
+dotnet add package FluentAssertions --version 6.12.0
+dotnet add package Microsoft.Data.SqlClient --version 6.1.4
+dotnet add package coverlet.collector --version 6.0.0
+
+# FRONTEND - npm
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Aero Linea\AirLine Broom"
+npm install
+npm install -D vitest @vitest/ui @testing-library/svelte @testing-library/jest-dom jsdom

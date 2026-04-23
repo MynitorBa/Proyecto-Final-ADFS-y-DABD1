@@ -1,0 +1,7 @@
+# BACKEND (822 tests)
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Cadena de Hoteles\Hotel"
+mvn test
+
+# FRONTEND (90 tests)
+cd "C:\Proyecto-Final-ADFS-y-DABD1\Cadena de Hoteles\Miku Inn"
+npm test

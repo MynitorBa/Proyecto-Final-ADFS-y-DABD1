@@ -1,8 +1,0 @@
-Primero:
-.\generar-docs-java.ps1
-
-Segundo:
-docsify serve docs-java
-
-Opcional:
-.\generar-tests-doc.ps1
