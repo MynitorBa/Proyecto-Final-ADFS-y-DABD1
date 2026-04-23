@@ -1,7 +1,5 @@
 # BACKEND (44 tests)
-cd "C:\Proyecto-Final-ADFS-y-DABD1\Agencia de Viajes\API Agencia\agencia-viajes"
-go test ./test/... -v
+.\generar-tests-go.ps1
 
 # FRONTEND (36 tests)
-cd "C:\Proyecto-Final-ADFS-y-DABD1\Agencia de Viajes\Movent"
 npm test

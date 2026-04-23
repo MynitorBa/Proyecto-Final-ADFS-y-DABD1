@@ -494,12 +494,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{c6f34f0d-7ae5-4f3a-be61-fe0c21ae9eb8}"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 1,
@@ -520,7 +516,7 @@
               "RelativeDocumentMoniker": "Aerolinea.API\\Services\\AdminReservacionesService.cs",
               "ToolTip": "C:\\Proyecto-Final-ADFS-y-DABD1\\Aero Linea\\Aerolinea.API\\Aerolinea.API\\Services\\AdminReservacionesService.cs",
               "RelativeToolTip": "Aerolinea.API\\Services\\AdminReservacionesService.cs",
-              "ViewState": "AgIAAG0AAAAAAAAAAADwv3YAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAHEAAAAAAAAAAAAswHYAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-23T02:12:54.632Z",
               "EditorCaption": ""

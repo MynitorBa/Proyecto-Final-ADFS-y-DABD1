@@ -3,5 +3,4 @@ cd "C:\Proyecto-Final-ADFS-y-DABD1\Aero Linea\Aerolinea.API\Aerolinea.API.Tests"
 dotnet test
 
 # FRONTEND (42 tests)
-cd "C:\Proyecto-Final-ADFS-y-DABD1\Aero Linea\AirLine Broom"
 npm test
