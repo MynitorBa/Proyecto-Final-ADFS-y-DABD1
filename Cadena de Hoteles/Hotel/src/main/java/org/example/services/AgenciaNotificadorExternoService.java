@@ -55,6 +55,18 @@ public class AgenciaNotificadorExternoService {
     }
 
     /**
+     * Constructor package-private para tests unitarios con inyeccion de dependencias.
+     * Permite sustituir HttpClient y ObjectMapper por mocks sin tocar el constructor publico.
+     *
+     * @param httpClient   cliente HTTP a utilizar en los tests.
+     * @param objectMapper serializador JSON a utilizar en los tests.
+     */
+    AgenciaNotificadorExternoService(HttpClient httpClient, ObjectMapper objectMapper) {
+        this.httpClient   = httpClient;
+        this.objectMapper = objectMapper;
+    }
+
+    /**
      * Intenta notificar al sistema externo de la agencia duena de la reservacion.
      *
      * @param reservacionId ID de la reservacion que fue cancelada.

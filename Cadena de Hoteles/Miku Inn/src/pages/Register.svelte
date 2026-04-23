@@ -10,6 +10,14 @@
 
   import logo from '../assets/mikuinn-logo.png';
   import { API } from '../lib/api.js';
+  import {
+    validatePassword,
+    getPasswordStrength,
+    calculateAge,
+    formatLocalPhone,
+    getPhonePlaceholder,
+    validateForm,
+  } from '../lib/registerUtils.js';
 
   /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo;
@@ -157,20 +165,6 @@
   };
 
   /**
-   * Da formato visual al numero de telefono local segun los digitos del pais.
-   * @param {string} digits - Digitos sin formato.
-   * @param {number} total - Total de digitos esperados.
-   * @returns {string}
-   */
-  function formatLocalPhone(digits, total) {
-    if (total <= 7)  return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
-    if (total === 8) return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
-    if (total === 9) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim();
-    if (total === 10) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,4})/, '$1 $2 $3').trim();
-    return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
-  }
-
-  /**
    * Maneja la entrada en el campo de telefono, extrae digitos, los limita
    * al maximo del pais y aplica formato visual.
    * @param {Event} e - Evento de input.
@@ -179,16 +173,6 @@
     const raw = e.target.value.replace(/\D/g, '');
     const capped = raw.slice(0, phoneDigitCount);
     formData.phone = formatLocalPhone(capped, phoneDigitCount);
-  }
-
-  /**
-   * Genera el placeholder de ejemplo para el campo de telefono.
-   * @param {number} digits - Total de digitos del pais.
-   * @returns {string}
-   */
-  function getPhonePlaceholder(digits) {
-    const sample = '5'.repeat(digits);
-    return formatLocalPhone(sample, digits);
   }
 
   /**
@@ -351,49 +335,6 @@
     nacionalidadesSeleccionadas = nacionalidadesSeleccionadas.filter((_, idx) => idx !== i);
   }
 
-  /**
-   * Evalua si la contrasena cumple los requisitos minimos de seguridad.
-   * @param {string} p - Contrasena a validar.
-   * @returns {{ minLength: boolean, hasUpperCase: boolean, hasLowerCase: boolean, hasNumber: boolean, hasSpecial: boolean }}
-   */
-  function validatePassword(p) {
-    return {
-      minLength:    p.length >= 8,
-      hasUpperCase: /[A-Z]/.test(p),
-      hasLowerCase: /[a-z]/.test(p),
-      hasNumber:    /[0-9]/.test(p),
-      hasSpecial:   /[!@#$%^&*(),.?":{}|<>]/.test(p)
-    };
-  }
-
-  /**
-   * Calcula el nivel de seguridad de la contrasena en funcion de cuantos
-   * requisitos cumple.
-   * @param {string} p - Contrasena a evaluar.
-   * @returns {{ text: string, color: string, width: string }}
-   */
-  function getPasswordStrength(p) {
-    const n = Object.values(validatePassword(p)).filter(Boolean).length;
-    if (n <= 2) return { text: 'Muy débil', color: '#ef4444', width: '25%' };
-    if (n <= 3) return { text: 'Débil',     color: '#f59e0b', width: '50%' };
-    if (n <= 4) return { text: 'Buena',     color: '#3b82f6', width: '75%' };
-    return              { text: 'Excelente', color: '#10b981', width: '100%' };
-  }
-
-  /**
-   * Calcula la edad del usuario a partir de su fecha de nacimiento.
-   * @param {string} birthDate - Fecha en formato ISO (YYYY-MM-DD).
-   * @returns {number} Edad en anos cumplidos.
-   */
-  function calculateAge(birthDate) {
-    if (!birthDate) return 0;
-    const today = new Date(), birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age;
-  }
-
   // Edad calculada de forma reactiva cuando cambia la fecha de nacimiento.
   $: userAge            = calculateAge(formData.birthDate);
 
@@ -423,60 +364,6 @@
   function resetCaptcha() { captchaVerified = false; captchaLoading = false; captchaError = false; }
 
   /**
-   * Valida todos los campos del formulario y llena el objeto `errors`.
-   * @returns {boolean} `true` si no hay errores, `false` en caso contrario.
-   */
-  function validateForm() {
-    errors = {};
-    if (!formData.firstName.trim() || formData.firstName.trim().length < 2)
-      errors.firstName = !formData.firstName.trim() ? 'Nombre requerido' : 'Mínimo 2 caracteres';
-    if (!formData.lastName.trim() || formData.lastName.trim().length < 2)
-      errors.lastName = !formData.lastName.trim() ? 'Apellidos requeridos' : 'Mínimo 2 caracteres';
-    if (!formData.birthDate) errors.birthDate = 'Fecha de nacimiento requerida';
-    else if (userAge < 18)   errors.birthDate = 'Debes tener al menos 18 años';
-
-    if (!formData.phone.trim()) {
-      errors.phone = 'Teléfono requerido';
-    } else {
-      const digitosIngresados = formData.phone.replace(/\D/g, '').length;
-      if (digitosIngresados !== phoneDigitCount) {
-        errors.phone = `Número incompleto: se requieren ${phoneDigitCount} dígitos para ${formData.country || 'el país seleccionado'} (ingresaste ${digitosIngresados}).`;
-      }
-    }
-
-    if (!formData.pasaporte.trim() || formData.pasaporte.trim().length < 5)
-      errors.pasaporte = !formData.pasaporte.trim() ? 'Pasaporte requerido' : 'Número de pasaporte inválido';
-    if (!paisSeleccionado || !formData.country) errors.country = 'Selecciona un país de la lista';
-    if (!ciudadSeleccionada || !formData.city)  errors.city    = 'Selecciona una ciudad de la lista';
-
-    if (!formData.username.trim()) {
-      errors.username = 'Nombre de usuario requerido';
-    } else if (formData.username.trim().length < 3) {
-      errors.username = 'Mínimo 3 caracteres';
-    } else if (formData.username.trim().length > 20) {
-      errors.username = 'Máximo 20 caracteres';
-    } else if (!/^[a-zA-Z0-9_.]+$/.test(formData.username.trim())) {
-      errors.username = 'Solo letras, números, puntos y guion bajo';
-    }
-
-    if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      errors.email = !formData.email.trim() ? 'Email requerido' : 'Email inválido';
-    const nacsValidas = nacionalidades.filter((n, i) => n.trim() && nacionalidadesSeleccionadas[i]);
-    if (nacsValidas.length === 0) errors.nacionalidades = 'Selecciona al menos una nacionalidad';
-    if (!formData.password)
-      errors.password = 'Contraseña requerida';
-    else if (!passwordValidation.minLength || !passwordValidation.hasUpperCase ||
-             !passwordValidation.hasLowerCase || !passwordValidation.hasNumber)
-      errors.password = 'La contraseña no cumple los requisitos';
-    if (!formData.confirmPassword) errors.confirmPassword = 'Confirma tu contraseña';
-    else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
-    if (!acceptTerms)     errors.terms   = 'Debes aceptar los términos y condiciones';
-    if (!acceptPrivacy)   errors.privacy = 'Debes aceptar la política de privacidad';
-    if (!captchaVerified) errors.captcha = 'Por favor verifica que no eres un robot';
-    return Object.keys(errors).length === 0;
-  }
-
-  /**
    * Maneja el envio del formulario de registro. Valida, construye el payload
    * y hace POST a /usuarios/registrar. Redirige al login tras el exito.
    * @async
@@ -485,7 +372,13 @@
    */
   async function handleRegister(e) {
     e.preventDefault();
-    if (!validateForm()) {
+    errors = validateForm({
+      formData, userAge, phoneDigitCount,
+      paisSeleccionado, ciudadSeleccionada,
+      nacionalidades, nacionalidadesSeleccionadas,
+      passwordValidation, acceptTerms, acceptPrivacy, captchaVerified,
+    });
+    if (Object.keys(errors).length !== 0) {
       document.querySelector('.register__error-text')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }

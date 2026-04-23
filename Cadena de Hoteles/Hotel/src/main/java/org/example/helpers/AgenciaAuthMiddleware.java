@@ -13,7 +13,8 @@ import java.util.Map;
  */
 public class AgenciaAuthMiddleware {
 
-    private static final AgenciaRepository repo = new AgenciaRepository();
+    /** Repositorio de agencias. Package-private para permitir sustitucion en tests unitarios. */
+    static AgenciaRepository repo = new AgenciaRepository();
 
     /**
      * Verifica el token de agencia en el header de la peticion.

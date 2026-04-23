@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.CancelacionRequestDTO;
 import org.example.helpers.AgenciaAuthMiddleware;
 import org.example.services.CancelacionService;
@@ -27,40 +28,43 @@ public class CancelacionAgenciaController {
      * @param app instancia de Javalin donde se registran las rutas.
      */
     public void registerRoutes(Javalin app) {
-
         // Consulta si una reservacion puede ser cancelada por la agencia autenticada
-        app.get("/agencia/reservaciones/{id}/puede-cancelar", ctx -> {
-            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
-
-            // Extrae la agencia autenticada y el ID de la reservacion desde el path
-            int agenciaId     = ctx.attribute("agenciaId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
-
-            try {
-                var resultado = cancelacionService.puedeCancelar(reservacionId, agenciaId);
-                ctx.status(200).json(resultado);
-            } catch (RuntimeException e) {
-                ctx.status(500).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.get("/agencia/reservaciones/{id}/puede-cancelar", this::handlePuedeCancelar);
 
         // Ejecuta la cancelacion de una reservacion perteneciente a la agencia autenticada
-        app.patch("/agencia/reservaciones/{id}/cancelar", ctx -> {
-            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+        app.patch("/agencia/reservaciones/{id}/cancelar", this::handleCancelar);
+    }
 
-            // Extrae la agencia autenticada y el ID de la reservacion desde el path
-            int agenciaId     = ctx.attribute("agenciaId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+    void handlePuedeCancelar(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 
-            CancelacionRequestDTO request = ctx.bodyAsClass(CancelacionRequestDTO.class);
-            try {
-                cancelacionService.cancelarReservacionAgencia(
-                        reservacionId, agenciaId, request.getMotivoCancelacion()
-                );
-                ctx.status(200).json(Map.of("mensaje", "Reservacion cancelada correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        // Extrae la agencia autenticada y el ID de la reservacion desde el path
+        int agenciaId     = ctx.attribute("agenciaId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+
+        try {
+            var resultado = cancelacionService.puedeCancelar(reservacionId, agenciaId);
+            ctx.status(200).json(resultado);
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleCancelar(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+
+        // Extrae la agencia autenticada y el ID de la reservacion desde el path
+        int agenciaId     = ctx.attribute("agenciaId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+
+        CancelacionRequestDTO request = ctx.bodyAsClass(CancelacionRequestDTO.class);
+        try {
+            cancelacionService.cancelarReservacionAgencia(
+                    reservacionId, agenciaId, request.getMotivoCancelacion()
+            );
+            ctx.status(200).json(Map.of("mensaje", "Reservacion cancelada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

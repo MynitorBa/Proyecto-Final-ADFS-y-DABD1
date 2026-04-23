@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.services.TokenValidacionService;
 
 import java.util.Map;
@@ -34,20 +35,23 @@ public class TokenValidacionController {
     public void registerRoutes(Javalin app) {
 
         // El usuarioId lo inyecta el AuthMiddleware, confirma que el usuario tiene sesion activa
-        app.get("/alianza/validar", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
+        app.get("/alianza/validar", this::handleValidar);
+    }
 
-            String token = ctx.queryParam("token");
-            if (token == null || token.isBlank()) {
-                ctx.status(400).json(Map.of("mensaje", "Token requerido"));
-                return;
-            }
+    void handleValidar(Context ctx) {
+        int usuarioId = ctx.attribute("usuarioId");
 
-            try {
-                ctx.status(200).json(tokenValidacionService.validar(token));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        String token = ctx.queryParam("token");
+        if (token == null || token.isBlank()) {
+            ctx.status(400).json(Map.of("mensaje", "Token requerido"));
+            return;
+        }
+
+        try {
+            var resultado = tokenValidacionService.validar(token);
+            ctx.status(200).json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

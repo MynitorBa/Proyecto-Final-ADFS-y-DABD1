@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.services.DestinosService;
 
 /**
@@ -25,8 +26,10 @@ public class DestinosController {
     public void registerRoutes(Javalin app) {
 
         // Retorna todos los destinos activos disponibles para busqueda publica
-        app.get("/destinos", ctx -> {
-            ctx.status(200).json(destinosService.obtenerDestinos());
-        });
+        app.get("/destinos", this::handleObtenerDestinos);
+    }
+
+    void handleObtenerDestinos(Context ctx) {
+        ctx.status(200).json(destinosService.obtenerDestinos());
     }
 }

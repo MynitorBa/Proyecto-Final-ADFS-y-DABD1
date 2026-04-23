@@ -14,12 +14,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/usuarios")]
     public class UsuariosController : ControllerBase
     {
-        private readonly UsuarioService _service;
+        private readonly IUsuarioService _service;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de usuarios.
         /// </summary>
-        public UsuariosController(UsuarioService service)
+        public UsuariosController(IUsuarioService service)
         {
             _service = service;
         }

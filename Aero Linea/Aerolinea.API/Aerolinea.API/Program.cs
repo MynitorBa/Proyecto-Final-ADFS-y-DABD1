@@ -42,6 +42,7 @@ builder.Services.AddScoped<NacionalidadRepository>();
 /// <summary>
 /// Repositorios de usuarios - Registro, consulta y validacion de credenciales.
 /// </summary>
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<UsuarioRepository>();
 
 /// <summary>
@@ -57,11 +58,13 @@ builder.Services.AddScoped<VueloRepository>();
 /// <summary>
 /// Repositorios de reservaciones - Creacion, consulta y cancelacion.
 /// </summary>
+builder.Services.AddScoped<IReservacionRepository, ReservacionRepository>();
 builder.Services.AddScoped<ReservacionRepository>();
 
 /// <summary>
 /// Repositorios sociales - Comentarios de usuarios sobre vuelos.
 /// </summary>
+builder.Services.AddScoped<IComentarioRepository, ComentarioRepository>();
 builder.Services.AddScoped<ComentarioRepository>();
 
 /// <summary>
@@ -72,11 +75,13 @@ builder.Services.AddScoped<DownRepository>();
 /// <summary>
 /// Repositorios de flota - Aviones disponibles y capacidad.
 /// </summary>
+builder.Services.AddScoped<IAvionRepository, AvionRepository>();
 builder.Services.AddScoped<AvionRepository>();
 
 /// <summary>
 /// Repositorios de flota - Tripulacion asignada a cada vuelo.
 /// </summary>
+builder.Services.AddScoped<ITripulacionRepository, TripulacionRepository>();
 builder.Services.AddScoped<TripulacionRepository>();
 
 /// <summary>
@@ -112,6 +117,7 @@ builder.Services.AddScoped<MetricasRepository>();
 /// <summary>
 /// Repositorios de vuelos - Rutas aereas entre aeropuertos.
 /// </summary>
+builder.Services.AddScoped<IRutaRepository, RutaRepository>();
 builder.Services.AddScoped<RutaRepository>();
 
 /// <summary>
@@ -172,11 +178,13 @@ builder.Services.AddScoped<NacionalidadService>();
 /// <summary>
 /// Servicios de usuarios - Registro, validacion de campos unicos y perfil.
 /// </summary>
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<UsuarioService>();
 
 /// <summary>
 /// Servicios de autenticacion - Login con cookies y verificacion de credenciales.
 /// </summary>
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<AuthService>();
 
 /// <summary>
@@ -187,16 +195,20 @@ builder.Services.AddScoped<AeropuertoService>();
 /// <summary>
 /// Servicios de vuelos - Busqueda con escalas, disponibilidad y precios.
 /// </summary>
+builder.Services.AddScoped<IVueloRepository, VueloRepository>();
+builder.Services.AddScoped<IVueloService, VueloService>();
 builder.Services.AddScoped<VueloService>();
 
 /// <summary>
 /// Servicios de reservaciones - Creacion, consulta por usuario y cancelacion.
 /// </summary>
+builder.Services.AddScoped<IReservacionService, ReservacionService>();
 builder.Services.AddScoped<ReservacionService>();
 
 /// <summary>
 /// Servicios sociales - Agregar, listar y validar resenas de vuelos.
 /// </summary>
+builder.Services.AddScoped<IComentarioService, ComentarioService>();
 builder.Services.AddScoped<ComentarioService>();
 
 /// <summary>
@@ -207,11 +219,13 @@ builder.Services.AddScoped<DownService>();
 /// <summary>
 /// Servicios de flota - Gestion de aviones y capacidad.
 /// </summary>
+builder.Services.AddScoped<IAvionService, AvionService>();
 builder.Services.AddScoped<AvionService>();
 
 /// <summary>
 /// Servicios de flota - Asignacion y consulta de tripulacion por vuelo.
 /// </summary>
+builder.Services.AddScoped<ITripulacionService, TripulacionService>();
 builder.Services.AddScoped<TripulacionService>();
 
 /// <summary>
@@ -248,6 +262,7 @@ builder.Services.AddScoped<MetricasService>();
 /// <summary>
 /// Servicios de vuelos - Consulta y administracion de rutas aereas.
 /// </summary>
+builder.Services.AddScoped<IRutaService, RutaService>();
 builder.Services.AddScoped<RutaService>();
 
 /// <summary>

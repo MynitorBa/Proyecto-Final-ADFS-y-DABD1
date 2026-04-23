@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.PagoRequestDTO;
 import org.example.services.PagoService;
 
@@ -28,20 +29,22 @@ public class PagoController {
     public void registerRoutes(Javalin app) {
 
         // Procesa el pago de una reservacion perteneciente al usuario autenticado
-        app.post("/reservaciones/{id}/pago", ctx -> {
+        app.post("/reservaciones/{id}/pago", this::handleProcesarPago);
+    }
 
-            // Extrae el usuario de la sesion y el ID de la reservacion desde el path
-            int usuarioId     = ctx.attribute("usuarioId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
-            PagoRequestDTO request = ctx.bodyAsClass(PagoRequestDTO.class);
+    void handleProcesarPago(Context ctx) {
+        // Extrae el usuario de la sesion y el ID de la reservacion desde el path
+        int usuarioId     = ctx.attribute("usuarioId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+        PagoRequestDTO request = ctx.bodyAsClass(PagoRequestDTO.class);
 
-            try {
-                ctx.status(200).json(pagoService.procesarPago(reservacionId, usuarioId, request));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            } catch (RuntimeException e) {
-                ctx.status(500).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        try {
+            var resultado = pagoService.procesarPago(reservacionId, usuarioId, request);
+            ctx.status(200).json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

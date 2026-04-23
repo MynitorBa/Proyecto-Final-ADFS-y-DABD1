@@ -14,12 +14,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/[controller]")]
     public class AvionesController : ControllerBase
     {
-        private readonly AvionService _avionService;
+        private readonly IAvionService _avionService;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de aviones.
         /// </summary>
-        public AvionesController(AvionService avionService)
+        public AvionesController(IAvionService avionService)
         {
             _avionService = avionService;
         }

@@ -8,14 +8,14 @@ namespace Aerolinea.API.Services
     /// y actualizar rutas entre aeropuertos, incluyendo el calculo de hora de llegada
     /// con conversion de zonas horarias IANA y Windows.
     /// </summary>
-    public class RutaService
+    public class RutaService : IRutaService
     {
-        private readonly RutaRepository _repository;
+        private readonly IRutaRepository _repository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de rutas.
         /// </summary>
-        public RutaService(RutaRepository repository)
+        public RutaService(IRutaRepository repository)
         {
             _repository = repository;
         }

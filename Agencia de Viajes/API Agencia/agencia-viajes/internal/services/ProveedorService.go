@@ -16,8 +16,16 @@ import (
 //
 // Servicio encargado de la logica de negocio relacionada con la creacion
 // y gestion de proveedores externos registrados en el sistema.
+// IProveedorRepository define las operaciones de base de datos necesarias para el servicio de proveedores.
+type IProveedorRepository interface {
+	ObtenerRolUsuario(usuarioID int) (int, error)
+	UsuarioYaTieneProveedor(usuarioID int) (bool, error)
+	ExisteTipoProveedor(tipoID int) (bool, error)
+	CrearProveedor(req dto.CrearProveedorRequest) (dto.CrearProveedorResponse, error)
+}
+
 type ProveedorService struct {
-	repo *repositories.ProveedorRepository
+	repo IProveedorRepository
 }
 
 // NewProveedorService
@@ -33,6 +41,11 @@ func NewProveedorService(db *sql.DB) *ProveedorService {
 	return &ProveedorService{
 		repo: repositories.NewProveedorRepository(db),
 	}
+}
+
+// NewProveedorServiceConRepo crea un ProveedorService con repositorio inyectado para pruebas.
+func NewProveedorServiceConRepo(repo IProveedorRepository) *ProveedorService {
+	return &ProveedorService{repo: repo}
 }
 
 // CrearProveedor

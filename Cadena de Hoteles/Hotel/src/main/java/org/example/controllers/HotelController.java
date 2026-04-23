@@ -33,328 +33,422 @@ public class HotelController {
      * @param app instancia de Javalin donde se registran las rutas.
      */
     public void registerRoutes(Javalin app) {
-
-        // Retorna el catalogo completo de amenidades disponibles
-        app.get("/admin/amenidades", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            ctx.json(hotelService.listarAmenidades());
-        });
-
-        // Agrega una nueva amenidad al catalogo del sistema
-        app.post("/admin/amenidades", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                Map<?, ?> body = ctx.bodyAsClass(Map.class);
-                String nombre = body.get("nombre") != null ? body.get("nombre").toString() : "";
-                ctx.status(201).json(hotelService.crearAmenidad(nombre));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Retorna el catalogo de paises registrados
-        app.get("/admin/paises",   ctx -> { if (!esAdmin(ctx)) { deny(ctx); return; } ctx.json(hotelService.listarPaises()); });
-
-        // Retorna el catalogo de ciudades registradas
-        app.get("/admin/ciudades", ctx -> { if (!esAdmin(ctx)) { deny(ctx); return; } ctx.json(hotelService.listarCiudades()); });
-
-        // Retorna todos los hoteles registrados en el sistema
-        app.get("/admin/hoteles", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            ctx.json(hotelService.listarTodos());
-        });
-
-        // Crea un nuevo hotel con los datos proporcionados en el cuerpo de la peticion
-        app.post("/admin/hoteles", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(hotelService.crearHotel(ctx.bodyAsClass(CrearHotelRequestDTO.class)));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Actualiza los datos de un hotel existente
-        app.patch("/admin/hoteles/{id}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                hotelService.editarHotel(id(ctx, "id"), ctx.bodyAsClass(EditarHotelRequestDTO.class));
-                ctx.json(Map.of("mensaje", "Hotel actualizado"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Elimina un hotel del sistema por su ID (rechaza si tiene reservas activas)
-        app.delete("/admin/hoteles/{id}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                hotelService.eliminarHotel(id(ctx, "id"));
-                ctx.json(Map.of("mensaje", "Hotel eliminado"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Retorna el recuento y datos de las reservaciones activas del hotel
-        app.get("/admin/hoteles/{id}/reservas-activas", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.json(hotelService.obtenerReservasActivasHotel(id(ctx, "id")));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Cancela todas las reservas activas del hotel y notifica a usuarios por correo.
-        // Si eliminarDefinitivo=true  → elimina el hotel fisicamente (comportamiento previo).
-        // Si eliminarDefinitivo=false → cambia EstadoID a 2 (Cerrado), hotel permanece en BD.
-        // Body: { "hotelNombre": "...", "eliminarDefinitivo": false }
-        app.post("/admin/hoteles/{id}/cerrar-con-cancelaciones", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                Map<?, ?> body = ctx.bodyAsClass(Map.class);
-                String hotelNombre = body != null && body.get("hotelNombre") != null
-                        ? body.get("hotelNombre").toString() : "Hotel";
-                boolean eliminarDefinitivo = body != null && body.get("eliminarDefinitivo") != null
-                        && Boolean.parseBoolean(body.get("eliminarDefinitivo").toString());
-                Map<String, Object> resultado =
-                        hotelService.cerrarHotelConCancelaciones(id(ctx, "id"), hotelNombre, eliminarDefinitivo);
-                ctx.json(resultado);
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Reactiva un hotel cerrado (EstadoID 2 → 1). El hotel vuelve a aparecer en busquedas.
-        app.post("/admin/hoteles/{id}/reactivar", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                hotelService.reactivarHotel(id(ctx, "id"));
-                ctx.json(Map.of("mensaje", "Hotel reactivado correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Agrega una imagen en base64 a un hotel especifico
-        app.post("/admin/hoteles/{id}/imagenes", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(hotelService.agregarImagenHotel(
-                        id(ctx, "id"), ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Elimina una imagen de hotel por su ID de imagen
-        app.delete("/admin/hoteles/imagenes/{imgId}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            hotelService.eliminarImagenHotel(id(ctx, "imgId"));
-            ctx.json(Map.of("mensaje", "Imagen eliminada"));
-        });
-
-        // Retorna las amenidades asignadas a un hotel especifico
-        app.get("/admin/hoteles/{id}/amenidades", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.json(hotelService.listarAmenidadesHotel(id(ctx, "id")));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Asigna una amenidad del catalogo a un hotel especifico
-        app.post("/admin/hoteles/{id}/amenidades", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(hotelService.agregarAmenidadHotel(
-                        id(ctx, "id"), ctx.bodyAsClass(AgregarAmenidadRequestDTO.class)));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Actualiza los datos de una amenidad ya asignada a un hotel
-        app.patch("/admin/hoteles/amenidades/{haId}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            hotelService.actualizarAmenidadHotel(id(ctx, "haId"), ctx.bodyAsClass(AgregarAmenidadRequestDTO.class));
-            ctx.json(Map.of("mensaje", "Amenidad actualizada"));
-        });
-
-        // Elimina la relacion entre una amenidad y un hotel
-        app.delete("/admin/hoteles/amenidades/{haId}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            hotelService.eliminarAmenidadHotel(id(ctx, "haId"));
-            ctx.json(Map.of("mensaje", "Amenidad eliminada"));
-        });
-
-        // Agrega una imagen en base64 a una amenidad de hotel
-        app.post("/admin/hoteles/amenidades/{haId}/imagenes", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(hotelService.agregarImagenAmenidad(
-                        id(ctx, "haId"), ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Elimina una imagen asociada a una amenidad de hotel
-        app.delete("/admin/hoteles/amenidades/imagenes/{imgId}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            hotelService.eliminarImagenAmenidad(id(ctx, "imgId"));
-            ctx.json(Map.of("mensaje", "Imagen de amenidad eliminada"));
-        });
-
-        // Retorna las habitaciones registradas para un hotel especifico
-        app.get("/admin/hoteles/{id}/habitaciones", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.json(hotelService.listarHabitaciones(id(ctx, "id")));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Crea una nueva habitacion asociada al hotel indicado en el path
-        app.post("/admin/hoteles/{id}/habitaciones", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                CrearHabitacionRequestDTO req = ctx.bodyAsClass(CrearHabitacionRequestDTO.class);
-                // Inyecta el hotelId del path en el DTO antes de procesar la creacion
-                req.setHotelId(id(ctx, "id"));
-                ctx.status(201).json(hotelService.crearHabitacion(req));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Actualiza los datos de una habitacion existente
-        app.patch("/admin/habitaciones/{id}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                hotelService.editarHabitacion(id(ctx, "id"), ctx.bodyAsClass(EditarHabitacionRequestDTO.class));
-                ctx.json(Map.of("mensaje", "Habitacion actualizada"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Elimina una habitacion del sistema por su ID
-        app.delete("/admin/habitaciones/{id}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                hotelService.eliminarHabitacion(id(ctx, "id"));
-                ctx.json(Map.of("mensaje", "Habitacion eliminada"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Retorna el recuento y datos de las reservaciones activas de la habitacion
-        app.get("/admin/habitaciones/{id}/reservas-activas", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.json(hotelService.obtenerReservasActivasHabitacion(id(ctx, "id")));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Cancela todas las reservas activas de la habitacion y notifica a usuarios por correo.
-        // Si eliminarDefinitivo=true  → elimina la habitacion fisicamente.
-        // Si eliminarDefinitivo=false → cambia ESTADO_ID a 2 (Cerrada), habitacion permanece en BD.
-        // Body: { "nombreHabitacion": "...", "eliminarDefinitivo": false }
-        app.post("/admin/habitaciones/{id}/cerrar-con-cancelaciones", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                Map<?, ?> body = ctx.bodyAsClass(Map.class);
-                String nombreHabitacion = body != null && body.get("nombreHabitacion") != null
-                        ? body.get("nombreHabitacion").toString() : "Habitacion";
-                boolean eliminarDefinitivo = body != null && body.get("eliminarDefinitivo") != null
-                        && Boolean.parseBoolean(body.get("eliminarDefinitivo").toString());
-                Map<String, Object> resultado =
-                        hotelService.cerrarHabitacionConCancelaciones(id(ctx, "id"), nombreHabitacion, eliminarDefinitivo);
-                ctx.json(resultado);
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Reactiva una habitacion cerrada (ESTADO_ID 2 → 1).
-        app.post("/admin/habitaciones/{id}/reactivar", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                hotelService.reactivarHabitacion(id(ctx, "id"));
-                ctx.json(Map.of("mensaje", "Habitacion reactivada correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Agrega una imagen en base64 a una habitacion especifica
-        app.post("/admin/habitaciones/{id}/imagenes", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(hotelService.agregarImagenHabitacion(
-                        id(ctx, "id"), ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Elimina una imagen de habitacion por su ID de imagen
-        app.delete("/admin/habitaciones/imagenes/{imgId}", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            hotelService.eliminarImagenHabitacion(id(ctx, "imgId"));
-            ctx.json(Map.of("mensaje", "Imagen eliminada"));
-        });
-
-        // Retorna todas las reservaciones registradas en el sistema
-        app.get("/admin/reservaciones", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            ctx.json(adminReservacionService.listarTodas());
-        });
-
-        // Cancela una reservacion con un motivo opcional.
-        // Notifica al sistema externo de la agencia (si corresponde) y envia correo al usuario.
-        // Respuesta: { mensaje, notificacionAgencia: { esReservaDeAgencia, nombreAgencia,
-        //              enviado, httpStatus, respuestaAgencia, error } }
-        app.patch("/admin/reservaciones/{id}/cancelar", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            int    reservacionId = id(ctx, "id");
-            String motivo        = "Cancelada por administrador";
-
-            // Intenta leer el motivo del cuerpo; si falla o no viene, conserva el valor por defecto
-            try {
-                Map<?, ?> body = ctx.bodyAsClass(Map.class);
-                if (body.containsKey("motivo") && body.get("motivo") != null)
-                    motivo = body.get("motivo").toString();
-            } catch (Exception ignored) {}
-
-            try {
-                ResultadoNotificacionDTO resultadoAgencia =
-                        adminReservacionService.cancelarReservacion(reservacionId, motivo);
-
-                // Construye respuesta enriquecida para que el admin vea el estado de la agencia
-                Map<String, Object> respuesta = new LinkedHashMap<>();
-                respuesta.put("mensaje", "Reservacion cancelada correctamente");
-                respuesta.put("notificacionAgencia", resultadoAgencia);
-
-                ctx.json(respuesta);
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Retorna las metricas generales del sistema para el panel de administracion
-        app.get("/admin/metricas", ctx -> {
-            if (!esAdmin(ctx)) { deny(ctx); return; }
-            ctx.json(hotelService.obtenerMetricas());
-        });
+        app.get   ("/admin/amenidades",                                    this::handleListarAmenidades);
+        app.post  ("/admin/amenidades",                                    this::handleCrearAmenidad);
+        app.get   ("/admin/paises",                                        this::handleListarPaises);
+        app.get   ("/admin/ciudades",                                      this::handleListarCiudades);
+        app.get   ("/admin/hoteles",                                       this::handleListarHoteles);
+        app.post  ("/admin/hoteles",                                       this::handleCrearHotel);
+        app.patch ("/admin/hoteles/{id}",                                  this::handleEditarHotel);
+        app.delete("/admin/hoteles/{id}",                                  this::handleEliminarHotel);
+        app.get   ("/admin/hoteles/{id}/reservas-activas",                 this::handleReservasActivasHotel);
+        app.post  ("/admin/hoteles/{id}/cerrar-con-cancelaciones",         this::handleCerrarHotel);
+        app.post  ("/admin/hoteles/{id}/reactivar",                        this::handleReactivarHotel);
+        app.post  ("/admin/hoteles/{id}/imagenes",                         this::handleAgregarImagenHotel);
+        app.delete("/admin/hoteles/imagenes/{imgId}",                      this::handleEliminarImagenHotel);
+        app.get   ("/admin/hoteles/{id}/amenidades",                       this::handleListarAmenidadesHotel);
+        app.post  ("/admin/hoteles/{id}/amenidades",                       this::handleAgregarAmenidadHotel);
+        app.patch ("/admin/hoteles/amenidades/{haId}",                     this::handleActualizarAmenidadHotel);
+        app.delete("/admin/hoteles/amenidades/{haId}",                     this::handleEliminarAmenidadHotel);
+        app.post  ("/admin/hoteles/amenidades/{haId}/imagenes",            this::handleAgregarImagenAmenidad);
+        app.delete("/admin/hoteles/amenidades/imagenes/{imgId}",           this::handleEliminarImagenAmenidad);
+        app.get   ("/admin/hoteles/{id}/habitaciones",                     this::handleListarHabitaciones);
+        app.post  ("/admin/hoteles/{id}/habitaciones",                     this::handleCrearHabitacion);
+        app.patch ("/admin/habitaciones/{id}",                             this::handleEditarHabitacion);
+        app.delete("/admin/habitaciones/{id}",                             this::handleEliminarHabitacion);
+        app.get   ("/admin/habitaciones/{id}/reservas-activas",            this::handleReservasActivasHabitacion);
+        app.post  ("/admin/habitaciones/{id}/cerrar-con-cancelaciones",    this::handleCerrarHabitacion);
+        app.post  ("/admin/habitaciones/{id}/reactivar",                   this::handleReactivarHabitacion);
+        app.post  ("/admin/habitaciones/{id}/imagenes",                    this::handleAgregarImagenHabitacion);
+        app.delete("/admin/habitaciones/imagenes/{imgId}",                 this::handleEliminarImagenHabitacion);
+        app.get   ("/admin/reservaciones",                                 this::handleListarReservaciones);
+        app.patch ("/admin/reservaciones/{id}/cancelar",                   this::handleCancelarReservacion);
+        app.get   ("/admin/metricas",                                      this::handleObtenerMetricas);
     }
+
+    // -------------------------------------------------------------------------
+    // Amenidades (catalogo global)
+    // -------------------------------------------------------------------------
+
+    /** Retorna el catalogo completo de amenidades disponibles. */
+    void handleListarAmenidades(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(hotelService.listarAmenidades());
+    }
+
+    /** Agrega una nueva amenidad al catalogo del sistema. */
+    void handleCrearAmenidad(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            Map<?, ?> body  = ctx.bodyAsClass(Map.class);
+            String    nombre = body.get("nombre") != null ? body.get("nombre").toString() : "";
+            ctx.status(201).json(hotelService.crearAmenidad(nombre));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Paises / Ciudades
+    // -------------------------------------------------------------------------
+
+    /** Retorna el catalogo de paises registrados. */
+    void handleListarPaises(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(hotelService.listarPaises());
+    }
+
+    /** Retorna el catalogo de ciudades registradas. */
+    void handleListarCiudades(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(hotelService.listarCiudades());
+    }
+
+    // -------------------------------------------------------------------------
+    // Hoteles - CRUD
+    // -------------------------------------------------------------------------
+
+    /** Retorna todos los hoteles registrados en el sistema. */
+    void handleListarHoteles(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(hotelService.listarTodos());
+    }
+
+    /** Crea un nuevo hotel con los datos proporcionados en el cuerpo de la peticion. */
+    void handleCrearHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(hotelService.crearHotel(ctx.bodyAsClass(CrearHotelRequestDTO.class)));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Actualiza los datos de un hotel existente. */
+    void handleEditarHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.editarHotel(id(ctx, "id"), ctx.bodyAsClass(EditarHotelRequestDTO.class));
+            ctx.json(Map.of("mensaje", "Hotel actualizado"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Elimina un hotel del sistema por su ID (rechaza si tiene reservas activas). */
+    void handleEliminarHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.eliminarHotel(id(ctx, "id"));
+            ctx.json(Map.of("mensaje", "Hotel eliminado"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Hoteles - operaciones especiales
+    // -------------------------------------------------------------------------
+
+    /** Retorna el recuento y datos de las reservaciones activas del hotel. */
+    void handleReservasActivasHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.json(hotelService.obtenerReservasActivasHotel(id(ctx, "id")));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /**
+     * Cancela todas las reservas activas del hotel y notifica a usuarios por correo.
+     * Si eliminarDefinitivo=true  elimina el hotel fisicamente.
+     * Si eliminarDefinitivo=false cambia EstadoID a 2 (Cerrado).
+     * Body: { "hotelNombre": "...", "eliminarDefinitivo": false }
+     */
+    void handleCerrarHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            Map<?, ?> body = ctx.bodyAsClass(Map.class);
+            String hotelNombre = body != null && body.get("hotelNombre") != null
+                    ? body.get("hotelNombre").toString() : "Hotel";
+            boolean eliminarDefinitivo = body != null && body.get("eliminarDefinitivo") != null
+                    && Boolean.parseBoolean(body.get("eliminarDefinitivo").toString());
+            Map<String, Object> resultado =
+                    hotelService.cerrarHotelConCancelaciones(id(ctx, "id"), hotelNombre, eliminarDefinitivo);
+            ctx.json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Reactiva un hotel cerrado (EstadoID 2 → 1). El hotel vuelve a aparecer en busquedas. */
+    void handleReactivarHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.reactivarHotel(id(ctx, "id"));
+            ctx.json(Map.of("mensaje", "Hotel reactivado correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Hoteles - imagenes
+    // -------------------------------------------------------------------------
+
+    /** Agrega una imagen en base64 a un hotel especifico. */
+    void handleAgregarImagenHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(hotelService.agregarImagenHotel(
+                    id(ctx, "id"), ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Elimina una imagen de hotel por su ID de imagen. */
+    void handleEliminarImagenHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        hotelService.eliminarImagenHotel(id(ctx, "imgId"));
+        ctx.json(Map.of("mensaje", "Imagen eliminada"));
+    }
+
+    // -------------------------------------------------------------------------
+    // Hoteles - amenidades asignadas
+    // -------------------------------------------------------------------------
+
+    /** Retorna las amenidades asignadas a un hotel especifico. */
+    void handleListarAmenidadesHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.json(hotelService.listarAmenidadesHotel(id(ctx, "id")));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Asigna una amenidad del catalogo a un hotel especifico. */
+    void handleAgregarAmenidadHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(hotelService.agregarAmenidadHotel(
+                    id(ctx, "id"), ctx.bodyAsClass(AgregarAmenidadRequestDTO.class)));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Actualiza los datos de una amenidad ya asignada a un hotel. */
+    void handleActualizarAmenidadHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        hotelService.actualizarAmenidadHotel(id(ctx, "haId"), ctx.bodyAsClass(AgregarAmenidadRequestDTO.class));
+        ctx.json(Map.of("mensaje", "Amenidad actualizada"));
+    }
+
+    /** Elimina la relacion entre una amenidad y un hotel. */
+    void handleEliminarAmenidadHotel(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        hotelService.eliminarAmenidadHotel(id(ctx, "haId"));
+        ctx.json(Map.of("mensaje", "Amenidad eliminada"));
+    }
+
+    // -------------------------------------------------------------------------
+    // Amenidades de hotel - imagenes
+    // -------------------------------------------------------------------------
+
+    /** Agrega una imagen en base64 a una amenidad de hotel. */
+    void handleAgregarImagenAmenidad(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(hotelService.agregarImagenAmenidad(
+                    id(ctx, "haId"), ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Elimina una imagen asociada a una amenidad de hotel. */
+    void handleEliminarImagenAmenidad(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        hotelService.eliminarImagenAmenidad(id(ctx, "imgId"));
+        ctx.json(Map.of("mensaje", "Imagen de amenidad eliminada"));
+    }
+
+    // -------------------------------------------------------------------------
+    // Habitaciones - CRUD
+    // -------------------------------------------------------------------------
+
+    /** Retorna las habitaciones registradas para un hotel especifico. */
+    void handleListarHabitaciones(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.json(hotelService.listarHabitaciones(id(ctx, "id")));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Crea una nueva habitacion asociada al hotel indicado en el path. */
+    void handleCrearHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            CrearHabitacionRequestDTO req = ctx.bodyAsClass(CrearHabitacionRequestDTO.class);
+            req.setHotelId(id(ctx, "id"));
+            ctx.status(201).json(hotelService.crearHabitacion(req));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Actualiza los datos de una habitacion existente. */
+    void handleEditarHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.editarHabitacion(id(ctx, "id"), ctx.bodyAsClass(EditarHabitacionRequestDTO.class));
+            ctx.json(Map.of("mensaje", "Habitacion actualizada"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Elimina una habitacion del sistema por su ID. */
+    void handleEliminarHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.eliminarHabitacion(id(ctx, "id"));
+            ctx.json(Map.of("mensaje", "Habitacion eliminada"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Habitaciones - operaciones especiales
+    // -------------------------------------------------------------------------
+
+    /** Retorna el recuento y datos de las reservaciones activas de la habitacion. */
+    void handleReservasActivasHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.json(hotelService.obtenerReservasActivasHabitacion(id(ctx, "id")));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /**
+     * Cancela todas las reservas activas de la habitacion y notifica a usuarios por correo.
+     * Si eliminarDefinitivo=true  elimina la habitacion fisicamente.
+     * Si eliminarDefinitivo=false cambia ESTADO_ID a 2 (Cerrada).
+     * Body: { "nombreHabitacion": "...", "eliminarDefinitivo": false }
+     */
+    void handleCerrarHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            Map<?, ?> body = ctx.bodyAsClass(Map.class);
+            String nombreHabitacion = body != null && body.get("nombreHabitacion") != null
+                    ? body.get("nombreHabitacion").toString() : "Habitacion";
+            boolean eliminarDefinitivo = body != null && body.get("eliminarDefinitivo") != null
+                    && Boolean.parseBoolean(body.get("eliminarDefinitivo").toString());
+            Map<String, Object> resultado =
+                    hotelService.cerrarHabitacionConCancelaciones(id(ctx, "id"), nombreHabitacion, eliminarDefinitivo);
+            ctx.json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Reactiva una habitacion cerrada (ESTADO_ID 2 → 1). */
+    void handleReactivarHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.reactivarHabitacion(id(ctx, "id"));
+            ctx.json(Map.of("mensaje", "Habitacion reactivada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Habitaciones - imagenes
+    // -------------------------------------------------------------------------
+
+    /** Agrega una imagen en base64 a una habitacion especifica. */
+    void handleAgregarImagenHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(hotelService.agregarImagenHabitacion(
+                    id(ctx, "id"), ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Elimina una imagen de habitacion por su ID de imagen. */
+    void handleEliminarImagenHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        hotelService.eliminarImagenHabitacion(id(ctx, "imgId"));
+        ctx.json(Map.of("mensaje", "Imagen eliminada"));
+    }
+
+    // -------------------------------------------------------------------------
+    // Reservaciones
+    // -------------------------------------------------------------------------
+
+    /** Retorna todas las reservaciones registradas en el sistema. */
+    void handleListarReservaciones(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(adminReservacionService.listarTodas());
+    }
+
+    /**
+     * Cancela una reservacion con un motivo opcional.
+     * Notifica al sistema externo de la agencia (si corresponde) y envia correo al usuario.
+     * Respuesta: { mensaje, notificacionAgencia: { esReservaDeAgencia, nombreAgencia,
+     *              enviado, httpStatus, respuestaAgencia, error } }
+     */
+    void handleCancelarReservacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        int    reservacionId = id(ctx, "id");
+        String motivo        = "Cancelada por administrador";
+
+        // Intenta leer el motivo del cuerpo; si falla o no viene, conserva el valor por defecto
+        try {
+            Map<?, ?> body = ctx.bodyAsClass(Map.class);
+            if (body.containsKey("motivo") && body.get("motivo") != null)
+                motivo = body.get("motivo").toString();
+        } catch (Exception ignored) {}
+
+        try {
+            ResultadoNotificacionDTO resultadoAgencia =
+                    adminReservacionService.cancelarReservacion(reservacionId, motivo);
+
+            // Construye respuesta enriquecida para que el admin vea el estado de la agencia
+            Map<String, Object> respuesta = new LinkedHashMap<>();
+            respuesta.put("mensaje", "Reservacion cancelada correctamente");
+            respuesta.put("notificacionAgencia", resultadoAgencia);
+
+            ctx.json(respuesta);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Metricas
+    // -------------------------------------------------------------------------
+
+    /** Retorna las metricas generales del sistema para el panel de administracion. */
+    void handleObtenerMetricas(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(hotelService.obtenerMetricas());
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers privados
+    // -------------------------------------------------------------------------
 
     /**
      * Verifica si el usuario autenticado tiene rol Administrador (rol 2).

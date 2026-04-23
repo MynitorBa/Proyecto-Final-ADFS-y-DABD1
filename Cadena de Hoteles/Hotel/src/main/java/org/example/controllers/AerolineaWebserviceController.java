@@ -28,38 +28,40 @@ public class AerolineaWebserviceController {
      * @param app instancia de Javalin donde se registran las rutas.
      */
     public void registerRoutes(Javalin app) {
+        app.get("/webservice/aerolineas",              this::handleListar);
+        app.post("/webservice/aerolineas",             this::handleCrear);
+        app.patch("/webservice/aerolineas/{id}/estado", this::handleCambiarEstado);
+    }
 
-        // Lista las aerolineas asociadas al usuario autenticado
-        app.get("/webservice/aerolineas", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            ctx.json(aerolineaService.listarPorUsuario(usuarioId(ctx)));
-        });
+    // Lista las aerolineas asociadas al usuario autenticado
+    void handleListar(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        ctx.json(aerolineaService.listarPorUsuario(usuarioId(ctx)));
+    }
 
-        // Crea una nueva aerolinea aliada para el usuario autenticado
-        app.post("/webservice/aerolineas", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(
-                        aerolineaService.crear(usuarioId(ctx), ctx.bodyAsClass(CrearAerolineaRequestDTO.class))
-                );
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+    // Crea una nueva aerolinea aliada para el usuario autenticado
+    void handleCrear(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(
+                    aerolineaService.crear(usuarioId(ctx), ctx.bodyAsClass(CrearAerolineaRequestDTO.class))
+            );
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
 
-        // Cambia el estado de una aerolinea especifica del usuario autenticado
-        app.patch("/webservice/aerolineas/{id}/estado", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            try {
-                Map<?, ?> body = ctx.bodyAsClass(Map.class);
-                int nuevoEstado = Integer.parseInt(body.get("estadoId").toString());
-                aerolineaService.cambiarEstado(id(ctx, "id"), usuarioId(ctx), nuevoEstado);
-                ctx.json(Map.of("mensaje", "Estado actualizado correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
+    // Cambia el estado de una aerolinea especifica del usuario autenticado
+    void handleCambiarEstado(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        try {
+            Map<?, ?> body = ctx.bodyAsClass(Map.class);
+            int nuevoEstado = Integer.parseInt(body.get("estadoId").toString());
+            aerolineaService.cambiarEstado(id(ctx, "id"), usuarioId(ctx), nuevoEstado);
+            ctx.json(Map.of("mensaje", "Estado actualizado correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 
     /**

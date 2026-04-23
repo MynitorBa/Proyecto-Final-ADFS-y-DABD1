@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.helpers.AgenciaAuthMiddleware;
 import org.example.services.HotelAgenciaService;
 
@@ -26,11 +27,13 @@ public class HotelAgenciaController {
     public void registrarRutas(Javalin app) {
 
         // Retorna el catalogo de hoteles disponibles para la agencia autenticada
-        app.get("/api/hoteles-agencia", ctx -> {
-            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+        app.get("/api/hoteles-agencia", this::handleObtenerHoteles);
+    }
 
-            var hoteles = service.obtenerHotelesParaAgencia();
-            ctx.json(hoteles);
-        });
+    void handleObtenerHoteles(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+
+        var hoteles = service.obtenerHotelesParaAgencia();
+        ctx.json(hoteles);
     }
 }

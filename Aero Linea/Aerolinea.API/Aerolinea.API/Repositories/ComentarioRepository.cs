@@ -9,7 +9,7 @@ namespace Aerolinea.API.Repositories
     /// respuestas a comentarios, consultas por ruta o usuario, y la inclusion del
     /// voto del usuario autenticado en los resultados.
     /// </summary>
-    public class ComentarioRepository
+    public class ComentarioRepository : IComentarioRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
 

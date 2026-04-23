@@ -8,6 +8,7 @@ package services
 import (
 	"agencia-viajes/internal/dto"
 	"agencia-viajes/internal/helpers"
+	"agencia-viajes/internal/models"
 	"agencia-viajes/internal/repositories"
 	"database/sql"
 	"errors"
@@ -19,8 +20,14 @@ import (
 // Servicio encargado de gestionar la autenticacion de usuarios en la agencia
 // de viajes. Valida las credenciales ingresadas contra la base de datos y
 // retorna la informacion del usuario autenticado para generar la sesion.
+// ILoginRepository define las operaciones de base de datos necesarias para autenticacion.
+type ILoginRepository interface {
+	ObtenerPorUsernameOCorreo(login string) (models.Usuario, error)
+}
+
 type LoginService struct {
-	repo *repositories.LoginRepository
+	repo            ILoginRepository
+	captchaVerifier func(string) (bool, string)
 }
 
 // NewLoginService
@@ -35,8 +42,14 @@ type LoginService struct {
 //   - *LoginService: instancia lista para usar
 func NewLoginService(db *sql.DB) *LoginService {
 	return &LoginService{
-		repo: repositories.NewLoginRepository(db),
+		repo:            repositories.NewLoginRepository(db),
+		captchaVerifier: helpers.VerificarCaptcha,
 	}
+}
+
+// NewLoginServiceConRepo crea un LoginService con repositorio e inyector de captcha para pruebas.
+func NewLoginServiceConRepo(repo ILoginRepository, captchaV func(string) (bool, string)) *LoginService {
+	return &LoginService{repo: repo, captchaVerifier: captchaV}
 }
 
 var (
@@ -75,7 +88,7 @@ func (s *LoginService) Login(req dto.LoginRequest) (dto.LoginResponse, error) {
 	}
 
 	// 3. Verificar el captcha con Google
-	if valido, _ := helpers.VerificarCaptcha(req.Captcha); !valido {
+	if valido, _ := s.captchaVerifier(req.Captcha); !valido {
 		return dto.LoginResponse{}, ErrCaptchaInvalido
 	}
 

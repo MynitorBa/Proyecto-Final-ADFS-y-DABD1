@@ -8,7 +8,7 @@ namespace Aerolinea.API.Repositories
     /// Repositorio de aviones. Gestiona el CRUD completo de aviones e imagenes
     /// asociadas. Permite consultar la flota disponible para la asignacion de vuelos.
     /// </summary>
-    public class AvionRepository
+    public class AvionRepository : IAvionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
 

@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.services.AdminBusquedaService;
 
 import java.util.Map;
@@ -27,85 +28,85 @@ public class AdminBusquedaController {
      * @param app instancia de Javalin donde se registran las rutas.
      */
     public void registerRoutes(Javalin app) {
+        app.get("/admin/reportes/busquedas",          this::handleListarBusquedas);
+        app.get("/admin/reportes/busquedas/resumen",  this::handleResumen);
+        app.post("/admin/reportes/busquedas/exportar", this::handleExportar);
+    }
 
-        // GET /admin/reportes/busquedas
-        // Devuelve { busquedas: [...], total: N }
-        // Query params opcionales: destino, usuarioAgencia, tipo (web|rest|todos),
-        // fechaDesde (YYYY-MM-DD), fechaHasta (YYYY-MM-DD), pagina (default 1), porPagina (default 25)
-        app.get("/admin/reportes/busquedas", ctx -> {
+    // GET /admin/reportes/busquedas
+    // Devuelve { busquedas: [...], total: N }
+    // Query params opcionales: destino, usuarioAgencia, tipo (web|rest|todos),
+    // fechaDesde (YYYY-MM-DD), fechaHasta (YYYY-MM-DD), pagina (default 1), porPagina (default 25)
+    void handleListarBusquedas(Context ctx) {
+        // Solo admins (rolId=2) pueden acceder
+        int rolId = ctx.attribute("rolId");
+        if (rolId != 2) {
+            ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
+            return;
+        }
 
-            // Solo admins (rolId=2) pueden acceder
-            int rolId = ctx.attribute("rolId");
-            if (rolId != 2) {
-                ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
-                return;
-            }
+        String destino        = ctx.queryParam("destino");
+        String usuarioAgencia = ctx.queryParam("usuarioAgencia");
+        String tipo           = ctx.queryParamAsClass("tipo", String.class).getOrDefault("todos");
+        String fechaDesde     = ctx.queryParam("fechaDesde");
+        String fechaHasta     = ctx.queryParam("fechaHasta");
 
-            String destino        = ctx.queryParam("destino");
-            String usuarioAgencia = ctx.queryParam("usuarioAgencia");
-            String tipo           = ctx.queryParamAsClass("tipo", String.class).getOrDefault("todos");
-            String fechaDesde     = ctx.queryParam("fechaDesde");
-            String fechaHasta     = ctx.queryParam("fechaHasta");
+        int pagina    = ctx.queryParamAsClass("pagina",    Integer.class).getOrDefault(1);
+        int porPagina = ctx.queryParamAsClass("porPagina", Integer.class).getOrDefault(25);
 
-            int pagina    = ctx.queryParamAsClass("pagina",    Integer.class).getOrDefault(1);
-            int porPagina = ctx.queryParamAsClass("porPagina", Integer.class).getOrDefault(25);
+        // Sanitizar limites de paginacion
+        if (pagina < 1)      pagina    = 1;
+        if (porPagina < 1)   porPagina = 25;
+        if (porPagina > 100) porPagina = 100;
 
-            // Sanitizar limites de paginacion
-            if (pagina < 1)      pagina    = 1;
-            if (porPagina < 1)   porPagina = 25;
-            if (porPagina > 100) porPagina = 100;
+        ctx.json(service.listar(destino, usuarioAgencia, tipo, fechaDesde, fechaHasta, pagina, porPagina));
+    }
 
-            ctx.json(service.listar(destino, usuarioAgencia, tipo, fechaDesde, fechaHasta, pagina, porPagina));
-        });
+    // GET /admin/reportes/busquedas/resumen
+    // Devuelve { totalWeb, totalRest, porDia: [...], topDestinos: [...] }
+    void handleResumen(Context ctx) {
+        int rolId = ctx.attribute("rolId");
+        if (rolId != 2) {
+            ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
+            return;
+        }
 
-        // GET /admin/reportes/busquedas/resumen
-        // Devuelve { totalWeb, totalRest, porDia: [...], topDestinos: [...] }
-        app.get("/admin/reportes/busquedas/resumen", ctx -> {
+        ctx.json(service.resumen());
+    }
 
-            int rolId = ctx.attribute("rolId");
-            if (rolId != 2) {
-                ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
-                return;
-            }
+    // POST /admin/reportes/busquedas/exportar
+    // Body: { email: "...", filtros: { destino, usuarioAgencia, tipo, fechaDesde, fechaHasta } }
+    // Envia el reporte HTML por correo al email indicado
+    void handleExportar(Context ctx) {
+        int rolId = ctx.attribute("rolId");
+        if (rolId != 2) {
+            ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
+            return;
+        }
 
-            ctx.json(service.resumen());
-        });
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = ctx.bodyAsClass(Map.class);
 
-        // POST /admin/reportes/busquedas/exportar
-        // Body: { email: "...", filtros: { destino, usuarioAgencia, tipo, fechaDesde, fechaHasta } }
-        // Envia el reporte HTML por correo al email indicado
-        app.post("/admin/reportes/busquedas/exportar", ctx -> {
+        String email = body.get("email") != null ? body.get("email").toString().trim() : "";
+        if (email.isBlank() || !email.contains("@")) {
+            ctx.status(400).json(Map.of("mensaje", "Correo electronico invalido"));
+            return;
+        }
 
-            int rolId = ctx.attribute("rolId");
-            if (rolId != 2) {
-                ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
-                return;
-            }
+        // Extraer filtros del body, usando un mapa vacio si no vienen
+        @SuppressWarnings("unchecked")
+        Map<String, Object> filtros = body.get("filtros") instanceof Map
+                ? (Map<String, Object>) body.get("filtros")
+                : Map.of();
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> body = ctx.bodyAsClass(Map.class);
+        String destino        = filtros.get("destino")        != null ? filtros.get("destino").toString()        : null;
+        String usuarioAgencia = filtros.get("usuarioAgencia") != null ? filtros.get("usuarioAgencia").toString() : null;
+        String tipo           = filtros.get("tipo")           != null ? filtros.get("tipo").toString()           : "todos";
+        String fechaDesde     = filtros.get("fechaDesde")     != null ? filtros.get("fechaDesde").toString()     : null;
+        String fechaHasta     = filtros.get("fechaHasta")     != null ? filtros.get("fechaHasta").toString()     : null;
 
-            String email = body.get("email") != null ? body.get("email").toString().trim() : "";
-            if (email.isBlank() || !email.contains("@")) {
-                ctx.status(400).json(Map.of("mensaje", "Correo electronico invalido"));
-                return;
-            }
+        service.exportar(email, destino, usuarioAgencia, tipo, fechaDesde, fechaHasta);
 
-            // Extraer filtros del body, usando un mapa vacio si no vienen
-            @SuppressWarnings("unchecked")
-            Map<String, Object> filtros = body.get("filtros") instanceof Map
-                    ? (Map<String, Object>) body.get("filtros")
-                    : Map.of();
-
-            String destino        = filtros.get("destino")        != null ? filtros.get("destino").toString()        : null;
-            String usuarioAgencia = filtros.get("usuarioAgencia") != null ? filtros.get("usuarioAgencia").toString() : null;
-            String tipo           = filtros.get("tipo")           != null ? filtros.get("tipo").toString()           : "todos";
-            String fechaDesde     = filtros.get("fechaDesde")     != null ? filtros.get("fechaDesde").toString()     : null;
-            String fechaHasta     = filtros.get("fechaHasta")     != null ? filtros.get("fechaHasta").toString()     : null;
-
-            service.exportar(email, destino, usuarioAgencia, tipo, fechaDesde, fechaHasta);
-
-            ctx.json(Map.of("mensaje", "Reporte enviado correctamente a " + email));
-        });
+        ctx.json(Map.of("mensaje", "Reporte enviado correctamente a " + email));
     }
 }

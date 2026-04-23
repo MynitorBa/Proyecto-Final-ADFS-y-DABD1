@@ -8,14 +8,14 @@ namespace Aerolinea.API.Services
     /// con calificacion sobre rutas, publicar respuestas a comentarios y consultar
     /// comentarios con informacion de votos por usuario.
     /// </summary>
-    public class ComentarioService
+    public class ComentarioService : IComentarioService
     {
-        private readonly ComentarioRepository _repository;
+        private readonly IComentarioRepository _repository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de comentarios.
         /// </summary>
-        public ComentarioService(ComentarioRepository repository)
+        public ComentarioService(IComentarioRepository repository)
         {
             _repository = repository;
         }

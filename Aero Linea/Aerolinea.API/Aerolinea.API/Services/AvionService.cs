@@ -8,14 +8,14 @@ namespace Aerolinea.API.Services
     /// Servicio de aviones. Gestiona la logica de negocio para registrar, consultar,
     /// actualizar y eliminar aviones de la flota, incluyendo el manejo de imagenes.
     /// </summary>
-    public class AvionService
+    public class AvionService : IAvionService
     {
-        private readonly AvionRepository _avionRepository;
+        private readonly IAvionRepository _avionRepository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de aviones.
         /// </summary>
-        public AvionService(AvionRepository avionRepository)
+        public AvionService(IAvionRepository avionRepository)
         {
             _avionRepository = avionRepository;
         }

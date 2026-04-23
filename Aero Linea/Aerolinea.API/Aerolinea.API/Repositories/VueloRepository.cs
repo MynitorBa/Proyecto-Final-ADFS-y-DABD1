@@ -9,7 +9,7 @@ namespace Aerolinea.API.Repositories
     /// directa por ruta y fecha, y busqueda con escalas mediante BFS por capas.
     /// Tambien registra cada busqueda realizada para alimentar las metricas del sistema.
     /// </summary>
-    public class VueloRepository
+    public class VueloRepository : IVueloRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
 

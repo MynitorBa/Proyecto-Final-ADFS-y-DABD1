@@ -10,7 +10,7 @@ namespace Aerolinea.API.Repositories
     /// aeropuertos. Incluye introspeccion de esquema para soportar instalaciones con
     /// o sin la tabla ZonaHoraria, adaptando las consultas segun la estructura disponible.
     /// </summary>
-    public class RutaRepository
+    public class RutaRepository : IRutaRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
 

@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.CancelacionRequestDTO;
 import org.example.services.CancelacionService;
 
@@ -28,20 +29,21 @@ public class CancelacionController {
     public void registerRoutes(Javalin app) {
 
         // Cancela una reservacion validando que pertenezca al usuario autenticado
-        app.patch("/reservaciones/{id}/cancelar", ctx -> {
+        app.patch("/reservaciones/{id}/cancelar", this::handleCancelarReservacion);
+    }
 
-            // Extrae el usuario de la sesion y el ID de la reservacion desde el path
-            int usuarioId     = ctx.attribute("usuarioId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
-            CancelacionRequestDTO request = ctx.bodyAsClass(CancelacionRequestDTO.class);
-            try {
-                cancelacionService.cancelarReservacion(
-                        reservacionId, usuarioId, request.getMotivoCancelacion()
-                );
-                ctx.status(200).json(Map.of("mensaje", "Reservacion cancelada correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+    void handleCancelarReservacion(Context ctx) {
+        // Extrae el usuario de la sesion y el ID de la reservacion desde el path
+        int usuarioId     = ctx.attribute("usuarioId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+        CancelacionRequestDTO request = ctx.bodyAsClass(CancelacionRequestDTO.class);
+        try {
+            cancelacionService.cancelarReservacion(
+                    reservacionId, usuarioId, request.getMotivoCancelacion()
+            );
+            ctx.status(200).json(Map.of("mensaje", "Reservacion cancelada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.helpers.EmailHelper;
 import org.example.services.EmailReservacionService;
 
@@ -32,79 +33,85 @@ public class EmailReservacionController {
 
         // Envia el correo de confirmacion de una reservacion al usuario dueno de la misma
         // Solo accesible para rol 1 (Administrador) y rol 2 (Usuario registrado)
-        app.get("/reservaciones/{id}/correo", ctx -> {
-            int usuarioId     = ctx.attribute("usuarioId");
-            int rolId         = ctx.attribute("rolId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
-
-            // Verifica que el rol tenga permiso para solicitar el envio del correo
-            if (rolId != 1 && rolId != 2) {
-                ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
-                return;
-            }
-
-            try {
-                emailService.enviarCorreoReservacion(reservacionId, usuarioId);
-                ctx.status(200).json(Map.of("mensaje", "Correo enviado correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            } catch (RuntimeException e) {
-                ctx.status(500).json(Map.of("mensaje", "Error al enviar el correo: " + e.getMessage()));
-            }
-        });
+        app.get("/reservaciones/{id}/correo", this::handleEnviarCorreoReservacion);
 
         // Recibe el formulario de contacto publico y notifica al administrador por correo
-        app.post("/contacto", ctx -> {
-            Map<String, String> body = ctx.bodyAsClass(Map.class);
-
-            // Extrae y limpia los campos del formulario
-            String nombre  = body.getOrDefault("nombre", "").trim();
-            String correo  = body.getOrDefault("correo", "").trim();
-            String asunto  = body.getOrDefault("asunto", "").trim();
-            String mensaje = body.getOrDefault("mensaje", "").trim();
-
-            // Valida que los campos obligatorios no esten vacios
-            if (nombre.isEmpty() || correo.isEmpty() || mensaje.isEmpty()) {
-                ctx.status(400).json(Map.of("mensaje", "Nombre, correo y mensaje son obligatorios"));
-                return;
-            }
-
-            try {
-                String html = construirCorreoContacto(nombre, correo, asunto, mensaje);
-                EmailHelper.enviar(
-                        ADMIN_EMAIL,
-                        "\uD83D\uDCE9 Nuevo mensaje de contacto \u2014 " + (asunto.isEmpty() ? "Sin asunto" : asunto),
-                        html
-                );
-                ctx.status(200).json(Map.of("mensaje", "Mensaje enviado correctamente"));
-            } catch (Exception e) {
-                ctx.status(500).json(Map.of("mensaje", "Error al enviar el mensaje: " + e.getMessage()));
-            }
-        });
+        app.post("/contacto", this::handleContacto);
 
         // Registra una suscripcion al boletin y notifica al administrador con el correo del suscriptor
-        app.post("/newsletter", ctx -> {
-            Map<String, String> body = ctx.bodyAsClass(Map.class);
-            String correo = body.getOrDefault("correo", "").trim();
+        app.post("/newsletter", this::handleNewsletter);
+    }
 
-            // Valida que el correo tenga formato valido antes de procesar la suscripcion
-            if (correo.isEmpty() || !correo.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
-                ctx.status(400).json(Map.of("mensaje", "Correo inv\u00E1lido"));
-                return;
-            }
+    void handleEnviarCorreoReservacion(Context ctx) {
+        int usuarioId     = ctx.attribute("usuarioId");
+        int rolId         = ctx.attribute("rolId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
 
-            try {
-                String html = construirCorreoNewsletter(correo);
-                EmailHelper.enviar(
-                        ADMIN_EMAIL,
-                        "\uD83D\uDCEC Nueva suscripci\u00F3n al bolet\u00EDn \u2014 " + correo,
-                        html
-                );
-                ctx.status(200).json(Map.of("mensaje", "Suscripci\u00F3n registrada correctamente"));
-            } catch (Exception e) {
-                ctx.status(500).json(Map.of("mensaje", "Error al registrar suscripci\u00F3n: " + e.getMessage()));
-            }
-        });
+        // Verifica que el rol tenga permiso para solicitar el envio del correo
+        if (rolId != 1 && rolId != 2) {
+            ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
+            return;
+        }
+
+        try {
+            emailService.enviarCorreoReservacion(reservacionId, usuarioId);
+            ctx.status(200).json(Map.of("mensaje", "Correo enviado correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", "Error al enviar el correo: " + e.getMessage()));
+        }
+    }
+
+    void handleContacto(Context ctx) {
+        Map<String, String> body = ctx.bodyAsClass(Map.class);
+
+        // Extrae y limpia los campos del formulario
+        String nombre  = body.getOrDefault("nombre", "").trim();
+        String correo  = body.getOrDefault("correo", "").trim();
+        String asunto  = body.getOrDefault("asunto", "").trim();
+        String mensaje = body.getOrDefault("mensaje", "").trim();
+
+        // Valida que los campos obligatorios no esten vacios
+        if (nombre.isEmpty() || correo.isEmpty() || mensaje.isEmpty()) {
+            ctx.status(400).json(Map.of("mensaje", "Nombre, correo y mensaje son obligatorios"));
+            return;
+        }
+
+        try {
+            String html = construirCorreoContacto(nombre, correo, asunto, mensaje);
+            EmailHelper.enviar(
+                    ADMIN_EMAIL,
+                    "\uD83D\uDCE9 Nuevo mensaje de contacto \u2014 " + (asunto.isEmpty() ? "Sin asunto" : asunto),
+                    html
+            );
+            ctx.status(200).json(Map.of("mensaje", "Mensaje enviado correctamente"));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("mensaje", "Error al enviar el mensaje: " + e.getMessage()));
+        }
+    }
+
+    void handleNewsletter(Context ctx) {
+        Map<String, String> body = ctx.bodyAsClass(Map.class);
+        String correo = body.getOrDefault("correo", "").trim();
+
+        // Valida que el correo tenga formato valido antes de procesar la suscripcion
+        if (correo.isEmpty() || !correo.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            ctx.status(400).json(Map.of("mensaje", "Correo inv\u00E1lido"));
+            return;
+        }
+
+        try {
+            String html = construirCorreoNewsletter(correo);
+            EmailHelper.enviar(
+                    ADMIN_EMAIL,
+                    "\uD83D\uDCEC Nueva suscripci\u00F3n al bolet\u00EDn \u2014 " + correo,
+                    html
+            );
+            ctx.status(200).json(Map.of("mensaje", "Suscripci\u00F3n registrada correctamente"));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("mensaje", "Error al registrar suscripci\u00F3n: " + e.getMessage()));
+        }
     }
 
     /**

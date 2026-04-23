@@ -15,8 +15,18 @@ import (
 // Servicio encargado de la logica de negocio para el registro y validacion
 // de usuarios, incluyendo la resolucion de ubicaciones y nacionalidades
 // mediante el servicio de ubicacion.
+// IUsuarioRepository define las operaciones de base de datos necesarias para el servicio de usuarios.
+type IUsuarioRepository interface {
+	ExisteCorreo(correo string) (bool, error)
+	ExistePasaporte(pasaporte string) (bool, error)
+	ExisteUsername(username string) (bool, error)
+	CrearUsuario(req dto.RegistroUsuarioRequest, ciudadID, rolID, estadoID int) (int, error)
+	AsignarNacionalidades(usuarioID int, nacionalidadIDs []int) error
+	ObtenerTodos() ([]dto.UsuarioResumen, error)
+}
+
 type UsuarioService struct {
-	repo             *repositories.UsuarioRepository
+	repo             IUsuarioRepository
 	ubicacionService *UbicacionService
 }
 
@@ -35,6 +45,11 @@ func NewUsuarioService(db *sql.DB, ubicacionService *UbicacionService) *UsuarioS
 		repo:             repositories.NewUsuarioRepository(db),
 		ubicacionService: ubicacionService,
 	}
+}
+
+// NewUsuarioServiceConRepo crea un UsuarioService con repositorio inyectado para pruebas.
+func NewUsuarioServiceConRepo(repo IUsuarioRepository, ubicacionService *UbicacionService) *UsuarioService {
+	return &UsuarioService{repo: repo, ubicacionService: ubicacionService}
 }
 
 // ValidarDatosUnicos

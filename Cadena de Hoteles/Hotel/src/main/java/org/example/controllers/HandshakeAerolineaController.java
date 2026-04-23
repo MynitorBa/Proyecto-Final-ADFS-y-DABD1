@@ -1,9 +1,12 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.HandshakeRequestDTO;
 import org.example.dtos.HandshakeResponseDTO;
 import org.example.services.HandshakeAerolineaService;
+
+import java.util.Map;
 
 /**
  * Controller que expone el endpoint publico de handshake para aerolineas aliadas.
@@ -34,21 +37,23 @@ public class HandshakeAerolineaController {
         // POST /api/aerolineas/handshake
         // Recibe { token_entrada, url_agencia } de la aerolinea y retorna { token_salida }
         // si la URL esta registrada en la tabla AerolineaAliado de la base de datos
-        app.post("/api/aerolineas/handshake", ctx -> {
-            HandshakeRequestDTO dto = ctx.bodyAsClass(HandshakeRequestDTO.class);
+        app.post("/api/aerolineas/handshake", this::handleHandshake);
+    }
 
-            // Log de depuracion — confirma que los datos llegan correctamente al sistema hotelero
-            System.out.println("[HANDSHAKE AEROLINEA] url_aerolinea recibida: '" + dto.getUrlAgencia() + "'");
-            System.out.println("[HANDSHAKE AEROLINEA] token_entrada recibido: '" + dto.getTokenEntrada() + "'");
+    void handleHandshake(Context ctx) {
+        HandshakeRequestDTO dto = ctx.bodyAsClass(HandshakeRequestDTO.class);
 
-            try {
-                HandshakeResponseDTO response = service.procesarHandshake(dto);
-                System.out.println("[HANDSHAKE AEROLINEA] Handshake exitoso. Token generado y guardado.");
-                ctx.json(response);
-            } catch (IllegalArgumentException ex) {
-                System.out.println("[HANDSHAKE AEROLINEA ERROR] " + ex.getMessage());
-                ctx.status(400).json(java.util.Map.of("mensaje", ex.getMessage()));
-            }
-        });
+        // Log de depuracion — confirma que los datos llegan correctamente al sistema hotelero
+        System.out.println("[HANDSHAKE AEROLINEA] url_aerolinea recibida: '" + dto.getUrlAgencia() + "'");
+        System.out.println("[HANDSHAKE AEROLINEA] token_entrada recibido: '" + dto.getTokenEntrada() + "'");
+
+        try {
+            HandshakeResponseDTO response = service.procesarHandshake(dto);
+            System.out.println("[HANDSHAKE AEROLINEA] Handshake exitoso. Token generado y guardado.");
+            ctx.json(response);
+        } catch (IllegalArgumentException ex) {
+            System.out.println("[HANDSHAKE AEROLINEA ERROR] " + ex.getMessage());
+            ctx.status(400).json(Map.of("mensaje", ex.getMessage()));
+        }
     }
 }

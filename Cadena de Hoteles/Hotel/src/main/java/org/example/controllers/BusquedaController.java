@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.BusquedaRequestDTO;
 import org.example.services.BusquedaService;
 import org.example.helpers.JwtHelper;
@@ -31,22 +32,25 @@ public class BusquedaController {
     public void registerRoutes(Javalin app) {
 
         // Endpoint publico: acepta busquedas con o sin sesion iniciada
-        app.post("/busqueda", ctx -> {
-            BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
+        app.post("/busqueda", this::handleBuscar);
+    }
 
-            // Intenta extraer el usuarioId del token si existe y es valido, sin bloquear la peticion si no hay sesion
-            Integer usuarioId = null;
-            String token = ctx.cookie("auth_token");
-            if (token != null && !token.isBlank() && JwtHelper.esValido(token)) {
-                Claims claims = JwtHelper.verificarToken(token);
-                usuarioId = JwtHelper.getUsuarioId(claims);
-            }
+    void handleBuscar(Context ctx) {
+        BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
 
-            try {
-                ctx.status(200).json(busquedaService.buscar(request, usuarioId));
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        // Intenta extraer el usuarioId del token si existe y es valido, sin bloquear la peticion si no hay sesion
+        Integer usuarioId = null;
+        String token = ctx.cookie("auth_token");
+        if (token != null && !token.isBlank() && JwtHelper.esValido(token)) {
+            Claims claims = JwtHelper.verificarToken(token);
+            usuarioId = JwtHelper.getUsuarioId(claims);
+        }
+
+        try {
+            var resultado = busquedaService.buscar(request, usuarioId);
+            ctx.status(200).json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

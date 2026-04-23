@@ -564,4 +564,13 @@ describe('validateForm — múltiples errores', () => {
     expect(e.terms).toBeUndefined();
   });
 
+  test('TC-70 | contraseña sin carácter especial → "La contraseña no cumple los requisitos"', () => {
+    // Cumple minLength + hasUpperCase + hasLowerCase + hasNumber pero NO hasSpecial
+    const s = estadoValido();
+    s.formData.password        = 'Abcdefg1';
+    s.formData.confirmPassword = 'Abcdefg1';
+    s.passwordValidation       = validatePassword('Abcdefg1');
+    expect(validateForm(s).password).toBe('La contraseña no cumple los requisitos');
+  });
+
 });

@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.ComentarioRequestDTO;
 import org.example.services.ComentarioService;
 import org.example.helpers.AgenciaAuthMiddleware;
@@ -29,37 +30,46 @@ public class ComentarioController {
     public void registerRoutes(Javalin app) {
 
         // Agrega un comentario a un hotel en nombre del usuario autenticado
-        app.post("/comentarios", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
-            ComentarioRequestDTO request = ctx.bodyAsClass(ComentarioRequestDTO.class);
-            try {
-                ctx.status(201).json(comentarioService.agregarComentario(request, usuarioId));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.post("/comentarios", this::handleAgregarComentario);
 
         // Retorna todos los comentarios realizados por el usuario autenticado
-        app.get("/comentarios/usuario", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
-            ctx.status(200).json(comentarioService.obtenerComentariosPorUsuario(usuarioId));
-        });
+        app.get("/comentarios/usuario", this::handleObtenerPorUsuario);
 
         // Retorna los comentarios de un hotel especifico, accesible sin autenticacion
-        app.get("/comentarios/hotel/{hotelId}", ctx -> {
-            int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));
-            ctx.status(200).json(comentarioService.obtenerComentariosPorHotel(hotelId));
-        });
+        app.get("/comentarios/hotel/{hotelId}", this::handleObtenerPorHotel);
 
         // Retorna los comentarios de un hotel para agencias autenticadas mediante X-Agencia-Token
-        app.get("/agencia/comentarios/hotel/{hotelId}", ctx -> {
-            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
-            int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));
-            try {
-                ctx.status(200).json(comentarioService.obtenerComentariosPorHotel(hotelId));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.get("/agencia/comentarios/hotel/{hotelId}", this::handleObtenerPorHotelAgencia);
+    }
+
+    void handleAgregarComentario(Context ctx) {
+        int usuarioId = ctx.attribute("usuarioId");
+        ComentarioRequestDTO request = ctx.bodyAsClass(ComentarioRequestDTO.class);
+        try {
+            var comentario = comentarioService.agregarComentario(request, usuarioId);
+            ctx.status(201).json(comentario);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleObtenerPorUsuario(Context ctx) {
+        int usuarioId = ctx.attribute("usuarioId");
+        ctx.status(200).json(comentarioService.obtenerComentariosPorUsuario(usuarioId));
+    }
+
+    void handleObtenerPorHotel(Context ctx) {
+        int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));
+        ctx.status(200).json(comentarioService.obtenerComentariosPorHotel(hotelId));
+    }
+
+    void handleObtenerPorHotelAgencia(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+        int hotelId = Integer.parseInt(ctx.pathParam("hotelId"));
+        try {
+            ctx.status(200).json(comentarioService.obtenerComentariosPorHotel(hotelId));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

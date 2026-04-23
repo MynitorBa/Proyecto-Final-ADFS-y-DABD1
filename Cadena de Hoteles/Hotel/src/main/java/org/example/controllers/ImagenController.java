@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.services.ImagenService;
 
 /**
@@ -25,27 +26,33 @@ public class ImagenController {
     public void registerRoutes(Javalin app) {
 
         // Retorna la imagen de un hotel; responde 404 si no existe
-        app.get("/imagenes/hotel/{id}", ctx -> {
-            int id = Integer.parseInt(ctx.pathParam("id"));
-            byte[] imagen = imagenService.obtenerImagenHotel(id);
-            if (imagen == null) { ctx.status(404); return; }
-            ctx.contentType("image/jpeg").result(imagen);
-        });
+        app.get("/imagenes/hotel/{id}", this::handleObtenerImagenHotel);
 
         // Retorna la imagen de una habitacion; responde 404 si no existe
-        app.get("/imagenes/habitacion/{id}", ctx -> {
-            int id = Integer.parseInt(ctx.pathParam("id"));
-            byte[] imagen = imagenService.obtenerImagenHabitacion(id);
-            if (imagen == null) { ctx.status(404); return; }
-            ctx.contentType("image/jpeg").result(imagen);
-        });
+        app.get("/imagenes/habitacion/{id}", this::handleObtenerImagenHabitacion);
 
         // Retorna la imagen de una amenidad; responde 404 si no existe
-        app.get("/imagenes/amenidad/{id}", ctx -> {
-            int id = Integer.parseInt(ctx.pathParam("id"));
-            byte[] imagen = imagenService.obtenerImagenAmenidad(id);
-            if (imagen == null) { ctx.status(404); return; }
-            ctx.contentType("image/jpeg").result(imagen);
-        });
+        app.get("/imagenes/amenidad/{id}", this::handleObtenerImagenAmenidad);
+    }
+
+    void handleObtenerImagenHotel(Context ctx) {
+        int id = Integer.parseInt(ctx.pathParam("id"));
+        byte[] imagen = imagenService.obtenerImagenHotel(id);
+        if (imagen == null) { ctx.status(404); return; }
+        ctx.contentType("image/jpeg").result(imagen);
+    }
+
+    void handleObtenerImagenHabitacion(Context ctx) {
+        int id = Integer.parseInt(ctx.pathParam("id"));
+        byte[] imagen = imagenService.obtenerImagenHabitacion(id);
+        if (imagen == null) { ctx.status(404); return; }
+        ctx.contentType("image/jpeg").result(imagen);
+    }
+
+    void handleObtenerImagenAmenidad(Context ctx) {
+        int id = Integer.parseInt(ctx.pathParam("id"));
+        byte[] imagen = imagenService.obtenerImagenAmenidad(id);
+        if (imagen == null) { ctx.status(404); return; }
+        ctx.contentType("image/jpeg").result(imagen);
     }
 }

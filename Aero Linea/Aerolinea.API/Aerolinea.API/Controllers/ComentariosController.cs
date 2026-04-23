@@ -15,12 +15,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/comentarios")]
     public class ComentariosController : ControllerBase
     {
-        private readonly ComentarioService _service;
+        private readonly IComentarioService _service;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de comentarios.
         /// </summary>
-        public ComentariosController(ComentarioService service)
+        public ComentariosController(IComentarioService service)
         {
             _service = service;
         }

@@ -15,12 +15,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/reservaciones")]
     public class ReservacionesController : ControllerBase
     {
-        private readonly ReservacionService _service;
+        private readonly IReservacionService _service;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de reservaciones.
         /// </summary>
-        public ReservacionesController(ReservacionService service)
+        public ReservacionesController(IReservacionService service)
         {
             _service = service;
         }

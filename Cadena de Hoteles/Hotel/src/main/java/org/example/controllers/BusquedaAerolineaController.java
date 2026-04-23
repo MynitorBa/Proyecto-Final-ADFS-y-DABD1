@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.BusquedaRequestDTO;
 import org.example.helpers.AerolineaAuthMiddleware;
 import org.example.services.BusquedaAerolineaService;
@@ -24,18 +25,19 @@ public class BusquedaAerolineaController {
      * @param app instancia de Javalin donde se registra la ruta.
      */
     public void registerRoutes(Javalin app) {
+        app.post("/aerolinea/busqueda", this::handleBuscar);
+    }
 
-        app.post("/aerolinea/busqueda", ctx -> {
-            if (!AerolineaAuthMiddleware.verificar(ctx)) return;
+    void handleBuscar(Context ctx) {
+        if (!AerolineaAuthMiddleware.verificar(ctx)) return;
 
-            String token = ctx.header("X-Aerolinea-Token");
+        String token = ctx.header("X-Aerolinea-Token");
 
-            BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
-            try {
-                ctx.status(200).json(busquedaAerolineaService.buscar(request, token));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
+        try {
+            ctx.status(200).json(busquedaAerolineaService.buscar(request, token));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

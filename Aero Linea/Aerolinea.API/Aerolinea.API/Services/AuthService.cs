@@ -7,14 +7,14 @@ namespace Aerolinea.API.Services
     /// Servicio de autenticacion. Verifica las credenciales del usuario contra la base de datos
     /// y retorna la informacion de sesion si la autenticacion es exitosa.
     /// </summary>
-    public class AuthService
+    public class AuthService : IAuthService
     {
-        private readonly UsuarioRepository _repository;
+        private readonly IUsuarioRepository _repository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de usuarios.
         /// </summary>
-        public AuthService(UsuarioRepository repository)
+        public AuthService(IUsuarioRepository repository)
         {
             _repository = repository;
         }

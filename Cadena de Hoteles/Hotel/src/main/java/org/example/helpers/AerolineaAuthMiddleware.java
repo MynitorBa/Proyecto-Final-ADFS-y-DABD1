@@ -13,7 +13,8 @@ import java.util.Map;
  */
 public class AerolineaAuthMiddleware {
 
-    private static final AerolineaAliadaRepository repo = new AerolineaAliadaRepository();
+    /** Repositorio de aerolineas. Package-private para permitir sustitucion en tests unitarios. */
+    static AerolineaAliadaRepository repo = new AerolineaAliadaRepository();
 
     /**
      * Verifica el token de aerolinea en el header de la peticion.

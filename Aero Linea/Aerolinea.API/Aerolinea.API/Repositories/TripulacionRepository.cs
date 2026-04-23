@@ -9,7 +9,7 @@ namespace Aerolinea.API.Repositories
     /// y sus imagenes almacenadas directamente en la tabla MiembroTripulacion.
     /// Tambien permite consultar los roles de tripulacion disponibles.
     /// </summary>
-    public class TripulacionRepository
+    public class TripulacionRepository : ITripulacionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
 

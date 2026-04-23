@@ -17,12 +17,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/auth")]
     public class AuthController : ControllerBase
     {
-        private readonly AuthService _service;
+        private readonly IAuthService _service;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de autenticacion.
         /// </summary>
-        public AuthController(AuthService service)
+        public AuthController(IAuthService service)
         {
             _service = service;
         }

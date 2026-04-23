@@ -9,14 +9,14 @@ namespace Aerolinea.API.Services
     /// actualizar y eliminar tripulantes de vuelo, incluyendo la asignacion de roles,
     /// manejo de imagenes y consulta del catalogo de roles disponibles.
     /// </summary>
-    public class TripulacionService
+    public class TripulacionService : ITripulacionService
     {
-        private readonly TripulacionRepository _repository;
+        private readonly ITripulacionRepository _repository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de tripulacion.
         /// </summary>
-        public TripulacionService(TripulacionRepository repository)
+        public TripulacionService(ITripulacionRepository repository)
         {
             _repository = repository;
         }

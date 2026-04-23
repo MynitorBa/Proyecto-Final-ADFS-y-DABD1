@@ -15,12 +15,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/rutas")]
     public class RutasController : ControllerBase
     {
-        private readonly RutaService _service;
+        private readonly IRutaService _service;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de rutas.
         /// </summary>
-        public RutasController(RutaService service)
+        public RutasController(IRutaService service)
         {
             _service = service;
         }

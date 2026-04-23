@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.ReservacionRequestDTO;
 import org.example.services.ReservacionService;
 
@@ -28,22 +29,27 @@ public class ReservacionController {
     public void registerRoutes(Javalin app) {
 
         // Crea una nueva reservacion en nombre del usuario autenticado
-        app.post("/reservaciones", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
-            ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
-            try {
-                ctx.status(201).json(reservacionService.crearReservacion(request, usuarioId));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            } catch (RuntimeException e) {
-                ctx.status(500).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.post("/reservaciones", this::handleCrearReservacion);
 
         // Retorna todas las reservaciones registradas por el usuario autenticado
-        app.get("/reservaciones", ctx -> {
-            int usuarioId = ctx.attribute("usuarioId");
-            ctx.status(200).json(reservacionService.obtenerReservaciones(usuarioId));
-        });
+        app.get("/reservaciones", this::handleObtenerReservaciones);
+    }
+
+    void handleCrearReservacion(Context ctx) {
+        int usuarioId = ctx.attribute("usuarioId");
+        ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
+        try {
+            var resultado = reservacionService.crearReservacion(request, usuarioId);
+            ctx.status(201).json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleObtenerReservaciones(Context ctx) {
+        int usuarioId = ctx.attribute("usuarioId");
+        ctx.status(200).json(reservacionService.obtenerReservaciones(usuarioId));
     }
 }

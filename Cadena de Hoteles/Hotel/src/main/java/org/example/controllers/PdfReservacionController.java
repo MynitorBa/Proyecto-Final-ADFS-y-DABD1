@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.services.PdfReservacionService;
 
 import java.util.Map;
@@ -27,22 +28,23 @@ public class PdfReservacionController {
     public void registerRoutes(Javalin app) {
 
         // Genera y retorna el PDF de una reservacion como archivo adjunto descargable
-        app.get("/reservaciones/{id}/pdf", ctx -> {
+        app.get("/reservaciones/{id}/pdf", this::handleDescargarPdf);
+    }
 
-            // Extrae el usuario de la sesion y el ID de la reservacion desde el path
-            int usuarioId     = ctx.attribute("usuarioId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+    void handleDescargarPdf(Context ctx) {
+        // Extrae el usuario de la sesion y el ID de la reservacion desde el path
+        int usuarioId     = ctx.attribute("usuarioId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
 
-            try {
-                byte[] pdf = pdfReservacionService.generarPdf(reservacionId, usuarioId);
+        try {
+            byte[] pdf = pdfReservacionService.generarPdf(reservacionId, usuarioId);
 
-                // Configura la respuesta para forzar la descarga del archivo con nombre unico por reservacion
-                ctx.contentType("application/pdf")
-                        .header("Content-Disposition", "attachment; filename=\"MIKU-" + reservacionId + ".pdf\"")
-                        .result(pdf);
-            } catch (IllegalArgumentException e) {
-                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+            // Configura la respuesta para forzar la descarga del archivo con nombre unico por reservacion
+            ctx.contentType("application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"MIKU-" + reservacionId + ".pdf\"")
+                    .result(pdf);
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

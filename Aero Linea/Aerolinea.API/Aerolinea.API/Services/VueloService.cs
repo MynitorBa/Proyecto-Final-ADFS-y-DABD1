@@ -7,14 +7,14 @@ namespace Aerolinea.API.Services
     /// Servicio de vuelos para usuarios. Gestiona la busqueda de vuelos directos y con escala,
     /// el registro de busquedas para metricas y la aplicacion de filtros de precio en memoria.
     /// </summary>
-    public class VueloService
+    public class VueloService : IVueloService
     {
-        private readonly VueloRepository _repository;
+        private readonly IVueloRepository _repository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de vuelos.
         /// </summary>
-        public VueloService(VueloRepository repository)
+        public VueloService(IVueloRepository repository)
         {
             _repository = repository;
         }

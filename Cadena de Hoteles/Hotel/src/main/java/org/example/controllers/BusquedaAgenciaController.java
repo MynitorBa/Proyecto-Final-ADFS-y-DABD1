@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.BusquedaRequestDTO;
 import org.example.helpers.AgenciaAuthMiddleware;
 import org.example.services.BusquedaAgenciaService;
@@ -27,20 +28,23 @@ public class BusquedaAgenciaController {
      * @param app instancia de Javalin donde se registra la ruta.
      */
     public void registerRoutes(Javalin app) {
+        app.post("/agencia/busqueda", this::handleBuscar);
+    }
 
-        // Valida el token de agencia antes de procesar la busqueda
-        app.post("/agencia/busqueda", ctx -> {
-            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+    /**
+     * Valida el token de agencia antes de procesar la busqueda.
+     */
+    void handleBuscar(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 
-            // Extrae el token del header para identificar la agencia solicitante
-            String token = ctx.header("X-Agencia-Token");
+        // Extrae el token del header para identificar la agencia solicitante
+        String token = ctx.header("X-Agencia-Token");
 
-            BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
-            try {
-                ctx.status(200).json(busquedaAgenciaService.buscarPorToken(request, token));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        BusquedaRequestDTO request = ctx.bodyAsClass(BusquedaRequestDTO.class);
+        try {
+            ctx.status(200).json(busquedaAgenciaService.buscarPorToken(request, token));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

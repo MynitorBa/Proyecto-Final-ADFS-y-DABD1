@@ -17,10 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @DisplayName("MoventClient — Pruebas Unitarias")
 class MoventClientTest {
 
-    // =========================================================================
-    // notificarHotelCerrado
-    // =========================================================================
-
     @Test
     @DisplayName("notificarHotelCerrado_listaVacia_retornaSinExcepcionNiHttpCall")
     void notificarHotelCerrado_listaVacia_retornaSinExcepcionNiHttpCall() {
@@ -57,10 +53,6 @@ class MoventClientTest {
                 MoventClient.notificarHotelCerrado("Hotel \"El Paraíso\"", reservas));
     }
 
-    // =========================================================================
-    // notificarHabitacionCerrada
-    // =========================================================================
-
     @Test
     @DisplayName("notificarHabitacionCerrada_listaVacia_retornaSinExcepcionNiHttpCall")
     void notificarHabitacionCerrada_listaVacia_retornaSinExcepcionNiHttpCall() {
@@ -88,7 +80,7 @@ class MoventClientTest {
 
     @Test
     @DisplayName("notificarHabitacionCerrada_multiplesReservas_swallowsExcepcion")
-    void notificarHabitacionCerrada_multiples_reservas_swallowsExcepcion() {
+    void notificarHabitacionCerrada_multiplesReservas_swallowsExcepcion() {
         List<Map<String, Object>> reservas = List.of(
                 Map.of("noReservacion", "RES-011", "correo", "e@f.com", "total", 120.0),
                 Map.of("noReservacion", "RES-012", "correo", "g@h.com", "total", 90.0)

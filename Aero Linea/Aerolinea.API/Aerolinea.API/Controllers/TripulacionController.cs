@@ -14,12 +14,12 @@ namespace Aerolinea.API.Controllers
     [Route("api/tripulacion")]
     public class TripulacionController : ControllerBase
     {
-        private readonly TripulacionService _service;
+        private readonly ITripulacionService _service;
 
         /// <summary>
         /// Inicializa el controlador con el servicio de tripulacion.
         /// </summary>
-        public TripulacionController(TripulacionService service)
+        public TripulacionController(ITripulacionService service)
         {
             _service = service;
         }

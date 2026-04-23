@@ -30,41 +30,45 @@ public class AerolineaAdminController {
      * @param app instancia de Javalin donde se registran las rutas.
      */
     public void registerRoutes(Javalin app) {
+        app.get("/admin/aerolineas",          this::handleListar);
+        app.post("/admin/aerolineas",         this::handleCrear);
+        app.patch("/admin/aerolineas/{id}",   this::handleEditar);
+        app.get("/admin/webservice/libres",   this::handleListarLibres);
+    }
 
-        // Retorna todas las aerolineas aliadas registradas en el sistema
-        app.get("/admin/aerolineas", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            ctx.json(aerolineaAdminService.listarTodas());
-        });
+    // Retorna todas las aerolineas aliadas registradas en el sistema
+    void handleListar(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        ctx.json(aerolineaAdminService.listarTodas());
+    }
 
-        // Crea una nueva aerolinea aliada asignada a un usuario webservice especifico
-        app.post("/admin/aerolineas", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            try {
-                ctx.status(201).json(
-                        aerolineaAdminService.crear(ctx.bodyAsClass(CrearAerolineaAdminRequestDTO.class))
-                );
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+    // Crea una nueva aerolinea aliada asignada a un usuario webservice especifico
+    void handleCrear(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        try {
+            ctx.status(201).json(
+                    aerolineaAdminService.crear(ctx.bodyAsClass(CrearAerolineaAdminRequestDTO.class))
+            );
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
 
-        // Edita los datos de una aerolinea especifica
-        app.patch("/admin/aerolineas/{id}", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            try {
-                aerolineaAdminService.editar(id(ctx, "id"), ctx.bodyAsClass(EditarAerolineaRequestDTO.class));
-                ctx.json(Map.of("mensaje", "Aerolinea actualizada correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+    // Edita los datos de una aerolinea especifica
+    void handleEditar(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        try {
+            aerolineaAdminService.editar(id(ctx, "id"), ctx.bodyAsClass(EditarAerolineaRequestDTO.class));
+            ctx.json(Map.of("mensaje", "Aerolinea actualizada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
 
-        // Retorna los usuarios webservice sin entidad asignada, para el selector al crear agencia o aerolinea
-        app.get("/admin/webservice/libres", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            ctx.json(aerolineaAdminService.listarWebserviceLibres());
-        });
+    // Retorna los usuarios webservice sin entidad asignada, para el selector al crear agencia o aerolinea
+    void handleListarLibres(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        ctx.json(aerolineaAdminService.listarWebserviceLibres());
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.dtos.PagoAgenciaRequestDTO;
 import org.example.helpers.AgenciaAuthMiddleware;
 import org.example.services.PagoAgenciaService;
@@ -27,23 +28,25 @@ public class PagoAgenciaController {
      * @param app instancia de Javalin donde se registra la ruta.
      */
     public void registerRoutes(Javalin app) {
-
         // Procesa el pago de una reservacion asociada a la agencia autenticada
-        app.post("/agencia/reservaciones/{id}/pago", ctx -> {
-            if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+        app.post("/agencia/reservaciones/{id}/pago", this::handleProcesarPago);
+    }
 
-            // Extrae la agencia autenticada y el ID de la reservacion desde el path
-            int agenciaId     = ctx.attribute("agenciaId");
-            int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+    void handleProcesarPago(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 
-            PagoAgenciaRequestDTO request = ctx.bodyAsClass(PagoAgenciaRequestDTO.class);
-            try {
-                ctx.status(200).json(pagoAgenciaService.procesarPago(reservacionId, agenciaId, request));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            } catch (RuntimeException e) {
-                ctx.status(500).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        // Extrae la agencia autenticada y el ID de la reservacion desde el path
+        int agenciaId     = ctx.attribute("agenciaId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+
+        PagoAgenciaRequestDTO request = ctx.bodyAsClass(PagoAgenciaRequestDTO.class);
+        try {
+            var confirmacion = pagoAgenciaService.procesarPago(reservacionId, agenciaId, request);
+            ctx.status(200).json(confirmacion);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

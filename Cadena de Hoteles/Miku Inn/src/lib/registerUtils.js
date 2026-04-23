@@ -175,7 +175,8 @@ export function validateForm(state) {
   if (!formData.password)
     errors.password = 'Contraseña requerida';
   else if (!passwordValidation.minLength || !passwordValidation.hasUpperCase ||
-           !passwordValidation.hasLowerCase || !passwordValidation.hasNumber)
+           !passwordValidation.hasLowerCase || !passwordValidation.hasNumber ||
+           !passwordValidation.hasSpecial)
     errors.password = 'La contraseña no cumple los requisitos';
 
   if (!formData.confirmPassword)

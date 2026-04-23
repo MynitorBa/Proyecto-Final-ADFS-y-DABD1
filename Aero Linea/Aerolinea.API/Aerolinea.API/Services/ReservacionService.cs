@@ -8,14 +8,14 @@ namespace Aerolinea.API.Services
     /// y la asignacion de pasajeros, validando que el usuario este autenticado
     /// y que los datos de pasaporte sean correctos antes de persistirlos.
     /// </summary>
-    public class ReservacionService
+    public class ReservacionService : IReservacionService
     {
-        private readonly ReservacionRepository _repository;
+        private readonly IReservacionRepository _repository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de reservaciones.
         /// </summary>
-        public ReservacionService(ReservacionRepository repository)
+        public ReservacionService(IReservacionRepository repository)
         {
             _repository = repository;
         }

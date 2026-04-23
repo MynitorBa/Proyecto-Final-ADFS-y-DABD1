@@ -10,7 +10,7 @@ namespace Aerolinea.API.Repositories
     /// incluyendo la asignacion de nacionalidades, verificacion de duplicados en registro,
     /// busqueda por credenciales para autenticacion y administracion de roles.
     /// </summary>
-    public class UsuarioRepository
+    public class UsuarioRepository : IUsuarioRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
         private readonly NacionalidadRepository _nacionalidadRepository;

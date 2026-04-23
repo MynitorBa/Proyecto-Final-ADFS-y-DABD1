@@ -11,7 +11,7 @@ namespace Aerolinea.API.Repositories
     /// la asignacion de pasajeros a boletos, la confirmacion y el completado automatico
     /// de reservaciones cuyos vuelos ya aterrizaron.
     /// </summary>
-    public class ReservacionRepository
+    public class ReservacionRepository : IReservacionRepository
     {
         private readonly DbConnectionFactory _connectionFactory;
         private readonly PaisRepository _paisRepository;

@@ -11,7 +11,7 @@ namespace Aerolinea.API.Services
     /// la verificacion de campos unicos, el cambio de rol por parte del administrador
     /// y la consulta del listado completo de usuarios del sistema.
     /// </summary>
-    public class UsuarioService
+    public class UsuarioService : IUsuarioService
     {
         private readonly UsuarioRepository   _repository;
         private readonly PaisRepository      _paisRepository;

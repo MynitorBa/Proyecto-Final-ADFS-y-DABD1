@@ -1,6 +1,7 @@
 package org.example.controllers;
 
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import org.example.helpers.JwtHelper;
 import org.example.services.SesionService;
 import io.jsonwebtoken.Claims;
@@ -27,22 +28,24 @@ public class SesionController {
     public void registerRoutes(Javalin app) {
 
         // Retorna el estado de sesion del usuario; responde sin sesion si el token es invalido o no existe
-        app.get("/sesion", ctx -> {
-            String token = ctx.cookie("auth_token");
+        app.get("/sesion", this::handleSesion);
+    }
 
-            // Si no hay token o es invalido, retorna un estado sin sesion sin lanzar error
-            if (token == null || token.isBlank() || !JwtHelper.esValido(token)) {
-                ctx.status(200).json(sesionService.sinSesion());
-                return;
-            }
+    void handleSesion(Context ctx) {
+        String token = ctx.cookie("auth_token");
 
-            // Extrae los datos del usuario desde el token JWT para construir la respuesta de sesion
-            Claims claims    = JwtHelper.verificarToken(token);
-            int    usuarioId = JwtHelper.getUsuarioId(claims);
-            String username  = JwtHelper.getUsername(claims);
-            int    rolId     = JwtHelper.getRolId(claims);
+        // Si no hay token o es invalido, retorna un estado sin sesion sin lanzar error
+        if (token == null || token.isBlank() || !JwtHelper.esValido(token)) {
+            ctx.status(200).json(sesionService.sinSesion());
+            return;
+        }
 
-            ctx.status(200).json(sesionService.obtenerSesion(usuarioId, username, rolId));
-        });
+        // Extrae los datos del usuario desde el token JWT para construir la respuesta de sesion
+        Claims claims    = JwtHelper.verificarToken(token);
+        int    usuarioId = JwtHelper.getUsuarioId(claims);
+        String username  = JwtHelper.getUsername(claims);
+        int    rolId     = JwtHelper.getRolId(claims);
+
+        ctx.status(200).json(sesionService.obtenerSesion(usuarioId, username, rolId));
     }
 }

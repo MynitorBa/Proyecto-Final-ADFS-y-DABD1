@@ -38,93 +38,104 @@ public class AgenciaController {
     public void registerRoutes(Javalin app) {
 
         // Lista las agencias asociadas al usuario autenticado
-        app.get("/webservice/agencias", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            ctx.json(agenciaService.listarPorUsuario(usuarioId(ctx)));
-        });
+        app.get("/webservice/agencias", this::handleListarWebservice);
 
         // Crea una nueva agencia para el usuario autenticado (flujo del portal webservice)
-        app.post("/webservice/agencias", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            try {
-                ctx.status(201).json(
-                        agenciaService.crear(usuarioId(ctx), ctx.bodyAsClass(CrearAgenciaRequestDTO.class))
-                );
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.post("/webservice/agencias", this::handleCrearWebservice);
 
         // Cambia el estado de una agencia especifica del usuario autenticado
-        app.patch("/webservice/agencias/{id}/estado", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            try {
-                Map<?, ?> body = ctx.bodyAsClass(Map.class);
-                int nuevoEstado = Integer.parseInt(body.get("estadoId").toString());
-                agenciaService.cambiarEstado(id(ctx, "id"), usuarioId(ctx), nuevoEstado);
-                ctx.json(Map.of("mensaje", "Estado actualizado correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.patch("/webservice/agencias/{id}/estado", this::handleCambiarEstadoWebservice);
 
         // Elimina una agencia perteneciente al usuario autenticado
-        app.delete("/webservice/agencias/{id}", ctx -> {
-            if (!esWebservice(ctx)) { deny(ctx); return; }
-            try {
-                agenciaService.eliminar(id(ctx, "id"), usuarioId(ctx));
-                ctx.json(Map.of("mensaje", "Agencia eliminada correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.delete("/webservice/agencias/{id}", this::handleEliminarWebservice);
 
         // Procesa el handshake de autenticacion entre sistemas externos y la plataforma
-        app.post("/api/agencias/handshake", ctx -> {
-            System.out.println("[HANDSHAKE] url_agencia recibida: '" + ctx.body() + "'");
-            try {
-                HandshakeRequestDTO dto = ctx.bodyAsClass(HandshakeRequestDTO.class);
-                System.out.println("[HANDSHAKE] url_agencia: '" + dto.getUrlAgencia() + "'");
-                System.out.println("[HANDSHAKE] token_entrada: '" + dto.getTokenEntrada() + "'");
-
-                HandshakeResponseDTO response = handshakeService.procesarHandshake(dto);
-                ctx.json(response);
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
-
-        // Rutas exclusivas para administradores (rol 2)
+        app.post("/api/agencias/handshake", this::handleHandshake);
 
         // Retorna todas las agencias registradas en el sistema
-        app.get("/admin/agencias", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            ctx.json(agenciaService.listarTodas());
-        });
+        app.get("/admin/agencias", this::handleListarAdmin);
 
         // Crea una nueva agencia desde el panel de administracion asignandola a un usuario webservice
-        app.post("/admin/agencias", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            try {
-                ctx.status(201).json(
-                        agenciaService.crearDesdeAdmin(ctx.bodyAsClass(CrearAgenciaAdminRequestDTO.class))
-                );
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.post("/admin/agencias", this::handleCrearAdmin);
 
         // Edita los datos de una agencia especifica
-        app.patch("/admin/agencias/{id}", ctx -> {
-            if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
-            try {
-                agenciaService.editar(id(ctx, "id"), ctx.bodyAsClass(EditarAgenciaRequestDTO.class));
-                ctx.json(Map.of("mensaje", "Agencia actualizada correctamente"));
-            } catch (IllegalArgumentException e) {
-                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-            }
-        });
+        app.patch("/admin/agencias/{id}", this::handleEditarAdmin);
+    }
 
+    void handleListarWebservice(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        ctx.json(agenciaService.listarPorUsuario(usuarioId(ctx)));
+    }
+
+    void handleCrearWebservice(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        try {
+            var agencia = agenciaService.crear(usuarioId(ctx), ctx.bodyAsClass(CrearAgenciaRequestDTO.class));
+            ctx.status(201).json(agencia);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleCambiarEstadoWebservice(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        try {
+            Map<?, ?> body = ctx.bodyAsClass(Map.class);
+            int nuevoEstado = Integer.parseInt(body.get("estadoId").toString());
+            agenciaService.cambiarEstado(id(ctx, "id"), usuarioId(ctx), nuevoEstado);
+            ctx.json(Map.of("mensaje", "Estado actualizado correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleEliminarWebservice(Context ctx) {
+        if (!esWebservice(ctx)) { deny(ctx); return; }
+        try {
+            agenciaService.eliminar(id(ctx, "id"), usuarioId(ctx));
+            ctx.json(Map.of("mensaje", "Agencia eliminada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleHandshake(Context ctx) {
+        System.out.println("[HANDSHAKE] url_agencia recibida: '" + ctx.body() + "'");
+        try {
+            HandshakeRequestDTO dto = ctx.bodyAsClass(HandshakeRequestDTO.class);
+            System.out.println("[HANDSHAKE] url_agencia: '" + dto.getUrlAgencia() + "'");
+            System.out.println("[HANDSHAKE] token_entrada: '" + dto.getTokenEntrada() + "'");
+
+            HandshakeResponseDTO response = handshakeService.procesarHandshake(dto);
+            ctx.json(response);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleListarAdmin(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        ctx.json(agenciaService.listarTodas());
+    }
+
+    void handleCrearAdmin(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        try {
+            var agencia = agenciaService.crearDesdeAdmin(ctx.bodyAsClass(CrearAgenciaAdminRequestDTO.class));
+            ctx.status(201).json(agencia);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleEditarAdmin(Context ctx) {
+        if (!esAdmin(ctx)) { denyAdmin(ctx); return; }
+        try {
+            agenciaService.editar(id(ctx, "id"), ctx.bodyAsClass(EditarAgenciaRequestDTO.class));
+            ctx.json(Map.of("mensaje", "Agencia actualizada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 
     /**
