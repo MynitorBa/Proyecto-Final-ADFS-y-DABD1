@@ -520,6 +520,215 @@ public class HotelService {
     }
 
     /**
+     * Retorna el recuento y los datos de las reservaciones activas de una habitacion.
+     * Se usa en el frontend para mostrar al admin que reservas se afectarian antes de cerrar.
+     * @param habitacionId ID de la habitacion a consultar.
+     * @return mapa con { count, reservaciones: lista de { id, noReservacion, correo, nombre, total } }
+     */
+    public Map<String, Object> obtenerReservasActivasHabitacion(int habitacionId) {
+        if (!hotelRepository.existeHabitacion(habitacionId))
+            throw new IllegalArgumentException("Habitacion no encontrada: " + habitacionId);
+        List<Object[]> filas = hotelRepository.obtenerReservacionesActivasHabitacion(habitacionId);
+        List<Map<String, Object>> lista = new ArrayList<>();
+        for (Object[] f : filas) {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("id",            f[0]);
+            r.put("noReservacion", f[1]);
+            r.put("correo",        f[2]);
+            r.put("nombre",        f[3]);
+            r.put("total",         f[4]);
+            lista.add(r);
+        }
+        return Map.of("count", filas.size(), "reservaciones", lista);
+    }
+
+    /**
+     * Reactiva una habitacion cerrada (ESTADO_ID = 2 → 1).
+     * @param habitacionId ID de la habitacion a reactivar.
+     * @throws IllegalArgumentException si la habitacion no existe.
+     */
+    public void reactivarHabitacion(int habitacionId) {
+        if (!hotelRepository.existeHabitacion(habitacionId))
+            throw new IllegalArgumentException("Habitacion no encontrada: " + habitacionId);
+        hotelRepository.reactivarHabitacion(habitacionId);
+    }
+
+    /**
+     * Cancela todas las reservaciones activas de la habitacion, notifica a cada usuario por correo
+     * y, segun el flag, elimina la habitacion fisicamente o la deja como Cerrada (ESTADO_ID = 2).
+     * El envio de correos y la notificacion a agencias son best-effort.
+     * @param habitacionId       ID de la habitacion a operar.
+     * @param nombreHabitacion   identificador legible de la habitacion (para el correo).
+     * @param eliminarDefinitivo si true, elimina la habitacion de la BD; si false, solo la cierra.
+     * @return mapa con { cancelaciones, emailsEnviados, emailsFallidos }
+     */
+    public Map<String, Object> cerrarHabitacionConCancelaciones(int habitacionId,
+                                                                String nombreHabitacion,
+                                                                boolean eliminarDefinitivo) {
+        if (!hotelRepository.existeHabitacion(habitacionId))
+            throw new IllegalArgumentException("Habitacion no encontrada: " + habitacionId);
+
+        List<Object[]> reservas = hotelRepository.obtenerReservacionesActivasHabitacion(habitacionId);
+
+        String motivo = eliminarDefinitivo
+                ? "La habitacion fue eliminada por el establecimiento. La reservacion ha sido cancelada."
+                : "La habitacion fue cerrada temporalmente por el establecimiento. La reservacion ha sido cancelada.";
+
+        hotelRepository.cancelarReservacionesActivasHabitacion(habitacionId, motivo);
+
+        int emailsEnviados = 0;
+        int emailsFallidos = 0;
+        List<Map<String, Object>> reservasAgencia = new ArrayList<>();
+
+        for (Object[] f : reservas) {
+            int    reservacionId = ((Number) f[0]).intValue();
+            String noReservacion = (String) f[1];
+            String correo        = (String) f[2];
+            String nombreUsuario = (String) f[3];
+            double total         = ((Number) f[4]).doubleValue();
+
+            try {
+                EmailHelper.enviar(
+                        correo,
+                        "Blink Hotels – Reservacion " + noReservacion + " Cancelada por cierre de habitacion",
+                        construirCorreoCierreHabitacion(nombreUsuario, noReservacion, total, nombreHabitacion, eliminarDefinitivo)
+                );
+                emailsEnviados++;
+            } catch (Exception ex) {
+                emailsFallidos++;
+                LOG.log(Level.WARNING,
+                        "Error al enviar correo de cierre de habitacion. Reservacion=" + noReservacion, ex);
+            }
+
+            try {
+                var resultado = agenciaNotificador.notificarCancelacion(reservacionId, motivo);
+                if (resultado.isEsReservaDeAgencia()) {
+                    Map<String, Object> r = new LinkedHashMap<>();
+                    r.put("noReservacion", noReservacion);
+                    r.put("correo",        correo);
+                    r.put("total",         total);
+                    reservasAgencia.add(r);
+                }
+            } catch (Exception ex) {
+                LOG.log(Level.WARNING,
+                        "Error notificando agencia para reservacion " + reservacionId, ex);
+            }
+        }
+
+        MoventClient.notificarHabitacionCerrada(habitacionId, reservasAgencia);
+
+        if (eliminarDefinitivo) {
+            hotelRepository.eliminarHabitacion(habitacionId);
+        } else {
+            hotelRepository.cerrarHabitacion(habitacionId);
+        }
+
+        return Map.of(
+                "cancelaciones",  reservas.size(),
+                "emailsEnviados", emailsEnviados,
+                "emailsFallidos", emailsFallidos
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // HTML del correo de cierre de habitacion
+    // -------------------------------------------------------------------------
+
+    private static String construirCorreoCierreHabitacion(
+            String nombreUsuario,
+            String noReservacion,
+            double total,
+            String nombreHabitacion,
+            boolean eliminada) {
+
+        int anio = Year.now().getValue();
+        String accion = eliminada ? "eliminada" : "cerrada temporalmente";
+
+        return """
+                <!DOCTYPE html>
+                <html lang="es">
+                <head><meta charset="UTF-8"><title>Cancelacion por cierre de habitacion</title></head>
+                <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+                  <table width="100%%" cellpadding="0" cellspacing="0"
+                         style="background:#F4F6F8;padding:40px 0;">
+                    <tr><td align="center">
+                      <table width="600" cellpadding="0" cellspacing="0"
+                             style="background:#ffffff;border-radius:8px;
+                                    box-shadow:0 4px 20px rgba(0,0,0,.08);overflow:hidden;">
+
+                        <!-- Cabecera -->
+                        <tr>
+                          <td style="background:#1A3C5E;padding:28px 40px;text-align:center;">
+                            <h1 style="margin:0;font-size:22px;font-weight:300;color:#ffffff;
+                                       letter-spacing:3px;">
+                              BLINK
+                              <span style="color:#F0A500;font-weight:700;">HOTELS</span>
+                            </h1>
+                          </td>
+                        </tr>
+
+                        <!-- Cuerpo -->
+                        <tr>
+                          <td style="padding:32px 40px;">
+                            <p style="margin:0 0 8px;font-size:16px;color:#1A3C5E;font-weight:600;">
+                              Hola, %s:
+                            </p>
+                            <p style="margin:0 0 24px;font-size:14px;color:#555;">
+                              Lamentamos informarte que la habitacion <strong>%s</strong> ha sido
+                              %s y, como consecuencia, tu reservacion ha sido
+                              cancelada automaticamente.
+                            </p>
+
+                            <!-- Resumen -->
+                            <table width="100%%" cellpadding="8" cellspacing="0"
+                                   style="background:#F4F6F8;border-radius:6px;margin-bottom:24px;">
+                              <tr>
+                                <td style="font-size:12px;color:#888;width:40%%;">N° Reservacion</td>
+                                <td style="font-size:14px;font-weight:700;color:#1A3C5E;
+                                           font-family:monospace;">%s</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size:12px;color:#888;">Total</td>
+                                <td style="font-size:14px;font-weight:700;">$%.2f</td>
+                              </tr>
+                            </table>
+
+                            <!-- Nota -->
+                            <div style="background:#FFF8E1;border-left:4px solid #F0A500;
+                                        padding:14px 18px;border-radius:4px;margin-bottom:24px;">
+                              <p style="margin:0 0 4px;font-size:12px;color:#F0A500;font-weight:700;">
+                                Informacion sobre reembolsos
+                              </p>
+                              <p style="margin:0;font-size:14px;color:#333;">
+                                Para consultas sobre reembolsos o compensaciones, contacta directamente
+                                al hotel. Lamentamos los inconvenientes causados.
+                              </p>
+                            </div>
+
+                            <p style="margin:0;font-size:13px;color:#777;">
+                              Si tienes alguna pregunta adicional, no dudes en contactarnos.
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Pie -->
+                        <tr>
+                          <td style="background:#1A3C5E;padding:16px 40px;text-align:center;">
+                            <p style="margin:0;font-size:11px;color:#90A4AE;">
+                              &copy; %d Blink Hotels — Todos los derechos reservados
+                            </p>
+                          </td>
+                        </tr>
+
+                      </table>
+                    </td></tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(nombreUsuario, nombreHabitacion, accion, noReservacion, total, anio);
+    }
+
+    /**
      * Agrega una imagen a una habitacion decodificando el base64 recibido.
      * @param habitacionId ID de la habitacion.
      * @param base64       imagen codificada en base64.

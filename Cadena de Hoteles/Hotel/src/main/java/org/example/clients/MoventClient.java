@@ -91,6 +91,81 @@ public class MoventClient {
         }
     }
 
+    /**
+     * Notifica a Movent que una habitacion cerro y se cancelaron reservaciones
+     * que originalmente venian via agencia de viaje.
+     * Best-effort: si falla, log error pero NO propaga excepcion.
+     *
+     * @param habitacionId    ID de la habitacion que fue cerrada.
+     * @param reservasAgencia lista de reservas afectadas (solo las de agencia).
+     *                        Cada mapa debe tener: noReservacion, correo, total.
+     */
+    public static void notificarHabitacionCerrada(
+            int habitacionId,
+            List<Map<String, Object>> reservasAgencia
+    ) {
+        if (reservasAgencia == null || reservasAgencia.isEmpty()) {
+            LOG.info("[MoventClient] Sin reservas de agencia afectadas por habitacion " + habitacionId + " — webhook omitido.");
+            return;
+        }
+
+        String webhookUrl = System.getenv().getOrDefault(
+                "MOVENT_WEBHOOK_URL",
+                "http://localhost:8080/api/webhooks/proveedor/hotel-cerrado"
+        );
+
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{")
+              .append("\"tipo\":\"habitacion_cerrada\",")
+              .append("\"proveedor\":\"MikuInn\",")
+              .append("\"habitacionId\":").append(habitacionId).append(",")
+              .append("\"reservas\":[");
+
+            for (int i = 0; i < reservasAgencia.size(); i++) {
+                Map<String, Object> r = reservasAgencia.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{")
+                  .append("\"noReservacion\":\"").append(escape(str(r.get("noReservacion")))).append("\",")
+                  .append("\"correo\":\"").append(escape(str(r.get("correo")))).append("\",")
+                  .append("\"total\":").append(r.get("total"))
+                  .append("}");
+            }
+
+            sb.append("]}");
+            String body = sb.toString();
+
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(CONNECT_TIMEOUT))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(webhookUrl))
+                    .timeout(Duration.ofSeconds(REQUEST_TIMEOUT))
+                    .header("Content-Type", "application/json")
+                    .header("X-Miku-Webhook", "habitacion-cerrada")
+                    .header("X-Miku-Token", System.getenv().getOrDefault("MOVENT_WEBHOOK_TOKEN", ""))
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpResponse<String> response = client.send(
+                    request, HttpResponse.BodyHandlers.ofString()
+            );
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                LOG.info("[MoventClient] Webhook habitacion_cerrada enviado. " +
+                         reservasAgencia.size() + " reserva(s). HabitacionID=" + habitacionId);
+            } else {
+                LOG.warning("[MoventClient] Webhook habitacion_cerrada respondio " + response.statusCode() +
+                            " para habitacion " + habitacionId + ": " + response.body());
+            }
+
+        } catch (Exception ex) {
+            LOG.log(Level.WARNING,
+                    "[MoventClient] Error enviando webhook de cierre de habitacion " + habitacionId, ex);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Construccion manual del JSON (sin dependencia de Jackson en el cliente)
     // -------------------------------------------------------------------------

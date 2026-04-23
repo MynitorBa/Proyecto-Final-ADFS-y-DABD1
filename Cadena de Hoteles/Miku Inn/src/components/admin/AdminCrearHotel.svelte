@@ -367,11 +367,12 @@
     guardandoNuevaHab = true; mensajeNuevaHab = null;
     if (cant > 1) { creandoMasivo = true; creandoMasivoProgreso = `Creando habitación 0 de ${cant}...`; }
     try {
-      // Payload sin numeroHabitacion — el backend lo genera automaticamente
+      // Payload sin numeroHabitacion — el backend lo genera automaticamente.
+      // estadoId siempre 1 (Activa): las habitaciones nuevas nacen activas.
       const payload = {
         tipoHabitacionId: Number(nuevaHabitacion.tipoHabitacionId),
         descripcion:      nuevaHabitacion.descripcion,
-        estadoId:         Number(nuevaHabitacion.estadoId),
+        estadoId:         1,
       };
       const tn = tiposHabitacion.find(t => t.id === payload.tipoHabitacionId)?.nombre ?? '';
       let creadas = 0; let idsLote = [];
@@ -656,10 +657,6 @@
       <div class="adm__field">
         <label>Tipo de Habitación</label>
         <select bind:value={nuevaHabitacion.tipoHabitacionId}>{#each tiposHabitacion as t}<option value={t.id}>{t.nombre}</option>{/each}</select>
-      </div>
-      <div class="adm__field">
-        <label>Estado</label>
-        <select bind:value={nuevaHabitacion.estadoId}><option value={1}>Activa</option><option value={2}>Cerrada</option></select>
       </div>
       <div class="adm__field">
         <label>Cantidad</label>

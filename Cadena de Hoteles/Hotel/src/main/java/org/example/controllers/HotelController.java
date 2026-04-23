@@ -253,6 +253,47 @@ public class HotelController {
             }
         });
 
+        // Retorna el recuento y datos de las reservaciones activas de la habitacion
+        app.get("/admin/habitaciones/{id}/reservas-activas", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                ctx.json(hotelService.obtenerReservasActivasHabitacion(id(ctx, "id")));
+            } catch (IllegalArgumentException e) {
+                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // Cancela todas las reservas activas de la habitacion y notifica a usuarios por correo.
+        // Si eliminarDefinitivo=true  → elimina la habitacion fisicamente.
+        // Si eliminarDefinitivo=false → cambia ESTADO_ID a 2 (Cerrada), habitacion permanece en BD.
+        // Body: { "nombreHabitacion": "...", "eliminarDefinitivo": false }
+        app.post("/admin/habitaciones/{id}/cerrar-con-cancelaciones", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                Map<?, ?> body = ctx.bodyAsClass(Map.class);
+                String nombreHabitacion = body != null && body.get("nombreHabitacion") != null
+                        ? body.get("nombreHabitacion").toString() : "Habitacion";
+                boolean eliminarDefinitivo = body != null && body.get("eliminarDefinitivo") != null
+                        && Boolean.parseBoolean(body.get("eliminarDefinitivo").toString());
+                Map<String, Object> resultado =
+                        hotelService.cerrarHabitacionConCancelaciones(id(ctx, "id"), nombreHabitacion, eliminarDefinitivo);
+                ctx.json(resultado);
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
+        // Reactiva una habitacion cerrada (ESTADO_ID 2 → 1).
+        app.post("/admin/habitaciones/{id}/reactivar", ctx -> {
+            if (!esAdmin(ctx)) { deny(ctx); return; }
+            try {
+                hotelService.reactivarHabitacion(id(ctx, "id"));
+                ctx.json(Map.of("mensaje", "Habitacion reactivada correctamente"));
+            } catch (IllegalArgumentException e) {
+                ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+            }
+        });
+
         // Agrega una imagen en base64 a una habitacion especifica
         app.post("/admin/habitaciones/{id}/imagenes", ctx -> {
             if (!esAdmin(ctx)) { deny(ctx); return; }

@@ -183,10 +183,9 @@ public class BusquedaRepository {
 
         String sql = "SELECT h.ID, h.NUMEROHABITACION " +
                 "FROM Habitacion h " +
-                "JOIN EstadoHabitacion e ON h.ESTADO_ID = e.ID " +
                 "WHERE h.HOTELID = ? " +
                 "AND h.TIPOHABITACIONID = ? " +
-                "AND LOWER(TRIM(e.TIPO_DE_CLASE)) = 'activa' " +
+                "AND h.ESTADO_ID = 1 " +
                 "AND h.ID NOT IN (" +
                 "  SELECT dr.HabitacionID FROM DetallesReservacion dr " +
                 "  JOIN Reservacion r ON dr.ReservacionID = r.ID " +

@@ -226,7 +226,7 @@ public class HotelRepository {
      */
     public int contarHabitaciones(int hotelId) {
         List<Integer> r = DatabaseManager.executeQuery(
-                "SELECT COUNT(*) FROM Habitacion WHERE HotelID=?", rs -> rs.getInt(1), hotelId);
+                "SELECT COUNT(*) FROM Habitacion WHERE HotelID=? AND ESTADO_ID = 1", rs -> rs.getInt(1), hotelId);
         return r.isEmpty() ? 0 : r.get(0);
     }
 
@@ -476,6 +476,67 @@ public class HotelRepository {
                 "WHERE dr.HabitacionID = ? AND re.EstadoID IN (1, 2)",
                 rs -> rs.getInt(1), habitacionId);
         return r.isEmpty() ? 0 : r.get(0);
+    }
+
+    /**
+     * Cambia el estado de la habitacion a Cerrada (ESTADO_ID = 2).
+     * @param habitacionId ID de la habitacion a cerrar.
+     */
+    public void cerrarHabitacion(int habitacionId) {
+        DatabaseManager.executeUpdate("UPDATE Habitacion SET ESTADO_ID = 2 WHERE ID = ?", habitacionId);
+    }
+
+    /**
+     * Reactiva una habitacion cerrada cambiando su ESTADO_ID a 1 (Activa).
+     * @param habitacionId ID de la habitacion a reactivar.
+     */
+    public void reactivarHabitacion(int habitacionId) {
+        DatabaseManager.executeUpdate("UPDATE Habitacion SET ESTADO_ID = 1 WHERE ID = ?", habitacionId);
+    }
+
+    /**
+     * Retorna los datos de cada reservacion activa de una habitacion especifica,
+     * necesarios para cancelarlas y notificar a los usuarios por correo.
+     * Columnas: reservacionId, noReservacion, correo, nombreCompleto, total, origen.
+     * @param habitacionId ID de la habitacion.
+     * @return lista de Object[] con los datos de cada reservacion activa.
+     */
+    public List<Object[]> obtenerReservacionesActivasHabitacion(int habitacionId) {
+        return DatabaseManager.executeQuery(
+                "SELECT DISTINCT re.ID, re.No_Reservacion, " +
+                "       u.Correo, " +
+                "       u.Nombre || ' ' || u.Apellido AS NombreCompleto, " +
+                "       re.Total " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Reservacion re ON dr.ReservacionID = re.ID " +
+                "JOIN Usuario     u  ON re.Usuario_ID    = u.ID " +
+                "WHERE dr.HabitacionID = ? AND re.EstadoID IN (1, 2)",
+                rs -> new Object[]{
+                        rs.getInt("ID"),
+                        rs.getString("No_Reservacion"),
+                        rs.getString("Correo"),
+                        rs.getString("NombreCompleto"),
+                        rs.getDouble("Total")
+                }, habitacionId);
+    }
+
+    /**
+     * Cancela todas las reservaciones activas de una habitacion especifica
+     * poniendo EstadoID = 4 (Cancelada).
+     * @param habitacionId ID de la habitacion cuyas reservaciones se cancelan.
+     * @param motivo       texto del motivo de cancelacion.
+     */
+    public void cancelarReservacionesActivasHabitacion(int habitacionId, String motivo) {
+        DatabaseManager.executeUpdate(
+                "UPDATE Reservacion re " +
+                "SET re.EstadoID = 4, re.Fecha_Cancelacion = SYSDATE, re.Motivo_Cancelacion = ? " +
+                "WHERE re.EstadoID IN (1, 2) " +
+                "  AND re.ID IN ( " +
+                "    SELECT DISTINCT dr.ReservacionID " +
+                "    FROM DetallesReservacion dr " +
+                "    WHERE dr.HabitacionID = ? " +
+                "  )",
+                motivo, habitacionId);
     }
 
     /**

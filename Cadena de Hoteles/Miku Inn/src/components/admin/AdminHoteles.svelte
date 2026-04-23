@@ -184,6 +184,30 @@
   /** Indica si la eliminacion de habitacion esta en curso. @type {boolean} */
   let eliminandoHab = false;
 
+  /** Controla la visibilidad del modal de cierre suave de habitacion. @type {boolean} */
+  let showModalCerrarHab = false;
+
+  /** Habitacion pendiente de cerrar. @type {Object|null} */
+  let habCerrando = null;
+
+  /** Reservaciones activas de la habitacion que se va a cerrar. @type {{ count: number, reservaciones: Array }|null} */
+  let reservasActivasHab = null;
+
+  /** Indica si se estan cargando las reservas activas de la habitacion. @type {boolean} */
+  let cargandoReservasHab = false;
+
+  /** Indica si el cierre/eliminacion de habitacion con cancelaciones esta en curso. @type {boolean} */
+  let cerrandoHab = false;
+
+  /** Controla la visibilidad del modal de reactivacion de habitacion. @type {boolean} */
+  let showModalReactivarHab = false;
+
+  /** Habitacion pendiente de reactivar. @type {Object|null} */
+  let habReactivando = null;
+
+  /** Indica si la reactivacion de habitacion esta en curso. @type {boolean} */
+  let reactivandoHab = false;
+
   /** Controla la visibilidad del modal de confirmacion de eliminacion de hotel. @type {boolean} */
   let showModalEliminarHotel = false;
 
@@ -772,6 +796,86 @@
   }
 
   /**
+   * Abre el modal de cierre suave de habitacion y precarga sus reservas activas.
+   * @param {Object} h - Habitacion a cerrar.
+   */
+  function abrirCerrarHab(h) {
+    habCerrando = h; reservasActivasHab = null; showModalCerrarHab = true;
+    _cargarReservasHab(h.id);
+  }
+
+  /**
+   * Carga las reservaciones activas de la habitacion para mostrarlas en el modal.
+   * @async
+   * @param {number} habitacionId - ID de la habitacion.
+   */
+  async function _cargarReservasHab(habitacionId) {
+    cargandoReservasHab = true;
+    try {
+      const res = await fetch(`${API_BASE}/admin/habitaciones/${habitacionId}/reservas-activas`, { credentials: 'include' });
+      if (res.ok) reservasActivasHab = await res.json();
+    } catch {}
+    finally { cargandoReservasHab = false; }
+  }
+
+  /**
+   * Cierra (o elimina) la habitacion seleccionada con cancelacion de reservas.
+   * @async
+   * @param {boolean} eliminarDefinitivo - true elimina fisicamente, false solo cierra.
+   */
+  async function _cerrarHab(eliminarDefinitivo) {
+    if (!habCerrando) return;
+    cerrandoHab = true; showModalCerrarHab = false;
+    eliminandoMasivo = true;
+    eliminandoMasivoProgreso = eliminarDefinitivo
+      ? `Eliminando habitación #${habCerrando.id}...`
+      : `Cerrando habitación #${habCerrando.id}...`;
+    const hayReservas = reservasActivasHab && reservasActivasHab.count > 0;
+    if (hayReservas) eliminandoMasivoProgreso = `Cancelando ${reservasActivasHab.count} reserva(s) y ${eliminarDefinitivo ? 'eliminando' : 'cerrando'} habitación...`;
+    try {
+      const nombreHabitacion = `${habCerrando.tipoHabitacion} #${habCerrando.numeroHabitacion || habCerrando.id}`;
+      const res = await fetch(`${API_BASE}/admin/habitaciones/${habCerrando.id}/cerrar-con-cancelaciones`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombreHabitacion, eliminarDefinitivo })
+      });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.mensaje || `Error ${res.status}`); }
+      if (eliminarDefinitivo) {
+        habitaciones = habitaciones.filter(h => h.id !== habCerrando.id);
+      } else {
+        habitaciones = habitaciones.map(h => h.id === habCerrando.id ? { ...h, estadoId: 2, estado: 'Cerrada' } : h);
+      }
+      habCerrando = null; reservasActivasHab = null;
+    } catch (e) { mensajeHabitacion = { tipo: 'error', texto: e.message }; }
+    finally { cerrandoHab = false; eliminandoMasivo = false; }
+  }
+
+  /**
+   * Abre el modal de reactivacion de habitacion.
+   * @param {Object} h - Habitacion a reactivar.
+   */
+  function abrirReactivarHab(h) { habReactivando = h; showModalReactivarHab = true; }
+
+  /**
+   * Reactiva la habitacion cerrada (ESTADO_ID=1).
+   * @async
+   */
+  async function _reactivarHab() {
+    if (!habReactivando) return;
+    reactivandoHab = true; showModalReactivarHab = false;
+    try {
+      const res = await fetch(`${API_BASE}/admin/habitaciones/${habReactivando.id}/reactivar`, {
+        method: 'POST', credentials: 'include'
+      });
+      if (!res.ok) { const data = await res.json().catch(() => ({})); throw new Error(data.mensaje || `Error ${res.status}`); }
+      const habId = habReactivando.id;
+      habitaciones = habitaciones.map(h => h.id === habId ? { ...h, estadoId: 1, estado: 'Activa' } : h);
+      habReactivando = null;
+    } catch (e) { mensajeHabitacion = { tipo: 'error', texto: 'No se pudo reactivar: ' + e.message }; }
+    finally { reactivandoHab = false; }
+  }
+
+  /**
    * Abre el modal de nueva habitacion reseteando el formulario.
    * Sin numeroHabitacion: el backend lo asigna automaticamente (count + 1).
    */
@@ -821,7 +925,9 @@
     showModalHabitacion = false; showModalNuevaHab = false;
     showModalEliminarHab = false; showModalEliminarHotel = false;
     showModalCerrarHotel = false; showModalReactivarHotel = false;
+    showModalCerrarHab = false; showModalReactivarHab = false;
     habitacionEditando = null; habEliminando = null; hotelEliminando = null; hotelReactivando = null;
+    habCerrando = null; habReactivando = null; reservasActivasHab = null;
   }
 
   /**
@@ -1073,8 +1179,13 @@
                   <td class="adm__table-center">{h.imagenesIds?.length ?? 0}</td>
                   <td>
                     <div style="display:flex;gap:.3rem">
-                      <button class="adm__icon-btn adm__icon-btn--edit" on:click={() => abrirEditarHabitacion(h)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                      <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => abrirEliminarHab(h)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+                      <button class="adm__icon-btn adm__icon-btn--edit" on:click={() => abrirEditarHabitacion(h)} title="Editar habitación"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      {#if h.estadoId === 2}
+                        <button class="adm__icon-btn adm__icon-btn--success" on:click={() => abrirReactivarHab(h)} title="Reactivar habitación"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                      {:else}
+                        <button class="adm__icon-btn adm__icon-btn--close" on:click={() => abrirCerrarHab(h)} title="Cerrar habitación"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>
+                      {/if}
+                      <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => abrirEliminarHab(h)} title="Eliminar definitivamente"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
                     </div>
                   </td>
                 </tr>
@@ -1298,6 +1409,84 @@
       <button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={reactivandoHotel}>Cancelar</button>
       <button class="adm__btn adm__btn--success" on:click={_reactivarHotel} disabled={reactivandoHotel} style="padding:.6rem 1.25rem;font-size:.85rem;">
         {#if reactivandoHotel}Procesando...{:else}Sí, reactivar hotel{/if}
+      </button>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal de cierre suave de habitacion (soft-close: ESTADO_ID=2, sin eliminar / o eliminacion con cancelaciones) -->
+{#if showModalCerrarHab && habCerrando}
+  <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
+  <div class="adm__rol-modal" style="max-width:500px">
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;border-color:rgba(245,158,11,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <div><p class="adm__cancel-modal__title">Cerrar Habitación</p><p class="adm__cancel-modal__subtitle">{habCerrando.tipoHabitacion} — ID #{habCerrando.id}</p></div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="adm__cancel-modal__body">
+      <div class="adm__cancel-info-box">
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Habitación</span><span class="adm__cancel-info-row__value">{habCerrando.tipoHabitacion}</span></div>
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">Nro.</span><span class="adm__cancel-info-row__value">{habCerrando.numeroHabitacion || '—'}</span></div>
+        <div class="adm__cancel-info-row"><span class="adm__cancel-info-row__label">ID</span><span class="adm__cancel-info-row__value">#{habCerrando.id}</span></div>
+      </div>
+
+      {#if cargandoReservasHab}
+        <p style="font-size:13px;color:#888;margin:.75rem 0;">Verificando reservaciones activas...</p>
+      {:else if reservasActivasHab && reservasActivasHab.count > 0}
+        <div class="adm__cancel-warning" style="border-left-color:#f59e0b;background:rgba(245,158,11,0.08);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span style="color:#f59e0b">Esta habitación tiene <strong>{reservasActivasHab.count} reservación(es) en proceso</strong>. Se cancelarán y se notificará a cada huésped por correo.</span>
+        </div>
+        <div style="max-height:140px;overflow-y:auto;margin:.5rem 0;border:1px solid #e0e0e0;border-radius:6px;font-size:12px;">
+          {#each reservasActivasHab.reservaciones as rv}
+            <div style="padding:6px 10px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;">
+              <span style="font-family:monospace;color:#1A3C5E;font-weight:600;">{rv.noReservacion}</span>
+              <span style="color:#555;">{rv.correo}</span>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <div class="adm__cancel-warning" style="border-left-color:#f59e0b;background:rgba(245,158,11,0.08);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span style="color:#f59e0b">No hay reservaciones activas. La habitación quedará <strong>cerrada y oculta</strong> para nuevas reservas. Puedes reactivarla en cualquier momento.</span></div>
+      {/if}
+    </div>
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={cerrandoHab}>Cancelar</button>
+      <button class="adm__btn--cancel-confirm adm__btn--cancel-confirm--warn" on:click={() => _cerrarHab(false)} disabled={cerrandoHab || cargandoReservasHab}>
+        {#if cerrandoHab}
+          Procesando...
+        {:else if reservasActivasHab && reservasActivasHab.count > 0}
+          Cancelar reservas y cerrar
+        {:else}
+          Cerrar temporalmente
+        {/if}
+      </button>
+      <button class="adm__btn--cancel-confirm" on:click={() => _cerrarHab(true)} disabled={cerrandoHab || cargandoReservasHab} style="background:#c0392b;">
+        {#if cerrandoHab}
+          Procesando...
+        {:else}
+          Eliminar definitivamente
+        {/if}
+      </button>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal de confirmacion de reactivacion de habitacion -->
+{#if showModalReactivarHab && habReactivando}
+  <div class="adm__overlay" on:click={cerrarModales} on:keydown={handleOverlayKey} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
+  <div class="adm__rol-modal" style="max-width:420px">
+    <div class="adm__cancel-modal__header">
+      <div class="adm__cancel-modal__icon" style="background:rgba(63,185,80,0.1);color:#3fb950;border-color:rgba(63,185,80,0.3)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div><p class="adm__cancel-modal__title">Reactivar Habitación</p><p class="adm__cancel-modal__subtitle">{habReactivando.tipoHabitacion} — #{habReactivando.id}</p></div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModales}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="adm__cancel-modal__body">
+      <div class="adm__cancel-warning" style="border-left-color:#3fb950;background:rgba(63,185,80,0.07);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" style="flex-shrink:0;margin-top:.1rem"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#3fb950">La habitación volverá a estar disponible para nuevas reservas.</span></div>
+    </div>
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModales} disabled={reactivandoHab}>Cancelar</button>
+      <button class="adm__btn adm__btn--success" on:click={_reactivarHab} disabled={reactivandoHab} style="padding:.6rem 1.25rem;font-size:.85rem;">
+        {#if reactivandoHab}Procesando...{:else}Sí, reactivar habitación{/if}
       </button>
     </div>
   </div>

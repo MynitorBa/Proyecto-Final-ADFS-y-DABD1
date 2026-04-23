@@ -26,11 +26,14 @@ class AdminReservacionServiceTest {
     @Mock
     private AdminReservacionRepository repo;
 
+    @Mock
+    private AgenciaNotificadorExternoService notificadorAgencia;
+
     private AdminReservacionService service;
 
     @BeforeEach
     void setUp() {
-        service = new AdminReservacionService(repo);
+        service = new AdminReservacionService(repo, notificadorAgencia);
     }
 
     // -- listarTodas
