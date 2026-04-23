@@ -1,7 +1,3 @@
-# BACKEND - Maven/Java
-cd "C:\Proyecto-Final-ADFS-y-DABD1\Cadena de Hoteles\Hotel"
-mvn clean install
-
 # FRONTEND - npm
 cd "C:\Proyecto-Final-ADFS-y-DABD1\Cadena de Hoteles\Miku Inn"
 npm install

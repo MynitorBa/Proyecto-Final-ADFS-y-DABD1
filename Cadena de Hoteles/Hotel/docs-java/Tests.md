@@ -9,8 +9,8 @@
 - Pasaron: 822
 - Fallaron: 0
 - Saltados: 0
-- Duracion: 162.4s
-- Ejecutado: 23/04/2026 09:23:56
+- Duracion: 112.2s
+- Ejecutado: 23/04/2026 15:25:37
 
 ---
 
@@ -22,21 +22,21 @@
 - Pasaron: 8
 - Fallaron: 0
 
-**[PASO]** notificarHabitacionCerrada_listaNula_retornaSinExcepcionNiHttpCall `(81ms)`
+**[PASO]** notificarHabitacionCerrada_listaNula_retornaSinExcepcionNiHttpCall `(59ms)`
 
-**[PASO]** notificarHabitacionCerrada_conReservas_swallowsExcepcionCuandoServidorNoDisponible `(956ms)`
+**[PASO]** notificarHabitacionCerrada_conReservas_swallowsExcepcionCuandoServidorNoDisponible `(424ms)`
 
-**[PASO]** notificarHotelCerrado_nombreConCaracteresEspeciales_swallowsExcepcion `(40ms)`
+**[PASO]** notificarHotelCerrado_nombreConCaracteresEspeciales_swallowsExcepcion `(26ms)`
 
-**[PASO]** notificarHabitacionCerrada_listaVacia_retornaSinExcepcionNiHttpCall `(3ms)`
+**[PASO]** notificarHabitacionCerrada_listaVacia_retornaSinExcepcionNiHttpCall `(5ms)`
 
-**[PASO]** notificarHotelCerrado_conReservas_swallowsExcepcionCuandoServidorNoDisponible `(110ms)`
+**[PASO]** notificarHotelCerrado_conReservas_swallowsExcepcionCuandoServidorNoDisponible `(19ms)`
 
 **[PASO]** notificarHotelCerrado_listaVacia_retornaSinExcepcionNiHttpCall `(2ms)`
 
-**[PASO]** notificarHotelCerrado_listaNula_retornaSinExcepcionNiHttpCall `(2ms)`
+**[PASO]** notificarHotelCerrado_listaNula_retornaSinExcepcionNiHttpCall `(3ms)`
 
-**[PASO]** notificarHabitacionCerrada_multiplesReservas_swallowsExcepcion `(97ms)`
+**[PASO]** notificarHabitacionCerrada_multiplesReservas_swallowsExcepcion `(26ms)`
 
 ---
 
@@ -46,7 +46,7 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** metodoCreateServer_existe_esPublicoEstatico `(16ms)`
+**[PASO]** metodoCreateServer_existe_esPublicoEstatico `(87ms)`
 
 **[PASO]** claseServerConfig_existe_esPublica `(2ms)`
 
@@ -58,11 +58,11 @@
 - Pasaron: 10
 - Fallaron: 0
 
-**[PASO]** handleResumen_conRolAdmin_retornaResumenEstadistico `(5s)`
+**[PASO]** handleResumen_conRolAdmin_retornaResumenEstadistico `(2.3s)`
 
 **[PASO]** handleExportar_conRolIncorrecto_retorna403YNoLlamaServicio `(11ms)`
 
-**[PASO]** handleListarBusquedas_conRolAdmin_aplicaFiltrosDeQueryParams `(100ms)`
+**[PASO]** handleListarBusquedas_conRolAdmin_aplicaFiltrosDeQueryParams `(67ms)`
 
 **[PASO]** handleExportar_conEmailValidoSinFiltros_llamaServicioYRetornaMensaje `(5ms)`
 
@@ -70,11 +70,11 @@
 
 **[PASO]** handleExportar_conEmailValidoYFiltros_llamaServicioConFiltros `(4ms)`
 
-**[PASO]** handleListarBusquedas_conRolAdmin_llamaServicioYRetornaResultado `(8ms)`
+**[PASO]** handleListarBusquedas_conRolAdmin_llamaServicioYRetornaResultado `(12ms)`
 
 **[PASO]** handleListarBusquedas_conRolIncorrecto_retorna403YNoLlamaServicio `(4ms)`
 
-**[PASO]** handleResumen_conRolIncorrecto_retorna403YNoLlamaServicio `(4ms)`
+**[PASO]** handleResumen_conRolIncorrecto_retorna403YNoLlamaServicio `(3ms)`
 
 **[PASO]** handleExportar_conEmailBlanco_retorna400ConMensaje `(4ms)`
 
@@ -86,25 +86,25 @@
 - Pasaron: 11
 - Fallaron: 0
 
-**[PASO]** handleEditar_conRolIncorrecto_retorna403YNoLlamaServicio `(59ms)`
+**[PASO]** handleEditar_conRolIncorrecto_retorna403YNoLlamaServicio `(37ms)`
 
-**[PASO]** handleListar_conRolNulo_retorna403YNoLlamaServicio `(4ms)`
+**[PASO]** handleListar_conRolNulo_retorna403YNoLlamaServicio `(24ms)`
 
-**[PASO]** handleListarLibres_conRolAdmin_retornaListaDeWebserviceLibres `(4ms)`
+**[PASO]** handleListarLibres_conRolAdmin_retornaListaDeWebserviceLibres `(12ms)`
 
-**[PASO]** handleEditar_conRolAdminYDatosValidos_retornaMensajeExito `(28ms)`
+**[PASO]** handleEditar_conRolAdminYDatosValidos_retornaMensajeExito `(26ms)`
 
-**[PASO]** handleEditar_conRolAdminYDatosInvalidos_retorna400ConMensaje `(7ms)`
+**[PASO]** handleEditar_conRolAdminYDatosInvalidos_retorna400ConMensaje `(8ms)`
 
-**[PASO]** handleCrear_conRolAdminYDatosValidos_retorna201ConNuevaAerolinea `(25ms)`
+**[PASO]** handleCrear_conRolAdminYDatosValidos_retorna201ConNuevaAerolinea `(19ms)`
 
-**[PASO]** handleListar_conRolAdmin_retornaListaDeAerolineas `(4ms)`
+**[PASO]** handleListar_conRolAdmin_retornaListaDeAerolineas `(13ms)`
 
-**[PASO]** handleCrear_conRolIncorrecto_retorna403YNoLlamaServicio `(3ms)`
+**[PASO]** handleCrear_conRolIncorrecto_retorna403YNoLlamaServicio `(4ms)`
 
-**[PASO]** handleCrear_conRolAdminYDatosInvalidos_retorna400ConMensaje `(5ms)`
+**[PASO]** handleCrear_conRolAdminYDatosInvalidos_retorna400ConMensaje `(4ms)`
 
-**[PASO]** handleListarLibres_conRolIncorrecto_retorna403YNoLlamaServicio `(3ms)`
+**[PASO]** handleListarLibres_conRolIncorrecto_retorna403YNoLlamaServicio `(1ms)`
 
 **[PASO]** handleListar_conRolIncorrecto_retorna403YNoLlamaServicio `(3ms)`
 
@@ -116,23 +116,23 @@
 - Pasaron: 9
 - Fallaron: 0
 
-**[PASO]** handleListar_conRolWebservice_retornaAerolineasDelUsuario `(25ms)`
+**[PASO]** handleListar_conRolWebservice_retornaAerolineasDelUsuario `(28ms)`
 
-**[PASO]** handleCrear_conRolWebserviceYDatosInvalidos_retorna400ConMensaje `(27ms)`
+**[PASO]** handleCrear_conRolWebserviceYDatosInvalidos_retorna400ConMensaje `(20ms)`
 
-**[PASO]** handleCambiarEstado_conRolIncorrecto_retorna403YNoLlamaServicio `(4ms)`
+**[PASO]** handleCambiarEstado_conRolIncorrecto_retorna403YNoLlamaServicio `(3ms)`
 
-**[PASO]** handleCrear_conRolWebserviceYDatosValidos_retorna201ConNuevaAerolinea `(5ms)`
+**[PASO]** handleCrear_conRolWebserviceYDatosValidos_retorna201ConNuevaAerolinea `(3ms)`
 
 **[PASO]** handleCambiarEstado_conRolWebserviceYEstadoInvalido_retorna400ConMensaje `(4ms)`
 
-**[PASO]** handleListar_conRolNulo_retorna403YNoLlamaServicio `(2ms)`
+**[PASO]** handleListar_conRolNulo_retorna403YNoLlamaServicio `(3ms)`
 
-**[PASO]** handleCrear_conRolIncorrecto_retorna403YNoLlamaServicio `(7ms)`
+**[PASO]** handleCrear_conRolIncorrecto_retorna403YNoLlamaServicio `(2ms)`
 
-**[PASO]** handleListar_conRolIncorrecto_retorna403YNoLlamaServicio `(5ms)`
+**[PASO]** handleListar_conRolIncorrecto_retorna403YNoLlamaServicio `(3ms)`
 
-**[PASO]** handleCambiarEstado_conRolWebserviceYDatosValidos_retornaMensajeExito `(6ms)`
+**[PASO]** handleCambiarEstado_conRolWebserviceYDatosValidos_retornaMensajeExito `(3ms)`
 
 ---
 
@@ -142,47 +142,47 @@
 - Pasaron: 21
 - Fallaron: 0
 
-**[PASO]** handleEditarAdmin_datosValidos_retornaMensaje `(151ms)`
+**[PASO]** handleEditarAdmin_datosValidos_retornaMensaje `(136ms)`
 
-**[PASO]** handleEliminarWebservice_rolNoWebservice_retorna403 `(3ms)`
+**[PASO]** handleEliminarWebservice_rolNoWebservice_retorna403 `(4ms)`
 
-**[PASO]** handleCrearAdmin_datosInvalidos_retorna400 `(6ms)`
+**[PASO]** handleCrearAdmin_datosInvalidos_retorna400 `(3ms)`
 
-**[PASO]** handleCambiarEstadoWebservice_estadoInvalido_retorna400 `(7ms)`
+**[PASO]** handleCambiarEstadoWebservice_estadoInvalido_retorna400 `(6ms)`
 
-**[PASO]** handleListarWebservice_rolNoWebservice_retorna403 `(5ms)`
+**[PASO]** handleListarWebservice_rolNoWebservice_retorna403 `(4ms)`
 
-**[PASO]** handleListarAdmin_rolNoAdministrador_retorna403 `(4ms)`
+**[PASO]** handleListarAdmin_rolNoAdministrador_retorna403 `(3ms)`
 
-**[PASO]** handleListarWebservice_rolWebservice_retornaLista `(5ms)`
+**[PASO]** handleListarWebservice_rolWebservice_retornaLista `(3ms)`
 
 **[PASO]** handleCrearWebservice_rolNoWebservice_retorna403 `(3ms)`
 
-**[PASO]** handleCambiarEstadoWebservice_rolNoWebservice_retorna403 `(4ms)`
+**[PASO]** handleCambiarEstadoWebservice_rolNoWebservice_retorna403 `(5ms)`
 
-**[PASO]** handleEditarAdmin_agenciaNoEncontrada_retorna400 `(5ms)`
+**[PASO]** handleEditarAdmin_agenciaNoEncontrada_retorna400 `(3ms)`
 
-**[PASO]** handleEliminarWebservice_agenciaExistente_retornaMensaje `(5ms)`
+**[PASO]** handleEliminarWebservice_agenciaExistente_retornaMensaje `(3ms)`
 
 **[PASO]** handleCrearAdmin_datosValidos_retorna201 `(3ms)`
 
-**[PASO]** handleCrearAdmin_rolNoAdministrador_retorna403 `(4ms)`
+**[PASO]** handleCrearAdmin_rolNoAdministrador_retorna403 `(3ms)`
 
-**[PASO]** handleCrearWebservice_datosValidos_retorna201 `(5ms)`
+**[PASO]** handleCrearWebservice_datosValidos_retorna201 `(2ms)`
 
-**[PASO]** handleHandshake_agenciaNoRegistrada_retorna400 `(8ms)`
+**[PASO]** handleHandshake_agenciaNoRegistrada_retorna400 `(7ms)`
 
-**[PASO]** handleListarAdmin_rolAdministrador_retornaTodasLasAgencias `(3ms)`
+**[PASO]** handleListarAdmin_rolAdministrador_retornaTodasLasAgencias `(6ms)`
 
-**[PASO]** handleCambiarEstadoWebservice_datosValidos_retornaMensaje `(4ms)`
+**[PASO]** handleCambiarEstadoWebservice_datosValidos_retornaMensaje `(7ms)`
 
 **[PASO]** handleEliminarWebservice_agenciaNoPertenece_retorna400 `(6ms)`
 
-**[PASO]** handleCrearWebservice_argumentoInvalido_retorna400 `(5ms)`
+**[PASO]** handleCrearWebservice_argumentoInvalido_retorna400 `(14ms)`
 
-**[PASO]** handleHandshake_datosValidos_retornaResponse `(4ms)`
+**[PASO]** handleHandshake_datosValidos_retornaResponse `(8ms)`
 
-**[PASO]** handleEditarAdmin_rolNoAdministrador_retorna403 `(5ms)`
+**[PASO]** handleEditarAdmin_rolNoAdministrador_retorna403 `(4ms)`
 
 ---
 
@@ -192,9 +192,9 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** handleLogout_siempre_invalidaCookieYRetorna200 `(59ms)`
+**[PASO]** handleLogout_siempre_invalidaCookieYRetorna200 `(65ms)`
 
-**[PASO]** handleLogin_credencialesValidas_emiteCookieYRetorna200 `(57ms)`
+**[PASO]** handleLogin_credencialesValidas_emiteCookieYRetorna200 `(38ms)`
 
 **[PASO]** handleLogin_credencialesInvalidas_retorna401 `(3ms)`
 
@@ -206,11 +206,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** handleBuscar_requestInvalido_retorna400ConMensaje `(69ms)`
+**[PASO]** handleBuscar_requestInvalido_retorna400ConMensaje `(78ms)`
 
-**[PASO]** handleBuscar_authFalla_noInvocaServicio `(2ms)`
+**[PASO]** handleBuscar_authFalla_noInvocaServicio `(3ms)`
 
-**[PASO]** handleBuscar_requestValido_retornaResultados200 `(3ms)`
+**[PASO]** handleBuscar_requestValido_retornaResultados200 `(2ms)`
 
 ---
 
@@ -220,11 +220,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** handleBuscar_requestInvalido_retorna400ConMensaje `(58ms)`
+**[PASO]** handleBuscar_requestInvalido_retorna400ConMensaje `(94ms)`
 
-**[PASO]** handleBuscar_authFalla_noInvocaServicio `(3ms)`
+**[PASO]** handleBuscar_authFalla_noInvocaServicio `(2ms)`
 
-**[PASO]** handleBuscar_requestValido_retornaResultados200 `(5ms)`
+**[PASO]** handleBuscar_requestValido_retornaResultados200 `(3ms)`
 
 ---
 
@@ -234,11 +234,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** handleBuscar_tokenValido_buscaConUsuarioId `(178ms)`
+**[PASO]** handleBuscar_tokenValido_buscaConUsuarioId `(168ms)`
 
-**[PASO]** handleBuscar_servicioLanzaIllegalArgument_retorna404 `(3ms)`
+**[PASO]** handleBuscar_servicioLanzaIllegalArgument_retorna404 `(2ms)`
 
-**[PASO]** handleBuscar_sinToken_buscaComoAnonimo `(3ms)`
+**[PASO]** handleBuscar_sinToken_buscaComoAnonimo `(2ms)`
 
 ---
 
@@ -248,17 +248,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** handlePuedeCancelar_reservacionValida_retornaResultado200 `(27ms)`
+**[PASO]** handlePuedeCancelar_reservacionValida_retornaResultado200 `(29ms)`
 
 **[PASO]** handleCancelar_authFalla_noInvocaServicio `(3ms)`
 
-**[PASO]** handlePuedeCancelar_errorServicio_retorna500ConMensaje `(5ms)`
+**[PASO]** handlePuedeCancelar_errorServicio_retorna500ConMensaje `(3ms)`
 
 **[PASO]** handlePuedeCancelar_authFalla_noInvocaServicio `(3ms)`
 
-**[PASO]** handleCancelar_motivoInvalido_retorna400ConMensaje `(28ms)`
+**[PASO]** handleCancelar_motivoInvalido_retorna400ConMensaje `(22ms)`
 
-**[PASO]** handleCancelar_motivoValido_cancelaYRetorna200 `(4ms)`
+**[PASO]** handleCancelar_motivoValido_cancelaYRetorna200 `(3ms)`
 
 ---
 
@@ -268,9 +268,9 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** handleCancelarReservacion_reservacionValida_retorna200 `(6ms)`
+**[PASO]** handleCancelarReservacion_reservacionValida_retorna200 `(4ms)`
 
-**[PASO]** handleCancelarReservacion_reservacionInvalida_retorna400 `(3ms)`
+**[PASO]** handleCancelarReservacion_reservacionInvalida_retorna400 `(2ms)`
 
 ---
 
@@ -280,23 +280,23 @@
 - Pasaron: 9
 - Fallaron: 0
 
-**[PASO]** handleObtenerPorHotelAgencia_authOk_retorna200ConLista `(61ms)`
+**[PASO]** handleObtenerPorHotelAgencia_authOk_retorna200ConLista `(52ms)`
 
-**[PASO]** handleObtenerPorUsuario_usuarioConComentarios_retorna200ConLista `(4ms)`
+**[PASO]** handleObtenerPorUsuario_usuarioConComentarios_retorna200ConLista `(3ms)`
 
-**[PASO]** handleObtenerPorHotelAgencia_servicioLanzaExcepcion_retorna400 `(5ms)`
+**[PASO]** handleObtenerPorHotelAgencia_servicioLanzaExcepcion_retorna400 `(4ms)`
 
-**[PASO]** handleObtenerPorHotel_hotelValido_retorna200ConLista `(2ms)`
+**[PASO]** handleObtenerPorHotel_hotelValido_retorna200ConLista `(1ms)`
 
-**[PASO]** handleObtenerPorUsuario_usuarioSinComentarios_retorna200ConListaVacia `(2ms)`
+**[PASO]** handleObtenerPorUsuario_usuarioSinComentarios_retorna200ConListaVacia `(1ms)`
 
-**[PASO]** handleObtenerPorHotel_hotelSinComentarios_retorna200ConListaVacia `(5ms)`
+**[PASO]** handleObtenerPorHotel_hotelSinComentarios_retorna200ConListaVacia `(2ms)`
 
-**[PASO]** handleAgregarComentario_argumentoInvalido_retorna400 `(6ms)`
+**[PASO]** handleAgregarComentario_argumentoInvalido_retorna400 `(1ms)`
 
-**[PASO]** handleObtenerPorHotelAgencia_authFalla_noInvocaServicio `(2ms)`
+**[PASO]** handleObtenerPorHotelAgencia_authFalla_noInvocaServicio `(3ms)`
 
-**[PASO]** handleAgregarComentario_datosValidos_retorna201 `(4ms)`
+**[PASO]** handleAgregarComentario_datosValidos_retorna201 `(3ms)`
 
 ---
 
@@ -306,7 +306,7 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** handleObtenerDestinos_conDestinosExistentes_retorna200ConLista `(27ms)`
+**[PASO]** handleObtenerDestinos_conDestinosExistentes_retorna200ConLista `(18ms)`
 
 **[PASO]** handleObtenerDestinos_sinDestinos_retorna200ConListaVacia `(2ms)`
 
@@ -318,25 +318,25 @@
 - Pasaron: 10
 - Fallaron: 0
 
-**[PASO]** handleAgregarDown_datosValidos_retorna201ConMensaje `(55ms)`
+**[PASO]** handleAgregarDown_datosValidos_retorna201ConMensaje `(47ms)`
 
-**[PASO]** handleObtenerDowns_usuarioConDowns_retorna200ConLista `(2ms)`
+**[PASO]** handleObtenerDowns_usuarioConDowns_retorna200ConLista `(3ms)`
 
-**[PASO]** handleActualizarDown_datosValidos_retorna200ConMensaje `(4ms)`
+**[PASO]** handleActualizarDown_datosValidos_retorna200ConMensaje `(2ms)`
 
-**[PASO]** handleEliminarDown_downExistente_retorna200ConMensaje `(4ms)`
+**[PASO]** handleEliminarDown_downExistente_retorna200ConMensaje `(3ms)`
 
-**[PASO]** handleObtenerDowns_usuarioSinDowns_retorna200ConListaVacia `(2ms)`
+**[PASO]** handleObtenerDowns_usuarioSinDowns_retorna200ConListaVacia `(3ms)`
 
 **[PASO]** handleAgregarDown_argumentoInvalido_retorna400 `(3ms)`
 
-**[PASO]** handleObtenerDownsPorHotel_hotelValido_retorna200ConLista `(2ms)`
+**[PASO]** handleObtenerDownsPorHotel_hotelValido_retorna200ConLista `(4ms)`
 
-**[PASO]** handleObtenerDownsPorHotel_hotelSinDowns_retorna200ConListaVacia `(4ms)`
+**[PASO]** handleObtenerDownsPorHotel_hotelSinDowns_retorna200ConListaVacia `(2ms)`
 
 **[PASO]** handleActualizarDown_downNoExistente_retorna400 `(5ms)`
 
-**[PASO]** handleEliminarDown_downNoExistente_retorna400 `(4ms)`
+**[PASO]** handleEliminarDown_downNoExistente_retorna400 `(3ms)`
 
 ---
 
@@ -346,21 +346,21 @@
 - Pasaron: 8
 - Fallaron: 0
 
-**[PASO]** handleNewsletter_correoValido_enviaCorreoYRetorna200 `(105ms)`
+**[PASO]** handleNewsletter_correoValido_enviaCorreoYRetorna200 `(78ms)`
 
 **[PASO]** handleEnviarCorreoReservacion_reservacionNoExiste_retorna404 `(5ms)`
 
-**[PASO]** handleEnviarCorreoReservacion_rolAutorizado_enviaCorreoYRetorna200 `(3ms)`
+**[PASO]** handleEnviarCorreoReservacion_rolAutorizado_enviaCorreoYRetorna200 `(9ms)`
 
-**[PASO]** handleContacto_camposObligatoriosFaltantes_retorna400 `(2ms)`
+**[PASO]** handleContacto_camposObligatoriosFaltantes_retorna400 `(4ms)`
 
-**[PASO]** handleEnviarCorreoReservacion_errorRuntime_retorna500 `(3ms)`
+**[PASO]** handleEnviarCorreoReservacion_errorRuntime_retorna500 `(4ms)`
 
 **[PASO]** handleNewsletter_correoSinArroba_retorna400 `(2ms)`
 
-**[PASO]** handleContacto_formularioValido_enviaCorreoYRetorna200 `(20ms)`
+**[PASO]** handleContacto_formularioValido_enviaCorreoYRetorna200 `(32ms)`
 
-**[PASO]** handleEnviarCorreoReservacion_rolNoAutorizado_retorna403 `(3ms)`
+**[PASO]** handleEnviarCorreoReservacion_rolNoAutorizado_retorna403 `(7ms)`
 
 ---
 
@@ -370,11 +370,11 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** handleHandshake_tokenEntradaIncorrecto_retorna400 `(25ms)`
+**[PASO]** handleHandshake_tokenEntradaIncorrecto_retorna400 `(43ms)`
 
 **[PASO]** handleHandshake_servicioExitoso_noLlamaStatus `(2ms)`
 
-**[PASO]** handleHandshake_aerolineaNoRegistrada_retorna400 `(6ms)`
+**[PASO]** handleHandshake_aerolineaNoRegistrada_retorna400 `(3ms)`
 
 **[PASO]** handleHandshake_datosValidos_retornaResponse `(3ms)`
 
@@ -386,9 +386,9 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** handleObtenerHoteles_autenticacionFallida_noRetornaDatos `(36ms)`
+**[PASO]** handleObtenerHoteles_autenticacionFallida_noRetornaDatos `(54ms)`
 
-**[PASO]** handleObtenerHoteles_autenticacionValida_retornaListaHoteles `(2ms)`
+**[PASO]** handleObtenerHoteles_autenticacionValida_retornaListaHoteles `(4ms)`
 
 ---
 
@@ -398,113 +398,113 @@
 - Pasaron: 83
 - Fallaron: 0
 
-**[PASO]** handleReactivarHabitacion_habitacionNoEncontrada_retorna404 `(119ms)`
+**[PASO]** handleReactivarHabitacion_habitacionNoEncontrada_retorna404 `(137ms)`
 
-**[PASO]** handleEliminarHotel_servicioLanzaExcepcion_retorna400 `(3ms)`
+**[PASO]** handleEliminarHotel_servicioLanzaExcepcion_retorna400 `(2ms)`
 
 **[PASO]** handleEliminarHabitacion_sinRolAdmin_retorna403 `(3ms)`
 
-**[PASO]** handleEditarHotel_servicioLanzaExcepcion_retorna400 `(28ms)`
+**[PASO]** handleEditarHotel_servicioLanzaExcepcion_retorna400 `(27ms)`
 
-**[PASO]** handleEliminarImagenAmenidad_rolAdmin_eliminaImagenExitosamente `(3ms)`
+**[PASO]** handleEliminarImagenAmenidad_rolAdmin_eliminaImagenExitosamente `(1ms)`
 
-**[PASO]** handleReservasActivasHotel_hotelNoEncontrado_retorna404 `(2ms)`
+**[PASO]** handleReservasActivasHotel_hotelNoEncontrado_retorna404 `(1ms)`
 
-**[PASO]** handleEliminarImagenAmenidad_sinRolAdmin_retorna403 `(1ms)`
+**[PASO]** handleEliminarImagenAmenidad_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleCrearHabitacion_servicioLanzaExcepcion_retorna400 `(22ms)`
 
-**[PASO]** handleAgregarImagenHabitacion_sinRolAdmin_retorna403 `(1ms)`
+**[PASO]** handleAgregarImagenHabitacion_sinRolAdmin_retorna403 `(3ms)`
 
-**[PASO]** handleListarAmenidadesHotel_rolAdmin_retornaAmenidadesDelHotel `(3ms)`
+**[PASO]** handleListarAmenidadesHotel_rolAdmin_retornaAmenidadesDelHotel `(1ms)`
 
-**[PASO]** handleEliminarHotel_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleEliminarHotel_sinRolAdmin_retorna403 `(3ms)`
 
 **[PASO]** handleCerrarHotel_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleCrearAmenidad_servicioLanzaExcepcion_retorna400 `(2ms)`
 
-**[PASO]** handleListarCiudades_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleListarCiudades_sinRolAdmin_retorna403 `(3ms)`
 
-**[PASO]** handleCrearAmenidad_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleCrearAmenidad_sinRolAdmin_retorna403 `(1ms)`
 
-**[PASO]** handleEliminarImagenHotel_rolAdmin_eliminaImagenExitosamente `(4ms)`
+**[PASO]** handleEliminarImagenHotel_rolAdmin_eliminaImagenExitosamente `(2ms)`
 
-**[PASO]** handleAgregarAmenidadHotel_rolAdmin_agregaAmenidadYRetorna201 `(26ms)`
+**[PASO]** handleAgregarAmenidadHotel_rolAdmin_agregaAmenidadYRetorna201 `(31ms)`
 
-**[PASO]** handleListarHabitaciones_sinRolAdmin_retorna403 `(4ms)`
+**[PASO]** handleListarHabitaciones_sinRolAdmin_retorna403 `(1ms)`
 
 **[PASO]** handleReservasActivasHotel_rolAdmin_retornaReservasActivas `(2ms)`
 
-**[PASO]** handleReservasActivasHabitacion_habitacionNoEncontrada_retorna404 `(3ms)`
+**[PASO]** handleReservasActivasHabitacion_habitacionNoEncontrada_retorna404 `(4ms)`
 
-**[PASO]** handleEditarHabitacion_rolAdmin_editaHabitacionExitosamente `(30ms)`
+**[PASO]** handleEditarHabitacion_rolAdmin_editaHabitacionExitosamente `(21ms)`
 
-**[PASO]** handleListarHabitaciones_hotelNoEncontrado_retorna404 `(3ms)`
+**[PASO]** handleListarHabitaciones_hotelNoEncontrado_retorna404 `(4ms)`
 
 **[PASO]** handleEliminarImagenHabitacion_sinRolAdmin_retorna403 `(3ms)`
 
-**[PASO]** handleEliminarAmenidadHotel_rolAdmin_eliminaAmenidadExitosamente `(3ms)`
+**[PASO]** handleEliminarAmenidadHotel_rolAdmin_eliminaAmenidadExitosamente `(1ms)`
 
 **[PASO]** handleListarPaises_rolAdmin_retornaListaDePaises `(2ms)`
 
-**[PASO]** handleAgregarImagenAmenidad_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleAgregarImagenAmenidad_sinRolAdmin_retorna403 `(1ms)`
 
-**[PASO]** handleEliminarHabitacion_habitacionNoEncontrada_retorna404 `(5ms)`
+**[PASO]** handleEliminarHabitacion_habitacionNoEncontrada_retorna404 `(1ms)`
 
-**[PASO]** handleCrearAmenidad_rolAdmin_creaAmenidadYRetorna201 `(3ms)`
+**[PASO]** handleCrearAmenidad_rolAdmin_creaAmenidadYRetorna201 `(2ms)`
 
-**[PASO]** handleCrearHabitacion_rolAdmin_creaHabitacionYRetorna201 `(3ms)`
+**[PASO]** handleCrearHabitacion_rolAdmin_creaHabitacionYRetorna201 `(2ms)`
 
-**[PASO]** handleAgregarImagenHotel_rolAdmin_agregaImagenYRetorna201 `(26ms)`
+**[PASO]** handleAgregarImagenHotel_rolAdmin_agregaImagenYRetorna201 `(23ms)`
 
-**[PASO]** handleEliminarHotel_rolAdmin_eliminaHotelExitosamente `(2ms)`
+**[PASO]** handleEliminarHotel_rolAdmin_eliminaHotelExitosamente `(3ms)`
 
-**[PASO]** handleReactivarHabitacion_sinRolAdmin_retorna403 `(1ms)`
+**[PASO]** handleReactivarHabitacion_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleCerrarHabitacion_rolAdmin_cierraHabitacionExitosamente `(2ms)`
+**[PASO]** handleCerrarHabitacion_rolAdmin_cierraHabitacionExitosamente `(3ms)`
 
-**[PASO]** handleListarHoteles_sinRolAdmin_retorna403 `(1ms)`
+**[PASO]** handleListarHoteles_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleListarReservaciones_rolAdmin_retornaTodasLasReservaciones `(2ms)`
+**[PASO]** handleListarReservaciones_rolAdmin_retornaTodasLasReservaciones `(3ms)`
 
-**[PASO]** handleEditarHabitacion_servicioLanzaExcepcion_retorna400 `(2ms)`
+**[PASO]** handleEditarHabitacion_servicioLanzaExcepcion_retorna400 `(3ms)`
 
-**[PASO]** handleListarAmenidadesHotel_hotelNoEncontrado_retorna404 `(4ms)`
+**[PASO]** handleListarAmenidadesHotel_hotelNoEncontrado_retorna404 `(3ms)`
 
 **[PASO]** handleEditarHotel_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleObtenerMetricas_rolAdmin_retornaMetricasDelSistema `(2ms)`
 
-**[PASO]** handleCrearHotel_rolAdmin_creaHotelYRetorna201 `(27ms)`
+**[PASO]** handleCrearHotel_rolAdmin_creaHotelYRetorna201 `(20ms)`
 
-**[PASO]** handleCerrarHabitacion_sinRolAdmin_retorna403 `(1ms)`
+**[PASO]** handleCerrarHabitacion_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleAgregarAmenidadHotel_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleAgregarImagenAmenidad_servicioLanzaExcepcion_retorna400 `(3ms)`
+**[PASO]** handleAgregarImagenAmenidad_servicioLanzaExcepcion_retorna400 `(1ms)`
 
-**[PASO]** handleAgregarAmenidadHotel_servicioLanzaExcepcion_retorna400 `(3ms)`
+**[PASO]** handleAgregarAmenidadHotel_servicioLanzaExcepcion_retorna400 `(1ms)`
 
 **[PASO]** handleCrearHabitacion_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleCrearHotel_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleEliminarHabitacion_rolAdmin_eliminaHabitacionExitosamente `(1ms)`
+**[PASO]** handleEliminarHabitacion_rolAdmin_eliminaHabitacionExitosamente `(2ms)`
 
-**[PASO]** handleListarAmenidadesHotel_sinRolAdmin_retorna403 `(3ms)`
+**[PASO]** handleListarAmenidadesHotel_sinRolAdmin_retorna403 `(1ms)`
 
-**[PASO]** handleCerrarHotel_servicioLanzaExcepcion_retorna400 `(4ms)`
+**[PASO]** handleCerrarHotel_servicioLanzaExcepcion_retorna400 `(1ms)`
 
-**[PASO]** handleListarHabitaciones_rolAdmin_retornaHabitacionesDelHotel `(16ms)`
+**[PASO]** handleListarHabitaciones_rolAdmin_retornaHabitacionesDelHotel `(2ms)`
 
-**[PASO]** handleAgregarImagenHabitacion_servicioLanzaExcepcion_retorna400 `(5ms)`
+**[PASO]** handleAgregarImagenHabitacion_servicioLanzaExcepcion_retorna400 `(2ms)`
 
-**[PASO]** handleEditarHotel_rolAdmin_editaHotelExitosamente `(3ms)`
+**[PASO]** handleEditarHotel_rolAdmin_editaHotelExitosamente `(1ms)`
 
-**[PASO]** handleEliminarImagenHabitacion_rolAdmin_eliminaImagenExitosamente `(3ms)`
+**[PASO]** handleEliminarImagenHabitacion_rolAdmin_eliminaImagenExitosamente `(1ms)`
 
-**[PASO]** handleListarAmenidades_sinRolAdmin_retorna403 `(1ms)`
+**[PASO]** handleListarAmenidades_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleCancelarReservacion_rolAdminConMotivo_cancelaYRetornaRespuesta `(20ms)`
 
@@ -512,23 +512,23 @@
 
 **[PASO]** handleListarHoteles_rolAdmin_retornaListaDeHoteles `(2ms)`
 
-**[PASO]** handleReservasActivasHabitacion_sinRolAdmin_retorna403 `(3ms)`
+**[PASO]** handleReservasActivasHabitacion_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleListarAmenidades_rolAdmin_retornaListaDelServicio `(2ms)`
 
-**[PASO]** handleCrearHotel_servicioLanzaExcepcion_retorna400 `(3ms)`
+**[PASO]** handleCrearHotel_servicioLanzaExcepcion_retorna400 `(4ms)`
 
 **[PASO]** handleReactivarHotel_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleCancelarReservacion_bodyLanzaExcepcion_usaMotivoDefault `(3ms)`
+**[PASO]** handleCancelarReservacion_bodyLanzaExcepcion_usaMotivoDefault `(1ms)`
 
-**[PASO]** handleReactivarHotel_hotelNoEncontrado_retorna404 `(3ms)`
+**[PASO]** handleReactivarHotel_hotelNoEncontrado_retorna404 `(1ms)`
 
 **[PASO]** handleCancelarReservacion_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleCerrarHotel_rolAdmin_cierraHotelExitosamente `(3ms)`
+**[PASO]** handleCerrarHotel_rolAdmin_cierraHotelExitosamente `(2ms)`
 
-**[PASO]** handleReactivarHabitacion_rolAdmin_reactivaHabitacionExitosamente `(2ms)`
+**[PASO]** handleReactivarHabitacion_rolAdmin_reactivaHabitacionExitosamente `(1ms)`
 
 **[PASO]** handleListarCiudades_rolAdmin_retornaListaDeCiudades `(2ms)`
 
@@ -536,33 +536,33 @@
 
 **[PASO]** handleActualizarAmenidadHotel_rolAdmin_actualizaAmenidadExitosamente `(2ms)`
 
-**[PASO]** handleAgregarImagenAmenidad_rolAdmin_agregaImagenYRetorna201 `(3ms)`
+**[PASO]** handleAgregarImagenAmenidad_rolAdmin_agregaImagenYRetorna201 `(2ms)`
 
-**[PASO]** handleAgregarImagenHotel_sinRolAdmin_retorna403 `(3ms)`
+**[PASO]** handleAgregarImagenHotel_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleAgregarImagenHabitacion_rolAdmin_agregaImagenYRetorna201 `(4ms)`
+**[PASO]** handleAgregarImagenHabitacion_rolAdmin_agregaImagenYRetorna201 `(1ms)`
 
 **[PASO]** handleReservasActivasHabitacion_rolAdmin_retornaReservasActivas `(2ms)`
 
-**[PASO]** handleListarPaises_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleListarPaises_sinRolAdmin_retorna403 `(0ms)`
 
-**[PASO]** handleReactivarHotel_rolAdmin_reactivaHotelExitosamente `(3ms)`
+**[PASO]** handleReactivarHotel_rolAdmin_reactivaHotelExitosamente `(2ms)`
 
-**[PASO]** handleObtenerMetricas_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleObtenerMetricas_sinRolAdmin_retorna403 `(1ms)`
 
 **[PASO]** handleEditarHabitacion_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleEliminarAmenidadHotel_sinRolAdmin_retorna403 `(2ms)`
+**[PASO]** handleEliminarAmenidadHotel_sinRolAdmin_retorna403 `(1ms)`
 
-**[PASO]** handleAgregarImagenHotel_servicioLanzaExcepcion_retorna400 `(3ms)`
+**[PASO]** handleAgregarImagenHotel_servicioLanzaExcepcion_retorna400 `(1ms)`
 
-**[PASO]** handleCancelarReservacion_servicioLanzaExcepcion_retorna400 `(2ms)`
+**[PASO]** handleCancelarReservacion_servicioLanzaExcepcion_retorna400 `(1ms)`
 
 **[PASO]** handleReservasActivasHotel_sinRolAdmin_retorna403 `(2ms)`
 
 **[PASO]** handleActualizarAmenidadHotel_sinRolAdmin_retorna403 `(2ms)`
 
-**[PASO]** handleListarReservaciones_sinRolAdmin_retorna403 `(4ms)`
+**[PASO]** handleListarReservaciones_sinRolAdmin_retorna403 `(1ms)`
 
 ---
 
@@ -572,17 +572,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** handleObtenerImagenAmenidad_imagenExiste_retornaImagenJpeg `(29ms)`
+**[PASO]** handleObtenerImagenAmenidad_imagenExiste_retornaImagenJpeg `(28ms)`
 
-**[PASO]** handleObtenerImagenHotel_imagenNoExiste_retorna404 `(2ms)`
+**[PASO]** handleObtenerImagenHotel_imagenNoExiste_retorna404 `(1ms)`
 
-**[PASO]** handleObtenerImagenHabitacion_imagenExiste_retornaImagenJpeg `(2ms)`
+**[PASO]** handleObtenerImagenHabitacion_imagenExiste_retornaImagenJpeg `(1ms)`
 
-**[PASO]** handleObtenerImagenAmenidad_imagenNoExiste_retorna404 `(4ms)`
+**[PASO]** handleObtenerImagenAmenidad_imagenNoExiste_retorna404 `(2ms)`
 
-**[PASO]** handleObtenerImagenHabitacion_imagenNoExiste_retorna404 `(3ms)`
+**[PASO]** handleObtenerImagenHabitacion_imagenNoExiste_retorna404 `(0ms)`
 
-**[PASO]** handleObtenerImagenHotel_imagenExiste_retornaImagenJpeg `(5ms)`
+**[PASO]** handleObtenerImagenHotel_imagenExiste_retornaImagenJpeg `(1ms)`
 
 ---
 
@@ -594,11 +594,11 @@
 
 **[PASO]** handleProcesarPago_authFalla_noInvocaServicio `(30ms)`
 
-**[PASO]** handleProcesarPago_errorPasarela_retorna500ConMensaje `(28ms)`
+**[PASO]** handleProcesarPago_errorPasarela_retorna500ConMensaje `(23ms)`
 
-**[PASO]** handleProcesarPago_pagoValido_retornaConfirmacion200 `(3ms)`
+**[PASO]** handleProcesarPago_pagoValido_retornaConfirmacion200 `(2ms)`
 
-**[PASO]** handleProcesarPago_pagoInvalido_retorna400ConMensaje `(5ms)`
+**[PASO]** handleProcesarPago_pagoInvalido_retorna400ConMensaje `(3ms)`
 
 ---
 
@@ -608,11 +608,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** handleProcesarPago_errorRuntime_retorna500 `(63ms)`
+**[PASO]** handleProcesarPago_errorRuntime_retorna500 `(54ms)`
 
 **[PASO]** handleProcesarPago_pagoExitoso_retorna200 `(2ms)`
 
-**[PASO]** handleProcesarPago_argumentoInvalido_retorna400 `(2ms)`
+**[PASO]** handleProcesarPago_argumentoInvalido_retorna400 `(3ms)`
 
 ---
 
@@ -622,9 +622,9 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** handleDescargarPdf_reservacionNoEncontrada_retorna404 `(27ms)`
+**[PASO]** handleDescargarPdf_reservacionNoEncontrada_retorna404 `(26ms)`
 
-**[PASO]** handleDescargarPdf_reservacionValida_retornaPdfComoAdjunto `(3ms)`
+**[PASO]** handleDescargarPdf_reservacionValida_retornaPdfComoAdjunto `(4ms)`
 
 ---
 
@@ -634,29 +634,29 @@
 - Pasaron: 13
 - Fallaron: 0
 
-**[PASO]** handleObtenerDetalleReservacion_reservacionNoEncontrada_retorna404ConMensaje `(39ms)`
+**[PASO]** handleObtenerDetalleReservacion_reservacionNoEncontrada_retorna404ConMensaje `(46ms)`
 
-**[PASO]** handleCrearReservacion_errorInterno_retorna500ConMensaje `(30ms)`
+**[PASO]** handleCrearReservacion_errorInterno_retorna500ConMensaje `(29ms)`
 
-**[PASO]** handleExpirarReservacion_reservacionValida_expiraYRetornaMensaje `(4ms)`
+**[PASO]** handleExpirarReservacion_reservacionValida_expiraYRetornaMensaje `(3ms)`
 
-**[PASO]** handleObtenerReservaciones_agenciaValida_retornaLista200 `(3ms)`
+**[PASO]** handleObtenerReservaciones_agenciaValida_retornaLista200 `(4ms)`
 
-**[PASO]** handleExpirarReservacion_authFalla_noInvocaServicio `(2ms)`
+**[PASO]** handleExpirarReservacion_authFalla_noInvocaServicio `(1ms)`
 
-**[PASO]** handleObtenerDetalleReservacion_errorInterno_retorna500ConMensaje `(3ms)`
+**[PASO]** handleObtenerDetalleReservacion_errorInterno_retorna500ConMensaje `(2ms)`
 
 **[PASO]** handleObtenerDetalleReservacion_reservacionExiste_retornaDetalle200 `(2ms)`
 
-**[PASO]** handleCrearReservacion_datosInvalidos_retorna400ConMensaje `(6ms)`
+**[PASO]** handleCrearReservacion_datosInvalidos_retorna400ConMensaje `(4ms)`
 
-**[PASO]** handleExpirarReservacion_reservacionInvalida_retorna400ConMensaje `(4ms)`
+**[PASO]** handleExpirarReservacion_reservacionInvalida_retorna400ConMensaje `(2ms)`
 
-**[PASO]** handleObtenerDetalleReservacion_authFalla_noInvocaServicio `(2ms)`
+**[PASO]** handleObtenerDetalleReservacion_authFalla_noInvocaServicio `(1ms)`
 
-**[PASO]** handleCrearReservacion_authFalla_noInvocaServicio `(3ms)`
+**[PASO]** handleCrearReservacion_authFalla_noInvocaServicio `(2ms)`
 
-**[PASO]** handleObtenerReservaciones_authFalla_noInvocaServicio `(3ms)`
+**[PASO]** handleObtenerReservaciones_authFalla_noInvocaServicio `(1ms)`
 
 **[PASO]** handleCrearReservacion_requestValido_retornaReservacion201 `(3ms)`
 
@@ -668,15 +668,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** handleCrearReservacion_datosValidos_retorna201 `(33ms)`
+**[PASO]** handleCrearReservacion_datosValidos_retorna201 `(128ms)`
 
 **[PASO]** handleObtenerReservaciones_usuarioConReservaciones_retorna200ConLista `(2ms)`
 
-**[PASO]** handleCrearReservacion_errorRuntime_retorna500 `(3ms)`
+**[PASO]** handleCrearReservacion_errorRuntime_retorna500 `(13ms)`
 
-**[PASO]** handleCrearReservacion_argumentoInvalido_retorna400 `(3ms)`
+**[PASO]** handleCrearReservacion_argumentoInvalido_retorna400 `(7ms)`
 
-**[PASO]** handleObtenerReservaciones_usuarioSinReservaciones_retorna200ConListaVacia `(2ms)`
+**[PASO]** handleObtenerReservaciones_usuarioSinReservaciones_retorna200ConListaVacia `(7ms)`
 
 ---
 
@@ -686,9 +686,9 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** handleSesion_tokenInvalido_retornaSinSesion `(24ms)`
+**[PASO]** handleSesion_tokenInvalido_retornaSinSesion `(53ms)`
 
-**[PASO]** handleSesion_tokenValido_retornaConSesion `(4ms)`
+**[PASO]** handleSesion_tokenValido_retornaConSesion `(12ms)`
 
 **[PASO]** handleSesion_sinToken_retornaSinSesion `(1ms)`
 
@@ -700,11 +700,11 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** handleGenerarToken_authOkYDatosValidos_retorna201ConToken `(54ms)`
+**[PASO]** handleGenerarToken_authOkYDatosValidos_retorna201ConToken `(68ms)`
 
-**[PASO]** handleGenerarToken_authOkYTokenHashNulo_servicioLlamadoConNulo `(6ms)`
+**[PASO]** handleGenerarToken_authOkYTokenHashNulo_servicioLlamadoConNulo `(3ms)`
 
-**[PASO]** handleGenerarToken_authFalla_noInvocaServicio `(3ms)`
+**[PASO]** handleGenerarToken_authFalla_noInvocaServicio `(1ms)`
 
 **[PASO]** handleGenerarToken_servicioLanzaExcepcion_retorna400 `(3ms)`
 
@@ -716,15 +716,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** handleValidar_tokenNull_retorna400SinLlamarServicio `(28ms)`
+**[PASO]** handleValidar_tokenNull_retorna400SinLlamarServicio `(48ms)`
 
-**[PASO]** handleValidar_tokenVacio_retorna400SinLlamarServicio `(3ms)`
+**[PASO]** handleValidar_tokenVacio_retorna400SinLlamarServicio `(5ms)`
 
-**[PASO]** handleValidar_tokenBlanco_retorna400SinLlamarServicio `(4ms)`
+**[PASO]** handleValidar_tokenBlanco_retorna400SinLlamarServicio `(1ms)`
 
-**[PASO]** handleValidar_tokenValido_retorna200ConResultado `(3ms)`
+**[PASO]** handleValidar_tokenValido_retorna200ConResultado `(5ms)`
 
-**[PASO]** handleValidar_tokenExpirado_retorna400ConMensaje `(3ms)`
+**[PASO]** handleValidar_tokenExpirado_retorna400ConMensaje `(12ms)`
 
 ---
 
@@ -734,33 +734,33 @@
 - Pasaron: 15
 - Fallaron: 0
 
-**[PASO]** handleRegistrar_camposDuplicados_retorna409 `(236ms)`
+**[PASO]** handleRegistrar_camposDuplicados_retorna409 `(803ms)`
 
-**[PASO]** handleCambiarTelefono_telefonoInvalido_retorna400 `(4ms)`
+**[PASO]** handleCambiarTelefono_telefonoInvalido_retorna400 `(9ms)`
 
-**[PASO]** handleObtenerPerfil_usuarioAutenticado_retornaPerfil `(3ms)`
+**[PASO]** handleObtenerPerfil_usuarioAutenticado_retornaPerfil `(5ms)`
 
-**[PASO]** handleCambiarContrasena_credencialesValidas_retorna200 `(4ms)`
+**[PASO]** handleCambiarContrasena_credencialesValidas_retorna200 `(8ms)`
 
-**[PASO]** handleCambiarRol_rolNoAutorizado_retorna403 `(3ms)`
+**[PASO]** handleCambiarRol_rolNoAutorizado_retorna403 `(2ms)`
 
-**[PASO]** handleListarAdmin_rolAdministrador_retornaLista `(3ms)`
+**[PASO]** handleListarAdmin_rolAdministrador_retornaLista `(2ms)`
 
-**[PASO]** handleCambiarTelefono_telefonoValido_retorna200 `(4ms)`
+**[PASO]** handleCambiarTelefono_telefonoValido_retorna200 `(7ms)`
 
-**[PASO]** handleCambiarRol_adminActualiza_retorna200 `(5ms)`
+**[PASO]** handleCambiarRol_adminActualiza_retorna200 `(100ms)`
 
-**[PASO]** handleValidar_servicioRetornaFalse_retornaResultadoNoDisponible `(2ms)`
+**[PASO]** handleValidar_servicioRetornaFalse_retornaResultadoNoDisponible `(10ms)`
 
 **[PASO]** handleCambiarRol_rolInvalido_retorna400 `(3ms)`
 
-**[PASO]** handleValidar_requestValido_retornaResultado `(2ms)`
+**[PASO]** handleValidar_requestValido_retornaResultado `(3ms)`
 
-**[PASO]** handleCambiarContrasena_credencialesInvalidas_retorna401 `(17ms)`
+**[PASO]** handleCambiarContrasena_credencialesInvalidas_retorna401 `(30ms)`
 
-**[PASO]** handleRegistrar_nuevoUsuario_retorna201ConId `(4ms)`
+**[PASO]** handleRegistrar_nuevoUsuario_retorna201ConId `(7ms)`
 
-**[PASO]** handleObtenerPerfil_diferentesUsuarios_llamaServicioConIdCorrecto `(3ms)`
+**[PASO]** handleObtenerPerfil_diferentesUsuarios_llamaServicioConIdCorrecto `(2ms)`
 
 **[PASO]** handleListarAdmin_rolNoAutorizado_retorna403 `(3ms)`
 
@@ -772,17 +772,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** sePuedeLanzarYCapturar_comoRuntimeException `(2ms)`
+**[PASO]** sePuedeLanzarYCapturar_comoRuntimeException `(5ms)`
 
 **[PASO]** constructor_conMensajeYCausa_almacenaAmbosValores `(2ms)`
 
-**[PASO]** mensajeDescriptivo_sePropaga_correctamente `(1ms)`
+**[PASO]** mensajeDescriptivo_sePropaga_correctamente `(0ms)`
 
-**[PASO]** causa_puedeSerSQLException_simulada `(5ms)`
+**[PASO]** causa_puedeSerSQLException_simulada `(134ms)`
 
-**[PASO]** sePuedeCapturar_comoDataAccessException `(1ms)`
+**[PASO]** sePuedeCapturar_comoDataAccessException `(4ms)`
 
-**[PASO]** esSubclase_deRuntimeException `(1ms)`
+**[PASO]** esSubclase_deRuntimeException `(2ms)`
 
 ---
 
@@ -792,15 +792,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** implementacion_conLambda_mapeaStringCorrectamente `(156ms)`
+**[PASO]** implementacion_conLambda_mapeaStringCorrectamente `(176ms)`
 
 **[PASO]** implementacion_propagaSQLException_cuandoResultSetFalla `(2ms)`
 
 **[PASO]** implementacion_conLambda_construyeObjetoCompuesto `(1ms)`
 
-**[PASO]** implementacion_conLambda_mapeaDoubleCorrectamente `(2ms)`
+**[PASO]** implementacion_conLambda_mapeaDoubleCorrectamente `(1ms)`
 
-**[PASO]** implementacion_conLambda_mapeaEnteroCorrectamente `(2ms)`
+**[PASO]** implementacion_conLambda_mapeaEnteroCorrectamente `(0ms)`
 
 ---
 
@@ -810,7 +810,7 @@
 - Pasaron: 78
 - Fallaron: 0
 
-**[PASO]** puedeCancelarDTO_constructorFalse_almacenaCorrecto `(1ms)`
+**[PASO]** puedeCancelarDTO_constructorFalse_almacenaCorrecto `(2ms)`
 
 **[PASO]** crearHotelRequestDTO_settersYGetters_funcionan `(0ms)`
 
@@ -818,27 +818,27 @@
 
 **[PASO]** tokenValidacionResponseDTO_constructor_almacenaTodosLosCampos `(0ms)`
 
-**[PASO]** aerolineaIdentidadDTO_constructor_almacenaNombreYUrl `(2ms)`
+**[PASO]** aerolineaIdentidadDTO_constructor_almacenaNombreYUrl `(100ms)`
 
-**[PASO]** cambiarContrasenaRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** cambiarContrasenaRequestDTO_settersYGetters_funcionan `(2ms)`
 
 **[PASO]** editarHotelRequestDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** hotelAdminDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** hotelAdminDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** habitacionAgenciaDTO_settersYGetters_funcionan `(2ms)`
+**[PASO]** habitacionAgenciaDTO_settersYGetters_funcionan `(57ms)`
 
-**[PASO]** reservacionRequestDTO_setterHabitaciones_funciona `(2ms)`
+**[PASO]** reservacionRequestDTO_setterHabitaciones_funciona `(15ms)`
 
-**[PASO]** hotelResultadoDTO_listas_seAsignanCorrectamente `(2ms)`
+**[PASO]** hotelResultadoDTO_listas_seAsignanCorrectamente `(24ms)`
 
-**[PASO]** reservacionResponseDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** reservacionResponseDTO_settersYGetters_funcionan `(6ms)`
 
-**[PASO]** editarAerolineaRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** editarAerolineaRequestDTO_settersYGetters_funcionan `(2ms)`
 
-**[PASO]** crearAerolineaRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** crearAerolineaRequestDTO_settersYGetters_funcionan `(3ms)`
 
-**[PASO]** loginResponseDTO_constructor_almacenaTodosLosCampos `(1ms)`
+**[PASO]** loginResponseDTO_constructor_almacenaTodosLosCampos `(5ms)`
 
 **[PASO]** cambiarRolRequestDTO_setterYGetter_funcionan `(1ms)`
 
@@ -846,23 +846,23 @@
 
 **[PASO]** aerolineaAdminDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** handshakeResponseDTO_setter_sobrescribeToken `(0ms)`
+**[PASO]** handshakeResponseDTO_setter_sobrescribeToken `(8ms)`
 
-**[PASO]** crearAerolineaAdminRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** crearAerolineaAdminRequestDTO_settersYGetters_funcionan `(4ms)`
 
-**[PASO]** ciudadDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** ciudadDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** reservacionDetalleDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** reservacionDetalleDTO_settersYGetters_funcionan `(4ms)`
 
 **[PASO]** paisDTO_constructor_almacenaIdYNombre `(1ms)`
 
-**[PASO]** downResponseDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** downResponseDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** agregarAmenidadRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** agregarAmenidadRequestDTO_settersYGetters_funcionan `(9ms)`
 
-**[PASO]** comentarioRequestDTO_settersYGetters_funcionan `(2ms)`
+**[PASO]** comentarioRequestDTO_settersYGetters_funcionan `(6ms)`
 
-**[PASO]** cancelacionRequestDTO_setterYGetter_funcionan `(0ms)`
+**[PASO]** cancelacionRequestDTO_setterYGetter_funcionan `(1ms)`
 
 **[PASO]** paisDTO_setters_sobrescribenValores `(1ms)`
 
@@ -870,37 +870,37 @@
 
 **[PASO]** usuarioValidacionRequestDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** tokenAerolineaResponseDTO_constructor_almacenaTodosLosCampos `(0ms)`
+**[PASO]** tokenAerolineaResponseDTO_constructor_almacenaTodosLosCampos `(1ms)`
 
 **[PASO]** busquedaRequestDTO_valoresPorDefecto_sonNullOCero `(1ms)`
 
-**[PASO]** downRequestDTO_setterYGetter_funcionan `(1ms)`
+**[PASO]** downRequestDTO_setterYGetter_funcionan `(0ms)`
 
-**[PASO]** downRequestDTO_valorNegativo_seAlmacenaCorrectamente `(0ms)`
+**[PASO]** downRequestDTO_valorNegativo_seAlmacenaCorrectamente `(2ms)`
 
-**[PASO]** usuarioPerfilResponseDTO_settersYGetters_funcionan `(2ms)`
+**[PASO]** usuarioPerfilResponseDTO_settersYGetters_funcionan `(1ms)`
 
 **[PASO]** tokenValidacionResponseDTO_porcentajeCero_seAlmacenaCorrectamente `(1ms)`
 
-**[PASO]** editarAgenciaRequestDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** editarAgenciaRequestDTO_settersYGetters_funcionan `(2ms)`
 
-**[PASO]** resultadoNotificacionDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** resultadoNotificacionDTO_settersYGetters_funcionan `(15ms)`
 
 **[PASO]** handshakeRequestDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** tokenAerolineaRequestDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** tokenAerolineaRequestDTO_settersYGetters_funcionan `(9ms)`
 
-**[PASO]** aerolineaAdminDTO_valoresPorDefecto_sonCero `(1ms)`
+**[PASO]** aerolineaAdminDTO_valoresPorDefecto_sonCero `(3ms)`
 
-**[PASO]** comentarioResponseDTO_settersYGetters_funcionan `(2ms)`
+**[PASO]** comentarioResponseDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** habitacionAgenciaResponseDTO_settersYGetters_funcionan `(8ms)`
+**[PASO]** habitacionAgenciaResponseDTO_settersYGetters_funcionan `(13ms)`
 
-**[PASO]** reservacionRequestDTO_listaVacia_seAsignaCorrectamente `(1ms)`
+**[PASO]** reservacionRequestDTO_listaVacia_seAsignaCorrectamente `(0ms)`
 
-**[PASO]** habitacionAdminDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** habitacionAdminDTO_settersYGetters_funcionan `(2ms)`
 
-**[PASO]** pagoRequestDTO_settersYGetters_facturacion_funcionan `(0ms)`
+**[PASO]** pagoRequestDTO_settersYGetters_facturacion_funcionan `(8ms)`
 
 **[PASO]** cambiarTelefonoRequestDTO_setterYGetter_funcionan `(0ms)`
 
@@ -910,59 +910,59 @@
 
 **[PASO]** loginRequestDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** agenciaIdentidad_settersYGetters_funcionan `(2ms)`
+**[PASO]** agenciaIdentidad_settersYGetters_funcionan `(3ms)`
 
-**[PASO]** tipoHabitacionResultadoDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** tipoHabitacionResultadoDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** loginResponseDTO_diferencteRol_seAlmacenaCorrectamente `(0ms)`
+**[PASO]** loginResponseDTO_diferencteRol_seAlmacenaCorrectamente `(2ms)`
 
-**[PASO]** busquedaRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** busquedaRequestDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** agenciaDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** agenciaDTO_settersYGetters_funcionan `(0ms)`
 
 **[PASO]** amenidadDTO_setters_sobrescribenValores `(0ms)`
 
-**[PASO]** hotelAmenidadDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** hotelAmenidadDTO_settersYGetters_funcionan `(1ms)`
 
 **[PASO]** editarHabitacionRequestDTO_settersYGetters_funcionan `(0ms)`
 
 **[PASO]** habitacionReservaRequestDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** crearAgenciaRequestDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** crearAgenciaRequestDTO_settersYGetters_funcionan `(2ms)`
 
-**[PASO]** sesionDTO_autenticadoFalsePorDefecto `(0ms)`
+**[PASO]** sesionDTO_autenticadoFalsePorDefecto `(1ms)`
 
-**[PASO]** usuarioValidacionResponseDTO_todosFalse_cuandoNingunExiste `(0ms)`
+**[PASO]** usuarioValidacionResponseDTO_todosFalse_cuandoNingunExiste `(1ms)`
 
-**[PASO]** crearAgenciaAdminRequestDTO_settersYGetters_funcionan `(0ms)`
+**[PASO]** crearAgenciaAdminRequestDTO_settersYGetters_funcionan `(2ms)`
 
-**[PASO]** amenidadHotelDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** amenidadHotelDTO_settersYGetters_funcionan `(0ms)`
 
 **[PASO]** hotelAgenciaDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** hotelResultadoDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** hotelResultadoDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** aerolineaWebserviceDTO_settersYGetters_funcionan `(1ms)`
+**[PASO]** aerolineaWebserviceDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** puedeCancelarDTO_constructorTrue_almacenaCorrecto `(0ms)`
+**[PASO]** puedeCancelarDTO_constructorTrue_almacenaCorrecto `(1ms)`
 
 **[PASO]** habitacionResumenDTO_settersYGetters_funcionan `(2ms)`
 
 **[PASO]** crearHabitacionRequestDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** handshakeResponseDTO_constructor_almacenaToken `(0ms)`
+**[PASO]** handshakeResponseDTO_constructor_almacenaToken `(1ms)`
 
-**[PASO]** amenidadDTO_constructor_almacenaIdYNombre `(0ms)`
+**[PASO]** amenidadDTO_constructor_almacenaIdYNombre `(1ms)`
 
 **[PASO]** pagoAgenciaRequestDTO_settersYGetters_funcionan `(1ms)`
 
-**[PASO]** subirImagenRequestDTO_setterYGetter_funcionan `(1ms)`
+**[PASO]** subirImagenRequestDTO_setterYGetter_funcionan `(2ms)`
 
 **[PASO]** loginRequestDTO_valoresPorDefecto_sonNull `(0ms)`
 
 **[PASO]** habitacionDTO_settersYGetters_funcionan `(0ms)`
 
-**[PASO]** agenciaDTO_valoresPorDefecto_sonCero `(0ms)`
+**[PASO]** agenciaDTO_valoresPorDefecto_sonCero `(1ms)`
 
 **[PASO]** pagoResponseDTO_settersYGetters_funcionan `(0ms)`
 
@@ -974,13 +974,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** verificar_tokenNoReconocido_retornaFalseYStatus401 `(39ms)`
+**[PASO]** verificar_tokenNoReconocido_retornaFalseYStatus401 `(51ms)`
 
-**[PASO]** verificar_tokenValido_retornaTrueEInyectaAtributosDeAerolinea `(2ms)`
+**[PASO]** verificar_tokenValido_retornaTrueEInyectaAtributosDeAerolinea `(4ms)`
 
 **[PASO]** verificar_tokenAusente_retornaFalseYStatus401SinConsultarRepo `(3ms)`
 
-**[PASO]** verificar_tokenEnBlanco_retornaFalseYStatus401SinConsultarRepo `(3ms)`
+**[PASO]** verificar_tokenEnBlanco_retornaFalseYStatus401SinConsultarRepo `(5ms)`
 
 ---
 
@@ -990,13 +990,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** verificar_tokenNoReconocido_retornaFalseYStatus401 `(34ms)`
+**[PASO]** verificar_tokenNoReconocido_retornaFalseYStatus401 `(45ms)`
 
-**[PASO]** verificar_tokenAusente_retornaFalseYStatus401SinConsultarRepo `(3ms)`
+**[PASO]** verificar_tokenAusente_retornaFalseYStatus401SinConsultarRepo `(6ms)`
 
-**[PASO]** verificar_tokenValido_retornaTrueEInyectaAtributosDeAgencia `(2ms)`
+**[PASO]** verificar_tokenValido_retornaTrueEInyectaAtributosDeAgencia `(14ms)`
 
-**[PASO]** verificar_tokenEnBlanco_retornaFalseYStatus401SinConsultarRepo `(3ms)`
+**[PASO]** verificar_tokenEnBlanco_retornaFalseYStatus401SinConsultarRepo `(2ms)`
 
 ---
 
@@ -1006,17 +1006,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** calcular_sinCombinacionesValidas_retornaVacio `(5ms)`
+**[PASO]** calcular_sinCombinacionesValidas_retornaVacio `(13ms)`
 
 **[PASO]** calcular_stockVacio_retornaListaVacia `(1ms)`
 
 **[PASO]** calcular_eliminaCombinacionExactaUnaHabitacion `(2ms)`
 
-**[PASO]** calcular_conMultiplesCapacidades_retornaCombinaciones `(1ms)`
+**[PASO]** calcular_conMultiplesCapacidades_retornaCombinaciones `(3ms)`
 
-**[PASO]** calcular_retornaMaximo3Combinaciones `(6ms)`
+**[PASO]** calcular_retornaMaximo3Combinaciones `(4ms)`
 
-**[PASO]** calcular_combinacionDosHabitaciones `(1ms)`
+**[PASO]** calcular_combinacionDosHabitaciones `(0ms)`
 
 ---
 
@@ -1026,11 +1026,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** enviar_datosValidos_noLanzaExcepcion `(2ms)`
+**[PASO]** enviar_datosValidos_noLanzaExcepcion `(8ms)`
 
-**[PASO]** enviar_cuerpoMinimo_noLanzaExcepcion `(1ms)`
+**[PASO]** enviar_cuerpoMinimo_noLanzaExcepcion `(12ms)`
 
-**[PASO]** enviar_argumentosExactos_invocaMetodoConParametrosCorrectos `(2ms)`
+**[PASO]** enviar_argumentosExactos_invocaMetodoConParametrosCorrectos `(3ms)`
 
 ---
 
@@ -1040,29 +1040,29 @@
 - Pasaron: 12
 - Fallaron: 0
 
-**[PASO]** esValido_tokenInvalido_retornaFalse `(544ms)`
+**[PASO]** esValido_tokenInvalido_retornaFalse `(605ms)`
 
-**[PASO]** getRolId_rolDistinto_retornaValorCorrecto `(142ms)`
+**[PASO]** getRolId_rolDistinto_retornaValorCorrecto `(112ms)`
 
 **[PASO]** getUsuarioId_idBorde_retornaIdCorrecto `(2ms)`
 
-**[PASO]** getUsername_usernameDistinto_retornaValorCorrecto `(2ms)`
+**[PASO]** getUsername_usernameDistinto_retornaValorCorrecto `(1ms)`
 
 **[PASO]** verificarToken_tokenInvalido_lanzaExcepcion `(2ms)`
 
 **[PASO]** generarToken_retornaTokenNoNulo `(2ms)`
 
-**[PASO]** esValido_tokenValido_retornaTrue `(2ms)`
+**[PASO]** esValido_tokenValido_retornaTrue `(1ms)`
 
-**[PASO]** generarToken_tieneEstructuraJwt `(1ms)`
+**[PASO]** generarToken_tieneEstructuraJwt `(2ms)`
 
-**[PASO]** getUsername_retornaUsernameCorrecto `(4ms)`
+**[PASO]** getUsername_retornaUsernameCorrecto `(1ms)`
 
 **[PASO]** verificarToken_tokenValido_retornaClaims `(2ms)`
 
 **[PASO]** getRolId_retornaRolCorrecto `(2ms)`
 
-**[PASO]** getUsuarioId_retornaIdCorrecto `(3ms)`
+**[PASO]** getUsuarioId_retornaIdCorrecto `(2ms)`
 
 ---
 
@@ -1072,13 +1072,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** hashear_retornaHashNoNulo `(381ms)`
+**[PASO]** hashear_retornaHashNoNulo `(320ms)`
 
-**[PASO]** verificar_contrasenaIncorrecta_retornaFalse `(660ms)`
+**[PASO]** verificar_contrasenaIncorrecta_retornaFalse `(542ms)`
 
-**[PASO]** hashear_resultadoDistintoCadaVez `(604ms)`
+**[PASO]** hashear_resultadoDistintoCadaVez `(517ms)`
 
-**[PASO]** verificar_contrasenaCorrecta_retornaTrue `(787ms)`
+**[PASO]** verificar_contrasenaCorrecta_retornaTrue `(507ms)`
 
 ---
 
@@ -1088,9 +1088,9 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** generarPdfReservacion_retornaPdfNoNulo `(530ms)`
+**[PASO]** generarPdfReservacion_retornaPdfNoNulo `(381ms)`
 
-**[PASO]** generarPdfReservacion_conFactura_retornaPdf `(49ms)`
+**[PASO]** generarPdfReservacion_conFactura_retornaPdf `(42ms)`
 
 ---
 
@@ -1100,23 +1100,23 @@
 - Pasaron: 9
 - Fallaron: 0
 
-**[PASO]** validar_titularVacio_lanzaExcepcion `(2ms)`
+**[PASO]** validar_titularVacio_lanzaExcepcion `(4ms)`
 
 **[PASO]** validar_formatoFechaInvalido_lanzaExcepcion `(3ms)`
 
-**[PASO]** validar_numeroConEspacios_esValido `(30ms)`
+**[PASO]** validar_numeroConEspacios_esValido `(5ms)`
 
-**[PASO]** validar_numeroInvalido_lanzaExcepcion `(0ms)`
+**[PASO]** validar_numeroInvalido_lanzaExcepcion `(2ms)`
 
-**[PASO]** validar_datosValidos_noLanzaExcepcion `(0ms)`
+**[PASO]** validar_datosValidos_noLanzaExcepcion `(1ms)`
 
-**[PASO]** validar_cvvInvalido_lanzaExcepcion `(0ms)`
+**[PASO]** validar_cvvInvalido_lanzaExcepcion `(2ms)`
 
 **[PASO]** validar_cvv4digitos_esValido `(2ms)`
 
-**[PASO]** validar_tarjetaVencida_lanzaExcepcion `(1ms)`
+**[PASO]** validar_tarjetaVencida_lanzaExcepcion `(0ms)`
 
-**[PASO]** validar_titularNull_lanzaExcepcion `(0ms)`
+**[PASO]** validar_titularNull_lanzaExcepcion `(1ms)`
 
 ---
 
@@ -1126,11 +1126,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** generarTokenHash_retornaCadena64Caracteres `(3ms)`
+**[PASO]** generarTokenHash_retornaCadena64Caracteres `(2ms)`
 
 **[PASO]** generarTokenHash_dosLlamadasRetornanDistinto `(0ms)`
 
-**[PASO]** generarTokenHash_retornaSoloHexadecimal `(0ms)`
+**[PASO]** generarTokenHash_retornaSoloHexadecimal `(1ms)`
 
 ---
 
@@ -1146,7 +1146,7 @@
 
 **[PASO]** reasignarUsername_noAfectaOtrosCampos `(0ms)`
 
-**[PASO]** setterYGetter_fechaNacimiento_funciona `(0ms)`
+**[PASO]** setterYGetter_fechaNacimiento_funciona `(1ms)`
 
 **[PASO]** ciudadId_conValor_seAlmacenaCorrectamente `(0ms)`
 
@@ -1154,7 +1154,7 @@
 
 **[PASO]** settersYGetters_camposNumericos_funcionan `(0ms)`
 
-**[PASO]** settersYGetters_camposTexto_funcionan `(2ms)`
+**[PASO]** settersYGetters_camposTexto_funcionan `(0ms)`
 
 ---
 
@@ -1164,15 +1164,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** listarTodas_retornaListaConReservacionDePrueba `(4.8s)`
+**[PASO]** listarTodas_retornaListaConReservacionDePrueba `(2.9s)`
 
-**[PASO]** obtenerReservacion_idExistente_retornaDatos `(1.7s)`
+**[PASO]** obtenerReservacion_idExistente_retornaDatos `(1.4s)`
 
-**[PASO]** obtenerReservacion_idInexistente_retornaNull `(1.5s)`
+**[PASO]** obtenerReservacion_idInexistente_retornaNull `(1.1s)`
 
-**[PASO]** obtenerDatosUsuarioPorReservacion_reservacionExistente_retornaDatos `(1.8s)`
+**[PASO]** obtenerDatosUsuarioPorReservacion_reservacionExistente_retornaDatos `(1.1s)`
 
-**[PASO]** cancelarReservacion_reservacionPendiente_cambiaEstado `(3s)`
+**[PASO]** cancelarReservacion_reservacionPendiente_cambiaEstado `(1.1s)`
 
 ---
 
@@ -1182,13 +1182,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** listarTodas_retornaListaNoNula `(1.5s)`
+**[PASO]** listarTodas_retornaListaNoNula `(581ms)`
 
-**[PASO]** crear_datosValidos_retornaAerolineaConId `(2.2s)`
+**[PASO]** crear_datosValidos_retornaAerolineaConId `(1.1s)`
 
-**[PASO]** editar_aerolineaExistente_actualizaDatos `(857ms)`
+**[PASO]** editar_aerolineaExistente_actualizaDatos `(669ms)`
 
-**[PASO]** listarWebserviceLibres_retornaListaNoNula `(886ms)`
+**[PASO]** listarWebserviceLibres_retornaListaNoNula `(550ms)`
 
 ---
 
@@ -1198,19 +1198,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** obtenerAerolineaPorToken_tokenActivo_retornaDto `(1.1s)`
+**[PASO]** obtenerAerolineaPorToken_tokenActivo_retornaDto `(768ms)`
 
-**[PASO]** obtenerAerolineaPorToken_tokenInexistente_retornaNull `(852ms)`
+**[PASO]** obtenerAerolineaPorToken_tokenInexistente_retornaNull `(680ms)`
 
-**[PASO]** obtenerDescuentoAerolinea_tokenActivo_retornaDescuentoPositivo `(793ms)`
+**[PASO]** obtenerDescuentoAerolinea_tokenActivo_retornaDescuentoPositivo `(730ms)`
 
-**[PASO]** buscarCiudadId_ciudadExistente_retornaId `(848ms)`
+**[PASO]** buscarCiudadId_ciudadExistente_retornaId `(649ms)`
 
-**[PASO]** guardarBusqueda_datosValidos_persisteEnOracle `(944ms)`
+**[PASO]** guardarBusqueda_datosValidos_persisteEnOracle `(759ms)`
 
-**[PASO]** obtenerAerolineaIdPorURL_urlExistente_retornaId `(982ms)`
+**[PASO]** obtenerAerolineaIdPorURL_urlExistente_retornaId `(657ms)`
 
-**[PASO]** guardarTokensAerolinea_datosValidos_actualizaToken `(1.4s)`
+**[PASO]** guardarTokensAerolinea_datosValidos_actualizaToken `(750ms)`
 
 ---
 
@@ -1220,13 +1220,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** listarPorUsuario_usuarioConAerolinea_retornaListaConAlMenosUna `(1.2s)`
+**[PASO]** listarPorUsuario_usuarioConAerolinea_retornaListaConAlMenosUna `(520ms)`
 
-**[PASO]** crear_datosValidos_retornaAerolineaConId `(2.1s)`
+**[PASO]** crear_datosValidos_retornaAerolineaConId `(963ms)`
 
-**[PASO]** cambiarEstado_aerolineaActiva_actualizaEstado `(722ms)`
+**[PASO]** cambiarEstado_aerolineaActiva_actualizaEstado `(593ms)`
 
-**[PASO]** listarPorUsuario_usuarioSinAerolinea_retornaListaVacia `(692ms)`
+**[PASO]** listarPorUsuario_usuarioSinAerolinea_retornaListaVacia `(583ms)`
 
 ---
 
@@ -1236,15 +1236,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** listarPorUsuario_usuarioConAgencia_retornaListaConAlMenosUna `(719ms)`
+**[PASO]** listarPorUsuario_usuarioConAgencia_retornaListaConAlMenosUna `(572ms)`
 
-**[PASO]** crear_datosValidos_retornaAgenciaConId `(1.3s)`
+**[PASO]** crear_datosValidos_retornaAgenciaConId `(932ms)`
 
-**[PASO]** editar_datosNuevos_actualizaNombre `(1.8s)`
+**[PASO]** editar_datosNuevos_actualizaNombre `(1.1s)`
 
-**[PASO]** cambiarEstado_agenciaActiva_cambiaEstado `(1.3s)`
+**[PASO]** cambiarEstado_agenciaActiva_cambiaEstado `(660ms)`
 
-**[PASO]** obtenerAgenciaPorToken_sinToken_retornaNull `(1.4s)`
+**[PASO]** obtenerAgenciaPorToken_sinToken_retornaNull `(548ms)`
 
 ---
 
@@ -1254,11 +1254,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** buscarPorIdentificador_porUsername_retornaUsuario `(823ms)`
+**[PASO]** buscarPorIdentificador_porUsername_retornaUsuario `(374ms)`
 
-**[PASO]** buscarPorIdentificador_porCorreo_retornaUsuario `(412ms)`
+**[PASO]** buscarPorIdentificador_porCorreo_retornaUsuario `(362ms)`
 
-**[PASO]** buscarPorIdentificador_identificadorInexistente_retornaNull `(397ms)`
+**[PASO]** buscarPorIdentificador_identificadorInexistente_retornaNull `(376ms)`
 
 ---
 
@@ -1268,15 +1268,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** buscarCiudadId_ciudadYPaisExistente_retornaIdNoNulo `(703ms)`
+**[PASO]** buscarCiudadId_ciudadYPaisExistente_retornaIdNoNulo `(531ms)`
 
-**[PASO]** buscarCiudadId_ciudadInexistente_retornaNull `(687ms)`
+**[PASO]** buscarCiudadId_ciudadInexistente_retornaNull `(542ms)`
 
-**[PASO]** obtenerDescuentoAgencia_usuarioConAgencia_retornaDescuento `(882ms)`
+**[PASO]** obtenerDescuentoAgencia_usuarioConAgencia_retornaDescuento `(719ms)`
 
-**[PASO]** guardarBusqueda_datosValidos_noLanzaExcepcion `(907ms)`
+**[PASO]** guardarBusqueda_datosValidos_noLanzaExcepcion `(543ms)`
 
-**[PASO]** buscarHotelesPorCiudad_retornaListaNoNula `(651ms)`
+**[PASO]** buscarHotelesPorCiudad_retornaListaNoNula `(540ms)`
 
 ---
 
@@ -1286,19 +1286,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** buscarCiudadId_ciudadYPaisExistente_retornaIdNoNulo `(189ms)`
+**[PASO]** buscarCiudadId_ciudadYPaisExistente_retornaIdNoNulo `(111ms)`
 
-**[PASO]** buscarCiudadId_ciudadInexistente_retornaNull `(378ms)`
+**[PASO]** buscarCiudadId_ciudadInexistente_retornaNull `(101ms)`
 
-**[PASO]** guardarBusqueda_sinUsuario_noLanzaExcepcion `(959ms)`
+**[PASO]** guardarBusqueda_sinUsuario_noLanzaExcepcion `(139ms)`
 
-**[PASO]** buscarHotelesPorCiudad_retornaListaNoNula `(796ms)`
+**[PASO]** buscarHotelesPorCiudad_retornaListaNoNula `(98ms)`
 
-**[PASO]** buscarImagenesHotel_hotelInexistente_retornaListaVacia `(1.1s)`
+**[PASO]** buscarImagenesHotel_hotelInexistente_retornaListaVacia `(149ms)`
 
-**[PASO]** buscarAmenidadesHotel_hotelInexistente_retornaListaVacia `(726ms)`
+**[PASO]** buscarAmenidadesHotel_hotelInexistente_retornaListaVacia `(107ms)`
 
-**[PASO]** buscarImagenesHabitacion_habitacionInexistente_retornaListaVacia `(920ms)`
+**[PASO]** buscarImagenesHabitacion_habitacionInexistente_retornaListaVacia `(115ms)`
 
 ---
 
@@ -1308,15 +1308,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** obtenerReservacionParaCancelar_reservacionDelUsuario_retornaDatos `(513ms)`
+**[PASO]** obtenerReservacionParaCancelar_reservacionDelUsuario_retornaDatos `(452ms)`
 
-**[PASO]** obtenerReservacionParaCancelar_otroUsuarioId_retornaNull `(495ms)`
+**[PASO]** obtenerReservacionParaCancelar_otroUsuarioId_retornaNull `(480ms)`
 
-**[PASO]** obtenerFechaCheckInMasReciente_sinDetalles_retornaNull `(558ms)`
+**[PASO]** obtenerFechaCheckInMasReciente_sinDetalles_retornaNull `(445ms)`
 
-**[PASO]** cancelarReservacion_estadoPendiente_actualizaAEstado4 `(598ms)`
+**[PASO]** cancelarReservacion_estadoPendiente_actualizaAEstado4 `(480ms)`
 
-**[PASO]** obtenerReservacionAgenciaParaCancelar_sinAgenciaVinculada_retornaNull `(673ms)`
+**[PASO]** obtenerReservacionAgenciaParaCancelar_sinAgenciaVinculada_retornaNull `(459ms)`
 
 ---
 
@@ -1326,21 +1326,21 @@
 - Pasaron: 8
 - Fallaron: 0
 
-**[PASO]** existeComentarioConResena_sinComentarios_retornaFalse `(707ms)`
+**[PASO]** existeComentarioConResena_sinComentarios_retornaFalse `(532ms)`
 
-**[PASO]** crearComentario_conResena_retornaIdPositivo `(749ms)`
+**[PASO]** crearComentario_conResena_retornaIdPositivo `(529ms)`
 
-**[PASO]** existeComentarioConResena_despuesDeCrear_retornaTrue `(934ms)`
+**[PASO]** existeComentarioConResena_despuesDeCrear_retornaTrue `(579ms)`
 
-**[PASO]** crearComentario_sinResena_esRespuestaAOtro `(712ms)`
+**[PASO]** crearComentario_sinResena_esRespuestaAOtro `(527ms)`
 
-**[PASO]** actualizarRatingHotel_conResena_noLanzaExcepcion `(722ms)`
+**[PASO]** actualizarRatingHotel_conResena_noLanzaExcepcion `(594ms)`
 
-**[PASO]** obtenerComentario_comentarioExistente_retornaDtoConDatos `(722ms)`
+**[PASO]** obtenerComentario_comentarioExistente_retornaDtoConDatos `(581ms)`
 
-**[PASO]** obtenerComentariosPorUsuario_retornaListaConAlMenosUno `(719ms)`
+**[PASO]** obtenerComentariosPorUsuario_retornaListaConAlMenosUno `(583ms)`
 
-**[PASO]** obtenerComentariosPorHotel_retornaListaConAlMenosUno `(704ms)`
+**[PASO]** obtenerComentariosPorHotel_retornaListaConAlMenosUno `(592ms)`
 
 ---
 
@@ -1350,13 +1350,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** obtenerTodosLosHoteles_retornaListaNoNula `(72ms)`
+**[PASO]** obtenerTodosLosHoteles_retornaListaNoNula `(45ms)`
 
-**[PASO]** obtenerTodosLosHoteles_conHotelesActivos_retornaDtosValidos `(54ms)`
+**[PASO]** obtenerTodosLosHoteles_conHotelesActivos_retornaDtosValidos `(38ms)`
 
-**[PASO]** obtenerImagenesHotel_hotelExistente_retornaListaNoNula `(87ms)`
+**[PASO]** obtenerImagenesHotel_hotelExistente_retornaListaNoNula `(106ms)`
 
-**[PASO]** obtenerImagenesHotel_hotelInexistente_retornaListaVacia `(45ms)`
+**[PASO]** obtenerImagenesHotel_hotelInexistente_retornaListaVacia `(34ms)`
 
 ---
 
@@ -1366,17 +1366,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** obtenerValorDown_sinDown_retornaNull `(926ms)`
+**[PASO]** obtenerValorDown_sinDown_retornaNull `(761ms)`
 
-**[PASO]** insertarDown_registraDown_obtenibleEnOracle `(951ms)`
+**[PASO]** insertarDown_registraDown_obtenibleEnOracle `(770ms)`
 
-**[PASO]** obtenerDownsDeUsuario_trasInsertarDown_retornaListaConDown `(977ms)`
+**[PASO]** obtenerDownsDeUsuario_trasInsertarDown_retornaListaConDown `(799ms)`
 
-**[PASO]** obtenerDownsDeUsuarioPorHotel_filtraPorHotel `(969ms)`
+**[PASO]** obtenerDownsDeUsuarioPorHotel_filtraPorHotel `(783ms)`
 
-**[PASO]** actualizarContadorDown_incrementaContador `(882ms)`
+**[PASO]** actualizarContadorDown_incrementaContador `(788ms)`
 
-**[PASO]** eliminarDown_eliminaDown_obtenerValorRetornaNull `(1.7s)`
+**[PASO]** eliminarDown_eliminaDown_obtenerValorRetornaNull `(891ms)`
 
 ---
 
@@ -1386,23 +1386,23 @@
 - Pasaron: 9
 - Fallaron: 0
 
-**[PASO]** listarAmenidades_retornaListaNoNula `(1.2s)`
+**[PASO]** listarAmenidades_retornaListaNoNula `(447ms)`
 
-**[PASO]** crearAmenidad_nombreValido_retornaIdPositivo `(541ms)`
+**[PASO]** crearAmenidad_nombreValido_retornaIdPositivo `(485ms)`
 
-**[PASO]** listarTodos_retornaListaConElHotelInsertado `(470ms)`
+**[PASO]** listarTodos_retornaListaConElHotelInsertado `(456ms)`
 
-**[PASO]** actualizarHotel_datosNuevos_actualizaNombreEnOracle `(529ms)`
+**[PASO]** actualizarHotel_datosNuevos_actualizaNombreEnOracle `(517ms)`
 
-**[PASO]** cerrarHotel_hotelActivo_cambiaEstadoId `(791ms)`
+**[PASO]** cerrarHotel_hotelActivo_cambiaEstadoId `(476ms)`
 
-**[PASO]** reactivarHotel_hotelCerrado_restauraEstadoId `(675ms)`
+**[PASO]** reactivarHotel_hotelCerrado_restauraEstadoId `(489ms)`
 
-**[PASO]** existe_hotelExistente_retornaTrue `(603ms)`
+**[PASO]** existe_hotelExistente_retornaTrue `(493ms)`
 
-**[PASO]** crearHabitacion_datosValidos_retornaIdPositivo `(656ms)`
+**[PASO]** crearHabitacion_datosValidos_retornaIdPositivo `(583ms)`
 
-**[PASO]** obtenerMetricas_retornaMapaConClaves `(821ms)`
+**[PASO]** obtenerMetricas_retornaMapaConClaves `(687ms)`
 
 ---
 
@@ -1412,19 +1412,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** obtenerImagenHotel_idExistente_retornaBytes `(319ms)`
+**[PASO]** obtenerImagenHotel_idExistente_retornaBytes `(301ms)`
 
-**[PASO]** obtenerImagenHotel_idInexistente_retornaNull `(285ms)`
+**[PASO]** obtenerImagenHotel_idInexistente_retornaNull `(262ms)`
 
-**[PASO]** obtenerImagenHabitacion_idExistente_retornaBytes `(274ms)`
+**[PASO]** obtenerImagenHabitacion_idExistente_retornaBytes `(267ms)`
 
-**[PASO]** obtenerImagenHabitacion_idInexistente_retornaNull `(258ms)`
+**[PASO]** obtenerImagenHabitacion_idInexistente_retornaNull `(296ms)`
 
-**[PASO]** eliminarImagenHotel_eliminaImagen_noObtenible `(265ms)`
+**[PASO]** eliminarImagenHotel_eliminaImagen_noObtenible `(277ms)`
 
-**[PASO]** eliminarImagenHabitacion_eliminaImagen_noObtenible `(303ms)`
+**[PASO]** eliminarImagenHabitacion_eliminaImagen_noObtenible `(279ms)`
 
-**[PASO]** obtenerImagenAmenidad_idInexistente_retornaNull `(271ms)`
+**[PASO]** obtenerImagenAmenidad_idInexistente_retornaNull `(261ms)`
 
 ---
 
@@ -1434,15 +1434,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** obtenerReservacionParaPago_reservacionDeAgencia_retornaDatos `(2.1s)`
+**[PASO]** obtenerReservacionParaPago_reservacionDeAgencia_retornaDatos `(918ms)`
 
-**[PASO]** obtenerReservacionParaPago_agenciaIncorrecta_retornaNull `(1s)`
+**[PASO]** obtenerReservacionParaPago_agenciaIncorrecta_retornaNull `(925ms)`
 
-**[PASO]** confirmarReservacion_estadoPendiente_actualizaAEstado2 `(1.1s)`
+**[PASO]** confirmarReservacion_estadoPendiente_actualizaAEstado2 `(931ms)`
 
-**[PASO]** crearFactura_datosValidos_retornaIdPositivo `(1.1s)`
+**[PASO]** crearFactura_datosValidos_retornaIdPositivo `(991ms)`
 
-**[PASO]** obtenerFactura_facturaExistente_retornaDtoConDatos `(2.7s)`
+**[PASO]** obtenerFactura_facturaExistente_retornaDtoConDatos `(1s)`
 
 ---
 
@@ -1452,19 +1452,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** obtenerReservacionParaPago_reservacionDelUsuario_retornaDatosCorrectos `(875ms)`
+**[PASO]** obtenerReservacionParaPago_reservacionDelUsuario_retornaDatosCorrectos `(920ms)`
 
-**[PASO]** obtenerReservacionParaPago_otroUsuarioId_retornaNull `(938ms)`
+**[PASO]** obtenerReservacionParaPago_otroUsuarioId_retornaNull `(877ms)`
 
-**[PASO]** confirmarReservacion_estadoPendiente_cambiaAEstado2 `(1s)`
+**[PASO]** confirmarReservacion_estadoPendiente_cambiaAEstado2 `(870ms)`
 
-**[PASO]** crearFactura_datosValidos_retornaIdPositivo `(2.3s)`
+**[PASO]** crearFactura_datosValidos_retornaIdPositivo `(830ms)`
 
-**[PASO]** obtenerFactura_facturaExistente_retornaDtoConDatos `(987ms)`
+**[PASO]** obtenerFactura_facturaExistente_retornaDtoConDatos `(969ms)`
 
-**[PASO]** actualizarTotalReservacion_nuevoTotal_actualizaCorrectamente `(1s)`
+**[PASO]** actualizarTotalReservacion_nuevoTotal_actualizaCorrectamente `(814ms)`
 
-**[PASO]** obtenerCiudadReservacion_conDetallesYHotel_retornaNombreCiudad `(971ms)`
+**[PASO]** obtenerCiudadReservacion_conDetallesYHotel_retornaNombreCiudad `(789ms)`
 
 ---
 
@@ -1476,15 +1476,15 @@
 
 **[PASO]** obtenerDescuentoAgencia_agenciaConDescuento_retornaValorPositivo `(1.3s)`
 
-**[PASO]** obtenerPrecios_habitacionExistente_retornaArrayConPrecios `(1.4s)`
+**[PASO]** obtenerPrecios_habitacionExistente_retornaArrayConPrecios `(1.1s)`
 
-**[PASO]** existeTraslape_fechasSinConflicto_retornaFalse `(1.3s)`
+**[PASO]** existeTraslape_fechasSinConflicto_retornaFalse `(1.2s)`
 
-**[PASO]** crearReservacion_datosValidos_retornaIdPositivo `(1.2s)`
+**[PASO]** crearReservacion_datosValidos_retornaIdPositivo `(1.1s)`
 
-**[PASO]** obtenerReservacion_reservacionExistente_retornaDatos `(1.3s)`
+**[PASO]** obtenerReservacion_reservacionExistente_retornaDatos `(1.2s)`
 
-**[PASO]** expirarReservacion_reservacionPendiente_actualizaEstado `(1.4s)`
+**[PASO]** expirarReservacion_reservacionPendiente_actualizaEstado `(1.2s)`
 
 ---
 
@@ -1494,21 +1494,21 @@
 - Pasaron: 8
 - Fallaron: 0
 
-**[PASO]** obtenerPrecios_habitacionExistente_retornaArrayConPrecios `(882ms)`
+**[PASO]** obtenerPrecios_habitacionExistente_retornaArrayConPrecios `(885ms)`
 
-**[PASO]** existeTraslape_sinReservacionesConflicto_retornaFalse `(919ms)`
+**[PASO]** existeTraslape_sinReservacionesConflicto_retornaFalse `(841ms)`
 
-**[PASO]** existeTraslape_conReservacionConflicto_retornaTrue `(959ms)`
+**[PASO]** existeTraslape_conReservacionConflicto_retornaTrue `(841ms)`
 
-**[PASO]** crearReservacion_datosValidos_retornaIdPositivo `(1.3s)`
+**[PASO]** crearReservacion_datosValidos_retornaIdPositivo `(956ms)`
 
-**[PASO]** obtenerReservacion_reservacionExistente_retornaDatosCorrectos `(1s)`
+**[PASO]** obtenerReservacion_reservacionExistente_retornaDatosCorrectos `(780ms)`
 
-**[PASO]** obtenerReservacionesDeUsuario_conDetalle_retornaListaConAlMenosUno `(971ms)`
+**[PASO]** obtenerReservacionesDeUsuario_conDetalle_retornaListaConAlMenosUno `(766ms)`
 
-**[PASO]** expirarReservacionesVencidas_noLanzaExcepcion_retornaEntero `(1.1s)`
+**[PASO]** expirarReservacionesVencidas_noLanzaExcepcion_retornaEntero `(806ms)`
 
-**[PASO]** obtenerImagenesHotel_hotelSinImagenes_retornaListaVacia `(1.1s)`
+**[PASO]** obtenerImagenesHotel_hotelSinImagenes_retornaListaVacia `(776ms)`
 
 ---
 
@@ -1518,25 +1518,25 @@
 - Pasaron: 10
 - Fallaron: 0
 
-**[PASO]** existeUsername_usernameExistente_retornaTrue `(525ms)`
+**[PASO]** existeUsername_usernameExistente_retornaTrue `(386ms)`
 
-**[PASO]** existeUsername_usernameInexistente_retornaFalse `(559ms)`
+**[PASO]** existeUsername_usernameInexistente_retornaFalse `(388ms)`
 
-**[PASO]** existeCorreo_correoExistente_retornaTrue `(669ms)`
+**[PASO]** existeCorreo_correoExistente_retornaTrue `(402ms)`
 
-**[PASO]** existePasaporte_pasaporteExistente_retornaTrue `(624ms)`
+**[PASO]** existePasaporte_pasaporteExistente_retornaTrue `(427ms)`
 
-**[PASO]** existePasaporte_pasaporteNuloOVacio_retornaFalse `(579ms)`
+**[PASO]** existePasaporte_pasaporteNuloOVacio_retornaFalse `(351ms)`
 
-**[PASO]** crearUsuario_datosValidos_retornaIdPositivo `(1s)`
+**[PASO]** crearUsuario_datosValidos_retornaIdPositivo `(680ms)`
 
-**[PASO]** obtenerPerfil_usuarioExistente_retornaDtoConDatos `(1s)`
+**[PASO]** obtenerPerfil_usuarioExistente_retornaDtoConDatos `(389ms)`
 
-**[PASO]** actualizarTelefono_usuarioExistente_cambiaElCampo `(1.5s)`
+**[PASO]** actualizarTelefono_usuarioExistente_cambiaElCampo `(427ms)`
 
-**[PASO]** obtenerContrasena_usuarioExistente_retornaHashNoNulo `(1.5s)`
+**[PASO]** obtenerContrasena_usuarioExistente_retornaHashNoNulo `(391ms)`
 
-**[PASO]** listarTodosConRol_retornaListaNoNula `(534ms)`
+**[PASO]** listarTodosConRol_retornaListaNoNula `(426ms)`
 
 ---
 
@@ -1546,15 +1546,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** listarSinFiltrosRetornaResultadosYTotalCorrecto `(952ms)`
+**[PASO]** listarSinFiltrosRetornaResultadosYTotalCorrecto `(648ms)`
 
-**[PASO]** listarConFiltroDestinoFiltraCorrectamente `(920ms)`
+**[PASO]** listarConFiltroDestinoFiltraCorrectamente `(604ms)`
 
-**[PASO]** listarConTipoWebRetornaSoloBusquedasWeb `(935ms)`
+**[PASO]** listarConTipoWebRetornaSoloBusquedasWeb `(655ms)`
 
-**[PASO]** listarPaginacionRetornaSegundaPagina `(858ms)`
+**[PASO]** listarPaginacionRetornaSegundaPagina `(704ms)`
 
-**[PASO]** resumenRetornaEstructuraCompletaDesdeOracle `(790ms)`
+**[PASO]** resumenRetornaEstructuraCompletaDesdeOracle `(704ms)`
 
 ---
 
@@ -1564,23 +1564,23 @@
 - Pasaron: 11
 - Fallaron: 0
 
-**[PASO]** listar_conFechasInvalidas_trataNullLasFechas `(186ms)`
+**[PASO]** listar_conFechasInvalidas_trataNullLasFechas `(48ms)`
 
-**[PASO]** listar_conTipoWeb_pasaTipoBusquedaId1 `(8ms)`
+**[PASO]** listar_conTipoWeb_pasaTipoBusquedaId1 `(1ms)`
 
 **[PASO]** listar_conTipoTodos_pasaTipoBusquedaIdNull `(2ms)`
 
-**[PASO]** listar_pagina3ConPorPagina5_calculaOffsetCorrecto `(2ms)`
+**[PASO]** listar_pagina3ConPorPagina5_calculaOffsetCorrecto `(1ms)`
 
 **[PASO]** listar_conTipoRest_pasaTipoBusquedaId2 `(2ms)`
 
-**[PASO]** resumen_llamadoNormal_invocaRepoConArgumentosCorrectos `(8ms)`
+**[PASO]** resumen_llamadoNormal_invocaRepoConArgumentosCorrectos `(1ms)`
 
-**[PASO]** exportar_sinFiltros_invocaRepoExportarConNulls `(2.7s)`
+**[PASO]** exportar_sinFiltros_invocaRepoExportarConNulls `(2.3s)`
 
-**[PASO]** resumen_llamadoNormal_retornaMapaConTodasLasClaves `(1ms)`
+**[PASO]** resumen_llamadoNormal_retornaMapaConTodasLasClaves `(2ms)`
 
-**[PASO]** exportar_conFiltros_invocaRepoExportarYEnviaCorreo `(1.9s)`
+**[PASO]** exportar_conFiltros_invocaRepoExportarYEnviaCorreo `(1.6s)`
 
 **[PASO]** listar_conFechasValidas_parseaCorrectamenteLasFechas `(2ms)`
 
@@ -1594,21 +1594,21 @@
 - Pasaron: 9
 - Fallaron: 0
 
-**[PASO]** cancelarReservacion_estadoCancelada_lanzaIllegalArgumentException `(100ms)`
+**[PASO]** cancelarReservacion_estadoCancelada_lanzaIllegalArgumentException `(77ms)`
 
-**[PASO]** listarTodas_repositorioRetornaLista_devuelveMismaLista `(2ms)`
+**[PASO]** listarTodas_repositorioRetornaLista_devuelveMismaLista `(1ms)`
 
-**[PASO]** cancelarReservacion_estadoPendiente_ejecutaCancelacionYNotificaAgencia `(2ms)`
+**[PASO]** cancelarReservacion_estadoPendiente_ejecutaCancelacionYNotificaAgencia `(1ms)`
 
-**[PASO]** cancelarReservacion_reservacionNoExiste_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** cancelarReservacion_reservacionNoExiste_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** listarTodas_repositorioRetornaListaVacia_devuelveListaVacia `(1ms)`
 
 **[PASO]** cancelarReservacion_estadoConfirmada_ejecutaCancelacionYNotificaAgencia `(1ms)`
 
-**[PASO]** cancelarReservacion_notificadorRetornaErrorHTTP_completaCancelacionConError `(3ms)`
+**[PASO]** cancelarReservacion_notificadorRetornaErrorHTTP_completaCancelacionConError `(2ms)`
 
-**[PASO]** cancelarReservacion_notificadorRetornaNoEsReservaAgencia_completaCancelacion `(2ms)`
+**[PASO]** cancelarReservacion_notificadorRetornaNoEsReservaAgencia_completaCancelacion `(1ms)`
 
 **[PASO]** cancelarReservacion_estadoExpirada_lanzaIllegalArgumentException `(1ms)`
 
@@ -1620,19 +1620,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** listarWebserviceLibres_conUsuariosDisponibles_retornaListaDelRepo `(64ms)`
+**[PASO]** listarWebserviceLibres_conUsuariosDisponibles_retornaListaDelRepo `(52ms)`
 
-**[PASO]** editar_requestValido_delegaAlRepo `(1ms)`
+**[PASO]** editar_requestValido_delegaAlRepo `(2ms)`
 
-**[PASO]** listarTodas_conAerolineas_retornaListaDelRepo `(4ms)`
+**[PASO]** listarTodas_conAerolineas_retornaListaDelRepo `(1ms)`
 
-**[PASO]** crear_requestValido_retornaAerolineaCreadaDelRepo `(1ms)`
+**[PASO]** crear_requestValido_retornaAerolineaCreadaDelRepo `(2ms)`
 
-**[PASO]** listarWebserviceLibres_todosAsignados_retornaListaVacia `(1ms)`
+**[PASO]** listarWebserviceLibres_todosAsignados_retornaListaVacia `(0ms)`
 
-**[PASO]** listarTodas_sinAerolineas_retornaListaVacia `(2ms)`
+**[PASO]** listarTodas_sinAerolineas_retornaListaVacia `(0ms)`
 
-**[PASO]** editar_idDistinto_invocaRepoConIdCorrecto `(2ms)`
+**[PASO]** editar_idDistinto_invocaRepoConIdCorrecto `(1ms)`
 
 ---
 
@@ -1642,17 +1642,17 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** listarPorUsuario_usuarioSinAerolineas_retornaListaVacia `(57ms)`
+**[PASO]** listarPorUsuario_usuarioSinAerolineas_retornaListaVacia `(42ms)`
 
-**[PASO]** cambiarEstado_estadoCero_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** cambiarEstado_estadoCero_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** cambiarEstado_estadoActivo_invocaRepoConParametrosCorrectos `(0ms)`
+**[PASO]** cambiarEstado_estadoActivo_invocaRepoConParametrosCorrectos `(2ms)`
 
-**[PASO]** cambiarEstado_estadoInvalido_lanzaIllegalArgumentExceptionSinInvocarRepo `(2ms)`
+**[PASO]** cambiarEstado_estadoInvalido_lanzaIllegalArgumentExceptionSinInvocarRepo `(0ms)`
 
-**[PASO]** crear_requestValido_retornaAerolineaCreadaDelRepo `(2ms)`
+**[PASO]** crear_requestValido_retornaAerolineaCreadaDelRepo `(1ms)`
 
-**[PASO]** cambiarEstado_estadoCerrado_invocaRepoConParametrosCorrectos `(2ms)`
+**[PASO]** cambiarEstado_estadoCerrado_invocaRepoConParametrosCorrectos `(3ms)`
 
 **[PASO]** listarPorUsuario_usuarioConAerolineas_retornaListaDelRepo `(1ms)`
 
@@ -1664,17 +1664,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** notificarCancelacion_agenciaSinToken_retornaErrorSinHTTP `(228ms)`
+**[PASO]** notificarCancelacion_agenciaSinToken_retornaErrorSinHTTP `(150ms)`
 
-**[PASO]** notificarCancelacion_httpError500_retornaEnviadoTrueConStatus500 `(14ms)`
+**[PASO]** notificarCancelacion_httpError500_retornaEnviadoTrueConStatus500 `(7ms)`
 
-**[PASO]** notificarCancelacion_agenciaSinURL_retornaErrorSinHTTP `(5ms)`
+**[PASO]** notificarCancelacion_agenciaSinURL_retornaErrorSinHTTP `(2ms)`
 
-**[PASO]** notificarCancelacion_httpExitoso200_retornaEnviadoTrueYStatusCorrecto `(6ms)`
+**[PASO]** notificarCancelacion_httpExitoso200_retornaEnviadoTrueYStatusCorrecto `(13ms)`
 
-**[PASO]** notificarCancelacion_excepcionRed_retornaErrorEnDTOSinPropagar `(13ms)`
+**[PASO]** notificarCancelacion_excepcionRed_retornaErrorEnDTOSinPropagar `(5ms)`
 
-**[PASO]** notificarCancelacion_noEsReservaDeAgencia_retornaEsReservaFalseYSinHTTP `(9ms)`
+**[PASO]** notificarCancelacion_noEsReservaDeAgencia_retornaEsReservaFalseYSinHTTP `(5ms)`
 
 ---
 
@@ -1688,15 +1688,15 @@
 
 **[PASO]** listarTodas_sinAgencias_retornaListaVacia `(2ms)`
 
-**[PASO]** listarPorUsuario_sinAgencias_retornaListaVacia `(1ms)`
+**[PASO]** listarPorUsuario_sinAgencias_retornaListaVacia `(2ms)`
 
-**[PASO]** cambiarEstado_estadoInvalido_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** cambiarEstado_estadoInvalido_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** cambiarEstado_estadoCero_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** cambiarEstado_estadoCero_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** listarTodas_retornaListaCompleta `(1ms)`
+**[PASO]** listarTodas_retornaListaCompleta `(2ms)`
 
-**[PASO]** cambiarEstado_estadoActivo_invocaRepoConParametrosCorrectos `(1ms)`
+**[PASO]** cambiarEstado_estadoActivo_invocaRepoConParametrosCorrectos `(2ms)`
 
 **[PASO]** crear_conRequestValido_retornaAgenciaCreadaDelRepo `(1ms)`
 
@@ -1704,7 +1704,7 @@
 
 **[PASO]** cambiarEstado_estadoCerrado_invocaRepoConParametrosCorrectos `(2ms)`
 
-**[PASO]** listarPorUsuario_conUsuarioValido_retornaListaDelRepo `(1ms)`
+**[PASO]** listarPorUsuario_conUsuarioValido_retornaListaDelRepo `(2ms)`
 
 ---
 
@@ -1714,13 +1714,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** loginExitosoConUsername `(831ms)`
+**[PASO]** loginExitosoConUsername `(669ms)`
 
-**[PASO]** loginExitosoConCorreo `(759ms)`
+**[PASO]** loginExitosoConCorreo `(600ms)`
 
-**[PASO]** loginFallaUsuarioInexistente `(380ms)`
+**[PASO]** loginFallaUsuarioInexistente `(371ms)`
 
-**[PASO]** loginFallaContrasenaIncorrecta `(1.7s)`
+**[PASO]** loginFallaContrasenaIncorrecta `(599ms)`
 
 ---
 
@@ -1730,11 +1730,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** login_contrasenaIncorrecta_lanzaCredencialesInvalidasException `(653ms)`
+**[PASO]** login_contrasenaIncorrecta_lanzaCredencialesInvalidasException `(557ms)`
 
-**[PASO]** login_credencialesCorrectas_retornaLoginResultadoConTokenYRespuesta `(579ms)`
+**[PASO]** login_credencialesCorrectas_retornaLoginResultadoConTokenYRespuesta `(499ms)`
 
-**[PASO]** login_usuarioNoExiste_lanzaCredencialesInvalidasException `(0ms)`
+**[PASO]** login_usuarioNoExiste_lanzaCredencialesInvalidasException `(1ms)`
 
 ---
 
@@ -1744,17 +1744,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** buscar_ciudadNoEncontrada_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** buscar_ciudadNoEncontrada_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** buscar_tokenValidoCiudadExistente_guardaBusquedaEnRepo `(1ms)`
+**[PASO]** buscar_tokenValidoCiudadExistente_guardaBusquedaEnRepo `(2ms)`
 
-**[PASO]** buscar_conDescuento10Porciento_aplicaDescuentoAPrecios `(5ms)`
+**[PASO]** buscar_conDescuento10Porciento_aplicaDescuentoAPrecios `(3ms)`
 
-**[PASO]** buscar_tokenInvalido_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** buscar_tokenInvalido_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** buscar_dosHotelesEnCiudad_retornaListaConDosHoteles `(2ms)`
 
-**[PASO]** buscar_tokenValidoCiudadExistente_retornaListaDeHoteles `(1ms)`
+**[PASO]** buscar_tokenValidoCiudadExistente_retornaListaDeHoteles `(2ms)`
 
 ---
 
@@ -1764,21 +1764,21 @@
 - Pasaron: 8
 - Fallaron: 0
 
-**[PASO]** buscar_ciudadNoEncontrada_lanzaIllegalArgumentException `(60ms)`
+**[PASO]** buscar_ciudadNoEncontrada_lanzaIllegalArgumentException `(47ms)`
 
-**[PASO]** buscar_sinAgenciaActiva_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** buscar_sinAgenciaActiva_lanzaIllegalArgumentException `(4ms)`
 
-**[PASO]** buscar_parametrosValidos_guardaBusquedaEnRepo `(9ms)`
+**[PASO]** buscar_parametrosValidos_guardaBusquedaEnRepo `(2ms)`
 
-**[PASO]** buscarPorToken_ciudadNoEncontrada_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** buscarPorToken_ciudadNoEncontrada_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** buscarPorToken_parametrosValidos_guardaBusquedaSinUsuario `(4ms)`
+**[PASO]** buscarPorToken_parametrosValidos_guardaBusquedaSinUsuario `(1ms)`
 
-**[PASO]** buscar_parametrosValidos_retornaListaDeHoteles `(0ms)`
+**[PASO]** buscar_parametrosValidos_retornaListaDeHoteles `(2ms)`
 
-**[PASO]** buscarPorToken_parametrosValidos_retornaListaDeHoteles `(5ms)`
+**[PASO]** buscarPorToken_parametrosValidos_retornaListaDeHoteles `(0ms)`
 
-**[PASO]** buscarPorToken_tokenInvalido_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** buscarPorToken_tokenInvalido_lanzaIllegalArgumentException `(0ms)`
 
 ---
 
@@ -1788,13 +1788,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** busquedaConCiudadRealRetornaHoteles `(2.5s)`
+**[PASO]** busquedaConCiudadRealRetornaHoteles `(1.5s)`
 
-**[PASO]** busquedaRegistraEventoEnOracle `(1.8s)`
+**[PASO]** busquedaRegistraEventoEnOracle `(1.5s)`
 
-**[PASO]** busquedaAnonimaRegistraEventoConUsuarioNull `(1.7s)`
+**[PASO]** busquedaAnonimaRegistraEventoConUsuarioNull `(1.5s)`
 
-**[PASO]** busquedaFallaCiudadInexistente `(526ms)`
+**[PASO]** busquedaFallaCiudadInexistente `(489ms)`
 
 ---
 
@@ -1804,17 +1804,17 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** buscar_ciudadNoEncontrada_lanzaIllegalArgumentException `(64ms)`
+**[PASO]** buscar_ciudadNoEncontrada_lanzaIllegalArgumentException `(57ms)`
 
-**[PASO]** buscar_ciudadNoEncontrada_noInvocaBuscarHoteles `(4ms)`
+**[PASO]** buscar_ciudadNoEncontrada_noInvocaBuscarHoteles `(3ms)`
 
-**[PASO]** buscar_sinUsuario_guardaBusquedaConUsuarioIdNull `(4ms)`
+**[PASO]** buscar_sinUsuario_guardaBusquedaConUsuarioIdNull `(1ms)`
 
-**[PASO]** buscar_conUsuarioAutenticado_guardaBusquedaConUsuarioId `(2ms)`
+**[PASO]** buscar_conUsuarioAutenticado_guardaBusquedaConUsuarioId `(1ms)`
 
-**[PASO]** buscar_ciudadEncontradaConHoteles_retornaListaNoVacia `(4ms)`
+**[PASO]** buscar_ciudadEncontradaConHoteles_retornaListaNoVacia `(2ms)`
 
-**[PASO]** buscar_ciudadEncontrada_retornaListaDeHoteles `(3ms)`
+**[PASO]** buscar_ciudadEncontrada_retornaListaDeHoteles `(2ms)`
 
 ---
 
@@ -1824,11 +1824,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** cancelacionExitosaPersistidaEnOracle `(873ms)`
+**[PASO]** cancelacionExitosaPersistidaEnOracle `(645ms)`
 
-**[PASO]** cancelacionFallaUsuarioIncorrecto `(732ms)`
+**[PASO]** cancelacionFallaUsuarioIncorrecto `(568ms)`
 
-**[PASO]** cancelacionFallaMenosDe24Horas `(946ms)`
+**[PASO]** cancelacionFallaMenosDe24Horas `(701ms)`
 
 ---
 
@@ -1838,37 +1838,37 @@
 - Pasaron: 17
 - Fallaron: 0
 
-**[PASO]** cancelarReservacion_menosDe24Horas_lanzaIllegalArgumentException `(57ms)`
+**[PASO]** cancelarReservacion_menosDe24Horas_lanzaIllegalArgumentException `(42ms)`
 
 **[PASO]** cancelarReservacionAgencia_valida_cancelaExitosamente `(2ms)`
 
-**[PASO]** cancelarReservacion_estadoPendienteCheckInPasado_cancelaExitosamente `(3ms)`
+**[PASO]** cancelarReservacion_estadoPendienteCheckInPasado_cancelaExitosamente `(2ms)`
 
-**[PASO]** puedeCancelar_reservacionNula_retornaFalso `(1ms)`
+**[PASO]** puedeCancelar_reservacionNula_retornaFalso `(0ms)`
 
 **[PASO]** puedeCancelar_estadoPendiente_retornaVerdadero `(1ms)`
 
 **[PASO]** cancelarReservacion_estadoConfirmadoFuturoLejano_cancelaExitosamente `(2ms)`
 
-**[PASO]** cancelarReservacionAgencia_menosDe24Horas_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** cancelarReservacionAgencia_menosDe24Horas_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** cancelarReservacion_reservacionNula_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** cancelarReservacion_reservacionNula_lanzaIllegalArgumentException `(0ms)`
 
 **[PASO]** cancelarReservacion_sinHabitaciones_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** cancelarReservacionAgencia_reservacionNula_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** puedeCancelar_confirmadaMenosDe24Horas_retornaFalso `(1ms)`
+**[PASO]** puedeCancelar_confirmadaMenosDe24Horas_retornaFalso `(0ms)`
 
-**[PASO]** cancelarReservacionAgencia_sinHabitaciones_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** cancelarReservacionAgencia_sinHabitaciones_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** puedeCancelar_estadoNoPermite_retornaFalso `(4ms)`
+**[PASO]** puedeCancelar_estadoNoPermite_retornaFalso `(1ms)`
 
-**[PASO]** puedeCancelar_confirmadaSinHabitaciones_retornaFalso `(3ms)`
+**[PASO]** puedeCancelar_confirmadaSinHabitaciones_retornaFalso `(2ms)`
 
-**[PASO]** cancelarReservacion_estadoNoPermite_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** cancelarReservacion_estadoNoPermite_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** puedeCancelar_confirmadaFuturoLejano_retornaVerdadero `(3ms)`
+**[PASO]** puedeCancelar_confirmadaFuturoLejano_retornaVerdadero `(2ms)`
 
 **[PASO]** cancelarReservacionAgencia_estadoNoPermite_lanzaIllegalArgumentException `(2ms)`
 
@@ -1880,33 +1880,33 @@
 - Pasaron: 14
 - Fallaron: 0
 
-**[PASO]** obtenerComentariosPorUsuario_usuarioConComentarios_retornaLista `(57ms)`
+**[PASO]** obtenerComentariosPorUsuario_usuarioConComentarios_retornaLista `(51ms)`
 
-**[PASO]** agregarComentario_resenaMayorACinco_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** agregarComentario_resenaMayorACinco_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** agregarComentario_contenidoBlanco_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** agregarComentario_respuestaValida_noActualizaRating `(2ms)`
+**[PASO]** agregarComentario_respuestaValida_noActualizaRating `(1ms)`
 
 **[PASO]** agregarComentario_respuestaConResena_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** agregarComentario_contenidoSuperaLimite_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** agregarComentario_contenidoSuperaLimite_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** agregarComentario_contenidoNulo_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** agregarComentario_contenidoNulo_lanzaIllegalArgumentException `(3ms)`
 
 **[PASO]** agregarComentario_comentarioPrincipalValido_retornaComentario `(1ms)`
 
 **[PASO]** agregarComentario_yaExisteResenaEnHotel_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** agregarComentario_comentarioPrincipalSinResena_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** agregarComentario_comentarioPrincipalSinResena_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** obtenerComentariosPorUsuario_usuarioSinComentarios_retornaListaVacia `(1ms)`
+**[PASO]** obtenerComentariosPorUsuario_usuarioSinComentarios_retornaListaVacia `(0ms)`
 
-**[PASO]** obtenerComentariosPorHotel_hotelConComentarios_retornaLista `(1ms)`
+**[PASO]** obtenerComentariosPorHotel_hotelConComentarios_retornaLista `(2ms)`
 
-**[PASO]** agregarComentario_resenaMenorACero_lanzaIllegalArgumentException `(9ms)`
+**[PASO]** agregarComentario_resenaMenorACero_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** obtenerComentariosPorHotel_hotelSinComentarios_retornaListaVacia `(1ms)`
+**[PASO]** obtenerComentariosPorHotel_hotelSinComentarios_retornaListaVacia `(0ms)`
 
 ---
 
@@ -1916,13 +1916,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** obtenerDestinos_hotelSinImagenes_asignaListaVacia `(148ms)`
+**[PASO]** obtenerDestinos_hotelSinImagenes_asignaListaVacia `(120ms)`
 
-**[PASO]** obtenerDestinos_unHotelConImagenes_retornaListaConImagenesAsignadas `(3ms)`
+**[PASO]** obtenerDestinos_unHotelConImagenes_retornaListaConImagenesAsignadas `(1ms)`
 
-**[PASO]** obtenerDestinos_variosHoteles_asignaImagenesAcadaUno `(2ms)`
+**[PASO]** obtenerDestinos_variosHoteles_asignaImagenesAcadaUno `(1ms)`
 
-**[PASO]** obtenerDestinos_sinHoteles_retornaListaVacia `(1ms)`
+**[PASO]** obtenerDestinos_sinHoteles_retornaListaVacia `(0ms)`
 
 ---
 
@@ -1932,41 +1932,41 @@
 - Pasaron: 18
 - Fallaron: 0
 
-**[PASO]** actualizarDown_valorDistinto_eliminaEInsertaNuevoDown `(62ms)`
+**[PASO]** actualizarDown_valorDistinto_eliminaEInsertaNuevoDown `(46ms)`
 
-**[PASO]** agregarDown_valorNegativo_insertaYActualizaContador `(2ms)`
+**[PASO]** agregarDown_valorNegativo_insertaYActualizaContador `(0ms)`
 
-**[PASO]** obtenerDownsDeUsuarioPorHotel_usuarioConDownsEnHotel_retornaLista `(2ms)`
+**[PASO]** obtenerDownsDeUsuarioPorHotel_usuarioConDownsEnHotel_retornaLista `(0ms)`
 
 **[PASO]** eliminarDown_downNegativoExistente_actualizaContadorConPositivo `(2ms)`
 
-**[PASO]** actualizarDown_noExisteDown_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** actualizarDown_noExisteDown_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** actualizarDown_valorInvalido_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** agregarDown_valorDos_lanzaIllegalArgumentException `(5ms)`
+**[PASO]** agregarDown_valorDos_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** agregarDown_valido_insertaYActualizaContador `(2ms)`
 
-**[PASO]** obtenerDownsDeUsuario_usuarioConDowns_retornaLista `(2ms)`
+**[PASO]** obtenerDownsDeUsuario_usuarioConDowns_retornaLista `(0ms)`
 
-**[PASO]** eliminarDown_noExisteDown_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** eliminarDown_noExisteDown_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** eliminarDown_downExistente_actualizaContadorYElimina `(4ms)`
+**[PASO]** eliminarDown_downExistente_actualizaContadorYElimina `(2ms)`
 
-**[PASO]** agregarDown_comentarioNoExiste_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** agregarDown_comentarioNoExiste_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** obtenerDownsDeUsuarioPorHotel_sinDownsEnHotel_retornaListaVacia `(4ms)`
+**[PASO]** obtenerDownsDeUsuarioPorHotel_sinDownsEnHotel_retornaListaVacia `(2ms)`
 
-**[PASO]** actualizarDown_mismoValor_lanzaIllegalArgumentException `(5ms)`
+**[PASO]** actualizarDown_mismoValor_lanzaIllegalArgumentException `(0ms)`
 
 **[PASO]** obtenerDownsDeUsuario_usuarioSinDowns_retornaListaVacia `(1ms)`
 
-**[PASO]** agregarDown_valorInvalido_lanzaIllegalArgumentException `(10ms)`
+**[PASO]** agregarDown_valorInvalido_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** agregarDown_yaExisteDown_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** actualizarDown_deNegativoAPositivo_reemplazaDownCorrectamente `(2ms)`
+**[PASO]** actualizarDown_deNegativoAPositivo_reemplazaDownCorrectamente `(4ms)`
 
 ---
 
@@ -1976,15 +1976,15 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** enviarCorreoReservacion_reservacionDistintaUsuario_noConsultaCorreo `(61ms)`
+**[PASO]** enviarCorreoReservacion_reservacionDistintaUsuario_noConsultaCorreo `(42ms)`
 
-**[PASO]** enviarCorreoReservacion_datosValidos_completaSinExcepcion `(1.9s)`
+**[PASO]** enviarCorreoReservacion_datosValidos_completaSinExcepcion `(1.8s)`
 
-**[PASO]** enviarCorreoReservacion_noPerteneceAlUsuario_lanzaIllegalArgumentException `(0ms)`
+**[PASO]** enviarCorreoReservacion_noPerteneceAlUsuario_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** enviarCorreoReservacion_correoNulo_lanzaIllegalArgumentException `(0ms)`
+**[PASO]** enviarCorreoReservacion_correoNulo_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** enviarCorreoReservacion_detallesVacios_lanzaIllegalArgumentException `(0ms)`
+**[PASO]** enviarCorreoReservacion_detallesVacios_lanzaIllegalArgumentException `(2ms)`
 
 ---
 
@@ -1994,19 +1994,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** iniciar_luegoDdetener_cicloCompletoCorrecto `(51ms)`
+**[PASO]** iniciar_luegoDdetener_cicloCompletoCorrecto `(55ms)`
 
-**[PASO]** iniciar_llamadaMultiple_noLanzaExcepcion `(3ms)`
+**[PASO]** iniciar_llamadaMultiple_noLanzaExcepcion `(2ms)`
 
-**[PASO]** iniciar_noLanzaExcepcion `(3ms)`
+**[PASO]** iniciar_noLanzaExcepcion `(1ms)`
 
-**[PASO]** detener_noLanzaExcepcion `(2ms)`
+**[PASO]** detener_noLanzaExcepcion `(3ms)`
 
-**[PASO]** constructor_repositoryValido_noLanzaExcepcion `(2ms)`
+**[PASO]** constructor_repositoryValido_noLanzaExcepcion `(1ms)`
 
-**[PASO]** expirarReservaciones_cuandoEsInvocado_llamaAlRepositorio `(9ms)`
+**[PASO]** expirarReservaciones_cuandoEsInvocado_llamaAlRepositorio `(2ms)`
 
-**[PASO]** detener_sinIniciarPreviamente_noLanzaExcepcion `(3ms)`
+**[PASO]** detener_sinIniciarPreviamente_noLanzaExcepcion `(1ms)`
 
 ---
 
@@ -2016,11 +2016,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** procesarHandshake_urlNoRegistrada_lanzaIllegalArgumentException `(7ms)`
+**[PASO]** procesarHandshake_urlNoRegistrada_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** procesarHandshake_urlRegistrada_retornaResponseDTOConTokenDeSalida `(5ms)`
+**[PASO]** procesarHandshake_urlRegistrada_retornaResponseDTOConTokenDeSalida `(1ms)`
 
-**[PASO]** procesarHandshake_tokensNoPersistidos_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** procesarHandshake_tokensNoPersistidos_lanzaIllegalArgumentException `(3ms)`
 
 ---
 
@@ -2030,11 +2030,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** procesarHandshake_urlNoRegistrada_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** procesarHandshake_urlNoRegistrada_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** procesarHandshake_tokenesNoGuardados_lanzaIllegalArgumentException `(7ms)`
+**[PASO]** procesarHandshake_tokenesNoGuardados_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** procesarHandshake_urlValida_retornaResponseDTONoNulo `(3ms)`
+**[PASO]** procesarHandshake_urlValida_retornaResponseDTONoNulo `(2ms)`
 
 ---
 
@@ -2044,9 +2044,9 @@
 - Pasaron: 2
 - Fallaron: 0
 
-**[PASO]** obtenerHotelesParaAgencia_repositorioRetornaListaVacia_retornaListaVacia `(58ms)`
+**[PASO]** obtenerHotelesParaAgencia_repositorioRetornaListaVacia_retornaListaVacia `(43ms)`
 
-**[PASO]** obtenerHotelesParaAgencia_repositorioRetornaUnElemento_retornaListaConUnElemento `(0ms)`
+**[PASO]** obtenerHotelesParaAgencia_repositorioRetornaUnElemento_retornaListaConUnElemento `(1ms)`
 
 ---
 
@@ -2056,95 +2056,95 @@
 - Pasaron: 69
 - Fallaron: 0
 
-**[PASO]** crearHotel_datosValidos_retornaMapaConIdMensaje `(273ms)`
+**[PASO]** crearHotel_datosValidos_retornaMapaConIdMensaje `(134ms)`
 
-**[PASO]** agregarImagenHotel_hotelNoExiste_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** agregarImagenHotel_hotelNoExiste_lanzaIllegalArgumentException `(3ms)`
 
 **[PASO]** agregarAmenidadHotel_datosValidos_retornaMapaConIdMensaje `(0ms)`
 
-**[PASO]** editarHotel_hotelExiste_invocaActualizarHotel `(3ms)`
+**[PASO]** editarHotel_hotelExiste_invocaActualizarHotel `(2ms)`
 
-**[PASO]** editarHabitacion_tipoInvalido_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** editarHabitacion_tipoInvalido_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** crearHabitacion_datosValidos_retornaMapaConIdMensaje `(1ms)`
+**[PASO]** crearHabitacion_datosValidos_retornaMapaConIdMensaje `(2ms)`
 
-**[PASO]** eliminarAmenidadHotel_delegaAlRepositorio `(5ms)`
+**[PASO]** eliminarAmenidadHotel_delegaAlRepositorio `(0ms)`
 
-**[PASO]** obtenerReservasActivasHotel_hotelExisteSinReservas_retornaCountCero `(2ms)`
+**[PASO]** obtenerReservasActivasHotel_hotelExisteSinReservas_retornaCountCero `(0ms)`
 
-**[PASO]** agregarAmenidadHotel_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** agregarAmenidadHotel_hotelNoExiste_lanzaIllegalArgumentException `(3ms)`
 
-**[PASO]** listarTodasReservaciones_delegaAlRepositorio `(1ms)`
+**[PASO]** listarTodasReservaciones_delegaAlRepositorio `(2ms)`
 
-**[PASO]** editarHotel_hotelNoExiste_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** editarHotel_hotelNoExiste_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** crearHotel_estadoInvalido_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** crearHotel_estadoInvalido_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** eliminarImagenHabitacion_delegaAlRepositorio `(1ms)`
 
 **[PASO]** crearAmenidad_nombreBlanco_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** listarPaises_delegaAlRepositorioDePaises `(0ms)`
+**[PASO]** listarPaises_delegaAlRepositorioDePaises `(1ms)`
 
-**[PASO]** cerrarHabitacionConCancelaciones_sinReservas_eliminaHabitacionDefinitiva `(2ms)`
+**[PASO]** cerrarHabitacionConCancelaciones_sinReservas_eliminaHabitacionDefinitiva `(4ms)`
 
 **[PASO]** crearAmenidad_nombreNulo_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** obtenerMetricas_delegaAlRepositorio `(2ms)`
 
-**[PASO]** cerrarHotelConCancelaciones_sinReservas_eliminaHotelDefinitivo `(1ms)`
+**[PASO]** cerrarHotelConCancelaciones_sinReservas_eliminaHotelDefinitivo `(2ms)`
 
-**[PASO]** cerrarHabitacionConCancelaciones_habitacionNoExiste_lanzaIllegalArgumentException `(6ms)`
+**[PASO]** cerrarHabitacionConCancelaciones_habitacionNoExiste_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** eliminarHotel_hotelExisteConReservasActivas_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** obtenerReservasActivasHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** obtenerReservasActivasHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(0ms)`
 
 **[PASO]** editarHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** cerrarHabitacionConCancelaciones_conReservas_cancelaEmailsYCierra `(8ms)`
+**[PASO]** cerrarHabitacionConCancelaciones_conReservas_cancelaEmailsYCierra `(17ms)`
 
-**[PASO]** listarHabitaciones_hotelNoExiste_lanzaIllegalArgumentException `(5ms)`
+**[PASO]** listarHabitaciones_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** crearHotel_paisNulo_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** crearHotel_paisNulo_lanzaIllegalArgumentException `(0ms)`
 
 **[PASO]** agregarImagenHabitacion_habitacionExiste_retornaMapaConId `(2ms)`
 
-**[PASO]** reactivarHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** reactivarHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** obtenerReservasActivasHabitacion_habitacionExisteSinReservas_retornaCountCero `(2ms)`
 
-**[PASO]** agregarAmenidadHotel_hotelYaTieneAmenidad_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** agregarAmenidadHotel_hotelYaTieneAmenidad_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** listarHabitaciones_hotelExiste_retornaListaConImagenes `(2ms)`
 
 **[PASO]** crearHotel_ciudadNula_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** obtenerReservasActivasHabitacion_habitacionExisteConReservas_retornaMapaConDatos `(2ms)`
+**[PASO]** obtenerReservasActivasHabitacion_habitacionExisteConReservas_retornaMapaConDatos `(0ms)`
 
-**[PASO]** editarHabitacion_habitacionExiste_invocaActualizarHabitacion `(1ms)`
+**[PASO]** editarHabitacion_habitacionExiste_invocaActualizarHabitacion `(3ms)`
 
-**[PASO]** eliminarImagenAmenidad_delegaAlRepositorio `(1ms)`
+**[PASO]** eliminarImagenAmenidad_delegaAlRepositorio `(2ms)`
 
-**[PASO]** eliminarHabitacion_habitacionExisteSinReservas_invocaEliminar `(2ms)`
+**[PASO]** eliminarHabitacion_habitacionExisteSinReservas_invocaEliminar `(1ms)`
 
-**[PASO]** listarAmenidadesHotel_hotelExiste_retornaListaDeAmenidades `(4ms)`
+**[PASO]** listarAmenidadesHotel_hotelExiste_retornaListaDeAmenidades `(0ms)`
 
-**[PASO]** listarCiudades_delegaAlRepositorioDePaises `(1ms)`
+**[PASO]** listarCiudades_delegaAlRepositorioDePaises `(2ms)`
 
 **[PASO]** listarTodos_repositorioRetornaListaVacia_retornaListaVacia `(2ms)`
 
 **[PASO]** crearAmenidad_nombreValido_retornaMapaConIdNombreMensaje `(0ms)`
 
-**[PASO]** listarAmenidadesHotel_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** listarAmenidadesHotel_hotelNoExiste_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** cerrarHotelConCancelaciones_conReservas_cancelaEmailsYCierra `(4ms)`
+**[PASO]** cerrarHotelConCancelaciones_conReservas_cancelaEmailsYCierra `(5ms)`
 
 **[PASO]** cerrarHabitacionConCancelaciones_sinReservas_cierraHabitacion `(2ms)`
 
-**[PASO]** crearHabitacion_estadoInvalido_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** crearHabitacion_estadoInvalido_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** agregarImagenAmenidad_base64Nulo_lanzaIllegalArgumentException `(6ms)`
+**[PASO]** agregarImagenAmenidad_base64Nulo_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** eliminarHotel_hotelExisteSinReservasActivas_invocaEliminarHotel `(2ms)`
 
@@ -2152,47 +2152,47 @@
 
 **[PASO]** eliminarImagenHotel_delegaAlRepositorio `(2ms)`
 
-**[PASO]** cerrarHotelConCancelaciones_sinReservas_cierraHotelSinEliminar `(4ms)`
+**[PASO]** cerrarHotelConCancelaciones_sinReservas_cierraHotelSinEliminar `(2ms)`
 
-**[PASO]** agregarImagenAmenidad_base64Valido_retornaMapaConId `(2ms)`
+**[PASO]** agregarImagenAmenidad_base64Valido_retornaMapaConId `(1ms)`
 
-**[PASO]** obtenerReservasActivasHotel_hotelNoExiste_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** obtenerReservasActivasHotel_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** listarTodos_repositorioRetornaHoteles_enriqueceConHabitacionesEImagenes `(3ms)`
+**[PASO]** listarTodos_repositorioRetornaHoteles_enriqueceConHabitacionesEImagenes `(0ms)`
 
-**[PASO]** obtenerReservasActivasHotel_hotelExisteConReservas_retornaMapaConDatos `(6ms)`
+**[PASO]** obtenerReservasActivasHotel_hotelExisteConReservas_retornaMapaConDatos `(0ms)`
 
-**[PASO]** crearHabitacion_tipoHabitacionInvalido_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** crearHabitacion_tipoHabitacionInvalido_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** reactivarHotel_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** eliminarHabitacion_habitacionExisteConReservas_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** eliminarHabitacion_habitacionExisteConReservas_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** actualizarAmenidadHotel_delegaAlRepositorio `(2ms)`
 
-**[PASO]** reactivarHabitacion_habitacionExiste_invocaReactivar `(3ms)`
+**[PASO]** reactivarHabitacion_habitacionExiste_invocaReactivar `(1ms)`
 
-**[PASO]** crearHotel_ratingFueraDeRango_lanzaIllegalArgumentException `(0ms)`
+**[PASO]** crearHotel_ratingFueraDeRango_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** crearHabitacion_hotelNoExiste_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** crearHabitacion_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** reactivarHotel_hotelExiste_invocaReactivarHotel `(1ms)`
+**[PASO]** reactivarHotel_hotelExiste_invocaReactivarHotel `(0ms)`
 
 **[PASO]** cerrarHotelConCancelaciones_hotelNoExiste_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** crearHotel_nombreNulo_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** crearHotel_nombreNulo_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** agregarAmenidadHotel_amenidadIdInvalida_lanzaIllegalArgumentException `(9ms)`
+**[PASO]** agregarAmenidadHotel_amenidadIdInvalida_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** editarHabitacion_estadoInvalido_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** eliminarHotel_hotelNoExiste_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** eliminarHotel_hotelNoExiste_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** agregarImagenHotel_hotelExiste_retornaMapaConId `(2ms)`
+**[PASO]** agregarImagenHotel_hotelExiste_retornaMapaConId `(0ms)`
 
-**[PASO]** listarAmenidades_delegaAlRepositorio `(0ms)`
+**[PASO]** listarAmenidades_delegaAlRepositorio `(2ms)`
 
-**[PASO]** eliminarHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** eliminarHabitacion_habitacionNoExiste_lanzaIllegalArgumentException `(1ms)`
 
 ---
 
@@ -2202,15 +2202,15 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** obtenerImagenHabitacion_imagenExiste_retornaBytesCorrectos `(52ms)`
+**[PASO]** obtenerImagenHabitacion_imagenExiste_retornaBytesCorrectos `(62ms)`
 
 **[PASO]** obtenerImagenAmenidad_imagenNoExiste_retornaNull `(2ms)`
 
-**[PASO]** obtenerImagenHotel_imagenExiste_retornaBytesCorrectos `(2ms)`
+**[PASO]** obtenerImagenHotel_imagenExiste_retornaBytesCorrectos `(1ms)`
 
-**[PASO]** obtenerImagenHabitacion_imagenNoExiste_retornaNull `(1ms)`
+**[PASO]** obtenerImagenHabitacion_imagenNoExiste_retornaNull `(0ms)`
 
-**[PASO]** obtenerImagenHotel_imagenNoExiste_retornaNull `(1ms)`
+**[PASO]** obtenerImagenHotel_imagenNoExiste_retornaNull `(0ms)`
 
 **[PASO]** obtenerImagenAmenidad_imagenExiste_retornaBytesCorrectos `(1ms)`
 
@@ -2222,19 +2222,19 @@
 - Pasaron: 7
 - Fallaron: 0
 
-**[PASO]** procesarPago_estadoNoPermitePago_lanzaIllegalArgumentException `(58ms)`
+**[PASO]** procesarPago_estadoNoPermitePago_lanzaIllegalArgumentException `(43ms)`
 
-**[PASO]** procesarPago_nitNulo_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** procesarPago_nitNulo_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** procesarPago_codigoPostalNulo_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** procesarPago_codigoPostalBlanco_lanzaIllegalArgumentException `(1ms)`
+**[PASO]** procesarPago_codigoPostalBlanco_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** procesarPago_reservacionNoEncontrada_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** procesarPago_nitBlanco_lanzaIllegalArgumentException `(4ms)`
+**[PASO]** procesarPago_nitBlanco_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** procesarPago_datosValidosEstadoPendiente_retornaPagoResponseDTO `(3ms)`
+**[PASO]** procesarPago_datosValidosEstadoPendiente_retornaPagoResponseDTO `(2ms)`
 
 ---
 
@@ -2244,11 +2244,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** pagoExitosoConfirmaReservacionYCreaFactura `(1.8s)`
+**[PASO]** pagoExitosoConfirmaReservacionYCreaFactura `(836ms)`
 
-**[PASO]** pagoFallaReservacionDeOtroUsuario `(730ms)`
+**[PASO]** pagoFallaReservacionDeOtroUsuario `(567ms)`
 
-**[PASO]** pagoFallaCvvInvalido `(660ms)`
+**[PASO]** pagoFallaCvvInvalido `(597ms)`
 
 ---
 
@@ -2258,23 +2258,23 @@
 - Pasaron: 10
 - Fallaron: 0
 
-**[PASO]** procesarPago_tokenAlianzaBlanco_procesaSinDescuento `(90ms)`
+**[PASO]** procesarPago_tokenAlianzaBlanco_procesaSinDescuento `(73ms)`
 
-**[PASO]** procesarPago_reservacionNoEncontrada_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** procesarPago_reservacionNoEncontrada_lanzaIllegalArgumentException `(1ms)`
 
 **[PASO]** procesarPago_conTokenAlianzaValido_aplicaDescuentoYMarcaTokenUsado `(2ms)`
 
 **[PASO]** procesarPago_numeroTarjetaInvalido_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** procesarPago_estadoNoEsPendiente_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** procesarPago_estadoNoEsPendiente_lanzaIllegalArgumentException `(3ms)`
 
-**[PASO]** procesarPago_nombreTitularVacio_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** procesarPago_nombreTitularVacio_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** procesarPago_tokenAlianzaInvalido_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** procesarPago_tokenAlianzaInvalido_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** procesarPago_cvvInvalido_lanzaIllegalArgumentException `(2ms)`
+**[PASO]** procesarPago_cvvInvalido_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** procesarPago_datosValidosSinToken_retornaPagoResponseDTO `(1ms)`
+**[PASO]** procesarPago_datosValidosSinToken_retornaPagoResponseDTO `(0ms)`
 
 **[PASO]** procesarPago_tarjetaVencida_lanzaIllegalArgumentException `(2ms)`
 
@@ -2286,9 +2286,9 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** generarPdf_detallesVacios_lanzaExcepcion `(4ms)`
+**[PASO]** generarPdf_detallesVacios_lanzaExcepcion `(2ms)`
 
-**[PASO]** generarPdf_guardasSuperadas_invocaRepositorio `(64ms)`
+**[PASO]** generarPdf_guardasSuperadas_invocaRepositorio `(50ms)`
 
 **[PASO]** generarPdf_noPertenece_lanzaExcepcion `(2ms)`
 
@@ -2300,23 +2300,23 @@
 - Pasaron: 9
 - Fallaron: 0
 
-**[PASO]** obtenerReservaciones_agenciaExistente_retornaLista `(59ms)`
+**[PASO]** obtenerReservaciones_agenciaExistente_retornaLista `(49ms)`
 
-**[PASO]** obtenerDetalleReservacion_sinDetalles_lanzaExcepcion `(4ms)`
+**[PASO]** obtenerDetalleReservacion_sinDetalles_lanzaExcepcion `(1ms)`
 
-**[PASO]** expirarReservacion_reservacionInvalida_lanzaExcepcion `(3ms)`
+**[PASO]** expirarReservacion_reservacionInvalida_lanzaExcepcion `(1ms)`
 
 **[PASO]** crearReservacion_sinHabitaciones_lanzaExcepcion `(1ms)`
 
-**[PASO]** obtenerReservaciones_sinReservaciones_retornaListaVacia `(3ms)`
+**[PASO]** obtenerReservaciones_sinReservaciones_retornaListaVacia `(0ms)`
 
-**[PASO]** expirarReservacion_reservacionValida_invocaRepositorio `(0ms)`
+**[PASO]** expirarReservacion_reservacionValida_invocaRepositorio `(1ms)`
 
-**[PASO]** crearReservacion_agenciaNoActiva_lanzaExcepcion `(3ms)`
+**[PASO]** crearReservacion_agenciaNoActiva_lanzaExcepcion `(2ms)`
 
-**[PASO]** obtenerDetalleReservacion_conDetalles_retornaListaConImagenes `(3ms)`
+**[PASO]** obtenerDetalleReservacion_conDetalles_retornaListaConImagenes `(1ms)`
 
-**[PASO]** crearReservacion_datosValidos_retornaResponse `(4ms)`
+**[PASO]** crearReservacion_datosValidos_retornaResponse `(10ms)`
 
 ---
 
@@ -2326,11 +2326,11 @@
 - Pasaron: 3
 - Fallaron: 0
 
-**[PASO]** crearReservacionExitosa `(1.6s)`
+**[PASO]** crearReservacionExitosa `(712ms)`
 
-**[PASO]** crearReservacionFallaSinHabitaciones `(572ms)`
+**[PASO]** crearReservacionFallaSinHabitaciones `(393ms)`
 
-**[PASO]** crearReservacionFallaFechaPasada `(536ms)`
+**[PASO]** crearReservacionFallaFechaPasada `(399ms)`
 
 ---
 
@@ -2340,15 +2340,15 @@
 - Pasaron: 6
 - Fallaron: 0
 
-**[PASO]** crearReservacion_traslape_lanzaExcepcion `(4ms)`
+**[PASO]** crearReservacion_traslape_lanzaExcepcion `(3ms)`
 
-**[PASO]** obtenerReservaciones_usuarioConReservaciones_retornaListaConImagenes `(1ms)`
+**[PASO]** obtenerReservaciones_usuarioConReservaciones_retornaListaConImagenes `(2ms)`
 
 **[PASO]** obtenerReservaciones_sinReservaciones_retornaListaVacia `(1ms)`
 
-**[PASO]** crearReservacion_habitacionesNull_lanzaExcepcion `(2ms)`
+**[PASO]** crearReservacion_habitacionesNull_lanzaExcepcion `(0ms)`
 
-**[PASO]** crearReservacion_habitacionesVacias_lanzaExcepcion `(2ms)`
+**[PASO]** crearReservacion_habitacionesVacias_lanzaExcepcion `(1ms)`
 
 **[PASO]** crearReservacion_datosValidos_retornaResponse `(2ms)`
 
@@ -2360,13 +2360,13 @@
 - Pasaron: 4
 - Fallaron: 0
 
-**[PASO]** obtenerSesion_datosValidos_retornaDtoCompleto `(52ms)`
+**[PASO]** obtenerSesion_datosValidos_retornaDtoCompleto `(41ms)`
 
-**[PASO]** sinSesion_siempre_retornaDtoNoAutenticado `(1ms)`
+**[PASO]** sinSesion_siempre_retornaDtoNoAutenticado `(2ms)`
 
-**[PASO]** sinSesion_siempre_retornaDtoSinDatosDeUsuario `(1ms)`
+**[PASO]** sinSesion_siempre_retornaDtoSinDatosDeUsuario `(2ms)`
 
-**[PASO]** obtenerSesion_rolConsultado_invocaRepositorio `(0ms)`
+**[PASO]** obtenerSesion_rolConsultado_invocaRepositorio `(1ms)`
 
 ---
 
@@ -2376,13 +2376,13 @@
 - Pasaron: 5
 - Fallaron: 0
 
-**[PASO]** generarToken_datosValidos_insertaTokenConIdsCorrectos `(55ms)`
+**[PASO]** generarToken_datosValidos_insertaTokenConIdsCorrectos `(42ms)`
 
-**[PASO]** generarToken_tokenValidoCiudadExistente_retornaResponseDTOCompleto `(10ms)`
+**[PASO]** generarToken_tokenValidoCiudadExistente_retornaResponseDTOCompleto `(0ms)`
 
 **[PASO]** generarToken_ciudadNoExiste_lanzaIllegalArgumentException `(1ms)`
 
-**[PASO]** generarToken_tokenInvalido_lanzaIllegalArgumentException `(3ms)`
+**[PASO]** generarToken_tokenInvalido_lanzaIllegalArgumentException `(2ms)`
 
 **[PASO]** generarToken_datosValidos_urlRedireccionContieneUrlBaseYToken `(1ms)`
 
@@ -2396,11 +2396,11 @@
 
 **[PASO]** validar_tokenInexistente_lanzaIllegalArgumentException `(2ms)`
 
-**[PASO]** validar_tokenExpirado_lanzaIllegalArgumentException `(10ms)`
+**[PASO]** validar_tokenExpirado_lanzaIllegalArgumentException `(0ms)`
 
-**[PASO]** validar_tokenValido_retornaTokenValidacionResponseDTO `(1ms)`
+**[PASO]** validar_tokenValido_retornaTokenValidacionResponseDTO `(0ms)`
 
-**[PASO]** validar_tokenYaUtilizado_lanzaIllegalArgumentException `(13ms)`
+**[PASO]** validar_tokenYaUtilizado_lanzaIllegalArgumentException `(2ms)`
 
 ---
 
@@ -2410,28 +2410,28 @@
 - Pasaron: 12
 - Fallaron: 0
 
-**[PASO]** obtenerPerfil_noExiste_lanzaExcepcion `(236ms)`
+**[PASO]** obtenerPerfil_noExiste_lanzaExcepcion `(120ms)`
 
-**[PASO]** validarDisponibilidad_usernameOcupado `(2ms)`
+**[PASO]** validarDisponibilidad_usernameOcupado `(1ms)`
 
 **[PASO]** cambiarRol_valido_actualizaRepositorio `(1ms)`
 
-**[PASO]** listarTodosUsuarios_retornaLista `(2ms)`
+**[PASO]** listarTodosUsuarios_retornaLista `(1ms)`
 
-**[PASO]** cambiarTelefono_vacio_lanzaExcepcion `(2ms)`
+**[PASO]** cambiarTelefono_vacio_lanzaExcepcion `(1ms)`
 
-**[PASO]** obtenerPerfil_existente_retornaPerfil `(2ms)`
+**[PASO]** obtenerPerfil_existente_retornaPerfil `(1ms)`
 
 **[PASO]** registrarUsuario_usernameDuplicado_lanzaExcepcion `(1ms)`
 
-**[PASO]** validarDisponibilidad_todosLibres `(2ms)`
+**[PASO]** validarDisponibilidad_todosLibres `(1ms)`
 
-**[PASO]** cambiarContrasena_contrasenaIncorrecta_lanzaExcepcion `(828ms)`
+**[PASO]** cambiarContrasena_contrasenaIncorrecta_lanzaExcepcion `(507ms)`
 
-**[PASO]** cambiarRol_invalido_lanzaExcepcion `(2ms)`
+**[PASO]** cambiarRol_invalido_lanzaExcepcion `(0ms)`
 
-**[PASO]** registrarUsuario_exitoso_retornaId `(2.2s)`
+**[PASO]** registrarUsuario_exitoso_retornaId `(2s)`
 
-**[PASO]** cambiarTelefono_valido_actualizaRepositorio `(0ms)`
+**[PASO]** cambiarTelefono_valido_actualizaRepositorio `(2ms)`
 
 ---
