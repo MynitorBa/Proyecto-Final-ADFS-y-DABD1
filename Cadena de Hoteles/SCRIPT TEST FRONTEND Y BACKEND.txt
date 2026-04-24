@@ -1,5 +1,5 @@
 # BACKEND (822 tests)
-.\generar-tests-go.ps1
+.\generar-tests-doc.ps1
 
 # FRONTEND (90 tests)
 npm test

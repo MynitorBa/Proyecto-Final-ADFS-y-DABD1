@@ -8,7 +8,7 @@
 - Total: 49
 - Pasaron: 49
 - Fallaron: 0
-- Ejecutado: 23/04/2026 15:35:12
+- Ejecutado: 23/04/2026 18:44:56
 
 ---
 
@@ -54,7 +54,7 @@
 
 ### TestLoginService_Login
 
-**[PASS]** `TestLoginService_Login` (0.38s)
+**[PASS]** `TestLoginService_Login` (0.21s)
 
 **[PASS]** `TestLoginService_Login/error_si_login_esta_vacio` (0.00s)
 
@@ -74,9 +74,9 @@
 
 **[PASS]** `TestLoginService_Login/error_usuario_deshabilitado_si_EstadoID_distinto_de_1` (0.00s)
 
-**[PASS]** `TestLoginService_Login/error_credenciales_invalidas_si_contrasena_no_coincide` (0.12s)
+**[PASS]** `TestLoginService_Login/error_credenciales_invalidas_si_contrasena_no_coincide` (0.05s)
 
-**[PASS]** `TestLoginService_Login/login_exitoso_retorna_datos_del_usuario` (0.09s)
+**[PASS]** `TestLoginService_Login/login_exitoso_retorna_datos_del_usuario` (0.05s)
 
 ### TestProveedorService_CrearProveedor
 
