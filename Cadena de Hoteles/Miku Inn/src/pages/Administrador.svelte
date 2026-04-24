@@ -6,7 +6,7 @@
    * aerolineas y reportes) y carga el sub-componente correspondiente segun la seccion activa.
    */
 
-  import '../styles/administrador.css';
+  import '../styles/Administrador.css';
   import { onMount } from 'svelte';
 
   import AdminDashboard   from '../components/admin/AdminDashboard.svelte';

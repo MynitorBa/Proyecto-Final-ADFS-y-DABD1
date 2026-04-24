@@ -45,7 +45,7 @@
   import './styles/myreservations.css';
   import './styles/destinos.css';
   import './styles/profile.css';
-  import './styles/administrador.css';
+  import './styles/Administrador.css';
   import './styles/webservice.css';
   import './styles/info-pages.css';
 
