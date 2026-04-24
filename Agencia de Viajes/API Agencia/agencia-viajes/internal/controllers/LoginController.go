@@ -1,4 +1,4 @@
-// # Package controllers
+// Package controllers
 //
 // Controladores HTTP de la agencia de viajes. Cada controlador recibe
 // solicitudes de Gin, delega la logica de negocio al servicio correspondiente
@@ -104,12 +104,15 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 		return
 	}
 
-	// Guardar en cookie HttpOnly
-	// Secure=true solo en produccion (ENV=production), false en desarrollo local
+	// Guardar en cookie HttpOnly con nombre dinámico
+	cookieName := os.Getenv("COOKIE_NAME")
+	if cookieName == "" {
+		cookieName = "session"
+	}
 	secureCookie := os.Getenv("ENV") == "production"
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie(
-		"session",
+		cookieName,
 		token,
 		int(24*time.Hour.Seconds()),
 		"/",
@@ -140,6 +143,12 @@ func (ctrl *LoginController) Logout(c *gin.Context) {
 	} else {
 		ctrl.logSesion.Registrar(c, helpers.TipoLogoutSinSesionActiva, nil, "", "Logout sin cookie de sesión válida")
 	}
-	c.SetCookie("session", "", -1, "/", "", false, true)
+
+	// Eliminar cookie usando el nombre dinámico
+	cookieName := os.Getenv("COOKIE_NAME")
+	if cookieName == "" {
+		cookieName = "session"
+	}
+	c.SetCookie(cookieName, "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Sesión cerrada"})
 }
