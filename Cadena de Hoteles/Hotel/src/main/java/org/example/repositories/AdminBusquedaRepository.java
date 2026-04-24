@@ -207,7 +207,6 @@ public class AdminBusquedaRepository {
         return DatabaseManager.executeQuery(sql, rs -> {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("nombre", rs.getString("Ciudad"));
-            row.put("total",  rs.getInt("TOTAL"));
             return row;
         });
     }
@@ -215,6 +214,7 @@ public class AdminBusquedaRepository {
     /**
      * Retorna todas las busquedas que coinciden con los filtros sin paginacion.
      * Se usa para generar el reporte completo a exportar por correo.
+     row.put("total",  rs.getInt("TOTAL"));
      * @param destino        nombre de ciudad a filtrar con LIKE, o null para no filtrar.
      * @param usuarioAgencia username del usuario o nombre de la agencia a filtrar, o null.
      * @param tipoBusquedaId 1 para busquedas web, 2 para busquedas REST, null para todas.

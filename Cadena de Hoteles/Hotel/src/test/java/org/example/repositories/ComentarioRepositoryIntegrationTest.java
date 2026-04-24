@@ -194,25 +194,26 @@ class ComentarioRepositoryIntegrationTest {
      * inserte correctamente el registro usando el ID del comentario padre y retorne
      * un ID positivo distinto al del comentario padre.
      * <p>
-     * Depende de {@code firstCommentId} inicializado en el @Order(2).
+     * Siempre crea el comentario padre dentro de la sesion actual del test, ya que
+     * {@code firstCommentId} puede apuntar a un comentario eliminado por el {@code @AfterEach}
+     * de una ejecucion anterior.
      * </p>
      */
     @Test
     @Order(4)
     @DisplayName("4. crearComentario sin resena como respuesta a otro retorna ID positivo")
     void crearComentario_sinResena_esRespuestaAOtro() {
-        // Crea primero el comentario padre si el test se ejecuta de forma aislada
-        if (firstCommentId == 0) {
-            firstCommentId = comentarioRepository.crearComentario(
-                    usuarioId, hotelId, null, 5, "Comentario padre de referencia");
-        }
+        // Siempre crea el padre en la sesion actual (firstCommentId de otro test ya fue borrado en tearDown)
+        int padreId = comentarioRepository.crearComentario(
+                usuarioId, hotelId, null, 5, "Comentario padre de referencia");
+        assertTrue(padreId > 0, "El comentario padre debe insertarse correctamente");
 
         int replyId = comentarioRepository.crearComentario(
-                usuarioId, hotelId, firstCommentId, null, "Gracias por su comentario!");
+                usuarioId, hotelId, padreId, null, "Gracias por su comentario!");
 
         assertTrue(replyId > 0,
                 "crearComentario de respuesta debe retornar un ID positivo");
-        assertNotEquals(firstCommentId, replyId,
+        assertNotEquals(padreId, replyId,
                 "El ID de la respuesta debe ser distinto al ID del comentario padre");
     }
 
