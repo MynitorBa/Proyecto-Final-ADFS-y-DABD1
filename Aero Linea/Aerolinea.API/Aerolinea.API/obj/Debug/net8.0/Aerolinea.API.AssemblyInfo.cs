@@ -13,7 +13,11 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
+<<<<<<< HEAD
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7769206b5bfd4cd9e7b31f988dafb2f487f6861b")]
+=======
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e2e2a739fbcb6420c87ac1dfa1d083ad62cd2c4")]
+>>>>>>> e7823159361ccbccd61f2f8753de768c7595ed18
 [assembly: System.Reflection.AssemblyProductAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Aerolinea.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -64,6 +64,18 @@ public class HotelController {
         app.get   ("/admin/reservaciones",                                 this::handleListarReservaciones);
         app.patch ("/admin/reservaciones/{id}/cancelar",                   this::handleCancelarReservacion);
         app.get   ("/admin/metricas",                                      this::handleObtenerMetricas);
+
+
+        // GET  /admin/tipos-habitacion                          → listar todos los tipos con imagenes
+        // PATCH /admin/tipos-habitacion/{id}                    → editar solo precios del tipo
+        // POST  /admin/tipos-habitacion/{id}/imagenes           → agregar imagen al tipo
+        // DELETE /admin/tipos-habitacion/imagenes/{imgId}       → eliminar imagen del tipo
+
+        app.get   ("/admin/tipos-habitacion",                          this::handleListarTiposHabitacion);
+        app.patch ("/admin/tipos-habitacion/{id}",                     this::handleEditarTipoHabitacion);
+        app.post  ("/admin/tipos-habitacion/{id}/imagenes",            this::handleAgregarImagenTipoHabitacion);
+        app.delete("/admin/tipos-habitacion/imagenes/{imgId}",         this::handleEliminarImagenTipoHabitacion);
+
     }
 
     // -------------------------------------------------------------------------
@@ -476,5 +488,54 @@ public class HotelController {
      */
     private int id(Context ctx, String param) {
         return Integer.parseInt(ctx.pathParam(param));
+    }
+
+
+
+
+
+
+    // Tipos de habitacion
+
+    /** Retorna todos los tipos de habitacion con sus datos y IDs de imagenes. */
+    void handleListarTiposHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(hotelService.listarTiposHabitacion());
+    }
+
+    /**
+     * Actualiza los precios de un tipo de habitacion.
+     * Solo acepta precioPorPersona y precioPorNoche en el body.
+     * Body: { "precioPorPersona": 90.0, "precioPorNoche": 150.0 }
+     */
+    void handleEditarTipoHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            hotelService.editarPreciosTipoHabitacion(
+                    id(ctx, "id"),
+                    ctx.bodyAsClass(org.example.dtos.EditarTipoHabitacionRequestDTO.class));
+            ctx.json(Map.of("mensaje", "Precios del tipo de habitacion actualizados"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Agrega una imagen en base64 a un tipo de habitacion especifico. */
+    void handleAgregarImagenTipoHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        try {
+            ctx.status(201).json(hotelService.agregarImagenTipoHabitacion(
+                    id(ctx, "id"),
+                    ctx.bodyAsClass(SubirImagenRequestDTO.class).getBase64()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Elimina una imagen de tipo de habitacion por su ID de imagen. */
+    void handleEliminarImagenTipoHabitacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        hotelService.eliminarImagenTipoHabitacion(id(ctx, "imgId"));
+        ctx.json(Map.of("mensaje", "Imagen de tipo de habitacion eliminada"));
     }
 }

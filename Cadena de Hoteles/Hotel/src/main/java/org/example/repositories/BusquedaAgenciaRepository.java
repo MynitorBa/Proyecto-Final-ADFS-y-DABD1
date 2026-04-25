@@ -216,9 +216,9 @@ public class BusquedaAgenciaRepository {
      * @param habitacionId ID de la habitacion de la que se quieren obtener las imagenes.
      * @return lista de IDs de imagenes de la habitacion.
      */
-    public List<Integer> buscarImagenesHabitacion(int habitacionId) {
-        String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
-        return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
+    public List<Integer> buscarImagenesHabitacion(int tipoHabitacionId) {
+        String sql = "SELECT ID FROM ImagenHabitacion WHERE TipoHabitacionID = ?";
+        return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), tipoHabitacionId);
     }
 
     /**

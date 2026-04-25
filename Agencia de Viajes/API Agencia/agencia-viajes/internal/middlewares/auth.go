@@ -9,6 +9,7 @@ package middlewares
 import (
 	"agencia-viajes/internal/helpers"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,13 @@ import (
 //   - gin.HandlerFunc: funcion de middleware lista para usar con router.Use
 func AuthRequerido() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenStr, err := c.Cookie("session")
+		// Obtener el nombre de la cookie desde variables de entorno
+		cookieName := os.Getenv("COOKIE_NAME")
+		if cookieName == "" {
+			cookieName = "session"
+		}
+
+		tokenStr, err := c.Cookie(cookieName)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
 			c.Abort()

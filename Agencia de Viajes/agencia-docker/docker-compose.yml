@@ -1,0 +1,51 @@
+services:
+
+  backend:
+    build:
+      context: ../API Agencia/agencia-viajes
+      dockerfile: Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}-backend
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:${BACKEND_PORT}
+      - DB_HOST=host.docker.internal
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - COOKIE_NAME=${COOKIE_NAME}
+      - ALLOWED_ORIGIN=http://localhost:${FRONTEND_PORT}
+      - AIRLINE_BACKEND_URL=${AIRLINE_BACKEND_URL}
+      - HOTEL_BACKEND_URL=${HOTEL_BACKEND_URL}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+      - EMAIL_SENDER=${EMAIL_SENDER}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
+    ports:
+      - "${BACKEND_PORT}:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      # Esto hace que "localhost" dentro del contenedor resuelva
+      # a la IP del host en lugar de 127.0.0.1 del propio contenedor.
+      # Así las URLs guardadas en BD como http://localhost:XXXX
+      # llegan correctamente a los servicios corriendo en la máquina host.
+      - "localhost:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../Movent
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:${BACKEND_PORT}
+    container_name: ${COMPOSE_PROJECT_NAME}-frontend
+    ports:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
