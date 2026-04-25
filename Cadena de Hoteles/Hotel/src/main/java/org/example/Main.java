@@ -25,6 +25,7 @@ import org.example.controllers.AdminBusquedaController;
 import org.example.controllers.EmailReservacionController;
 import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.BusquedaAgenciaController;
+import org.example.controllers.ImagenAgenciaController;
 
 import org.example.controllers.BusquedaAerolineaController;
 import org.example.controllers.TokenAerolineaController;
@@ -174,6 +175,7 @@ public class Main {
         new ReservacionAgenciaController(reservacionAgenciaService).registerRoutes(app);
         new BusquedaAgenciaController(busquedaAgenciaService).registerRoutes(app);
         new PagoAgenciaController(pagoAgenciaService).registerRoutes(app);
+        new ImagenAgenciaController(imagenService).registerRoutes(app);
 
         // Controllers de aerolineas (busqueda y tokens para integraciones externas)
         new BusquedaAerolineaController(busquedaAerolineaService).registerRoutes(app);
