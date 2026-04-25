@@ -222,11 +222,23 @@ public class ReservacionRepository {
      * Marca como expiradas todas las reservaciones pendientes cuya fecha de expiracion ya paso.
      * @return numero de filas actualizadas en la base de datos.
      */
-    public int expirarReservacionesVencidas() {
-        String sql = "UPDATE Reservacion " +
+    public List<Integer> expirarReservacionesVencidas() {
+        // Primero obtener los IDs que van a ser expirados
+        String sqlSelect = "SELECT ID FROM Reservacion " +
+                "WHERE EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'pendiente') " +
+                "AND Fecha_Expiracion < SYSDATE";
+
+        List<Integer> ids = DatabaseManager.executeQuery(sqlSelect, rs -> rs.getInt("ID"));
+
+        if (ids.isEmpty()) return ids;
+
+        // Luego expirarlos en bloque
+        String sqlUpdate = "UPDATE Reservacion " +
                 "SET EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'expirada') " +
                 "WHERE EstadoID = (SELECT ID FROM EstadoReserva WHERE LOWER(Estado) = 'pendiente') " +
                 "AND Fecha_Expiracion < SYSDATE";
-        return DatabaseManager.executeUpdate(sql);
+        DatabaseManager.executeUpdate(sqlUpdate);
+
+        return ids;
     }
 }

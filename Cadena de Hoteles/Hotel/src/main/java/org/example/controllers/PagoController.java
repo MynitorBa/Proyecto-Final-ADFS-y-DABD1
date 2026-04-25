@@ -33,13 +33,13 @@ public class PagoController {
     }
 
     void handleProcesarPago(Context ctx) {
-        // Extrae el usuario de la sesion y el ID de la reservacion desde el path
         int usuarioId     = ctx.attribute("usuarioId");
         int reservacionId = Integer.parseInt(ctx.pathParam("id"));
         PagoRequestDTO request = ctx.bodyAsClass(PagoRequestDTO.class);
 
         try {
-            var resultado = pagoService.procesarPago(reservacionId, usuarioId, request);
+            var resultado = pagoService.procesarPago(reservacionId, usuarioId, request,
+                    ctx.ip(), ctx.userAgent());
             ctx.status(200).json(resultado);
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));

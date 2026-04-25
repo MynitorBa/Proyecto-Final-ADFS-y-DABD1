@@ -5,6 +5,9 @@ import org.example.dtos.PagoResponseDTO;
 import org.example.helpers.TarjetaHelper;
 import org.example.repositories.PagoRepository;
 import org.example.repositories.TokenValidacionRepository;
+
+import org.example.repositories.LogReservacionRepository;
+
 import org.example.dtos.TokenValidacionResponseDTO;
 
 /**
@@ -15,14 +18,19 @@ public class PagoService {
 
     private final PagoRepository pagoRepository;
     private final TokenValidacionRepository tokenValidacionRepository;
+    private final LogReservacionRepository logReservacionRepository;
 
     /**
      * Crea una instancia de PagoService con sus dependencias inyectadas.
      */
-    public PagoService(PagoRepository pagoRepository, TokenValidacionRepository tokenValidacionRepository) {
+    public PagoService(PagoRepository pagoRepository,
+                       TokenValidacionRepository tokenValidacionRepository,
+                       LogReservacionRepository logReservacionRepository) {
         this.pagoRepository            = pagoRepository;
         this.tokenValidacionRepository = tokenValidacionRepository;
+        this.logReservacionRepository  = logReservacionRepository;
     }
+
 
     /**
      * Procesa el pago de una reservacion de usuario web.
@@ -39,65 +47,104 @@ public class PagoService {
      *                                  su estado no permite el pago, el token es invalido
      *                                  o el token no aplica para la ciudad del hotel.
      */
-    public PagoResponseDTO procesarPago(int reservacionId, int usuarioId, PagoRequestDTO request) {
-
-        Object[] reservacion = pagoRepository.obtenerReservacionParaPago(reservacionId, usuarioId);
-        if (reservacion == null) {
-            throw new IllegalArgumentException("Reservacion no encontrada o no pertenece al usuario");
-        }
-
-        int estadoId = (int) reservacion[4];
-        String estado = (String) reservacion[3];
-        if (estadoId != 1) {
-            throw new IllegalArgumentException(
-                    "La reservacion no puede ser pagada, estado actual: " + estado
-            );
-        }
-
-        TarjetaHelper.validar(request);
-
-        // Declarar total ANTES de usarlo
-        double total = (double) reservacion[2];
-
-        // Aplica descuento si viene con token de aerolinea
-        if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
-            TokenValidacionResponseDTO datosToken = tokenValidacionRepository
-                    .buscarTokenValido(request.getTokenAlianza());
-            if (datosToken == null) {
-                throw new IllegalArgumentException("Token de alianza invalido, ya utilizado o expirado");
+    public PagoResponseDTO procesarPago(int reservacionId, int usuarioId,
+                                        PagoRequestDTO request, String ip, String userAgent) {
+        try {
+            Object[] reservacion = pagoRepository.obtenerReservacionParaPago(reservacionId, usuarioId);
+            if (reservacion == null) {
+                throw new IllegalArgumentException("Reservacion no encontrada o no pertenece al usuario");
             }
 
-            // Validar que el hotel de la reservacion este en la ciudad del token.
-            // Esto impide que el descuento se aplique a hoteles en otras ciudades,
-            // incluso si el request fue fabricado manualmente saltando el frontend.
-            String ciudadHotel = pagoRepository.obtenerCiudadReservacion(reservacionId);
-            if (ciudadHotel == null || !ciudadHotel.equalsIgnoreCase(datosToken.getCiudad())) {
+            int estadoId  = (int) reservacion[4];
+            String estado = (String) reservacion[3];
+            if (estadoId != 1) {
                 throw new IllegalArgumentException(
-                        "El token de alianza no aplica para hoteles en esta ciudad"
+                        "La reservacion no puede ser pagada, estado actual: " + estado
                 );
             }
 
-            double factor = 1.0 - (datosToken.getPorcentajeDescuento() / 100.0);
-            total = Math.round(total * factor * 100.0) / 100.0;
-            pagoRepository.actualizarTotalReservacion(reservacionId, total);
-            pagoRepository.actualizarTotalDetalles(reservacionId, factor);
+            TarjetaHelper.validar(request);
+
+            double total = (double) reservacion[2];
+
+            if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
+                TokenValidacionResponseDTO datosToken = tokenValidacionRepository
+                        .buscarTokenValido(request.getTokenAlianza());
+                if (datosToken == null) {
+                    throw new IllegalArgumentException("Token de alianza invalido, ya utilizado o expirado");
+                }
+
+                String ciudadHotel = pagoRepository.obtenerCiudadReservacion(reservacionId);
+                if (ciudadHotel == null || !ciudadHotel.equalsIgnoreCase(datosToken.getCiudad())) {
+                    throw new IllegalArgumentException(
+                            "El token de alianza no aplica para hoteles en esta ciudad"
+                    );
+                }
+
+                double factor = 1.0 - (datosToken.getPorcentajeDescuento() / 100.0);
+                total = Math.round(total * factor * 100.0) / 100.0;
+                pagoRepository.actualizarTotalReservacion(reservacionId, total);
+                pagoRepository.actualizarTotalDetalles(reservacionId, factor);
+            }
+
+            pagoRepository.confirmarReservacion(reservacionId);
+
+            if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
+                tokenValidacionRepository.marcarTokenUsado(request.getTokenAlianza(), reservacionId);
+            }
+
+            int facturaId = pagoRepository.crearFactura(
+                    reservacionId,
+                    request.getNit(),
+                    request.getCodigoPostal(),
+                    total
+            );
+
+            PagoResponseDTO resultado = pagoRepository.obtenerFactura(facturaId);
+
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_PAGO_EXITOSO,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    total,
+                    true,
+                    ip,
+                    userAgent,
+                    null
+            );
+
+            return resultado;
+
+        } catch (IllegalArgumentException e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_PAGO_FALLIDO,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw e;
+        } catch (Exception e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_PAGO_ERROR_INTERNO,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw new RuntimeException("Error interno al procesar el pago", e);
         }
-
-        // Confirmar UNA sola vez
-        pagoRepository.confirmarReservacion(reservacionId);
-
-        // Cierra el token despues de confirmar
-        if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
-            tokenValidacionRepository.marcarTokenUsado(request.getTokenAlianza(), reservacionId);
-        }
-
-        int facturaId = pagoRepository.crearFactura(
-                reservacionId,
-                request.getNit(),
-                request.getCodigoPostal(),
-                total
-        );
-
-        return pagoRepository.obtenerFactura(facturaId);
     }
 }

@@ -2,6 +2,10 @@ package org.example.services;
 
 import org.example.repositories.ReservacionRepository;
 
+import org.example.repositories.LogReservacionRepository;
+
+
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -14,17 +18,19 @@ public class ExpiracionService {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private final ReservacionRepository reservacionRepository;
+    private final LogReservacionRepository logReservacionRepository;
 
     /**
      * Crea una instancia de ExpiracionService con sus dependencias inyectadas.
      */
-    public ExpiracionService(ReservacionRepository reservacionRepository) {
-        this.reservacionRepository = reservacionRepository;
+    public ExpiracionService(ReservacionRepository reservacionRepository,
+                             LogReservacionRepository logReservacionRepository) {
+        this.reservacionRepository    = reservacionRepository;
+        this.logReservacionRepository = logReservacionRepository;
     }
 
     /**
      * Arranca el hilo programado que revisa y expira reservaciones cada minuto.
-     * El primer ciclo inicia un minuto despues de llamar a este metodo.
      */
     public void iniciar() {
         scheduler.scheduleAtFixedRate(this::expirarReservaciones, 1, 1, TimeUnit.MINUTES);
@@ -33,14 +39,28 @@ public class ExpiracionService {
 
     /**
      * Ejecuta la expiracion de reservaciones vencidas en cada ciclo del scheduler.
-     * Registra en consola cuantas reservaciones fueron expiradas, si las hay.
-     * Los errores se capturan para que el hilo no se detenga por una falla puntual.
+     * Por cada reservacion expirada registra un log automatico sin IP ni UserAgent
+     * ya que la accion la ejecuta el servidor, no un cliente.
      */
     private void expirarReservaciones() {
         try {
-            int expiradas = reservacionRepository.expirarReservacionesVencidas();
-            if (expiradas > 0) {
-                System.out.println("[ExpiracionService] " + expiradas + " reservacion(es) expiradas.");
+            List<Integer> ids = reservacionRepository.expirarReservacionesVencidas();
+            if (!ids.isEmpty()) {
+                System.out.println("[ExpiracionService] " + ids.size() + " reservacion(es) expiradas.");
+                for (int reservacionId : ids) {
+                    logReservacionRepository.registrar(
+                            LogReservacionRepository.TIPO_RESERVACION_EXPIRADA_AUTO,
+                            reservacionId,
+                            null,
+                            null,
+                            null,
+                            null,
+                            true,
+                            null,
+                            null,
+                            "Expirada automaticamente por el scheduler"
+                    );
+                }
             }
         } catch (Exception e) {
             System.err.println("[ExpiracionService] Error al expirar reservaciones: " + e.getMessage());
@@ -49,7 +69,6 @@ public class ExpiracionService {
 
     /**
      * Detiene el hilo del scheduler al apagar el servidor.
-     * Se llama desde el ShutdownHook registrado en Main.
      */
     public void detener() {
         scheduler.shutdown();

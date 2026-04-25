@@ -2,6 +2,9 @@ package org.example.services;
 
 import org.example.repositories.CancelacionRepository;
 
+import org.example.repositories.LogReservacionRepository;
+
+
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -15,12 +18,15 @@ import org.example.dtos.PuedeCancelarDTO;
 public class CancelacionService {
 
     private final CancelacionRepository cancelacionRepository;
+    private final LogReservacionRepository logReservacionRepository;
 
     /**
      * Crea una instancia de CancelacionService con sus dependencias inyectadas.
      */
-    public CancelacionService(CancelacionRepository cancelacionRepository) {
-        this.cancelacionRepository = cancelacionRepository;
+    public CancelacionService(CancelacionRepository cancelacionRepository,
+                              LogReservacionRepository logReservacionRepository) {
+        this.cancelacionRepository    = cancelacionRepository;
+        this.logReservacionRepository = logReservacionRepository;
     }
 
     /**
@@ -33,41 +39,67 @@ public class CancelacionService {
      * @throws IllegalArgumentException si la reservacion no existe, el estado no lo permite
      *                                  o faltan menos de 24 horas para el check-in.
      */
-    public void cancelarReservacion(int reservacionId, int usuarioId, String motivoCancelacion) {
+    public void cancelarReservacion(int reservacionId, int usuarioId,
+                                    String motivoCancelacion, String ip, String userAgent) {
+        try {
+            Object[] reservacion = cancelacionRepository.obtenerReservacionParaCancelar(reservacionId, usuarioId);
+            if (reservacion == null) {
+                throw new IllegalArgumentException("Reservacion no encontrada o no pertenece al usuario");
+            }
 
-        // Verifica que la reservacion existe y pertenece al usuario
-        Object[] reservacion = cancelacionRepository.obtenerReservacionParaCancelar(reservacionId, usuarioId);
-        if (reservacion == null) {
-            throw new IllegalArgumentException("Reservacion no encontrada o no pertenece al usuario");
-        }
+            int estadoId  = (int) reservacion[1];
+            String estado = (String) reservacion[2];
+            if (estadoId != 1 && estadoId != 2) {
+                throw new IllegalArgumentException(
+                        "La reservacion no puede cancelarse, estado actual: " + estado
+                );
+            }
 
-        // Solo se puede cancelar si esta Pendiente (1) o Confirmada (2)
-        int estadoId  = (int) reservacion[1];
-        String estado = (String) reservacion[2];
-        if (estadoId != 1 && estadoId != 2) {
-            throw new IllegalArgumentException(
-                    "La reservacion no puede cancelarse, estado actual: " + estado
+            Date fechaCheckIn = cancelacionRepository.obtenerFechaCheckInMasReciente(reservacionId);
+            if (fechaCheckIn == null) {
+                throw new IllegalArgumentException("La reservacion no tiene habitaciones asociadas");
+            }
+
+            long horasRestantes = ChronoUnit.HOURS.between(
+                    LocalDate.now().atStartOfDay(),
+                    fechaCheckIn.toLocalDate().atStartOfDay()
             );
-        }
+            if (horasRestantes < 24 && estadoId != 1) {
+                throw new IllegalArgumentException(
+                        "No se puede cancelar con menos de 24 horas de anticipacion al check-in"
+                );
+            }
 
-        // Obtiene la fecha de check-in mas proxima para validar el plazo
-        Date fechaCheckIn = cancelacionRepository.obtenerFechaCheckInMasReciente(reservacionId);
-        if (fechaCheckIn == null) {
-            throw new IllegalArgumentException("La reservacion no tiene habitaciones asociadas");
-        }
+            cancelacionRepository.cancelarReservacion(reservacionId, motivoCancelacion);
 
-        // Regla: reservaciones confirmadas requieren mas de 24 horas de anticipacion
-        long horasRestantes = ChronoUnit.HOURS.between(
-                LocalDate.now().atStartOfDay(),
-                fechaCheckIn.toLocalDate().atStartOfDay()
-        );
-        if (horasRestantes < 24 && estadoId != 1) {
-            throw new IllegalArgumentException(
-                    "No se puede cancelar con menos de 24 horas de anticipacion al check-in"
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CANCELACION_EXITOSA,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    null,
+                    true,
+                    ip,
+                    userAgent,
+                    motivoCancelacion
             );
-        }
 
-        cancelacionRepository.cancelarReservacion(reservacionId, motivoCancelacion);
+        } catch (IllegalArgumentException e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CANCELACION_FALLIDA,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw e;
+        }
     }
 
     /**
@@ -88,11 +120,9 @@ public class CancelacionService {
         if (estadoId != 1 && estadoId != 2)
             return new PuedeCancelarDTO(false, "Estado actual no permite cancelacion: " + estado);
 
-        // Pendiente siempre puede cancelarse sin restriccion de tiempo
         if (estadoId == 1)
             return new PuedeCancelarDTO(true, "Reservacion pendiente, puede cancelarse");
 
-        // Confirmada: valida que falten mas de 24 horas para el check-in
         Date fechaCheckIn = cancelacionRepository.obtenerFechaCheckInMasReciente(reservacionId);
         if (fechaCheckIn == null)
             return new PuedeCancelarDTO(false, "La reservacion no tiene habitaciones asociadas");
@@ -102,9 +132,22 @@ public class CancelacionService {
                 fechaCheckIn.toLocalDate().atStartOfDay()
         );
 
-        if (horasRestantes < 24)
+        if (horasRestantes < 24) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CANCELACION_AGENCIA_FALLIDA,
+                    reservacionId,
+                    null,
+                    agenciaId,
+                    null,
+                    null,
+                    false,
+                    null,  // ip no disponible aqui
+                    null,  // userAgent no disponible aqui
+                    "Cancelacion rechazada: menos de 24 horas para el check-in (" + horasRestantes + "h restantes)"
+            );
             return new PuedeCancelarDTO(false,
                     "No se puede cancelar con menos de 24 horas de anticipacion al check-in");
+        }
 
         return new PuedeCancelarDTO(true,
                 "Puede cancelarse. Faltan " + horasRestantes + " horas para el check-in");
@@ -119,29 +162,61 @@ public class CancelacionService {
      * @throws IllegalArgumentException si la reservacion no existe, el estado no lo permite
      *                                  o faltan menos de 24 horas para el check-in.
      */
-    public void cancelarReservacionAgencia(int reservacionId, int agenciaId, String motivo) {
-        Object[] reservacion = cancelacionRepository.obtenerReservacionAgenciaParaCancelar(reservacionId, agenciaId);
-        if (reservacion == null)
-            throw new IllegalArgumentException("Reservacion no encontrada o no pertenece a esta agencia");
+    public void cancelarReservacionAgencia(int reservacionId, int agenciaId,
+                                           String motivo, String ip, String userAgent) {
+        try {
+            Object[] reservacion = cancelacionRepository.obtenerReservacionAgenciaParaCancelar(reservacionId, agenciaId);
+            if (reservacion == null)
+                throw new IllegalArgumentException("Reservacion no encontrada o no pertenece a esta agencia");
 
-        int estadoId  = (int) reservacion[1];
-        String estado = (String) reservacion[2];
+            int estadoId  = (int) reservacion[1];
+            String estado = (String) reservacion[2];
 
-        if (estadoId != 1 && estadoId != 2)
-            throw new IllegalArgumentException("La reservacion no puede cancelarse, estado actual: " + estado);
+            if (estadoId != 1 && estadoId != 2)
+                throw new IllegalArgumentException(
+                        "La reservacion no puede cancelarse, estado actual: " + estado);
 
-        Date fechaCheckIn = cancelacionRepository.obtenerFechaCheckInMasReciente(reservacionId);
-        if (fechaCheckIn == null)
-            throw new IllegalArgumentException("La reservacion no tiene habitaciones asociadas");
+            Date fechaCheckIn = cancelacionRepository.obtenerFechaCheckInMasReciente(reservacionId);
+            if (fechaCheckIn == null)
+                throw new IllegalArgumentException("La reservacion no tiene habitaciones asociadas");
 
-        long horasRestantes = ChronoUnit.HOURS.between(
-                LocalDate.now().atStartOfDay(),
-                fechaCheckIn.toLocalDate().atStartOfDay()
-        );
-        if (horasRestantes < 24 && estadoId != 1)
-            throw new IllegalArgumentException(
-                    "No se puede cancelar con menos de 24 horas de anticipacion al check-in");
+            long horasRestantes = ChronoUnit.HOURS.between(
+                    LocalDate.now().atStartOfDay(),
+                    fechaCheckIn.toLocalDate().atStartOfDay()
+            );
+            if (horasRestantes < 24 && estadoId != 1)
+                throw new IllegalArgumentException(
+                        "No se puede cancelar con menos de 24 horas de anticipacion al check-in");
 
-        cancelacionRepository.cancelarReservacion(reservacionId, motivo);
+            cancelacionRepository.cancelarReservacion(reservacionId, motivo);
+
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CANCELACION_AGENCIA_EXITOSA,
+                    reservacionId,
+                    null,
+                    agenciaId,
+                    null,
+                    null,
+                    true,
+                    ip,
+                    userAgent,
+                    motivo
+            );
+
+        } catch (IllegalArgumentException e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CANCELACION_AGENCIA_FALLIDA,
+                    reservacionId,
+                    null,
+                    agenciaId,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw e;
+        }
     }
 }

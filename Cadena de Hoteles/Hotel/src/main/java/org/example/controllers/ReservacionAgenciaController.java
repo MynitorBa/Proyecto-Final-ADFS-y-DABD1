@@ -44,10 +44,10 @@ public class ReservacionAgenciaController {
     void handleCrearReservacion(Context ctx) {
         if (!AgenciaAuthMiddleware.verificar(ctx)) return;
         int agenciaId = ctx.attribute("agenciaId");
-
         ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
         try {
-            var reservacion = reservacionAgenciaService.crearReservacion(request, agenciaId);
+            var reservacion = reservacionAgenciaService.crearReservacion(request, agenciaId,
+                    ctx.ip(), ctx.userAgent());
             ctx.status(201).json(reservacion);
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));
@@ -65,13 +65,11 @@ public class ReservacionAgenciaController {
 
     void handleExpirarReservacion(Context ctx) {
         if (!AgenciaAuthMiddleware.verificar(ctx)) return;
-
-        // Extrae el ID de la reservacion desde el path y la agencia del contexto
         int reservacionId = Integer.parseInt(ctx.pathParam("id"));
         int agenciaId     = ctx.attribute("agenciaId");
-
         try {
-            reservacionAgenciaService.expirarReservacion(reservacionId, agenciaId);
+            reservacionAgenciaService.expirarReservacion(reservacionId, agenciaId,
+                    ctx.ip(), ctx.userAgent());
             ctx.json(Map.of("mensaje", "Reservacion expirada correctamente"));
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));

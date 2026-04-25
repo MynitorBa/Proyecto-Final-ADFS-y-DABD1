@@ -27,6 +27,7 @@ public class UsuarioService {
     private final CiudadRepository              ciudadRepository;
     private final NacionalidadRepository        nacionalidadRepository;
     private final UsuarioNacionalidadRepository usuarioNacionalidadRepository;
+    private final LogRepository logRepository;
 
     /**
      * Crea una instancia de UsuarioService con sus dependencias inyectadas.
@@ -35,12 +36,14 @@ public class UsuarioService {
                           PaisRepository paisRepository,
                           CiudadRepository ciudadRepository,
                           NacionalidadRepository nacionalidadRepository,
-                          UsuarioNacionalidadRepository usuarioNacionalidadRepository) {
+                          UsuarioNacionalidadRepository usuarioNacionalidadRepository,
+                          LogRepository logRepository) {
         this.usuarioRepository             = usuarioRepository;
         this.paisRepository                = paisRepository;
         this.ciudadRepository              = ciudadRepository;
         this.nacionalidadRepository        = nacionalidadRepository;
         this.usuarioNacionalidadRepository = usuarioNacionalidadRepository;
+        this.logRepository                 = logRepository;
     }
 
     /**
@@ -67,67 +70,91 @@ public class UsuarioService {
      * @return ID del usuario recien creado.
      * @throws CamposDuplicadosException si el username, correo o pasaporte ya estan en uso.
      */
-    public int registrarUsuario(UsuarioValidacionRequestDTO request) {
+    public int registrarUsuario(UsuarioValidacionRequestDTO request, String ip, String userAgent) {
+            try {
+                UsuarioValidacionResponseDTO validacion = validarDisponibilidad(request);
+                if (validacion.isUsernameExiste() || validacion.isCorreoExiste() || validacion.isPasaporteExiste()) {
+                    logRepository.registrar(
+                            LogRepository.TIPO_REGISTRO_FALLIDO,
+                            null,
+                            request.getUsername(),
+                            false,
+                            ip,
+                            userAgent,
+                            "Campos duplicados: " + construirDetalleDuplicados(validacion)
+                    );
+                    throw new CamposDuplicadosException(validacion);
+                }
 
-        // Verificar que no haya campos duplicados antes de continuar
-        UsuarioValidacionResponseDTO validacion = validarDisponibilidad(request);
-        if (validacion.isUsernameExiste() || validacion.isCorreoExiste() || validacion.isPasaporteExiste()) {
-            throw new CamposDuplicadosException(validacion);
-        }
+                int paisId   = paisRepository.buscarOCrearPorNombre(request.getPais());
+                int ciudadId = ciudadRepository.buscarOCrearPorNombre(request.getCiudad(), paisId);
 
-        // Resolver pais y ciudad, creandolos si no existen en la base de datos
-        int paisId   = paisRepository.buscarOCrearPorNombre(request.getPais());
-        int ciudadId = ciudadRepository.buscarOCrearPorNombre(request.getCiudad(), paisId);
+                String contrasenaHasheada = PasswordHelper.hashear(request.getContrasena());
+                Date   fechaNacimiento    = Date.valueOf(LocalDate.parse(request.getFechaNacimiento()));
 
-        String contrasenaHasheada = PasswordHelper.hashear(request.getContrasena());
-        Date   fechaNacimiento    = Date.valueOf(LocalDate.parse(request.getFechaNacimiento()));
+                int nuevoUsuarioId = usuarioRepository.crearUsuario(
+                        request.getCorreo(),
+                        contrasenaHasheada,
+                        request.getPasaporte(),
+                        request.getUsername(),
+                        request.getNombre(),
+                        request.getApellido(),
+                        request.getTelefono(),
+                        fechaNacimiento,
+                        ciudadId
+                );
 
-        int nuevoUsuarioId = usuarioRepository.crearUsuario(
-                request.getCorreo(),
-                contrasenaHasheada,
-                request.getPasaporte(),
-                request.getUsername(),
-                request.getNombre(),
-                request.getApellido(),
-                request.getTelefono(),
-                fechaNacimiento,
-                ciudadId
-        );
+                if (request.getNacionalidades() != null && !request.getNacionalidades().isEmpty()) {
+                    List<Integer> nacionalidadIds = new ArrayList<>();
+                    for (String nombreNac : request.getNacionalidades()) {
+                        nacionalidadIds.add(nacionalidadRepository.buscarOCrearPorNombre(nombreNac));
+                    }
+                    usuarioNacionalidadRepository.asignarNacionalidades(nuevoUsuarioId, nacionalidadIds);
+                }
 
-        // Asignar nacionalidades si se proporcionaron
-        if (request.getNacionalidades() != null && !request.getNacionalidades().isEmpty()) {
-            List<Integer> nacionalidadIds = new ArrayList<>();
-            for (String nombreNac : request.getNacionalidades()) {
-                nacionalidadIds.add(nacionalidadRepository.buscarOCrearPorNombre(nombreNac));
+                logRepository.registrar(
+                        LogRepository.TIPO_REGISTRO_EXITOSO,
+                        nuevoUsuarioId,
+                        request.getUsername(),
+                        true,
+                        ip,
+                        userAgent,
+                        null
+                );
+
+                try {
+                    String html = construirCorreoBienvenida(
+                            request.getNombre(), request.getApellido(), request.getUsername(),
+                            request.getCorreo(), request.getContrasena(),
+                            request.getTelefono(), request.getPais(), request.getCiudad()
+                    );
+                    EmailHelper.enviar(
+                            request.getCorreo(),
+                            "\u00A1Bienvenido a Miku Inn, " + request.getNombre() + "! \uD83C\uDFE8",
+                            html
+                    );
+                } catch (Exception e) {
+                    System.err.println("\u26A0 No se pudo enviar correo de bienvenida a "
+                            + request.getCorreo() + ": " + e.getMessage());
+                }
+
+                return nuevoUsuarioId;
+
+            } catch (CamposDuplicadosException e) {
+                throw e;
+            } catch (Exception e) {
+                logRepository.registrar(
+                        LogRepository.TIPO_REGISTRO_ERROR_INTERNO,
+                        null,
+                        request.getUsername(),
+                        false,
+                        ip,
+                        userAgent,
+                        e.getMessage()
+                );
+                throw new RuntimeException("Error interno al registrar usuario", e);
             }
-            usuarioNacionalidadRepository.asignarNacionalidades(nuevoUsuarioId, nacionalidadIds);
         }
-
-        // Enviar correo de bienvenida; un fallo aqui no debe interrumpir el registro
-        try {
-            String html = construirCorreoBienvenida(
-                    request.getNombre(),
-                    request.getApellido(),
-                    request.getUsername(),
-                    request.getCorreo(),
-                    request.getContrasena(),
-                    request.getTelefono(),
-                    request.getPais(),
-                    request.getCiudad()
-            );
-            EmailHelper.enviar(
-                    request.getCorreo(),
-                    "\u00A1Bienvenido a Miku Inn, " + request.getNombre() + "! \uD83C\uDFE8",
-                    html
-            );
-        } catch (Exception e) {
-            // No impedir el registro si el correo falla
-            System.err.println("\u26A0 No se pudo enviar correo de bienvenida a "
-                    + request.getCorreo() + ": " + e.getMessage());
-        }
-
-        return nuevoUsuarioId;
-    }
 
     /**
      * Construye el HTML del correo de bienvenida para el usuario recien registrado.
@@ -280,11 +307,35 @@ public class UsuarioService {
      * @param nuevoTelefono nuevo numero de telefono; no puede ser nulo ni vacio.
      * @throws IllegalArgumentException si el telefono es nulo o esta en blanco.
      */
-    public void cambiarTelefono(int usuarioId, String nuevoTelefono) {
+    public void cambiarTelefono(int usuarioId, String nuevoTelefono, String ip, String userAgent) {
         if (nuevoTelefono == null || nuevoTelefono.isBlank()) {
             throw new IllegalArgumentException("El teléfono no puede estar vacío");
         }
-        usuarioRepository.actualizarTelefono(usuarioId, nuevoTelefono);
+        try {
+            usuarioRepository.actualizarTelefono(usuarioId, nuevoTelefono);
+            logRepository.registrar(
+                    LogRepository.TIPO_CAMBIO_TELEFONO_EXITOSO,
+                    usuarioId,
+                    null,
+                    true,
+                    ip,
+                    userAgent,
+                    null
+            );
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            logRepository.registrar(
+                    LogRepository.TIPO_CAMBIO_TELEFONO_ERROR,
+                    usuarioId,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw e;
+        }
     }
 
     /**
@@ -295,15 +346,50 @@ public class UsuarioService {
      * @param contrasenaNueva  nueva contrasena en texto plano que sera hasheada.
      * @throws CredencialesInvalidasException si la contrasena actual no coincide.
      */
-    public void cambiarContrasena(int usuarioId, String contrasenaActual, String contrasenaNueva) {
-        // Verificar que la contrasena actual sea correcta antes de permitir el cambio
-        String hashActual = usuarioRepository.obtenerContrasena(usuarioId);
-        if (!PasswordHelper.verificar(contrasenaActual, hashActual)) {
-            throw new CredencialesInvalidasException();
-        }
+    public void cambiarContrasena(int usuarioId, String contrasenaActual, String contrasenaNueva,
+                                  String ip, String userAgent) {
+        try {
+            String hashActual = usuarioRepository.obtenerContrasena(usuarioId);
+            if (!PasswordHelper.verificar(contrasenaActual, hashActual)) {
+                logRepository.registrar(
+                        LogRepository.TIPO_CAMBIO_CONTRASENA_FALLIDO,
+                        usuarioId,
+                        null,
+                        false,
+                        ip,
+                        userAgent,
+                        "Contrasena actual incorrecta"
+                );
+                throw new CredencialesInvalidasException();
+            }
 
-        String nuevoHash = PasswordHelper.hashear(contrasenaNueva);
-        usuarioRepository.actualizarContrasena(usuarioId, nuevoHash);
+            String nuevoHash = PasswordHelper.hashear(contrasenaNueva);
+            usuarioRepository.actualizarContrasena(usuarioId, nuevoHash);
+
+            logRepository.registrar(
+                    LogRepository.TIPO_CAMBIO_CONTRASENA_EXITOSO,
+                    usuarioId,
+                    null,
+                    true,
+                    ip,
+                    userAgent,
+                    null
+            );
+
+        } catch (CredencialesInvalidasException e) {
+            throw e;
+        } catch (Exception e) {
+            logRepository.registrar(
+                    LogRepository.TIPO_CAMBIO_CONTRASENA_ERROR,
+                    usuarioId,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw e;
+        }
     }
 
     /**
@@ -328,5 +414,16 @@ public class UsuarioService {
             throw new IllegalArgumentException("Rol inválido. Solo se permiten 1 (Usuario), 2 (Administrador) o 3 (Webservice)");
         }
         usuarioRepository.actualizarRol(usuarioId, nuevoRolId);
+    }
+
+
+
+    /** Construye un string descriptivo con los campos duplicados encontrados. */
+    private String construirDetalleDuplicados(UsuarioValidacionResponseDTO v) {
+        List<String> campos = new ArrayList<>();
+        if (v.isUsernameExiste())  campos.add("username");
+        if (v.isCorreoExiste())    campos.add("correo");
+        if (v.isPasaporteExiste()) campos.add("pasaporte");
+        return String.join(", ", campos);
     }
 }

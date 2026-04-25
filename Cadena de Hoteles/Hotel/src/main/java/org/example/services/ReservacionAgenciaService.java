@@ -7,6 +7,9 @@ import org.example.dtos.ReservacionDetalleDTO;
 import org.example.dtos.ReservacionRequestDTO;
 import org.example.repositories.ReservacionAgenciaRepository;
 
+import org.example.repositories.LogReservacionRepository;
+
+
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -24,12 +27,16 @@ import java.util.UUID;
 public class ReservacionAgenciaService {
 
     private final ReservacionAgenciaRepository repository;
+    private final LogReservacionRepository logReservacionRepository;
+
 
     /**
      * Crea una instancia de ReservacionAgenciaService con sus dependencias inyectadas.
      */
-    public ReservacionAgenciaService(ReservacionAgenciaRepository repository) {
-        this.repository = repository;
+    public ReservacionAgenciaService(ReservacionAgenciaRepository repository,
+                                     LogReservacionRepository logReservacionRepository) {
+        this.repository                = repository;
+        this.logReservacionRepository  = logReservacionRepository;
     }
 
     /**
@@ -43,103 +50,141 @@ public class ReservacionAgenciaService {
      * @throws IllegalArgumentException si la agencia no esta activa, no hay habitaciones,
      *                                  las fechas son invalidas o alguna habitacion no esta disponible.
      */
-    public ReservacionAgenciaResponseDTO crearReservacion(ReservacionRequestDTO request, int agenciaId) {
+    public ReservacionAgenciaResponseDTO crearReservacion(ReservacionRequestDTO request,
+                                                          int agenciaId, String ip, String userAgent) {
+        try {
+            int[] datosAgencia = repository.obtenerDatosAgencia(agenciaId);
+            if (datosAgencia == null)
+                throw new IllegalArgumentException("La agencia no esta activa");
 
-        int[] datosAgencia = repository.obtenerDatosAgencia(agenciaId);
-        if (datosAgencia == null)
-            throw new IllegalArgumentException("La agencia no esta activa");
+            int    usuarioWebisId      = datosAgencia[0];
+            double porcentajeDescuento = repository.obtenerDescuentoAgencia(agenciaId);
 
-        int    usuarioWebisId      = datosAgencia[0];
-        double porcentajeDescuento = repository.obtenerDescuentoAgencia(agenciaId);
+            if (request.getHabitaciones() == null || request.getHabitaciones().isEmpty())
+                throw new IllegalArgumentException("Debe incluir al menos una habitacion");
 
-        if (request.getHabitaciones() == null || request.getHabitaciones().isEmpty())
-            throw new IllegalArgumentException("Debe incluir al menos una habitacion");
+            double factor       = 1.0 - (porcentajeDescuento / 100.0);
+            double totalGeneral = 0;
+            List<HabitacionAgenciaResponseDTO> desglose = new ArrayList<>();
 
-        // Factor multiplicador para aplicar el descuento de la agencia
-        double factor = 1.0 - (porcentajeDescuento / 100.0);
+            for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
+                LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
+                LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
+                long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
 
-        double totalGeneral = 0;
-        List<HabitacionAgenciaResponseDTO> desglose = new ArrayList<>();
+                if (dias <= 0)
+                    throw new IllegalArgumentException(
+                            "Las fechas de la habitacion " + item.getHabitacionId() + " son invalidas");
 
-        for (HabitacionReservaRequestDTO item : request.getHabitaciones()) {
-            LocalDate checkIn  = LocalDate.parse(item.getFechaCheckIn());
-            LocalDate checkOut = LocalDate.parse(item.getFechaCheckOut());
-            long dias = ChronoUnit.DAYS.between(checkIn, checkOut);
+                Date fechaCheckIn  = Date.valueOf(checkIn);
+                Date fechaCheckOut = Date.valueOf(checkOut);
 
-            if (dias <= 0)
-                throw new IllegalArgumentException(
-                        "Las fechas de la habitacion " + item.getHabitacionId() + " son invalidas");
+                if (repository.existeTraslape(item.getHabitacionId(), fechaCheckIn, fechaCheckOut))
+                    throw new IllegalArgumentException(
+                            "La habitacion " + item.getHabitacionId() +
+                                    " no esta disponible para las fechas seleccionadas");
 
-            Date fechaCheckIn  = Date.valueOf(checkIn);
-            Date fechaCheckOut = Date.valueOf(checkOut);
+                double[] precios = repository.obtenerPrecios(item.getHabitacionId());
 
-            // Verifica que la habitacion no tenga reservaciones que se traslapen
-            if (repository.existeTraslape(item.getHabitacionId(), fechaCheckIn, fechaCheckOut))
-                throw new IllegalArgumentException(
-                        "La habitacion " + item.getHabitacionId() +
-                                " no esta disponible para las fechas seleccionadas");
+                double precioPorNoche   = Math.round(precios[0] * factor * 100.0) / 100.0;
+                double precioPorPersona = Math.round(precios[1] * factor * 100.0) / 100.0;
+                int    capacidadMaxima  = precios.length > 2 ? (int) precios[2] : Integer.MAX_VALUE;
+                int    personasExtra    = Math.max(0, item.getCantidadPersonas() - capacidadMaxima);
 
-            double[] precios = repository.obtenerPrecios(item.getHabitacionId());
+                double totalHab = Math.round(
+                        ((dias * precioPorNoche) + (personasExtra * dias * precioPorPersona)) * 100.0
+                ) / 100.0;
 
-            // Aplica el descuento de la agencia al precio por noche y por persona
-            double precioPorNoche   = Math.round(precios[0] * factor * 100.0) / 100.0;
-            double precioPorPersona = Math.round(precios[1] * factor * 100.0) / 100.0;
-            int    capacidadMaxima  = precios.length > 2 ? (int) precios[2] : Integer.MAX_VALUE;
-            int    personasExtra    = Math.max(0, item.getCantidadPersonas() - capacidadMaxima);
+                totalGeneral += totalHab;
 
-            // Total de la habitacion: noches base + cargo por personas extra
-            double totalHab = Math.round(
-                    ((dias * precioPorNoche) + (personasExtra * dias * precioPorPersona)) * 100.0
-            ) / 100.0;
+                HabitacionAgenciaResponseDTO habDTO = new HabitacionAgenciaResponseDTO();
+                habDTO.setHabitacionId(item.getHabitacionId());
+                habDTO.setPrecioPorNoche(precioPorNoche);
+                habDTO.setPrecioPorPersona(precioPorPersona);
+                habDTO.setPersonasExtra(personasExtra);
+                habDTO.setNoches((int) dias);
+                habDTO.setTotal(totalHab);
+                desglose.add(habDTO);
+            }
 
-            totalGeneral += totalHab;
+            totalGeneral = Math.round(totalGeneral * 100.0) / 100.0;
 
-            HabitacionAgenciaResponseDTO habDTO = new HabitacionAgenciaResponseDTO();
-            habDTO.setHabitacionId(item.getHabitacionId());
-            habDTO.setPrecioPorNoche(precioPorNoche);
-            habDTO.setPrecioPorPersona(precioPorPersona);
-            habDTO.setPersonasExtra(personasExtra);
-            habDTO.setNoches((int) dias);
-            habDTO.setTotal(totalHab);
-            desglose.add(habDTO);
-        }
+            String noReservacion      = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
+            Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
 
-        totalGeneral = Math.round(totalGeneral * 100.0) / 100.0;
-
-        // Genera un numero de reservacion unico con prefijo MIKU
-        String noReservacion      = "MIKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        Timestamp fechaCreacion   = Timestamp.valueOf(LocalDateTime.now());
-        Timestamp fechaExpiracion = Timestamp.valueOf(LocalDateTime.now().plusMinutes(10));
-
-        int reservacionId = repository.crearReservacion(
-                noReservacion, totalGeneral, usuarioWebisId, fechaCreacion, fechaExpiracion
-        );
-
-        // Persiste el detalle de cada habitacion vinculada a la reservacion
-        for (int i = 0; i < desglose.size(); i++) {
-            HabitacionAgenciaResponseDTO hab = desglose.get(i);
-            HabitacionReservaRequestDTO item = request.getHabitaciones().get(i);
-            repository.crearDetalle(
-                    reservacionId,
-                    hab.getHabitacionId(),
-                    Date.valueOf(LocalDate.parse(item.getFechaCheckIn())),
-                    Date.valueOf(LocalDate.parse(item.getFechaCheckOut())),
-                    item.getCantidadPersonas(),
-                    hab.getTotal()
+            int reservacionId = repository.crearReservacion(
+                    noReservacion, totalGeneral, usuarioWebisId, fechaCreacion, fechaExpiracion
             );
+
+            for (int i = 0; i < desglose.size(); i++) {
+                HabitacionAgenciaResponseDTO hab = desglose.get(i);
+                HabitacionReservaRequestDTO item = request.getHabitaciones().get(i);
+                repository.crearDetalle(
+                        reservacionId,
+                        hab.getHabitacionId(),
+                        Date.valueOf(LocalDate.parse(item.getFechaCheckIn())),
+                        Date.valueOf(LocalDate.parse(item.getFechaCheckOut())),
+                        item.getCantidadPersonas(),
+                        hab.getTotal()
+                );
+            }
+
+            Object[] datos = repository.obtenerReservacion(reservacionId);
+
+            ReservacionAgenciaResponseDTO response = new ReservacionAgenciaResponseDTO();
+            response.setId((int) datos[0]);
+            response.setNoReservacion((String) datos[1]);
+            response.setTotal((double) datos[2]);
+            response.setFechaCreacion((String) datos[3]);
+            response.setFechaExpiracion((String) datos[4]);
+            response.setEstado((String) datos[5]);
+            response.setHabitaciones(desglose);
+
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_AGENCIA_EXITOSA,
+                    response.getId(),
+                    null,
+                    agenciaId,
+                    response.getNoReservacion(),
+                    response.getTotal(),
+                    true,
+                    ip,
+                    userAgent,
+                    null
+            );
+
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_AGENCIA_FALLIDA,
+                    null,
+                    null,
+                    agenciaId,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw e;
+        } catch (Exception e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_AGENCIA_ERROR,
+                    null,
+                    null,
+                    agenciaId,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.getMessage()
+            );
+            throw new RuntimeException("Error interno al crear reservacion de agencia", e);
         }
-
-        Object[] datos = repository.obtenerReservacion(reservacionId);
-
-        ReservacionAgenciaResponseDTO response = new ReservacionAgenciaResponseDTO();
-        response.setId((int) datos[0]);
-        response.setNoReservacion((String) datos[1]);
-        response.setTotal((double) datos[2]);
-        response.setFechaCreacion((String) datos[3]);
-        response.setFechaExpiracion((String) datos[4]);
-        response.setEstado((String) datos[5]);
-        response.setHabitaciones(desglose);
-        return response;
     }
 
     /**
@@ -159,14 +204,40 @@ public class ReservacionAgenciaService {
      * @throws IllegalArgumentException si la reservacion no existe, no pertenece a la agencia
      *                                  o no esta en estado pendiente.
      */
-    public void expirarReservacion(int reservacionId, int agenciaId) {
+    public void expirarReservacion(int reservacionId, int agenciaId, String ip, String userAgent) {
         boolean valida = repository.perteneceAAgenciaYEstaPendiente(reservacionId, agenciaId);
 
-        if (!valida)
+        if (!valida) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_AGENCIA_FALLIDA,
+                    reservacionId,
+                    null,
+                    agenciaId,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    "Intento de expiracion invalido: reservacion no encontrada o no pendiente"
+            );
             throw new IllegalArgumentException(
                     "La reservacion no existe, no pertenece a esta agencia, o no esta en estado pendiente");
+        }
 
         repository.expirarReservacion(reservacionId);
+
+        logReservacionRepository.registrar(
+                LogReservacionRepository.TIPO_AGENCIA_EXPIRADA,
+                reservacionId,
+                null,
+                agenciaId,
+                null,
+                null,
+                true,
+                ip,
+                userAgent,
+                null
+        );
     }
 
     /**
