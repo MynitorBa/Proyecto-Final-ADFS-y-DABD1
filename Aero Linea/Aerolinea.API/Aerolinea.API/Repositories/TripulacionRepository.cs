@@ -1,4 +1,5 @@
 using Aerolinea.API.Data;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
@@ -273,6 +274,80 @@ namespace Aerolinea.API.Repositories
             }
 
             return (totalFuturos, numeros48h);
+        }
+
+        /// <summary>
+        /// Retorna la lista detallada de vuelos activos futuros a los que el tripulante esta asignado.
+        /// Incluye datos de ruta y horas restantes calculados en SQL.
+        /// Usado para el modal de confirmacion de desactivacion.
+        /// </summary>
+        public async Task<List<VueloActivoInfoDTO>> ObtenerVuelosAsignadosDetallados(int tripulanteId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT v.ID,
+                       v.NumeroVuelo,
+                       ao.Codigo AS Origen,
+                       ad.Codigo AS Destino,
+                       CONVERT(VARCHAR(10), v.Fecha, 120)                         AS Fecha,
+                       CONVERT(VARCHAR(8),  v.HoraSalida, 108)                    AS HoraSalida,
+                       CAST(DATEDIFF(MINUTE, GETDATE(),
+                           DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraSalida),
+                                   CAST(v.Fecha AS DATETIME))) AS FLOAT) / 60.0   AS HorasRestantes
+                FROM   EquipoPivote ep
+                INNER JOIN Vuelo      v  ON v.ID  = ep.VueloID
+                INNER JOIN Ruta       r  ON r.ID  = v.RutaID
+                INNER JOIN Aeropuerto ao ON ao.ID = r.OrigenID
+                INNER JOIN Aeropuerto ad ON ad.ID = r.DestinoID
+                WHERE  ep.MiembroTripulacionID = @TripulanteId
+                  AND  v.EstadoID = 1
+                  AND  v.Fecha   >= CAST(GETDATE() AS DATE)
+                ORDER BY v.Fecha, v.HoraSalida";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@TripulanteId", tripulanteId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var result = new List<VueloActivoInfoDTO>();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new VueloActivoInfoDTO(
+                    Id:             reader.GetInt32(0),
+                    NumeroVuelo:    reader.GetString(1),
+                    Origen:         reader.GetString(2),
+                    Destino:        reader.GetString(3),
+                    Fecha:          reader.GetString(4),
+                    HoraSalida:     reader.GetString(5),
+                    HorasRestantes: Convert.ToDouble(reader[6])
+                ));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Elimina al tripulante de EquipoPivote para los vuelos indicados.
+        /// Se usa al desactivar un tripulante con vuelos futuros (>48h) para liberar esos vuelos.
+        /// Retorna el numero de filas eliminadas.
+        /// </summary>
+        public async Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds)
+        {
+            var ids = string.Join(",", vueloIds);
+            if (string.IsNullOrEmpty(ids)) return 0;
+
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = $@"
+                DELETE FROM EquipoPivote
+                WHERE MiembroTripulacionID = @TripulanteId
+                  AND VueloID IN ({ids})";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@TripulanteId", tripulanteId);
+            return await command.ExecuteNonQueryAsync();
         }
 
         /// <summary>

@@ -1,3 +1,4 @@
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 
 namespace Aerolinea.API.Repositories
@@ -15,5 +16,7 @@ namespace Aerolinea.API.Repositories
         Task<List<RolTripulacion>> ObtenerRoles();
         Task<bool> CambiarEstado(int id, bool activo);
         Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosAsignados(int tripulanteId);
+        Task<List<VueloActivoInfoDTO>> ObtenerVuelosAsignadosDetallados(int tripulanteId);
+        Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds);
     }
 }

@@ -13,5 +13,6 @@ namespace Aerolinea.API.Services
         Task EliminarImagen(int avionId);
         Task<bool> CambiarEstado(int id, bool activo);
         Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosActivos(int avionId);
+        Task<List<VueloActivoInfoDTO>> ObtenerVuelosActivosDetallados(int avionId);
     }
 }

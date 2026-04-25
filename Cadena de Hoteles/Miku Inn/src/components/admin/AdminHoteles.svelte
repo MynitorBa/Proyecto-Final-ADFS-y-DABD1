@@ -153,12 +153,6 @@
   /** Mensaje de retroalimentacion en el modal de habitacion. @type {{tipo: string, texto: string}|null} */
   let mensajeHabitacion = null;
 
-  /** Indica si se esta subiendo una imagen en el modal de habitacion. @type {boolean} */
-  let subiendoImgHab = false;
-
-  /** Mensaje de retroalimentacion en la seccion de imagenes del modal de habitacion. @type {{tipo: string, texto: string}|null} */
-  let mensajeImgHab = null;
-
   /** Controla la visibilidad del modal de nueva habitacion. @type {boolean} */
   let showModalNuevaHab = false;
 
@@ -684,7 +678,7 @@
       descripcion:      h.descripcion ?? '',
       estadoId:         h.estadoId,
     };
-    mensajeHabitacion = null; mensajeImgHab = null; showModalHabitacion = true;
+    mensajeHabitacion = null; showModalHabitacion = true;
   }
 
   /**
@@ -710,65 +704,6 @@
       await cargarHabitacionesDetalle(hotelDetalle.id);
     } catch (e) { mensajeHabitacion = { tipo: 'error', texto: e.message }; }
     finally { guardandoHabitacion = false; }
-  }
-
-  /**
-   * Sube una imagen a la habitacion que se esta editando en el modal.
-   * @async
-   * @param {Event} event - Evento del input file.
-   * @returns {Promise<void>}
-   */
-  async function subirImagenHabitacion(event) {
-    const file = event.target.files[0]; if (!file) return;
-    if (file.size > 7 * 1024 * 1024) {
-      mensajeImgHab = { tipo: 'error', texto: 'La imagen excede 7 MB. Usa una imagen más pequeña.' };
-      event.target.value = ''; return;
-    }
-    subiendoImgHab = true; mensajeImgHab = null;
-    try {
-      const base64 = await fileToBase64(file);
-      const res = await fetch(`${API_BASE}/admin/habitaciones/${habitacionEditando.id}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64 }) });
-      if (!res.ok) {
-        const ct = res.headers.get('content-type') || '';
-        let msg;
-        if (ct.includes('application/json')) {
-          const err = await res.json().catch(() => ({}));
-          msg = err.mensaje || `Error ${res.status}`;
-        } else {
-          msg = res.status === 413
-            ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).'
-            : (await res.text().catch(() => '') || `Error ${res.status}`);
-        }
-        throw new Error(msg);
-      }
-      const data = await res.json();
-      const nuevosIds = [...(habitacionEditando.imagenesIds ?? []), data.id];
-      habitacionEditando = { ...habitacionEditando, imagenesIds: nuevosIds };
-      habitaciones = habitaciones.map(h => h.id === habitacionEditando.id ? { ...h, imagenesIds: nuevosIds } : h);
-      mensajeImgHab = { tipo: 'ok', texto: 'Imagen agregada.' };
-    } catch (e) { mensajeImgHab = { tipo: 'error', texto: e.message }; }
-    finally { subiendoImgHab = false; event.target.value = ''; }
-  }
-
-  /**
-   * Solicita confirmacion antes de eliminar una imagen de la habitacion en edicion.
-   * @param {number} imagenId - ID de la imagen.
-   */
-  function pedirEliminarImgHab(imagenId) { pedirConfirmacion('Eliminar imagen', '¿Eliminar esta imagen de la habitación?', () => _eliminarImgHab(imagenId)); }
-
-  /**
-   * Elimina una imagen de la habitacion en edicion.
-   * @async
-   * @param {number} imagenId - ID de la imagen.
-   * @returns {Promise<void>}
-   */
-  async function _eliminarImgHab(imagenId) {
-    try {
-      await fetch(`${API_BASE}/admin/habitaciones/imagenes/${imagenId}`, { method: 'DELETE', credentials: 'include' });
-      const nuevosIds = (habitacionEditando.imagenesIds ?? []).filter(id => id !== imagenId);
-      habitacionEditando = { ...habitacionEditando, imagenesIds: nuevosIds };
-      habitaciones = habitaciones.map(h => h.id === habitacionEditando.id ? { ...h, imagenesIds: nuevosIds } : h);
-    } catch (e) { mensajeImgHab = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message }; }
   }
 
   /**
@@ -1224,16 +1159,6 @@
       </div>
       {#if mensajeHabitacion}<div class="adm__feedback adm__feedback--{mensajeHabitacion.tipo}" style="margin:.75rem 0">{mensajeHabitacion.texto}</div>{/if}
       <div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem"><button class="adm__btn adm__btn--primary" on:click={guardarHabitacion} disabled={guardandoHabitacion}>{#if guardandoHabitacion}Guardando...{:else}Guardar cambios{/if}</button></div>
-      <div class="adm__modal-section-divider"></div>
-      <!-- Seccion de imagenes dentro del modal de edicion de habitacion -->
-      <div class="adm__img-section-header" style="margin-top:1rem">
-        <p class="adm__modal-section-title" style="margin:0">Imágenes</p>
-        <label class="adm__btn adm__btn--ghost adm__upload-btn">{#if subiendoImgHab}Subiendo...{:else}+ Agregar{/if}<input type="file" accept="image/*" on:change={subirImagenHabitacion} disabled={subiendoImgHab} style="display:none" /></label>
-      </div>
-      {#if mensajeImgHab}<div class="adm__feedback adm__feedback--{mensajeImgHab.tipo}" style="margin:.5rem 0">{mensajeImgHab.texto}</div>{/if}
-      {#if habitacionEditando.imagenesIds?.length > 0}
-        <div class="adm__img-grid adm__img-grid--sm" style="margin-top:.75rem">{#each habitacionEditando.imagenesIds as imgId (imgId)}<div class="adm__img-card"><img src="{API_BASE}/imagenes/habitacion/{imgId}" alt="hab" /><button class="adm__img-delete" on:click={() => pedirEliminarImgHab(imgId)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}</div>
-      {:else}<div class="adm__img-empty" style="padding:1.5rem 0"><p>Sin imágenes.</p></div>{/if}
     </div>
     <div class="adm__hotel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales}>Cerrar</button></div>
   </div>

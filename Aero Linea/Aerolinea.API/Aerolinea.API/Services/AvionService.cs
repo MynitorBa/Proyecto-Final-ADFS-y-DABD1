@@ -162,5 +162,14 @@ namespace Aerolinea.API.Services
         {
             return await _avionRepository.VerificarVuelosActivos(avionId);
         }
+
+        /// <summary>
+        /// Retorna la lista detallada de vuelos activos futuros del avion con ruta y horas restantes.
+        /// Usado para el modal de confirmacion de desactivacion.
+        /// </summary>
+        public async Task<List<VueloActivoInfoDTO>> ObtenerVuelosActivosDetallados(int avionId)
+        {
+            return await _avionRepository.ObtenerVuelosActivosDetallados(avionId);
+        }
     }
 }

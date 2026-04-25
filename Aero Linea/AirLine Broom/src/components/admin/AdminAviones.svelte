@@ -216,32 +216,89 @@
     } catch { mostrarToast('error', 'Error de conexion'); }
   }
 
+  // ── Estado del modal de desactivacion ───────────────────────────────────
+  /** Avion que se esta intentando desactivar. @type {any} */
+  let avionDesactivar     = null;
+  /** Indica si el modal de desactivacion esta visible. @type {boolean} */
+  let mostrarModalDesact  = false;
+  /** Vuelos que bloquean la desactivacion (<48h). @type {any[]} */
+  let vuelos48h           = [];
+  /** Vuelos que seran cancelados al confirmar (>48h). @type {any[]} */
+  let vuelosLejanos       = [];
+  /** Indica si se esta cargando la lista de vuelos del modal. @type {boolean} */
+  let cargandoVuelosModal = false;
+  /** Indica si se esta ejecutando la desactivacion. @type {boolean} */
+  let desactivando        = false;
+
   /**
-   * Cambia el estado activo/inactivo de un avion mediante una solicitud PUT al backend.
-   * Si tiene exito recarga la lista de aviones y muestra un toast informativo.
-   * @async
-   * @param {number} id - El ID del avion a modificar.
-   * @param {boolean} nuevoEstado - El nuevo valor de activo (true = reactivar, false = desactivar).
-   * @returns {Promise<void>}
+   * Reactiva un avion directamente (sin modal). Usado cuando activo === false.
    */
-  async function cambiarEstadoAvion(id, nuevoEstado) {
+  async function reactivarAvion(id) {
     try {
       const res = await fetch(`${API}/api/aviones/${id}/estado`, {
-        method: 'PUT',
-        credentials: 'include',
+        method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activo: nuevoEstado })
+        body: JSON.stringify({ activo: true })
       });
       if (res.ok) {
-        mostrarToast('success', nuevoEstado ? 'Avion reactivado correctamente' : 'Avion desactivado correctamente');
+        mostrarToast('success', 'Avion reactivado correctamente');
         await cargarAviones();
       } else {
         const err = await res.json();
-        mostrarToast('error', err.message || 'Error al cambiar estado del avion');
+        mostrarToast('error', err.message || 'Error al reactivar el avion');
       }
-    } catch (e) {
-      mostrarToast('error', 'Error de conexion');
-    }
+    } catch { mostrarToast('error', 'Error de conexion'); }
+  }
+
+  /**
+   * Abre el modal de desactivacion y carga los vuelos activos del avion
+   * para mostrar al admin que se vera afectado.
+   * @param {any} avion - El objeto avion de la fila.
+   */
+  async function intentarDesactivar(avion) {
+    avionDesactivar     = avion;
+    vuelos48h           = [];
+    vuelosLejanos       = [];
+    cargandoVuelosModal = true;
+    mostrarModalDesact  = true;
+    try {
+      const r = await fetch(`${API}/api/aviones/${avion.id}/vuelos-activos`, { credentials: 'include' });
+      if (r.ok) {
+        const data  = await r.json();
+        vuelos48h   = data.vuelos48h   ?? [];
+        vuelosLejanos = data.vuelosLejanos ?? [];
+      }
+    } catch { /* silencioso — modal sigue abierto */ }
+    finally { cargandoVuelosModal = false; }
+  }
+
+  /**
+   * Confirma la desactivacion del avion, cancela vuelos lejanos (logica en backend)
+   * y cierra el modal.
+   */
+  async function confirmarDesactivar() {
+    desactivando = true;
+    try {
+      const res = await fetch(`${API}/api/aviones/${avionDesactivar.id}/estado`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: false })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        let msg = data.message || 'Avion desactivado correctamente';
+        if (data.vuelosCancelados > 0)
+          msg += ` — ${data.vuelosCancelados} vuelo(s) cancelado(s), ${data.pasajerosNotificados} pasajero(s) notificado(s)`;
+        mostrarToast('success', msg);
+        mostrarModalDesact = false;
+        await cargarAviones();
+      } else {
+        mostrarToast('error', data.message || 'Error al desactivar el avion');
+        // Recargar vuelos por si cambió el estado
+        await intentarDesactivar(avionDesactivar);
+      }
+    } catch { mostrarToast('error', 'Error de conexion'); }
+    finally { desactivando = false; }
   }
 </script>
 
@@ -322,7 +379,7 @@
                   class="btn-estado"
                   class:btn-desactivar={avion.activo !== false}
                   class:btn-activar={avion.activo === false}
-                  on:click={() => cambiarEstadoAvion(avion.id, avion.activo === false)}>
+                  on:click={() => avion.activo === false ? reactivarAvion(avion.id) : intentarDesactivar(avion)}>
                   {avion.activo === false ? 'Reactivar' : 'Desactivar'}
                 </button>
               </div>
@@ -400,6 +457,77 @@
   </div>
 {/if}
 
+<!-- Modal de confirmacion de desactivacion de avion -->
+{#if mostrarModalDesact}
+  <div class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal modal--desact" on:click|stopPropagation>
+      <div class="modal__header modal__header--warning">
+        <h3 class="modal__title">Desactivar Avion</h3>
+        <button class="modal__close" on:click={() => mostrarModalDesact = false} disabled={desactivando}>×</button>
+      </div>
+
+      <div class="modal__body">
+        {#if cargandoVuelosModal}
+          <p class="modal-loading">Verificando vuelos asignados...</p>
+
+        {:else if vuelos48h.length > 0}
+          <!-- Bloqueo: vuelos inminentes -->
+          <div class="desact-alert desact-alert--error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            No se puede desactivar: hay {vuelos48h.length} vuelo(s) en menos de 48 horas.
+          </div>
+          <p class="desact-sublabel">Vuelos bloqueantes:</p>
+          <ul class="desact-vuelos-list">
+            {#each vuelos48h as v}
+              <li class="desact-vuelo-item desact-vuelo-item--block">
+                <span class="vuelo-num">{v.numeroVuelo}</span>
+                <span class="vuelo-ruta">{v.origen} → {v.destino}</span>
+                <span class="vuelo-fecha">{v.fecha} {v.horaSalida}</span>
+                <span class="vuelo-horas">{v.horasRestantes.toFixed(1)}h restantes</span>
+              </li>
+            {/each}
+          </ul>
+          <div class="modal__actions">
+            <button class="btn-secondary" on:click={() => mostrarModalDesact = false}>Cerrar</button>
+          </div>
+
+        {:else}
+          <!-- Confirmacion: sin bloqueo -->
+          <p class="desact-avion-nombre">
+            ¿Desactivar <strong>{avionDesactivar?.marca} {avionDesactivar?.modelo}</strong>?
+          </p>
+
+          {#if vuelosLejanos.length > 0}
+            <div class="desact-alert desact-alert--warn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Se cancelaran {vuelosLejanos.length} vuelo(s). Los pasajeros seran notificados por correo.
+            </div>
+            <p class="desact-sublabel">Vuelos que seran cancelados:</p>
+            <ul class="desact-vuelos-list">
+              {#each vuelosLejanos as v}
+                <li class="desact-vuelo-item desact-vuelo-item--cancel">
+                  <span class="vuelo-num">{v.numeroVuelo}</span>
+                  <span class="vuelo-ruta">{v.origen} → {v.destino}</span>
+                  <span class="vuelo-fecha">{v.fecha} {v.horaSalida}</span>
+                </li>
+              {/each}
+            </ul>
+          {:else}
+            <p class="desact-ok">El avion no tiene vuelos activos. Se puede desactivar sin efectos adicionales.</p>
+          {/if}
+
+          <div class="modal__actions">
+            <button class="btn-danger" on:click={confirmarDesactivar} disabled={desactivando}>
+              {desactivando ? 'Desactivando...' : 'Confirmar desactivacion'}
+            </button>
+            <button class="btn-secondary" on:click={() => mostrarModalDesact = false} disabled={desactivando}>Cancelar</button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
 <style>
   .admin-filter-bar { margin-bottom: 1rem; }
   .filter-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555; }
@@ -410,4 +538,27 @@
   .btn-activar { background: #d1e7dd; color: #0a3622; }
   .btn-activar:hover { background: #198754; color: #fff; }
   .badge-inactivo { background: #e9ecef; color: #6c757d; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+
+  /* Modal de desactivacion */
+  .modal--desact { max-width: 540px; }
+  .modal__header--warning { background: #fff8e1; border-bottom: 1px solid #ffe082; }
+  .modal__body { padding: 1.25rem 1.5rem; }
+  .modal-loading { color: #6b7280; font-style: italic; }
+  .desact-avion-nombre { margin-bottom: 1rem; font-size: 1rem; color: #374151; }
+  .desact-alert { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; margin-bottom: 1rem; }
+  .desact-alert--error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .desact-alert--warn  { background: #fff3cd; color: #856404; border: 1px solid #ffe082; }
+  .desact-sublabel { font-size: 0.8rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .desact-vuelos-list { list-style: none; padding: 0; margin: 0 0 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; max-height: 220px; overflow-y: auto; }
+  .desact-vuelo-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.8rem; flex-wrap: wrap; }
+  .desact-vuelo-item--block  { background: #fee2e2; border: 1px solid #fca5a5; }
+  .desact-vuelo-item--cancel { background: #fff3cd; border: 1px solid #ffe082; }
+  .vuelo-num   { font-weight: 700; min-width: 70px; }
+  .vuelo-ruta  { color: #374151; }
+  .vuelo-fecha { color: #6b7280; font-size: 0.75rem; }
+  .vuelo-horas { margin-left: auto; font-weight: 600; color: #dc2626; font-size: 0.75rem; }
+  .desact-ok   { color: #166534; background: #dcfce7; border: 1px solid #86efac; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem; margin-bottom: 1.25rem; }
+  .btn-danger  { padding: 0.55rem 1.25rem; background: #dc2626; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
+  .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+  .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

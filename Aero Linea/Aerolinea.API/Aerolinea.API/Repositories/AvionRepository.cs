@@ -1,4 +1,5 @@
 using Aerolinea.API.Data;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
@@ -255,6 +256,56 @@ namespace Aerolinea.API.Repositories
             }
 
             return (totalFuturos, numeros48h);
+        }
+
+        /// <summary>
+        /// Retorna la lista detallada de vuelos activos futuros asignados a un avion.
+        /// Incluye datos de ruta y horas restantes calculados en SQL.
+        /// Usado para mostrar al admin qué vuelos se verán afectados al desactivar el avion.
+        /// </summary>
+        public async Task<List<VueloActivoInfoDTO>> ObtenerVuelosActivosDetallados(int avionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT v.ID,
+                       v.NumeroVuelo,
+                       ao.Codigo AS Origen,
+                       ad.Codigo AS Destino,
+                       CONVERT(VARCHAR(10), v.Fecha, 120)                         AS Fecha,
+                       CONVERT(VARCHAR(8),  v.HoraSalida, 108)                    AS HoraSalida,
+                       CAST(DATEDIFF(MINUTE, GETDATE(),
+                           DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraSalida),
+                                   CAST(v.Fecha AS DATETIME))) AS FLOAT) / 60.0   AS HorasRestantes
+                FROM   Vuelo v
+                INNER JOIN Ruta        r  ON r.ID  = v.RutaID
+                INNER JOIN Aeropuerto ao  ON ao.ID = r.OrigenID
+                INNER JOIN Aeropuerto ad  ON ad.ID = r.DestinoID
+                WHERE  v.AvionID  = @AvionId
+                  AND  v.EstadoID = 1
+                  AND  v.Fecha   >= CAST(GETDATE() AS DATE)
+                ORDER BY v.Fecha, v.HoraSalida";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@AvionId", avionId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var result = new List<VueloActivoInfoDTO>();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new VueloActivoInfoDTO(
+                    Id:             reader.GetInt32(0),
+                    NumeroVuelo:    reader.GetString(1),
+                    Origen:         reader.GetString(2),
+                    Destino:        reader.GetString(3),
+                    Fecha:          reader.GetString(4),
+                    HoraSalida:     reader.GetString(5),
+                    HorasRestantes: Convert.ToDouble(reader[6])
+                ));
+            }
+
+            return result;
         }
 
         /// <summary>

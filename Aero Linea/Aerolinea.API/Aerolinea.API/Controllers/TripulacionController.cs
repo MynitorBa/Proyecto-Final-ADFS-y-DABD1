@@ -1,4 +1,5 @@
 using Aerolinea.API.DTOs;
+using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,13 +16,16 @@ namespace Aerolinea.API.Controllers
     public class TripulacionController : ControllerBase
     {
         private readonly ITripulacionService _service;
+        private readonly AdminVueloRepository _adminVueloRepo;
 
         /// <summary>
-        /// Inicializa el controlador con el servicio de tripulacion.
+        /// Inicializa el controlador con el servicio de tripulacion y el repositorio de vuelos admin
+        /// (usado para verificar conflictos al desactivar un tripulante).
         /// </summary>
-        public TripulacionController(ITripulacionService service)
+        public TripulacionController(ITripulacionService service, AdminVueloRepository adminVueloRepo)
         {
-            _service = service;
+            _service        = service;
+            _adminVueloRepo = adminVueloRepo;
         }
 
         // Público: necesario para cargar listas en formularios del panel
@@ -98,6 +102,21 @@ namespace Aerolinea.API.Controllers
         }
 
         /// <summary>
+        /// Retorna los vuelos activos futuros asignados al tripulante, separados en dos grupos:
+        /// vuelos en menos de 48 horas (bloquean la desactivacion) y vuelos lejanos
+        /// (el tripulante sera desasignado al confirmar la desactivacion). Requiere Administrador.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpGet("{id}/vuelos-asignados")]
+        public async Task<IActionResult> ObtenerVuelosAsignados(int id)
+        {
+            var vuelos      = await _service.ObtenerVuelosAsignadosDetallados(id);
+            var vuelos48h   = vuelos.Where(v => v.HorasRestantes <= 48).ToList();
+            var vuelosLejos = vuelos.Where(v => v.HorasRestantes > 48).ToList();
+            return Ok(new { vuelos48h, vuelosLejanos = vuelosLejos });
+        }
+
+        /// <summary>
         /// Elimina un tripulante por su identificador. Requiere rol Administrador.
         /// Retorna 400 si el tripulante tiene vuelos asignados activos; 404 si no existe.
         /// </summary>
@@ -130,8 +149,13 @@ namespace Aerolinea.API.Controllers
         }
 
         /// <summary>
-        /// Cambia el estado activo/inactivo de un tripulante (soft-delete). Requiere rol Administrador.
-        /// Al desactivar, retorna 400 si el tripulante tiene vuelos activos asignados; 404 si no existe.
+        /// Cambia el estado activo/inactivo de un tripulante. Requiere rol Administrador.
+        /// Al desactivar:
+        ///   - Bloquea si hay vuelos asignados en menos de 48 horas.
+        ///   - Si solo hay vuelos con mas de 48 horas: elimina al tripulante de EquipoPivote
+        ///     para esos vuelos (los vuelos quedan activos, solo sin este tripulante) y desactiva.
+        ///   - Si no hay vuelos futuros: desactiva directamente.
+        /// Al reactivar: sin validaciones adicionales.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/estado")]
@@ -139,30 +163,41 @@ namespace Aerolinea.API.Controllers
         {
             if (!dto.Activo)
             {
-                var (totalFuturos, numeros48h) = await _service.VerificarVuelosAsignados(id);
+                var vuelos      = await _service.ObtenerVuelosAsignadosDetallados(id);
+                var vuelos48h   = vuelos.Where(v => v.HorasRestantes <= 48).ToList();
+                var vuelosLejos = vuelos.Where(v => v.HorasRestantes > 48).ToList();
 
-                if (numeros48h.Count > 0)
+                // Bloquear si hay vuelos inminentes (< 48 h)
+                if (vuelos48h.Count > 0)
                     return BadRequest(new
                     {
-                        message = $"No se puede desactivar. El tripulante tiene {numeros48h.Count} vuelo(s) asignado(s) en menos de 48 horas.",
-                        vuelos = numeros48h
+                        message  = $"No se puede desactivar. El tripulante tiene {vuelos48h.Count} vuelo(s) asignado(s) en menos de 48 horas.",
+                        vuelos48h
                     });
 
-                if (totalFuturos > 0)
-                    return BadRequest(new
-                    {
-                        message = $"No se puede desactivar. El tripulante tiene {totalFuturos} vuelo(s) activo(s) asignados.",
-                        cantidadVuelos = totalFuturos
-                    });
+                // Desasignar de vuelos lejanos (los vuelos quedan activos, solo sin este tripulante)
+                if (vuelosLejos.Count > 0)
+                    await _service.DesasignarDeFuturosVuelos(id, vuelosLejos.Select(v => v.Id));
+
+                var resultado2 = await _service.CambiarEstado(id, false);
+                if (!resultado2)
+                    return NotFound(new { message = "Tripulante no encontrado" });
+
+                return Ok(new
+                {
+                    message              = "Tripulante desactivado correctamente",
+                    vuelosDesasignados   = vuelosLejos.Count,
+                    nota                 = vuelosLejos.Count > 0
+                        ? "Los vuelos quedan activos. Asigna un reemplazo desde el panel de vuelos."
+                        : null
+                });
             }
 
             var resultado = await _service.CambiarEstado(id, dto.Activo);
-
             if (!resultado)
                 return NotFound(new { message = "Tripulante no encontrado" });
 
-            var estado = dto.Activo ? "activado" : "desactivado";
-            return Ok(new { message = $"Tripulante {estado} correctamente" });
+            return Ok(new { message = "Tripulante activado correctamente" });
         }
 
         // ===== ENDPOINTS DE IMAGEN =====

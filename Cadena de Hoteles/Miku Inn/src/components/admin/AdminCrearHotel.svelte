@@ -160,15 +160,6 @@
   /** Mensaje de retroalimentacion al crear habitaciones. @type {{tipo: string, texto: string}|null} */
   let mensajeNuevaHab = null;
 
-  /**
-   * Mapa de imagenes por habitacion: clave = ID de habitacion, valor = array de {id, preview}.
-   * @type {Object<number, Array<{id: number, preview: string}>>}
-   */
-  let imagenesHabNueva = {};
-
-  /** Set con los IDs de habitaciones individuales cuya imagen se esta subiendo. @type {Set<number>} */
-  let subiendoImgHabNuevaSet = new Set();
-
   /** ID de la habitacion individual que esta siendo editada. @type {number|null} */
   let editandoHabId = null;
 
@@ -382,7 +373,7 @@
         const d = await r.json(); if (!r.ok) throw new Error(d.mensaje || 'Error');
         const newH = { ...payload, id: d.id, tipoHabitacion: tn, imagenesIds: [] };
         if (!usarMismas) { habitacionesNuevas = [...habitacionesNuevas, newH]; }
-        imagenesHabNueva = { ...imagenesHabNueva, [d.id]: [] }; idsLote.push(d.id); creadas++;
+        idsLote.push(d.id); creadas++;
       }
       if (usarMismas) { gruposHab = [...gruposHab, { ids: idsLote, tipoHabitacion: tn, cantidad: cant, tipoHabitacionId: payload.tipoHabitacionId, descripcion: payload.descripcion ?? '' }]; }
       toast(`${creadas} habitación(es) ${tn} creada(s)`); showFormHabNueva = false;
@@ -390,34 +381,6 @@
     } catch (e) { mensajeNuevaHab = { tipo: 'error', texto: e.message }; }
     finally { guardandoNuevaHab = false; creandoMasivo = false; }
   }
-
-  /** Set con los indices de grupo cuya imagen se esta subiendo actualmente. @type {Set<number>} */
-  let subiendoImgGrupoSet = new Set();
-
-  /**
-   * Sube una imagen a todas las habitaciones de un grupo (lote con mismas imagenes).
-   * @async
-   * @param {Event} ev - Evento del input file.
-   * @param {number} gi - Indice del grupo en el array gruposHab.
-   * @returns {Promise<void>}
-   */
-  async function subirImgGrupo(ev, gi) { const f = ev.target.files[0]; if (!f) return; const g = gruposHab[gi]; if (!g) return; if (f.size > 7 * 1024 * 1024) { toast('La imagen excede 7 MB. Usa una imagen más pequeña.', 'error'); ev.target.value = ''; return; } subiendoImgGrupoSet = new Set([...subiendoImgGrupoSet, gi]); try { const b = await fileToBase64(f); for (const hId of g.ids) { const r = await fetch(`${API_BASE}/admin/habitaciones/${hId}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64: b }) }); if (!r.ok) { const ct = r.headers.get('content-type') || ''; let msg; if (ct.includes('application/json')) { const err = await r.json().catch(() => ({})); msg = err.mensaje || `Error ${r.status}`; } else { msg = r.status === 413 ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).' : (await r.text().catch(() => '') || `Error ${r.status}`); } throw new Error(msg); } const d = await r.json(); imagenesHabNueva = { ...imagenesHabNueva, [hId]: [...(imagenesHabNueva[hId] ?? []), { id: d.id, preview: b }] }; } toast(`Imagen agregada a ${g.ids.length} habitaciones`); } catch(e) { toast('Error: ' + e.message, 'error'); } finally { subiendoImgGrupoSet = new Set([...subiendoImgGrupoSet].filter(i => i !== gi)); ev.target.value = ''; } }
-
-  /**
-   * Solicita confirmacion antes de eliminar una imagen de todas las habitaciones de un grupo.
-   * @param {number} gi - Indice del grupo.
-   * @param {number} imgIdx - Posicion de la imagen dentro del array de imagenes del grupo.
-   */
-  function pedirEliminarImgGrupo(gi, imgIdx) { pedirConfirmacion('Eliminar imagen', `¿Eliminar de las ${gruposHab[gi]?.ids.length} habitaciones?`, () => _eliminarImgGrupo(gi, imgIdx)); }
-
-  /**
-   * Elimina una imagen de todas las habitaciones de un grupo sincronizando el indice.
-   * @async
-   * @param {number} gi - Indice del grupo.
-   * @param {number} imgIdx - Indice de la imagen a eliminar.
-   * @returns {Promise<void>}
-   */
-  async function _eliminarImgGrupo(gi, imgIdx) { const g = gruposHab[gi]; if (!g) return; const firstId = g.ids[0]; const imgs = imagenesHabNueva[firstId] ?? []; const img = imgs[imgIdx]; if (!img) return; try { for (const hId of g.ids) { const habImgs = imagenesHabNueva[hId] ?? []; const match = habImgs[imgIdx]; if (match) { await fetch(`${API_BASE}/admin/habitaciones/imagenes/${match.id}`, { method: 'DELETE', credentials: 'include' }); imagenesHabNueva = { ...imagenesHabNueva, [hId]: habImgs.filter(i => i.id !== match.id) }; } } toast('Imagen eliminada de todas las habitaciones'); } catch(e) { toast(e.message, 'error'); } }
 
   /**
    * Solicita confirmacion antes de eliminar todas las habitaciones de un grupo.
@@ -431,32 +394,7 @@
    * @param {number} gi - Indice del grupo.
    * @returns {Promise<void>}
    */
-  async function _eliminarGrupo(gi) { const g = gruposHab[gi]; if (!g) return; eliminandoMasivo = true; eliminandoMasivoProgreso = `Eliminando ${g.cantidad} habitaciones...`; try { for (let i = 0; i < g.ids.length; i++) { eliminandoMasivoProgreso = `Eliminando ${i+1} de ${g.ids.length}...`; await fetch(`${API_BASE}/admin/habitaciones/${g.ids[i]}`, { method: 'DELETE', credentials: 'include' }); delete imagenesHabNueva[g.ids[i]]; } imagenesHabNueva = { ...imagenesHabNueva }; gruposHab = gruposHab.filter((_, i) => i !== gi); toast(`${g.cantidad} habitaciones eliminadas`); } catch(e) { toast(e.message, 'error'); } finally { eliminandoMasivo = false; } }
-
-  /**
-   * Sube una imagen a una habitacion individual.
-   * @async
-   * @param {Event} ev - Evento del input file.
-   * @param {number} hId - ID de la habitacion.
-   * @returns {Promise<void>}
-   */
-  async function subirImgHab(ev, hId) { const f = ev.target.files[0]; if (!f) return; if (f.size > 7 * 1024 * 1024) { toast('La imagen excede 7 MB. Usa una imagen más pequeña.', 'error'); ev.target.value = ''; return; } subiendoImgHabNuevaSet = new Set([...subiendoImgHabNuevaSet, hId]); try { const b = await fileToBase64(f); const r = await fetch(`${API_BASE}/admin/habitaciones/${hId}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64: b }) }); if (!r.ok) { const ct = r.headers.get('content-type') || ''; let msg; if (ct.includes('application/json')) { const err = await r.json().catch(() => ({})); msg = err.mensaje || `Error ${r.status}`; } else { msg = r.status === 413 ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).' : (await r.text().catch(() => '') || `Error ${r.status}`); } throw new Error(msg); } const d = await r.json(); imagenesHabNueva = { ...imagenesHabNueva, [hId]: [...(imagenesHabNueva[hId] ?? []), { id: d.id, preview: b }] }; } catch (e) { if (e.message) toast(e.message, 'error'); } finally { subiendoImgHabNuevaSet = new Set([...subiendoImgHabNuevaSet].filter(i => i !== hId)); ev.target.value = ''; } }
-
-  /**
-   * Solicita confirmacion antes de eliminar una imagen de una habitacion individual.
-   * @param {number} hId - ID de la habitacion.
-   * @param {number} imgId - ID de la imagen.
-   */
-  function pedirEliminarImgHab(hId, imgId) { pedirConfirmacion('Eliminar imagen', '¿Eliminar esta imagen?', () => _eliminarImgHab(hId, imgId)); }
-
-  /**
-   * Elimina una imagen de una habitacion individual.
-   * @async
-   * @param {number} hId - ID de la habitacion.
-   * @param {number} imgId - ID de la imagen.
-   * @returns {Promise<void>}
-   */
-  async function _eliminarImgHab(hId, imgId) { try { await fetch(`${API_BASE}/admin/habitaciones/imagenes/${imgId}`, { method: 'DELETE', credentials: 'include' }); imagenesHabNueva = { ...imagenesHabNueva, [hId]: (imagenesHabNueva[hId] ?? []).filter(i => i.id !== imgId) }; toast('Imagen eliminada'); } catch(e) { toast(e.message, 'error'); } }
+  async function _eliminarGrupo(gi) { const g = gruposHab[gi]; if (!g) return; eliminandoMasivo = true; eliminandoMasivoProgreso = `Eliminando ${g.cantidad} habitaciones...`; try { for (let i = 0; i < g.ids.length; i++) { eliminandoMasivoProgreso = `Eliminando ${i+1} de ${g.ids.length}...`; await fetch(`${API_BASE}/admin/habitaciones/${g.ids[i]}`, { method: 'DELETE', credentials: 'include' }); } gruposHab = gruposHab.filter((_, i) => i !== gi); toast(`${g.cantidad} habitaciones eliminadas`); } catch(e) { toast(e.message, 'error'); } finally { eliminandoMasivo = false; } }
 
   /**
    * Abre el formulario de edicion inline para una habitacion individual.
@@ -485,7 +423,15 @@
    * @param {number} hId - ID de la habitacion.
    * @returns {Promise<void>}
    */
-  async function _eliminarHab(hId) { try { await fetch(`${API_BASE}/admin/habitaciones/${hId}`, { method: 'DELETE', credentials: 'include' }); habitacionesNuevas = habitacionesNuevas.filter(h => h.id !== hId); delete imagenesHabNueva[hId]; imagenesHabNueva = { ...imagenesHabNueva }; toast('Habitación eliminada'); } catch(e) { toast(e.message, 'error'); } }
+  async function _eliminarHab(hId) { 
+    try { 
+      await fetch(`${API_BASE}/admin/habitaciones/${hId}`, { method: 'DELETE', credentials: 'include' }); 
+      habitacionesNuevas = habitacionesNuevas.filter(h => h.id !== hId); 
+      toast('Habitación eliminada'); 
+    } catch(e) { 
+      toast(e.message, 'error'); 
+    } 
+  }
 
   /** Indice del grupo siendo editado actualmente. @type {number|null} */
   let editandoGrupoIdx = null;
@@ -518,7 +464,7 @@
     nuevaHabitacion = { tipoHabitacionId: 1, descripcion: '', estadoId: 1, cantidad: 1, mismasImagenes: true };
     nuevaAmenidad = { amenidadId: 1, descripcion: '' }; nuevaAmenidadCatalogoNombre = '';
     mensajeNuevaHab = null; mensajeAmenidad = null; mensajeNuevaAmenidadCatalogo = null;
-    imagenesHabNueva = {}; subiendoImgHabNuevaSet = new Set(); subiendoImgAmenidadSet = new Set(); subiendoImgGrupoSet = new Set();
+    subiendoImgAmenidadSet = new Set();
     wizardPaisQuery = ''; wizardPaisSeleccionado = null; wizardPaisError = ''; wizardPaisesSugeridos = []; wizardCiudadesSugeridas = []; wizardCiudadError = '';
     amenidadEditandoId = null; editandoHabId = null; editandoGrupoIdx = null;
   }
@@ -714,8 +660,6 @@
           </div>
         {/if}
       </div>
-      <!-- Imagenes compartidas: se muestra el set del primer ID del grupo -->
-      <div class="adm__wizard-hab-imgs"><div class="adm__img-grid adm__img-grid--sm">{#each (imagenesHabNueva[g.ids[0]] ?? []) as img, imgIdx (img.id)}<div class="adm__img-card"><img src={img.preview} alt="img" /><button class="adm__img-delete" on:click={() => pedirEliminarImgGrupo(gi, imgIdx)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}<label class="adm__wizard-add-img-btn adm__upload-btn">{#if subiendoImgGrupoSet.has(gi)}<svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{/if}<input type="file" accept="image/*" on:change={(e) => subirImgGrupo(e, gi)} style="display:none" /></label></div></div>
     </div>
     {/each}
   </div>
@@ -748,7 +692,6 @@
           </div>
         {/if}
       </div>
-      <div class="adm__wizard-hab-imgs"><div class="adm__img-grid adm__img-grid--sm">{#each (imagenesHabNueva[h.id] ?? []) as img (img.id)}<div class="adm__img-card"><img src={img.preview} alt="img" /><button class="adm__img-delete" on:click={() => pedirEliminarImgHab(h.id, img.id)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}<label class="adm__wizard-add-img-btn adm__upload-btn">{#if subiendoImgHabNuevaSet.has(h.id)}<svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{/if}<input type="file" accept="image/*" on:change={(e) => subirImgHab(e, h.id)} style="display:none" /></label></div></div>
     </div>
     {/each}
   </div>

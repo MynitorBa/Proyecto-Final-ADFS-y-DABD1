@@ -1,3 +1,4 @@
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 
 namespace Aerolinea.API.Repositories
@@ -14,5 +15,6 @@ namespace Aerolinea.API.Repositories
         Task<string?> ObtenerImagen(int avionId);
         Task<bool> CambiarEstado(int id, bool activo);
         Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosActivos(int avionId);
+        Task<List<VueloActivoInfoDTO>> ObtenerVuelosActivosDetallados(int avionId);
     }
 }

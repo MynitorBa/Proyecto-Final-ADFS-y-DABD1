@@ -171,5 +171,22 @@ namespace Aerolinea.API.Services
         {
             return await _repository.VerificarVuelosAsignados(tripulanteId);
         }
+
+        /// <summary>
+        /// Retorna la lista detallada de vuelos activos futuros asignados al tripulante.
+        /// Usado para el modal de confirmacion de desactivacion.
+        /// </summary>
+        public async Task<List<VueloActivoInfoDTO>> ObtenerVuelosAsignadosDetallados(int tripulanteId)
+        {
+            return await _repository.ObtenerVuelosAsignadosDetallados(tripulanteId);
+        }
+
+        /// <summary>
+        /// Elimina al tripulante de EquipoPivote para los vuelos indicados.
+        /// </summary>
+        public async Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds)
+        {
+            return await _repository.DesasignarDeFuturosVuelos(tripulanteId, vueloIds);
+        }
     }
 }
