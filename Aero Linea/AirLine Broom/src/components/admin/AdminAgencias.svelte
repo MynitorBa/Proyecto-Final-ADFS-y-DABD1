@@ -535,7 +535,7 @@
     </div>
     <div style="display:flex; gap:.75rem;">
       <button class="btn-add" on:click={cargarTodo} style="background:#4b5563">
-        ↻ Actualizar
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>Actualizar
       </button>
       <button class="btn-add" on:click={abrirModalCrear}>
         + Nueva Agencia
@@ -627,12 +627,12 @@
                     style="background:#6366f1"
                     on:click={() => abrirModalUrl(ag)}
                     title="Editar URL">
-                    🔗 URL
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>URL
                   </button>
                   <button class="table__action-btn ag-btn-asignar"
                     on:click={() => abrirModalAsignar(ag)}
                     title="Asignar usuario Webservice">
-                    👤 Asignar
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Asignar
                   </button>
                 </div>
               </td>

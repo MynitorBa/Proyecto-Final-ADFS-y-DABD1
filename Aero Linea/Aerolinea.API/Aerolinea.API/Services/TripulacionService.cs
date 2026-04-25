@@ -22,13 +22,14 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
-        /// Retorna la lista completa de tripulantes registrados en el sistema.
+        /// Retorna la lista de tripulantes registrados en el sistema. Si incluirInactivos es false
+        /// (valor por defecto), solo retorna los tripulantes activos.
         /// Por cada tripulante resuelve el nombre del rol mediante una consulta adicional
         /// al repositorio y construye el DTO con el nombre completo concatenado.
         /// </summary>
-        public async Task<List<TripulanteDTO>> ObtenerTodos()
+        public async Task<List<TripulanteDTO>> ObtenerTodos(bool incluirInactivos = false)
         {
-            var tripulantes = await _repository.ObtenerTodos();
+            var tripulantes = await _repository.ObtenerTodos(incluirInactivos);
             var tripulantesDTO = new List<TripulanteDTO>();
 
             foreach (var tripulante in tripulantes)
@@ -151,6 +152,24 @@ namespace Aerolinea.API.Services
         public async Task<List<RolTripulacion>> ObtenerRoles()
         {
             return await _repository.ObtenerRoles();
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un tripulante (soft-delete).
+        /// Retorna true si el tripulante existe y se actualizo correctamente.
+        /// </summary>
+        public async Task<bool> CambiarEstado(int id, bool activo)
+        {
+            return await _repository.CambiarEstado(id, activo);
+        }
+
+        /// <summary>
+        /// Verifica si el tripulante tiene vuelos activos asignados a futuro.
+        /// Retorna el total de vuelos futuros y los numeros de vuelo dentro de 48 horas.
+        /// </summary>
+        public async Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosAsignados(int tripulanteId)
+        {
+            return await _repository.VerificarVuelosAsignados(tripulanteId);
         }
     }
 }

@@ -14,9 +14,30 @@ namespace Aerolinea.API.Repositories
     {
         private readonly DbConnectionFactory _connectionFactory;
 
+        /// <summary>
+        /// Cache estático del resultado de la verificación de esquema ZonaHoraria.
+        /// Se evalúa una sola vez por vida del proceso para evitar consultas repetidas
+        /// a INFORMATION_SCHEMA en cada petición.
+        /// </summary>
+        private static bool? _tieneZonaHoraria;
+
         public RutaRepository(DbConnectionFactory connectionFactory)
         {
             _connectionFactory = connectionFactory;
+        }
+
+        /// <summary>
+        /// Retorna (y cachea) si la tabla ZonaHoraria y la columna ZonaHorariaID existen.
+        /// Solo consulta INFORMATION_SCHEMA la primera vez; las siguientes devuelven el valor cacheado.
+        /// </summary>
+        private static async Task<bool> TieneZonaHorariaAsync(SqlConnection connection)
+        {
+            if (_tieneZonaHoraria.HasValue)
+                return _tieneZonaHoraria.Value;
+
+            _tieneZonaHoraria = await TablaExiste(connection, "ZonaHoraria") &&
+                                await ColumnaExiste(connection, "Aeropuerto", "ZonaHorariaID");
+            return _tieneZonaHoraria.Value;
         }
 
         /// <summary>
@@ -30,8 +51,7 @@ namespace Aerolinea.API.Repositories
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
-            bool tieneZonaHoraria = await TablaExiste(connection, "ZonaHoraria") &&
-                                    await ColumnaExiste(connection, "Aeropuerto", "ZonaHorariaID");
+            bool tieneZonaHoraria = await TieneZonaHorariaAsync(connection);
 
             string query = tieneZonaHoraria
                 ? @"SELECT
@@ -115,8 +135,7 @@ namespace Aerolinea.API.Repositories
 
             // Verificar si la tabla ZonaHoraria y la columna ZonaHorariaID existen
             // antes de intentar el JOIN — evita errores si la migración no se ha ejecutado
-            bool tieneZonaHoraria = await TablaExiste(connection, "ZonaHoraria") &&
-                                    await ColumnaExiste(connection, "Aeropuerto", "ZonaHorariaID");
+            bool tieneZonaHoraria = await TieneZonaHorariaAsync(connection);
 
             string query = tieneZonaHoraria
                 ? @"SELECT r.DuracionEstimada,

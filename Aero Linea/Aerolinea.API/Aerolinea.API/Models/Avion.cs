@@ -11,5 +11,6 @@ namespace Aerolinea.API.Models
         public string Modelo { get; set; }
         public int CapacidadPasajeros { get; set; }
         public string? ImagenBase64 { get; set; }
+        public bool Activo { get; set; } = true;
     }
 }

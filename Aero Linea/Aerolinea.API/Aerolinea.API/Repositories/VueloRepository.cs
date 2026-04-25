@@ -270,7 +270,7 @@ namespace Aerolinea.API.Repositories
                         if (minutosEscala < 60 || minutosEscala > 720)
                             continue;
 
-                        // Regla: duración acumulada de vuelo (sin escalas) no supera el 1.5x de la ruta directa
+                        // Regla: duración acumulada de vuelo (sin escalas) no supera el multiplicador de la ruta directa
                         int nuevaDuracionVuelo = camino.DuracionVueloAcumulada + tramo.DuracionMinutos;
                         if (nuevaDuracionVuelo > limiteVueloMinutos)
                             continue;
@@ -356,7 +356,7 @@ namespace Aerolinea.API.Repositories
                 foreach (var tramo in resultado.Tramos)
                     tramo.Tripulantes = tripulantesPorVuelo[tramo.Id];
 
-            return resultados.OrderBy(r => r.DuracionTotalMinutos).ToList();
+            return resultados.OrderBy(r => r.DuracionTotalMinutos).Take(50).ToList();
         }
 
         private async Task<List<VueloDetalleDTO>> BuscarTramosDesdeLista(
@@ -445,9 +445,12 @@ namespace Aerolinea.API.Repositories
             var result = await cmd.ExecuteScalarAsync();
 
             if (result != null && result != DBNull.Value)
+            {
+                // Multiplicador simple: 1.5x la duración directa
                 return (int)((int)result * 1.5);
+            }
 
-            // Si no hay ruta directa usamos un fallback proporcional al número de escalas
+            // Fallback si no hay ruta directa: 8 horas por escala
             return maxEscalas * 8 * 60;
         }
 

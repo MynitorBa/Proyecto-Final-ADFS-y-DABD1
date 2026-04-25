@@ -26,6 +26,12 @@
   /** Lista de aviones registrados actualmente en el sistema, cargada desde la API del backend. @type {any[]} */
   let aviones        = [];
 
+  /** Controla si se muestran tambien los aviones inactivos en la tabla. @type {boolean} */
+  let mostrarInactivos = false;
+
+  /** Lista filtrada de aviones segun el estado mostrarInactivos. @type {any[]} */
+  $: avionesFiltrados = mostrarInactivos ? aviones : aviones.filter(a => a.activo !== false);
+
   /** Indica si la carga de la lista de aviones esta en progreso. @type {boolean} */
   let loadingAviones = false;
 
@@ -61,7 +67,7 @@
   async function cargarAviones() {
     loadingAviones = true;
     try {
-      const r = await fetch(`${API}/api/aviones`);
+      const r = await fetch(`${API}/api/aviones?incluirInactivos=${mostrarInactivos}`);
       if (r.ok) aviones = await r.json();
       else mostrarToast('error', 'Error al cargar aviones');
     } catch { mostrarToast('error', 'Error de conexion al cargar aviones'); }
@@ -209,6 +215,34 @@
       } else { mostrarToast('error', 'Error al eliminar la imagen'); }
     } catch { mostrarToast('error', 'Error de conexion'); }
   }
+
+  /**
+   * Cambia el estado activo/inactivo de un avion mediante una solicitud PUT al backend.
+   * Si tiene exito recarga la lista de aviones y muestra un toast informativo.
+   * @async
+   * @param {number} id - El ID del avion a modificar.
+   * @param {boolean} nuevoEstado - El nuevo valor de activo (true = reactivar, false = desactivar).
+   * @returns {Promise<void>}
+   */
+  async function cambiarEstadoAvion(id, nuevoEstado) {
+    try {
+      const res = await fetch(`${API}/api/aviones/${id}/estado`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: nuevoEstado })
+      });
+      if (res.ok) {
+        mostrarToast('success', nuevoEstado ? 'Avion reactivado correctamente' : 'Avion desactivado correctamente');
+        await cargarAviones();
+      } else {
+        const err = await res.json();
+        mostrarToast('error', err.message || 'Error al cambiar estado del avion');
+      }
+    } catch (e) {
+      mostrarToast('error', 'Error de conexion');
+    }
+  }
 </script>
 
 <!-- Seccion principal de gestion de flota de aviones -->
@@ -224,11 +258,20 @@
     </button>
   </div>
 
+  <!-- Barra de filtro para mostrar aviones inactivos -->
+  <div class="admin-filter-bar">
+    <label class="filter-toggle">
+      <input type="checkbox" bind:checked={mostrarInactivos}
+        on:change={cargarAviones}>
+      Mostrar aviones inactivos
+    </label>
+  </div>
+
   <!-- Tabla de aviones con imagen, marca, modelo y capacidad de pasajeros -->
   {#if loadingAviones}
     <p class="loading-text">Cargando aviones...</p>
 
-  {:else if aviones.length === 0}
+  {:else if avionesFiltrados.length === 0}
     <div class="placeholder-card">
       <p class="placeholder-card__text">No hay aviones registrados.</p>
     </div>
@@ -242,11 +285,12 @@
           <th class="table__header">Marca</th>
           <th class="table__header">Modelo</th>
           <th class="table__header">Capacidad</th>
+          <th class="table__header">Estado</th>
           <th class="table__header">Acciones</th>
         </tr>
       </thead>
       <tbody class="table__body">
-        {#each aviones as avion}
+        {#each avionesFiltrados as avion}
           <tr class="table__row">
             <td class="table__cell">
               {#if avion.imagenBase64}
@@ -260,6 +304,13 @@
             <td class="table__cell">{avion.modelo}</td>
             <td class="table__cell">{avion.capacidadPasajeros} pax</td>
             <td class="table__cell">
+              {#if avion.activo === false}
+                <span class="badge-inactivo">Inactivo</span>
+              {:else}
+                <span style="color:#198754;font-weight:600;font-size:0.8rem;">Activo</span>
+              {/if}
+            </td>
+            <td class="table__cell">
               <div class="table__actions">
                 <button class="table__action-btn table__action-btn--view"
                   on:click={() => abrirEditar(avion)}>Editar</button>
@@ -267,6 +318,13 @@
                   <button class="table__action-btn table__action-btn--cancel"
                     on:click={() => handleEliminarImagen(avion.id)}>Quitar img</button>
                 {/if}
+                <button
+                  class="btn-estado"
+                  class:btn-desactivar={avion.activo !== false}
+                  class:btn-activar={avion.activo === false}
+                  on:click={() => cambiarEstadoAvion(avion.id, avion.activo === false)}>
+                  {avion.activo === false ? 'Reactivar' : 'Desactivar'}
+                </button>
               </div>
             </td>
           </tr>
@@ -341,3 +399,15 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .admin-filter-bar { margin-bottom: 1rem; }
+  .filter-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555; }
+  .filter-toggle input { cursor: pointer; }
+  .btn-estado { padding: 0.35rem 0.75rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
+  .btn-desactivar { background: #fff3cd; color: #856404; }
+  .btn-desactivar:hover { background: #ffc107; color: #000; }
+  .btn-activar { background: #d1e7dd; color: #0a3622; }
+  .btn-activar:hover { background: #198754; color: #fff; }
+  .badge-inactivo { background: #e9ecef; color: #6c757d; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+</style>

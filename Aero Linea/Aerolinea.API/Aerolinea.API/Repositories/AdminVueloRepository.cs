@@ -1,4 +1,6 @@
 using Aerolinea.API.Data;
+using Aerolinea.API.DTOs;
+using Aerolinea.API.Models;
 using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.Data.SqlClient;
@@ -65,7 +67,7 @@ namespace Aerolinea.API.Repositories
                     VALUES
                         (@NumeroVuelo, @Fecha, @HoraSalida, @HoraLlegada, @FechaLlegada, @EstadoId,
                          @AvionId, @RutaId, @BoletosTurista, @BoletosEjecutivo,
-                         @PrecioTurista, @PrecioEjecutivo)";
+                         @PrecioTurista, @PrecioEjecutiva)";
 
                 int vueloId;
                 using (var cmd = new SqlCommand(insertVuelo, connection, transaction))
@@ -81,7 +83,7 @@ namespace Aerolinea.API.Repositories
                     cmd.Parameters.AddWithValue("@BoletosTurista", dto.BoletosTurista);
                     cmd.Parameters.AddWithValue("@BoletosEjecutivo", dto.BoletosEjecutivo);
                     cmd.Parameters.AddWithValue("@PrecioTurista", dto.PrecioTurista);
-                    cmd.Parameters.AddWithValue("@PrecioEjecutivo", dto.PrecioEjecutiva);
+                    cmd.Parameters.AddWithValue("@PrecioEjecutiva", dto.PrecioEjecutiva);
                     vueloId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 }
 
@@ -590,6 +592,38 @@ namespace Aerolinea.API.Repositories
             return ocupados;
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        //  SIGUIENTE NÚMERO DE VUELO
+        // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Devuelve el entero siguiente al maximo numero de secuencia usado para un prefijo dado.
+        /// Busca vuelos cuyo NumeroVuelo comience con "{prefijo} " y extrae el numero que sigue al espacio.
+        /// Si no existen vuelos con ese prefijo devuelve 1.
+        /// </summary>
+        public async Task<string> ObtenerSiguienteNumeroVuelo(string prefijo)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // Busca el numero maximo en la tabla Vuelo (ambos tipos de vuelo, normal y con escalas,
+            // se persisten en la misma tabla, por lo que una sola consulta cubre todos los casos).
+            const string query = @"
+                SELECT ISNULL(
+                    MAX(TRY_CAST(LTRIM(SUBSTRING(NumeroVuelo, LEN(@Prefijo) + 2, 20)) AS INT)),
+                    0
+                )
+                FROM Vuelo
+                WHERE NumeroVuelo LIKE @PrefijoLike";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@Prefijo",     prefijo.ToUpper());
+            cmd.Parameters.AddWithValue("@PrefijoLike", prefijo.ToUpper() + " %");
+
+            var result = await cmd.ExecuteScalarAsync();
+            int siguiente = Convert.ToInt32(result) + 1;
+            return siguiente.ToString("D4");   // "0001", "0042", etc.
+        }
+
         private static async Task<bool> ColumnaExiste(SqlConnection connection, string tabla, string columna)
         {
             const string q = "SELECT COUNT(1) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME=@T AND COLUMN_NAME=@C";
@@ -599,5 +633,282 @@ namespace Aerolinea.API.Repositories
             return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        //  EDITAR VUELO — HELPERS
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>Obtiene un vuelo por ID para operaciones administrativas.</summary>
+        public async Task<Vuelo?> ObtenerVueloPorId(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                "SELECT ID, NumeroVuelo, Fecha, HoraSalida, HoraLlegada, EstadoID, AvionID, RutaID, BoletosTurista, BoletosEjecutivo, PrecioTurista, PrecioEjecutivo FROM Vuelo WHERE ID = @id",
+                connection);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return new Vuelo
+            {
+                Id             = reader.GetInt32(0),
+                NumeroVuelo    = reader.GetString(1),
+                Fecha          = reader.GetDateTime(2),
+                HoraSalida     = reader.GetTimeSpan(3),
+                HoraLlegada    = reader.GetTimeSpan(4),
+                EstadoId       = reader.GetInt32(5),
+                AvionId        = reader.GetInt32(6),
+                RutaId         = reader.GetInt32(7),
+                BoletosTurista = reader.GetInt32(8),
+                BoletosEjecutivo = reader.GetInt32(9),
+                PrecioTurista  = reader.GetDecimal(10),
+                PrecioEjecutivo = reader.GetDecimal(11)
+            };
+        }
+
+        /// <summary>Obtiene datos básicos de un avión por ID.</summary>
+        public async Task<Avion?> ObtenerAvionPorId(int id)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                "SELECT ID, Modelo, Marca, CapacidadPasajeros FROM Avion WHERE ID = @id",
+                connection);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return new Avion
+            {
+                Id                 = reader.GetInt32(0),
+                Modelo             = reader.GetString(1),
+                Marca              = reader.GetString(2),
+                CapacidadPasajeros = reader.GetInt32(3)
+            };
+        }
+
+        /// <summary>Obtiene tripulantes por lista de IDs para validar composición de roles.</summary>
+        public async Task<List<Tripulante>> ObtenerTripulantesPorIds(List<int> ids)
+        {
+            if (ids.Count == 0) return new List<Tripulante>();
+
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var paramNames = ids.Select((_, i) => $"@id{i}").ToList();
+            string inClause = string.Join(", ", paramNames);
+
+            using var cmd = new SqlCommand(
+                $"SELECT ID, Nombre, Apellido, RolID FROM MiembroTripulacion WHERE ID IN ({inClause})",
+                connection);
+
+            for (int i = 0; i < ids.Count; i++)
+                cmd.Parameters.AddWithValue(paramNames[i], ids[i]);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            var lista = new List<Tripulante>();
+            while (await reader.ReadAsync())
+                lista.Add(new Tripulante
+                {
+                    Id       = reader.GetInt32(0),
+                    Nombre   = reader.GetString(1),
+                    Apellido = reader.GetString(2),
+                    RolID    = reader.GetInt32(3)
+                });
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Obtiene la duración estimada y las zonas horarias de una ruta por su ID.
+        /// Retorna (120, null, null) como fallback si la ruta no existe.
+        /// </summary>
+        public async Task<(int duracion, string? tzOrigen, string? tzDestino)> ObtenerInfoRutaPorId(int rutaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            bool tieneZonaHoraria =
+                await ColumnaExiste(connection, "Aeropuerto", "ZonaHorariaID");
+
+            string query = tieneZonaHoraria
+                ? @"SELECT r.DuracionEstimada,
+                           zho.Nombre AS TzOrigen,
+                           zhd.Nombre AS TzDestino
+                    FROM   Ruta r
+                    INNER JOIN Aeropuerto ao  ON ao.ID = r.OrigenID
+                    INNER JOIN Aeropuerto ad  ON ad.ID = r.DestinoID
+                    LEFT  JOIN ZonaHoraria zho ON zho.ID = ao.ZonaHorariaID
+                    LEFT  JOIN ZonaHoraria zhd ON zhd.ID = ad.ZonaHorariaID
+                    WHERE  r.ID = @rutaId"
+                : "SELECT DuracionEstimada, NULL, NULL FROM Ruta WHERE ID = @rutaId";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@rutaId", rutaId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return (120, null, null);
+
+            return (
+                duracion: reader.GetInt32(0),
+                tzOrigen:  reader.IsDBNull(1) ? null : reader.GetString(1),
+                tzDestino: reader.IsDBNull(2) ? null : reader.GetString(2)
+            );
+        }
+
+        /// <summary>Actualiza los datos editables de un vuelo y reasigna la tripulación en una transacción.</summary>
+        public async Task ActualizarVuelo(int vueloId, EditarVueloDTO dto, TimeSpan horaLlegada, DateTime fechaLlegada)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Actualizar datos del vuelo
+                using (var cmd = new SqlCommand(@"
+                    UPDATE Vuelo SET
+                        Fecha            = @fecha,
+                        HoraSalida       = @horaSalida,
+                        HoraLlegada      = @horaLlegada,
+                        FechaLlegada     = @fechaLlegada,
+                        AvionID          = @avionId,
+                        PrecioTurista    = @precioTurista,
+                        PrecioEjecutivo  = @PrecioEjecutiva,
+                        BoletosTurista   = @boletosTurista,
+                        BoletosEjecutivo = @boletosEjecutivo
+                    WHERE ID = @vueloId", connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@fecha",            dto.Fecha.Date);
+                    cmd.Parameters.AddWithValue("@horaSalida",       TimeSpan.Parse(dto.HoraSalida));
+                    cmd.Parameters.AddWithValue("@horaLlegada",      horaLlegada);
+                    cmd.Parameters.AddWithValue("@fechaLlegada",     fechaLlegada.Date);
+                    cmd.Parameters.AddWithValue("@avionId",          dto.AvionId);
+                    cmd.Parameters.AddWithValue("@precioTurista",    dto.PrecioTurista);
+                    cmd.Parameters.AddWithValue("@PrecioEjecutiva",  dto.PrecioEjecutiva);
+                    cmd.Parameters.AddWithValue("@boletosTurista",   dto.BoletosTurista);
+                    cmd.Parameters.AddWithValue("@boletosEjecutivo", dto.BoletosEjecutivo);
+                    cmd.Parameters.AddWithValue("@vueloId",          vueloId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Reemplazar tripulación
+                using (var cmdDel = new SqlCommand(
+                    "DELETE FROM EquipoPivote WHERE VueloID = @vueloId", connection, transaction))
+                {
+                    cmdDel.Parameters.AddWithValue("@vueloId", vueloId);
+                    await cmdDel.ExecuteNonQueryAsync();
+                }
+
+                foreach (var tripId in dto.TripulantesIds)
+                {
+                    using var cmdIns = new SqlCommand(
+                        "INSERT INTO EquipoPivote (VueloID, MiembroTripulacionID) VALUES (@vueloId, @tripId)",
+                        connection, transaction);
+                    cmdIns.Parameters.AddWithValue("@vueloId", vueloId);
+                    cmdIns.Parameters.AddWithValue("@tripId",  tripId);
+                    await cmdIns.ExecuteNonQueryAsync();
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        //  ESCALAS — HELPERS COMPARTIDOS
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Obtiene código, nombre y zona horaria de un aeropuerto.
+        /// Devuelve null si el aeropuerto no existe.
+        /// </summary>
+        public async Task<(string codigo, string nombre, string? tz)?> ObtenerInfoAeropuerto(
+            int aeropuertoId, SqlConnection connection, SqlTransaction? transaction = null)
+        {
+            var query = @"
+                SELECT a.Codigo, a.Nombre, zh.Nombre AS Tz
+                FROM   Aeropuerto a
+                LEFT   JOIN ZonaHoraria zh ON zh.ID = a.ZonaHorariaID
+                WHERE  a.ID = @id";
+
+            using var cmd = transaction != null
+                ? new SqlCommand(query, connection, transaction)
+                : new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@id", aeropuertoId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (!await reader.ReadAsync()) return null;
+
+            return (
+                reader.GetString(0),
+                reader.GetString(1),
+                reader.IsDBNull(2) ? null : reader.GetString(2)
+            );
+        }
+
+        /// <summary>
+        /// Obtiene o crea una ruta entre dos aeropuertos dentro de la transaccion indicada.
+        /// Si la ruta no tiene duración estimada (0) usa 120 min como fallback.
+        /// </summary>
+        public async Task<(int rutaId, int duracion, string? tzOrigen, string? tzDestino)>
+            ObtenerOCrearRutaConZonas(
+                int origenId, int destinoId,
+                SqlConnection connection, SqlTransaction transaction)
+        {
+            // Buscar ruta existente con zonas horarias
+            var queryBuscar = @"
+                SELECT r.ID, r.DuracionEstimada, zho.Nombre, zhd.Nombre
+                FROM   Ruta r
+                INNER JOIN Aeropuerto ao  ON ao.ID = r.OrigenID
+                INNER JOIN Aeropuerto ad  ON ad.ID = r.DestinoID
+                LEFT  JOIN ZonaHoraria zho ON zho.ID = ao.ZonaHorariaID
+                LEFT  JOIN ZonaHoraria zhd ON zhd.ID = ad.ZonaHorariaID
+                WHERE  r.OrigenID = @o AND r.DestinoID = @d";
+
+            using (var cmd = new SqlCommand(queryBuscar, connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@o", origenId);
+                cmd.Parameters.AddWithValue("@d", destinoId);
+                using var reader = await cmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    int duracion = reader.GetInt32(1);
+                    return (
+                        reader.GetInt32(0),
+                        duracion > 0 ? duracion : 120,
+                        reader.IsDBNull(2) ? null : reader.GetString(2),
+                        reader.IsDBNull(3) ? null : reader.GetString(3)
+                    );
+                }
+            }
+
+            // Crear ruta con duración default 120 min
+            const string queryCrear = @"
+                INSERT INTO Ruta (OrigenID, DestinoID, DuracionEstimada)
+                OUTPUT INSERTED.ID
+                VALUES (@o, @d, 120)";
+
+            using var cmdCrear = new SqlCommand(queryCrear, connection, transaction);
+            cmdCrear.Parameters.AddWithValue("@o", origenId);
+            cmdCrear.Parameters.AddWithValue("@d", destinoId);
+            int nuevaRutaId = Convert.ToInt32(await cmdCrear.ExecuteScalarAsync());
+
+            // Obtener zonas de los aeropuertos recién asociados
+            var (_, _, tzO) = (await ObtenerInfoAeropuerto(origenId, connection, transaction))
+                              ?? ("", "", null);
+            var (_, _, tzD) = (await ObtenerInfoAeropuerto(destinoId, connection, transaction))
+                              ?? ("", "", null);
+
+            return (nuevaRutaId, 120, tzO, tzD);
+        }
     }
 }

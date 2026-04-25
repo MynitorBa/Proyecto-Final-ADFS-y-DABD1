@@ -26,13 +26,14 @@ namespace Aerolinea.API.Controllers
 
         // Público: necesario para cargar listas en formularios del panel
         /// <summary>
-        /// Retorna la lista completa de aviones registrados. Endpoint publico, utilizado
-        /// para poblar selectores en el formulario de creacion de vuelos del panel de admin.
+        /// Retorna la lista de aviones registrados. Por defecto solo retorna aviones activos.
+        /// Con incluirInactivos=true retorna todos (activos e inactivos). Endpoint publico,
+        /// utilizado para poblar selectores en el formulario de creacion de vuelos del panel de admin.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<AvionDTO>>> ObtenerTodos()
+        public async Task<ActionResult<List<AvionDTO>>> ObtenerTodos([FromQuery] bool incluirInactivos = false)
         {
-            var aviones = await _avionService.ObtenerTodos();
+            var aviones = await _avionService.ObtenerTodos(incluirInactivos);
             return Ok(aviones);
         }
 
@@ -87,18 +88,70 @@ namespace Aerolinea.API.Controllers
 
         /// <summary>
         /// Elimina un avion por su identificador. Requiere rol Administrador.
-        /// Retorna 404 si el avion no existe.
+        /// Retorna 400 si el avion tiene vuelos activos programados; 404 si no existe.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Eliminar(int id)
         {
+            var (totalFuturos, numeros48h) = await _avionService.VerificarVuelosActivos(id);
+
+            if (numeros48h.Count > 0)
+                return BadRequest(new
+                {
+                    message = $"No se puede eliminar. El avión tiene {numeros48h.Count} vuelo(s) en menos de 48 horas.",
+                    vuelos = numeros48h
+                });
+
+            if (totalFuturos > 0)
+                return BadRequest(new
+                {
+                    message = $"No se puede eliminar. El avión tiene {totalFuturos} vuelo(s) activo(s) programados.",
+                    cantidadVuelos = totalFuturos
+                });
+
             var eliminado = await _avionService.Eliminar(id);
 
             if (!eliminado)
                 return NotFound(new { message = "Avión no encontrado" });
 
             return Ok(new { message = "Avión eliminado correctamente" });
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un avion (soft-delete). Requiere rol Administrador.
+        /// Al desactivar, retorna 400 si el avion tiene vuelos activos programados; 404 si no existe.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("{id}/estado")]
+        public async Task<ActionResult> CambiarEstadoAvion(int id, [FromBody] CambiarEstadoDTO dto)
+        {
+            if (!dto.Activo)
+            {
+                var (totalFuturos, numeros48h) = await _avionService.VerificarVuelosActivos(id);
+
+                if (numeros48h.Count > 0)
+                    return BadRequest(new
+                    {
+                        message = $"No se puede desactivar. El avión tiene {numeros48h.Count} vuelo(s) en menos de 48 horas.",
+                        vuelos = numeros48h
+                    });
+
+                if (totalFuturos > 0)
+                    return BadRequest(new
+                    {
+                        message = $"No se puede desactivar. El avión tiene {totalFuturos} vuelo(s) activo(s) programados.",
+                        cantidadVuelos = totalFuturos
+                    });
+            }
+
+            var resultado = await _avionService.CambiarEstado(id, dto.Activo);
+
+            if (!resultado)
+                return NotFound(new { message = "Avión no encontrado" });
+
+            var estado = dto.Activo ? "activado" : "desactivado";
+            return Ok(new { message = $"Avión {estado} correctamente" });
         }
 
         // ===== ENDPOINTS DE IMAGEN =====

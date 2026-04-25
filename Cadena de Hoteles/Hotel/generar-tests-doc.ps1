@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-.\generar-tests-doc.ps1
-=======
 $javaHome = "$env:USERPROFILE\.jdks\ms-17.0.18"
-$mvnCmd = "C:\Program Files\JetBrains\IntelliJ IDEA 2025.3.3\plugins\maven\lib\maven3\bin\mvn.cmd"
-
+$mvnCmd = "mvn"
 
 Write-Host "Corriendo tests..."
 $env:JAVA_HOME = $javaHome
@@ -108,4 +104,3 @@ foreach ($b in $suiteBlocks) {
 
 [System.IO.File]::WriteAllText($out, ($result -join "`n"), [System.Text.Encoding]::UTF8)
 Write-Host "Generado: $out ($totalTests tests, $totalPass pasaron, $totalFail fallaron)"
->>>>>>> 4e2e2a739fbcb6420c87ac1dfa1d083ad62cd2c4

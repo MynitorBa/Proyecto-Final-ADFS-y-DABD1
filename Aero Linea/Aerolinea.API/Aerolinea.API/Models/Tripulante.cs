@@ -11,5 +11,6 @@ namespace Aerolinea.API.Models
         public string Apellido { get; set; }
         public int RolID { get; set; }
         public string? ImagenBase64 { get; set; }
+        public bool Activo { get; set; } = true;
     }
 }

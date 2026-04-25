@@ -26,6 +26,12 @@
   /** Lista de tripulantes registrados actualmente en el sistema. @type {any[]} */
   let tripulantes        = [];
 
+  /** Controla si se muestran tambien los tripulantes inactivos en la tabla. @type {boolean} */
+  let mostrarInactivos = false;
+
+  /** Lista filtrada de tripulantes segun el estado mostrarInactivos. @type {any[]} */
+  $: tripulantesFiltrados = mostrarInactivos ? tripulantes : tripulantes.filter(t => t.activo !== false);
+
   /** Roles de tripulacion disponibles obtenidos del backend, mapeados a { id, nombre }. @type {{ id: number, nombre: string }[]} */
   let rolesTripulacion   = [];
 
@@ -68,7 +74,7 @@
   async function cargarTripulantes() {
     loadingTripulantes = true;
     try {
-      const r = await fetch(`${API}/api/tripulacion`);
+      const r = await fetch(`${API}/api/tripulacion?incluirInactivos=${mostrarInactivos}`);
       if (r.ok) tripulantes = await r.json();
       else mostrarToast('error', 'Error al cargar tripulantes');
     } catch { mostrarToast('error', 'Error de conexion al cargar tripulantes'); }
@@ -188,6 +194,34 @@
       } else { mostrarToast('error', 'Error al eliminar la foto'); }
     } catch { mostrarToast('error', 'Error de conexion'); }
   }
+
+  /**
+   * Cambia el estado activo/inactivo de un tripulante mediante una solicitud PUT al backend.
+   * Si tiene exito recarga la lista de tripulantes y muestra un toast informativo.
+   * @async
+   * @param {number} id - El ID del tripulante a modificar.
+   * @param {boolean} nuevoEstado - El nuevo valor de activo (true = reactivar, false = desactivar).
+   * @returns {Promise<void>}
+   */
+  async function cambiarEstadoTripulante(id, nuevoEstado) {
+    try {
+      const res = await fetch(`${API}/api/tripulacion/${id}/estado`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activo: nuevoEstado })
+      });
+      if (res.ok) {
+        mostrarToast('success', nuevoEstado ? 'Tripulante reactivado correctamente' : 'Tripulante desactivado correctamente');
+        await cargarTripulantes();
+      } else {
+        const err = await res.json();
+        mostrarToast('error', err.message || 'Error al cambiar estado del tripulante');
+      }
+    } catch (e) {
+      mostrarToast('error', 'Error de conexion');
+    }
+  }
 </script>
 
 <!-- Seccion de gestion de tripulantes con tabla y modal de creacion/edicion -->
@@ -203,11 +237,20 @@
     </button>
   </div>
 
+  <!-- Barra de filtro para mostrar tripulantes inactivos -->
+  <div class="admin-filter-bar">
+    <label class="filter-toggle">
+      <input type="checkbox" bind:checked={mostrarInactivos}
+        on:change={cargarTripulantes}>
+      Mostrar tripulantes inactivos
+    </label>
+  </div>
+
   <!-- Tabla de tripulantes con foto, nombre, apellido y rol -->
   {#if loadingTripulantes}
     <p class="loading-text">Cargando tripulantes...</p>
 
-  {:else if tripulantes.length === 0}
+  {:else if tripulantesFiltrados.length === 0}
     <div class="placeholder-card">
       <p class="placeholder-card__text">No hay tripulantes registrados.</p>
     </div>
@@ -221,11 +264,12 @@
           <th class="table__header">Nombre</th>
           <th class="table__header">Apellido</th>
           <th class="table__header">Rol</th>
+          <th class="table__header">Estado</th>
           <th class="table__header">Acciones</th>
         </tr>
       </thead>
       <tbody class="table__body">
-        {#each tripulantes as t}
+        {#each tripulantesFiltrados as t}
           <tr class="table__row">
             <td class="table__cell" data-label="Foto">
               {#if t.imagenBase64}
@@ -241,6 +285,13 @@
             <td class="table__cell" data-label="Rol">
               <span class="rol-badge--tripulacion">{t.nombreRol}</span>
             </td>
+            <td class="table__cell" data-label="Estado">
+              {#if t.activo === false}
+                <span class="badge-inactivo">Inactivo</span>
+              {:else}
+                <span style="color:#198754;font-weight:600;font-size:0.8rem;">Activo</span>
+              {/if}
+            </td>
             <td class="table__cell" data-label="Acciones">
               <div class="table__actions">
                 <button class="table__action-btn table__action-btn--view"
@@ -249,6 +300,13 @@
                   <button class="table__action-btn table__action-btn--cancel"
                     on:click={() => handleEliminarFoto(t.id)}>Quitar foto</button>
                 {/if}
+                <button
+                  class="btn-estado"
+                  class:btn-desactivar={t.activo !== false}
+                  class:btn-activar={t.activo === false}
+                  on:click={() => cambiarEstadoTripulante(t.id, t.activo === false)}>
+                  {t.activo === false ? 'Reactivar' : 'Desactivar'}
+                </button>
               </div>
             </td>
           </tr>
@@ -316,3 +374,15 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .admin-filter-bar { margin-bottom: 1rem; }
+  .filter-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555; }
+  .filter-toggle input { cursor: pointer; }
+  .btn-estado { padding: 0.35rem 0.75rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
+  .btn-desactivar { background: #fff3cd; color: #856404; }
+  .btn-desactivar:hover { background: #ffc107; color: #000; }
+  .btn-activar { background: #d1e7dd; color: #0a3622; }
+  .btn-activar:hover { background: #198754; color: #fff; }
+  .badge-inactivo { background: #e9ecef; color: #6c757d; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+</style>

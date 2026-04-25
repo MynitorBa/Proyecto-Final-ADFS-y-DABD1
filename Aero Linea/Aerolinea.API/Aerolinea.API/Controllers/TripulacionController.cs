@@ -26,13 +26,14 @@ namespace Aerolinea.API.Controllers
 
         // Público: necesario para cargar listas en formularios del panel
         /// <summary>
-        /// Retorna la lista completa de tripulantes registrados. Endpoint publico, utilizado
+        /// Retorna la lista de tripulantes registrados. Por defecto solo retorna tripulantes activos.
+        /// Con incluirInactivos=true retorna todos (activos e inactivos). Endpoint publico, utilizado
         /// para poblar selectores en el formulario de creacion de vuelos del panel de admin.
         /// </summary>
         [HttpGet]
-        public async Task<IActionResult> ObtenerTodos()
+        public async Task<IActionResult> ObtenerTodos([FromQuery] bool incluirInactivos = false)
         {
-            var tripulantes = await _service.ObtenerTodos();
+            var tripulantes = await _service.ObtenerTodos(incluirInactivos);
             return Ok(tripulantes);
         }
 
@@ -98,18 +99,70 @@ namespace Aerolinea.API.Controllers
 
         /// <summary>
         /// Elimina un tripulante por su identificador. Requiere rol Administrador.
-        /// Retorna 404 si el tripulante no existe.
+        /// Retorna 400 si el tripulante tiene vuelos asignados activos; 404 si no existe.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar(int id)
         {
+            var (totalFuturos, numeros48h) = await _service.VerificarVuelosAsignados(id);
+
+            if (numeros48h.Count > 0)
+                return BadRequest(new
+                {
+                    message = $"No se puede eliminar. El tripulante tiene {numeros48h.Count} vuelo(s) asignado(s) en menos de 48 horas.",
+                    vuelos = numeros48h
+                });
+
+            if (totalFuturos > 0)
+                return BadRequest(new
+                {
+                    message = $"No se puede eliminar. El tripulante tiene {totalFuturos} vuelo(s) activo(s) asignados.",
+                    cantidadVuelos = totalFuturos
+                });
+
             var resultado = await _service.Eliminar(id);
 
             if (!resultado)
                 return NotFound(new { message = "Tripulante no encontrado" });
 
             return Ok(new { message = "Tripulante eliminado correctamente" });
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un tripulante (soft-delete). Requiere rol Administrador.
+        /// Al desactivar, retorna 400 si el tripulante tiene vuelos activos asignados; 404 si no existe.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("{id}/estado")]
+        public async Task<IActionResult> CambiarEstadoTripulante(int id, [FromBody] CambiarEstadoDTO dto)
+        {
+            if (!dto.Activo)
+            {
+                var (totalFuturos, numeros48h) = await _service.VerificarVuelosAsignados(id);
+
+                if (numeros48h.Count > 0)
+                    return BadRequest(new
+                    {
+                        message = $"No se puede desactivar. El tripulante tiene {numeros48h.Count} vuelo(s) asignado(s) en menos de 48 horas.",
+                        vuelos = numeros48h
+                    });
+
+                if (totalFuturos > 0)
+                    return BadRequest(new
+                    {
+                        message = $"No se puede desactivar. El tripulante tiene {totalFuturos} vuelo(s) activo(s) asignados.",
+                        cantidadVuelos = totalFuturos
+                    });
+            }
+
+            var resultado = await _service.CambiarEstado(id, dto.Activo);
+
+            if (!resultado)
+                return NotFound(new { message = "Tripulante no encontrado" });
+
+            var estado = dto.Activo ? "activado" : "desactivado";
+            return Ok(new { message = $"Tripulante {estado} correctamente" });
         }
 
         // ===== ENDPOINTS DE IMAGEN =====

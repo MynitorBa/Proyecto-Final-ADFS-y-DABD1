@@ -21,12 +21,12 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
-        /// Retorna la lista completa de aviones registrados en el sistema,
-        /// incluyendo marca, modelo, capacidad e imagen en Base64.
+        /// Retorna la lista de aviones registrados en el sistema. Si incluirInactivos es false
+        /// (valor por defecto), solo retorna los aviones activos.
         /// </summary>
-        public async Task<List<AvionDTO>> ObtenerTodos()
+        public async Task<List<AvionDTO>> ObtenerTodos(bool incluirInactivos = false)
         {
-            var aviones = await _avionRepository.ObtenerTodos();
+            var aviones = await _avionRepository.ObtenerTodos(incluirInactivos);
 
             return aviones.Select(a => new AvionDTO
             {
@@ -143,6 +143,24 @@ namespace Aerolinea.API.Services
         public async Task EliminarImagen(int avionId)
         {
             await _avionRepository.EliminarImagen(avionId);
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un avion (soft-delete).
+        /// Retorna true si el avion existe y se actualizo correctamente.
+        /// </summary>
+        public async Task<bool> CambiarEstado(int id, bool activo)
+        {
+            return await _avionRepository.CambiarEstado(id, activo);
+        }
+
+        /// <summary>
+        /// Verifica si el avion tiene vuelos activos programados a futuro.
+        /// Retorna el total de vuelos futuros y los numeros de vuelo dentro de 48 horas.
+        /// </summary>
+        public async Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosActivos(int avionId)
+        {
+            return await _avionRepository.VerificarVuelosActivos(avionId);
         }
     }
 }

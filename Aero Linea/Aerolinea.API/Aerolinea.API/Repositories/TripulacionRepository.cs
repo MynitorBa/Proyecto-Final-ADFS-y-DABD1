@@ -21,19 +21,22 @@ namespace Aerolinea.API.Repositories
         /// <summary>
         /// Retorna la lista de todos los miembros de tripulacion ordenados por ID,
         /// incluyendo su imagen en Base64 si esta disponible.
+        /// Si incluirInactivos es false, solo retorna los activos.
         /// </summary>
-        public async Task<List<Tripulante>> ObtenerTodos()
+        public async Task<List<Tripulante>> ObtenerTodos(bool incluirInactivos = false)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             // La columna Imagen está directamente en MiembroTripulacion
             var query = @"
-                SELECT ID, Nombre, Apellido, RolID, Imagen
+                SELECT ID, Nombre, Apellido, RolID, Imagen, Activo
                 FROM MiembroTripulacion
+                WHERE (@IncluirInactivos = 1 OR Activo = 1)
                 ORDER BY ID";
 
             using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@IncluirInactivos", incluirInactivos ? 1 : 0);
             using var reader = await command.ExecuteReaderAsync();
 
             var tripulantes = new List<Tripulante>();
@@ -45,11 +48,30 @@ namespace Aerolinea.API.Repositories
                     Nombre = reader.GetString(1),
                     Apellido = reader.GetString(2),
                     RolID = reader.GetInt32(3),
-                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4)
+                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Activo = reader.GetBoolean(5)
                 });
             }
 
             return tripulantes;
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un tripulante (soft-delete).
+        /// Retorna true si se modifico al menos una fila.
+        /// </summary>
+        public async Task<bool> CambiarEstado(int id, bool activo)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "UPDATE MiembroTripulacion SET Activo = @Activo WHERE ID = @Id";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Activo", activo);
+
+            var filasAfectadas = await command.ExecuteNonQueryAsync();
+            return filasAfectadas > 0;
         }
 
         /// <summary>
@@ -213,6 +235,44 @@ namespace Aerolinea.API.Repositories
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Id", tripulanteId);
             await command.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Verifica si el tripulante tiene vuelos activos asignados a futuro.
+        /// Retorna el total de vuelos futuros activos y los numeros de vuelo
+        /// que salen en menos de 48 horas (para bloquear desactivacion/eliminacion).
+        /// </summary>
+        public async Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosAsignados(int tripulanteId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT v.NumeroVuelo,
+                       v.Fecha
+                FROM   EquipoPivote ep
+                INNER JOIN Vuelo v ON v.ID = ep.VueloID
+                WHERE  ep.MiembroTripulacionID = @TripulanteId
+                  AND  v.EstadoID  = 1
+                  AND  v.Fecha    >= CAST(GETDATE() AS DATE)";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@TripulanteId", tripulanteId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var numeros48h   = new List<string>();
+            int totalFuturos = 0;
+            var limite48h    = DateTime.Now.AddHours(48).Date;
+
+            while (await reader.ReadAsync())
+            {
+                totalFuturos++;
+                var fecha = reader.GetDateTime(1).Date;
+                if (fecha <= limite48h)
+                    numeros48h.Add(reader.GetString(0));
+            }
+
+            return (totalFuturos, numeros48h);
         }
 
         /// <summary>
