@@ -1,4 +1,5 @@
 using Aerolinea.API.DTOs;
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -17,15 +18,21 @@ namespace Aerolinea.API.Controllers
     {
         private readonly ITripulacionService _service;
         private readonly AdminVueloRepository _adminVueloRepo;
+        private readonly EmailHelper _emailHelper;
 
         /// <summary>
-        /// Inicializa el controlador con el servicio de tripulacion y el repositorio de vuelos admin
-        /// (usado para verificar conflictos al desactivar un tripulante).
+        /// Inicializa el controlador con el servicio de tripulacion, el repositorio de vuelos admin
+        /// (usado para verificar conflictos al desactivar un tripulante) y el helper de correo
+        /// (usado para notificar a pasajeros afectados por cambios de personal).
         /// </summary>
-        public TripulacionController(ITripulacionService service, AdminVueloRepository adminVueloRepo)
+        public TripulacionController(
+            ITripulacionService service,
+            AdminVueloRepository adminVueloRepo,
+            EmailHelper emailHelper)
         {
             _service        = service;
             _adminVueloRepo = adminVueloRepo;
+            _emailHelper    = emailHelper;
         }
 
         // Público: necesario para cargar listas en formularios del panel
@@ -117,6 +124,20 @@ namespace Aerolinea.API.Controllers
         }
 
         /// <summary>
+        /// Retorna el equipo actual (tripulantes asignados) de un vuelo especifico.
+        /// Usado en el modal de reemplazo para mostrar la composicion actual del vuelo
+        /// y calcular que roles faltan al retirar al tripulante que se desactiva.
+        /// Requiere Administrador.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpGet("vuelo/{vueloId}/equipo")]
+        public async Task<IActionResult> ObtenerEquipoVuelo(int vueloId)
+        {
+            var equipo = await _service.ObtenerEquipoVuelo(vueloId);
+            return Ok(equipo);
+        }
+
+        /// <summary>
         /// Elimina un tripulante por su identificador. Requiere rol Administrador.
         /// Retorna 400 si el tripulante tiene vuelos asignados activos; 404 si no existe.
         /// </summary>
@@ -152,14 +173,16 @@ namespace Aerolinea.API.Controllers
         /// Cambia el estado activo/inactivo de un tripulante. Requiere rol Administrador.
         /// Al desactivar:
         ///   - Bloquea si hay vuelos asignados en menos de 48 horas.
-        ///   - Si solo hay vuelos con mas de 48 horas: elimina al tripulante de EquipoPivote
-        ///     para esos vuelos (los vuelos quedan activos, solo sin este tripulante) y desactiva.
+        ///   - Si hay vuelos con mas de 48 horas: requiere que el cuerpo incluya Reemplazos
+        ///     (uno por vuelo) para garantizar que cada vuelo mantenga 1 piloto + 1 copiloto
+        ///     + 3 auxiliares. Agrega los reemplazos, desasigna al tripulante saliente y
+        ///     notifica a los pasajeros con reservas activas o pendientes de pago.
         ///   - Si no hay vuelos futuros: desactiva directamente.
         /// Al reactivar: sin validaciones adicionales.
         /// </summary>
         [Authorize(Roles = "Administrador")]
         [HttpPut("{id}/estado")]
-        public async Task<IActionResult> CambiarEstadoTripulante(int id, [FromBody] CambiarEstadoDTO dto)
+        public async Task<IActionResult> CambiarEstadoTripulante(int id, [FromBody] DesactivarTripulanteDTO dto)
         {
             if (!dto.Activo)
             {
@@ -175,22 +198,107 @@ namespace Aerolinea.API.Controllers
                         vuelos48h
                     });
 
-                // Desasignar de vuelos lejanos (los vuelos quedan activos, solo sin este tripulante)
+                // Vuelos lejanos: requerir reemplazos antes de proceder
                 if (vuelosLejos.Count > 0)
+                {
+                    if (dto.Reemplazos == null || dto.Reemplazos.Count == 0)
+                        return BadRequest(new
+                        {
+                            message = "Debes asignar reemplazos para todos los vuelos afectados antes de desactivar al tripulante."
+                        });
+
+                    var vueloIdsAfectados = vuelosLejos.Select(v => v.Id).ToHashSet();
+                    // Obtener roles para validar composicion 1 piloto + 1 copiloto + 3 auxiliares
+                    var roles = await _service.ObtenerRoles();
+                    int? rolPilotoId   = roles.FirstOrDefault(r =>
+                        r.Cargo.Contains("Piloto", StringComparison.OrdinalIgnoreCase) &&
+                        !r.Cargo.Contains("Co",    StringComparison.OrdinalIgnoreCase))?.Id;
+                    int? rolCopiloId   = roles.FirstOrDefault(r =>
+                        r.Cargo.Contains("Copiloto", StringComparison.OrdinalIgnoreCase) ||
+                        r.Cargo.Contains("Co-Piloto", StringComparison.OrdinalIgnoreCase))?.Id;
+
+                    // Validar composicion por vuelo ANTES de hacer cambios
+                    foreach (var vuelo in vuelosLejos)
+                    {
+                        var equipoActual    = await _service.ObtenerEquipoVuelo(vuelo.Id);
+                        var equipoSinSaliente = equipoActual.Where(t => t.Id != id).ToList();
+
+                        var reemplazo      = dto.Reemplazos.FirstOrDefault(r => r.VueloId == vuelo.Id);
+                        var nuevosIds      = reemplazo?.NuevosTripulantesIds ?? new List<int>();
+                        var rolesNuevos    = nuevosIds.Count > 0
+                                              ? (await _adminVueloRepo.ObtenerTripulantesPorIds(nuevosIds)).Select(t => t.RolID)
+                                              : Enumerable.Empty<int>();
+                        var equipoFinal    = equipoSinSaliente.Select(t => t.RolID)
+                                              .Concat(rolesNuevos)
+                                              .ToList();
+
+                        int pilotos    = rolPilotoId.HasValue  ? equipoFinal.Count(r => r == rolPilotoId.Value)  : 0;
+                        int copilotos  = rolCopiloId.HasValue  ? equipoFinal.Count(r => r == rolCopiloId.Value)  : 0;
+                        int auxiliares = equipoFinal.Count(r =>
+                            (!rolPilotoId.HasValue  || r != rolPilotoId.Value) &&
+                            (!rolCopiloId.HasValue  || r != rolCopiloId.Value));
+
+                        if (pilotos < 1 || copilotos < 1 || auxiliares < 3)
+                            return BadRequest(new
+                            {
+                                message = $"El vuelo {vuelo.NumeroVuelo} no cumple la composicion minima (1 piloto, 1 copiloto, 3 auxiliares) con los reemplazos seleccionados."
+                            });
+                    }
+
+                    // Composicion validada — aplicar cambios
+                    foreach (var reemplazo in dto.Reemplazos)
+                    {
+                        if (!vueloIdsAfectados.Contains(reemplazo.VueloId))
+                            continue;
+
+                        // Agregar los nuevos tripulantes al vuelo
+                        await _service.AsignarTripulantesAVuelo(reemplazo.VueloId, reemplazo.NuevosTripulantesIds);
+                    }
+
+                    // Desasignar al tripulante saliente de todos los vuelos lejanos
                     await _service.DesasignarDeFuturosVuelos(id, vuelosLejos.Select(v => v.Id));
 
-                var resultado2 = await _service.CambiarEstado(id, false);
-                if (!resultado2)
+                    // Notificar a los pasajeros afectados (solo reservas activas/pendientes de pago)
+                    int notificados = 0;
+                    foreach (var vuelo in vuelosLejos)
+                    {
+                        var afectados = await _adminVueloRepo.ObtenerAfectadosPorVuelo(vuelo.Id);
+                        foreach (var afectado in afectados.Where(a => !string.IsNullOrEmpty(a.EmailUsuario)))
+                        {
+                            _ = _emailHelper.Enviar(
+                                afectado.EmailUsuario,
+                                "Broom Airline — Actualización de personal en tu vuelo",
+                                EmailTemplates.CorreoCambioPersonal(
+                                    afectado.NombreUsuario,
+                                    afectado.NoReservacion,
+                                    afectado.NumeroVuelo,
+                                    afectado.OrigenCodigo,
+                                    afectado.DestinoCodigo,
+                                    afectado.FechaVuelo
+                                )
+                            );
+                            notificados++;
+                        }
+                    }
+
+                    var resultado2 = await _service.CambiarEstado(id, false);
+                    if (!resultado2)
+                        return NotFound(new { message = "Tripulante no encontrado" });
+
+                    return Ok(new
+                    {
+                        message              = "Tripulante desactivado correctamente. Los reemplazos han sido asignados.",
+                        vuelosDesasignados   = vuelosLejos.Count,
+                        pasajerosNotificados = notificados
+                    });
+                }
+
+                // Sin vuelos futuros: desactivar directamente
+                var resultado3 = await _service.CambiarEstado(id, false);
+                if (!resultado3)
                     return NotFound(new { message = "Tripulante no encontrado" });
 
-                return Ok(new
-                {
-                    message              = "Tripulante desactivado correctamente",
-                    vuelosDesasignados   = vuelosLejos.Count,
-                    nota                 = vuelosLejos.Count > 0
-                        ? "Los vuelos quedan activos. Asigna un reemplazo desde el panel de vuelos."
-                        : null
-                });
+                return Ok(new { message = "Tripulante desactivado correctamente" });
             }
 
             var resultado = await _service.CambiarEstado(id, dto.Activo);

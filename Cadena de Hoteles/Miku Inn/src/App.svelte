@@ -215,6 +215,15 @@
       window.history.replaceState({}, '', '/home');
       return;
     }
+
+    // Si se recarga en hotel-detail y no hay datos en memoria, restaurar desde sessionStorage
+    if (path === 'hotel-detail' && !currentHotelData) {
+      try {
+        const saved = sessionStorage.getItem('lastHotelData');
+        if (saved) currentHotelData = JSON.parse(saved);
+      } catch(_) {}
+    }
+
     currentPage = path;
     pageKey = Date.now();
   }
@@ -239,7 +248,10 @@
     pageKey     = Date.now();
     window.history.pushState({}, '', `/${page}`);
 
-    if (page === 'hotel-detail')   currentHotelData   = data;
+    if (page === 'hotel-detail') {
+      currentHotelData = data;
+      try { sessionStorage.setItem('lastHotelData', JSON.stringify(data)); } catch(_) {}
+    }
     if (page === 'search-results') searchParams       = data;
     if (page === 'checkout')       checkoutData       = data;
     if (page === 'agradecimiento') {

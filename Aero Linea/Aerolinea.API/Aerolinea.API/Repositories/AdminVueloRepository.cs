@@ -412,7 +412,7 @@ namespace Aerolinea.API.Repositories
                 WHERE b.VueloID            = @VueloId
                   AND b.ReservacionID      IS NOT NULL
                   AND b.EstadoBoletoID     IN (2, 3)
-                  AND r.EstadoReservaID    NOT IN (3, 4)";
+                  AND r.EstadoReservaID    IN (1, 2)";
 
             using var cmd = new SqlCommand(query, connection);
             cmd.Parameters.AddWithValue("@VueloId", vueloId);

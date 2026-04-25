@@ -14,5 +14,6 @@ namespace Aerolinea.API.DTOs
         public string NombreCompleto { get; set; }
         // Base64 de la imagen (puede ser null si no tiene imagen)
         public string? ImagenBase64 { get; set; }
+        public bool Activo { get; set; }
     }
 }

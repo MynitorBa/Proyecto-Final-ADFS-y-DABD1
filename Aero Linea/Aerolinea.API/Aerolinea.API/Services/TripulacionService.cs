@@ -44,7 +44,8 @@ namespace Aerolinea.API.Services
                     RolID = tripulante.RolID,
                     NombreRol = nombreRol ?? "Desconocido",
                     NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
-                    ImagenBase64 = tripulante.ImagenBase64
+                    ImagenBase64 = tripulante.ImagenBase64,
+                    Activo = tripulante.Activo
                 });
             }
 
@@ -73,7 +74,8 @@ namespace Aerolinea.API.Services
                 RolID = tripulante.RolID,
                 NombreRol = nombreRol ?? "Desconocido",
                 NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
-                ImagenBase64 = tripulante.ImagenBase64
+                ImagenBase64 = tripulante.ImagenBase64,
+                Activo = tripulante.Activo
             };
         }
 
@@ -187,6 +189,23 @@ namespace Aerolinea.API.Services
         public async Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds)
         {
             return await _repository.DesasignarDeFuturosVuelos(tripulanteId, vueloIds);
+        }
+
+        /// <summary>
+        /// Retorna el equipo actual asignado a un vuelo especifico.
+        /// Usado para mostrar la composicion del vuelo en el modal de reemplazo.
+        /// </summary>
+        public async Task<List<Tripulante>> ObtenerEquipoVuelo(int vueloId)
+        {
+            return await _repository.ObtenerEquipoVuelo(vueloId);
+        }
+
+        /// <summary>
+        /// Asigna los tripulantes indicados al vuelo, ignorando los que ya esten asignados.
+        /// </summary>
+        public async Task AsignarTripulantesAVuelo(int vueloId, IEnumerable<int> tripulanteIds)
+        {
+            await _repository.AsignarTripulantesAVuelo(vueloId, tripulanteIds);
         }
     }
 }

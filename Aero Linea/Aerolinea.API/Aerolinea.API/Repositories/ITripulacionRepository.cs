@@ -18,5 +18,7 @@ namespace Aerolinea.API.Repositories
         Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosAsignados(int tripulanteId);
         Task<List<VueloActivoInfoDTO>> ObtenerVuelosAsignadosDetallados(int tripulanteId);
         Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds);
+        Task<List<Tripulante>> ObtenerEquipoVuelo(int vueloId);
+        Task AsignarTripulantesAVuelo(int vueloId, IEnumerable<int> tripulanteIds);
     }
 }

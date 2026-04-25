@@ -360,6 +360,19 @@ select.rh-mod-input { cursor: pointer; }
   gap: 6px; flex-shrink: 0;
 }
 
+/* Contenedor del logo + nombre del proveedor */
+.rh-grupo__proveedor-logo {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.rh-grupo__proveedor-logo-img {
+  width: 52px; height: 52px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18);
+}
+
 .rh-grupo__proveedor {
   font-size: 10px; font-weight: 700; color: #9a8e80;
   text-transform: uppercase; letter-spacing: .06em;
@@ -399,9 +412,11 @@ select.rh-mod-input { cursor: pointer; }
 /* Lista de habitaciones del hotel sin border-radius inferior */
 .rh-habitaciones {
   display: flex; flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: #f5f2ee;
   border: 1px solid #e8e3dc; border-top: none;
   border-radius: 0;
-  overflow: hidden;
 }
 /* Si no hay sección de reseñas, las habitaciones cierran el grupo */
 .rh-habitaciones:last-child {
@@ -411,12 +426,14 @@ select.rh-mod-input { cursor: pointer; }
 /* Tarjeta de habitación con imagen y detalles */
 .rh-card {
   display: grid; grid-template-columns: 150px 1fr;
-  background: #fff; border-bottom: 1px solid #f0ebe3;
+  background: #fff;
+  border: 1px solid #e8e3dc;
+  border-radius: 10px;
+  overflow: hidden;
   transition: all .2s;
 }
-.rh-card:last-child { border-bottom: none; }
-.rh-card:hover { background: #fdfcfa; }
-.rh-card--seleccionada { background: #fffbeb; border-left: 3px solid #FFCC00; }
+.rh-card:hover { background: #fdfcfa; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.rh-card--seleccionada { background: #fffbeb; border-color: #FFCC00; box-shadow: 0 0 0 2px rgba(255,204,0,.25); }
 
 /* Imagen placeholder de la habitación */
 .rh-card__img { position: relative; overflow: hidden; }
@@ -424,6 +441,26 @@ select.rh-mod-input { cursor: pointer; }
   width: 100%; height: 100%; min-height: 160px;
   background: linear-gradient(135deg, #1C1A18 0%, #3a3530 100%);
   display: flex; align-items: center; justify-content: center;
+}
+/* Imagen real de la habitación (superpone el placeholder) */
+.rh-card__img-real {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Logo del proveedor dentro del ícono (igual que rv-card__logo img en vuelos) */
+.rh-grupo__hotel-icon {
+  overflow: hidden;
+  background: #fff;   /* fondo blanco para logos con transparencia */
+}
+.rh-grupo__hotel-img {
+  width: 100%; height: 100%;
+  object-fit: contain;  /* contain = logo completo sin recortar */
+  padding: 4px;
+  display: block;
+  background: #fff;
 }
 
 /* Badge de tipo de habitación y urgencia */
@@ -709,6 +746,104 @@ select.rh-mod-input { cursor: pointer; }
 .rh-btn--outline:hover { background: rgba(255,255,255,0.1); }
 .rh-btn--ghost { background: transparent; border: 1px solid #e0d9cf; color: #5a5047; }
 .rh-btn--ghost:hover { background: #f5f2ec; }
+
+/* ── Transición y panel de detalles de la habitación ── */
+.rh-slide-enter-active, .rh-slide-leave-active { transition: all .25s ease; overflow: hidden; }
+.rh-slide-enter-from, .rh-slide-leave-to { opacity: 0; max-height: 0; }
+.rh-slide-enter-to, .rh-slide-leave-from { opacity: 1; max-height: 900px; }
+
+.rh-det-toggle {
+  /* span both grid columns (image + info) of rh-card */
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 12px 18px;
+  border: none;
+  border-top: 2px solid #FFCC00;
+  background: #1C1A18;
+  border-radius: 0;   /* clipped to rh-card's border-radius via overflow:hidden */
+  color: #FFCC00;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .18s, color .18s;
+  font-family: inherit;
+}
+.rh-det-toggle:hover {
+  background: #2a2724;
+  color: #ffe566;
+}
+
+.rh-det-panel {
+  margin-top: 10px;
+  padding: 14px;
+  background: #faf9f6;
+  border: 1px solid #f0ebe3;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rh-det-sep {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9a9089;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #f0ebe3;
+}
+
+.rh-det-desc {
+  font-size: 13px;
+  color: #5a5047;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rh-det-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.rh-det-bloque {
+  background: #fff;
+  border: 1px solid #e8e3dc;
+  border-radius: 8px;
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rh-det-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9a9089;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.rh-det-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1C1A18;
+}
+.rh-det-val--urgente { color: #d97706; }
+.rh-det-val--out { color: #ef4444; }
+
+.rh-det-rooms { display: flex; flex-direction: column; gap: 6px; }
+.rh-det-rooms__list { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.rh-det-amenidades { display: flex; flex-direction: column; gap: 6px; }
+.rh-det-amenidades__list { display: flex; flex-wrap: wrap; gap: 5px; }
 
 /* Responsive: sidebar como drawer en tablet */
 @media (max-width: 960px) {

@@ -1356,3 +1356,52 @@
   background: rgba(102,126,234,.08);
   border-radius: 8px;
 }
+
+/* Mini-carrusel de amenidades */
+.amenity-mini-carousel {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.amenity-mini-prev,
+.amenity-mini-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,.6);
+  border: none;
+  color: white;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity .2s;
+  border-radius: 3px;
+  z-index: 2;
+}
+.amenity-mini-carousel:hover .amenity-mini-prev,
+.amenity-mini-carousel:hover .amenity-mini-next { opacity: 1; }
+.amenity-mini-prev { left: 1px; }
+.amenity-mini-next { right: 1px; }
+.amenity-mini-counter {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0,0,0,.65);
+  color: white;
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1.4;
+  z-index: 2;
+  pointer-events: none;
+}

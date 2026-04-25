@@ -351,6 +351,68 @@ namespace Aerolinea.API.Repositories
         }
 
         /// <summary>
+        /// Retorna la lista de tripulantes actualmente asignados a un vuelo especifico,
+        /// incluyendo su rol, para mostrar la composicion actual en el modal de reemplazo.
+        /// </summary>
+        public async Task<List<Tripulante>> ObtenerEquipoVuelo(int vueloId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT mt.ID, mt.Nombre, mt.Apellido, mt.RolID
+                FROM   EquipoPivote ep
+                INNER JOIN MiembroTripulacion mt ON mt.ID = ep.MiembroTripulacionID
+                WHERE  ep.VueloID = @VueloId
+                ORDER  BY mt.RolID, mt.ID";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@VueloId", vueloId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var result = new List<Tripulante>();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new Tripulante
+                {
+                    Id       = reader.GetInt32(0),
+                    Nombre   = reader.GetString(1),
+                    Apellido = reader.GetString(2),
+                    RolID    = reader.GetInt32(3)
+                });
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Asigna los tripulantes indicados al vuelo, ignorando los que ya esten asignados.
+        /// Se usa para agregar reemplazos al desactivar un tripulante con vuelos futuros.
+        /// </summary>
+        public async Task AsignarTripulantesAVuelo(int vueloId, IEnumerable<int> tripulanteIds)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            foreach (var tripId in tripulanteIds)
+            {
+                var check = "SELECT COUNT(1) FROM EquipoPivote WHERE VueloID = @V AND MiembroTripulacionID = @T";
+                using var cmdCheck = new SqlCommand(check, connection);
+                cmdCheck.Parameters.AddWithValue("@V", vueloId);
+                cmdCheck.Parameters.AddWithValue("@T", tripId);
+                var existe = Convert.ToInt32(await cmdCheck.ExecuteScalarAsync()) > 0;
+
+                if (!existe)
+                {
+                    var insert = "INSERT INTO EquipoPivote (VueloID, MiembroTripulacionID) VALUES (@V, @T)";
+                    using var cmdIns = new SqlCommand(insert, connection);
+                    cmdIns.Parameters.AddWithValue("@V", vueloId);
+                    cmdIns.Parameters.AddWithValue("@T", tripId);
+                    await cmdIns.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        /// <summary>
         /// Retorna la lista de todos los roles de tripulacion disponibles ordenados por ID.
         /// </summary>
         public async Task<List<RolTripulacion>> ObtenerRoles()

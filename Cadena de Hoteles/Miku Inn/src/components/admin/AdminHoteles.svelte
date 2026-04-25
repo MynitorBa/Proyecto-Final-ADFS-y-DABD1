@@ -113,6 +113,9 @@
   /** Set con los IDs de amenidades cuya imagen se esta subiendo. @type {Set<number>} */
   let subiendoImgAmenidadSet = new Set();
 
+  /** URL de la imagen de amenidad expandida en el lightbox. @type {string|null} */
+  let imagenAmenidadExpandida = null;
+
   /** Controla la visibilidad del formulario para crear una nueva categoria de amenidad. @type {boolean} */
   let showFormNuevaAmenidadCatalogo = false;
 
@@ -829,7 +832,8 @@
     if (!hotelDetalle) return;
     const cant = Math.max(1, Math.min(50, Number(nuevaHabGestion.cantidad) || 1));
     guardandoNuevaHab = true; mensajeNuevaHab = null;
-    if (cant > 1) { creandoMasivo = true; creandoMasivoProgreso = `Creando habitación 0 de ${cant}...`; }
+    creandoMasivo = true;
+    creandoMasivoProgreso = cant > 1 ? `Creando habitación 0 de ${cant}...` : 'Creando habitación...';
     try {
       // Payload sin numeroHabitacion — el backend lo genera automaticamente (count + 1)
       const payload = {
@@ -841,14 +845,14 @@
       const estNom  = payload.estadoId === 1 ? 'Activa' : 'Cerrada';
       let creadas = 0;
       for (let i = 0; i < cant; i++) {
-        if (cant > 1) creandoMasivoProgreso = `Creando habitación ${i + 1} de ${cant}...`;
+        creandoMasivoProgreso = cant > 1 ? `Creando habitación ${i + 1} de ${cant}...` : 'Creando habitación...';
         const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}/habitaciones`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
         creadas++;
       }
       await cargarHabitacionesDetalle(hotelDetalle.id);
-      mensajeNuevaHab = { tipo: 'ok', texto: `${creadas} habitación(es) ${tipoNom} creada(s). Número asignado automáticamente.` };
+      showModalNuevaHab = false;
     } catch (e) { mensajeNuevaHab = { tipo: 'error', texto: e.message }; }
     finally { guardandoNuevaHab = false; creandoMasivo = false; }
   }
@@ -1080,7 +1084,7 @@
                 <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => pedirEliminarAmenidad(ha.id, ha.amenidadNombre)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
               </div>
             </div>
-            <div class="adm__amenidad-imgs"><div class="adm__img-grid adm__img-grid--sm">{#each (ha.imagenesIds ?? []) as imgId (imgId)}<div class="adm__img-card"><img src="{API_BASE}/imagenes/amenidad/{imgId}" alt="img" /><button class="adm__img-delete" on:click={() => pedirEliminarImgAmenidad(ha.id, imgId)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}<label class="adm__wizard-add-img-btn adm__upload-btn">{#if subiendoImgAmenidadSet.has(ha.id)}<svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{/if}<input type="file" accept="image/*" on:change={(e) => subirImagenAmenidad(e, ha.id)} disabled={subiendoImgAmenidadSet.has(ha.id)} style="display:none" /></label></div></div>
+            <div class="adm__amenidad-imgs"><div class="adm__img-grid adm__img-grid--sm">{#each (ha.imagenesIds ?? []) as imgId (imgId)}<div class="adm__img-card"><img src="{API_BASE}/imagenes/amenidad/{imgId}" alt="img" style="cursor:zoom-in" on:click|stopPropagation={() => imagenAmenidadExpandida = API_BASE + '/imagenes/amenidad/' + imgId} /><button class="adm__img-delete" on:click={() => pedirEliminarImgAmenidad(ha.id, imgId)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}<label class="adm__wizard-add-img-btn adm__upload-btn">{#if subiendoImgAmenidadSet.has(ha.id)}<svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{/if}<input type="file" accept="image/*" on:change={(e) => subirImagenAmenidad(e, ha.id)} disabled={subiendoImgAmenidadSet.has(ha.id)} style="display:none" /></label></div></div>
           </div>
         {/each}
       </div>
@@ -1437,5 +1441,14 @@
       <button class="adm__btn adm__btn--ghost" on:click={cerrarConfirm}>Cancelar</button>
       <button class="adm__btn--cancel-confirm" on:click={ejecutarConfirm}>Sí, eliminar</button>
     </div>
+  </div>
+{/if}
+
+{#if imagenAmenidadExpandida}
+  <div class="adm__lightbox" on:click={() => imagenAmenidadExpandida = null} on:keydown={e => e.key === 'Escape' && (imagenAmenidadExpandida = null)} role="button" tabindex="-1" aria-label="Cerrar imagen">
+    <img src={imagenAmenidadExpandida} alt="Imagen expandida" on:click|stopPropagation style="max-width:90vw;max-height:87vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.7)" />
+    <button class="adm__lightbox-close" on:click={() => imagenAmenidadExpandida = null} aria-label="Cerrar">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
 {/if}

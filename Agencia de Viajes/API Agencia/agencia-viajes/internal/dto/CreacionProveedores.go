@@ -15,6 +15,7 @@ type CrearProveedorRequest struct {
 	URLAPI             string  `json:"url_api"`                               // URL base de la API del proveedor
 	UsuarioID          int     `json:"usuario_id" binding:"required"`         // ID del usuario vinculado; debe tener rol 3
 	PorcentajeGanancia float64 `json:"porcentaje_ganancia"`                   // Porcentaje de ganancia aplicado sobre el precio base
+	ImagenBase64       string  `json:"imagenBase64"`                          // Imagen del proveedor codificada en Base64
 }
 
 // CrearProveedorResponse
@@ -29,4 +30,5 @@ type CrearProveedorResponse struct {
 	UsuarioID          int     `json:"usuario_id"`          // ID del usuario vinculado al proveedor
 	EstadoID           int     `json:"estado_id"`           // ID del estado inicial del proveedor
 	PorcentajeGanancia float64 `json:"porcentaje_ganancia"` // Porcentaje de ganancia configurado
+	ImagenBase64       string  `json:"imagenBase64"`        // Imagen del proveedor codificada en Base64
 }

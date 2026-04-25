@@ -92,7 +92,8 @@ func (r *BusquedaRepository) ObtenerProveedoresPorOrigenYTipo(
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT DISTINCT p.ID, p.Nombre, p.URL_API, p.Token_HASH_Entrada, p.Porcentaje_Ganancia
+		SELECT DISTINCT p.ID, p.Nombre, p.URL_API, p.Token_HASH_Entrada, p.Porcentaje_Ganancia,
+		       COALESCE(p.Imagen_Base64, '')
 		FROM Catalogo_Proveedor cp
 		JOIN Proveedor p ON cp.Proveedor_ID = p.ID
 		WHERE cp.Ciudad_Origen_ID  = ?
@@ -107,7 +108,7 @@ func (r *BusquedaRepository) ObtenerProveedoresPorOrigenYTipo(
 	var proveedores []dto.ProveedorCatalogo
 	for rows.Next() {
 		var p dto.ProveedorCatalogo
-		if err := rows.Scan(&p.ProveedorID, &p.Nombre, &p.URLApi, &p.TokenEntrada, &p.PorcentajeGanancia); err != nil {
+		if err := rows.Scan(&p.ProveedorID, &p.Nombre, &p.URLApi, &p.TokenEntrada, &p.PorcentajeGanancia, &p.ImagenBase64); err != nil {
 			return nil, err
 		}
 		proveedores = append(proveedores, p)
@@ -140,7 +141,8 @@ func (r *BusquedaRepository) ObtenerAerolineasPorRuta(
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT DISTINCT p.ID, p.Nombre, p.URL_API, p.Token_HASH_Entrada, p.Porcentaje_Ganancia
+		SELECT DISTINCT p.ID, p.Nombre, p.URL_API, p.Token_HASH_Entrada, p.Porcentaje_Ganancia,
+		       COALESCE(p.Imagen_Base64, '')
 		FROM Catalogo_Proveedor cp
 		JOIN Proveedor p ON cp.Proveedor_ID = p.ID
 		WHERE cp.Ciudad_Origen_ID  = ?
@@ -155,7 +157,7 @@ func (r *BusquedaRepository) ObtenerAerolineasPorRuta(
 	var proveedores []dto.ProveedorCatalogo
 	for rows.Next() {
 		var p dto.ProveedorCatalogo
-		if err := rows.Scan(&p.ProveedorID, &p.Nombre, &p.URLApi, &p.TokenEntrada, &p.PorcentajeGanancia); err != nil {
+		if err := rows.Scan(&p.ProveedorID, &p.Nombre, &p.URLApi, &p.TokenEntrada, &p.PorcentajeGanancia, &p.ImagenBase64); err != nil {
 			return nil, err
 		}
 		proveedores = append(proveedores, p)

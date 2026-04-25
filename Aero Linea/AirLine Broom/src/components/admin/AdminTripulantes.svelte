@@ -209,6 +209,82 @@
   /** Indica si se esta ejecutando la desactivacion. @type {boolean} */
   let desactivando             = false;
 
+  // ── Estado de reemplazos por vuelo ───────────────────────────────────────
+  /**
+   * Equipo actual de cada vuelo afectado. { [vueloId]: Tripulante[] }
+   * @type {Record<number, any[]>}
+   */
+  let equiposVuelo = {};
+
+  /**
+   * Tripulantes seleccionados como reemplazo para cada vuelo. { [vueloId]: number[] }
+   * @type {Record<number, number[]>}
+   */
+  let reemplazosSeleccionados = {};
+
+  // IDs de rol para piloto y copiloto (resueltos por nombre de cargo)
+  $: rolIdPiloto    = rolesTripulacion.find(r => {
+    const n = r.nombre.toLowerCase();
+    return n.includes('piloto') && !n.includes('co');
+  })?.id ?? -1;
+  $: rolIdCopiloto  = rolesTripulacion.find(r =>
+    r.nombre.toLowerCase().includes('copiloto') || r.nombre.toLowerCase().includes('co-piloto')
+  )?.id ?? -2;
+
+  /**
+   * Verifica si un vuelo tiene la composicion minima: 1 piloto + 1 copiloto + 3 auxiliares
+   * considerando el equipo actual SIN el tripulante que se desactiva, MAS los reemplazos elegidos.
+   * @param {number} vueloId
+   * @returns {boolean}
+   */
+  function vueloTieneComposicionValida(vueloId) {
+    const equipoActual    = (equiposVuelo[vueloId] ?? []).filter(t => t.id !== tripulanteDesactivar?.id);
+    const idsReemplazo    = reemplazosSeleccionados[vueloId] ?? [];
+    const nuevos          = tripulantes.filter(t => idsReemplazo.includes(t.id));
+    const equipoFinal     = [...equipoActual, ...nuevos];
+
+    const pilotos    = equipoFinal.filter(t => t.rolID === rolIdPiloto).length;
+    const copilotos  = equipoFinal.filter(t => t.rolID === rolIdCopiloto).length;
+    const auxiliares = equipoFinal.filter(t => t.rolID !== rolIdPiloto && t.rolID !== rolIdCopiloto).length;
+
+    return pilotos >= 1 && copilotos >= 1 && auxiliares >= 3;
+  }
+
+  /** Verdadero cuando todos los vuelos lejanos tienen composicion valida. */
+  $: todosVuelosValidos = vuelosLejanos.length > 0 &&
+    vuelosLejanos.every(v => vueloTieneComposicionValida(v.id));
+
+  /**
+   * Devuelve el resumen de composicion de un vuelo (tras quitar al saliente y agregar reemplazos).
+   * @param {number} vueloId
+   */
+  function resumenComposicion(vueloId) {
+    const equipoActual = (equiposVuelo[vueloId] ?? []).filter(t => t.id !== tripulanteDesactivar?.id);
+    const idsReemplazo = reemplazosSeleccionados[vueloId] ?? [];
+    const nuevos       = tripulantes.filter(t => idsReemplazo.includes(t.id));
+    const equipoFinal  = [...equipoActual, ...nuevos];
+
+    const pilotos    = equipoFinal.filter(t => t.rolID === rolIdPiloto).length;
+    const copilotos  = equipoFinal.filter(t => t.rolID === rolIdCopiloto).length;
+    const auxiliares = equipoFinal.filter(t => t.rolID !== rolIdPiloto && t.rolID !== rolIdCopiloto).length;
+
+    return { pilotos, copilotos, auxiliares, valido: pilotos >= 1 && copilotos >= 1 && auxiliares >= 3 };
+  }
+
+  /**
+   * Alterna la seleccion de un tripulante como reemplazo en un vuelo especifico.
+   * @param {number} vueloId
+   * @param {number} tripId
+   */
+  function toggleReemplazo(vueloId, tripId) {
+    const actuales = reemplazosSeleccionados[vueloId] ?? [];
+    if (actuales.includes(tripId)) {
+      reemplazosSeleccionados = { ...reemplazosSeleccionados, [vueloId]: actuales.filter(id => id !== tripId) };
+    } else {
+      reemplazosSeleccionados = { ...reemplazosSeleccionados, [vueloId]: [...actuales, tripId] };
+    }
+  }
+
   /**
    * Reactiva un tripulante directamente (sin modal).
    * @param {number} id
@@ -231,49 +307,68 @@
   }
 
   /**
-   * Abre el modal de desactivacion y carga los vuelos asignados del tripulante.
+   * Abre el modal de desactivacion, carga los vuelos asignados y el equipo de cada vuelo lejano.
    * @param {any} t - El objeto tripulante de la fila.
    */
   async function intentarDesactivarTripulante(t) {
-    tripulanteDesactivar = t;
-    vuelos48h            = [];
-    vuelosLejanos        = [];
-    cargandoVuelosModal  = true;
-    mostrarModalDesact   = true;
+    tripulanteDesactivar    = t;
+    vuelos48h               = [];
+    vuelosLejanos           = [];
+    equiposVuelo            = {};
+    reemplazosSeleccionados = {};
+    cargandoVuelosModal     = true;
+    mostrarModalDesact      = true;
+
     try {
       const r = await fetch(`${API}/api/tripulacion/${t.id}/vuelos-asignados`, { credentials: 'include' });
       if (r.ok) {
         const data    = await r.json();
         vuelos48h     = data.vuelos48h     ?? [];
         vuelosLejanos = data.vuelosLejanos ?? [];
+
+        // Cargar el equipo actual de cada vuelo lejano en paralelo
+        await Promise.all(vuelosLejanos.map(async vuelo => {
+          try {
+            const re = await fetch(`${API}/api/tripulacion/vuelo/${vuelo.id}/equipo`, { credentials: 'include' });
+            if (re.ok) {
+              const equipo = await re.json();
+              equiposVuelo = { ...equiposVuelo, [vuelo.id]: equipo };
+            }
+          } catch { /* silencioso */ }
+        }));
       }
     } catch { /* silencioso — modal sigue abierto */ }
     finally { cargandoVuelosModal = false; }
   }
 
   /**
-   * Confirma la desactivacion del tripulante, desasigna de vuelos lejanos (logica en backend)
-   * y cierra el modal.
+   * Confirma la desactivacion del tripulante enviando los reemplazos seleccionados.
+   * El backend asignara los nuevos tripulantes, desasignara al saliente y notificara pasajeros.
    */
   async function confirmarDesactivarTripulante() {
     desactivando = true;
     try {
+      const reemplazos = vuelosLejanos.map(v => ({
+        vueloId: v.id,
+        nuevosTripulantesIds: reemplazosSeleccionados[v.id] ?? []
+      }));
+
       const res = await fetch(`${API}/api/tripulacion/${tripulanteDesactivar.id}/estado`, {
         method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activo: false })
+        body: JSON.stringify({ activo: false, reemplazos })
       });
       const data = await res.json();
       if (res.ok) {
         let msg = data.message || 'Tripulante desactivado correctamente';
-        if (data.vuelosDesasignados > 0)
-          msg += ` — desasignado de ${data.vuelosDesasignados} vuelo(s)`;
+        if (data.pasajerosNotificados > 0)
+          msg += `. ${data.pasajerosNotificados} pasajero(s) notificado(s) por correo.`;
         mostrarToast('success', msg);
         mostrarModalDesact = false;
         await cargarTripulantes();
+        dispatch('tripulantesActualizados');
       } else {
         mostrarToast('error', data.message || 'Error al desactivar el tripulante');
-        await intentarDesactivarTripulante(tripulanteDesactivar);
       }
     } catch { mostrarToast('error', 'Error de conexion'); }
     finally { desactivando = false; }
@@ -466,33 +561,95 @@
           </div>
 
         {:else}
-          <!-- Confirmacion: sin bloqueo -->
+          <!-- Sin bloqueo -->
           <p class="desact-nombre">
             ¿Desactivar a <strong>{tripulanteDesactivar?.nombre} {tripulanteDesactivar?.apellido}</strong>?
           </p>
 
           {#if vuelosLejanos.length > 0}
+            <!-- ── AVISO OBLIGATORIO DE REEMPLAZO ── -->
             <div class="desact-alert desact-alert--warn">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Sera desasignado de {vuelosLejanos.length} vuelo(s). Los vuelos quedan activos — asigna un reemplazo.
+              <div>
+                <strong>Reemplazo obligatorio</strong> — Este tripulante tiene {vuelosLejanos.length} vuelo(s) programado(s).
+                Debes seleccionar reemplazos para que cada vuelo mantenga:
+                <span class="cuota-badge">1 Piloto</span>
+                <span class="cuota-badge">1 Copiloto</span>
+                <span class="cuota-badge">3 Auxiliares</span>
+              </div>
             </div>
-            <p class="desact-sublabel">Vuelos afectados:</p>
-            <ul class="desact-vuelos-list">
-              {#each vuelosLejanos as v}
-                <li class="desact-vuelo-item desact-vuelo-item--cancel">
-                  <span class="vuelo-num">{v.numeroVuelo}</span>
-                  <span class="vuelo-ruta">{v.origen} → {v.destino}</span>
-                  <span class="vuelo-fecha">{v.fecha} {v.horaSalida}</span>
-                </li>
-              {/each}
-            </ul>
+
+            <!-- ── SELECTOR DE REEMPLAZOS POR VUELO ── -->
+            {#each vuelosLejanos as vuelo}
+              {@const composicion = resumenComposicion(vuelo.id)}
+              <div class="vuelo-reemplazo-card" class:vuelo-reemplazo-card--ok={composicion.valido} class:vuelo-reemplazo-card--err={!composicion.valido}>
+                <!-- Cabecera del vuelo -->
+                <div class="vrc-header">
+                  <span class="vuelo-num">{vuelo.numeroVuelo}</span>
+                  <span class="vuelo-ruta">{vuelo.origen} → {vuelo.destino}</span>
+                  <span class="vuelo-fecha">{vuelo.fecha} {vuelo.horaSalida}</span>
+                  {#if composicion.valido}
+                    <span class="vrc-badge vrc-badge--ok">Listo</span>
+                  {:else}
+                    <span class="vrc-badge vrc-badge--err">Incompleto</span>
+                  {/if}
+                </div>
+
+                <!-- Composicion actual -->
+                <div class="vrc-composicion">
+                  <span class:comp-ok={composicion.pilotos >= 1} class:comp-err={composicion.pilotos < 1}>
+                    Pilotos: {composicion.pilotos}/1
+                  </span>
+                  <span class:comp-ok={composicion.copilotos >= 1} class:comp-err={composicion.copilotos < 1}>
+                    Copilotos: {composicion.copilotos}/1
+                  </span>
+                  <span class:comp-ok={composicion.auxiliares >= 3} class:comp-err={composicion.auxiliares < 3}>
+                    Auxiliares: {composicion.auxiliares}/3
+                  </span>
+                </div>
+
+                <!-- Selector de reemplazos (tripulantes activos disponibles, excluye al saliente y a los ya en el vuelo) -->
+                <p class="vrc-sublabel">Selecciona reemplazos para este vuelo:</p>
+                <div class="vrc-tripulantes-grid">
+                  {#each tripulantes.filter(t => t.activo !== false && t.id !== tripulanteDesactivar?.id && !(equiposVuelo[vuelo.id] ?? []).some(e => e.id === t.id)) as t}
+                    {@const seleccionado = (reemplazosSeleccionados[vuelo.id] ?? []).includes(t.id)}
+                    <button
+                      type="button"
+                      class="vrc-trip-btn"
+                      class:vrc-trip-btn--sel={seleccionado}
+                      on:click={() => toggleReemplazo(vuelo.id, t.id)}>
+                      <span class="vrc-trip-nombre">{t.nombre} {t.apellido}</span>
+                      <span class="vrc-trip-rol">{t.nombreRol}</span>
+                    </button>
+                  {/each}
+                  {#if tripulantes.filter(t => t.id !== tripulanteDesactivar?.id && !(equiposVuelo[vuelo.id] ?? []).some(e => e.id === t.id)).length === 0}
+                    <p class="vrc-sin-disponibles">No hay tripulantes disponibles para asignar.</p>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+
+            <!-- Nota de correos -->
+            <p class="desact-nota-correo">
+              Los pasajeros con reservas activas o pendientes de pago en estos vuelos seran notificados por correo sobre el cambio de personal.
+            </p>
+
           {:else}
             <p class="desact-ok">El tripulante no tiene vuelos asignados. Se puede desactivar sin efectos adicionales.</p>
           {/if}
 
           <div class="modal__actions">
-            <button class="btn-danger" on:click={confirmarDesactivarTripulante} disabled={desactivando}>
-              {desactivando ? 'Desactivando...' : 'Confirmar desactivacion'}
+            <button
+              class="btn-danger"
+              on:click={confirmarDesactivarTripulante}
+              disabled={desactivando || (vuelosLejanos.length > 0 && !todosVuelosValidos)}>
+              {#if desactivando}
+                Desactivando...
+              {:else if vuelosLejanos.length > 0 && !todosVuelosValidos}
+                Completa los reemplazos para continuar
+              {:else}
+                Confirmar desactivacion
+              {/if}
             </button>
             <button class="btn-secondary" on:click={() => mostrarModalDesact = false} disabled={desactivando}>Cancelar</button>
           </div>
@@ -514,7 +671,7 @@
   .badge-inactivo { background: #e9ecef; color: #6c757d; padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
 
   /* Modal de desactivacion */
-  .modal--desact { max-width: 540px; }
+  .modal--desact { max-width: 700px; }
   .modal__header--warning { background: #fff8e1; border-bottom: 1px solid #ffe082; }
   .modal__body { padding: 1.25rem 1.5rem; }
   .modal-loading { color: #6b7280; font-style: italic; }
@@ -535,4 +692,35 @@
   .btn-danger  { padding: 0.55rem 1.25rem; background: #dc2626; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
   .btn-danger:hover:not(:disabled) { background: #b91c1c; }
   .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* ── Cuotas de composicion ── */
+  .cuota-badge { display: inline-block; background: #1C1A18; color: #F2EFEA; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; margin: 0 0.15rem; }
+
+  /* ── Tarjeta de reemplazo por vuelo ── */
+  .vuelo-reemplazo-card { border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; background: #fafafa; }
+  .vuelo-reemplazo-card--ok  { border-color: #86efac; background: #f0fdf4; }
+  .vuelo-reemplazo-card--err { border-color: #fca5a5; background: #fff8f8; }
+  .vrc-header { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .vrc-badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; margin-left: auto; }
+  .vrc-badge--ok  { background: #dcfce7; color: #166534; }
+  .vrc-badge--err { background: #fee2e2; color: #991b1b; }
+
+  /* Composicion numerica */
+  .vrc-composicion { display: flex; gap: 1rem; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.75rem; flex-wrap: wrap; }
+  .comp-ok  { color: #166534; }
+  .comp-err { color: #dc2626; }
+
+  .vrc-sublabel { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+  /* Grid de tripulantes disponibles */
+  .vrc-tripulantes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.4rem; max-height: 180px; overflow-y: auto; }
+  .vrc-trip-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; padding: 0.45rem 0.65rem; border: 1.5px solid #e5e7eb; border-radius: 7px; background: #fff; cursor: pointer; font-size: 0.8rem; text-align: left; transition: all 0.15s; }
+  .vrc-trip-btn:hover { border-color: #B89A7A; background: #fdf8f3; }
+  .vrc-trip-btn--sel { border-color: #1C1A18; background: #1C1A18; color: #F2EFEA; }
+  .vrc-trip-nombre { font-weight: 600; line-height: 1.2; }
+  .vrc-trip-rol    { font-size: 0.7rem; opacity: 0.75; }
+  .vrc-sin-disponibles { font-size: 0.8rem; color: #9ca3af; font-style: italic; grid-column: 1 / -1; }
+
+  /* Nota de correos */
+  .desact-nota-correo { font-size: 0.8rem; color: #6b7280; background: #f3f4f6; border-radius: 6px; padding: 0.6rem 0.85rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
 </style>

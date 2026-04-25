@@ -82,6 +82,9 @@
   /** Tipo de habitación cuyas imágenes se están gestionando (modal de imágenes). @type {Object|null} */
   let tipoImagenes = null;
 
+  /** ID de la imagen actualmente expandida en el lightbox. @type {number|null} */
+  let imagenExpandida = null;
+
   onMount(() => { cargarTiposHabitacion(); });
 
   /**
@@ -225,6 +228,8 @@
   }
 </script>
 
+<svelte:window on:keydown={(e) => { if (e.key === 'Escape' && imagenExpandida !== null) imagenExpandida = null; }} />
+
 <!-- Notificaciones toast -->
 {#if toasts.length > 0}<div class="adm__toast-container">{#each toasts as t (t.id)}<div class="adm__toast adm__toast--{t.tipo}">{#if t.tipo === 'ok'}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>{/if}{t.texto}<button class="adm__toast__close" on:click={() => toasts = toasts.filter(x => x.id !== t.id)}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}</div>{/if}
 
@@ -291,9 +296,9 @@
         </div>
 
         <!-- Botones de acción -->
-        <div style="display:flex;gap:.5rem">
-          <button class="adm__btn adm__btn--ghost" style="flex:1" on:click={() => abrirEditPrecios(tipo)}>Editar Precios</button>
-          <button class="adm__btn adm__btn--primary" style="flex:1" on:click={() => abrirModalImagenes(tipo)}>Imágenes</button>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <button class="adm__btn adm__btn--ghost" style="justify-content:center" on:click={() => abrirEditPrecios(tipo)}>Editar Precios</button>
+          <button class="adm__btn adm__btn--primary" style="justify-content:center" on:click={() => abrirModalImagenes(tipo)}>Imágenes</button>
         </div>
       </div>
     {/each}
@@ -363,7 +368,7 @@
         <div class="adm__img-grid">
           {#each (tipoImagenes.imagenesIds ?? []) as imgId (imgId)}
             <div class="adm__img-card">
-              <img src="{API_BASE}/imagenes/habitacion/{imgId}" alt="imagen tipo {imgId}" on:error={(e) => { e.target.style.display='none'; e.target.nextElementSibling?.remove(); const p = e.target.parentElement; if(p && !p.querySelector('.adm__img-broken')) { const d = document.createElement('div'); d.className='adm__img-broken'; d.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'; p.appendChild(d); } }} />
+              <img src="{API_BASE}/imagenes/habitacion/{imgId}" alt="imagen tipo {imgId}" style="cursor:zoom-in" on:click={() => imagenExpandida = imgId} on:error={(e) => { e.target.style.display='none'; e.target.nextElementSibling?.remove(); const p = e.target.parentElement; if(p && !p.querySelector('.adm__img-broken')) { const d = document.createElement('div'); d.className='adm__img-broken'; d.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'; p.appendChild(d); } }} />
               <button class="adm__img-delete" on:click={() => pedirEliminarImagen(imgId)}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -382,3 +387,12 @@
 
 <!-- Diálogo de confirmación personalizado -->
 {#if confirmDialog}<div class="adm__overlay" on:click={cerrarConfirm} on:keydown={e => e.key === 'Escape' && cerrarConfirm()} role="button" tabindex="-1" aria-label="Cerrar"></div><div class="adm__confirm"><div class="adm__confirm__header"><div class="adm__confirm__icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><p class="adm__confirm__title">{confirmDialog.titulo}</p></div><div class="adm__confirm__body"><p>{confirmDialog.mensaje}</p></div><div class="adm__confirm__footer"><button class="adm__confirm__btn-cancel" on:click={cerrarConfirm}>Cancelar</button><button class="adm__confirm__btn-ok" on:click={ejecutarConfirm}>Confirmar</button></div></div>{/if}
+
+{#if imagenExpandida !== null}
+  <div class="adm__lightbox" on:click={() => imagenExpandida = null} on:keydown={e => e.key === 'Escape' && (imagenExpandida = null)} role="button" tabindex="-1" aria-label="Cerrar imagen">
+    <img src="{API_BASE}/imagenes/habitacion/{imagenExpandida}" alt="Imagen expandida" on:click|stopPropagation style="max-width:90vw;max-height:87vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.7)" />
+    <button class="adm__lightbox-close" on:click={() => imagenExpandida = null} aria-label="Cerrar">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+{/if}
