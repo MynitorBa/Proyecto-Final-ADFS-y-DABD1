@@ -39,7 +39,8 @@ public class ReservacionController {
         int usuarioId = ctx.attribute("usuarioId");
         ReservacionRequestDTO request = ctx.bodyAsClass(ReservacionRequestDTO.class);
         try {
-            var resultado = reservacionService.crearReservacion(request, usuarioId);
+            var resultado = reservacionService.crearReservacion(request, usuarioId,
+                    ctx.ip(), ctx.userAgent());
             ctx.status(201).json(resultado);
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));

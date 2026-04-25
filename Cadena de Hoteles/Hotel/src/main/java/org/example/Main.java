@@ -27,6 +27,7 @@ import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.BusquedaAgenciaController;
 import org.example.controllers.ImagenAgenciaController;
 
+
 import org.example.controllers.BusquedaAerolineaController;
 import org.example.controllers.TokenAerolineaController;
 import org.example.controllers.TokenValidacionController;
@@ -53,6 +54,10 @@ public class Main {
 
         // Verifica conexion a Oracle al iniciar
         DatabaseTest.testConnection();
+
+        //logs
+        LogRepository  logRepository  = new LogRepository();
+        LogReservacionRepository  logReservacionRepository= new LogReservacionRepository();
 
         // Repositories
         AdminBusquedaRepository       adminBusquedaRepository       = new AdminBusquedaRepository();
@@ -91,15 +96,15 @@ public class Main {
         // Services
         AdminBusquedaService      adminBusquedaService      = new AdminBusquedaService(adminBusquedaRepository);
         AgenciaService            agenciaService            = new AgenciaService(agenciaRepository);
-        AuthService               authService               = new AuthService(authRepository);
+        AuthService    authService    = new AuthService(authRepository, logRepository);
         BusquedaAgenciaService    busquedaAgenciaService    = new BusquedaAgenciaService(busquedaAgenciaRepository);
         BusquedaService           busquedaService           = new BusquedaService(busquedaRepository);
-        CancelacionService        cancelacionService        = new CancelacionService(cancelacionRepository);
+        CancelacionService        cancelacionService        = new CancelacionService(cancelacionRepository, logReservacionRepository);
         ComentarioService         comentarioService         = new ComentarioService(comentarioRepository);
         DestinosService           destinosService           = new DestinosService(destinosRepository);
         DownsService              downsService              = new DownsService(downsRepository, comentarioRepository);
         EmailReservacionService   emailReservacionService   = new EmailReservacionService(pdfReservacionRepository);
-        ExpiracionService         expiracionService         = new ExpiracionService(reservacionRepository);
+        ExpiracionService         expiracionService         = new ExpiracionService(reservacionRepository, logReservacionRepository);
         HandshakeService          handshakeService          = new HandshakeService(agenciaRepository);
         HotelAgenciaService       hotelAgenciaService       = new HotelAgenciaService(hotelAgenciaRepository);
         // Service de notificacion a agencias externas — se crea antes de HotelService porque
@@ -110,13 +115,13 @@ public class Main {
 
         HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository, agenciaNotificadorExternoService);
         ImagenService             imagenService             = new ImagenService(imagenRepository);
-        PagoAgenciaService        pagoAgenciaService        = new PagoAgenciaService(pagoAgenciaRepository);
-        PagoService               pagoService               = new PagoService(pagoRepository, tokenValidacionRepository);
+        PagoAgenciaService        pagoAgenciaService        = new PagoAgenciaService(pagoAgenciaRepository, logReservacionRepository);
+        PagoService               pagoService               = new PagoService(pagoRepository, tokenValidacionRepository, logReservacionRepository);
         PdfReservacionService     pdfReservacionService     = new PdfReservacionService(pdfReservacionRepository);
-        ReservacionAgenciaService reservacionAgenciaService = new ReservacionAgenciaService(reservacionAgenciaRepository);
-        ReservacionService        reservacionService        = new ReservacionService(reservacionRepository);
+        ReservacionAgenciaService reservacionAgenciaService = new ReservacionAgenciaService(reservacionAgenciaRepository, logReservacionRepository);
+        ReservacionService        reservacionService        = new ReservacionService(reservacionRepository, logReservacionRepository);
         SesionService             sesionService             = new SesionService(sesionRepository);
-        UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository);
+        UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository, logRepository);
 
         BusquedaAerolineaService  busquedaAerolineaService  = new BusquedaAerolineaService(aerolineaAliadaRepository);
         TokenAerolineaService     tokenAerolineaService     = new TokenAerolineaService(tokenAerolineaRepository, aerolineaAliadaRepository);

@@ -64,7 +64,7 @@ public class UsuarioController {
     void handleRegistrar(Context ctx) {
         UsuarioValidacionRequestDTO request = ctx.bodyAsClass(UsuarioValidacionRequestDTO.class);
         try {
-            int nuevoId = usuarioService.registrarUsuario(request);
+            int nuevoId = usuarioService.registrarUsuario(request, ctx.ip(), ctx.userAgent());
             ctx.status(201).json(Map.of(
                     "mensaje",   "Usuario creado exitosamente",
                     "usuarioId", nuevoId
@@ -86,7 +86,7 @@ public class UsuarioController {
         int usuarioId = ctx.attribute("usuarioId");
         CambiarTelefonoRequestDTO request = ctx.bodyAsClass(CambiarTelefonoRequestDTO.class);
         try {
-            usuarioService.cambiarTelefono(usuarioId, request.getTelefono());
+            usuarioService.cambiarTelefono(usuarioId, request.getTelefono(), ctx.ip(), ctx.userAgent());
             ctx.status(200).json(Map.of("mensaje", "Telefono actualizado correctamente"));
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));
@@ -97,7 +97,13 @@ public class UsuarioController {
         int usuarioId = ctx.attribute("usuarioId");
         CambiarContrasenaRequestDTO request = ctx.bodyAsClass(CambiarContrasenaRequestDTO.class);
         try {
-            usuarioService.cambiarContrasena(usuarioId, request.getContrasenaActual(), request.getContrasenaNueva());
+            usuarioService.cambiarContrasena(
+                    usuarioId,
+                    request.getContrasenaActual(),
+                    request.getContrasenaNueva(),
+                    ctx.ip(),
+                    ctx.userAgent()
+            );
             ctx.status(200).json(Map.of("mensaje", "Contrasena actualizada correctamente"));
         } catch (CredencialesInvalidasException e) {
             ctx.status(401).json(Map.of("mensaje", "La contrasena actual es incorrecta"));

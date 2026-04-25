@@ -35,13 +35,13 @@ public class PagoAgenciaController {
     void handleProcesarPago(Context ctx) {
         if (!AgenciaAuthMiddleware.verificar(ctx)) return;
 
-        // Extrae la agencia autenticada y el ID de la reservacion desde el path
         int agenciaId     = ctx.attribute("agenciaId");
         int reservacionId = Integer.parseInt(ctx.pathParam("id"));
-
         PagoAgenciaRequestDTO request = ctx.bodyAsClass(PagoAgenciaRequestDTO.class);
+
         try {
-            var confirmacion = pagoAgenciaService.procesarPago(reservacionId, agenciaId, request);
+            var confirmacion = pagoAgenciaService.procesarPago(reservacionId, agenciaId, request,
+                    ctx.ip(), ctx.userAgent());
             ctx.status(200).json(confirmacion);
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));

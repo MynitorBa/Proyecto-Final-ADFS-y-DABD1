@@ -33,13 +33,13 @@ public class CancelacionController {
     }
 
     void handleCancelarReservacion(Context ctx) {
-        // Extrae el usuario de la sesion y el ID de la reservacion desde el path
         int usuarioId     = ctx.attribute("usuarioId");
         int reservacionId = Integer.parseInt(ctx.pathParam("id"));
         CancelacionRequestDTO request = ctx.bodyAsClass(CancelacionRequestDTO.class);
         try {
             cancelacionService.cancelarReservacion(
-                    reservacionId, usuarioId, request.getMotivoCancelacion()
+                    reservacionId, usuarioId, request.getMotivoCancelacion(),
+                    ctx.ip(), ctx.userAgent()
             );
             ctx.status(200).json(Map.of("mensaje", "Reservacion cancelada correctamente"));
         } catch (IllegalArgumentException e) {

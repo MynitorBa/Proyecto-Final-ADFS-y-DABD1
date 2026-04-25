@@ -52,15 +52,13 @@ public class CancelacionAgenciaController {
 
     void handleCancelar(Context ctx) {
         if (!AgenciaAuthMiddleware.verificar(ctx)) return;
-
-        // Extrae la agencia autenticada y el ID de la reservacion desde el path
         int agenciaId     = ctx.attribute("agenciaId");
         int reservacionId = Integer.parseInt(ctx.pathParam("id"));
-
         CancelacionRequestDTO request = ctx.bodyAsClass(CancelacionRequestDTO.class);
         try {
             cancelacionService.cancelarReservacionAgencia(
-                    reservacionId, agenciaId, request.getMotivoCancelacion()
+                    reservacionId, agenciaId, request.getMotivoCancelacion(),
+                    ctx.ip(), ctx.userAgent()
             );
             ctx.status(200).json(Map.of("mensaje", "Reservacion cancelada correctamente"));
         } catch (IllegalArgumentException e) {
