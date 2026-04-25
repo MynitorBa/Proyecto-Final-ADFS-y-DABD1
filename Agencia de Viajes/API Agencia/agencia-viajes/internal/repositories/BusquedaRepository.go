@@ -214,3 +214,32 @@ func (r *BusquedaRepository) RegistrarBusqueda(
 
 	return err
 }
+
+// Parametros:
+//   - proveedorID: ID del proveedor a consultar
+//
+// Retorna:
+//   - *dto.ProveedorAcceso: struct con URLApi y TokenEntrada, nil si no existe o no esta activo
+//   - error: error de base de datos, nil si la operacion fue exitosa
+func (r *BusquedaRepository) ObtenerURLYTokenProveedor(proveedorID int) (*dto.ProveedorAcceso, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	var acceso dto.ProveedorAcceso
+	err = conn.QueryRowContext(context.Background(), `
+		SELECT URL_API, Token_HASH_Entrada
+		FROM Proveedor
+		WHERE ID = ? AND EstadoID = 1
+	`, proveedorID).Scan(&acceso.URLApi, &acceso.TokenEntrada)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &acceso, nil
+}
