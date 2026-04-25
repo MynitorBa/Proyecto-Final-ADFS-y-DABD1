@@ -807,4 +807,64 @@ public class HotelService {
     public Map<String, Object> obtenerMetricas() {
         return hotelRepository.obtenerMetricas();
     }
+
+
+
+
+    // -------------------------------------------------------------------------
+    // Tipos de habitacion - admin
+    // Agregar estos metodos al final de HotelService, antes del cierre de clase
+    // -------------------------------------------------------------------------
+
+    /**
+     * Retorna todos los tipos de habitacion con sus IDs de imagenes.
+     * @return lista de tipos de habitacion enriquecidos con imagenes para el panel admin.
+     */
+    public List<org.example.dtos.TipoHabitacionAdminDTO> listarTiposHabitacion() {
+        List<org.example.dtos.TipoHabitacionAdminDTO> tipos = hotelRepository.listarTiposHabitacion();
+        for (org.example.dtos.TipoHabitacionAdminDTO tipo : tipos)
+            tipo.setImagenesIds(hotelRepository.obtenerImagenesTipoHabitacionIds(tipo.getId()));
+        return tipos;
+    }
+
+    /**
+     * Actualiza los precios de un tipo de habitacion.
+     * Solo permite modificar precioPorPersona y precioPorNoche.
+     * @param tipoHabitacionId ID del tipo a editar.
+     * @param req              DTO con los nuevos precios.
+     * @throws IllegalArgumentException si el tipo no existe o los precios son invalidos.
+     */
+    public void editarPreciosTipoHabitacion(int tipoHabitacionId,
+                                            org.example.dtos.EditarTipoHabitacionRequestDTO req) {
+        if (!hotelRepository.existeTipoHabitacion(tipoHabitacionId))
+            throw new IllegalArgumentException("Tipo de habitacion no encontrado: " + tipoHabitacionId);
+        if (req.getPrecioPorPersona() <= 0)
+            throw new IllegalArgumentException("El precio por persona debe ser mayor que 0");
+        if (req.getPrecioPorNoche() <= 0)
+            throw new IllegalArgumentException("El precio por noche debe ser mayor que 0");
+        hotelRepository.actualizarPreciosTipoHabitacion(
+                tipoHabitacionId, req.getPrecioPorPersona(), req.getPrecioPorNoche());
+    }
+
+    /**
+     * Agrega una imagen a un tipo de habitacion decodificando el base64 recibido.
+     * @param tipoHabitacionId ID del tipo de habitacion.
+     * @param base64           imagen codificada en base64, con o sin prefijo data URI.
+     * @return mapa con el ID de la imagen creada y mensaje de confirmacion.
+     * @throws IllegalArgumentException si el tipo no existe o la imagen es invalida.
+     */
+    public Map<String, Object> agregarImagenTipoHabitacion(int tipoHabitacionId, String base64) {
+        if (!hotelRepository.existeTipoHabitacion(tipoHabitacionId))
+            throw new IllegalArgumentException("Tipo de habitacion no encontrado: " + tipoHabitacionId);
+        int nuevoId = hotelRepository.agregarImagenTipoHabitacion(tipoHabitacionId, decodeBase64(base64));
+        return Map.of("id", nuevoId, "mensaje", "Imagen de tipo de habitacion agregada");
+    }
+
+    /**
+     * Elimina una imagen de tipo de habitacion por su ID.
+     * @param imagenId ID de la imagen a eliminar.
+     */
+    public void eliminarImagenTipoHabitacion(int imagenId) {
+        hotelRepository.eliminarImagenTipoHabitacion(imagenId);
+    }
 }

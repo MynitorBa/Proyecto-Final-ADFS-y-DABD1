@@ -249,9 +249,9 @@ public class AerolineaAliadaRepository {
      * @param habitacionId ID de la habitacion.
      * @return lista de IDs de imagenes.
      */
-    public List<Integer> buscarImagenesHabitacion(int habitacionId) {
-        String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
-        return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
+    public List<Integer> buscarImagenesHabitacion(int tipoHabitacionId) {
+        String sql = "SELECT ID FROM ImagenHabitacion WHERE TipoHabitacionID = ?";
+        return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), tipoHabitacionId);
     }
 
     // ── Handshake con aerolineas aliadas ──────────────────────────────────────

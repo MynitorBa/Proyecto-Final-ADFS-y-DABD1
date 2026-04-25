@@ -212,7 +212,9 @@ public class ReservacionRepository {
      * @return lista de IDs de imagenes de la habitacion.
      */
     public List<Integer> obtenerImagenesHabitacion(int habitacionId) {
-        String sql = "SELECT ID FROM ImagenHabitacion WHERE HabitacionID = ?";
+        String sql = "SELECT ih.ID FROM ImagenHabitacion ih " +
+                "JOIN Habitacion h ON ih.TipoHabitacionID = h.TIPOHABITACIONID " +
+                "WHERE h.ID = ?";
         return DatabaseManager.executeQuery(sql, rs -> rs.getInt("ID"), habitacionId);
     }
 
