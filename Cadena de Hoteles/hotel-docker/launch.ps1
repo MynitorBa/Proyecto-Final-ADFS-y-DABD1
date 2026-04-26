@@ -303,6 +303,38 @@ function Show-EnvCheck {
     docker exec $cname printenv 2>&1 | Where-Object { $_ -match "(PORT|DB_|JWT|COOKIE|CORS)" }
 }
 
+function Unlock-OracleAccounts {
+    param([int]$total)
+    if (-not $script:HasSqlplus) { return }
+    Write-Info "Verificando y desbloqueando cuentas Oracle..."
+    $conn = "${ORACLE_SYSDBA_USER}/${ORACLE_SYSDBA_PASS}@${ORACLE_HOST}:${ORACLE_PORT}/${ORACLE_SERVICE}"
+    $tmp  = "$env:TEMP\unlock_hotels.sql"
+    $sql  = "SET SERVEROUTPUT ON SIZE UNLIMITED;`n"
+    $sql += "DECLARE v_status VARCHAR2(32); BEGIN`n"
+    for ($i = 1; $i -le $total; $i++) {
+        $user = "hotel$i"
+        $pass = Get-EnvValue $i "DB_PASS"
+        if (-not $pass) { $pass = "pass_hotel$i" }
+        $sql += "  BEGIN SELECT account_status INTO v_status FROM dba_users WHERE username=UPPER('$user'); EXCEPTION WHEN NO_DATA_FOUND THEN v_status:='NOT_FOUND'; END;`n"
+        $sql += "  IF v_status LIKE '%LOCKED%' THEN`n"
+        $sql += "    EXECUTE IMMEDIATE 'ALTER USER $user ACCOUNT UNLOCK';`n"
+        $sql += "    EXECUTE IMMEDIATE 'ALTER USER $user IDENTIFIED BY $pass';`n"
+        $sql += "    DBMS_OUTPUT.PUT_LINE('  UNLOCK: $user desbloqueado');`n"
+        $sql += "  ELSIF v_status = 'NOT_FOUND' THEN`n"
+        $sql += "    DBMS_OUTPUT.PUT_LINE('  SKIP: $user no existe en Oracle');`n"
+        $sql += "  ELSE`n"
+        $sql += "    DBMS_OUTPUT.PUT_LINE('  OK: $user esta abierto (' || v_status || ')');`n"
+        $sql += "  END IF;`n"
+    }
+    $sql += "END;`n/`nEXIT;"
+    $sql | Set-Content -Path $tmp -Encoding ASCII
+    $out = & sqlplus -S $conn "@$tmp" 2>&1
+    $out | Where-Object { $_ -match "(OK|UNLOCK|SKIP)" } |
+        ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+    Remove-Item $tmp -ErrorAction SilentlyContinue
+    Write-Ok "Verificacion Oracle completada"
+}
+
 function Show-Status {
     param([int]$total = 5)
     Write-Header "Estado de instancias"
@@ -369,7 +401,7 @@ switch ($Action) {
             Ensure-DockerUp $i
             if ($wasUp) { $skipped++ } else { $started++ }
         }
-        Write-Host ""; Show-Status $N
+        Write-Host ""; Unlock-OracleAccounts $N; Show-Status $N
         Write-Ok "$N hoteles: $started iniciados, $skipped ya corriendo"
     }
 
@@ -452,6 +484,61 @@ switch ($Action) {
             for ($i = 1; $i -le $N; $i++) { Nuke-Hotel $i }
             Write-Ok "Nuke completado para $N hoteles"
         } else { Write-Info "Cancelado." }
+    }
+
+    "unlock" {
+        Write-Header "Desbloqueando cuentas Oracle para $N hoteles"
+        Test-Deps
+        Unlock-OracleAccounts $N
+    }
+
+    "up-new" {
+        Write-Header "REINICIO COMPLETO de $N hoteles (Docker + Oracle + .env)"
+        Write-Warn "Esto elimina contenedores, imagenes, usuarios Oracle y archivos .env de $N hoteles."
+        Write-Warn "Se recreara todo desde cero. Los datos existentes se PERDERAN."
+        $confirm = Read-Host "Escribi REINICIAR para confirmar"
+        if ($confirm -ne "REINICIAR") { Write-Info "Cancelado."; break }
+        Test-Deps
+        Write-Header "PASO 1: Bajando y eliminando Docker"
+        for ($i = 1; $i -le $N; $i++) { Nuke-Hotel $i }
+        Write-Header "PASO 2: Eliminando usuarios Oracle"
+        $conn = "${ORACLE_SYSDBA_USER}/${ORACLE_SYSDBA_PASS}@${ORACLE_HOST}:${ORACLE_PORT}/${ORACLE_SERVICE}"
+        for ($i = 1; $i -le $N; $i++) {
+            $user = "hotel$i"
+            Write-Info "Eliminando usuario Oracle '$user'..."
+            $dropTmp = "$env:TEMP\drop_${user}.sql"
+            # El / DEBE estar en su propia linea para que sqlplus lo ejecute
+            @"
+BEGIN
+    EXECUTE IMMEDIATE 'DROP USER $user CASCADE';
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
+EXIT;
+"@ | Set-Content -Path $dropTmp -Encoding ASCII
+            & sqlplus -S $conn "@$dropTmp" 2>&1 | Out-Null
+            Remove-Item $dropTmp -ErrorAction SilentlyContinue
+            Write-Ok "Usuario Oracle '$user' eliminado"
+        }
+        Write-Header "PASO 3: Eliminando archivos .env"
+        for ($i = 1; $i -le $N; $i++) {
+            $f = ".env.hotel$i"
+            if (Test-Path $f) { Remove-Item $f -Force; Write-Ok "Eliminado $f" }
+        }
+        Write-Header "PASO 4: Recreando todo desde cero"
+        $started = 0
+        for ($i = 1; $i -le $N; $i++) {
+            Write-Host ""; Write-Info "--- Hotel $i / $N ---"
+            Ensure-EnvFile $i
+            Ensure-OracleHotel $i
+            Ensure-DockerUp $i
+            $started++
+        }
+        Write-Host ""
+        Unlock-OracleAccounts $N
+        Show-Status $N
+        Write-Ok "Reinicio completo: $started hoteles recreados desde cero"
     }
 
     "clean-images" {

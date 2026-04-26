@@ -348,6 +348,47 @@ switch ($Action) {
         } else { Write-Info "Cancelado." }
     }
 
+    "up-new" {
+        Write-Header "REINICIO COMPLETO de $N aerolineas (Docker + BD + .env)"
+        Write-Warn "Esto elimina contenedores, imagenes, DATOS DE SQL SERVER y archivos .env de $N aerolineas."
+        Write-Warn "Se recreara todo desde cero incluyendo schema y seed. Los datos se PERDERAN."
+        $confirm = Read-Host "Escribi REINICIAR para confirmar"
+        if ($confirm -ne "REINICIAR") { Write-Info "Cancelado."; break }
+        Test-Deps
+        Write-Header "PASO 1: Bajando y eliminando Docker + BD"
+        for ($i = 1; $i -le $N; $i++) {
+            Write-Info "Eliminando aerolinea-$i (contenedores + imagenes + volumen DB)..."
+            $f = ".env.aerolinea$i"
+            if (Test-Path $f) {
+                docker-compose --env-file $f -p "aerolinea-$i" down --rmi all --volumes 2>&1 | Select-Object -Last 3
+            } else {
+                # Si no existe el .env, intentar bajar igual con nombre del proyecto
+                docker-compose -p "aerolinea-$i" down --rmi all --volumes 2>&1 | Out-Null
+            }
+            Write-Ok "aerolinea-$i eliminada completamente"
+        }
+        Write-Header "PASO 2: Eliminando archivos .env"
+        for ($i = 1; $i -le $N; $i++) {
+            $f = ".env.aerolinea$i"
+            if (Test-Path $f) { Remove-Item $f -Force; Write-Ok "Eliminado $f" }
+            else { Write-Skip "$f no existia" }
+        }
+        Write-Header "PASO 3: Recreando todo desde cero"
+        $started = 0
+        for ($i = 1; $i -le $N; $i++) {
+            Write-Host ""
+            Write-Info "--- Aerolinea $i / $N ---"
+            Ensure-EnvFile $i
+            Ensure-Up $i
+            $started++
+        }
+        Write-Host ""
+        Show-Status $N
+        Write-Ok "Reinicio completo: $started aerolineas recreadas desde cero"
+        Write-Info "Nota: el db-init aplica schema+seed automaticamente al arrancar."
+        Write-Info "Si el backend da error al inicio, espera 30s y revisa: .\launch.ps1 logs-db-init 1"
+    }
+
     "clean-images" {
         Write-Info "Eliminando imagenes huerfanas..."
         docker image prune -f
