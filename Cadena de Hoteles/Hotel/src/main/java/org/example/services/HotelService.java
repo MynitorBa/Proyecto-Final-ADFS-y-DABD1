@@ -5,6 +5,7 @@ import org.example.dtos.*;
 import org.example.helpers.EmailHelper;
 import org.example.repositories.CiudadRepository;
 import org.example.repositories.HotelRepository;
+import org.example.repositories.LogReservacionRepository;
 import org.example.repositories.PaisRepository;
 
 import java.time.Year;
@@ -28,6 +29,7 @@ public class HotelService {
     private final CiudadRepository               ciudadRepository;
     private final PaisRepository                 paisRepository;
     private final AgenciaNotificadorExternoService agenciaNotificador;
+    private final LogReservacionRepository        logRepo;
 
     /**
      * Crea una instancia de HotelService con sus dependencias inyectadas.
@@ -35,11 +37,13 @@ public class HotelService {
     public HotelService(HotelRepository hotelRepository,
                         CiudadRepository ciudadRepository,
                         PaisRepository paisRepository,
-                        AgenciaNotificadorExternoService agenciaNotificador) {
+                        AgenciaNotificadorExternoService agenciaNotificador,
+                        LogReservacionRepository logRepo) {
         this.hotelRepository   = hotelRepository;
         this.ciudadRepository  = ciudadRepository;
         this.paisRepository    = paisRepository;
         this.agenciaNotificador = agenciaNotificador;
+        this.logRepo            = logRepo;
     }
 
     /**
@@ -237,6 +241,11 @@ public class HotelService {
                 LOG.log(Level.WARNING,
                         "Error notificando agencia para reservacion " + reservacionId, ex);
             }
+
+            // Log de auditoria por cada reservacion cancelada por cierre de hotel
+            logRepo.registrar(LogReservacionRepository.TIPO_CANCELACION_ADMIN_EXITOSA,
+                    reservacionId, null, null, noReservacion, total, true, null, null,
+                    "Cancelada por cierre de hotel: " + hotelNombre);
         }
 
         // Webhook de resumen a Movent (best-effort, solo reservas que venian de agencia)
@@ -613,6 +622,11 @@ public class HotelService {
                 LOG.log(Level.WARNING,
                         "Error notificando agencia para reservacion " + reservacionId, ex);
             }
+
+            // Log de auditoria por cada reservacion cancelada por cierre de habitacion
+            logRepo.registrar(LogReservacionRepository.TIPO_CANCELACION_ADMIN_EXITOSA,
+                    reservacionId, null, null, noReservacion, total, true, null, null,
+                    "Cancelada por cierre de habitacion: " + nombreHabitacion);
         }
 
         MoventClient.notificarHabitacionCerrada(habitacionId, reservasAgencia);

@@ -56,6 +56,32 @@
   /** Indica si el usuario acepto la politica de privacidad. @type {boolean} */
   let acceptPrivacy = false;
 
+  /** Indica si el usuario desea recibir ofertas y promociones. @type {boolean} */
+  let recibirOfertas = false;
+
+  /**
+   * Preferencias de viaje cuando el usuario opta por recibir ofertas.
+   * @type {{ tiposHabitacion: string[], presupuesto: string, combinacion: string, personasExtra: number }}
+   */
+  let preferencias = {
+    tiposHabitacion: [],
+    presupuesto: 'Estándar',
+    combinacion: 'Una habitación',
+    personasExtra: 1
+  };
+
+  /** Tipos de habitacion disponibles para la seleccion de preferencias. */
+  const tipoHabOpciones = ['Doble', 'Junior Suite', 'Suite', 'Gran Suite'];
+
+  /** Alterna la seleccion de un tipo de habitacion en las preferencias. */
+  function toggleTipoHab(tipo) {
+    if (preferencias.tiposHabitacion.includes(tipo)) {
+      preferencias.tiposHabitacion = preferencias.tiposHabitacion.filter(t => t !== tipo);
+    } else {
+      preferencias.tiposHabitacion = [...preferencias.tiposHabitacion, tipo];
+    }
+  }
+
   /** Mapa de errores de validacion por campo. @type {Object.<string, string>} */
   let errors = {};
 
@@ -387,17 +413,18 @@
     const nacsValidas = nacionalidades.filter((n, i) => n.trim() && nacionalidadesSeleccionadas[i]);
 
     const payload = {
-      username:        formData.username.trim(),
-      correo:          formData.email.toLowerCase(),
-      contrasena:      formData.password,
-      pasaporte:       formData.pasaporte.trim(),
-      nombre:          formData.firstName.trim(),
-      apellido:        formData.lastName.trim(),
-      telefono:        dialCode + ' ' + formData.phone.replace(/\s/g, ''),
-      fechaNacimiento: formData.birthDate,
-      pais:            formData.country,
-      ciudad:          formData.city,
-      nacionalidades:  nacsValidas
+      username:           formData.username.trim(),
+      correo:             formData.email.toLowerCase(),
+      contrasena:         formData.password,
+      pasaporte:          formData.pasaporte.trim(),
+      nombre:             formData.firstName.trim(),
+      apellido:           formData.lastName.trim(),
+      telefono:           dialCode + ' ' + formData.phone.replace(/\s/g, ''),
+      fechaNacimiento:    formData.birthDate,
+      pais:               formData.country,
+      ciudad:             formData.city,
+      nacionalidades:     nacsValidas,
+      preferenciasOferta: recibirOfertas ? JSON.stringify(preferencias) : null
     };
 
     try {
@@ -797,6 +824,103 @@
                 </svg>
                 Error en la verificación. Intenta de nuevo.
                 <button type="button" class="retry-captcha" on:click={resetCaptcha}>Reintentar</button>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Seccion de ofertas y promociones -->
+          <div class="offers-section">
+            <label class="register__checkbox-label offers-toggle-label">
+              <input type="checkbox" bind:checked={recibirOfertas} />
+              <span class="register__checkbox-custom offers-checkbox-custom"></span>
+              <span class="register__checkbox-text offers-toggle-text">
+                <span class="offers-icon">🎁</span>
+                Quiero recibir ofertas y promociones personalizadas
+              </span>
+            </label>
+
+            {#if recibirOfertas}
+              <div class="offers-panel">
+                <p class="offers-panel__desc">
+                  Cuéntanos tus preferencias de viaje para enviarte las mejores ofertas
+                </p>
+
+                <!-- Tipos de habitacion favoritos -->
+                <div class="offers-group">
+                  <span class="offers-group__label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                    </svg>
+                    Tipos de habitación favoritos
+                  </span>
+                  <div class="offers-chips">
+                    {#each tipoHabOpciones as tipo}
+                      <button type="button"
+                        class="offers-chip"
+                        class:offers-chip--active={preferencias.tiposHabitacion.includes(tipo)}
+                        on:click={() => toggleTipoHab(tipo)}>
+                        {tipo}
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Preferencia de precio/presupuesto -->
+                <div class="offers-group">
+                  <span class="offers-group__label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+                    </svg>
+                    Presupuesto estimado por noche
+                  </span>
+                  <div class="offers-radios">
+                    {#each ['Económico', 'Estándar', 'Premium', 'Lujo'] as op}
+                      <label class="offers-radio-label">
+                        <input type="radio" bind:group={preferencias.presupuesto} value={op} />
+                        <span class="offers-radio-btn" class:offers-radio-btn--active={preferencias.presupuesto === op}>{op}</span>
+                      </label>
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Preferencia de combinacion -->
+                <div class="offers-group">
+                  <span class="offers-group__label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="2" y="3" width="9" height="18" rx="2"/><rect x="13" y="3" width="9" height="18" rx="2"/>
+                    </svg>
+                    Preferencia de habitación
+                  </span>
+                  <div class="offers-radios">
+                    {#each ['Una habitación', 'Combinar habitaciones'] as op}
+                      <label class="offers-radio-label">
+                        <input type="radio" bind:group={preferencias.combinacion} value={op} />
+                        <span class="offers-radio-btn" class:offers-radio-btn--active={preferencias.combinacion === op}>{op}</span>
+                      </label>
+                    {/each}
+                  </div>
+                </div>
+
+                <!-- Personas extra habituales -->
+                <div class="offers-group">
+                  <span class="offers-group__label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                    ¿Cuántas personas viajan usualmente contigo?
+                  </span>
+                  <div class="offers-radios">
+                    {#each [1, 2, 3, 4] as n}
+                      <label class="offers-radio-label">
+                        <input type="radio" bind:group={preferencias.personasExtra} value={n} />
+                        <span class="offers-radio-btn" class:offers-radio-btn--active={preferencias.personasExtra === n}>
+                          {n === 4 ? '4+' : n} {n === 1 ? 'persona' : 'personas'}
+                        </span>
+                      </label>
+                    {/each}
+                  </div>
+                </div>
               </div>
             {/if}
           </div>

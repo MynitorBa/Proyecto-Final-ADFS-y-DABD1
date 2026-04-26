@@ -22,6 +22,7 @@ import Dashboard           from '../views/admin/Dashboard.vue'
 import GestionRoles        from '../views/admin/GestionRoles.vue'
 import GestionProveedores  from '../views/admin/GestionProveedores.vue'
 import GestionFinanzas     from '../views/admin/GestionFinanzas.vue'
+import AdminMetricas       from '../views/admin/AdminMetricas.vue'
 import WebService          from '../views/WebService.vue'
 import Profile             from '../views/Profile.vue'
 import Notificaciones      from '../views/Notificaciones.vue'
@@ -62,6 +63,7 @@ const routes = [
   { path: '/admin/roles',       component: GestionRoles,      name: 'gestionRoles' },
   { path: '/admin/proveedores', component: GestionProveedores, name: 'gestionProveedores' },
   { path: '/admin/paquetes',    component: GestionFinanzas,   name: 'gestionFinanzas' },
+  { path: '/admin/metricas',    component: AdminMetricas,     name: 'adminMetricas' },
   { path: '/admin/webservice',  component: WebService,        name: 'webService' },
 
   { path: '/:pathMatch(.*)*', redirect: '/principal', name: 'notFound' },

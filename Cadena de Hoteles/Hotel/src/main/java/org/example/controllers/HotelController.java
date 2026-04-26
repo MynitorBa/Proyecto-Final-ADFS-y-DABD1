@@ -62,6 +62,7 @@ public class HotelController {
         app.post  ("/admin/habitaciones/{id}/imagenes",                    this::handleAgregarImagenHabitacion);
         app.delete("/admin/habitaciones/imagenes/{imgId}",                 this::handleEliminarImagenHabitacion);
         app.get   ("/admin/reservaciones",                                 this::handleListarReservaciones);
+        app.get   ("/admin/reservaciones/recientes",                       this::handleListarReservacionesRecientes);
         app.patch ("/admin/reservaciones/{id}/cancelar",                   this::handleCancelarReservacion);
         app.get   ("/admin/metricas",                                      this::handleObtenerMetricas);
 
@@ -415,6 +416,12 @@ public class HotelController {
         ctx.json(adminReservacionService.listarTodas());
     }
 
+    /** Retorna las 10 reservaciones mas recientes (version ligera para el dashboard). */
+    void handleListarReservacionesRecientes(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        ctx.json(adminReservacionService.listarRecientes(10));
+    }
+
     /**
      * Cancela una reservacion con un motivo opcional.
      * Notifica al sistema externo de la agencia (si corresponde) y envia correo al usuario.
@@ -435,7 +442,8 @@ public class HotelController {
 
         try {
             ResultadoNotificacionDTO resultadoAgencia =
-                    adminReservacionService.cancelarReservacion(reservacionId, motivo);
+                    adminReservacionService.cancelarReservacion(reservacionId, motivo,
+                            ctx.ip(), ctx.header("User-Agent"));
 
             // Construye respuesta enriquecida para que el admin vea el estado de la agencia
             Map<String, Object> respuesta = new LinkedHashMap<>();

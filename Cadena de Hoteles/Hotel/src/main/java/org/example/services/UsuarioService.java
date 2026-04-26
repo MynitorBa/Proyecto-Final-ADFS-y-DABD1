@@ -27,7 +27,8 @@ public class UsuarioService {
     private final CiudadRepository              ciudadRepository;
     private final NacionalidadRepository        nacionalidadRepository;
     private final UsuarioNacionalidadRepository usuarioNacionalidadRepository;
-    private final LogRepository logRepository;
+    private final LogRepository                 logRepository;
+    private final OfertasEmailService           ofertasEmailService;
 
     /**
      * Crea una instancia de UsuarioService con sus dependencias inyectadas.
@@ -37,13 +38,15 @@ public class UsuarioService {
                           CiudadRepository ciudadRepository,
                           NacionalidadRepository nacionalidadRepository,
                           UsuarioNacionalidadRepository usuarioNacionalidadRepository,
-                          LogRepository logRepository) {
+                          LogRepository logRepository,
+                          OfertasEmailService ofertasEmailService) {
         this.usuarioRepository             = usuarioRepository;
         this.paisRepository                = paisRepository;
         this.ciudadRepository              = ciudadRepository;
         this.nacionalidadRepository        = nacionalidadRepository;
         this.usuarioNacionalidadRepository = usuarioNacionalidadRepository;
         this.logRepository                 = logRepository;
+        this.ofertasEmailService           = ofertasEmailService;
     }
 
     /**
@@ -101,7 +104,8 @@ public class UsuarioService {
                         request.getApellido(),
                         request.getTelefono(),
                         fechaNacimiento,
-                        ciudadId
+                        ciudadId,
+                        request.getPreferenciasOferta()
                 );
 
                 if (request.getNacionalidades() != null && !request.getNacionalidades().isEmpty()) {
@@ -136,6 +140,16 @@ public class UsuarioService {
                 } catch (Exception e) {
                     System.err.println("\u26A0 No se pudo enviar correo de bienvenida a "
                             + request.getCorreo() + ": " + e.getMessage());
+                }
+
+                // Si el usuario opted-in a ofertas, enviarle las ofertas inmediatamente
+                if (request.getPreferenciasOferta() != null && !request.getPreferenciasOferta().isBlank()) {
+                    try {
+                        ofertasEmailService.enviarOfertasAUsuario(nuevoUsuarioId);
+                    } catch (Exception e) {
+                        System.err.println("\u26A0 No se pudo enviar correo de ofertas a "
+                                + request.getCorreo() + ": " + e.getMessage());
+                    }
                 }
 
                 return nuevoUsuarioId;
@@ -417,6 +431,60 @@ public class UsuarioService {
     }
 
 
+
+    // ── Actualizaciones de perfil ──────────────────────────────────────────────
+
+    /** Actualiza nombre, apellido y fecha de nacimiento. */
+    public void actualizarDatosPersonales(int usuarioId, String nombre, String apellido, String fechaNacimientoStr) {
+        if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("El nombre no puede estar vacío");
+        if (apellido == null || apellido.isBlank()) throw new IllegalArgumentException("El apellido no puede estar vacío");
+        java.sql.Date fecha = java.sql.Date.valueOf(java.time.LocalDate.parse(fechaNacimientoStr));
+        usuarioRepository.actualizarDatosPersonales(usuarioId, nombre.trim(), apellido.trim(), fecha);
+    }
+
+    /**
+     * Actualiza username, correo y/o pasaporte verificando que los nuevos valores
+     * no estén en uso por otro usuario.
+     */
+    public void actualizarCredenciales(int usuarioId, String username, String correo, String pasaporte) {
+        boolean usernameExiste  = username  != null && !username.isBlank()  && usuarioRepository.existeUsernameExceptoId(username, usuarioId);
+        boolean correoExiste    = correo    != null && !correo.isBlank()    && usuarioRepository.existeCorreoExceptoId(correo, usuarioId);
+        boolean pasaporteExiste = pasaporte != null && !pasaporte.isBlank() && usuarioRepository.existePasaporteExceptoId(pasaporte, usuarioId);
+
+        if (usernameExiste || correoExiste || pasaporteExiste) {
+            throw new org.example.helpers.CamposDuplicadosException(
+                new org.example.dtos.UsuarioValidacionResponseDTO(usernameExiste, correoExiste, pasaporteExiste)
+            );
+        }
+
+        if (username  != null && !username.isBlank())  usuarioRepository.actualizarUsername(usuarioId, username.trim());
+        if (correo    != null && !correo.isBlank())    usuarioRepository.actualizarCorreo(usuarioId, correo.trim().toLowerCase());
+        if (pasaporte != null && !pasaporte.isBlank()) usuarioRepository.actualizarPasaporte(usuarioId, pasaporte.trim().toUpperCase());
+    }
+
+    /** Actualiza el país y ciudad de residencia del usuario. */
+    public void actualizarCiudad(int usuarioId, String pais, String ciudad) {
+        if (pais == null || pais.isBlank()) throw new IllegalArgumentException("El país no puede estar vacío");
+        if (ciudad == null || ciudad.isBlank()) throw new IllegalArgumentException("La ciudad no puede estar vacía");
+        int paisId   = paisRepository.buscarOCrearPorNombre(pais.trim());
+        int ciudadId = ciudadRepository.buscarOCrearPorNombre(ciudad.trim(), paisId);
+        usuarioRepository.actualizarCiudad(usuarioId, ciudadId);
+    }
+
+    /** Reemplaza todas las nacionalidades del usuario. */
+    public void actualizarNacionalidades(int usuarioId, List<String> nacionalidades) {
+        if (nacionalidades == null || nacionalidades.isEmpty())
+            throw new IllegalArgumentException("Debe indicar al menos una nacionalidad");
+        usuarioNacionalidadRepository.eliminarPorUsuario(usuarioId);
+        List<Integer> ids = new ArrayList<>();
+        for (String n : nacionalidades) ids.add(nacionalidadRepository.buscarOCrearPorNombre(n));
+        usuarioNacionalidadRepository.asignarNacionalidades(usuarioId, ids);
+    }
+
+    /** Guarda o limpia las preferencias de ofertas del usuario. */
+    public void actualizarPreferencias(int usuarioId, String preferenciasOferta) {
+        usuarioRepository.actualizarPreferencias(usuarioId, preferenciasOferta);
+    }
 
     /** Construye un string descriptivo con los campos duplicados encontrados. */
     private String construirDetalleDuplicados(UsuarioValidacionResponseDTO v) {

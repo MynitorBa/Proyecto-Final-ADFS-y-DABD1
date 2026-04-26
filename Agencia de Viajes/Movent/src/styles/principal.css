@@ -597,3 +597,190 @@ select.form-input { cursor: pointer; }
   .hero-stat { min-width: 4rem; }
   .trip-type-btn { font-size: 12px; padding: 7px 10px; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   SECCIÓN DESCUBRIR — Paneles personalizados de destinos
+═══════════════════════════════════════════════════════════ */
+
+.descubrir-section {
+  padding: 5rem 0 4rem;
+  background: #0f0c0a;
+}
+
+.descubrir-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+/* Tarjeta de panel */
+.panel-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 1.5rem 1.25rem 1.25rem;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+  transition: transform .2s, box-shadow .2s;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.panel-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+}
+
+.panel-card:focus-visible { outline: 2px solid #FFCC00; }
+
+/* Gradientes — 6 variantes cálidas */
+.panel-card--grad-1 { background: linear-gradient(145deg, #1f1209 0%, #3d1f06 60%, #5c2e08 100%); }
+.panel-card--grad-2 { background: linear-gradient(145deg, #0f1a1f 0%, #0d2e3a 60%, #0a3d4f 100%); }
+.panel-card--grad-3 { background: linear-gradient(145deg, #1a0f1f 0%, #2d0d38 60%, #3d0f4d 100%); }
+.panel-card--grad-4 { background: linear-gradient(145deg, #1a1a09 0%, #2e2d06 60%, #3d3a08 100%); }
+.panel-card--grad-5 { background: linear-gradient(145deg, #1f0f0f 0%, #3a0d0d 60%, #4f1010 100%); }
+.panel-card--grad-6 { background: linear-gradient(145deg, #0a1f15 0%, #0d3325 60%, #0f4230 100%); }
+
+/* Skeleton */
+.panel-card--skeleton {
+  background: linear-gradient(90deg, #1c1612 25%, #2a1f15 50%, #1c1612 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  cursor: default;
+  pointer-events: none;
+}
+@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+
+/* Badge tipo (Vuelo / Hotel) */
+.panel-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+/* Icono central */
+.panel-card__icon {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.18);
+  margin: 0.5rem 0;
+}
+
+/* Info texto */
+.panel-card__body { margin-bottom: 0.75rem; }
+
+.panel-card__ciudad {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.panel-card__pais {
+  margin: 2px 0 6px;
+  font-size: .8rem;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.panel-card__precio {
+  margin: 0;
+  font-size: .82rem;
+  color: rgba(255,255,255,0.6);
+}
+
+.panel-card__precio strong {
+  color: #FFCC00;
+  font-size: 1rem;
+}
+
+/* Footer / CTA */
+.panel-card__footer {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 0.75rem;
+  font-size: .82rem;
+  font-weight: 600;
+}
+
+.panel-card__cta { color: #FFCC00; }
+.panel-card__searching {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.6);
+}
+
+.panel-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* Tag "desde [ciudad]" */
+.panel-card__origen-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255,204,0,0.15);
+  color: #FFCC00;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,204,0,0.25);
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hint para usuarios anónimos */
+.descubrir-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 1.5rem;
+  font-size: .82rem;
+  color: #6a6058;
+}
+
+.descubrir-hint__link {
+  color: #FFCC00;
+  font-weight: 600;
+  text-decoration: none;
+}
+.descubrir-hint__link:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .descubrir-grid { grid-template-columns: repeat(3, 1fr); }
+  .descubrir-grid .panel-card:nth-child(4),
+  .descubrir-grid .panel-card:nth-child(5) { display: none; }
+}
+
+@media (max-width: 700px) {
+  .descubrir-grid { grid-template-columns: repeat(2, 1fr); }
+  .descubrir-grid .panel-card:nth-child(3),
+  .descubrir-grid .panel-card:nth-child(4),
+  .descubrir-grid .panel-card:nth-child(5) { display: none; }
+}
+
+@media (max-width: 480px) {
+  .descubrir-grid { grid-template-columns: 1fr 1fr; }
+  .panel-card { min-height: 180px; padding: 1rem; }
+}

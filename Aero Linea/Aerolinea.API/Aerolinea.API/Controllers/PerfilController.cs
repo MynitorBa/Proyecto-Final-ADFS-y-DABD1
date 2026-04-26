@@ -85,6 +85,22 @@ namespace Aerolinea.API.Controllers
         }
 
         /// <summary>
+        /// Actualiza los datos personales del usuario: nombre, apellido, username, pasaporte,
+        /// fecha de nacimiento, pais y ciudad. Solo el propio usuario puede modificar su perfil.
+        /// </summary>
+        [HttpPatch("{usuarioId}/datos-personales")]
+        public async Task<IActionResult> ActualizarDatosPersonales(
+            int usuarioId,
+            [FromBody] ActualizarDatosPersonalesDTO dto)
+        {
+            if (!EsPropietario(usuarioId))
+                return StatusCode(403, new { message = "Acceso denegado." });
+
+            var (exito, mensaje) = await _service.ActualizarDatosPersonales(usuarioId, dto);
+            return exito ? Ok(new { message = mensaje }) : BadRequest(new { message = mensaje });
+        }
+
+        /// <summary>
         /// Actualiza el correo electronico del usuario especificado tras validar formato y unicidad.
         /// Solo el propio usuario puede cambiar su correo; retorna 403 si el id de ruta no coincide.
         /// </summary>

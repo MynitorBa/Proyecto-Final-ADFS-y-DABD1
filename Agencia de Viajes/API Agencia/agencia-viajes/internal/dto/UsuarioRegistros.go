@@ -20,6 +20,7 @@ type RegistroUsuarioRequest struct {
 	Ciudad          string   `json:"ciudad"`           // Ciudad de residencia del usuario
 	Pais            string   `json:"pais"`             // Pais de residencia del usuario
 	Nacionalidades  []string `json:"nacionalidades"`   // Lista de nacionalidades del usuario
+	RecibirOfertas  bool     `json:"recibir_ofertas"`  // Suscripcion a ofertas por correo cada 5 dias
 }
 
 // ValidacionUsuarioResponse

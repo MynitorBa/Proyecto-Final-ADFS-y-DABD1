@@ -2,6 +2,11 @@ package org.example.controllers;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import org.example.dtos.ActualizarCiudadRequestDTO;
+import org.example.dtos.ActualizarCredencialesRequestDTO;
+import org.example.dtos.ActualizarDatosPersonalesRequestDTO;
+import org.example.dtos.ActualizarNacionalidadesRequestDTO;
+import org.example.dtos.ActualizarPreferenciasRequestDTO;
 import org.example.dtos.CambiarContrasenaRequestDTO;
 import org.example.dtos.CambiarRolRequestDTO;
 import org.example.dtos.CambiarTelefonoRequestDTO;
@@ -48,6 +53,21 @@ public class UsuarioController {
 
         // Actualiza la contrasena del usuario autenticado validando la contrasena actual
         app.patch("/usuarios/contrasena", this::handleCambiarContrasena);
+
+        // Actualiza nombre, apellido y fecha de nacimiento del usuario autenticado
+        app.patch("/usuarios/datos-personales", this::handleActualizarDatosPersonales);
+
+        // Actualiza username, correo y/o pasaporte (con verificación de duplicados)
+        app.patch("/usuarios/credenciales", this::handleActualizarCredenciales);
+
+        // Actualiza el país y ciudad de residencia del usuario autenticado
+        app.patch("/usuarios/ciudad", this::handleActualizarCiudad);
+
+        // Reemplaza las nacionalidades del usuario autenticado
+        app.patch("/usuarios/nacionalidades", this::handleActualizarNacionalidades);
+
+        // Guarda o limpia las preferencias de ofertas del usuario autenticado
+        app.patch("/usuarios/preferencias", this::handleActualizarPreferencias);
 
         // Retorna la lista completa de usuarios con su rol; exclusivo para administradores
         app.get("/admin/usuarios", this::handleListarAdmin);
@@ -141,5 +161,58 @@ public class UsuarioController {
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));
         }
+    }
+
+    void handleActualizarDatosPersonales(Context ctx) {
+        int id = ctx.attribute("usuarioId");
+        ActualizarDatosPersonalesRequestDTO req = ctx.bodyAsClass(ActualizarDatosPersonalesRequestDTO.class);
+        try {
+            usuarioService.actualizarDatosPersonales(id, req.getNombre(), req.getApellido(), req.getFechaNacimiento());
+            ctx.status(200).json(Map.of("mensaje", "Datos personales actualizados correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleActualizarCredenciales(Context ctx) {
+        int id = ctx.attribute("usuarioId");
+        ActualizarCredencialesRequestDTO req = ctx.bodyAsClass(ActualizarCredencialesRequestDTO.class);
+        try {
+            usuarioService.actualizarCredenciales(id, req.getUsername(), req.getCorreo(), req.getPasaporte());
+            ctx.status(200).json(Map.of("mensaje", "Credenciales actualizadas correctamente"));
+        } catch (CamposDuplicadosException e) {
+            ctx.status(409).json(Map.of("mensaje", "Algunos campos ya están en uso", "campos", e.getDetalle()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleActualizarCiudad(Context ctx) {
+        int id = ctx.attribute("usuarioId");
+        ActualizarCiudadRequestDTO req = ctx.bodyAsClass(ActualizarCiudadRequestDTO.class);
+        try {
+            usuarioService.actualizarCiudad(id, req.getPais(), req.getCiudad());
+            ctx.status(200).json(Map.of("mensaje", "Ubicación actualizada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleActualizarNacionalidades(Context ctx) {
+        int id = ctx.attribute("usuarioId");
+        ActualizarNacionalidadesRequestDTO req = ctx.bodyAsClass(ActualizarNacionalidadesRequestDTO.class);
+        try {
+            usuarioService.actualizarNacionalidades(id, req.getNacionalidades());
+            ctx.status(200).json(Map.of("mensaje", "Nacionalidades actualizadas correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleActualizarPreferencias(Context ctx) {
+        int id = ctx.attribute("usuarioId");
+        ActualizarPreferenciasRequestDTO req = ctx.bodyAsClass(ActualizarPreferenciasRequestDTO.class);
+        usuarioService.actualizarPreferencias(id, req.getPreferenciasOferta());
+        ctx.status(200).json(Map.of("mensaje", "Preferencias guardadas correctamente"));
     }
 }

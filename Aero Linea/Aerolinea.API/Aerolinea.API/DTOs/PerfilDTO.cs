@@ -43,4 +43,19 @@ namespace Aerolinea.API.DTOs
     {
         public string NuevoCorreo { get; set; } = "";
     }
+
+    /// <summary>
+    /// DTO de peticion para actualizar los datos personales del usuario:
+    /// nombre, apellido, username, pasaporte, fecha de nacimiento, pais y ciudad.
+    /// </summary>
+    public class ActualizarDatosPersonalesDTO
+    {
+        public string Nombre   { get; set; } = "";
+        public string Apellido { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Pasaporte { get; set; } = "";
+        public DateTime? FechaNacimiento { get; set; }
+        public string Pais   { get; set; } = "";
+        public string Ciudad { get; set; } = "";
+    }
 }

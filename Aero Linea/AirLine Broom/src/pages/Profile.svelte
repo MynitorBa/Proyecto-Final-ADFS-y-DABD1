@@ -125,6 +125,153 @@
   /** True mientras la solicitud PATCH de contrasena esta en progreso. @type {boolean} */
   let guardandoPassword = false;
 
+  /** Fecha de nacimiento en formato ISO (YYYY-MM-DD) para el input type=date en edicion. @type {string} */
+  let fechaNacimientoISO = '';
+
+  // ── Modo edicion de datos personales ──────────────────────────────
+  /** True cuando el formulario de datos personales esta en modo edicion. @type {boolean} */
+  let modoEdicion = false;
+
+  /** True mientras se guarda la solicitud PATCH de datos personales. @type {boolean} */
+  let guardandoDatos = false;
+
+  /** Mensaje de exito tras guardar datos personales. @type {string} */
+  let datosMensaje = '';
+
+  /** Mensaje de error al guardar datos personales. @type {string} */
+  let datosError = '';
+
+  // Campos editables (se copian al activar edicion)
+  let editNombre = '', editApellido = '', editUsername = '', editPasaporte = '', editFecha = '';
+
+  // Autocomplete pais/ciudad en modo edicion
+  let todosLosPaisesEdit = [];
+  let cargandoPaisesEdit = false;
+  let paisQueryEdit = '', paisesSugeridosEdit = [], paisSeleccionadoEdit = null;
+  let ciudadQueryEdit = '', ciudadesSugeridosEdit = [], ciudadSeleccionadaEdit = false;
+
+  async function activarEdicion() {
+    editNombre    = perfil.nombre;
+    editApellido  = perfil.apellido;
+    editUsername  = perfil.username;
+    editPasaporte = perfil.pasaporte;
+    editFecha     = fechaNacimientoISO;
+    paisQueryEdit = perfil.pais;
+    ciudadQueryEdit = perfil.ciudad;
+    paisSeleccionadoEdit = null;
+    ciudadSeleccionadaEdit = false;
+    paisesSugeridosEdit = [];
+    ciudadesSugeridosEdit = [];
+    datosError = ''; datosMensaje = '';
+    modoEdicion = true;
+
+    if (todosLosPaisesEdit.length === 0) {
+      cargandoPaisesEdit = true;
+      try {
+        const res  = await fetch('https://countriesnow.space/api/v0.1/countries');
+        const data = await res.json();
+        todosLosPaisesEdit = data.data;
+        // pre-seleccionar pais actual
+        const found = todosLosPaisesEdit.find(
+          p => p.country.toLowerCase() === perfil.pais.toLowerCase());
+        if (found) { paisSeleccionadoEdit = found; ciudadSeleccionadaEdit = true; }
+      } catch { console.error('Error cargando paises'); }
+      finally { cargandoPaisesEdit = false; }
+    } else {
+      const found = todosLosPaisesEdit.find(
+        p => p.country.toLowerCase() === perfil.pais.toLowerCase());
+      if (found) { paisSeleccionadoEdit = found; ciudadSeleccionadaEdit = true; }
+    }
+  }
+
+  function cancelarEdicion() {
+    modoEdicion = false; datosError = '';
+  }
+
+  function onPaisEditInput() {
+    const q = paisQueryEdit.toLowerCase();
+    paisesSugeridosEdit = q.length < 2 ? [] :
+      todosLosPaisesEdit.filter(p => p.country.toLowerCase().includes(q)).slice(0, 6);
+    if (paisSeleccionadoEdit && paisQueryEdit !== paisSeleccionadoEdit.country) {
+      paisSeleccionadoEdit = null;
+      ciudadQueryEdit = ''; ciudadSeleccionadaEdit = false;
+    }
+  }
+
+  function seleccionarPaisEdit(p) {
+    paisSeleccionadoEdit = p; paisQueryEdit = p.country;
+    paisesSugeridosEdit = [];
+    ciudadQueryEdit = ''; ciudadSeleccionadaEdit = false;
+  }
+
+  function onCiudadEditInput() {
+    if (!paisSeleccionadoEdit) return;
+    const q = ciudadQueryEdit.toLowerCase();
+    ciudadesSugeridosEdit = q.length < 2 ? [] :
+      paisSeleccionadoEdit.cities.filter(c => c.toLowerCase().includes(q)).slice(0, 6);
+    ciudadSeleccionadaEdit = false;
+  }
+
+  function seleccionarCiudadEdit(c) {
+    ciudadQueryEdit = c; ciudadesSugeridosEdit = []; ciudadSeleccionadaEdit = true;
+  }
+
+  function onPasaporteEditInput(e) {
+    editPasaporte = e.target.value.replace(/[^0-9]/g, '');
+  }
+
+  async function handleActualizarDatos() {
+    datosError = ''; datosMensaje = '';
+    if (!editNombre.trim())    { datosError = 'El nombre es obligatorio.'; return; }
+    if (!editApellido.trim())  { datosError = 'El apellido es obligatorio.'; return; }
+    if (!editUsername.trim())  { datosError = 'El username es obligatorio.'; return; }
+    if (!editPasaporte.trim()) { datosError = 'El pasaporte es obligatorio.'; return; }
+    if (!paisSeleccionadoEdit) { datosError = 'Debes seleccionar un país de la lista.'; return; }
+    if (!ciudadSeleccionadaEdit || !ciudadQueryEdit.trim()) {
+      datosError = 'Debes seleccionar una ciudad de la lista.'; return;
+    }
+
+    guardandoDatos = true;
+    try {
+      const res = await fetch(`${API}/api/perfil/${usuarioId}/datos-personales`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:           editNombre.trim(),
+          apellido:         editApellido.trim(),
+          username:         editUsername.trim(),
+          pasaporte:        editPasaporte.trim(),
+          fechaNacimiento:  editFecha || null,
+          pais:             paisQueryEdit.trim(),
+          ciudad:           ciudadQueryEdit.trim()
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        perfil.nombre    = editNombre.trim();
+        perfil.apellido  = editApellido.trim();
+        perfil.username  = editUsername.trim();
+        perfil.pasaporte = editPasaporte.trim();
+        perfil.pais      = paisQueryEdit.trim();
+        perfil.ciudad    = ciudadQueryEdit.trim();
+        if (editFecha) {
+          const d = new Date(editFecha + 'T00:00:00');
+          perfil.fechaNacimiento = d.toLocaleDateString('es-GT');
+          fechaNacimientoISO = editFecha;
+        }
+        perfil = { ...perfil };
+        datosMensaje = data.message;
+        modoEdicion = false;
+      } else {
+        datosError = data.message;
+      }
+    } catch {
+      datosError = 'Error de conexión.';
+    } finally {
+      guardandoDatos = false;
+    }
+  }
+
   /** Nuevo correo electronico ingresado por el usuario. @type {string} */
   let nuevoCorreo = '';
 
@@ -182,6 +329,9 @@
         pais:   data.pais,
         ciudad: data.ciudad
       };
+
+      fechaNacimientoISO = data.fechaNacimiento
+        ? data.fechaNacimiento.split('T')[0] : '';
 
       const info = dialCodesMap[data.pais?.toLowerCase()];
       if (info) {
@@ -393,54 +543,162 @@
         <main class="profile__main">
 
           {#if activeTab === 'personal'}
-            <!-- Pestana de informacion personal con campos de solo lectura y edicion de telefono -->
+            <!-- Pestana de informacion personal -->
             <section class="profile-section">
-              <h2 class="profile-section__title">Informacion Personal</h2>
-              <p class="profile-section__subtitle">Tus datos registrados en el sistema</p>
-
-              <!-- Campos de lectura del perfil del usuario registrado -->
-              <div class="profile-form">
-                <div class="profile-form__row">
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Nombre</label>
-                    <input class="profile-form__input" value={perfil.nombre} disabled />
-                  </div>
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Apellido</label>
-                    <input class="profile-form__input" value={perfil.apellido} disabled />
-                  </div>
+              <div class="profile-section__head">
+                <div>
+                  <h2 class="profile-section__title">Informacion Personal</h2>
+                  <p class="profile-section__subtitle">Tus datos registrados en el sistema</p>
                 </div>
-                <div class="profile-form__row">
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Correo</label>
-                    <input class="profile-form__input" value={perfil.correo} disabled />
-                  </div>
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Username</label>
-                    <input class="profile-form__input" value={perfil.username} disabled />
-                  </div>
-                </div>
-                <div class="profile-form__row">
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Pasaporte</label>
-                    <input class="profile-form__input" value={perfil.pasaporte} disabled />
-                  </div>
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Fecha de Nacimiento</label>
-                    <input class="profile-form__input" value={perfil.fechaNacimiento} disabled />
-                  </div>
-                </div>
-                <div class="profile-form__row">
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Pais</label>
-                    <input class="profile-form__input" value={perfil.pais} disabled />
-                  </div>
-                  <div class="profile-form__field">
-                    <label class="profile-form__label">Ciudad</label>
-                    <input class="profile-form__input" value={perfil.ciudad} disabled />
-                  </div>
-                </div>
+                {#if !modoEdicion}
+                  <button class="profile-edit-btn" on:click={activarEdicion}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Editar datos
+                  </button>
+                {/if}
               </div>
+
+              {#if datosMensaje}
+                <div class="profile-alert profile-alert--ok">{datosMensaje}</div>
+              {/if}
+
+              {#if !modoEdicion}
+                <!-- Vista de solo lectura -->
+                <div class="profile-form">
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Nombre</label>
+                      <input class="profile-form__input" value={perfil.nombre} disabled />
+                    </div>
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Apellido</label>
+                      <input class="profile-form__input" value={perfil.apellido} disabled />
+                    </div>
+                  </div>
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Username</label>
+                      <input class="profile-form__input" value={perfil.username} disabled />
+                    </div>
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Pasaporte</label>
+                      <input class="profile-form__input" value={perfil.pasaporte} disabled />
+                    </div>
+                  </div>
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Fecha de Nacimiento</label>
+                      <input class="profile-form__input" value={perfil.fechaNacimiento} disabled />
+                    </div>
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Correo</label>
+                      <input class="profile-form__input" value={perfil.correo} disabled />
+                    </div>
+                  </div>
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Pais</label>
+                      <input class="profile-form__input" value={perfil.pais} disabled />
+                    </div>
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Ciudad</label>
+                      <input class="profile-form__input" value={perfil.ciudad} disabled />
+                    </div>
+                  </div>
+                </div>
+
+              {:else}
+                <!-- Modo edicion -->
+                {#if cargandoPaisesEdit}
+                  <p style="color:var(--text-muted);font-size:.85rem;margin:.5rem 0 1rem">Cargando paises...</p>
+                {/if}
+                <div class="profile-form">
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Nombre</label>
+                      <input class="profile-form__input" bind:value={editNombre} placeholder="Tu nombre" autocomplete="off" />
+                    </div>
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Apellido</label>
+                      <input class="profile-form__input" bind:value={editApellido} placeholder="Tu apellido" autocomplete="off" />
+                    </div>
+                  </div>
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Username</label>
+                      <input class="profile-form__input" bind:value={editUsername} placeholder="usuario123" autocomplete="off" />
+                    </div>
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Pasaporte (solo numeros)</label>
+                      <input class="profile-form__input" value={editPasaporte} on:input={onPasaporteEditInput} placeholder="12345678" autocomplete="off" />
+                    </div>
+                  </div>
+                  <div class="profile-form__row">
+                    <div class="profile-form__field">
+                      <label class="profile-form__label">Fecha de Nacimiento</label>
+                      <input class="profile-form__input" type="date" bind:value={editFecha} />
+                    </div>
+                    <div class="profile-form__field"><!-- espacio --></div>
+                  </div>
+
+                  <!-- Autocomplete Pais -->
+                  <div class="profile-form__row">
+                    <div class="profile-form__field profile-form__field--full" style="position:relative">
+                      <label class="profile-form__label">Pais</label>
+                      <input class="profile-form__input" bind:value={paisQueryEdit}
+                        on:input={onPaisEditInput} placeholder="Escribe tu pais..." autocomplete="off" />
+                      {#if paisesSugeridosEdit.length > 0}
+                        <ul class="profile-autocomplete">
+                          {#each paisesSugeridosEdit as p}
+                            <li>
+                              <button type="button" class="profile-autocomplete__btn"
+                                on:click={() => seleccionarPaisEdit(p)}>{p.country}</button>
+                            </li>
+                          {/each}
+                        </ul>
+                      {/if}
+                    </div>
+                  </div>
+
+                  <!-- Autocomplete Ciudad -->
+                  <div class="profile-form__row">
+                    <div class="profile-form__field profile-form__field--full" style="position:relative">
+                      <label class="profile-form__label">Ciudad</label>
+                      <input class="profile-form__input" bind:value={ciudadQueryEdit}
+                        on:input={onCiudadEditInput}
+                        placeholder={paisSeleccionadoEdit ? 'Escribe tu ciudad...' : 'Selecciona un pais primero'}
+                        disabled={!paisSeleccionadoEdit}
+                        autocomplete="off" />
+                      {#if ciudadesSugeridosEdit.length > 0}
+                        <ul class="profile-autocomplete">
+                          {#each ciudadesSugeridosEdit as c}
+                            <li>
+                              <button type="button" class="profile-autocomplete__btn"
+                                on:click={() => seleccionarCiudadEdit(c)}>{c}</button>
+                            </li>
+                          {/each}
+                        </ul>
+                      {/if}
+                    </div>
+                  </div>
+
+                  {#if datosError}
+                    <div class="profile-alert profile-alert--err">{datosError}</div>
+                  {/if}
+
+                  <div class="profile-form__actions">
+                    <button class="profile-form__submit" on:click={handleActualizarDatos} disabled={guardandoDatos}>
+                      {guardandoDatos ? 'Guardando...' : 'Guardar cambios'}
+                    </button>
+                    <button class="profile-form__cancel" on:click={cancelarEdicion} disabled={guardandoDatos}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              {/if}
 
               <!-- Subseccion editable para actualizar el telefono con prefijo internacional -->
               <div style="margin-top:2.5rem">

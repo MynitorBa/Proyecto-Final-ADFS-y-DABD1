@@ -107,6 +107,21 @@
   /** Cadena de ID de clase seleccionado para el filtro de clase (vacia significa todas las clases). @type {string} */
   let claseSeleccionada = '';
 
+  /** Calificacion minima de aerolinea para el filtro de rating (0 = sin filtro, 1-5 = minimo). @type {number} */
+  let ratingMin = 0;
+
+  /**
+   * Retorna una calificacion determinista de 3-5 estrellas para una marca de aerolinea basada en su nombre.
+   * @param {string} marca - Nombre de la aerolinea.
+   * @returns {number} Calificacion entre 3 y 5.
+   */
+  function getAirlineRating(marca) {
+    if (!marca) return 3;
+    let sum = 0;
+    for (let i = 0; i < marca.length; i++) sum += marca.charCodeAt(i);
+    return (sum % 3) + 3;
+  }
+
   if (searchParams?.fromGlobalSearch) {
     isGlobalSearch = true;
     globalSearchQuery = searchParams.globalSearchQuery || '';
@@ -119,6 +134,9 @@
     searchData   = searchParams.searchData;
     vuelosIda    = searchParams.vuelosIda   ?? { directos: [], conEscala: [] };
     vuelosVuelta = searchParams.vuelosVuelta ?? { directos: [], conEscala: [] };
+
+    // Pre-cargar clase preferida desde el formulario del Home
+    if (searchData.clasePreferida) claseSeleccionada = searchData.clasePreferida;
 
     const fm = searchData.flightMode ?? 'todos';
     if (fm === 'escalas') {
@@ -145,11 +163,21 @@
   // Mensaje de error para la direccion actualmente mostrada.
   $: errorActual      = currentView === 'outbound' ? errorIda      : errorVuelta;
 
-  // Lista de vuelos directos para la direccion actual.
-  $: listaDirectos    = currentVuelos.directos  ?? [];
+  // Lista de vuelos directos para la direccion actual (sin filtro de rating).
+  $: listaDirectosRaw = currentVuelos.directos  ?? [];
 
-  // Lista de itinerarios con escala para la direccion actual.
-  $: listaEscalas     = currentVuelos.conEscala ?? [];
+  // Lista de itinerarios con escala para la direccion actual (sin filtro de rating).
+  $: listaEscalasRaw  = currentVuelos.conEscala ?? [];
+
+  // Lista de vuelos directos filtrada por calificacion minima de aerolinea.
+  $: listaDirectos = ratingMin > 0
+    ? listaDirectosRaw.filter(v => getAirlineRating(v.avionMarca) >= ratingMin)
+    : listaDirectosRaw;
+
+  // Lista de escalas filtrada por calificacion minima de aerolinea (se evalua el primer tramo).
+  $: listaEscalas = ratingMin > 0
+    ? listaEscalasRaw.filter(e => getAirlineRating(e.tramos?.[0]?.avionMarca ?? '') >= ratingMin)
+    : listaEscalasRaw;
 
   // Lista renderizada en el area de contenido principal segun currentTab.
   $: listaActiva      = currentTab === 'directos' ? listaDirectos : listaEscalas;
@@ -283,7 +311,7 @@
    * Limpia los campos de filtro de precio y clase, luego aplica los filtros inmediatamente para actualizar resultados.
    */
   function limpiarFiltros() {
-    precioMin = ''; precioMax = ''; claseSeleccionada = '';
+    precioMin = ''; precioMax = ''; claseSeleccionada = ''; ratingMin = 0;
     aplicarFiltros();
   }
 
@@ -675,6 +703,27 @@
               </div>
             </div>
 
+            <!-- Filtro de calificacion minima de aerolinea (1-5 estrellas, aplicado en cliente) -->
+            <div class="filter-group">
+              <span class="filter-group__label">Calificación mínima</span>
+              <div class="filter-rating">
+                {#each [0, 3, 4, 5] as r}
+                  <button
+                    type="button"
+                    class="filter-rating__btn"
+                    class:filter-rating__btn--active={ratingMin === r}
+                    on:click={() => ratingMin = r}
+                  >
+                    {#if r === 0}
+                      Todas
+                    {:else}
+                      {'★'.repeat(r)}{'☆'.repeat(5 - r)}
+                    {/if}
+                  </button>
+                {/each}
+              </div>
+            </div>
+
             <button class="filters-panel__apply" on:click={aplicarFiltros}>Aplicar Filtros</button>
           </div>
         </aside>
@@ -745,6 +794,11 @@
                       <div class="flight-card__code-info">
                         <span class="flight-card__code">{vuelo.numeroVuelo || 'N/A'}</span>
                         <span class="flight-card__airline">{vuelo.avionMarca || ''} {vuelo.avionModelo || ''}</span>
+                        {#if vuelo.avionMarca}
+                          <span class="flight-card__rating" title="Calificación de la aerolínea">
+                            {'★'.repeat(getAirlineRating(vuelo.avionMarca))}{'☆'.repeat(5 - getAirlineRating(vuelo.avionMarca))}
+                          </span>
+                        {/if}
                       </div>
                       {#if isGlobalSearch && vuelo.fecha}
                         <span class="flight-card__badge flight-card__badge--directo">{formatFecha(vuelo.fecha)}</span>
@@ -782,7 +836,7 @@
 
                     <!-- Botones de seleccion de clase con precio y disponibilidad por tipo -->
                     <div class="flight-card__class-selection">
-                      {#each clases as clase}
+                      {#each (claseSeleccionada !== '' ? clases.filter(c => String(c.id) === String(claseSeleccionada)) : clases) as clase}
                         {@const precio     = getPrecioDirecto(vuelo, clase.id)}
                         {@const boletos    = getBoletosDirecto(vuelo, clase.id)}
                         {@const disponible = precio !== null && precio > 0 && boletos >= (isGlobalSearch ? 1 : searchData.pasajeros)}
@@ -841,6 +895,12 @@
                         <span class="flight-card__airline">
                           {escala.tramos.map(t => t.numeroVuelo).join(' · ')}
                         </span>
+                        {#if escala.tramos[0]?.avionMarca}
+                          {@const r = getAirlineRating(escala.tramos[0].avionMarca)}
+                          <span class="flight-card__rating" title="Calificación de la aerolínea">
+                            {'★'.repeat(r)}{'☆'.repeat(5 - r)}
+                          </span>
+                        {/if}
                       </div>
                       <span class="flight-card__badge flight-card__badge--escala">
                         {labelEscala(escala.numeroEscalas)}
@@ -909,7 +969,7 @@
 
                     <!-- Botones de seleccion de clase con precio total y disponibilidad para vuelos con escalas -->
                     <div class="flight-card__class-selection">
-                      {#each clases as clase}
+                      {#each (claseSeleccionada !== '' ? clases.filter(c => String(c.id) === String(claseSeleccionada)) : clases) as clase}
                         {@const precio     = getPrecioEscala(escala, clase.id)}
                         {@const boletos    = getBoletosEscala(escala, clase.id)}
                         {@const disponible = precio !== null && precio > 0 && boletos >= searchData.pasajeros}

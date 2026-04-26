@@ -58,16 +58,19 @@ namespace Aerolinea.API.Repositories
                         $"supera la capacidad del avión ({capacidadAvion}).");
 
                 // 5. Crear el vuelo
+                // NOTA: Se usa SCOPE_IDENTITY() en lugar de OUTPUT INSERTED.ID porque la tabla
+                // Vuelo tiene el trigger trg_Vuelo_Auditoria (AFTER INSERT) y SQL Server lanza
+                // el error 334 cuando se usa OUTPUT sin INTO en tablas con triggers habilitados.
                 var insertVuelo = @"
                     INSERT INTO Vuelo
                         (NumeroVuelo, Fecha, HoraSalida, HoraLlegada, FechaLlegada, EstadoID,
                          AvionID, RutaID, BoletosTurista, BoletosEjecutivo,
                          PrecioTurista, PrecioEjecutivo)
-                    OUTPUT INSERTED.ID
                     VALUES
                         (@NumeroVuelo, @Fecha, @HoraSalida, @HoraLlegada, @FechaLlegada, @EstadoId,
                          @AvionId, @RutaId, @BoletosTurista, @BoletosEjecutivo,
-                         @PrecioTurista, @PrecioEjecutiva)";
+                         @PrecioTurista, @PrecioEjecutiva);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
                 int vueloId;
                 using (var cmd = new SqlCommand(insertVuelo, connection, transaction))

@@ -84,6 +84,41 @@ public class AdminReservacionRepository {
     }
 
     /**
+     * Retorna las N reservaciones mas recientes. Usa FETCH FIRST para evitar
+     * traer toda la tabla cuando solo se necesitan las ultimas filas (dashboard).
+     * @param n cantidad maxima de filas a retornar.
+     * @return lista de mapas con los datos resumidos de cada reservacion.
+     */
+    public List<Map<String, Object>> listarRecientes(int n) {
+        String sql =
+                "SELECT r.ID, r.No_Reservacion, r.Total, " +
+                "  er.Estado, " +
+                "  u.Username, " +
+                "  ( SELECT hot2.Nombre " +
+                "    FROM DetallesReservacion dr2 " +
+                "    JOIN Habitacion h2   ON dr2.HabitacionID = h2.ID " +
+                "    JOIN Hotel      hot2 ON h2.HotelID       = hot2.ID " +
+                "    WHERE dr2.ReservacionID = r.ID AND ROWNUM = 1 " +
+                "  ) AS HotelNombre " +
+                "FROM Reservacion   r " +
+                "JOIN EstadoReserva er ON r.EstadoID   = er.ID " +
+                "JOIN Usuario       u  ON r.Usuario_ID = u.ID " +
+                "ORDER BY r.Fecha_Creacion DESC " +
+                "FETCH FIRST ? ROWS ONLY";
+
+        return DatabaseManager.executeQuery(sql, rs -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id",            rs.getInt("ID"));
+            row.put("noReservacion", rs.getString("No_Reservacion"));
+            row.put("total",         rs.getDouble("Total"));
+            row.put("estado",        rs.getString("Estado").toLowerCase());
+            row.put("usuario",       rs.getString("Username"));
+            row.put("hotel",         rs.getString("HotelNombre"));
+            return row;
+        }, n);
+    }
+
+    /**
      * Busca una reservacion por su ID y retorna sus datos basicos de estado.
      * @param reservacionId ID de la reservacion a buscar.
      * @return arreglo con {ID, EstadoID, Estado} o null si no existe.
