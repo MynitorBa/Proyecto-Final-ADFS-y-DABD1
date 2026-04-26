@@ -34,10 +34,12 @@ namespace Aerolinea.API.Controllers
         [Authorize]
         public async Task<IActionResult> CrearReservacion([FromBody] CrearReservacionDTO dto)
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
             try
             {
                 int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
-                var reservacion = await _service.CrearReservacion(dto, usuarioId);
+                var reservacion = await _service.CrearReservacion(dto, usuarioId, ip, userAgent);
                 return Ok(reservacion);
             }
             catch (Exception ex)
@@ -56,14 +58,12 @@ namespace Aerolinea.API.Controllers
         [Authorize]
         public async Task<IActionResult> AgregarPasajeros(int id, [FromBody] List<DatosPasajeroDTO> pasajeros)
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
             try
             {
-                var dto = new AgregarPasajerosDTO
-                {
-                    ReservacionId = id,
-                    Pasajeros = pasajeros
-                };
-                await _service.AgregarPasajeros(dto);
+                var dto = new AgregarPasajerosDTO { ReservacionId = id, Pasajeros = pasajeros };
+                await _service.AgregarPasajeros(dto, ip, userAgent);
                 return Ok(new { message = "Pasajeros agregados correctamente." });
             }
             catch (Exception ex)

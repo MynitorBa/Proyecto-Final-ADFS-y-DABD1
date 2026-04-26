@@ -55,10 +55,12 @@ namespace Aerolinea.API.Controllers
         [HttpPost("{reservacionId}/cancelar")]
         public async Task<IActionResult> CancelarReservacion(int reservacionId, [FromBody] CancelarReservacionDTO dto)
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
             try
             {
                 int usuarioId = await ObtenerUsuarioWebId();
-                await _service.CancelarReservacion(reservacionId, usuarioId, dto?.Motivo);
+                await _service.CancelarReservacion(reservacionId, usuarioId, dto?.Motivo, ip, userAgent, esAgencia: true);
                 return Ok(new { message = "Reservación cancelada exitosamente." });
             }
             catch (Exception ex)

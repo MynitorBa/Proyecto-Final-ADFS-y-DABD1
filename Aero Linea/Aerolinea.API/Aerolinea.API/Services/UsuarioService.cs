@@ -13,28 +13,31 @@ namespace Aerolinea.API.Services
     /// </summary>
     public class UsuarioService : IUsuarioService
     {
-        private readonly UsuarioRepository   _repository;
-        private readonly PaisRepository      _paisRepository;
-        private readonly CiudadRepository    _ciudadRepository;
+        private readonly UsuarioRepository _repository;
+        private readonly PaisRepository _paisRepository;
+        private readonly CiudadRepository _ciudadRepository;
         private readonly DbConnectionFactory _connectionFactory;
-        private readonly EmailHelper         _emailHelper;
+        private readonly EmailHelper _emailHelper;
+        private readonly LogRepository _logRepository;
 
         /// <summary>
         /// Inicializa el servicio con los repositorios de usuario, pais, ciudad,
         /// la fabrica de conexiones y el helper de correo.
         /// </summary>
         public UsuarioService(
-            UsuarioRepository   repository,
-            PaisRepository      paisRepository,
-            CiudadRepository    ciudadRepository,
-            DbConnectionFactory connectionFactory,
-            EmailHelper         emailHelper)
+                UsuarioRepository repository,
+                PaisRepository paisRepository,
+                CiudadRepository ciudadRepository,
+                DbConnectionFactory connectionFactory,
+                EmailHelper emailHelper,
+                LogRepository logRepository)
         {
-            _repository        = repository;
-            _paisRepository    = paisRepository;
-            _ciudadRepository  = ciudadRepository;
+            _repository = repository;
+            _paisRepository = paisRepository;
+            _ciudadRepository = ciudadRepository;
             _connectionFactory = connectionFactory;
-            _emailHelper       = emailHelper;
+            _emailHelper = emailHelper;
+            _logRepository = logRepository;
         }
 
         /// <summary>
@@ -43,80 +46,99 @@ namespace Aerolinea.API.Services
         /// el rol de cliente por defecto. Tambien guarda las nacionalidades si se proveen
         /// y envia un correo de bienvenida de forma no bloqueante.
         /// </summary>
-        public async Task CrearUsuario(CrearUsuarioDTO dto)
+        public async Task CrearUsuario(CrearUsuarioDTO dto, string? ip, string? userAgent)
         {
-            // ══════════════════════════════════════════════════════════════
-            //  VALIDACIONES DE FORMATO
-            // ══════════════════════════════════════════════════════════════
-
-            // Pasaporte: solo números
-            if (string.IsNullOrWhiteSpace(dto.Pasaporte))
-                throw new Exception("El número de pasaporte es obligatorio.");
-
-            if (!dto.Pasaporte.All(char.IsDigit))
-                throw new Exception("El número de pasaporte debe contener solo números.");
-
-            // Teléfono: solo dígitos, espacios y el signo +
-            if (string.IsNullOrWhiteSpace(dto.Telefono))
-                throw new Exception("El número de teléfono es obligatorio.");
-
-            string telefonoLimpio = dto.Telefono.Replace(" ", "").Replace("+", "");
-            if (!telefonoLimpio.All(char.IsDigit))
-                throw new Exception("El número de teléfono debe contener solo números.");
-
-            // ══════════════════════════════════════════════════════════════
-
-            using var connection = _connectionFactory.CreateConnection();
-            await connection.OpenAsync();
-
-            int paisId = await _paisRepository.ObtenerOCrearId(dto.Pais, connection);
-            int ciudadId = await _ciudadRepository.ObtenerOCrearId(dto.Ciudad, paisId, connection);
-
-            var usuario = new Usuario
-            {
-                Correo = dto.Correo,
-                ContrasenaHash = PasswordHasher.Hash(dto.Contrasena),
-                Pasaporte = dto.Pasaporte,
-                Username = dto.Username,
-                Nombre = dto.Nombre,
-                Apellido = dto.Apellido,
-                Telefono = dto.Telefono,
-                FechaNacimiento = dto.FechaNacimiento,
-                CiudadId = ciudadId,
-                RolID = 1  // Cliente por defecto
-            };
-
-            int usuarioId = await _repository.CrearUsuario(usuario);
-
-            if (dto.Nacionalidades != null && dto.Nacionalidades.Count > 0)
-                await _repository.AgregarNacionalidades(usuarioId, dto.Nacionalidades);
-
-            // ══════════════════════════════════════════════════════════════
-            //  ENVIAR CORREO DE BIENVENIDA al nuevo usuario
-            //  (no bloquea el registro si falla el envío)
-            // ══════════════════════════════════════════════════════════════
             try
             {
-                string html = EmailTemplates.CorreoBienvenida(
-                    dto.Nombre,
-                    dto.Apellido,
+                if (string.IsNullOrWhiteSpace(dto.Pasaporte))
+                    throw new Exception("El número de pasaporte es obligatorio.");
+
+                if (!dto.Pasaporte.All(char.IsDigit))
+                    throw new Exception("El número de pasaporte debe contener solo números.");
+
+                if (string.IsNullOrWhiteSpace(dto.Telefono))
+                    throw new Exception("El número de teléfono es obligatorio.");
+
+                string telefonoLimpio = dto.Telefono.Replace(" ", "").Replace("+", "");
+                if (!telefonoLimpio.All(char.IsDigit))
+                    throw new Exception("El número de teléfono debe contener solo números.");
+
+                using var connection = _connectionFactory.CreateConnection();
+                await connection.OpenAsync();
+
+                int paisId = await _paisRepository.ObtenerOCrearId(dto.Pais, connection);
+                int ciudadId = await _ciudadRepository.ObtenerOCrearId(dto.Ciudad, paisId, connection);
+
+                var usuario = new Usuario
+                {
+                    Correo = dto.Correo,
+                    ContrasenaHash = PasswordHasher.Hash(dto.Contrasena),
+                    Pasaporte = dto.Pasaporte,
+                    Username = dto.Username,
+                    Nombre = dto.Nombre,
+                    Apellido = dto.Apellido,
+                    Telefono = dto.Telefono,
+                    FechaNacimiento = dto.FechaNacimiento,
+                    CiudadId = ciudadId,
+                    RolID = 1
+                };
+
+                int usuarioId = await _repository.CrearUsuario(usuario);
+
+                if (dto.Nacionalidades != null && dto.Nacionalidades.Count > 0)
+                    await _repository.AgregarNacionalidades(usuarioId, dto.Nacionalidades);
+
+                await _logRepository.Registrar(
+                    LogRepository.TipoRegistroExitoso,
+                    usuarioId,
                     dto.Username,
-                    dto.Correo,
-                    dto.Pasaporte,
-                    dto.Telefono,
-                    dto.Pais,
-                    dto.Ciudad,
-                    dto.FechaNacimiento.ToString("yyyy-MM-dd"),
-                    dto.Nacionalidades ?? new List<string>()
+                    true,
+                    ip,
+                    userAgent,
+                    null
                 );
 
-                string asunto = "Bienvenido a Broom AirLine - Cuenta creada exitosamente";
-                await _emailHelper.Enviar(dto.Correo, asunto, html);
+                try
+                {
+                    string html = EmailTemplates.CorreoBienvenida(
+                        dto.Nombre, dto.Apellido, dto.Username, dto.Correo,
+                        dto.Pasaporte, dto.Telefono, dto.Pais, dto.Ciudad,
+                        dto.FechaNacimiento.ToString("yyyy-MM-dd"),
+                        dto.Nacionalidades ?? new List<string>()
+                    );
+                    await _emailHelper.Enviar(dto.Correo, "Bienvenido a Broom AirLine - Cuenta creada exitosamente", html);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[WARN] No se pudo enviar correo de bienvenida a {dto.Correo}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            catch (Exception e) when (e.Message.StartsWith("El número"))
             {
-                // Log del error pero no interrumpir el registro
-                Console.WriteLine($"[WARN] No se pudo enviar correo de bienvenida a {dto.Correo}: {ex.Message}");
+                // Validaciones de formato — no son error interno, son datos incorrectos del cliente
+                await _logRepository.Registrar(
+                    LogRepository.TipoRegistroFallido,
+                    null,
+                    dto.Username,
+                    false,
+                    ip,
+                    userAgent,
+                    e.Message
+                );
+                throw;
+            }
+            catch (Exception e)
+            {
+                await _logRepository.Registrar(
+                    LogRepository.TipoRegistroErrorInterno,
+                    null,
+                    dto.Username,
+                    false,
+                    ip,
+                    userAgent,
+                    e.Message
+                );
+                throw;
             }
         }
 

@@ -5,7 +5,7 @@ namespace Aerolinea.API.Services
 {
     public interface IUsuarioService
     {
-        Task CrearUsuario(CrearUsuarioDTO dto);
+        Task CrearUsuario(CrearUsuarioDTO dto, string? ip, string? userAgent);
         Task<RegisterConstraint> VerificarConstraints(CrearUsuarioDTO dto);
         Task<(bool exito, string mensaje)> CambiarRol(CambiarRolDTO dto);
         Task<List<object>> ObtenerTodos();

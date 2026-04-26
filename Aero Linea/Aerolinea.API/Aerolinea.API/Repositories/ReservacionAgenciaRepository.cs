@@ -204,7 +204,7 @@ namespace Aerolinea.API.Repositories
         private string SiguienteAsiento(string ultimoAsiento, int claseId)
         {
             string prefijo = claseId == 2 ? "E-" : "";
-            int columnas = 6;
+            string[] columnas = { "A", "B", "C", "D", "E", "F" };
 
             if (ultimoAsiento == null)
                 return $"{prefijo}A1";
@@ -216,13 +216,21 @@ namespace Aerolinea.API.Repositories
             int splitIdx = 0;
             while (splitIdx < raw.Length && char.IsLetter(raw[splitIdx])) splitIdx++;
 
-            string filaLetras = raw.Substring(0, splitIdx);
-            int columna = int.Parse(raw.Substring(splitIdx));
+            string columnaActual = raw.Substring(0, splitIdx); // letra = columna (A-F)
+            int filaActual = int.Parse(raw.Substring(splitIdx)); // numero = fila
 
-            if (columna < columnas)
-                return $"{prefijo}{filaLetras}{columna + 1}";
+            int idxColumna = Array.IndexOf(columnas, columnaActual);
+
+            if (idxColumna < columnas.Length - 1)
+            {
+                // Siguiente columna en la misma fila: A1 → B1 → C1 → ... → F1
+                return $"{prefijo}{columnas[idxColumna + 1]}{filaActual}";
+            }
             else
-                return $"{prefijo}{SiguienteLetraFila(filaLetras)}1";
+            {
+                // Se agotaron las columnas, pasar a la primera columna de la siguiente fila: F1 → A2
+                return $"{prefijo}A{filaActual + 1}";
+            }
         }
 
         private string SiguienteLetraFila(string fila)

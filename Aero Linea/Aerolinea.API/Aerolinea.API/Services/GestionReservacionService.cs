@@ -11,23 +11,27 @@ namespace Aerolinea.API.Services
     /// </summary>
     public class GestionReservacionService
     {
-        private readonly GestionReservacionRepository      _repository;
-        private readonly EmailHelper                       _emailHelper;
+        private readonly GestionReservacionRepository _repository;
+        private readonly EmailHelper _emailHelper;
         private readonly ILogger<GestionReservacionService> _logger;
+        private readonly LogReservacionRepository _logRepository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de gestion de reservaciones,
         /// el helper de correo y el logger.
         /// </summary>
         public GestionReservacionService(
-            GestionReservacionRepository      repository,
-            EmailHelper                       emailHelper,
-            ILogger<GestionReservacionService> logger)
-        {
-            _repository  = repository;
-            _emailHelper = emailHelper;
-            _logger      = logger;
+            GestionReservacionRepository repository,
+            EmailHelper emailHelper,
+            ILogger<GestionReservacionService> logger,
+            LogReservacionRepository logRepository)
+                {
+                    _repository = repository;
+                    _emailHelper = emailHelper;
+                    _logger = logger;
+                    _logRepository = logRepository;
         }
+
 
         /// <summary>
         /// Retorna la lista de todas las reservaciones del usuario autenticado,
@@ -65,39 +69,72 @@ namespace Aerolinea.API.Services
         /// Tras cancelar exitosamente envia un correo de aviso al usuario (best-effort:
         /// si el envio falla se registra en el log pero NO se revierte la cancelacion).
         /// </summary>
-        public async Task CancelarReservacion(int reservacionId, int usuarioId, string motivo)
+        public async Task CancelarReservacion(int reservacionId, int usuarioId,
+                                        string motivo, string? ip, string? userAgent,
+                                        bool esAgencia = false)
         {
-            // El repositorio retorna los datos del usuario necesarios para el correo
-            var (noReservacion, nombreUsuario, emailUsuario) =
-                await _repository.CancelarReservacion(reservacionId, usuarioId, motivo);
-
-            // Enviar correo de cancelacion (best-effort)
-            if (!string.IsNullOrEmpty(emailUsuario))
+            try
             {
-                try
+                var (noReservacion, nombreUsuario, emailUsuario) =
+                    await _repository.CancelarReservacion(reservacionId, usuarioId, motivo);
+
+                await _logRepository.Registrar(
+                    esAgencia
+                        ? LogReservacionRepository.TipoCancelacionAgenciaExitosa
+                        : LogReservacionRepository.TipoCancelacionExitosa,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    true,
+                    ip,
+                    userAgent,
+                    motivo
+                );
+
+                if (!string.IsNullOrEmpty(emailUsuario))
                 {
-                    _logger.LogInformation(
-                        "Enviando correo de cancelacion para reservacion {NoReservacion} a {Email}",
-                        noReservacion, emailUsuario);
+                    try
+                    {
+                        _logger.LogInformation(
+                            "Enviando correo de cancelacion para reservacion {NoReservacion} a {Email}",
+                            noReservacion, emailUsuario);
 
-                    string html = EmailTemplates.CorreoCancelacion(nombreUsuario, noReservacion);
+                        string html = EmailTemplates.CorreoCancelacion(nombreUsuario, noReservacion);
 
-                    await _emailHelper.Enviar(
-                        emailUsuario,
-                        $"Broom AirLine - Reservacion {noReservacion} Cancelada",
-                        html);
+                        await _emailHelper.Enviar(
+                            emailUsuario,
+                            $"Broom AirLine - Reservacion {noReservacion} Cancelada",
+                            html);
 
-                    _logger.LogInformation(
-                        "Correo de cancelacion enviado exitosamente para reservacion {NoReservacion}",
-                        noReservacion);
+                        _logger.LogInformation(
+                            "Correo de cancelacion enviado exitosamente para reservacion {NoReservacion}",
+                            noReservacion);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Error al enviar correo de cancelacion para reservacion {NoReservacion} a {Email}",
+                            noReservacion, emailUsuario);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    // El fallo del correo nunca revierte la cancelacion ya confirmada
-                    _logger.LogError(ex,
-                        "Error al enviar correo de cancelacion para reservacion {NoReservacion} a {Email}",
-                        noReservacion, emailUsuario);
-                }
+            }
+            catch (Exception e)
+            {
+                await _logRepository.Registrar(
+                    esAgencia
+                        ? LogReservacionRepository.TipoCancelacionAgenciaFallida
+                        : LogReservacionRepository.TipoCancelacionFallida,
+                    reservacionId,
+                    usuarioId,
+                    null,
+                    null,
+                    false,
+                    ip,
+                    userAgent,
+                    e.Message
+                );
+                throw;
             }
         }
 

@@ -11,13 +11,17 @@ namespace Aerolinea.API.Services
     public class ConfirmarReservacionAgenciaService
     {
         private readonly ConfirmarReservacionAgenciaRepository _repository;
+        private readonly LogReservacionRepository _logRepository;
 
         /// <summary>
         /// Inicializa el servicio con el repositorio de confirmacion de reservaciones de agencia.
         /// </summary>
-        public ConfirmarReservacionAgenciaService(ConfirmarReservacionAgenciaRepository repository)
+        public ConfirmarReservacionAgenciaService(
+                ConfirmarReservacionAgenciaRepository repository,
+                LogReservacionRepository logRepository)
         {
             _repository = repository;
+            _logRepository = logRepository;
         }
 
         /// <summary>
@@ -26,17 +30,51 @@ namespace Aerolinea.API.Services
         /// Retorna los datos de confirmacion con la informacion de la factura generada.
         /// </summary>
         public async Task<ConfirmacionAgenciaDTO> ConfirmarReservacion(
-            int reservacionId,
-            int agenciaId,
-            ConfirmarReservacionAgenciaDTO dto)
+                int reservacionId, int agenciaId, ConfirmarReservacionAgenciaDTO dto,
+                string? ip, string? userAgent)
         {
-            if (string.IsNullOrWhiteSpace(dto.NIT))
-                throw new Exception("El NIT es requerido. Si no tienes, ingresa 'CF'.");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.NIT))
+                    throw new Exception("El NIT es requerido. Si no tienes, ingresa 'CF'.");
 
-            if (string.IsNullOrWhiteSpace(dto.CodigoPostal))
-                throw new Exception("El código postal es requerido.");
+                if (string.IsNullOrWhiteSpace(dto.CodigoPostal))
+                    throw new Exception("El código postal es requerido.");
 
-            return await _repository.ConfirmarReservacion(reservacionId, agenciaId, dto);
+                var resultado = await _repository.ConfirmarReservacion(reservacionId, agenciaId, dto);
+
+                await _logRepository.Registrar(
+                    LogReservacionRepository.TipoPagoAgenciaExitoso,
+                    reservacionId,
+                    null,
+                    agenciaId,
+                    (decimal?)resultado.Total,
+                    true,
+                    ip,
+                    userAgent,
+                    null
+                );
+
+                return resultado;
+            }
+            catch (Exception e) when (
+                e.Message.Contains("NIT") ||
+                e.Message.Contains("postal"))
+            {
+                await _logRepository.Registrar(
+                    LogReservacionRepository.TipoPagoAgenciaFallido,
+                    reservacionId, null, agenciaId, null, false, ip, userAgent, e.Message
+                );
+                throw;
+            }
+            catch (Exception e)
+            {
+                await _logRepository.Registrar(
+                    LogReservacionRepository.TipoPagoAgenciaError,
+                    reservacionId, null, agenciaId, null, false, ip, userAgent, e.Message
+                );
+                throw;
+            }
         }
     }
 }
