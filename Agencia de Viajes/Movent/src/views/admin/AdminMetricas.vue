@@ -81,10 +81,20 @@
             <p>Cargando métricas...</p>
           </div>
 
+          <!-- Error de conexión -->
+          <div v-else-if="errorResumen && errorNegocio" class="met-error-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div>
+              <strong>No se pudieron cargar las métricas.</strong>
+              <span>{{ errorDetalle || 'Verifica que el servidor esté corriendo y tengas sesión de administrador.' }}</span>
+            </div>
+            <button class="met-btn-retry" @click="cargarTodo">Reintentar</button>
+          </div>
+
           <template v-else>
 
             <!-- ═══ PANEL 1: KPIs ═══════════════════════════════════════════ -->
-            <div class="adm-kpis" v-if="resumen">
+            <div class="adm-kpis">
               <div class="adm-kpi adm-kpi--dark">
                 <div class="adm-kpi__icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -142,7 +152,7 @@
             </div>
 
             <!-- ═══ PANEL 2: Gráficas de búsquedas ════════════════════════════ -->
-            <div class="met-grid-2" v-if="resumen">
+            <div class="met-grid-2">
 
               <!-- Búsquedas por día (línea SVG) -->
               <div class="met-card">
@@ -205,7 +215,7 @@
             </div>
 
             <!-- ═══ PANEL 3: Destinos + Reservaciones por tipo ════════════════ -->
-            <div class="met-grid-2" v-if="resumen">
+            <div class="met-grid-2">
 
               <!-- Top destinos -->
               <div class="met-card">
@@ -261,10 +271,10 @@
             </div>
 
             <!-- ═══ PANEL 4: Análisis de Negocio ══════════════════════════════ -->
-            <template v-if="!loadingNegocio && negocio">
+            <template v-if="!loadingNegocio">
 
               <!-- Embudo de conversión -->
-              <div class="met-card met-card--wide" v-if="negocio.embudo">
+              <div class="met-card met-card--wide" v-if="negocio?.embudo">
                 <p class="met-card__titulo">Embudo de Conversión</p>
                 <div class="met-embudo">
                   <div v-for="etapa in embudoEtapas" :key="etapa.label" class="met-embudo-fila">
@@ -272,7 +282,7 @@
                     <div class="met-embudo-barra-track">
                       <div class="met-embudo-barra"
                         :style="{
-                          width: negocio.embudo.busquedas > 0
+                          width: negocio?.embudo?.busquedas > 0
                             ? (etapa.val / negocio.embudo.busquedas * 100) + '%'
                             : '0%',
                           background: etapa.color
@@ -281,12 +291,16 @@
                     </div>
                     <span class="met-embudo-val">{{ etapa.val }}</span>
                     <span class="met-embudo-pct">
-                      {{ negocio.embudo.busquedas > 0
+                      {{ negocio?.embudo?.busquedas > 0
                           ? ((etapa.val / negocio.embudo.busquedas) * 100).toFixed(1) + '%'
                           : '—' }}
                     </span>
                   </div>
                 </div>
+              </div>
+              <div class="met-card met-card--wide" v-else>
+                <p class="met-card__titulo">Embudo de Conversión</p>
+                <p class="met-vacio">Sin datos en este período</p>
               </div>
 
               <!-- Proveedores + Cancelaciones -->
@@ -295,7 +309,7 @@
                 <!-- Top proveedores -->
                 <div class="met-card">
                   <p class="met-card__titulo">Rendimiento de Proveedores</p>
-                  <div class="met-tabla-scroll" v-if="negocio.proveedores?.length">
+                  <div class="met-tabla-scroll" v-if="negocio?.proveedores?.length">
                     <table class="met-tabla">
                       <thead>
                         <tr>
@@ -307,7 +321,7 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="p in negocio.proveedores" :key="p.nombre">
+                        <tr v-for="p in (negocio?.proveedores ?? [])" :key="p.nombre">
                           <td>{{ p.nombre }}</td>
                           <td>
                             <span :class="p.tipoId === 1 ? 'met-badge met-badge--vuelo' : 'met-badge met-badge--hotel'">
@@ -327,8 +341,8 @@
                 <!-- Cancelaciones por tipo -->
                 <div class="met-card">
                   <p class="met-card__titulo">Cancelaciones por Tipo</p>
-                  <div class="met-barras-h" v-if="negocio.cancelaciones?.length">
-                    <div v-for="ct in negocio.cancelaciones" :key="ct.tipo" class="met-barra-h-row">
+                  <div class="met-barras-h" v-if="negocio?.cancelaciones?.length">
+                    <div v-for="ct in (negocio?.cancelaciones ?? [])" :key="ct.tipo" class="met-barra-h-row">
                       <span class="met-barra-h-lbl">{{ ct.tipo }}</span>
                       <div class="met-barra-h-track">
                         <div class="met-barra-h-fill met-barra-h-fill--rojo"
@@ -344,7 +358,7 @@
               </div>
 
               <!-- Tendencia de ingresos mensual (línea SVG multi-serie) -->
-              <div class="met-card met-card--wide" v-if="negocio.tendencia?.length">
+              <div class="met-card met-card--wide" v-if="negocio?.tendencia?.length">
                 <p class="met-card__titulo">Tendencia de Ingresos Mensuales</p>
                 <svg viewBox="0 0 700 180" class="met-svg">
                   <defs>
@@ -384,7 +398,7 @@
               </div>
 
               <!-- Heatmap búsquedas por hora y día -->
-              <div class="met-card met-card--wide" v-if="negocio.heatmap?.length">
+              <div class="met-card met-card--wide" v-if="negocio?.heatmap?.length">
                 <p class="met-card__titulo">Mapa de Calor — Búsquedas por Hora y Día</p>
                 <div class="met-heatmap-scroll">
                   <div class="met-heatmap">
@@ -550,7 +564,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import Encabezado from '@/components/Encabezado.vue'
+import Encabezado from '../../components/Encabezado.vue'
 
 const API = import.meta.env.VITE_API_URL || ''
 
@@ -562,10 +576,13 @@ const listado       = ref({ registros: [], totalRegistros: 0, totalPaginas: 1, p
 const loadingResumen = ref(true)
 const loadingNegocio = ref(true)
 const loadingListado = ref(false)
+const errorResumen   = ref(false)
+const errorNegocio   = ref(false)
+const errorDetalle   = ref('')
 
 const fechaHasta   = ref(hoy())
-const fechaDesde   = ref(hace30Dias())
-const periodoActivo = ref('30d')
+const fechaDesde   = ref(hace1Anio())
+const periodoActivo = ref('yr')
 
 const filtroTipo    = ref('')
 const filtroUsuario = ref('')
@@ -580,10 +597,11 @@ const exportando   = ref(false)
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 const periodos = [
-  { key: '7d',  label: '7 días',  dias: 7  },
-  { key: '30d', label: '30 días', dias: 30 },
-  { key: '90d', label: '3 meses', dias: 90 },
-  { key: 'yr',  label: '1 año',   dias: 365 },
+  { key: '7d',   label: '7 días',  dias: 7   },
+  { key: '30d',  label: '30 días', dias: 30  },
+  { key: '90d',  label: '3 meses', dias: 90  },
+  { key: 'yr',   label: '1 año',   dias: 365 },
+  { key: 'todo', label: 'Todo',    dias: null },
 ]
 const formatos = [
   { key: 'excel', label: 'Excel',  icon: '📊' },
@@ -598,9 +616,9 @@ const horas       = [0,2,4,6,8,10,12,14,16,18,20,22]
 function hoy() {
   return new Date().toISOString().slice(0, 10)
 }
-function hace30Dias() {
+function hace1Anio() {
   const d = new Date()
-  d.setDate(d.getDate() - 29)
+  d.setFullYear(d.getFullYear() - 1)
   return d.toISOString().slice(0, 10)
 }
 function formatFecha(f) {
@@ -615,19 +633,39 @@ function fmt(v) {
 // ── Carga de datos ────────────────────────────────────────────────────────────
 async function cargarResumen() {
   loadingResumen.value = true
+  errorResumen.value = false
   try {
     const r = await fetch(`${API}/api/admin/metricas/resumen?fechaDesde=${fechaDesde.value}&fechaHasta=${fechaHasta.value}`, { credentials: 'include' })
-    if (r.ok) resumen.value = await r.json()
-  } catch {}
+    if (r.ok) {
+      resumen.value = await r.json()
+    } else {
+      errorResumen.value = true
+      errorDetalle.value = `HTTP ${r.status} — ${r.status === 401 ? 'Sesión expirada o no iniciada' : r.status === 403 ? 'Sin permisos de administrador' : r.status === 404 ? 'Ruta no encontrada (reinicia el servidor Go)' : 'Error del servidor'}`
+      resumen.value = null
+    }
+  } catch (e) {
+    errorResumen.value = true
+    errorDetalle.value = `Error de red — verifica que el servidor Go esté corriendo`
+    resumen.value = null
+  }
   finally { loadingResumen.value = false }
 }
 
 async function cargarNegocio() {
   loadingNegocio.value = true
+  errorNegocio.value = false
   try {
     const r = await fetch(`${API}/api/admin/metricas/negocio?fechaDesde=${fechaDesde.value}&fechaHasta=${fechaHasta.value}`, { credentials: 'include' })
-    if (r.ok) negocio.value = await r.json()
-  } catch {}
+    if (r.ok) {
+      negocio.value = await r.json()
+    } else {
+      errorNegocio.value = true
+      negocio.value = null
+    }
+  } catch {
+    errorNegocio.value = true
+    negocio.value = null
+  }
   finally { loadingNegocio.value = false }
 }
 
@@ -661,10 +699,15 @@ function cargarTodo() {
 
 function setPeriodo(p) {
   periodoActivo.value = p.key
-  const d = new Date()
-  fechaHasta.value = d.toISOString().slice(0, 10)
-  d.setDate(d.getDate() - (p.dias - 1))
-  fechaDesde.value = d.toISOString().slice(0, 10)
+  if (p.key === 'todo') {
+    fechaDesde.value = '2020-01-01'
+    fechaHasta.value = hoy()
+  } else {
+    const d = new Date()
+    fechaHasta.value = d.toISOString().slice(0, 10)
+    d.setDate(d.getDate() - (p.dias - 1))
+    fechaDesde.value = d.toISOString().slice(0, 10)
+  }
   cargarResumen()
   cargarNegocio()
   cargarListado(1)
@@ -993,6 +1036,23 @@ async function handleExportar() {
 .met-btn-del { background: none; border: none; color: #DC2626; cursor: pointer; font-size: 14px; }
 .met-btn-add { background: none; border: 1px dashed #ddd6cc; border-radius: 6px; padding: 5px 12px; font-size: 11px; color: #5a5047; cursor: pointer; }
 .met-error-msg { font-size: 12px; color: #DC2626; background: #FEF2F2; padding: 8px 12px; border-radius: 6px; }
+.met-error-banner {
+  display: flex; align-items: center; gap: 12px;
+  background: #FEF2F2; border: 1px solid #FECACA;
+  color: #991B1B; border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 20px;
+  font-size: 13px;
+}
+.met-error-banner svg { flex-shrink: 0; color: #DC2626; }
+.met-error-banner div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.met-error-banner strong { font-size: 13px; }
+.met-error-banner span { font-size: 12px; opacity: 0.85; }
+.met-btn-retry {
+  padding: 6px 14px; font-size: 11px; font-weight: 700;
+  background: #DC2626; color: #fff; border: none;
+  border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+.met-btn-retry:hover { background: #B91C1C; }
 .met-btn-cancel { padding: 7px 16px; font-size: 12px; border: 1px solid #ddd6cc; border-radius: 8px; background: #fff; cursor: pointer; color: #5a5047; }
 .met-btn-primary { display: flex; align-items: center; gap: 6px; padding: 7px 18px; font-size: 12px; font-weight: 700; background: #1C1A18; color: #FFCC00; border: none; border-radius: 8px; cursor: pointer; }
 .met-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }

@@ -22,14 +22,14 @@ public class MetricasHotelRepository {
     public Map<String, Object> obtenerIngresosKpi(String fechaDesde, String fechaHasta) {
         String sql =
             "SELECT " +
-            "  NVL(SUM(CASE WHEN er.Estado IN ('confirmada','completada') THEN r.Total ELSE 0 END), 0) AS IngresosTotales, " +
-            "  NVL(SUM(CASE WHEN er.Estado IN ('confirmada','completada') " +
-            "    AND r.Usuario_ID NOT IN (SELECT UsuarioWebID FROM Agencia) THEN r.Total ELSE 0 END), 0) AS IngresosDirecto, " +
-            "  NVL(SUM(CASE WHEN er.Estado IN ('confirmada','completada') " +
-            "    AND r.Usuario_ID IN (SELECT UsuarioWebID FROM Agencia) THEN r.Total ELSE 0 END), 0) AS IngresosAgencia, " +
+            "  NVL(SUM(CASE WHEN LOWER(TRIM(er.Estado)) IN ('confirmada','completada') THEN r.Total ELSE 0 END), 0) AS IngresosTotales, " +
+            "  NVL(SUM(CASE WHEN LOWER(TRIM(er.Estado)) IN ('confirmada','completada') " +
+            "    AND NOT EXISTS (SELECT 1 FROM Agencia a WHERE a.UsuarioWebis_ID = r.Usuario_ID) THEN r.Total ELSE 0 END), 0) AS IngresosDirecto, " +
+            "  NVL(SUM(CASE WHEN LOWER(TRIM(er.Estado)) IN ('confirmada','completada') " +
+            "    AND EXISTS (SELECT 1 FROM Agencia a WHERE a.UsuarioWebis_ID = r.Usuario_ID) THEN r.Total ELSE 0 END), 0) AS IngresosAgencia, " +
             "  COUNT(*) AS TotalReservaciones, " +
-            "  COUNT(CASE WHEN er.Estado IN ('confirmada','completada') THEN 1 END) AS ReservacionesPagadas, " +
-            "  NVL(AVG(CASE WHEN er.Estado IN ('confirmada','completada') THEN r.Total END), 0) AS TicketPromedio " +
+            "  COUNT(CASE WHEN LOWER(TRIM(er.Estado)) IN ('confirmada','completada') THEN 1 END) AS ReservacionesPagadas, " +
+            "  NVL(AVG(CASE WHEN LOWER(TRIM(er.Estado)) IN ('confirmada','completada') THEN r.Total END), 0) AS TicketPromedio " +
             "FROM Reservacion r " +
             "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
             "WHERE TRUNC(r.Fecha_Creacion) >= TO_DATE(?, 'YYYY-MM-DD') " +
@@ -77,13 +77,13 @@ public class MetricasHotelRepository {
     public List<Map<String, Object>> canalSplit(String fechaDesde, String fechaHasta) {
         String sql =
             "SELECT " +
-            "  CASE WHEN r.Usuario_ID IN (SELECT UsuarioWebID FROM Agencia) " +
+            "  CASE WHEN EXISTS (SELECT 1 FROM Agencia a WHERE a.UsuarioWebis_ID = r.Usuario_ID) " +
             "       THEN 'Agencia' ELSE 'Directo' END AS Canal, " +
             "  COUNT(*) AS Total " +
             "FROM Reservacion r " +
             "WHERE TRUNC(r.Fecha_Creacion) >= TO_DATE(?, 'YYYY-MM-DD') " +
             "  AND TRUNC(r.Fecha_Creacion) <= TO_DATE(?, 'YYYY-MM-DD') " +
-            "GROUP BY CASE WHEN r.Usuario_ID IN (SELECT UsuarioWebID FROM Agencia) " +
+            "GROUP BY CASE WHEN EXISTS (SELECT 1 FROM Agencia a WHERE a.UsuarioWebis_ID = r.Usuario_ID) " +
             "              THEN 'Agencia' ELSE 'Directo' END " +
             "ORDER BY Total DESC";
 
@@ -104,11 +104,11 @@ public class MetricasHotelRepository {
     public Map<String, Object> embudo(String fechaDesde, String fechaHasta) {
         String sql =
             "SELECT " +
-            "  SUM(CASE WHEN er.Estado = 'completada'  THEN 1 ELSE 0 END) AS Completadas, " +
-            "  SUM(CASE WHEN er.Estado = 'confirmada'  THEN 1 ELSE 0 END) AS Pagadas, " +
-            "  SUM(CASE WHEN er.Estado = 'pendiente'   THEN 1 ELSE 0 END) AS Pendientes, " +
-            "  SUM(CASE WHEN er.Estado = 'expirada'    THEN 1 ELSE 0 END) AS Expiradas, " +
-            "  SUM(CASE WHEN er.Estado = 'cancelada'   THEN 1 ELSE 0 END) AS Canceladas " +
+            "  SUM(CASE WHEN LOWER(TRIM(er.Estado)) = 'completada'  THEN 1 ELSE 0 END) AS Completadas, " +
+            "  SUM(CASE WHEN LOWER(TRIM(er.Estado)) = 'confirmada'  THEN 1 ELSE 0 END) AS Pagadas, " +
+            "  SUM(CASE WHEN LOWER(TRIM(er.Estado)) = 'pendiente'   THEN 1 ELSE 0 END) AS Pendientes, " +
+            "  SUM(CASE WHEN LOWER(TRIM(er.Estado)) = 'expirada'    THEN 1 ELSE 0 END) AS Expiradas, " +
+            "  SUM(CASE WHEN LOWER(TRIM(er.Estado)) = 'cancelada'   THEN 1 ELSE 0 END) AS Canceladas " +
             "FROM Reservacion r " +
             "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
             "WHERE TRUNC(r.Fecha_Creacion) >= TO_DATE(?, 'YYYY-MM-DD') " +
@@ -135,7 +135,7 @@ public class MetricasHotelRepository {
         String sql =
             "SELECT h.Nombre AS Hotel, " +
             "  COUNT(DISTINCT r.ID) AS TotalReservaciones, " +
-            "  NVL(SUM(CASE WHEN er.Estado IN ('confirmada','completada') THEN r.Total ELSE 0 END), 0) AS IngresosTotales " +
+            "  NVL(SUM(CASE WHEN LOWER(TRIM(er.Estado)) IN ('confirmada','completada') THEN r.Total ELSE 0 END), 0) AS IngresosTotales " +
             "FROM Hotel h " +
             "JOIN Habitacion hab ON hab.HotelID = h.ID " +
             "JOIN DetallesReservacion dr ON dr.HabitacionID = hab.ID " +
@@ -199,16 +199,16 @@ public class MetricasHotelRepository {
     public List<Map<String, Object>> ingresosTendencia(String fechaDesde, String fechaHasta) {
         String sql =
             "SELECT TO_CHAR(r.Fecha_Creacion, 'YYYY-MM') AS Mes, " +
-            "  CASE WHEN r.Usuario_ID IN (SELECT UsuarioWebID FROM Agencia) " +
+            "  CASE WHEN EXISTS (SELECT 1 FROM Agencia a WHERE a.UsuarioWebis_ID = r.Usuario_ID) " +
             "       THEN 'Agencia' ELSE 'Directo' END AS Canal, " +
             "  NVL(SUM(r.Total), 0) AS Revenue " +
             "FROM Reservacion r " +
             "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
-            "WHERE er.Estado IN ('confirmada','completada') " +
+            "WHERE LOWER(TRIM(er.Estado)) IN ('confirmada','completada') " +
             "  AND TRUNC(r.Fecha_Creacion) >= TO_DATE(?, 'YYYY-MM-DD') " +
             "  AND TRUNC(r.Fecha_Creacion) <= TO_DATE(?, 'YYYY-MM-DD') " +
             "GROUP BY TO_CHAR(r.Fecha_Creacion, 'YYYY-MM'), " +
-            "  CASE WHEN r.Usuario_ID IN (SELECT UsuarioWebID FROM Agencia) " +
+            "  CASE WHEN EXISTS (SELECT 1 FROM Agencia a WHERE a.UsuarioWebis_ID = r.Usuario_ID) " +
             "       THEN 'Agencia' ELSE 'Directo' END " +
             "ORDER BY Mes ASC";
 
