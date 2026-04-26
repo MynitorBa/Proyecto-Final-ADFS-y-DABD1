@@ -31,18 +31,18 @@ namespace Aerolinea.API.Controllers
         /// la reservacion pertenezca a la agencia autenticada antes de procesar la confirmacion.
         /// </summary>
         [HttpPost("{id}/confirmar")]
-        public async Task<IActionResult> ConfirmarReservacion(
-            int id,
-            [FromBody] ConfirmarReservacionAgenciaDTO dto)
+        public async Task<IActionResult> ConfirmarReservacion(int id, [FromBody] ConfirmarReservacionAgenciaDTO dto)
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
             try
             {
                 var agencia = HttpContext.Items["agencia_id"];
                 if (agencia == null)
                     return Unauthorized(new { message = "Token de agencia requerido." });
-
                 int agenciaId = (int)agencia;
-                var resultado = await _service.ConfirmarReservacion(id, agenciaId, dto);
+
+                var resultado = await _service.ConfirmarReservacion(id, agenciaId, dto, ip, userAgent);
                 return Ok(resultado);
             }
             catch (Exception ex)

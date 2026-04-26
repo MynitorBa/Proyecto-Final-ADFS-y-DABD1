@@ -36,25 +36,26 @@ namespace Aerolinea.API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
         {
-            var result = await _service.Login(request);
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
+
+            var result = await _service.Login(request, ip, userAgent);
 
             if (result == null)
                 return Unauthorized("Credenciales inválidas");
 
-            // Construimos los claims que viajan dentro de la cookie cifrada
             var claims = new List<Claim>
             {
                 new Claim(SessionHelper.ClaimUsuarioId, result.UsuarioId.ToString()),
                 new Claim(SessionHelper.ClaimRolId,     result.RolId.ToString()),
-                new Claim(SessionHelper.ClaimRolNombre, result.RolNombre),   // ClaimTypes.Role
-                new Claim(SessionHelper.ClaimNombre,    result.Nombre),       // ClaimTypes.Name
-                new Claim(SessionHelper.ClaimCorreo,    result.Correo),       // ClaimTypes.Email
+                new Claim(SessionHelper.ClaimRolNombre, result.RolNombre),
+                new Claim(SessionHelper.ClaimNombre,    result.Nombre),
+                new Claim(SessionHelper.ClaimCorreo,    result.Correo),
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
 
-            // Firmamos y enviamos la cookie al navegador
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
@@ -64,7 +65,6 @@ namespace Aerolinea.API.Controllers
                     ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
                 });
 
-            // Devolvemos los datos al frontend para que los use en UI
             return Ok(result);
         }
 
@@ -98,6 +98,14 @@ namespace Aerolinea.API.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
+
+            int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
+            string? username = SessionHelper.GetNombre(HttpContext);
+
+            await _service.Logout(usuarioId, username, ip, userAgent);
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok("Sesión cerrada correctamente");
         }

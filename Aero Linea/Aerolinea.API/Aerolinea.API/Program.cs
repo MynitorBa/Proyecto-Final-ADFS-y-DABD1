@@ -14,6 +14,9 @@ using QuestPDF.Infrastructure;
 /// </summary>
 var builder = WebApplication.CreateBuilder(args);
 
+
+builder.Services.AddScoped<LogRepository>();
+builder.Services.AddScoped<LogReservacionRepository>();
 /// <summary>
 /// Registra los controllers de la API para que ASP.NET los descubra automaticamente.
 /// </summary>

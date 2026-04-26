@@ -34,13 +34,15 @@ namespace Aerolinea.API.Controllers
         [Authorize]
         public async Task<IActionResult> ComprarReservacion(int id, [FromBody] ComprarReservacionDTO dto)
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
             try
             {
                 int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
                 if (usuarioId == null)
                     return Unauthorized(new { message = "Debes iniciar sesión para realizar una compra." });
 
-                var resultado = await _service.ComprarReservacion(id, usuarioId.Value, dto);
+                var resultado = await _service.ComprarReservacion(id, usuarioId.Value, dto, ip, userAgent);
                 return Ok(resultado);
             }
             catch (Exception ex)

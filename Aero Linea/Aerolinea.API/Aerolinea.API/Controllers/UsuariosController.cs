@@ -1,4 +1,5 @@
 using Aerolinea.API.DTOs;
+using Aerolinea.API.Repositories;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,13 +16,16 @@ namespace Aerolinea.API.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioService _service;
+        private readonly LogRepository _logRepository;
+
 
         /// <summary>
         /// Inicializa el controlador con el servicio de usuarios.
         /// </summary>
-        public UsuariosController(IUsuarioService service)
+        public UsuariosController(IUsuarioService service, LogRepository logRepository)
         {
             _service = service;
+            _logRepository = logRepository;
         }
 
         // Público: cualquiera puede registrarse
@@ -32,10 +36,24 @@ namespace Aerolinea.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CrearUsuario([FromBody] CrearUsuarioDTO dto)
         {
-            var constraints = await _service.VerificarConstraints(dto);
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
 
+            var constraints = await _service.VerificarConstraints(dto);
             if (constraints.CorreoExiste || constraints.UsernameExiste || constraints.PasaporteExiste)
             {
+                Console.WriteLine($"[DEBUG] Entrando al log de duplicados - username: {dto.Username}");
+
+                await _logRepository.Registrar(
+                    LogRepository.TipoRegistroFallido,
+                    null,
+                    dto.Username,
+                    false,
+                    ip,
+                    userAgent,
+                    $"Campos duplicados — correo:{constraints.CorreoExiste} username:{constraints.UsernameExiste} pasaporte:{constraints.PasaporteExiste}"
+                );
+
                 return BadRequest(new
                 {
                     message = "No se puede crear el usuario",
@@ -45,7 +63,7 @@ namespace Aerolinea.API.Controllers
                 });
             }
 
-            await _service.CrearUsuario(dto);
+            await _service.CrearUsuario(dto, ip, userAgent);
             return Ok(new { message = "Usuario creado correctamente" });
         }
 
@@ -55,10 +73,29 @@ namespace Aerolinea.API.Controllers
         /// Se usa para validacion en tiempo real mientras el usuario completa el formulario de registro.
         /// Endpoint publico, no requiere autenticacion.
         /// </summary>
+       
         [HttpPost("verificar")]
         public async Task<IActionResult> VerificarConstraints([FromBody] CrearUsuarioDTO dto)
         {
+            string? ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? userAgent = Request.Headers["User-Agent"].ToString();
+
             var constraints = await _service.VerificarConstraints(dto);
+
+            // Solo loggeamos si hay duplicados — esto es el intento real de registro del frontend
+            if (constraints.CorreoExiste || constraints.UsernameExiste || constraints.PasaporteExiste)
+            {
+                await _logRepository.Registrar(
+                    LogRepository.TipoRegistroFallido,
+                    null,
+                    dto.Username,
+                    false,
+                    ip,
+                    userAgent,
+                    $"Campos duplicados — correo:{constraints.CorreoExiste} username:{constraints.UsernameExiste} pasaporte:{constraints.PasaporteExiste}"
+                );
+            }
+
             return Ok(constraints);
         }
 
