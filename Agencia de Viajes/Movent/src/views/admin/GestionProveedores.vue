@@ -100,8 +100,13 @@
 
               <div class="adm-prov-card__head">
                 <div class="adm-prov-card__tipo-icon" :class="`adm-prov-card__tipo-icon--${tipoClase(p)}`">
-                  <svg v-if="p.tipoProveedorId===1" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  <img v-if="p.imagenBase64" :src="'data:image/png;base64,' + p.imagenBase64"
+                    style="width:100%;height:100%;object-fit:cover;border-radius:8px;"
+                    @error="e => e.target.style.display='none'" />
+                  <template v-else>
+                    <svg v-if="p.tipoProveedorId===1" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  </template>
                 </div>
                 <div class="adm-prov-card__info">
                   <h4 class="adm-prov-card__nombre">{{ p.nombre }}</h4>
@@ -163,7 +168,7 @@
 
     <!-- Modal de formulario para crear o editar un proveedor -->
     <div v-if="formAbierto" class="adm-modal-overlay" @click.self="cerrarForm">
-      <div class="adm-modal adm-modal--lg">
+      <div class="adm-modal prov-modal">
         <div class="adm-modal__head">
           <h3 class="adm-modal__title">{{ editando ? 'Editar proveedor' : 'Nuevo proveedor' }}</h3>
           <button class="adm-modal__close" @click="cerrarForm" type="button">
@@ -171,49 +176,82 @@
           </button>
         </div>
 
-        <!-- Campos del formulario; tipo y usuarioId solo se muestran al crear -->
+        <!-- Layout carnet: datos a la izquierda, imagen a la derecha -->
         <div class="adm-modal__body">
-          <div class="adm-form-grid">
-            <div class="adm-field adm-field--full">
-              <label class="adm-field__label">Nombre del proveedor *</label>
-              <input class="adm-field__input" v-model="form.nombre" placeholder="Ej. Broom AirLine" type="text" />
-            </div>
+          <div class="prov-carnet">
 
-            <template v-if="!editando">
+            <!-- IZQUIERDA: campos del formulario -->
+            <div class="prov-carnet__fields">
               <div class="adm-field">
-                <label class="adm-field__label">Tipo *</label>
-                <select class="adm-field__input" v-model="form.tipoProveedorId">
-                  <option value="">Seleccionar...</option>
-                  <option :value="1">Aerolínea</option>
-                  <option :value="2">Hotel</option>
-                </select>
+                <label class="adm-field__label">Nombre del proveedor *</label>
+                <input class="adm-field__input" v-model="form.nombre" placeholder="Ej. Broom AirLine" type="text" />
               </div>
+
+              <template v-if="!editando">
+                <div class="adm-field">
+                  <label class="adm-field__label">Tipo *</label>
+                  <select class="adm-field__input" v-model="form.tipoProveedorId">
+                    <option value="">Seleccionar...</option>
+                    <option :value="1">Aerolínea</option>
+                    <option :value="2">Hotel</option>
+                  </select>
+                </div>
+                <div class="adm-field">
+                  <label class="adm-field__label">Usuario WebService *</label>
+                  <select class="adm-field__input" v-model.number="form.usuarioId">
+                    <option value="">Seleccionar usuario...</option>
+                    <option v-for="u in usuariosWS" :key="u.id" :value="u.id">
+                      {{ u.nombre }} {{ u.apellido }} — {{ u.correo }}
+                    </option>
+                  </select>
+                </div>
+              </template>
+
               <div class="adm-field">
-              <label class="adm-field__label">Usuario WebService *</label>
-              <select class="adm-field__input" v-model.number="form.usuarioId">
-                <option value="">Seleccionar usuario...</option>
-                <option v-for="u in usuariosWS" :key="u.id" :value="u.id">
-                  {{ u.nombre }} {{ u.apellido }} — {{ u.correo }}
-                </option>
-              </select>
-            </div>
-            </template>
+                <label class="adm-field__label">URL del servicio REST *</label>
+                <input class="adm-field__input" v-model="form.url" placeholder="http://localhost:7000" type="url" />
+              </div>
 
-            <div class="adm-field adm-field--full">
-              <label class="adm-field__label">URL del servicio REST *</label>
-              <input class="adm-field__input" v-model="form.url" placeholder="http://localhost:7000" type="url" />
-            </div>
-
-            <div class="adm-field">
-              <label class="adm-field__label">% Ganancia</label>
-              <div class="adm-field__prefix">
-                <span>%</span>
-                <input class="adm-field__input" v-model.number="form.porcentajeGanancia" type="number" min="0" step="0.01" placeholder="15.50" />
+              <div class="adm-field">
+                <label class="adm-field__label">% Ganancia</label>
+                <div class="adm-field__prefix">
+                  <span>%</span>
+                  <input class="adm-field__input" v-model.number="form.porcentajeGanancia" type="number" min="0" step="0.01" placeholder="15.50" />
+                </div>
               </div>
             </div>
+
+            <!-- DERECHA: foto carnet -->
+            <div class="prov-carnet__photo">
+              <p class="prov-carnet__photo-label">Logo / Imagen</p>
+              <div class="prov-carnet__frame">
+                <img v-if="form.imagenBase64"
+                  :src="'data:image/png;base64,' + form.imagenBase64"
+                  alt="Logo proveedor"
+                  class="prov-carnet__img" />
+                <div v-else class="prov-carnet__placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#c8bfb4" stroke-width="1.5" width="36" height="36"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <span>Sin imagen</span>
+                </div>
+              </div>
+              <div class="prov-carnet__actions">
+                <label class="adm-btn adm-btn--sm adm-btn--outline prov-carnet__upload-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  {{ form.imagenBase64 ? 'Cambiar' : 'Subir imagen' }}
+                  <input type="file" accept="image/*" @change="seleccionarImagen" style="display:none" />
+                </label>
+                <button v-if="form.imagenBase64" type="button"
+                  class="adm-btn adm-btn--sm adm-btn--danger-ghost"
+                  @click="form.imagenBase64 = ''">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  Quitar
+                </button>
+              </div>
+            </div>
+
           </div>
 
-          <p v-if="formError" class="adm-form-error">{{ formError }}</p>
+          <p v-if="formError" class="adm-form-error" style="margin-top:10px">{{ formError }}</p>
         </div>
 
         <div class="adm-modal__foot">
@@ -308,7 +346,7 @@ const estadoConexion = ref({})
  * @returns {{nombre: string, tipoProveedorId: string, usuarioId: string, url: string, porcentajeGanancia: number}}
  */
 const formVacio = () => ({
-  nombre: '', tipoProveedorId: '', usuarioId: '', url: '', porcentajeGanancia: 15.5
+  nombre: '', tipoProveedorId: '', usuarioId: '', url: '', porcentajeGanancia: 15.5, imagenBase64: ''
 })
 
 /** Estado reactivo del formulario de creación/edición. @type {import('vue').Ref<Object>} */
@@ -405,6 +443,7 @@ function abrirFormEditar(p) {
     usuarioId:          '',
     url:                p.url,
     porcentajeGanancia: p.porcentajeGanancia,
+    imagenBase64:       p.imagenBase64 || '',
   }
   formError.value = ''
   formAbierto.value = true
@@ -450,6 +489,7 @@ async function guardarProveedor() {
           nombre:             form.value.nombre,
           url:                form.value.url,
           porcentajeGanancia: form.value.porcentajeGanancia,
+          imagenBase64:       form.value.imagenBase64,
         }),
       })
       if (!res.ok) throw new Error(`Error ${res.status}`)
@@ -465,6 +505,7 @@ async function guardarProveedor() {
           url_api:             form.value.url,
           usuario_id:          form.value.usuarioId,
           porcentaje_ganancia: form.value.porcentajeGanancia,
+          imagenBase64:        form.value.imagenBase64,
         }),
       })
       if (!res.ok) {
@@ -575,6 +616,34 @@ async function actualizarCatalogo() {
 }
 
 /**
+ * Convierte el archivo de imagen seleccionado a Base64 y lo guarda en form.imagenBase64.
+ * @param {Event} e - Evento change del input file.
+ */
+function seleccionarImagen(e) {
+  const file = e.target.files[0]
+  if (!file) return
+
+  const MAX_W = 400   // px máximos del logo
+  const QUALITY = 0.85
+
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const scale = Math.min(1, MAX_W / Math.max(img.width, img.height))
+      canvas.width  = Math.round(img.width  * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/png', QUALITY)
+      form.value.imagenBase64 = dataUrl.split(',')[1]
+    }
+    img.src = ev.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+/**
  * Muestra una notificación toast y la oculta automáticamente tras 3.5 segundos.
  * @param {'ok'|'err'} tipo - Tipo de notificación.
  * @param {string} msg - Mensaje a mostrar.
@@ -584,3 +653,105 @@ function mostrarToast(tipo, msg) {
   setTimeout(() => toast.value = null, 3500)
 }
 </script>
+
+<style scoped>
+/* Modal más ancho para el layout carnet */
+.prov-modal {
+  max-width: 720px;
+}
+
+/* Layout carnet: campos a la izquierda, foto a la derecha */
+.prov-carnet {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.prov-carnet__fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* Panel derecho — foto tipo carnet */
+.prov-carnet__photo {
+  flex-shrink: 0;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.prov-carnet__photo-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9a9089;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+/* Marco de la foto — estilo carnet / credencial */
+.prov-carnet__frame {
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  border: 2px dashed #d4cdc5;
+  background: #f5f2ec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.prov-carnet__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+}
+
+.prov-carnet__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #b8b0a8;
+  font-size: 11px;
+}
+
+.prov-carnet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.prov-carnet__upload-btn {
+  cursor: pointer;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Responsive: apila cuando el modal no tiene espacio */
+@media (max-width: 560px) {
+  .prov-carnet {
+    flex-direction: column-reverse;
+  }
+  .prov-carnet__photo {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  .prov-carnet__frame {
+    width: 90px;
+    height: 90px;
+  }
+}
+</style>

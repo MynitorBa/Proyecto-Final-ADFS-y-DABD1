@@ -160,16 +160,18 @@ func (s *BusquedaService) BuscarVuelos(c *gin.Context, req dto.BusquedaVuelosReq
 		if err != nil {
 			log.Printf("[BusquedaService] Proveedor '%s' (ID=%d) no disponible: %v", p.Nombre, p.ProveedorID, err)
 			resultados = append(resultados, dto.BusquedaVuelosResponse{
-				ProveedorID: p.ProveedorID,
-				Proveedor:   p.Nombre,
-				Error:       err.Error(),
+				ProveedorID:     p.ProveedorID,
+				Proveedor:       p.Nombre,
+				ProveedorImagen: p.ImagenBase64,
+				Error:           err.Error(),
 			})
 			continue
 		}
 		resultados = append(resultados, dto.BusquedaVuelosResponse{
-			ProveedorID: p.ProveedorID,
-			Proveedor:   p.Nombre,
-			Datos:       datos,
+			ProveedorID:     p.ProveedorID,
+			Proveedor:       p.Nombre,
+			ProveedorImagen: p.ImagenBase64,
+			Datos:           datos,
 		})
 	}
 	return resultados, nil
@@ -296,16 +298,18 @@ func (s *BusquedaService) BuscarHoteles(c *gin.Context, req dto.BusquedaHotelesR
 		if err != nil {
 			log.Printf("[BusquedaService] Proveedor '%s' (ID=%d) no disponible: %v", p.Nombre, p.ProveedorID, err)
 			resultados = append(resultados, dto.BusquedaHotelesResponse{
-				ProveedorID: p.ProveedorID,
-				Proveedor:   p.Nombre,
-				Error:       err.Error(),
+				ProveedorID:     p.ProveedorID,
+				Proveedor:       p.Nombre,
+				ProveedorImagen: p.ImagenBase64,
+				Error:           err.Error(),
 			})
 			continue
 		}
 		resultados = append(resultados, dto.BusquedaHotelesResponse{
-			ProveedorID: p.ProveedorID,
-			Proveedor:   p.Nombre,
-			Datos:       datos,
+			ProveedorID:     p.ProveedorID,
+			Proveedor:       p.Nombre,
+			ProveedorImagen: p.ImagenBase64,
+			Datos:           datos,
 		})
 	}
 	return resultados, nil

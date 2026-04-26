@@ -22,13 +22,14 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
-        /// Retorna la lista completa de tripulantes registrados en el sistema.
+        /// Retorna la lista de tripulantes registrados en el sistema. Si incluirInactivos es false
+        /// (valor por defecto), solo retorna los tripulantes activos.
         /// Por cada tripulante resuelve el nombre del rol mediante una consulta adicional
         /// al repositorio y construye el DTO con el nombre completo concatenado.
         /// </summary>
-        public async Task<List<TripulanteDTO>> ObtenerTodos()
+        public async Task<List<TripulanteDTO>> ObtenerTodos(bool incluirInactivos = false)
         {
-            var tripulantes = await _repository.ObtenerTodos();
+            var tripulantes = await _repository.ObtenerTodos(incluirInactivos);
             var tripulantesDTO = new List<TripulanteDTO>();
 
             foreach (var tripulante in tripulantes)
@@ -43,7 +44,8 @@ namespace Aerolinea.API.Services
                     RolID = tripulante.RolID,
                     NombreRol = nombreRol ?? "Desconocido",
                     NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
-                    ImagenBase64 = tripulante.ImagenBase64
+                    ImagenBase64 = tripulante.ImagenBase64,
+                    Activo = tripulante.Activo
                 });
             }
 
@@ -72,7 +74,8 @@ namespace Aerolinea.API.Services
                 RolID = tripulante.RolID,
                 NombreRol = nombreRol ?? "Desconocido",
                 NombreCompleto = $"{tripulante.Nombre} {tripulante.Apellido}",
-                ImagenBase64 = tripulante.ImagenBase64
+                ImagenBase64 = tripulante.ImagenBase64,
+                Activo = tripulante.Activo
             };
         }
 
@@ -151,6 +154,58 @@ namespace Aerolinea.API.Services
         public async Task<List<RolTripulacion>> ObtenerRoles()
         {
             return await _repository.ObtenerRoles();
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un tripulante (soft-delete).
+        /// Retorna true si el tripulante existe y se actualizo correctamente.
+        /// </summary>
+        public async Task<bool> CambiarEstado(int id, bool activo)
+        {
+            return await _repository.CambiarEstado(id, activo);
+        }
+
+        /// <summary>
+        /// Verifica si el tripulante tiene vuelos activos asignados a futuro.
+        /// Retorna el total de vuelos futuros y los numeros de vuelo dentro de 48 horas.
+        /// </summary>
+        public async Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosAsignados(int tripulanteId)
+        {
+            return await _repository.VerificarVuelosAsignados(tripulanteId);
+        }
+
+        /// <summary>
+        /// Retorna la lista detallada de vuelos activos futuros asignados al tripulante.
+        /// Usado para el modal de confirmacion de desactivacion.
+        /// </summary>
+        public async Task<List<VueloActivoInfoDTO>> ObtenerVuelosAsignadosDetallados(int tripulanteId)
+        {
+            return await _repository.ObtenerVuelosAsignadosDetallados(tripulanteId);
+        }
+
+        /// <summary>
+        /// Elimina al tripulante de EquipoPivote para los vuelos indicados.
+        /// </summary>
+        public async Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds)
+        {
+            return await _repository.DesasignarDeFuturosVuelos(tripulanteId, vueloIds);
+        }
+
+        /// <summary>
+        /// Retorna el equipo actual asignado a un vuelo especifico.
+        /// Usado para mostrar la composicion del vuelo en el modal de reemplazo.
+        /// </summary>
+        public async Task<List<Tripulante>> ObtenerEquipoVuelo(int vueloId)
+        {
+            return await _repository.ObtenerEquipoVuelo(vueloId);
+        }
+
+        /// <summary>
+        /// Asigna los tripulantes indicados al vuelo, ignorando los que ya esten asignados.
+        /// </summary>
+        public async Task AsignarTripulantesAVuelo(int vueloId, IEnumerable<int> tripulanteIds)
+        {
+            await _repository.AsignarTripulantesAVuelo(vueloId, tripulanteIds);
         }
     }
 }

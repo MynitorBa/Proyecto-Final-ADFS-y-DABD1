@@ -343,7 +343,11 @@
                 <div class="rv-card__head">
                   <div class="rv-card__aerolinea">
                     <div class="rv-card__logo">
-                      <svg viewBox="0 0 24 24" fill="#FFCC00" width="15" height="15"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                      <img v-if="vuelo.proveedorImagen"
+                        :src="'data:image/png;base64,' + vuelo.proveedorImagen"
+                        alt="Logo" @error="e=>e.target.style.display='none'" style="object-fit:contain;width:100%;height:100%;" />
+                      <img v-else-if="esAerolineaBroom(vuelo.aerolinea)" src="/logo-broom.png" alt="Logo" @error="e=>e.target.style.display='none'" />
+                      <svg v-else viewBox="0 0 24 24" fill="#FFCC00" width="15" height="15"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
                     </div>
                     <div>
                       <span class="rv-card__nombre">{{ vuelo.aerolinea }}</span>
@@ -508,6 +512,14 @@
                   </button>
                 </div>
 
+                <!-- ── Botón modal de detalles del vuelo ── -->
+                <button class="rv-det-toggle" @click.stop="abrirModalVuelo(vuelo)" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  Ver detalles del vuelo
+                </button>
+
               </article>
 
               <!-- ─── COMENTARIOS DEL VUELO (solo lectura) ─── -->
@@ -575,6 +587,150 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODAL DE DETALLES DEL VUELO — teleportado a <body>
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div v-if="modalVuelo" class="mv-backdrop" @click.self="cerrarModalVuelo">
+        <div class="mv-modal" role="dialog" aria-modal="true">
+
+          <!-- Header oscuro -->
+          <div class="mv-header">
+            <img v-if="modalVuelo.proveedorImagen"
+              :src="'data:image/png;base64,' + modalVuelo.proveedorImagen"
+              alt="Logo aerolínea" class="mv-header__logo"
+              @error="e=>e.target.style.display='none'" />
+            <img v-else-if="esAerolineaBroom(modalVuelo.aerolinea)"
+              src="/logo-broom.png" alt="Logo aerolínea" class="mv-header__logo" />
+            <div v-else class="mv-header__logo--placeholder">
+              <svg viewBox="0 0 24 24" fill="#FFCC00" width="26" height="26">
+                <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
+              </svg>
+            </div>
+            <div class="mv-header__info">
+              <div class="mv-header__nombre">{{ modalVuelo.aerolinea }}</div>
+              <div class="mv-header__sub">Vuelo {{ modalVuelo.numeroVuelo }}</div>
+            </div>
+            <button class="mv-header__close" @click="cerrarModalVuelo" type="button" aria-label="Cerrar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="mv-modal__scroll">
+
+          <!-- Hero: ruta -->
+          <div class="mv-hero">
+            <div class="mv-hero__punto">
+              <span class="mv-hero__iata">{{ modalVuelo.origenCodigo }}</span>
+              <span class="mv-hero__ciudad">{{ modalVuelo.origenCiudad }}</span>
+              <span class="mv-hero__hora">{{ modalVuelo.horaSalida }}</span>
+            </div>
+            <div class="mv-hero__centro">
+              <span class="mv-hero__dur">{{ formatDuracion(modalVuelo.duracionMinutos) }}</span>
+              <div class="mv-hero__track">
+                <div class="mv-hero__line"></div>
+                <svg viewBox="0 0 24 24" fill="#FFCC00" width="22" height="22">
+                  <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/>
+                </svg>
+                <div class="mv-hero__line"></div>
+              </div>
+              <span v-if="modalVuelo.escalas > 0" class="mv-hero__dur">{{ modalVuelo.escalas }} escala{{ modalVuelo.escalas !== 1 ? 's' : '' }}</span>
+              <span v-else class="mv-hero__dur" style="color:#FFCC00;font-weight:700">✓ Directo</span>
+            </div>
+            <div class="mv-hero__punto mv-hero__punto--dest">
+              <span class="mv-hero__iata">{{ modalVuelo.destinoCodigo }}</span>
+              <span class="mv-hero__ciudad">{{ modalVuelo.destinoCiudad }}</span>
+              <span class="mv-hero__hora">{{ modalVuelo.horaLlegada }}</span>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="mv-body">
+            <div class="mv-sep">Aeronave y disponibilidad</div>
+            <div class="mv-grid">
+              <div class="mv-bloque">
+                <span class="mv-lbl">Aerolínea</span>
+                <span class="mv-val">{{ modalVuelo.aerolinea }}</span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Aeronave</span>
+                <span class="mv-val">{{ modalVuelo.avionMarca }} {{ modalVuelo.avionModelo }}</span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Duración total</span>
+                <span class="mv-val">{{ formatDuracion(modalVuelo.duracionMinutos) }}</span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Asientos Económica</span>
+                <span class="mv-val" :class="{ 'mv-val--urgente': modalVuelo.asientosTurista > 0 && modalVuelo.asientosTurista <= 5, 'mv-val--out': modalVuelo.asientosTurista === 0 }">
+                  {{ modalVuelo.asientosTurista === 0 ? 'Agotado' : modalVuelo.asientosTurista + ' disponibles' }}
+                </span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Asientos Ejecutiva</span>
+                <span class="mv-val" :class="{ 'mv-val--urgente': modalVuelo.asientosEjecutiva > 0 && modalVuelo.asientosEjecutiva <= 5, 'mv-val--out': modalVuelo.asientosEjecutiva === 0 }">
+                  {{ modalVuelo.asientosEjecutiva === 0 ? 'Agotado' : modalVuelo.asientosEjecutiva + ' disponibles' }}
+                </span>
+              </div>
+              <div v-if="modalVuelo.tiempoEscalaMinutos" class="mv-bloque">
+                <span class="mv-lbl">Tiempo en escalas</span>
+                <span class="mv-val">{{ formatDuracion(modalVuelo.tiempoEscalaMinutos) }}</span>
+              </div>
+            </div>
+
+            <!-- Itinerario por tramos -->
+            <template v-if="modalVuelo.tramos?.length">
+              <div class="mv-sep">{{ modalVuelo.tramos.length === 1 ? 'Tripulación y detalles del vuelo' : `Itinerario completo — ${modalVuelo.tramos.length} tramos` }}</div>
+              <div v-for="(tramo, idx) in modalVuelo.tramos" :key="idx" class="mv-tramo">
+                <!-- Cabecera compacta: vuelo · ruta · avión · duración -->
+                <div class="mv-tramo__head">
+                  <span class="mv-tramo__badge">{{ tramo.numeroVuelo }}</span>
+                  <span class="mv-tramo__ruta">{{ tramo.origenCodigo }} → {{ tramo.destinoCodigo }}</span>
+                  <span class="mv-tramo__avion">{{ tramo.avionMarca }} {{ tramo.avionModelo }}</span>
+                  <span class="mv-tramo__dur">{{ formatDuracion(tramo.duracionMinutos) }}</span>
+                </div>
+
+                <!-- Ruta compacta horizontal -->
+                <div class="mv-tramo__route">
+                  <div class="mv-tramo__point">
+                    <span class="mv-tramo__time">{{ formatHora(tramo.horaSalida) }}</span>
+                    <span class="mv-tramo__place">{{ tramo.origenCiudad }}<template v-if="tramo.origenPais">, {{ tramo.origenPais }}</template></span>
+                  </div>
+                  <div class="mv-tramo__arrow">
+                    <div class="mv-tramo__line"></div>
+                    <svg viewBox="0 0 24 24" fill="#FFCC00" width="16" height="16"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                    <div class="mv-tramo__line"></div>
+                  </div>
+                  <div class="mv-tramo__point mv-tramo__point--dest">
+                    <span class="mv-tramo__time">{{ formatHora(tramo.horaLlegada) }}</span>
+                    <span class="mv-tramo__place">{{ tramo.destinoCiudad }}<template v-if="tramo.destinoPais">, {{ tramo.destinoPais }}</template></span>
+                  </div>
+                </div>
+
+                <!-- Tripulación inline -->
+                <div v-if="tramo.tripulantes?.length" class="mv-tripulantes">
+                  <div class="mv-tripulantes__list">
+                    <span v-for="t in tramo.tripulantes" :key="t.id ?? t.nombreCompleto" class="mv-tripulante">
+                      <img v-if="t.imagenBase64"
+                        :src="'data:image/jpeg;base64,' + t.imagenBase64"
+                        class="mv-tripulante__foto"
+                        :alt="t.nombreCompleto"
+                        @error="e => e.target.style.display='none'"
+                      />
+                      <span class="mv-tripulante__info">{{ t.nombreCompleto }} <em>({{ t.nombreRol }})</em></span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+          </div><!-- /mv-modal__scroll -->
+
+        </div>
+      </div>
+    </Teleport>
+
     <Piepagina />
   </div>
 </template>
@@ -593,6 +749,7 @@ import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import ComentarioNodo from '../components/Comentarionodo.vue'
 import '../styles/resultadosvuelos.css'
+import '../styles/detalle-modal.css'
 
 const router = useRouter()
 
@@ -665,6 +822,13 @@ const sidebarColapsado = ref(false)
 /** Objeto reactivo que registra qué vuelos tienen el itinerario de tramos abierto. @type {Record<string, boolean>} */
 const tramosAbiertos = reactive({})
 
+/** Vuelo actualmente abierto en el modal de detalles. @type {import('vue').Ref<object|null>} */
+const modalVuelo = ref(null)
+
+function abrirModalVuelo(v) { modalVuelo.value = v; document.body.style.overflow = 'hidden' }
+function cerrarModalVuelo() { modalVuelo.value = null; document.body.style.overflow = '' }
+function esAerolineaBroom(nombre) { return /broom/i.test(nombre || '') }
+
 /** Fecha de hoy en formato ISO para validaciones de fecha mínima. @type {string} */
 const hoy = new Date().toISOString().split('T')[0]
 
@@ -676,6 +840,7 @@ const esIdaVuelta = computed(() => busqueda.value.tipoVuelo === 'idaVuelta')
  * @param {string} id - ID compuesto del vuelo
  */
 function toggleTramos(id) { tramosAbiertos[id] = !tramosAbiertos[id] }
+
 
 /**
  * Estado reactivo de todos los filtros aplicados a la lista de vuelos.
@@ -1159,6 +1324,7 @@ function mapDirecto(v, b) {
     id:       `${b.proveedor_id}-d-${v.id ?? Math.random()}`,
     rutaId:   v.id ?? null,                    // ID real de la ruta en Broom para comentarios
     aerolinea: b.proveedor, numeroVuelo: v.numeroVuelo || '--',
+    proveedorImagen: b.proveedorImagen || '',
     origenCodigo: v.origenCodigo || '', origenCiudad: v.origenCiudad || '',
     destinoCodigo: v.destinoCodigo || '', destinoCiudad: v.destinoCiudad || '',
     horaSalida: formatHora(v.horaSalida), horaLlegada: formatHora(v.horaLlegada),
@@ -1167,7 +1333,9 @@ function mapDirecto(v, b) {
     asientosTurista:   typeof v.boletosDisponiblesTurista   === 'number' ? v.boletosDisponiblesTurista   : 99,
     asientosEjecutiva: typeof v.boletosDisponiblesEjecutiva === 'number' ? v.boletosDisponiblesEjecutiva : 99,
     claseSeleccionada: 'economica', avionMarca: v.avionMarca || '', avionModelo: v.avionModelo || '',
-    escalas: 0, paradas: [], tramos: [], tiempoEscalaMinutos: 0,
+    escalas: 0, paradas: [],
+    tramos: [v],   // vuelo directo = 1 tramo sintético con crew + detalles
+    tiempoEscalaMinutos: 0,
   }
 }
 
@@ -1184,6 +1352,7 @@ function mapEscala(v, b) {
     id:     `${b.proveedor_id}-e-${v.id ?? v.precioTuristaTotal ?? Math.random()}`,
     rutaId: v.id ?? null,                       // ID real si Broom lo devuelve
     aerolinea: b.proveedor, numeroVuelo: p.numeroVuelo || '--',
+    proveedorImagen: b.proveedorImagen || '',
     origenCodigo: p.origenCodigo || '', origenCiudad: p.origenCiudad || '',
     destinoCodigo: u.destinoCodigo || '', destinoCiudad: u.destinaCiudad || u.destinoCiudad || '',
     horaSalida: formatHora(p.horaSalida), horaLlegada: formatHora(u.horaLlegada),

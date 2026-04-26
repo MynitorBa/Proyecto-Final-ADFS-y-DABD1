@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Repositories;
@@ -170,6 +172,58 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
+        /// Edita un vuelo existente. Solo permitido con mas de 48 horas de anticipacion.
+        /// Recalcula la hora de llegada, valida tripulacion y capacidad del avion.
+        /// </summary>
+        public async Task<int> EditarVuelo(int vueloId, EditarVueloDTO dto)
+        {
+            // Obtener vuelo actual
+            var vuelo = await _adminVueloRepository.ObtenerVueloPorId(vueloId);
+            if (vuelo == null)
+                throw new ArgumentException("Vuelo no encontrado");
+
+            // Validar restricción de 48h
+            var fechaSalidaLocal = vuelo.Fecha.Date + vuelo.HoraSalida;
+            var horasRestantes = (fechaSalidaLocal - DateTime.Now).TotalHours;
+            if (horasRestantes < 48)
+                throw new InvalidOperationException(
+                    $"No se puede editar: el vuelo sale en {horasRestantes:F0}h. Mínimo 48h de anticipación.");
+
+            // Validar tripulación
+            if (dto.TripulantesIds.Count != 5)
+                throw new ArgumentException("El vuelo requiere exactamente 5 tripulantes");
+
+            // Validar composición por roles
+            var tripulantes = await _adminVueloRepository.ObtenerTripulantesPorIds(dto.TripulantesIds);
+            int pilotos    = tripulantes.Count(t => t.RolID == 1);
+            int copilotos  = tripulantes.Count(t => t.RolID == 2);
+            int auxiliares = tripulantes.Count(t => t.RolID == 3);
+
+            if (pilotos < 1)    throw new ArgumentException("Debe asignar al menos 1 Piloto");
+            if (copilotos < 1)  throw new ArgumentException("Debe asignar al menos 1 Copiloto");
+            if (auxiliares < 3) throw new ArgumentException("Debe asignar al menos 3 Auxiliares de vuelo");
+
+            // Validar capacidad del avión
+            var avion = await _adminVueloRepository.ObtenerAvionPorId(dto.AvionId);
+            if (avion == null)
+                throw new ArgumentException("Avión no encontrado");
+
+            if (dto.BoletosTurista + dto.BoletosEjecutivo > avion.CapacidadPasajeros)
+                throw new ArgumentException(
+                    $"Los boletos ({dto.BoletosTurista + dto.BoletosEjecutivo}) superan la capacidad del avión ({avion.CapacidadPasajeros})");
+
+            // Recalcular hora de llegada usando la ruta del vuelo
+            var (duracion, tzOrigen, tzDestino) = await _adminVueloRepository.ObtenerInfoRutaPorId(vuelo.RutaId);
+            var (horaLlegada, fechaLlegada, _, _) = RutaService.CalcularLlegadaConZonas(
+                dto.Fecha, TimeSpan.Parse(dto.HoraSalida), duracion, tzOrigen, tzDestino);
+
+            // Actualizar en BD
+            await _adminVueloRepository.ActualizarVuelo(vueloId, dto, horaLlegada, fechaLlegada);
+
+            return vueloId;
+        }
+
+        /// <summary>
         /// Retorna el conjunto de IDs de aviones que ya tienen un vuelo programado
         /// para la fecha, hora de salida y aeropuerto de origen indicados.
         /// Permite filtrar aviones no disponibles al momento de crear un vuelo nuevo.
@@ -184,6 +238,22 @@ namespace Aerolinea.API.Services
         /// </summary>
         public async Task<HashSet<int>> ObtenerTripulantesOcupados(DateTime fecha, TimeSpan horaSalida)
             => await _adminVueloRepository.ObtenerTripulantesOcupados(fecha, horaSalida);
+
+        // ─────────────────────────────────────────────────────────────────
+        //  SIGUIENTE NÚMERO DE VUELO
+        // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Calcula el siguiente numero de secuencia disponible para el prefijo indicado.
+        /// Valida que el prefijo sea exactamente 2 letras mayusculas antes de consultar.
+        /// </summary>
+        public async Task<string> ObtenerSiguienteNumeroVuelo(string prefijo)
+        {
+            prefijo = prefijo?.Trim().ToUpper() ?? "";
+            if (!Regex.IsMatch(prefijo, @"^[A-Z]{4}$"))
+                throw new ArgumentException("El prefijo debe tener exactamente 4 letras mayúsculas.");
+
+            return await _adminVueloRepository.ObtenerSiguienteNumeroVuelo(prefijo);
+        }
 
     }
 }

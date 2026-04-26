@@ -9,14 +9,15 @@
   import '../styles/Administrador.css';
   import { onMount } from 'svelte';
 
-  import AdminDashboard   from '../components/admin/AdminDashboard.svelte';
-  import AdminUsuarios    from '../components/admin/AdminUsuarios.svelte';
-  import AdminHoteles     from '../components/admin/AdminHoteles.svelte';
-  import AdminCrearHotel  from '../components/admin/AdminCrearHotel.svelte';
-  import AdminReservas    from '../components/admin/AdminReservas.svelte';
-  import AdminAgencias    from '../components/admin/AdminAgencias.svelte';
-  import AdminAerolineas  from '../components/admin/AdminAerolineas.svelte';
-  import AdminReportes    from '../components/admin/AdminReportes.svelte';
+  import AdminDashboard        from '../components/admin/AdminDashboard.svelte';
+  import AdminUsuarios         from '../components/admin/AdminUsuarios.svelte';
+  import AdminHoteles          from '../components/admin/AdminHoteles.svelte';
+  import AdminCrearHotel       from '../components/admin/AdminCrearHotel.svelte';
+  import AdminTiposHabitacion  from '../components/admin/AdminTiposHabitacion.svelte';
+  import AdminReservas         from '../components/admin/AdminReservas.svelte';
+  import AdminAgencias         from '../components/admin/AdminAgencias.svelte';
+  import AdminAerolineas       from '../components/admin/AdminAerolineas.svelte';
+  import AdminReportes         from '../components/admin/AdminReportes.svelte';
 
   /** URL base del backend usada por todos los sub-componentes de admin. @type {string} */
   import { API } from '../lib/api.js';
@@ -33,6 +34,9 @@
 
   /** Contador de hoteles, actualizado por AdminHoteles via bind. @type {number} */
   let countHoteles    = 0;
+
+  /** Contador de tipos de habitación, actualizado por AdminTiposHabitacion via bind. @type {number} */
+  let countTiposHabitacion = 0;
 
   /** Contador de reservas, actualizado por AdminReservas via bind. @type {number} */
   let countReservas   = 0;
@@ -96,15 +100,15 @@
    * @type {Array<{id: string, label: string, icon: string}>}
    */
   const navItems = [
-    { id: 'dashboard',    label: 'Dashboard',    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { id: 'usuarios',     label: 'Usuarios',      icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
-    { id: 'hoteles',      label: 'Hoteles',       icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
-    { id: 'crear-hotel',  label: 'Crear Hotel',   icon: 'M12 4v16m8-8H4' },
-    { id: 'reservas',     label: 'Reservas',      icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    { id: 'agencias',     label: 'Agencias',      icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-    // Seccion de aerolineas aliadas en el sidebar de administracion
-    { id: 'aerolineas',   label: 'Aerolineas',    icon: 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z' },
-    { id: 'reportes',     label: 'Reportes',      icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+    { id: 'dashboard',         label: 'Dashboard',         icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    { id: 'usuarios',          label: 'Usuarios',          icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+    { id: 'hoteles',           label: 'Hoteles',           icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
+    { id: 'crear-hotel',       label: 'Crear Hotel',       icon: 'M12 4v16m8-8H4' },
+    { id: 'tipos-habitacion',  label: 'Tipos Habitación',  icon: 'M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5' },
+    { id: 'reservas',          label: 'Reservas',          icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { id: 'agencias',          label: 'Agencias',          icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+    { id: 'aerolineas',        label: 'Aerolineas',        icon: 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z' },
+    { id: 'reportes',          label: 'Reportes',          icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
   ];
 </script>
 
@@ -156,6 +160,7 @@
           {:else if activeSection === 'usuarios'}Gestión de Usuarios
           {:else if activeSection === 'hoteles'}Gestión de Hoteles
           {:else if activeSection === 'crear-hotel'}Crear Nuevo Hotel
+          {:else if activeSection === 'tipos-habitacion'}Tipos de Habitación
           {:else if activeSection === 'reservas'}Reservas
           {:else if activeSection === 'agencias'}Gestión de Agencias
           {:else if activeSection === 'aerolineas'}Gestión de Aerolineas Aliadas
@@ -187,6 +192,9 @@
 
   {:else if activeSection === 'crear-hotel'}
     <AdminCrearHotel API_BASE={API} {badge} {fileToBase64} {tiposHabitacion} onFinish={() => setSection('hoteles')} />
+
+  {:else if activeSection === 'tipos-habitacion'}
+    <AdminTiposHabitacion API_BASE={API} {badge} {fileToBase64} count={countTiposHabitacion} />
 
   {:else if activeSection === 'reservas'}
     <AdminReservas API_BASE={API} {badge} bind:count={countReservas} />

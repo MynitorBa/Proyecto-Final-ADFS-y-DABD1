@@ -712,6 +712,17 @@ const boletos              = computed(() => detalleVuelo.value?.detalle?.boletos
 /** Cantidad total de boletos (al menos 1). @type {import('vue').ComputedRef<number>} */
 const totalBoletos         = computed(() => boletos.value.length || 1)
 
+/**
+ * Pasajeros únicos según la búsqueda — independiente del número de tramos o vuelos de regreso.
+ * Para ida+vuelta con escalas el backend genera N tramos × pax boletos, pero el usuario
+ * solo debe llenar datos una vez por pasajero real.
+ */
+const cantidadPasajerosUnicos = computed(() => {
+  if (tipoItem.value === 'vuelo')   return item.value?.busqueda?.cantidadPasajeros || 1
+  if (tipoItem.value === 'paquete') return item.value?.cantidadPersonas || 1
+  return 1
+})
+
 /** Array de objetos con los datos de los pasajeros adicionales (boletos 2, 3...). @type {import('vue').Ref<Array>} */
 const pasajerosAdicionales = ref([])
 
@@ -728,14 +739,17 @@ const paxAcState           = ref([])
  * Inicializa los formularios de pasajeros adicionales cada vez que llegan los boletos del servidor.
  * Se ejecuta de forma inmediata y reactiva cuando cambia `detalleVuelo`.
  */
-watch(detalleVuelo, (val) => {
-  const bols = val?.detalle?.boletos || []
-  if (bols.length > 1) {
-    pasajerosAdicionales.value = bols.slice(1).map(() =>
+watch(detalleVuelo, () => {
+  // Usar pasajeros únicos (de la búsqueda), no el total de boletos.
+  // Para ida+vuelta con escalas el backend genera múltiples boletos por pasajero
+  // (uno por tramo × vuelo), pero el usuario solo llena datos una vez por persona.
+  const formsExtra = Math.max(0, cantidadPasajerosUnicos.value - 1)
+  if (formsExtra > 0) {
+    pasajerosAdicionales.value = Array.from({ length: formsExtra }, () =>
       ({ nombre: '', apellido: '', pasaporte: '', telefono: '', pais: '', ciudad: '' })
     )
-    erroresPasajeros.value = bols.slice(1).map(() => ({}))
-    paxAcState.value = bols.slice(1).map(() => ({
+    erroresPasajeros.value = Array.from({ length: formsExtra }, () => ({}))
+    paxAcState.value = Array.from({ length: formsExtra }, () => ({
       paisQuery:         '',
       paisesSugeridos:   [],
       paisSel:           null,
@@ -746,6 +760,10 @@ watch(detalleVuelo, (val) => {
       dialCode:          '',
       phoneDigits:       8,
     }))
+  } else {
+    pasajerosAdicionales.value = []
+    erroresPasajeros.value     = []
+    paxAcState.value           = []
   }
 }, { immediate: true })
 
@@ -1467,8 +1485,12 @@ async function handleReservar() {
       : { proveedorId: item.value?.proveedorId, vuelosArr: [] }
 
     if ((tipoItem.value === 'vuelo' || tipoItem.value === 'paquete') && boletos.value.length > 0) {
+      const unicos = cantidadPasajerosUnicos.value
       const pasajerosPayload = boletos.value.map((boleto, idx) => {
-        if (idx === 0) {
+        // Pasajero real = posición dentro del ciclo de pasajeros únicos.
+        // ej: 4 pax, 24 boletos → idx%4 da 0,1,2,3,0,1,2,3,...
+        const paxIdx = idx % unicos
+        if (paxIdx === 0) {
           return {
             boletoId:  boleto.boletoId,
             nombre:    f.nombre,
@@ -1479,8 +1501,8 @@ async function handleReservar() {
             ciudad:    f.ciudad,
           }
         }
-        const pax = pasajerosAdicionales.value[idx - 1]
-        const st  = paxAcState.value[idx - 1]
+        const pax = pasajerosAdicionales.value[paxIdx - 1]
+        const st  = paxAcState.value[paxIdx - 1]
         const tel = st?.dialCode
           ? `${st.dialCode} ${pax.telefono.replace(/\s/g, '')}`
           : pax.telefono

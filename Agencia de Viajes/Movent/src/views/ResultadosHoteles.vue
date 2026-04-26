@@ -307,7 +307,13 @@
               <div class="rh-grupo__head">
                 <div class="rh-grupo__hotel-info">
                   <div class="rh-grupo__hotel-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+                    <img
+                      v-if="grupo.proveedorImagen"
+                      :src="'data:image/png;base64,' + grupo.proveedorImagen"
+                      class="rh-grupo__hotel-img"
+                      @error="e => e.target.style.display='none'"
+                    />
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>
                   </div>
@@ -513,6 +519,12 @@
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
                       </svg>
                     </div>
+                    <img
+                      v-if="hab.imagenesIds?.length"
+                      :src="imgUrlHab(hab.imagenesIds[0])"
+                      class="rh-card__img-real"
+                      @error="e => e.target.style.display='none'"
+                    />
                     <div class="rh-card__tipo-badge">{{ hab.tipoHabitacion }}</div>
                     <div v-if="hab.cantidadDisponible <= 2" class="rh-card__urgente-badge">
                       ¡Solo {{ hab.cantidadDisponible }}!
@@ -590,7 +602,16 @@
                         </svg>
                       </template>
                     </button>
+
                   </div>
+
+                  <!-- ── Botón modal — span ambas columnas del grid ── -->
+                  <button class="rh-det-toggle" @click.stop="abrirModalHab(hab, grupo)" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    Ver detalles de la habitación
+                  </button>
 
                 </article>
               </div>
@@ -660,6 +681,161 @@
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODAL DE DETALLES DE HABITACIÓN — teleportado a <body>
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div v-if="modalHab" class="mv-backdrop" @click.self="cerrarModalHab">
+        <div class="mv-modal" role="dialog" aria-modal="true">
+
+          <!-- Header oscuro -->
+          <div class="mv-header">
+            <img v-if="modalHab.grupo.proveedorImagen"
+              :src="'data:image/png;base64,' + modalHab.grupo.proveedorImagen"
+              alt="Logo proveedor" class="mv-header__logo"
+              @error="e => e.target.style.display='none'" />
+            <div v-else class="mv-header__logo--placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="1.8" width="26" height="26">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <div class="mv-header__info">
+              <div class="mv-header__nombre">{{ modalHab.grupo.nombreHotel }}</div>
+              <div class="mv-header__sub">{{ modalHab.grupo.ciudad }}, {{ modalHab.grupo.pais }} · {{ modalHab.hab.tipoHabitacion }}</div>
+            </div>
+            <button class="mv-header__close" @click="cerrarModalHab" type="button" aria-label="Cerrar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="mv-modal__scroll">
+
+          <!-- Body -->
+          <div class="mv-body">
+
+            <!-- Layout 2 columnas: imagen hotel (izq) + collage habitaciones (der) -->
+            <div class="mv-media-layout">
+              <!-- Izquierda: imagen principal del hotel (click = lightbox) -->
+              <div class="mv-media-layout__hotel"
+                :class="{ 'mv-media-layout__hotel--clickable': modalHab.grupo.imagenesIds?.length }"
+                @click="modalHab.grupo.imagenesIds?.length && abrirLightbox(modalHab.grupo.imagenesIds.map(imgUrlHotel), 0)">
+                <img v-if="modalHab.grupo.imagenesIds?.length"
+                  :src="imgUrlHotel(modalHab.grupo.imagenesIds[0])"
+                  :alt="modalHab.grupo.nombreHotel"
+                  class="mv-media-layout__hotel-img"
+                  @error="e => e.target.style.display='none'" />
+                <div v-else class="mv-media-layout__hotel-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                </div>
+                <span v-if="modalHab.grupo.imagenesIds?.length" class="mv-media-layout__label">Hotel</span>
+              </div>
+              <!-- Derecha: collage de imágenes del tipo de habitación -->
+              <div class="mv-media-layout__rooms">
+                <template v-if="modalHab.hab.imagenesIds?.length">
+                  <img v-for="(id, i) in modalHab.hab.imagenesIds.slice(0, 4)" :key="id"
+                    :src="imgUrlHab(id)"
+                    :alt="`Hab. ${i + 1}`"
+                    class="mv-media-layout__room-img"
+                    @click="abrirLightbox(modalHab.hab.imagenesIds.map(imgUrlHab), i)"
+                    @error="e => e.target.style.display='none'" />
+                  <div v-if="modalHab.hab.imagenesIds.length > 4"
+                    class="mv-media-layout__room-img mv-media-layout__room-more"
+                    @click="abrirLightbox(modalHab.hab.imagenesIds.map(imgUrlHab), 4)">
+                    +{{ modalHab.hab.imagenesIds.length - 4 }}
+                  </div>
+                </template>
+                <div v-else class="mv-media-layout__rooms-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span>Sin imágenes</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info del hotel -->
+            <template v-if="modalHab.grupo.descripcion || modalHab.grupo.direccion">
+              <div class="mv-sep">Sobre el hotel</div>
+              <p v-if="modalHab.grupo.descripcion" style="font-size:.88rem;color:#3d3630;line-height:1.55;margin:0 0 10px">{{ modalHab.grupo.descripcion }}</p>
+              <div v-if="modalHab.grupo.direccion" class="mv-grid">
+                <div class="mv-bloque" style="grid-column: 1 / -1">
+                  <span class="mv-lbl">Dirección</span>
+                  <span class="mv-val">{{ modalHab.grupo.direccion }}</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Specs de habitación -->
+            <div class="mv-sep">Detalles de la habitación</div>
+            <div class="mv-grid">
+              <div class="mv-bloque">
+                <span class="mv-lbl">Tipo</span>
+                <span class="mv-val">{{ modalHab.hab.tipoHabitacion }}</span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Tipo de cama</span>
+                <span class="mv-val">{{ modalHab.hab.tipoCama }}</span>
+              </div>
+              <div v-if="modalHab.hab.metrosCuadrados" class="mv-bloque">
+                <span class="mv-lbl">Superficie</span>
+                <span class="mv-val">{{ modalHab.hab.metrosCuadrados }} m²</span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Capacidad máxima</span>
+                <span class="mv-val">{{ modalHab.hab.capacidadMaxima }} persona{{ modalHab.hab.capacidadMaxima !== 1 ? 's' : '' }}</span>
+              </div>
+              <div class="mv-bloque">
+                <span class="mv-lbl">Disponibilidad</span>
+                <span class="mv-val" :class="{ 'mv-val--urgente': modalHab.hab.cantidadDisponible > 0 && modalHab.hab.cantidadDisponible <= 3, 'mv-val--out': modalHab.hab.cantidadDisponible === 0 }">
+                  {{ modalHab.hab.cantidadDisponible === 0 ? 'Agotado' : modalHab.hab.cantidadDisponible + ' habitaciones' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Amenidades -->
+            <template v-if="modalHab.grupo.amenidades?.length">
+              <div class="mv-sep">Amenidades del hotel</div>
+              <div class="mv-amenidades">
+                <span v-for="am in modalHab.grupo.amenidades" :key="am.amenidadId"
+                  class="mv-amenidad" :title="am.descripcion">
+                  <span class="mv-amenidad__icon" v-html="amenityIcon(am.nombre)"></span>
+                  {{ am.nombre }}
+                </span>
+              </div>
+            </template>
+
+          </div>
+          </div><!-- /mv-modal__scroll -->
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Lightbox pantalla completa -->
+    <Teleport to="body">
+      <div v-if="lightbox" class="mv-lightbox" @click.self="cerrarLightbox">
+        <img :src="lightbox.imgs[lightbox.idx]" class="mv-lightbox__img" @error="onImgError" />
+        <button class="mv-lightbox__close" @click="cerrarLightbox" type="button" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <button v-if="lightbox.imgs.length > 1" class="mv-lightbox__arrow mv-lightbox__arrow--prev" @click="lightboxPrev" type="button" aria-label="Anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button v-if="lightbox.imgs.length > 1" class="mv-lightbox__arrow mv-lightbox__arrow--next" @click="lightboxNext" type="button" aria-label="Siguiente">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div v-if="lightbox.imgs.length > 1" class="mv-lightbox__counter">
+          {{ lightbox.idx + 1 }} / {{ lightbox.imgs.length }}
+        </div>
+      </div>
+    </Teleport>
+
     <Piepagina />
   </div>
 </template>
@@ -672,11 +848,12 @@
  * filtros dinámicos, carga reseñas de forma lazy con IntersectionObserver y pre-crea la
  * reservación en background al seleccionar.
  */
-import { ref, computed, reactive, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '../components/Encabezado.vue'
 import Piepagina from '../components/Piepagina.vue'
 import '../styles/resultadoshoteles.css'
+import '../styles/detalle-modal.css'
 import ComentarioNodo from '../components/Comentarionodo.vue'
 
 const router = useRouter()
@@ -732,6 +909,107 @@ const error = ref('')
 
 /** UID de la habitación actualmente marcada como seleccionada (feedback visual). @type {import('vue').Ref<string|null>} */
 const seleccionada = ref(null)
+
+/** Habitación + grupo abiertos en el modal de detalles. @type {import('vue').Ref<{hab:object,grupo:object}|null>} */
+const modalHab = ref(null)
+/** Índice de la imagen activa en la galería del modal. @type {import('vue').Ref<number>} */
+const modalImgIdx = ref(0)
+/** URL base del proveedor de hoteles para construir URLs de imágenes. @type {string} */
+const HOTEL_API = import.meta.env.VITE_HOTEL_API_URL || 'http://localhost:7000'
+
+function abrirModalHab(hab, grupo) {
+  modalHab.value = { hab, grupo }
+  modalImgIdx.value = 0
+  lightbox.value = null
+  document.body.style.overflow = 'hidden'
+}
+function cerrarModalHab() { modalHab.value = null; lightbox.value = null; document.body.style.overflow = '' }
+function imgUrlHab(id)   { return `${HOTEL_API}/imagenes/habitacion/${id}` }
+function imgUrlHotel(id) { return `${HOTEL_API}/imagenes/hotel/${id}` }
+function onImgError(e) { e.target.style.display = 'none' }
+
+function prevImg() {
+  const imgs = modalHab.value?.hab?.imagenesIds
+  if (!imgs?.length) return
+  modalImgIdx.value = (modalImgIdx.value - 1 + imgs.length) % imgs.length
+}
+function nextImg() {
+  const imgs = modalHab.value?.hab?.imagenesIds
+  if (!imgs?.length) return
+  modalImgIdx.value = (modalImgIdx.value + 1) % imgs.length
+}
+
+/** Lightbox: { imgs, idx } */
+const lightbox = ref(null)
+function abrirLightbox(imgs, idx) { lightbox.value = { imgs, idx } }
+function cerrarLightbox() { lightbox.value = null }
+function lightboxPrev() { if (!lightbox.value) return; lightbox.value.idx = (lightbox.value.idx - 1 + lightbox.value.imgs.length) % lightbox.value.imgs.length }
+function lightboxNext() { if (!lightbox.value) return; lightbox.value.idx = (lightbox.value.idx + 1) % lightbox.value.imgs.length }
+
+const _S = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">${d}</svg>`
+const AMENITY_ICONS = {
+  wifi:            _S('<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>'),
+  'wi-fi':         _S('<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>'),
+  internet:        _S('<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>'),
+  piscina:         _S('<path d="M2 12h20"/><path d="M2 6l4 4 4-4 4 4 4-4 4 4"/><path d="M2 18l4-4 4 4 4-4 4 4"/>'),
+  pool:            _S('<path d="M2 12h20"/><path d="M2 6l4 4 4-4 4 4 4-4 4 4"/><path d="M2 18l4-4 4 4 4-4 4 4"/>'),
+  alberca:         _S('<path d="M2 12h20"/><path d="M2 6l4 4 4-4 4 4 4-4 4 4"/><path d="M2 18l4-4 4 4 4-4 4 4"/>'),
+  gimnasio:        _S('<path d="M6 5v14"/><path d="M18 5v14"/><path d="M2 9v6"/><path d="M22 9v6"/><line x1="6" y1="12" x2="18" y2="12"/>'),
+  gym:             _S('<path d="M6 5v14"/><path d="M18 5v14"/><path d="M2 9v6"/><path d="M22 9v6"/><line x1="6" y1="12" x2="18" y2="12"/>'),
+  fitness:         _S('<path d="M6 5v14"/><path d="M18 5v14"/><path d="M2 9v6"/><path d="M22 9v6"/><line x1="6" y1="12" x2="18" y2="12"/>'),
+  restaurante:     _S('<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>'),
+  restaurant:      _S('<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>'),
+  comedor:         _S('<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>'),
+  estacionamiento: _S('<rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+  parking:         _S('<rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+  parqueo:         _S('<rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>'),
+  spa:             _S('<path d="M12 22c4.97 0 9-2.69 9-6V4c-3.87 1.52-5.68 3.97-7 6-1.32-2.03-3.13-4.48-7-6v12c0 3.31 4.03 6 5 6z"/>'),
+  masaje:          _S('<path d="M12 22c4.97 0 9-2.69 9-6V4c-3.87 1.52-5.68 3.97-7 6-1.32-2.03-3.13-4.48-7-6v12c0 3.31 4.03 6 5 6z"/>'),
+  bar:             _S('<polyline points="8 22 8 14 2 2 22 2 16 14 16 22"/><line x1="8" y1="22" x2="16" y2="22"/>'),
+  'cafetería':     _S('<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>'),
+  'café':          _S('<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>'),
+  'lavandería':    _S('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M9 7h1"/><path d="M12 7h1"/>'),
+  laundry:         _S('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M9 7h1"/><path d="M12 7h1"/>'),
+  desayuno:        _S('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/>'),
+  breakfast:       _S('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/>'),
+  aire:            _S('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>'),
+  'a/c':           _S('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>'),
+  tv:              _S('<rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>'),
+  'televisión':    _S('<rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>'),
+  television:      _S('<rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>'),
+  terraza:         _S('<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
+  'balcón':        _S('<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
+  balcon:          _S('<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'),
+  'jardín':        _S('<path d="M17 8c0 4-2.5 6-5 8.5C9.5 14 7 12 7 8a5 5 0 0 1 10 0z"/><path d="M12 21v-5"/>'),
+  jardin:          _S('<path d="M17 8c0 4-2.5 6-5 8.5C9.5 14 7 12 7 8a5 5 0 0 1 10 0z"/><path d="M12 21v-5"/>'),
+  seguridad:       _S('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'),
+  vigilancia:      _S('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'),
+  'recepción':     _S('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
+  recepcion:       _S('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
+  '24 horas':      _S('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
+}
+const _DEFAULT_ICON = _S('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>')
+function amenityIcon(nombre) {
+  const key = (nombre || '').toLowerCase()
+  for (const [k, v] of Object.entries(AMENITY_ICONS)) {
+    if (key.includes(k)) return v
+  }
+  return _DEFAULT_ICON
+}
+
+// Teclado: ESC cierra, flechas navegan
+function _onKeydown(e) {
+  if (lightbox.value) {
+    if (e.key === 'Escape') { cerrarLightbox(); return }
+    if (e.key === 'ArrowLeft')  { lightboxPrev(); return }
+    if (e.key === 'ArrowRight') { lightboxNext(); return }
+  }
+  if (modalHab.value) {
+    if (e.key === 'Escape') { cerrarModalHab(); return }
+    if (e.key === 'ArrowLeft')  { prevImg(); return }
+    if (e.key === 'ArrowRight') { nextImg(); return }
+  }
+}
 
 /** Controla la visibilidad del sidebar de filtros en móvil. @type {import('vue').Ref<boolean>} */
 const filtrosAbiertos = ref(false)
@@ -1012,10 +1290,11 @@ const gruposPorHotel = computed(() => {
     if (!map.has(key)) {
       map.set(key, {
         hotelId: hab.hotelId, proveedorId: hab.proveedorId,
-        proveedorNombre: hab.proveedorNombre, nombreHotel: hab.nombreHotel,
+        proveedorNombre: hab.proveedorNombre, proveedorImagen: hab.proveedorImagen || '', nombreHotel: hab.nombreHotel,
         ciudad: hab.hotelCiudad, pais: hab.hotelPais,
         descripcion: hab.hotelDescripcion, direccion: hab.hotelDireccion,
         rating: hab.hotelRating, amenidades: hab.amenidades || [],
+        imagenesIds: hab.hotelImagenesIds || [],
         habitaciones: [],
         tiposHabitacion:             hab._tiposHabitacion || [],
         tiposHabitacionPorCapacidad: hab._tiposHabitacionPorCapacidad || {},
@@ -1356,7 +1635,7 @@ function mapearRespuesta(respuesta) {
         const habitacionesDisp = Array.isArray(room.habitacionesDisponibles) ? room.habitacionesDisponibles : []
         resultado.push({
           uid: `${proveedor.proveedor_id}-${hotel.id}-${room.tipoHabitacionId}`,
-          proveedorId: proveedor.proveedor_id, proveedorNombre: proveedor.proveedor,
+          proveedorId: proveedor.proveedor_id, proveedorNombre: proveedor.proveedor, proveedorImagen: proveedor.proveedorImagen || '',
           hotelId: hotel.id, nombreHotel: hotel.nombre,
           hotelCiudad: hotel.ciudad, hotelPais: hotel.pais,
           hotelDescripcion: hotel.descripcion, hotelDireccion: hotel.direccion,
@@ -1371,6 +1650,8 @@ function mapearRespuesta(respuesta) {
           capacidadMaxima: room.capacidadMaxima ?? 1,
           habitacionesDisponibles: habitacionesDisp,
           cantidadDisponible: habitacionesDisp.length,
+          imagenesIds: Array.isArray(room.imagenesIds) ? room.imagenesIds : [],
+          hotelImagenesIds: Array.isArray(hotel.imagenesIds) ? hotel.imagenesIds : [],
           _tiposHabitacion:             Array.isArray(hotel.tiposHabitacion) ? hotel.tiposHabitacion : [],
           _tiposHabitacionPorCapacidad: hotel.tiposHabitacionPorCapacidad || null,
           _combinacionesNumericas:      hotel.combinacionesNumericas || [],
@@ -1603,5 +1884,7 @@ onMounted(() => {
   // Inicializar observer y comenzar a observar grupos visibles
   initHotelObserver()
   observarGrupos()
+  window.addEventListener('keydown', _onKeydown)
 })
+onUnmounted(() => { window.removeEventListener('keydown', _onKeydown) })
 </script>

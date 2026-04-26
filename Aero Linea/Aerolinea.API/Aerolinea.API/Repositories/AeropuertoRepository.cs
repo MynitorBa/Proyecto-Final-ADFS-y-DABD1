@@ -375,7 +375,9 @@ namespace Aerolinea.API.Repositories
         /// <summary>
         /// Retorna las fechas con vuelos disponibles para una ruta especifica, considerando
         /// cantidad de pasajeros, clase y numero maximo de escalas. Utiliza BFS por capas
-        /// para incluir fechas de itinerarios con conexiones, igual que VueloRepository.
+        /// con los mismos criterios de limite de tiempo que VueloRepository (1.5x la ruta
+        /// directa, o 8h por escala como fallback) para garantizar que el calendario solo
+        /// marca fechas que la busqueda real puede encontrar.
         /// </summary>
         public async Task<List<DateTime>> ObtenerFechasConVuelosPorRuta(
     int? origenId,
@@ -423,7 +425,10 @@ namespace Aerolinea.API.Repositories
             if (!origenId.HasValue || !destinoId.HasValue)
                 return fechas.OrderBy(f => f).ToList();
 
-            // Límite de tiempo de vuelo acumulado: 1.5x la ruta directa
+            // Límite de tiempo de vuelo acumulado: mismo criterio que VueloRepository.ObtenerLimiteVuelo
+            // — 1.5x la duración de la ruta directa, o 8h por escala si no hay ruta directa.
+            // Mantener este valor sincronizado con VueloRepository para que el calendario
+            // solo marque fechas que la búsqueda real también puede encontrar.
             int limiteMinutos;
             using (var cmd = new SqlCommand(
                 "SELECT TOP 1 DuracionEstimada FROM Ruta WHERE OrigenID = @o AND DestinoID = @d", connection))
@@ -433,7 +438,7 @@ namespace Aerolinea.API.Repositories
                 var result = await cmd.ExecuteScalarAsync();
                 limiteMinutos = result != null && result != DBNull.Value
                     ? (int)((int)result * 1.5)
-    :               maxEscalas * 8 * 60;
+                    : maxEscalas * 8 * 60;
             }
 
             // Traemos TODOS los tramos útiles de una sola vez:

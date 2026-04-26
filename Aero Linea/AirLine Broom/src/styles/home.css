@@ -391,8 +391,8 @@
 }
 /* Marcador de posicion de celda vacia para dias antes del primero del mes */
 .cal-day--empty { background: none; }
-/* Dia bloqueado/pasado: desvanecido y cursor no permitido */
-.cal-day--bloqueado { color: #ddd; cursor: not-allowed; opacity: .4; }
+/* Dia bloqueado/pasado: gris suave visible pero no clicable */
+.cal-day--bloqueado { color: #bbb; cursor: not-allowed; opacity: .6; }
 /* Dia de ida disponible: fondo marron oscuro, texto blanco, clicable */
 .cal-day--disponible {
     background: #7a5c3f; color: var(--white);

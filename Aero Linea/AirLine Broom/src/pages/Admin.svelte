@@ -31,7 +31,7 @@
   // Modulo de gestion de reservaciones: listado, detalle y cancelacion con notificacion por correo
   import AdminReservas      from '../components/admin/AdminReservas.svelte';
 
-  /** Funcion de navegacion proporcionada por el enrutador de la aplicacion. Acepta un payload de datos opcional. @type {Function} */
+/** Funcion de navegacion proporcionada por el enrutador de la aplicacion. Acepta un payload de datos opcional. @type {Function} */
   export let navigateTo = (page, data = null) => {};
 
   import { API } from '../lib/api.js';
@@ -215,10 +215,8 @@
     { id: 'usuarios',             label: 'Usuarios',             icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
     { id: 'metricas',             label: 'Métricas',             icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { id: 'agencias',             label: 'Agencias',             icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-
     // Modulo de hoteles aliados: gestion de hoteles vinculados via Webservice
     { id: 'hoteles-aliados',      label: 'Hoteles Aliados',      icon: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4z' },
-
     // Modulo de reservaciones: lista global, detalle de boletos y cancelacion administrativa
     { id: 'reservaciones',        label: 'Reservaciones',        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   ];

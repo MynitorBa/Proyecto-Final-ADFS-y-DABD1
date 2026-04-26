@@ -1,6 +1,5 @@
 $javaHome = "$env:USERPROFILE\.jdks\ms-17.0.18"
-$mvnCmd = "C:\Program Files\JetBrains\IntelliJ IDEA 2025.3.3\plugins\maven\lib\maven3\bin\mvn.cmd"
-
+$mvnCmd = "mvn"
 
 Write-Host "Corriendo tests..."
 $env:JAVA_HOME = $javaHome

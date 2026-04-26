@@ -49,6 +49,14 @@
   /** Indica si la solicitud de la API para crear ruta esta en vuelo. @type {boolean} */
   let creandoRuta = false;
 
+  /** Texto de busqueda para filtrar la tabla de rutas por codigo IATA o ciudad. @type {string} */
+  let filtroRutas = '';
+
+  // Filtra la lista de rutas segun el texto ingresado en la barra de busqueda.
+  $: rutasFiltradas = rutas.filter(r =>
+    !filtroRutas || [r.codigoOrigen, r.origen, r.codigoDestino, r.destino].some(v => v?.toLowerCase().includes(filtroRutas.toLowerCase()))
+  );
+
   /** Texto actual en el input de busqueda de aeropuerto de origen dentro del modal. @type {string} */
   let busquedaOrigenModal  = '';
 
@@ -227,7 +235,7 @@
     </div>
     <div style="display:flex;gap:.75rem">
       <button class="btn-add" on:click={abrirModalCrearRuta}>+ Nueva Ruta</button>
-      <button class="btn-add" on:click={cargarRutas} style="background:#4b5563">↻ Actualizar</button>
+      <button class="btn-add" on:click={cargarRutas} style="background:#4b5563"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Actualizar</button>
     </div>
   </div>
 
@@ -245,11 +253,24 @@
   {:else}
     <!-- Aviso informativo sobre el calculo de llegada con zona horaria -->
     <div class="rutas-tz-note">
-      <span>💡</span>
+      <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" style="vertical-align:-3px;flex-shrink:0"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 1 4 12.74V17H8v-2.26A7 7 0 0 1 12 2z"/></svg></span>
       <span>
-        Las rutas con <strong>✔ TZ</strong> en ambos aeropuertos calcularan la hora de llegada
+        Las rutas con <strong><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:1px"><path d="M1.5 6l3 3 6-6"/></svg>TZ</strong> en ambos aeropuertos calcularan la hora de llegada
         con conversion de zona horaria real. Si algun aeropuerto no tiene timezone,
         editalo en <em>Gestionar Aeropuertos</em>.
+      </span>
+    </div>
+
+    <!-- Barra de busqueda para filtrar rutas por codigo IATA o ciudad -->
+    <div class="admin-search-bar">
+      <input
+        type="text"
+        bind:value={filtroRutas}
+        placeholder="Buscar por código IATA o ciudad (ej: GUA, Madrid, MIA)..."
+        class="admin-search-input"
+      />
+      <span class="admin-search-count">
+        Mostrando {rutasFiltradas.length} de {rutas.length} rutas
       </span>
     </div>
 
@@ -267,7 +288,7 @@
         </tr>
       </thead>
       <tbody class="table__body">
-        {#each rutas as ruta}
+        {#each rutasFiltradas as ruta}
           <tr class="table__row">
             <td class="table__cell">
               <span class="ruta-code">{ruta.codigoOrigen}</span>
@@ -279,14 +300,14 @@
             </td>
             <td class="table__cell">
               {#if ruta.zonaHorariaOrigen}
-                <span class="tz-badge tz-badge--ok">✔ {ruta.zonaHorariaOrigen}</span>
+                <span class="tz-badge tz-badge--ok"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:2px"><path d="M1.5 6l3 3 6-6"/></svg>{ruta.zonaHorariaOrigen}</span>
               {:else}
                 <span class="tz-badge tz-badge--missing">Sin TZ</span>
               {/if}
             </td>
             <td class="table__cell">
               {#if ruta.zonaHorariaDestino}
-                <span class="tz-badge tz-badge--ok">✔ {ruta.zonaHorariaDestino}</span>
+                <span class="tz-badge tz-badge--ok"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:2px"><path d="M1.5 6l3 3 6-6"/></svg>{ruta.zonaHorariaDestino}</span>
               {:else}
                 <span class="tz-badge tz-badge--missing">Sin TZ</span>
               {/if}
@@ -299,10 +320,10 @@
                   <button class="table__action-btn table__action-btn--view"
                     disabled={guardandoDuracion}
                     on:click={() => guardarDuracionRuta(ruta.id)}>
-                    {guardandoDuracion ? '...' : '✔'}
+                    {#if guardandoDuracion}...{:else}<svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1.5 6l3 3 6-6"/></svg>{/if}
                   </button>
                   <button class="table__action-btn table__action-btn--cancel"
-                    on:click={() => { editandoRutaId = null; rutaDuracionEdit = ''; }}>✕</button>
+                    on:click={() => { editandoRutaId = null; rutaDuracionEdit = ''; }}><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-1px"><path d="M2 2l8 8M10 2L2 10"/></svg></button>
                 </div>
               {:else}
                 <span class="duracion-display">
@@ -316,7 +337,7 @@
               {#if editandoRutaId !== ruta.id}
                 <button class="table__action-btn table__action-btn--view"
                   on:click={() => { editandoRutaId = ruta.id; rutaDuracionEdit = String(ruta.duracionEstimada); }}>
-                  ✎ Editar duracion
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar duracion
                 </button>
               {/if}
             </td>
@@ -366,7 +387,7 @@
               </div>
             {/if}
             {#if aeropuertoOrigenSeleccionado}
-              <p class="selected-item">✔ {aeropuertoOrigenSeleccionado.codigo} — {aeropuertoOrigenSeleccionado.nombre}</p>
+              <p class="selected-item"><svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:3px"><path d="M1.5 6l3 3 6-6"/></svg>{aeropuertoOrigenSeleccionado.codigo} — {aeropuertoOrigenSeleccionado.nombre}</p>
             {/if}
           </div>
         </div>
@@ -396,7 +417,7 @@
               </div>
             {/if}
             {#if aeropuertoDestinoSeleccionado}
-              <p class="selected-item">✔ {aeropuertoDestinoSeleccionado.codigo} — {aeropuertoDestinoSeleccionado.nombre}</p>
+              <p class="selected-item"><svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="vertical-align:-1px;margin-right:3px"><path d="M1.5 6l3 3 6-6"/></svg>{aeropuertoDestinoSeleccionado.codigo} — {aeropuertoDestinoSeleccionado.nombre}</p>
             {/if}
           </div>
         </div>
@@ -426,3 +447,10 @@
     </div>
   </div>
 {/if}
+
+<style>
+.admin-search-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.admin-search-input { flex: 1; padding: 10px 14px; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.admin-search-input:focus { border-color: var(--primary-color, #7a5c3f); }
+.admin-search-count { font-size: 0.8rem; color: #888; white-space: nowrap; }
+</style>

@@ -184,7 +184,8 @@ func (ctrl *AdminController) ListarProveedores(c *gin.Context) {
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT ID, Nombre, Tipo_Proveedor_ID, URL_API, EstadoID, Porcentaje_Ganancia
+		SELECT ID, Nombre, Tipo_Proveedor_ID, URL_API, EstadoID, Porcentaje_Ganancia,
+		       COALESCE(Imagen_Base64, '')
 		FROM Proveedor
 		ORDER BY ID
 	`)
@@ -203,6 +204,7 @@ func (ctrl *AdminController) ListarProveedores(c *gin.Context) {
 		EstadoID           int     `json:"estadoId"`
 		Activo             bool    `json:"activo"`
 		PorcentajeGanancia float64 `json:"porcentajeGanancia"`
+		ImagenBase64       string  `json:"imagenBase64"`
 	}
 
 	tipoNombre := func(id int) string {
@@ -216,7 +218,7 @@ func (ctrl *AdminController) ListarProveedores(c *gin.Context) {
 	for rows.Next() {
 		var p ProveedorAdmin
 		if err := rows.Scan(&p.ID, &p.Nombre, &p.TipoProveedorID,
-			&p.URL, &p.EstadoID, &p.PorcentajeGanancia); err != nil {
+			&p.URL, &p.EstadoID, &p.PorcentajeGanancia, &p.ImagenBase64); err != nil {
 			continue
 		}
 		p.Activo = p.EstadoID == 1
@@ -320,6 +322,7 @@ func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 		Nombre             string  `json:"nombre"`
 		URL                string  `json:"url"`
 		PorcentajeGanancia float64 `json:"porcentajeGanancia"`
+		ImagenBase64       string  `json:"imagenBase64"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
@@ -334,10 +337,11 @@ func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 	defer conn.Close()
 
 	_, err = conn.ExecContext(context.Background(),
-		"UPDATE Proveedor SET Nombre = ?, URL_API = ?, Porcentaje_Ganancia = ? WHERE ID = ?",
-		req.Nombre, req.URL, req.PorcentajeGanancia, id)
+		"UPDATE Proveedor SET Nombre = ?, URL_API = ?, Porcentaje_Ganancia = ?, Imagen_Base64 = ? WHERE ID = ?",
+		req.Nombre, req.URL, req.PorcentajeGanancia, req.ImagenBase64, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando proveedor"})
+		fmt.Printf("[EditarProveedor] error SQL: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando proveedor", "detalle": err.Error()})
 		return
 	}
 

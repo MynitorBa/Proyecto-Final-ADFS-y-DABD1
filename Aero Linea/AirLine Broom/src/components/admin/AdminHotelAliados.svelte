@@ -491,7 +491,7 @@
     </div>
     <div style="display:flex; gap:.75rem;">
       <button class="btn-add" on:click={cargarTodo} style="background:#4b5563">
-        ↻ Actualizar
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>Actualizar
       </button>
       <button class="btn-add" on:click={abrirModalCrear}>
         + Nuevo Hotel
@@ -581,14 +581,14 @@
                     style="background:#6366f1"
                     on:click={() => abrirModalUrls(h)}
                     title="Editar URLs">
-                    🔗 URLs
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>URLs
                   </button>
 
                   <!-- Boton para asignar o reasignar usuario Webservice al hotel -->
                   <button class="table__action-btn ag-btn-asignar"
                     on:click={() => abrirModalAsignar(h)}
                     title="Asignar usuario Webservice">
-                    👤 Asignar
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Asignar
                   </button>
 
                   <!-- Boton para iniciar el handshake de autenticacion con el hotel aliado.
@@ -598,7 +598,11 @@
                     on:click={() => handleHandshake(h)}
                     disabled={handshakeEnCurso === h.id}
                     title="Iniciar handshake de autenticacion con el hotel">
-                    {handshakeEnCurso === h.id ? '⏳ Conectando...' : '🤝 Handshake'}
+                    {#if handshakeEnCurso === h.id}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>Conectando...
+                    {:else}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>Handshake
+                    {/if}
                   </button>
                 </div>
               </td>

@@ -61,7 +61,7 @@ public class Main {
 
         // Repositories
         AdminBusquedaRepository       adminBusquedaRepository       = new AdminBusquedaRepository();
-        AdminReservacionRepository     adminReservacionRepository     = new AdminReservacionRepository();
+        AdminReservacionRepository adminReservacionRepository = new AdminReservacionRepository();
         AgenciaRepository              agenciaRepository              = new AgenciaRepository();
         AuthRepository                 authRepository                 = new AuthRepository();
         BusquedaAgenciaRepository      busquedaAgenciaRepository      = new BusquedaAgenciaRepository();

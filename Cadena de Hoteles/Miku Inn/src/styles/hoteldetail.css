@@ -229,7 +229,7 @@
   background: rgba(245,158,11,.02);
 }
 
-.room-images-section { position: relative; }
+.room-images-section { position: relative; overflow: hidden; min-height: 280px; }
 
 .room-main-image { width: 100%; height: 100%; object-fit: cover; }
 
@@ -823,12 +823,74 @@
 
 /* Placeholder cuando la habitación no tiene imagen */
 .room-no-image {
-  width: 100%; height: 100%; min-height: 220px;
+  width: 100%; min-height: 280px; height: 100%;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: .75rem;
-  background: var(--bg-light); color: var(--text-light);
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  color: var(--text-light);
 }
-.room-no-image span { font-size: .85rem; }
+.room-no-image svg  { opacity: .35; }
+.room-no-image span { font-size: .85rem; font-weight: 500; }
+
+/* Carrusel de imágenes para tarjetas de habitación */
+.room-carousel {
+  position: relative;
+  width: 100%; height: 100%;
+  min-height: 280px;
+  overflow: hidden;
+  background: var(--bg-light);
+}
+
+.room-carousel__img {
+  width: 100%; height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Botones de navegación prev/next del carrusel */
+.room-carousel__nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(0,0,0,0.52); color: white;
+  border: none; border-radius: 50%;
+  width: 38px; height: 38px;
+  font-size: 1.5rem; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.2s ease, background 0.2s ease;
+  z-index: 5; padding: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.room-carousel:hover .room-carousel__nav { opacity: 1; }
+.room-carousel__nav:hover { background: rgba(0,0,0,0.78); }
+.room-carousel__nav--prev { left: 0.625rem; }
+.room-carousel__nav--next { right: 0.625rem; }
+
+/* Indicadores de posición (dots) del carrusel */
+.room-carousel__dots {
+  position: absolute; bottom: 0.75rem; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 0.35rem; z-index: 5;
+}
+
+.room-carousel__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,0.5); border: none;
+  cursor: pointer; padding: 0;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.room-carousel__dot.active {
+  background: white; transform: scale(1.4);
+}
+.room-carousel__dot:hover:not(.active) { background: rgba(255,255,255,0.8); }
+
+/* Contador "X / N" en esquina inferior derecha */
+.room-carousel__counter {
+  position: absolute; bottom: 0.75rem; right: 0.75rem;
+  background: rgba(0,0,0,0.52); color: white;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 0.2rem 0.55rem; border-radius: 20px; z-index: 5;
+}
 
 /* Modal de galería de imágenes a pantalla completa */
 .gallery-modal {
@@ -1243,6 +1305,11 @@
   .hdet__gallery-main-image { height: 400px; }
   .hdet__gallery-thumbnails { grid-template-columns: repeat(4, 1fr); }
   .room-detail-card { grid-template-columns: 1fr; }
+  /* En tablet el carrusel es pantalla completa: mostrar nav siempre (sin hover) */
+  .room-carousel__nav { opacity: 1; }
+  .room-carousel,
+  .room-carousel__img,
+  .room-no-image { min-height: 240px; }
 }
 
 /* Responsive para móviles */
@@ -1288,4 +1355,53 @@
   color: var(--primary);
   background: rgba(102,126,234,.08);
   border-radius: 8px;
+}
+
+/* Mini-carrusel de amenidades */
+.amenity-mini-carousel {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.amenity-mini-prev,
+.amenity-mini-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,.6);
+  border: none;
+  color: white;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity .2s;
+  border-radius: 3px;
+  z-index: 2;
+}
+.amenity-mini-carousel:hover .amenity-mini-prev,
+.amenity-mini-carousel:hover .amenity-mini-next { opacity: 1; }
+.amenity-mini-prev { left: 1px; }
+.amenity-mini-next { right: 1px; }
+.amenity-mini-counter {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0,0,0,.65);
+  color: white;
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  line-height: 1.4;
+  z-index: 2;
+  pointer-events: none;
 }

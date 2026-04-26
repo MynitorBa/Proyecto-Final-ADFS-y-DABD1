@@ -142,14 +142,15 @@ func (r *ProveedorRepository) CrearProveedor(req dto.CrearProveedorRequest) (dto
 
 	result, err := conn.ExecContext(context.Background(), `
 		INSERT INTO Proveedor
-			(Nombre, Tipo_Proveedor_ID, URL_API, Usuario_ID, EstadoID, Porcentaje_Ganancia, Token_HASH_Entrada, Token_HASH_Salida)
-		VALUES (?, ?, ?, ?, ?, ?, '', '')`,
+			(Nombre, Tipo_Proveedor_ID, URL_API, Usuario_ID, EstadoID, Porcentaje_Ganancia, Token_HASH_Entrada, Token_HASH_Salida, Imagen_Base64)
+		VALUES (?, ?, ?, ?, ?, ?, '', '', ?)`,
 		req.Nombre,
 		req.TipoProveedorID,
 		req.URLAPI,
 		req.UsuarioID,
 		estadoActivo,
 		req.PorcentajeGanancia,
+		req.ImagenBase64,
 	)
 	if err != nil {
 		return dto.CrearProveedorResponse{}, err
@@ -165,6 +166,7 @@ func (r *ProveedorRepository) CrearProveedor(req dto.CrearProveedorRequest) (dto
 		UsuarioID:          req.UsuarioID,
 		EstadoID:           estadoActivo,
 		PorcentajeGanancia: req.PorcentajeGanancia,
+		ImagenBase64:       req.ImagenBase64,
 	}, nil
 }
 

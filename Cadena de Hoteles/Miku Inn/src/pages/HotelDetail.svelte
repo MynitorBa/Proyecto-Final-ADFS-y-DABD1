@@ -169,6 +169,84 @@
   /** True cuando la galeria modal de imagenes esta abierta. @type {boolean} */
   let showImageGallery = false;
 
+  /**
+   * Mapa de indice actual del carrusel por tipoHabitacionId.
+   * Permite que cada tarjeta de habitacion lleve su propio estado de slide.
+   * @type {Record<number,number>}
+   */
+  let roomCarouselIdx = {};
+
+  /** Mapa de indice actual del mini-carrusel de amenidades por amenidadId. @type {Record<number,number>} */
+  let amenityCarouselIdx = {};
+
+  /** Imágenes de la galería enfocada (solo room o amenidad seleccionada). @type {string[]} */
+  let focusImgs = [];
+  /** Índice actual en la galería enfocada. @type {number} */
+  let focusIdx = 0;
+  /** True cuando la galería enfocada está abierta. @type {boolean} */
+  let showFocusGallery = false;
+
+  /**
+   * Avanza el carrusel de una habitacion hacia atras.
+   * @param {number} id - tipoHabitacionId
+   * @param {number} total - numero de imagenes
+   */
+  function roomCarouselPrev(id, total) {
+    roomCarouselIdx = { ...roomCarouselIdx, [id]: ((roomCarouselIdx[id] ?? 0) - 1 + total) % total };
+  }
+
+  /**
+   * Avanza el carrusel de una habitacion hacia adelante.
+   * @param {number} id - tipoHabitacionId
+   * @param {number} total - numero de imagenes
+   */
+  function roomCarouselNext(id, total) {
+    roomCarouselIdx = { ...roomCarouselIdx, [id]: ((roomCarouselIdx[id] ?? 0) + 1) % total };
+  }
+
+  /** Retrocede el mini-carrusel de amenidades. */
+  function amenityCarouselPrev(id, total) {
+    amenityCarouselIdx = { ...amenityCarouselIdx, [id]: ((amenityCarouselIdx[id] ?? 0) - 1 + total) % total };
+  }
+
+  /** Avanza el mini-carrusel de amenidades. */
+  function amenityCarouselNext(id, total) {
+    amenityCarouselIdx = { ...amenityCarouselIdx, [id]: ((amenityCarouselIdx[id] ?? 0) + 1) % total };
+  }
+
+  /**
+   * Abre la galería enfocada mostrando solo las imágenes del array recibido.
+   * @param {string[]} imgs - URLs de imágenes a mostrar.
+   * @param {number} startIdx - Índice inicial.
+   */
+  function openFocusGallery(imgs, startIdx = 0) {
+    focusImgs = imgs;
+    focusIdx = startIdx;
+    showFocusGallery = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  /** Cierra la galería enfocada y restaura el scroll. */
+  function closeFocusGallery() {
+    showFocusGallery = false;
+    document.body.style.overflow = 'auto';
+  }
+
+  /** Avanza a la siguiente imagen en la galería enfocada. */
+  function nextFocusImage() { focusIdx = (focusIdx + 1) % focusImgs.length; }
+
+  /** Retrocede a la imagen anterior en la galería enfocada. */
+  function prevFocusImage() { focusIdx = (focusIdx - 1 + focusImgs.length) % focusImgs.length; }
+
+  /**
+   * Devuelve todas las URLs de imagenes de un tipo de habitacion.
+   * @param {any} room
+   * @returns {string[]}
+   */
+  function roomImgUrls(room) {
+    return (room.imagenesIds ?? []).map(/** @param {number} imgId */ imgId => `${API}/imagenes/habitacion/${imgId}`);
+  }
+
   /** True cuando se debe mostrar el modal de login requerido. @type {boolean} */
   let showLoginRequired = false;
 
@@ -943,8 +1021,14 @@
   })();
 </script>
 
-<!-- Navegacion con teclado para la galeria modal -->
+<!-- Navegacion con teclado para ambas galerias -->
 <svelte:window on:keydown={(e) => {
+  if (showFocusGallery) {
+    if (e.key === 'Escape')     closeFocusGallery();
+    if (e.key === 'ArrowLeft')  prevFocusImage();
+    if (e.key === 'ArrowRight') nextFocusImage();
+    return;
+  }
   if (!showImageGallery) return;
   if (e.key === 'Escape')     closeGallery();
   if (e.key === 'ArrowLeft')  prevImage();
@@ -1076,10 +1160,25 @@
               <section class="content-section">
                 <h2 class="hdet__section-title">Servicios y Comodidades</h2>
                 <div class="amenities-grid">
-                  {#each hotel.amenidades as am}
+                  {#each hotel.amenidades as am, amI}
                     <div class="amenity-card">
                       {#if am.imagenesIds?.length > 0}
-                        <img src={amenityImage(am)} alt={am.nombre} class="amenity-image" on:error={(e) => { /** @type {HTMLImageElement} */ (e.target).style.display = 'none'; }} />
+                        {@const aIdx = amenityCarouselIdx[amI] ?? 0}
+                        <div class="amenity-mini-carousel">
+                          <img
+                            src={`${API}/imagenes/amenidad/${am.imagenesIds[aIdx]}`}
+                            alt={am.nombre}
+                            class="amenity-image"
+                            style="cursor:zoom-in"
+                            on:click={() => openFocusGallery(am.imagenesIds.map(id => `${API}/imagenes/amenidad/${id}`), aIdx)}
+                            on:error={(e) => { (/** @type {HTMLImageElement} */ (e.target)).style.display = 'none'; }}
+                          />
+                          {#if am.imagenesIds.length > 1}
+                            <button class="amenity-mini-prev" on:click|stopPropagation={() => amenityCarouselPrev(amI, am.imagenesIds.length)} aria-label="Anterior">&#8249;</button>
+                            <button class="amenity-mini-next" on:click|stopPropagation={() => amenityCarouselNext(amI, am.imagenesIds.length)} aria-label="Siguiente">&#8250;</button>
+                            <div class="amenity-mini-counter">{aIdx + 1}/{am.imagenesIds.length}</div>
+                          {/if}
+                        </div>
                       {:else}
                         <span class="amenity-icon-large" aria-hidden="true">{@html getAmenityIcon(am.nombre)}</span>
                       {/if}
@@ -1105,10 +1204,24 @@
                 <p class="hdet__section-description">Habitaciones con capacidad para {cantidadPersonas} {cantidadPersonas === 1 ? 'persona' : 'personas'}.</p>
                 <div class="rooms-list">
                   {#each habitacionesDisponibles as room}
+                    {@const imgs = roomImgUrls(room)}
+                    {@const cIdx = roomCarouselIdx[room.tipoHabitacionId] ?? 0}
                     <article class="room-detail-card" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra}>
                       <div class="room-images-section">
-                        {#if room.imagenesIds?.length > 0}
-                          <img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>`; }} />
+                        {#if imgs.length > 0}
+                          <div class="room-carousel">
+                            <img src={imgs[cIdx]} alt="{room.tipoHabitacion} · foto {cIdx + 1}" class="room-carousel__img" style="cursor:zoom-in" on:click|stopPropagation={() => openFocusGallery(imgs, cIdx)} on:error={handleImgError} />
+                            {#if imgs.length > 1}
+                              <button class="room-carousel__nav room-carousel__nav--prev" on:click|stopPropagation={() => roomCarouselPrev(room.tipoHabitacionId, imgs.length)} aria-label="Imagen anterior">&#8249;</button>
+                              <button class="room-carousel__nav room-carousel__nav--next" on:click|stopPropagation={() => roomCarouselNext(room.tipoHabitacionId, imgs.length)} aria-label="Imagen siguiente">&#8250;</button>
+                              <div class="room-carousel__dots">
+                                {#each imgs as _, di}
+                                  <button class="room-carousel__dot" class:active={di === cIdx} on:click|stopPropagation={() => { roomCarouselIdx = { ...roomCarouselIdx, [room.tipoHabitacionId]: di }; }} aria-label="Foto {di + 1}"></button>
+                                {/each}
+                              </div>
+                              <div class="room-carousel__counter">{cIdx + 1} / {imgs.length}</div>
+                            {/if}
+                          </div>
                         {:else}
                           <div class="room-no-image">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
@@ -1165,9 +1278,27 @@
                 </div>
                 <div class="rooms-list">
                   {#each habitacionesSuperiores as room}
+                    {@const imgs = roomImgUrls(room)}
+                    {@const cIdx = roomCarouselIdx[room.tipoHabitacionId] ?? 0}
                     <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && !selectedRoomIsExtra}>
                       <div class="room-images-section">
-                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
+                        {#if imgs.length > 0}
+                          <div class="room-carousel">
+                            <img src={imgs[cIdx]} alt="{room.tipoHabitacion} · foto {cIdx + 1}" class="room-carousel__img" style="cursor:zoom-in" on:click|stopPropagation={() => openFocusGallery(imgs, cIdx)} on:error={handleImgError} />
+                            {#if imgs.length > 1}
+                              <button class="room-carousel__nav room-carousel__nav--prev" on:click|stopPropagation={() => roomCarouselPrev(room.tipoHabitacionId, imgs.length)} aria-label="Imagen anterior">&#8249;</button>
+                              <button class="room-carousel__nav room-carousel__nav--next" on:click|stopPropagation={() => roomCarouselNext(room.tipoHabitacionId, imgs.length)} aria-label="Imagen siguiente">&#8250;</button>
+                              <div class="room-carousel__dots">
+                                {#each imgs as _, di}
+                                  <button class="room-carousel__dot" class:active={di === cIdx} on:click|stopPropagation={() => { roomCarouselIdx = { ...roomCarouselIdx, [room.tipoHabitacionId]: di }; }} aria-label="Foto {di + 1}"></button>
+                                {/each}
+                              </div>
+                              <div class="room-carousel__counter">{cIdx + 1} / {imgs.length}</div>
+                            {/if}
+                          </div>
+                        {:else}
+                          <div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>
+                        {/if}
                         <div class="room-capacity-badge room-capacity-badge--superior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Máx. {room.capacidadMaxima}</div>
                       </div>
                       <div class="room-content-section">
@@ -1204,9 +1335,27 @@
                 </div>
                 <div class="rooms-list">
                   {#each habitacionesPersonaExtra as room}
+                    {@const imgs = roomImgUrls(room)}
+                    {@const cIdx = roomCarouselIdx[room.tipoHabitacionId] ?? 0}
                     <article class="room-detail-card room-detail-card--superior" class:selected={selectedRoom?.tipoHabitacionId === room.tipoHabitacionId && bookMode === 'single' && selectedRoomIsExtra}>
                       <div class="room-images-section">
-                        {#if room.imagenesIds?.length > 0}<img src={roomImage(room)} alt={room.tipoHabitacion} class="room-main-image" on:error={(e) => { (e.target).parentElement.innerHTML = `<div class="room-no-image"><span>Sin imagen</span></div>`; }} />{:else}<div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>{/if}
+                        {#if imgs.length > 0}
+                          <div class="room-carousel">
+                            <img src={imgs[cIdx]} alt="{room.tipoHabitacion} · foto {cIdx + 1}" class="room-carousel__img" style="cursor:zoom-in" on:click|stopPropagation={() => openFocusGallery(imgs, cIdx)} on:error={handleImgError} />
+                            {#if imgs.length > 1}
+                              <button class="room-carousel__nav room-carousel__nav--prev" on:click|stopPropagation={() => roomCarouselPrev(room.tipoHabitacionId, imgs.length)} aria-label="Imagen anterior">&#8249;</button>
+                              <button class="room-carousel__nav room-carousel__nav--next" on:click|stopPropagation={() => roomCarouselNext(room.tipoHabitacionId, imgs.length)} aria-label="Imagen siguiente">&#8250;</button>
+                              <div class="room-carousel__dots">
+                                {#each imgs as _, di}
+                                  <button class="room-carousel__dot" class:active={di === cIdx} on:click|stopPropagation={() => { roomCarouselIdx = { ...roomCarouselIdx, [room.tipoHabitacionId]: di }; }} aria-label="Foto {di + 1}"></button>
+                                {/each}
+                              </div>
+                              <div class="room-carousel__counter">{cIdx + 1} / {imgs.length}</div>
+                            {/if}
+                          </div>
+                        {:else}
+                          <div class="room-no-image"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span>Sin imagen disponible</span></div>
+                        {/if}
                         <div class="room-capacity-badge room-capacity-badge--superior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> {room.capacidadMaxima} + 1 extra</div>
                       </div>
                       <div class="room-content-section">
@@ -1731,6 +1880,27 @@
       <div class="gallery-content">
         <img src={images[currentImageIndex]} alt="{hotel.nombre} {currentImageIndex + 1}" class="gallery-image" on:error={handleImgError} />
         <div class="gallery-counter">{currentImageIndex + 1} / {images.length}</div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Galería enfocada: muestra solo las imágenes del room o amenidad seleccionado -->
+  {#if showFocusGallery && focusImgs.length > 0}
+    <div class="gallery-modal" role="dialog" aria-modal="true" aria-label="Galería" on:click={closeFocusGallery}>
+      <button class="gallery-close" on:click={closeFocusGallery} aria-label="Cerrar">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      {#if focusImgs.length > 1}
+        <button class="gallery-nav-btn gallery-prev" on:click|stopPropagation={prevFocusImage} aria-label="Anterior">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="gallery-nav-btn gallery-next" on:click|stopPropagation={nextFocusImage} aria-label="Siguiente">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      {/if}
+      <div class="gallery-content" on:click|stopPropagation>
+        <img src={focusImgs[focusIdx]} alt="Imagen {focusIdx + 1}" class="gallery-image" on:error={handleImgError} />
+        <div class="gallery-counter">{focusIdx + 1} / {focusImgs.length}</div>
       </div>
     </div>
   {/if}

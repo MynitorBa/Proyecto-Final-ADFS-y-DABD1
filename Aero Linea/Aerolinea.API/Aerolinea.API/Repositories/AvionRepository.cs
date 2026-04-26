@@ -1,4 +1,5 @@
 using Aerolinea.API.Data;
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models;
 using Microsoft.Data.SqlClient;
 
@@ -19,9 +20,9 @@ namespace Aerolinea.API.Repositories
 
         /// <summary>
         /// Retorna la lista completa de aviones con su imagen asociada, ordenados
-        /// por marca y modelo.
+        /// por marca y modelo. Si incluirInactivos es false, solo retorna los activos.
         /// </summary>
-        public async Task<List<Avion>> ObtenerTodos()
+        public async Task<List<Avion>> ObtenerTodos(bool incluirInactivos = false)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
@@ -29,12 +30,14 @@ namespace Aerolinea.API.Repositories
             // LEFT JOIN para incluir la imagen si existe
             var query = @"
                 SELECT a.ID, a.Modelo, a.Marca, a.CapacidadPasajeros,
-                       ia.Imagen
+                       ia.Imagen, a.Activo
                 FROM Avion a
                 LEFT JOIN ImagenAvion ia ON ia.AvionID = a.ID
+                WHERE (@IncluirInactivos = 1 OR a.Activo = 1)
                 ORDER BY a.Marca, a.Modelo";
 
             using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@IncluirInactivos", incluirInactivos ? 1 : 0);
             using var reader = await command.ExecuteReaderAsync();
 
             var aviones = new List<Avion>();
@@ -46,11 +49,30 @@ namespace Aerolinea.API.Repositories
                     Modelo = reader.GetString(1),
                     Marca = reader.GetString(2),
                     CapacidadPasajeros = reader.GetInt32(3),
-                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4)
+                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Activo = reader.GetBoolean(5)
                 });
             }
 
             return aviones;
+        }
+
+        /// <summary>
+        /// Cambia el estado activo/inactivo de un avion (soft-delete).
+        /// Retorna true si se modifico al menos una fila.
+        /// </summary>
+        public async Task<bool> CambiarEstado(int id, bool activo)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "UPDATE Avion SET Activo = @Activo WHERE ID = @Id";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Activo", activo);
+
+            var filasAfectadas = await command.ExecuteNonQueryAsync();
+            return filasAfectadas > 0;
         }
 
         /// <summary>
@@ -197,6 +219,93 @@ namespace Aerolinea.API.Repositories
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@AvionID", avionId);
             await command.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Verifica si el avion tiene vuelos activos programados a futuro.
+        /// Retorna el total de vuelos futuros activos y los numeros de vuelo
+        /// que salen en menos de 48 horas (para bloquear desactivacion/eliminacion).
+        /// </summary>
+        public async Task<(int totalFuturos, List<string> numeros48h)> VerificarVuelosActivos(int avionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT v.NumeroVuelo,
+                       v.Fecha
+                FROM   Vuelo v
+                WHERE  v.AvionID   = @AvionId
+                  AND  v.EstadoID  = 1
+                  AND  v.Fecha    >= CAST(GETDATE() AS DATE)";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@AvionId", avionId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var numeros48h   = new List<string>();
+            int totalFuturos = 0;
+            var limite48h    = DateTime.Now.AddHours(48).Date;
+
+            while (await reader.ReadAsync())
+            {
+                totalFuturos++;
+                var fecha = reader.GetDateTime(1).Date;
+                if (fecha <= limite48h)
+                    numeros48h.Add(reader.GetString(0));
+            }
+
+            return (totalFuturos, numeros48h);
+        }
+
+        /// <summary>
+        /// Retorna la lista detallada de vuelos activos futuros asignados a un avion.
+        /// Incluye datos de ruta y horas restantes calculados en SQL.
+        /// Usado para mostrar al admin qué vuelos se verán afectados al desactivar el avion.
+        /// </summary>
+        public async Task<List<VueloActivoInfoDTO>> ObtenerVuelosActivosDetallados(int avionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT v.ID,
+                       v.NumeroVuelo,
+                       ao.Codigo AS Origen,
+                       ad.Codigo AS Destino,
+                       CONVERT(VARCHAR(10), v.Fecha, 120)                         AS Fecha,
+                       CONVERT(VARCHAR(8),  v.HoraSalida, 108)                    AS HoraSalida,
+                       CAST(DATEDIFF(MINUTE, GETDATE(),
+                           DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraSalida),
+                                   CAST(v.Fecha AS DATETIME))) AS FLOAT) / 60.0   AS HorasRestantes
+                FROM   Vuelo v
+                INNER JOIN Ruta        r  ON r.ID  = v.RutaID
+                INNER JOIN Aeropuerto ao  ON ao.ID = r.OrigenID
+                INNER JOIN Aeropuerto ad  ON ad.ID = r.DestinoID
+                WHERE  v.AvionID  = @AvionId
+                  AND  v.EstadoID = 1
+                  AND  v.Fecha   >= CAST(GETDATE() AS DATE)
+                ORDER BY v.Fecha, v.HoraSalida";
+
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@AvionId", avionId);
+            using var reader = await command.ExecuteReaderAsync();
+
+            var result = new List<VueloActivoInfoDTO>();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new VueloActivoInfoDTO(
+                    Id:             reader.GetInt32(0),
+                    NumeroVuelo:    reader.GetString(1),
+                    Origen:         reader.GetString(2),
+                    Destino:        reader.GetString(3),
+                    Fecha:          reader.GetString(4),
+                    HoraSalida:     reader.GetString(5),
+                    HorasRestantes: Convert.ToDouble(reader[6])
+                ));
+            }
+
+            return result;
         }
 
         /// <summary>

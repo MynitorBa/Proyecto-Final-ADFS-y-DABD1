@@ -41,6 +41,7 @@ type ProveedorCatalogo struct {
 	URLApi             string  // URL base de la API del proveedor
 	TokenEntrada       string  // Token de autenticacion para acceder a la API del proveedor
 	PorcentajeGanancia float64 // Porcentaje de ganancia aplicado al precio base del proveedor
+	ImagenBase64       string  // Imagen del proveedor codificada en Base64
 }
 
 // BusquedaVuelosResponse
@@ -48,10 +49,11 @@ type ProveedorCatalogo struct {
 // Representa la respuesta de busqueda de vuelos para un proveedor especifico,
 // encapsulando los datos crudos devueltos por su API o el error ocurrido.
 type BusquedaVuelosResponse struct {
-	Proveedor   string      `json:"proveedor"`              // Nombre del proveedor aerolinea
-	ProveedorID int         `json:"proveedor_id"`           // ID del proveedor aerolinea
-	Datos       interface{} `json:"datos"`                  // Datos crudos de vuelos devueltos por el proveedor
-	Error       string      `json:"error,omitempty"`        // Mensaje de error si la consulta al proveedor fallo
+	Proveedor      string      `json:"proveedor"`                 // Nombre del proveedor aerolinea
+	ProveedorID    int         `json:"proveedor_id"`              // ID del proveedor aerolinea
+	ProveedorImagen string     `json:"proveedorImagen,omitempty"` // Imagen del proveedor en Base64
+	Datos          interface{} `json:"datos"`                     // Datos crudos de vuelos devueltos por el proveedor
+	Error          string      `json:"error,omitempty"`           // Mensaje de error si la consulta al proveedor fallo
 }
 
 // BusquedaHotelesResponse
@@ -59,8 +61,9 @@ type BusquedaVuelosResponse struct {
 // Representa la respuesta de busqueda de hoteles para un proveedor especifico,
 // encapsulando los datos crudos devueltos por su API o el error ocurrido.
 type BusquedaHotelesResponse struct {
-	Proveedor   string      `json:"proveedor"`              // Nombre del proveedor hotelero
-	ProveedorID int         `json:"proveedor_id"`           // ID del proveedor hotelero
-	Datos       interface{} `json:"datos"`                  // Datos crudos de hoteles devueltos por el proveedor
-	Error       string      `json:"error,omitempty"`        // Mensaje de error si la consulta al proveedor fallo
+	Proveedor       string      `json:"proveedor"`                 // Nombre del proveedor hotelero
+	ProveedorID     int         `json:"proveedor_id"`              // ID del proveedor hotelero
+	ProveedorImagen string      `json:"proveedorImagen,omitempty"` // Imagen del proveedor en Base64
+	Datos           interface{} `json:"datos"`                     // Datos crudos de hoteles devueltos por el proveedor
+	Error           string      `json:"error,omitempty"`           // Mensaje de error si la consulta al proveedor fallo
 }

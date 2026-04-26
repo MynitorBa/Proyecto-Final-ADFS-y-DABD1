@@ -124,6 +124,40 @@
   /** Fecha de hoy formateada como YYYY-MM-DD, usada como la fecha minima permitida de vuelo. @type {string} */
   const hoyStr = new Date().toISOString().split('T')[0];
 
+  /** Indica si el calculo de hora de llegada esta en progreso. @type {boolean} */
+  let calculandoLlegada = false;
+
+  /** Indica si el envio del formulario al backend esta en progreso. @type {boolean} */
+  let creandoVuelo = false;
+
+  /**
+   * Clave de los ultimos parametros con los que se lanzo una peticion de calculo de llegada.
+   * Formato: "origenId-destinoId-fecha-horaSalida". Si los parametros actuales coinciden
+   * con esta clave, el calculo se omite para evitar peticiones duplicadas provocadas por
+   * escrituras secundarias a nuevoVuelo (p.ej. al limpiar avion/tripulante no disponible).
+   * @type {string|null}
+   */
+  let lastPreviewKey = null;
+
+  /** Hora de llegada calculada por el endpoint calcular-llegada, o null si no esta disponible. @type {string|null} */
+  let horaLlegadaCalculada = null;
+
+  /** Prefijo de exactamente 4 letras para generar el numero de vuelo (ej: BMAA, GTLA). @type {string} */
+  let prefijoVuelo = 'BMAA';
+
+  /** Siguiente numero de secuencia para el prefijo actual, formato "0001". @type {string} */
+  let numeroSugerido = '';
+
+  /** Numero de vuelo completo construido del prefijo + numero sugerido. @type {string} */
+  $: numeroVueloCompleto = prefijoVuelo && numeroSugerido
+    ? `${prefijoVuelo} ${numeroSugerido}`
+    : '';
+
+  /** Cuando el prefijo tiene exactamente 4 letras consulta el siguiente numero disponible. */
+  $: if (prefijoVuelo && prefijoVuelo.length === 4) {
+    obtenerSiguienteNumero();
+  }
+
   /**
    * Formatea el input del numero de vuelo: fuerza 2 letras mayusculas + espacio + digitos.
    * Actualiza nuevoVuelo.numeroVuelo y el valor del elemento input en el lugar.
@@ -251,7 +285,7 @@
   $: {
     nuevoVuelo.fecha; nuevoVuelo.horaSalida;
     if (fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha)) actualizarPreviewLlegada();
-    else previewLlegada = null;
+    else { previewLlegada = null; horaLlegadaCalculada = null; }
   }
 
   // Activa una verificacion de disponibilidad de aviones y tripulantes cuando cambia la fecha o la hora.
@@ -260,6 +294,13 @@
     if (fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha)) cargarDisponibilidad();
     else { avionesOcupadosIds = new Set(); tripulantesOcupadosIds = new Set(); }
   }
+
+  // Contadores reactivos de composicion de tripulacion por rol.
+  $: pilotos    = nuevoVuelo.tripulantesSeleccionados.filter(t => t.rolID === 1).length;
+  $: copilotos  = nuevoVuelo.tripulantesSeleccionados.filter(t => t.rolID === 2).length;
+  $: auxiliares = nuevoVuelo.tripulantesSeleccionados.filter(t => t.rolID === 3).length;
+  $: totalTripulantes = nuevoVuelo.tripulantesSeleccionados.length;
+  $: tripulacionCompleta = pilotos >= 1 && copilotos >= 1 && auxiliares >= 3 && totalTripulantes === 5;
 
   /**
    * Verifica si existe una ruta entre los aeropuertos de origen y destino actualmente seleccionados.
@@ -270,9 +311,10 @@
   function verificarRutaSiCambioAeropuerto() {
     const origenId  = nuevoVuelo.aeropuertoOrigenId;
     const destinoId = nuevoVuelo.aeropuertoDestinoId;
-    if (!origenId || !destinoId) { rutaExisteStatus = null; previewLlegada = null; return; }
+    if (!origenId || !destinoId) { rutaExisteStatus = null; previewLlegada = null; horaLlegadaCalculada = null; lastPreviewKey = null; return; }
     if (origenId === lastOrigenId && destinoId === lastDestinoId) return;
     lastOrigenId = origenId; lastDestinoId = destinoId;
+    lastPreviewKey = null; // aeropuertos cambiaron → forzar recalculo
     clearTimeout(rutaCheckTimer);
     rutaCheckTimer = setTimeout(async () => {
       rutaExisteStatus = 'checking';
@@ -281,9 +323,11 @@
         if (rc.ok) { const { existe } = await rc.json(); rutaExisteStatus = existe ? 'ok' : 'missing'; }
         else rutaExisteStatus = null;
       } catch { rutaExisteStatus = null; }
-      if (rutaExisteStatus === 'ok' && fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha)) calcularPreviewLlegada();
-      else { previewLlegada = null; loadingPreview = false; }
-    }, 300);
+      if (rutaExisteStatus === 'ok' && fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha)) {
+        // Ya esperamos el debounce de verificarRuta — llamar fetch directo sin segundo debounce
+        calcularPreviewLlegada(true);
+      } else { previewLlegada = null; horaLlegadaCalculada = null; loadingPreview = false; }
+    }, 200);
   }
 
   /**
@@ -295,12 +339,12 @@
   }
 
   /**
-   * Hace debounce y luego llama al endpoint calcular-llegada de la API con origen, destino, fecha
-   * y hora de salida. Almacena el resultado en previewLlegada. Cancela la solicitud despues de 8 segundos
-   * usando AbortController. Requiere que todos los campos sean validos y no pasados antes de enviar.
-   * @async
+   * Calcula la hora de llegada llamando al backend.
+   * sinDebounce=true: se usa cuando ya se esperó un debounce externo (verificarRuta),
+   * evitando el doble espera de 200ms+200ms=400ms. El default es false (espera 200ms).
+   * @param {boolean} sinDebounce
    */
-  function calcularPreviewLlegada() {
+  function calcularPreviewLlegada(sinDebounce = false) {
     const origenId  = parseInt(nuevoVuelo.aeropuertoOrigenId);
     const destinoId = parseInt(nuevoVuelo.aeropuertoDestinoId);
     if (!origenId || !destinoId || isNaN(origenId) || isNaN(destinoId) ||
@@ -308,9 +352,18 @@
         !nuevoVuelo.horaSalida) {
       previewLlegada = null; loadingPreview = false; return;
     }
+
+    // Evitar peticion duplicada si los 4 parametros no cambiaron desde el ultimo calculo.
+    const clave = `${origenId}-${destinoId}-${nuevoVuelo.fecha}-${nuevoVuelo.horaSalida}`;
+    if (clave === lastPreviewKey) return;
+
     clearTimeout(previewDebounceTimer);
-    previewDebounceTimer = setTimeout(async () => {
+
+    const doFetch = async () => {
+      if (clave === lastPreviewKey) return;
+      lastPreviewKey = clave;
       loadingPreview = true; previewLlegada = null;
+      calculandoLlegada = true; horaLlegadaCalculada = null;
       const controller = new AbortController();
       const tid = setTimeout(() => controller.abort(), 8000);
       try {
@@ -325,11 +378,25 @@
             horaSalida:  nuevoVuelo.horaSalida
           })
         });
-        if (r.ok) previewLlegada = await r.json();
-        else previewLlegada = null;
-      } catch { previewLlegada = null; }
-      finally { clearTimeout(tid); loadingPreview = false; }
-    }, 600);
+        if (r.ok) {
+          previewLlegada = await r.json();
+          horaLlegadaCalculada = previewLlegada?.horaLlegada ?? null;
+        } else {
+          previewLlegada = null; horaLlegadaCalculada = null;
+          lastPreviewKey = null;
+        }
+      } catch {
+        previewLlegada = null; horaLlegadaCalculada = null;
+        lastPreviewKey = null;
+      }
+      finally { clearTimeout(tid); loadingPreview = false; calculandoLlegada = false; }
+    };
+
+    if (sinDebounce) {
+      doFetch();
+    } else {
+      previewDebounceTimer = setTimeout(doFetch, 200);
+    }
   }
 
   /**
@@ -397,6 +464,36 @@
   function quitarTripulante(id)  { nuevoVuelo.tripulantesSeleccionados = nuevoVuelo.tripulantesSeleccionados.filter(t => t.id !== id); }
 
   /**
+   * Selecciona aleatoriamente 1 Piloto, 1 Copiloto y 3 Auxiliares de los tripulantes disponibles
+   * (excluyendo los que ya tienen un vuelo asignado en la fecha/hora seleccionada).
+   */
+  function autorellenarTripulantes() {
+    const disponibles = tripulantes.filter(t => !tripulantesOcupadosIds.has(t.id));
+    const pilotos_d    = disponibles.filter(t => t.rolID === 1);
+    const copilotos_d  = disponibles.filter(t => t.rolID === 2);
+    const auxiliares_d = disponibles.filter(t => t.rolID === 3);
+
+    if (pilotos_d.length < 1)    { mostrarToast('error', 'No hay pilotos disponibles');                      return; }
+    if (copilotos_d.length < 1)  { mostrarToast('error', 'No hay copilotos disponibles');                    return; }
+    if (auxiliares_d.length < 3) { mostrarToast('error', 'No hay suficientes auxiliares disponibles (mín 3)'); return; }
+
+    const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+    const piloto   = rand(pilotos_d);
+    const copiloto = rand(copilotos_d);
+
+    const pool  = auxiliares_d.filter(a => a.id !== piloto.id && a.id !== copiloto.id);
+    const auxSels = [];
+    const usados  = new Set();
+    while (auxSels.length < 3) {
+      const a = rand(pool);
+      if (!usados.has(a.id)) { usados.add(a.id); auxSels.push(a); }
+    }
+
+    nuevoVuelo.tripulantesSeleccionados = [piloto, copiloto, ...auxSels];
+    mostrarToast('success', 'Tripulación autocompletada: 1P · 1C · 3A');
+  }
+
+  /**
    * Reinicia todo el formulario de creacion de vuelo a su estado inicial vacio, incluyendo todos
    * los inputs de busqueda, estados de dropdown, datos de vista previa y conjuntos de disponibilidad.
    */
@@ -405,6 +502,28 @@
     busquedaOrigen = ''; busquedaDestino = ''; busquedaAvion = ''; busquedaTripulante = '';
     previewLlegada = null; rutaExisteStatus = null; lastOrigenId = null; lastDestinoId = null;
     avionesOcupadosIds = new Set(); tripulantesOcupadosIds = new Set();
+    prefijoVuelo = 'BMAA'; numeroSugerido = '';
+  }
+
+  /**
+   * Consulta el backend por el siguiente numero disponible para prefijoVuelo.
+   * Actualiza numeroSugerido con el formato "0001".
+   * @async
+   */
+  async function obtenerSiguienteNumero() {
+    if (!prefijoVuelo || prefijoVuelo.length !== 4 || !/^[A-Z]{4}$/.test(prefijoVuelo)) {
+      numeroSugerido = ''; return;
+    }
+    try {
+      const r = await fetch(
+        `${API}/api/admin/vuelos/siguiente-numero?prefijo=${prefijoVuelo}`,
+        { credentials: 'include' }
+      );
+      if (r.ok) {
+        const data = await r.json();
+        numeroSugerido = data.siguienteNumero;
+      }
+    } catch { numeroSugerido = '0001'; }
   }
 
   /**
@@ -415,7 +534,8 @@
    * @returns {Promise<void>}
    */
   async function handleCrearVuelo() {
-    if (!nuevoVuelo.numeroVuelo || nuevoVuelo.numeroVuelo.length < 4) { mostrarToast('error', 'Ingresa el numero de vuelo (ej: AA 1234)'); return; }
+    if (!numeroVueloCompleto) { mostrarToast('error', 'Ingresa el prefijo del vuelo para generar el número'); return; }
+    if (!/^[A-Z]{4} \d{4}$/.test(numeroVueloCompleto)) { mostrarToast('error', 'Formato inválido. El prefijo debe tener exactamente 4 letras (ej: BMAA 0001)'); return; }
     if (!nuevoVuelo.aeropuertoOrigenId)   { mostrarToast('error', 'Selecciona el aeropuerto de origen'); return; }
     if (!nuevoVuelo.aeropuertoDestinoId)  { mostrarToast('error', 'Selecciona el aeropuerto de destino'); return; }
     if (!nuevoVuelo.avionId)              { mostrarToast('error', 'Selecciona un avion'); return; }
@@ -426,6 +546,24 @@
     if (!nuevoVuelo.boletosEjecutivo || parseInt(nuevoVuelo.boletosEjecutivo) < 0) { mostrarToast('error', 'Ingresa los boletos de clase ejecutiva'); return; }
     if (excedeLimite) { mostrarToast('error', `Los boletos (${totalBoletosAsignados}) exceden la capacidad del avion (${capacidadAvion})`); return; }
     if (!nuevoVuelo.precioTurista || !nuevoVuelo.precioEjecutiva) { mostrarToast('error', 'Ingresa los precios de ambas clases'); return; }
+    // Validar tripulacion
+    if (totalTripulantes !== 5) {
+      mostrarToast('error', 'Debe asignar exactamente 5 tripulantes al vuelo');
+      return;
+    }
+    if (pilotos < 1) {
+      mostrarToast('error', 'Falta asignar 1 Piloto (Rol 1)');
+      return;
+    }
+    if (copilotos < 1) {
+      mostrarToast('error', 'Falta asignar 1 Copiloto (Rol 2)');
+      return;
+    }
+    if (auxiliares < 3) {
+      mostrarToast('error', 'Faltan Auxiliares de vuelo — mínimo 3 (Rol 3)');
+      return;
+    }
+    creandoVuelo = true;
     try {
       const rCheck = await fetch(`${API}/api/rutas/existe?origenId=${nuevoVuelo.aeropuertoOrigenId}&destinoId=${nuevoVuelo.aeropuertoDestinoId}`, { credentials: 'include' });
       if (rCheck.ok) { const { existe } = await rCheck.json(); if (!existe) { mostrarToast('error', 'No existe una ruta entre estos aeropuertos. Creala primero en "Gestionar Rutas".'); return; } }
@@ -435,7 +573,7 @@
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          numeroVuelo:         nuevoVuelo.numeroVuelo,
+          numeroVuelo:         numeroVueloCompleto,
           aeropuertoOrigenId:  parseInt(nuevoVuelo.aeropuertoOrigenId),
           aeropuertoDestinoId: parseInt(nuevoVuelo.aeropuertoDestinoId),
           avionId:             parseInt(nuevoVuelo.avionId),
@@ -451,6 +589,7 @@
       if (r.ok) { mostrarToast('success', '¡Vuelo creado exitosamente!'); limpiarFormularioVuelo(); dispatch('vueloCreado'); }
       else { const err = await r.json(); mostrarToast('error', err.message || 'Error al crear el vuelo'); }
     } catch { mostrarToast('error', 'Error de conexion al crear el vuelo'); }
+    finally { creandoVuelo = false; }
   }
 </script>
 
@@ -466,15 +605,28 @@
       <h3 class="admin-form__group-title">Informacion Basica</h3>
       <div class="admin-form__row">
         <div class="admin-form__field">
-          <label for="cv-numero" class="admin-form__label">Numero de Vuelo *</label>
-          <input type="text" id="cv-numero" class="admin-form__input"
-            value={nuevoVuelo.numeroVuelo}
-            on:input={formatearNumeroVuelo}
-            placeholder="Ej: AA 1234" maxlength="8"
-            style="text-transform:uppercase;letter-spacing:1px"
-            autocomplete="off" required />
-          <small class="img-hint">2 letras + espacio + numero (ej: AA 1234, LA 820)</small>
+          <label class="admin-form__label">Prefijo *</label>
+          <input type="text" class="admin-form__input"
+            bind:value={prefijoVuelo}
+            placeholder="BMAA" maxlength="4"
+            style="text-transform:uppercase;letter-spacing:2px"
+            autocomplete="off"
+            on:input={e => { prefijoVuelo = e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4); e.target.value = prefijoVuelo; }} />
+          <small class="img-hint">4 letras mayúsculas (ej: BMAA, GTLA, USFL)</small>
         </div>
+        <div class="admin-form__field">
+          <label class="admin-form__label">Numero de Vuelo *</label>
+          <input type="text" class="admin-form__input"
+            value={numeroVueloCompleto}
+            readonly
+            placeholder="Escribe el prefijo primero"
+            style="background:#f8f9fa;cursor:not-allowed;font-weight:600;letter-spacing:1px" />
+          {#if numeroVueloCompleto}
+            <small class="img-hint">Auto-incrementado: {numeroVueloCompleto}</small>
+          {/if}
+        </div>
+      </div>
+      <div class="admin-form__row" style="margin-top:0.75rem">
         <div class="admin-form__field">
           <label for="cv-fecha" class="admin-form__label">Fecha del Vuelo *</label>
           <input type="date" id="cv-fecha" class="admin-form__input"
@@ -509,7 +661,7 @@
                 {/each}
               </div>
             {/if}
-            {#if aeropuertoOrigen}<p class="selected-item">✔ {aeropuertoOrigen.codigo} — {aeropuertoOrigen.nombre}</p>{/if}
+            {#if aeropuertoOrigen}<p class="selected-item"><svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M2 6l3 3 5-5"/></svg>{aeropuertoOrigen.codigo} — {aeropuertoOrigen.nombre}</p>{/if}
           </div>
         </div>
         <div class="admin-form__field">
@@ -531,7 +683,7 @@
                 {/each}
               </div>
             {/if}
-            {#if aeropuertoDestino}<p class="selected-item">✔ {aeropuertoDestino.codigo} — {aeropuertoDestino.nombre}</p>{/if}
+            {#if aeropuertoDestino}<p class="selected-item"><svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M2 6l3 3 5-5"/></svg>{aeropuertoDestino.codigo} — {aeropuertoDestino.nombre}</p>{/if}
           </div>
         </div>
       </div>
@@ -553,7 +705,7 @@
           {#if rutaExisteStatus === 'checking' || loadingPreview}
             <div class="llegada-preview llegada-preview--loading">
               <div class="llegada-loader">
-                <span class="llegada-loader__plane">✈</span>
+                <span class="llegada-loader__plane"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>
                 <div class="llegada-loader__bar"><div class="llegada-loader__fill"></div></div>
                 <span class="llegada-loader__text">
                   {rutaExisteStatus === 'checking' ? 'Verificando ruta...' : 'Calculando hora de llegada...'}
@@ -563,7 +715,7 @@
 
           {:else if rutaExisteStatus === 'missing'}
             <div class="llegada-preview--no-ruta">
-              <span class="llegada-preview__no-ruta-icon">🚫</span>
+              <span class="llegada-preview__no-ruta-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg></span>
               <span class="llegada-preview__no-ruta-title">No existe esta ruta</span>
               <small class="llegada-preview__no-ruta-msg">Creala en <strong>Gestionar Rutas</strong> antes de crear el vuelo.</small>
               <button type="button" class="llegada-preview__no-ruta-btn" on:click={() => dispatch('irARutas')}>→ Ir a crear la ruta</button>
@@ -571,14 +723,14 @@
 
           {:else if previewLlegada}
             <div class="llegada-preview" class:llegada-preview--tz={previewLlegada.usoZonasHorarias}>
-              <span class="llegada-preview__time">🛬 {previewLlegada.horaLlegada}
+              <span class="llegada-preview__time"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-3px;margin-right:4px"><path d="M2.5 19h19v2h-19v-2zm7.18-1.73l4.35 1.16 5.31 1.42c.8.21 1.62-.26 1.84-1.06.21-.8-.26-1.62-1.06-1.84l-3.23-.86-2.48-5.46-1.69-.45v5.37L8.19 13.9 7.8 9.17l-1.5-.4c-.4-.11-.8.13-.91.52L4.2 13.6l5.48 3.67z"/></svg>{previewLlegada.horaLlegada}
                 {#if previewLlegada.fechaLlegada !== nuevoVuelo.fecha}
                   <span class="llegada-preview__nextday">(+1 dia)</span>
                 {/if}
               </span>
               <span class="llegada-preview__meta">{previewLlegada.duracionMinutos} min ·
                 {#if previewLlegada.usoZonasHorarias}
-                  <span class="tz-badge tz-badge--ok">✔ Con zona horaria</span>
+                  <span class="tz-badge tz-badge--ok"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px"><path d="M2 6l3 3 5-5"/></svg>Con zona horaria</span>
                 {:else}
                   <span class="tz-badge tz-badge--missing">Sin zona horaria</span>
                 {/if}
@@ -591,7 +743,7 @@
               Se calcula automaticamente al completar origen, destino, fecha y hora de salida
               {#if camposListos}
                 <div class="llegada-loader" style="margin-top:.5rem">
-                  <span class="llegada-loader__plane">✈</span>
+                  <span class="llegada-loader__plane"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>
                   <div class="llegada-loader__bar"><div class="llegada-loader__fill"></div></div>
                   <span class="llegada-loader__text">Preparando calculo...</span>
                 </div>
@@ -613,7 +765,7 @@
           </small>
         {:else if fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha) && !cargandoDisponibilidad}
           <small class="disponibilidad-hint disponibilidad-hint--ok">
-            ✔ Mostrando aviones disponibles para {nuevoVuelo.fecha}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M2 6l3 3 5-5"/></svg>Mostrando aviones disponibles para {nuevoVuelo.fecha}
           </small>
         {/if}
         <div class="searchable-select">
@@ -633,10 +785,10 @@
             </div>
           {:else if mostrarDropdownAvion && avionesFiltrados.length === 0 && aviones.length > 0}
             <div class="searchable-select__dropdown">
-              <p class="searchable-select__empty">🚫 Todos los aviones estan ocupados para el {nuevoVuelo.fecha || 'dia seleccionado'}</p>
+              <p class="searchable-select__empty"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>Todos los aviones estan ocupados para el {nuevoVuelo.fecha || 'dia seleccionado'}</p>
             </div>
           {/if}
-          {#if avionSeleccionado}<p class="selected-item">✔ {avionSeleccionado.nombreCompleto}</p>{/if}
+          {#if avionSeleccionado}<p class="selected-item"><svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M2 6l3 3 5-5"/></svg>{avionSeleccionado.nombreCompleto}</p>{/if}
         </div>
       </div>
     </div>
@@ -652,7 +804,7 @@
               class:capacidad-bar__count--ok={totalBoletosAsignados === capacidadAvion && !excedeLimite}
               class:capacidad-bar__count--error={excedeLimite}>
               {totalBoletosAsignados} asignados
-              {#if excedeLimite}&nbsp;Excede limite{:else if totalBoletosAsignados === capacidadAvion}&nbsp;✔ Completo{/if}
+              {#if excedeLimite}&nbsp;Excede limite{:else if totalBoletosAsignados === capacidadAvion}&nbsp;<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px"><path d="M2 6l3 3 5-5"/></svg>Completo{/if}
             </span>
           </div>
           <div class="capacidad-bar__track">
@@ -692,14 +844,27 @@
     <div class="admin-form__group">
       <h3 class="admin-form__group-title">Tripulacion</h3>
       <div class="admin-form__field admin-form__field--full">
-        <label for="cv-trip" class="admin-form__label">Agregar Tripulantes</label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem;">
+          <label for="cv-trip" class="admin-form__label" style="margin-bottom:0;">Agregar Tripulantes</label>
+          <button type="button" class="btn-autorellenar" on:click={autorellenarTripulantes}
+            disabled={tripulantes.length < 5}
+            title={tripulantes.length < 5 ? 'No hay suficientes tripulantes disponibles' : 'Seleccionar 1 Piloto, 1 Copiloto y 3 Auxiliares aleatorios'}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+              <path d="M8 16H3v5"/>
+            </svg>
+            Autorellenar tripulantes
+          </button>
+        </div>
         {#if fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha) && tripulantesOcupadosIds.size > 0}
           <small class="disponibilidad-hint disponibilidad-hint--warn">
             {tripulantesOcupadosIds.size} tripulante(s) ya asignado(s) a otro vuelo y no aparecen en la lista
           </small>
         {:else if fechaEsValida(nuevoVuelo.fecha) && !fechaEsPasada(nuevoVuelo.fecha) && nuevoVuelo.horaSalida && !cargandoDisponibilidad}
           <small class="disponibilidad-hint disponibilidad-hint--ok">
-            ✔ Mostrando tripulantes disponibles para {nuevoVuelo.fecha} a las {nuevoVuelo.horaSalida}
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M2 6l3 3 5-5"/></svg>Mostrando tripulantes disponibles para {nuevoVuelo.fecha} a las {nuevoVuelo.horaSalida}
           </small>
         {/if}
         <div class="searchable-select">
@@ -719,23 +884,36 @@
             </div>
           {:else if mostrarDropdownTripulante && tripulantesFiltrados.length === 0 && tripulantes.length > 0}
             <div class="searchable-select__dropdown">
-              <p class="searchable-select__empty">🚫 Ningun tripulante disponible.<br><small>Deben pasar 24h desde su vuelo anterior.</small></p>
+              <p class="searchable-select__empty"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14"/></svg>Ningun tripulante disponible.<br><small>Deben pasar 24h desde su vuelo anterior.</small></p>
             </div>
           {/if}
         </div>
         {#if nuevoVuelo.tripulantesSeleccionados.length > 0}
-          <div class="tripulantes-seleccionados">
-            <p class="tripulantes-seleccionados__title">Tripulantes seleccionados ({nuevoVuelo.tripulantesSeleccionados.length})</p>
-            <div class="tripulantes-seleccionados__list">
-              {#each nuevoVuelo.tripulantesSeleccionados as t}
-                <div class="tripulante-item">
-                  <div class="tripulante-item__info">
-                    <span class="tripulante-item__name">{t.nombreCompleto}</span>
-                    <span class="tripulante-item__rol">{t.nombreRol}</span>
-                  </div>
-                  <button type="button" class="tripulante-item__remove" on:click={() => quitarTripulante(t.id)}>×</button>
-                </div>
-              {/each}
+          <div class="tripulantes-chips">
+            {#each nuevoVuelo.tripulantesSeleccionados as t}
+              <span class="t-chip" class:t-chip--piloto={t.rolID === 1} class:t-chip--copiloto={t.rolID === 2} class:t-chip--auxiliar={t.rolID === 3}>
+                <span class="t-chip__rol">{t.rolID === 1 ? 'P' : t.rolID === 2 ? 'C' : 'A'}</span>
+                <span class="t-chip__nombre">{t.nombreCompleto}</span>
+                <button type="button" class="t-chip__remove" on:click={() => quitarTripulante(t.id)} aria-label="Quitar">×</button>
+              </span>
+            {/each}
+          </div>
+          <div class="crew-checklist">
+            <div class="crew-check-item" class:ok={pilotos >= 1} class:missing={pilotos === 0}>
+              <span class="crew-check-icon">{#if pilotos >= 1}<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3 3 5-5"/></svg>{:else}<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="4"/></svg>{/if}</span>
+              Piloto: {pilotos}/1
+            </div>
+            <div class="crew-check-item" class:ok={copilotos >= 1} class:missing={copilotos === 0}>
+              <span class="crew-check-icon">{copilotos >= 1 ? '✓' : '○'}</span>
+              Copiloto: {copilotos}/1
+            </div>
+            <div class="crew-check-item" class:ok={auxiliares >= 3} class:missing={auxiliares < 3}>
+              <span class="crew-check-icon">{auxiliares >= 3 ? '✓' : '○'}</span>
+              Auxiliares: {auxiliares}/3
+            </div>
+            <div class="crew-check-item" class:ok={totalTripulantes === 5} class:missing={totalTripulantes !== 5}>
+              <span class="crew-check-icon">{totalTripulantes === 5 ? '✓' : '○'}</span>
+              Total: {totalTripulantes}/5
             </div>
           </div>
         {/if}
@@ -744,9 +922,161 @@
 
     <!-- Acciones del formulario: crear vuelo o limpiar todos los campos -->
     <div class="admin-form__actions">
-      <button type="submit" class="admin-form__submit">Crear Vuelo</button>
+      <button type="submit" class="admin-form__submit" disabled={creandoVuelo}>
+        {#if creandoVuelo}
+          Creando vuelo...
+        {:else}
+          Crear Vuelo
+        {/if}
+      </button>
       <button type="button" class="admin-form__cancel" on:click={limpiarFormularioVuelo}>Limpiar</button>
     </div>
 
   </form>
 </section>
+
+<style>
+/* ── Igualar con AdminCrearVueloEscalas: inputs, labels, spacing ── */
+
+/* Inputs: border-radius uniforme + borde marrón claro */
+.admin-form__input {
+  border-radius: 8px !important;
+  border: 1.5px solid #c9b99a !important;
+  padding: 9px 12px !important;
+  font-size: 0.9rem !important;
+  background: white !important;
+}
+.admin-form__input:focus {
+  border-color: var(--primary-color, #7a5c3f) !important;
+  box-shadow: 0 0 0 3px rgba(122,92,63,0.1) !important;
+}
+
+/* Labels: quitar uppercase y letter-spacing excesivo */
+.admin-form__label {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: #444 !important;
+}
+
+/* Títulos de grupo: quitar uppercase */
+.admin-form__group-title {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: var(--secondary-color, #1a1a2e) !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Grupos: reducir separación y suavizar el divisor */
+.admin-form__group {
+  padding-bottom: 1.25rem !important;
+  border-bottom: 1px solid #e5e0d8 !important;
+}
+.admin-form__group:last-of-type { border-bottom: none !important; }
+
+/* Subtítulo con borde inferior como en escalas */
+.admin-section__subtitle {
+  padding-bottom: 1rem !important;
+  margin-bottom: 1.5rem !important;
+  border-bottom: 2px solid #e5e0d8 !important;
+  font-size: 0.9rem !important;
+  color: #666 !important;
+}
+
+/* Botones de acción */
+.admin-form__submit {
+  border-radius: 8px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: none !important;
+  font-size: 0.9rem !important;
+}
+.admin-form__cancel {
+  border-radius: 8px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  font-size: 0.9rem !important;
+}
+
+/* Hints: nunca heredar letter-spacing del campo padre */
+.img-hint {
+  letter-spacing: normal !important;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 3px;
+  display: block;
+}
+
+/* ── Aviso de cálculo en progreso ── */
+.calcular-aviso {
+  padding: 10px 14px;
+  margin-bottom: 0.75rem;
+  background: #fffbeb;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* ── Chips de tripulantes seleccionados ── */
+.tripulantes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 0.6rem;
+  padding: 8px 10px;
+  background: #f9f7f4;
+  border: 1px solid #e5e0d8;
+  border-radius: 8px;
+  min-height: 40px;
+}
+.t-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 6px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1.5px solid transparent;
+  white-space: nowrap;
+}
+.t-chip--piloto   { background: #e8f4fd; border-color: #90cdf4; color: #1a4971; }
+.t-chip--copiloto { background: #f0fdf4; border-color: #86efac; color: #14532d; }
+.t-chip--auxiliar { background: #fdf4ff; border-color: #d8b4fe; color: #581c87; }
+.t-chip__rol {
+  font-weight: 700;
+  font-size: 0.7rem;
+  width: 14px;
+  text-align: center;
+}
+.t-chip__nombre {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.t-chip__remove {
+  background: none;
+  border: none;
+  padding: 0 1px;
+  line-height: 1;
+  font-size: 1rem;
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.t-chip__remove:hover { opacity: 1; color: #dc2626; }
+
+/* ── Clases propias del componente ── */
+.crew-checklist { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-top: 0.75rem; padding: 0.75rem; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+.crew-check-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; padding: 0.4rem 0.6rem; border-radius: 6px; }
+.crew-check-item.ok { background: #e6f7ee; color: #1a7a3f; }
+.crew-check-item.missing { background: #fef2f2; color: #b91c1c; }
+.crew-check-icon { font-weight: 700; }
+.btn-autorellenar { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; background: #f0ebe3; color: #5a3e2a; border: 1.5px solid #c9b99a; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap; }
+.btn-autorellenar:hover:not(:disabled) { background: #e8dfd4; border-color: #a08060; }
+.btn-autorellenar:disabled { opacity: 0.45; cursor: not-allowed; }
+</style>

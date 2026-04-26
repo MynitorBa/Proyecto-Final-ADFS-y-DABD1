@@ -1,3 +1,4 @@
+using Aerolinea.API.DTOs;
 using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -107,6 +108,76 @@ namespace Aerolinea.API.Controllers
             catch (Exception)
             {
                 return StatusCode(500, new { message = "Ocurrió un error inesperado al cancelar el vuelo." });
+            }
+        }
+
+        /// <summary>
+        /// Edita un vuelo existente. Requiere mas de 48h de anticipacion.
+        /// Recalcula la hora de llegada y reasigna la tripulacion.
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditarVuelo(int id, [FromBody] EditarVueloDTO dto)
+        {
+            try
+            {
+                var vueloId = await _adminVueloService.EditarVuelo(id, dto);
+                return Ok(new { message = "Vuelo actualizado correctamente", vueloId });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (SqlException ex)
+            {
+                return BadRequest(new { message = TraducirErrorSql(ex, null) });
+            }
+            catch (Exception ex) when (ex.InnerException is SqlException sqlEx)
+            {
+                return BadRequest(new { message = TraducirErrorSql(sqlEx, null) });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Ocurrió un error inesperado al editar el vuelo. Intenta de nuevo." });
+            }
+        }
+
+        // ── GET /api/admin/vuelos/siguiente-numero ───────────────────────────
+        /// <summary>
+        /// Devuelve el siguiente numero de secuencia disponible para un prefijo de vuelo.
+        /// Por ejemplo, si ya existen BM 0001 y BM 0003, devuelve 4 (MAX + 1).
+        /// Si no hay vuelos previos con ese prefijo, devuelve 1.
+        /// </summary>
+        [HttpGet("siguiente-numero")]
+        public async Task<IActionResult> ObtenerSiguienteNumero([FromQuery] string prefijo)
+        {
+            if (string.IsNullOrWhiteSpace(prefijo))
+                return BadRequest(new { message = "El prefijo es obligatorio." });
+
+            prefijo = prefijo.Trim().ToUpper();
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(prefijo, @"^[A-Z]{4}$"))
+                return BadRequest(new { message = "El prefijo debe tener exactamente 4 letras mayúsculas." });
+
+            try
+            {
+                var siguienteNumero = await _adminVueloService.ObtenerSiguienteNumeroVuelo(prefijo);
+                return Ok(new
+                {
+                    siguienteNumero,
+                    numeroCompleto = $"{prefijo} {siguienteNumero}"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Error al calcular el siguiente número de vuelo." });
             }
         }
 

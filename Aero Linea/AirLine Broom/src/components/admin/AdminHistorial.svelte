@@ -10,6 +10,7 @@
  */
 // @ts-nocheck
   import { createEventDispatcher, onMount } from 'svelte';
+  import AdminEditarVuelo from './AdminEditarVuelo.svelte';
 
   /** URL base de la API usada para todas las solicitudes al backend. @type {string} */
   export let API;
@@ -22,6 +23,39 @@
 
   const dispatch = createEventDispatcher();
 
+  /** Controla la visibilidad del modal de edicion de vuelo. @type {boolean} */
+  let mostrarEditarModal = false;
+
+  /** Vuelo actualmente seleccionado para editar. @type {any} */
+  let vueloEditar = null;
+
+  /** Lista de aeropuertos cargados para el modal de edicion. @type {any[]} */
+  let aeropuertos = [];
+
+  /** Lista de aviones cargados para el modal de edicion. @type {any[]} */
+  let aviones = [];
+
+  /** Lista de tripulantes cargados para el modal de edicion. @type {any[]} */
+  let tripulacion = [];
+
+  /**
+   * Carga aeropuertos, aviones y tripulantes necesarios para el modal de edicion.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function cargarDatosEdicion() {
+    try {
+      const [rA, rAv, rT] = await Promise.all([
+        fetch(`${API}/api/aeropuertos`,  { credentials: 'include' }),
+        fetch(`${API}/api/aviones`,      { credentials: 'include' }),
+        fetch(`${API}/api/tripulacion`,  { credentials: 'include' })
+      ]);
+      if (rA.ok)  aeropuertos = await rA.json();
+      if (rAv.ok) aviones     = await rAv.json();
+      if (rT.ok)  tripulacion = await rT.json();
+    } catch(e) { console.error('Error cargando datos de edicion', e); }
+  }
+
   /** Lista completa de vuelos cargados desde el endpoint del historial. @type {any[]} */
   let historialVuelos        = [];
 
@@ -29,40 +63,93 @@
   let loadingHistorialVuelos = false;
 
   /**
-   * Clave de la pestana activa para el filtrado por estado.
-   * Valores posibles: 'todos', 'Activo', 'Cancelado', 'Finalizado'.
+   * Clave de la pestana activa.
+   * Valores: 'todos', 'Activo', 'En curso', 'Cancelado', 'Finalizado', 'recientes'.
    * @type {string}
    */
-  let filtroEstado  = 'todos';
+  let filtroEstado   = 'todos';
 
-  /** Texto usado para filtrar vuelos por numero de vuelo, origen o destino. @type {string} */
+  /** Texto libre: busca en numero de vuelo, origen y destino. @type {string} */
   let filtroBusqueda = '';
 
-  /** Vuelos que coinciden con el filtro de estado activo y la busqueda por texto. @type {any[]} */
-  let vuelosFiltrados = [];
-  $: vuelosFiltrados = historialVuelos.filter(v => {
-    const coincideEstado = filtroEstado === 'todos' || v.estado === filtroEstado;
-    const q = filtroBusqueda.toLowerCase();
-    const coincideBusqueda = !q ||
-      v.numeroVuelo?.toLowerCase().includes(q) ||
-      v.origen?.toLowerCase().includes(q) ||
-      v.destino?.toLowerCase().includes(q);
-    return coincideEstado && coincideBusqueda;
-  });
+  /** Codigo IATA de origen para filtrar (p.ej. "GUA"). @type {string} */
+  let filtroOrigen   = '';
 
-  /** Conteo de vuelos por estado para los badges de las pestanas. @type {{ todos: number, Activo: number, Cancelado: number, Finalizado: number }} */
-  let contadores = { todos: 0, Activo: 0, Cancelado: 0, Finalizado: 0 };
+  /** Codigo IATA de destino para filtrar (p.ej. "YYZ"). @type {string} */
+  let filtroDestino  = '';
+
+  /** Fecha minima del rango (YYYY-MM-DD). @type {string} */
+  let fechaDesde     = '';
+
+  /** Fecha maxima del rango (YYYY-MM-DD). @type {string} */
+  let fechaHasta     = '';
+
+  /** Vuelos que coinciden con todos los filtros activos. @type {any[]} */
+  let vuelosFiltrados = [];
+  $: {
+    // ── Base: para "recientes" se preordena por ID desc y se toman 20 ──
+    const base = filtroEstado === 'recientes'
+      ? [...historialVuelos].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)).slice(0, 20)
+      : historialVuelos;
+
+    vuelosFiltrados = base.filter(v => {
+      // ── Filtro por estado (recientes y todos no filtran por estado) ──
+      if (filtroEstado !== 'todos' && filtroEstado !== 'recientes') {
+        if (v.estado !== filtroEstado) return false;
+      }
+
+      // ── Busqueda por texto libre ─────────────────────────────────
+      const q = filtroBusqueda.trim().toLowerCase();
+      if (q) {
+        const enNumero  = v.numeroVuelo?.toLowerCase().includes(q);
+        const enOrigen  = v.origen?.toLowerCase().includes(q);
+        const enDestino = v.destino?.toLowerCase().includes(q);
+        if (!enNumero && !enOrigen && !enDestino) return false;
+      }
+
+      // ── Filtro por IATA origen ───────────────────────────────────
+      const fOrigen = filtroOrigen.trim().toUpperCase();
+      if (fOrigen && !v.origen?.toUpperCase().startsWith(fOrigen)) return false;
+
+      // ── Filtro por IATA destino ──────────────────────────────────
+      const fDestino = filtroDestino.trim().toUpperCase();
+      if (fDestino && !v.destino?.toUpperCase().startsWith(fDestino)) return false;
+
+      // ── Filtro por rango de fechas ───────────────────────────────
+      const fechaVuelo = (v.fecha ?? '').split('T')[0];
+      if (fechaDesde && fechaVuelo < fechaDesde) return false;
+      if (fechaHasta && fechaVuelo > fechaHasta) return false;
+
+      return true;
+    });
+  }
+
+  /** Conteo de vuelos por estado para los badges. */
   $: contadores = {
     todos:      historialVuelos.length,
     Activo:     historialVuelos.filter(v => v.estado === 'Activo').length,
+    'En curso': historialVuelos.filter(v => v.estado === 'En curso').length,
     Cancelado:  historialVuelos.filter(v => v.estado === 'Cancelado').length,
     Finalizado: historialVuelos.filter(v => v.estado === 'Finalizado').length,
+    recientes:  Math.min(20, historialVuelos.length),
   };
 
+  /** Indica si hay algun filtro avanzado activo (ademas del tab). @type {boolean} */
+  $: hayFiltrosActivos = !!(filtroBusqueda || filtroOrigen || filtroDestino || fechaDesde || fechaHasta);
+
+  /** Limpia todos los filtros de busqueda y fecha sin tocar la pestana de estado. */
+  function limpiarFiltros() {
+    filtroBusqueda = '';
+    filtroOrigen   = '';
+    filtroDestino  = '';
+    fechaDesde     = '';
+    fechaHasta     = '';
+  }
+
   /**
-   * Al montar: carga el historial de vuelos desde el backend.
+   * Al montar: carga el historial de vuelos y los datos compartidos para el modal de edicion.
    */
-  onMount(() => { cargarHistorial(); });
+  onMount(() => { cargarHistorial(); cargarDatosEdicion(); });
 
   /**
    * Obtiene el historial completo de vuelos desde la API del backend y lo almacena en historialVuelos.
@@ -121,7 +208,7 @@
       <p class="admin-section__subtitle">Todos los vuelos del sistema</p>
     </div>
     <button class="btn-add" on:click={cargarHistorial} style="background:#4b5563">
-      ↻ Actualizar
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Actualizar
     </button>
   </div>
 
@@ -134,15 +221,18 @@
     </div>
 
   {:else}
-    <!-- Barra de filtros: pestanas por estado y campo de busqueda por texto -->
+    <!-- Barra de filtros: pestanas por estado + filtros avanzados -->
     <div class="historial-filtros">
 
+      <!-- Pestanas de estado -->
       <div class="historial-tabs">
         {#each [
-          { key: 'todos',      label: 'Todos',      color: '#6b7280' },
-          { key: 'Activo',     label: 'Activos',    color: '#2e7d32' },
-          { key: 'Cancelado',  label: 'Cancelados', color: '#c62828' },
-          { key: 'Finalizado', label: 'Finalizados',color: '#1565c0' }
+          { key: 'todos',      label: 'Todos',       color: '#6b7280' },
+          { key: 'Activo',     label: 'Activos',     color: '#2e7d32' },
+          { key: 'En curso',   label: 'En curso',    color: '#b45309' },
+          { key: 'Cancelado',  label: 'Cancelados',  color: '#c62828' },
+          { key: 'Finalizado', label: 'Finalizados', color: '#1565c0' },
+          { key: 'recientes',  label: 'Recientes',   color: '#8b5cf6' }
         ] as tab}
           <button
             class="historial-tab"
@@ -150,22 +240,86 @@
             on:click={() => filtroEstado = tab.key}
             style="--tab-color:{tab.color}">
             {tab.label}
-            <span class="historial-tab__count">{contadores[tab.key] ?? contadores.todos}</span>
+            <span class="historial-tab__count">{contadores[tab.key] ?? 0}</span>
           </button>
         {/each}
       </div>
 
-      <input
-        type="text"
-        class="historial-search"
-        bind:value={filtroBusqueda}
-        placeholder="Buscar por numero de vuelo, origen o destino..."
-      />
+      <!-- Filtros avanzados -->
+      <div class="historial-advanced">
+
+        <!-- Busqueda por texto -->
+        <div class="hf-search-wrap">
+          <svg class="hf-search-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+          </svg>
+          <input
+            type="text"
+            class="hf-search"
+            bind:value={filtroBusqueda}
+            placeholder="Buscar por número, ciudad, código..."
+          />
+        </div>
+
+        <!-- Fila de filtros específicos -->
+        <div class="hf-row">
+
+          <div class="hf-field">
+            <label class="hf-label">Origen IATA</label>
+            <input
+              type="text"
+              class="hf-iata"
+              bind:value={filtroOrigen}
+              placeholder="GUA"
+              maxlength="4"
+            />
+          </div>
+
+          <div class="hf-field">
+            <label class="hf-label">Destino IATA</label>
+            <input
+              type="text"
+              class="hf-iata"
+              bind:value={filtroDestino}
+              placeholder="YYZ"
+              maxlength="4"
+            />
+          </div>
+
+          <div class="hf-field">
+            <label class="hf-label">Desde</label>
+            <input type="date" class="hf-date" bind:value={fechaDesde} />
+          </div>
+
+          <div class="hf-field">
+            <label class="hf-label">Hasta</label>
+            <input type="date" class="hf-date" bind:value={fechaHasta} />
+          </div>
+
+          {#if hayFiltrosActivos}
+            <button class="hf-clear" on:click={limpiarFiltros} title="Limpiar filtros">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-1px;margin-right:4px"><path d="M2 2l8 8M10 2L2 10"/></svg>Limpiar
+            </button>
+          {/if}
+
+        </div>
+      </div>
     </div>
 
     {#if vuelosFiltrados.length === 0}
-      <div class="placeholder-card">
-        <p class="placeholder-card__text">No hay vuelos que coincidan con los filtros.</p>
+      <div class="hf-empty">
+        <span class="hf-empty__icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M16 16l4 4"/></svg></span>
+        <p class="hf-empty__title">Sin resultados</p>
+        <p class="hf-empty__sub">
+          {#if hayFiltrosActivos}
+            Ningún vuelo coincide con los filtros aplicados.
+          {:else}
+            No hay vuelos en esta categoría.
+          {/if}
+        </p>
+        {#if hayFiltrosActivos}
+          <button class="hf-clear hf-clear--center" on:click={limpiarFiltros}>Limpiar filtros</button>
+        {/if}
       </div>
     {:else}
       <!-- Tabla de vuelos filtrados con fechas, horarios, precios, estado y accion de cancelar -->
@@ -228,6 +382,10 @@
                 <td class="table__cell">
                   <div class="table__actions">
                     {#if vuelo.estado === 'Activo' || vuelo.estado === 'En curso'}
+                      <button class="table__action-btn table__action-btn--edit"
+                        on:click={() => { vueloEditar = vuelo; mostrarEditarModal = true; }}>
+                        Editar
+                      </button>
                       <button class="table__action-btn table__action-btn--cancel"
                         on:click={() => handleCancelarVuelo(vuelo.id)}>
                         Cancelar
@@ -243,3 +401,151 @@
     {/if}
   {/if}
 </section>
+
+{#if mostrarEditarModal && vueloEditar}
+  <AdminEditarVuelo
+    vuelo={vueloEditar}
+    {aeropuertos}
+    {aviones}
+    {tripulacion}
+    {mostrarToast}
+    onClose={() => mostrarEditarModal = false}
+    onGuardado={() => { mostrarEditarModal = false; cargarHistorial(); dispatch('vueloCancelado'); }}
+  />
+{/if}
+
+<style>
+.table__action-btn--edit {
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: .35rem .8rem;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  margin-right: .4rem;
+}
+.table__action-btn--edit:hover { background: #1e40af; }
+
+/* ── Filtros avanzados ─────────────────────────────────────── */
+.historial-advanced {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Barra de búsqueda general */
+.hf-search-wrap {
+  position: relative;
+}
+.hf-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+.hf-search {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  font-size: 0.875rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+.hf-search:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+}
+
+/* Fila de filtros específicos */
+.hf-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+.hf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hf-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.hf-iata {
+  width: 80px;
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  font-family: monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  transition: border-color 0.15s;
+}
+.hf-iata:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+.hf-date {
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  transition: border-color 0.15s;
+}
+.hf-date:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+/* Botón limpiar */
+.hf-clear {
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+.hf-clear:hover { background: #e5e7eb; color: #111827; }
+.hf-clear--center { margin-top: 8px; }
+
+/* Estado vacío */
+.hf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+}
+.hf-empty__icon { font-size: 2rem; }
+.hf-empty__title { font-size: 1rem; font-weight: 700; color: #374151; margin: 0; }
+.hf-empty__sub   { font-size: 0.875rem; margin: 0; }
+</style>

@@ -113,6 +113,9 @@
   /** Set con los IDs de amenidades cuya imagen se esta subiendo. @type {Set<number>} */
   let subiendoImgAmenidadSet = new Set();
 
+  /** URL de la imagen de amenidad expandida en el lightbox. @type {string|null} */
+  let imagenAmenidadExpandida = null;
+
   /** Controla la visibilidad del formulario para crear una nueva categoria de amenidad. @type {boolean} */
   let showFormNuevaAmenidadCatalogo = false;
 
@@ -152,12 +155,6 @@
 
   /** Mensaje de retroalimentacion en el modal de habitacion. @type {{tipo: string, texto: string}|null} */
   let mensajeHabitacion = null;
-
-  /** Indica si se esta subiendo una imagen en el modal de habitacion. @type {boolean} */
-  let subiendoImgHab = false;
-
-  /** Mensaje de retroalimentacion en la seccion de imagenes del modal de habitacion. @type {{tipo: string, texto: string}|null} */
-  let mensajeImgHab = null;
 
   /** Controla la visibilidad del modal de nueva habitacion. @type {boolean} */
   let showModalNuevaHab = false;
@@ -684,7 +681,7 @@
       descripcion:      h.descripcion ?? '',
       estadoId:         h.estadoId,
     };
-    mensajeHabitacion = null; mensajeImgHab = null; showModalHabitacion = true;
+    mensajeHabitacion = null; showModalHabitacion = true;
   }
 
   /**
@@ -710,65 +707,6 @@
       await cargarHabitacionesDetalle(hotelDetalle.id);
     } catch (e) { mensajeHabitacion = { tipo: 'error', texto: e.message }; }
     finally { guardandoHabitacion = false; }
-  }
-
-  /**
-   * Sube una imagen a la habitacion que se esta editando en el modal.
-   * @async
-   * @param {Event} event - Evento del input file.
-   * @returns {Promise<void>}
-   */
-  async function subirImagenHabitacion(event) {
-    const file = event.target.files[0]; if (!file) return;
-    if (file.size > 7 * 1024 * 1024) {
-      mensajeImgHab = { tipo: 'error', texto: 'La imagen excede 7 MB. Usa una imagen más pequeña.' };
-      event.target.value = ''; return;
-    }
-    subiendoImgHab = true; mensajeImgHab = null;
-    try {
-      const base64 = await fileToBase64(file);
-      const res = await fetch(`${API_BASE}/admin/habitaciones/${habitacionEditando.id}/imagenes`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base64 }) });
-      if (!res.ok) {
-        const ct = res.headers.get('content-type') || '';
-        let msg;
-        if (ct.includes('application/json')) {
-          const err = await res.json().catch(() => ({}));
-          msg = err.mensaje || `Error ${res.status}`;
-        } else {
-          msg = res.status === 413
-            ? 'La imagen es demasiado grande. Usa una imagen de menor tamaño (máximo 7 MB).'
-            : (await res.text().catch(() => '') || `Error ${res.status}`);
-        }
-        throw new Error(msg);
-      }
-      const data = await res.json();
-      const nuevosIds = [...(habitacionEditando.imagenesIds ?? []), data.id];
-      habitacionEditando = { ...habitacionEditando, imagenesIds: nuevosIds };
-      habitaciones = habitaciones.map(h => h.id === habitacionEditando.id ? { ...h, imagenesIds: nuevosIds } : h);
-      mensajeImgHab = { tipo: 'ok', texto: 'Imagen agregada.' };
-    } catch (e) { mensajeImgHab = { tipo: 'error', texto: e.message }; }
-    finally { subiendoImgHab = false; event.target.value = ''; }
-  }
-
-  /**
-   * Solicita confirmacion antes de eliminar una imagen de la habitacion en edicion.
-   * @param {number} imagenId - ID de la imagen.
-   */
-  function pedirEliminarImgHab(imagenId) { pedirConfirmacion('Eliminar imagen', '¿Eliminar esta imagen de la habitación?', () => _eliminarImgHab(imagenId)); }
-
-  /**
-   * Elimina una imagen de la habitacion en edicion.
-   * @async
-   * @param {number} imagenId - ID de la imagen.
-   * @returns {Promise<void>}
-   */
-  async function _eliminarImgHab(imagenId) {
-    try {
-      await fetch(`${API_BASE}/admin/habitaciones/imagenes/${imagenId}`, { method: 'DELETE', credentials: 'include' });
-      const nuevosIds = (habitacionEditando.imagenesIds ?? []).filter(id => id !== imagenId);
-      habitacionEditando = { ...habitacionEditando, imagenesIds: nuevosIds };
-      habitaciones = habitaciones.map(h => h.id === habitacionEditando.id ? { ...h, imagenesIds: nuevosIds } : h);
-    } catch (e) { mensajeImgHab = { tipo: 'error', texto: 'No se pudo eliminar: ' + e.message }; }
   }
 
   /**
@@ -894,7 +832,8 @@
     if (!hotelDetalle) return;
     const cant = Math.max(1, Math.min(50, Number(nuevaHabGestion.cantidad) || 1));
     guardandoNuevaHab = true; mensajeNuevaHab = null;
-    if (cant > 1) { creandoMasivo = true; creandoMasivoProgreso = `Creando habitación 0 de ${cant}...`; }
+    creandoMasivo = true;
+    creandoMasivoProgreso = cant > 1 ? `Creando habitación 0 de ${cant}...` : 'Creando habitación...';
     try {
       // Payload sin numeroHabitacion — el backend lo genera automaticamente (count + 1)
       const payload = {
@@ -906,14 +845,14 @@
       const estNom  = payload.estadoId === 1 ? 'Activa' : 'Cerrada';
       let creadas = 0;
       for (let i = 0; i < cant; i++) {
-        if (cant > 1) creandoMasivoProgreso = `Creando habitación ${i + 1} de ${cant}...`;
+        creandoMasivoProgreso = cant > 1 ? `Creando habitación ${i + 1} de ${cant}...` : 'Creando habitación...';
         const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}/habitaciones`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
         creadas++;
       }
       await cargarHabitacionesDetalle(hotelDetalle.id);
-      mensajeNuevaHab = { tipo: 'ok', texto: `${creadas} habitación(es) ${tipoNom} creada(s). Número asignado automáticamente.` };
+      showModalNuevaHab = false;
     } catch (e) { mensajeNuevaHab = { tipo: 'error', texto: e.message }; }
     finally { guardandoNuevaHab = false; creandoMasivo = false; }
   }
@@ -1145,7 +1084,7 @@
                 <button class="adm__icon-btn adm__icon-btn--delete" on:click={() => pedirEliminarAmenidad(ha.id, ha.amenidadNombre)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
               </div>
             </div>
-            <div class="adm__amenidad-imgs"><div class="adm__img-grid adm__img-grid--sm">{#each (ha.imagenesIds ?? []) as imgId (imgId)}<div class="adm__img-card"><img src="{API_BASE}/imagenes/amenidad/{imgId}" alt="img" /><button class="adm__img-delete" on:click={() => pedirEliminarImgAmenidad(ha.id, imgId)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}<label class="adm__wizard-add-img-btn adm__upload-btn">{#if subiendoImgAmenidadSet.has(ha.id)}<svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{/if}<input type="file" accept="image/*" on:change={(e) => subirImagenAmenidad(e, ha.id)} disabled={subiendoImgAmenidadSet.has(ha.id)} style="display:none" /></label></div></div>
+            <div class="adm__amenidad-imgs"><div class="adm__img-grid adm__img-grid--sm">{#each (ha.imagenesIds ?? []) as imgId (imgId)}<div class="adm__img-card"><img src="{API_BASE}/imagenes/amenidad/{imgId}" alt="img" style="cursor:zoom-in" on:click|stopPropagation={() => imagenAmenidadExpandida = API_BASE + '/imagenes/amenidad/' + imgId} /><button class="adm__img-delete" on:click={() => pedirEliminarImgAmenidad(ha.id, imgId)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}<label class="adm__wizard-add-img-btn adm__upload-btn">{#if subiendoImgAmenidadSet.has(ha.id)}<svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>{:else}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>{/if}<input type="file" accept="image/*" on:change={(e) => subirImagenAmenidad(e, ha.id)} disabled={subiendoImgAmenidadSet.has(ha.id)} style="display:none" /></label></div></div>
           </div>
         {/each}
       </div>
@@ -1224,16 +1163,6 @@
       </div>
       {#if mensajeHabitacion}<div class="adm__feedback adm__feedback--{mensajeHabitacion.tipo}" style="margin:.75rem 0">{mensajeHabitacion.texto}</div>{/if}
       <div style="display:flex;justify-content:flex-end;margin-bottom:1.5rem"><button class="adm__btn adm__btn--primary" on:click={guardarHabitacion} disabled={guardandoHabitacion}>{#if guardandoHabitacion}Guardando...{:else}Guardar cambios{/if}</button></div>
-      <div class="adm__modal-section-divider"></div>
-      <!-- Seccion de imagenes dentro del modal de edicion de habitacion -->
-      <div class="adm__img-section-header" style="margin-top:1rem">
-        <p class="adm__modal-section-title" style="margin:0">Imágenes</p>
-        <label class="adm__btn adm__btn--ghost adm__upload-btn">{#if subiendoImgHab}Subiendo...{:else}+ Agregar{/if}<input type="file" accept="image/*" on:change={subirImagenHabitacion} disabled={subiendoImgHab} style="display:none" /></label>
-      </div>
-      {#if mensajeImgHab}<div class="adm__feedback adm__feedback--{mensajeImgHab.tipo}" style="margin:.5rem 0">{mensajeImgHab.texto}</div>{/if}
-      {#if habitacionEditando.imagenesIds?.length > 0}
-        <div class="adm__img-grid adm__img-grid--sm" style="margin-top:.75rem">{#each habitacionEditando.imagenesIds as imgId (imgId)}<div class="adm__img-card"><img src="{API_BASE}/imagenes/habitacion/{imgId}" alt="hab" /><button class="adm__img-delete" on:click={() => pedirEliminarImgHab(imgId)}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>{/each}</div>
-      {:else}<div class="adm__img-empty" style="padding:1.5rem 0"><p>Sin imágenes.</p></div>{/if}
     </div>
     <div class="adm__hotel-modal__footer"><button class="adm__btn adm__btn--ghost" on:click={cerrarModales}>Cerrar</button></div>
   </div>
@@ -1512,5 +1441,14 @@
       <button class="adm__btn adm__btn--ghost" on:click={cerrarConfirm}>Cancelar</button>
       <button class="adm__btn--cancel-confirm" on:click={ejecutarConfirm}>Sí, eliminar</button>
     </div>
+  </div>
+{/if}
+
+{#if imagenAmenidadExpandida}
+  <div class="adm__lightbox" on:click={() => imagenAmenidadExpandida = null} on:keydown={e => e.key === 'Escape' && (imagenAmenidadExpandida = null)} role="button" tabindex="-1" aria-label="Cerrar imagen">
+    <img src={imagenAmenidadExpandida} alt="Imagen expandida" on:click|stopPropagation style="max-width:90vw;max-height:87vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.7)" />
+    <button class="adm__lightbox-close" on:click={() => imagenAmenidadExpandida = null} aria-label="Cerrar">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
 {/if}

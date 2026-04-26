@@ -559,6 +559,97 @@ namespace Aerolinea.API.Helpers
         }
 
         // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE CAMBIO DE PERSONAL — enviado a pasajeros cuando
+        //  se actualiza la tripulacion de un vuelo activo
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo informativo que se envia a cada pasajero con reserva
+        /// activa o pendiente de pago cuando el administrador cambia la tripulacion de un vuelo.
+        /// El vuelo NO se cancela; solo se actualiza el personal asignado.
+        /// </summary>
+        public static string CorreoCambioPersonal(
+            string nombreUsuario,
+            string noReservacion,
+            string numeroVuelo,
+            string origenCodigo,
+            string destinoCodigo,
+            string fechaVuelo)
+        {
+            var e = EmailHelper.Esc;
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:22px;color:#F2EFEA;font-weight:700;'>Actualización de Tripulación</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Broom AirLine</p>
+    </div>
+    <div style='height:3px;background:#B89A7A;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+        <p style='font-size:15px;color:#1C1A18;margin:0 0 6px;'>Hola, <strong>{e(nombreUsuario)}</strong>:</p>
+        <p style='font-size:14px;color:#3A3531;margin:0 0 24px;line-height:1.6;'>
+            Queremos informarte que el personal asignado a tu vuelo ha sido actualizado.
+            Tu vuelo sigue programado con normalidad y todos los detalles de tu reservacion
+            permanecen sin cambios.
+        </p>
+
+        <!-- DETALLE DEL VUELO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:20px;border-left:4px solid #B89A7A;margin-bottom:20px;'>
+            <table style='width:100%;border-collapse:collapse;table-layout:fixed;'>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;width:140px;vertical-align:top;'>N. Reservacion</td>
+                    <td style='padding:8px 0;font-size:15px;color:#1C1A18;font-weight:700;font-family:monospace;'>{e(noReservacion)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Vuelo</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(numeroVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Ruta</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(origenCodigo)} &rarr; {e(destinoCodigo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Fecha</td>
+                    <td style='padding:8px 0;font-size:14px;color:#3A3531;'>{e(fechaVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Estado</td>
+                    <td style='padding:8px 0;font-size:14px;color:#166534;font-weight:600;'>Vuelo activo — sin cambios en horarios</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- MENSAJE DE CONTACTO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;'>
+            <p style='margin:0;font-size:13px;color:#3A3531;line-height:1.7;'>
+                Si tienes preguntas sobre tu reservacion, contactanos a
+                <a href='mailto:distribuidorapine@gmail.com' style='color:#8B6B4A;font-weight:600;'>distribuidorapine@gmail.com</a>.
+                Gracias por volar con Broom AirLine.
+            </p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine &middot; Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         //  CORREO DE CANCELACIÓN — enviado al usuario
         // ══════════════════════════════════════════════════════════════════
         /// <summary>

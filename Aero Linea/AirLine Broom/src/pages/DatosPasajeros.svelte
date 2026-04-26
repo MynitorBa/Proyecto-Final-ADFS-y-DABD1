@@ -45,6 +45,12 @@
   /** Mapa de boletoId a objetos de datos del formulario de pasajero que contienen nombre, apellido, pasaporte, telefono, pais y ciudad. @type {object} */
   let passengerData = {};
 
+  /** Numero de pasajeros unicos deducido de total_boletos / unique_vueloIds. @type {number} */
+  let cantidadPasajerosUnicos = 0;
+
+  /** Claves sinteticas para cada pasajero unico: ['pax_0', 'pax_1', ...]. @type {string[]} */
+  let pasajeroKeys = [];
+
   /** Indice basado en cero del boleto actualmente mostrado en la UI del formulario paso a paso. @type {number} */
   let currentPassengerIndex = 0;
 
@@ -294,9 +300,15 @@
         return;
       }
 
-      todosLosBoletos.forEach(boleto => {
-        passengerData[boleto.boletoId] = {
-          boletoId:  boleto.boletoId,
+      // Derivar cantidad de pasajeros unicos: total boletos / legs de vuelo unicos
+      const uniqueFlightLegs = new Set(todosLosBoletos.map(b => b.vueloId)).size;
+      cantidadPasajerosUnicos = uniqueFlightLegs > 0
+        ? Math.round(todosLosBoletos.length / uniqueFlightLegs)
+        : todosLosBoletos.length;
+      pasajeroKeys = Array.from({ length: cantidadPasajerosUnicos }, (_, i) => `pax_${i}`);
+
+      pasajeroKeys.forEach(key => {
+        passengerData[key] = {
           nombre:    '',
           apellido:  '',
           pasaporte: '',
@@ -304,16 +316,16 @@
           pais:      '',
           ciudad:    ''
         };
-        paisQueries[boleto.boletoId]           = '';
-        paisesSugeridos[boleto.boletoId]       = [];
-        paisesSeleccionados[boleto.boletoId]   = null;
-        ciudadQueries[boleto.boletoId]         = '';
-        ciudadesSugeridas[boleto.boletoId]     = [];
-        ciudadesSeleccionadas[boleto.boletoId] = false;
-        dialCodes[boleto.boletoId]             = '';
-        phoneDigitCounts[boleto.boletoId]      = 8;
-        phoneErrors[boleto.boletoId]           = '';
-        pasaporteErrors[boleto.boletoId]       = '';
+        paisQueries[key]           = '';
+        paisesSugeridos[key]       = [];
+        paisesSeleccionados[key]   = null;
+        ciudadQueries[key]         = '';
+        ciudadesSugeridas[key]     = [];
+        ciudadesSeleccionadas[key] = false;
+        dialCodes[key]             = '';
+        phoneDigitCounts[key]      = 8;
+        phoneErrors[key]           = '';
+        pasaporteErrors[key]       = '';
       });
 
     } catch (err) {
@@ -427,12 +439,12 @@
   }
 
   /**
-   * Avanza el formulario escalonado al siguiente boleto si no esta en el ultimo.
+   * Avanza el formulario escalonado al siguiente pasajero unico si no esta en el ultimo.
    */
-  function handleNext()     { if (currentPassengerIndex < todosLosBoletos.length - 1) currentPassengerIndex++; }
+  function handleNext()     { if (currentPassengerIndex < cantidadPasajerosUnicos - 1) currentPassengerIndex++; }
 
   /**
-   * Regresa el formulario escalonado al boleto anterior si no esta en el primero.
+   * Regresa el formulario escalonado al pasajero unico anterior si no esta en el primero.
    */
   function handlePrevious() { if (currentPassengerIndex > 0) currentPassengerIndex--; }
 
@@ -450,48 +462,61 @@
   async function handleSubmit() {
     submitting = true;
     try {
-      const boletosAgrupados = {};
-      todosLosBoletos.forEach(boleto => {
-        if (!boletosAgrupados[boleto.reservacionId])
-          boletosAgrupados[boleto.reservacionId] = [];
-        const pd = passengerData[boleto.boletoId];
-        const dc = dialCodes[boleto.boletoId] || '';
-        const telefonoCompleto = dc ? dc + ' ' + pd.telefono.replace(/\s/g, '') : pd.telefono;
-        boletosAgrupados[boleto.reservacionId].push({ ...pd, telefono: telefonoCompleto });
-      });
-
-      for (const reservacionId in boletosAgrupados) {
-        for (const p of boletosAgrupados[reservacionId]) {
-          if (!p.nombre || !p.apellido || !p.pasaporte || !p.telefono || !p.pais || !p.ciudad) {
-            alert('Por favor completa todos los campos de todos los pasajeros');
-            submitting = false; return;
-          }
-        }
-      }
-
-      for (const boleto of todosLosBoletos) {
-        const pasaporte = passengerData[boleto.boletoId].pasaporte;
-        if (!/^\d+$/.test(pasaporte)) {
-          pasaporteErrors[boleto.boletoId] = 'El pasaporte debe contener solo números.';
-          pasaporteErrors = { ...pasaporteErrors };
-          currentPassengerIndex = todosLosBoletos.indexOf(boleto);
+      // Validar que todos los campos de los pasajeros unicos esten completos
+      for (const key of pasajeroKeys) {
+        const p = passengerData[key];
+        if (!p.nombre || !p.apellido || !p.pasaporte || !p.telefono || !p.pais || !p.ciudad) {
+          alert('Por favor completa todos los campos de todos los pasajeros');
           submitting = false; return;
         }
       }
 
-      for (const boleto of todosLosBoletos) {
-        const dc = dialCodes[boleto.boletoId];
+      // Validar pasaporte (solo digitos) para cada pasajero unico
+      for (let i = 0; i < pasajeroKeys.length; i++) {
+        const key = pasajeroKeys[i];
+        if (!/^\d+$/.test(passengerData[key].pasaporte)) {
+          pasaporteErrors[key] = 'El pasaporte debe contener solo números.';
+          pasaporteErrors = { ...pasaporteErrors };
+          currentPassengerIndex = i;
+          submitting = false; return;
+        }
+      }
+
+      // Validar telefono para cada pasajero unico
+      for (let i = 0; i < pasajeroKeys.length; i++) {
+        const key = pasajeroKeys[i];
+        const dc = dialCodes[key];
         if (dc) {
-          const digitosIngresados = passengerData[boleto.boletoId].telefono.replace(/\D/g, '').length;
-          const requeridos = phoneDigitCounts[boleto.boletoId];
+          const digitosIngresados = passengerData[key].telefono.replace(/\D/g, '').length;
+          const requeridos = phoneDigitCounts[key];
           if (digitosIngresados !== requeridos) {
-            phoneErrors[boleto.boletoId] = `Se requieren ${requeridos} dígitos (ingresaste ${digitosIngresados}).`;
+            phoneErrors[key] = `Se requieren ${requeridos} dígitos (ingresaste ${digitosIngresados}).`;
             phoneErrors = { ...phoneErrors };
-            currentPassengerIndex = todosLosBoletos.indexOf(boleto);
+            currentPassengerIndex = i;
             submitting = false; return;
           }
         }
       }
+
+      // Mapear cada boleto a su pasajero unico usando modulo y agrupar por reservacionId
+      const boletosAgrupados = {};
+      todosLosBoletos.forEach((boleto, idx) => {
+        if (!boletosAgrupados[boleto.reservacionId])
+          boletosAgrupados[boleto.reservacionId] = [];
+        const key = pasajeroKeys[idx % cantidadPasajerosUnicos];
+        const pd = passengerData[key];
+        const dc = dialCodes[key] || '';
+        const telefonoCompleto = dc ? dc + ' ' + pd.telefono.replace(/\s/g, '') : pd.telefono;
+        boletosAgrupados[boleto.reservacionId].push({
+          boletoId: boleto.boletoId,
+          nombre:    pd.nombre,
+          apellido:  pd.apellido,
+          pasaporte: pd.pasaporte,
+          telefono:  telefonoCompleto,
+          pais:      pd.pais,
+          ciudad:    pd.ciudad
+        });
+      });
 
       const promises = Object.entries(boletosAgrupados).map(([reservacionId, body]) =>
         fetch(`${API}/api/reservaciones/${reservacionId}/pasajeros`, {
@@ -551,14 +576,17 @@
     return `${p[0]}:${p[1]}`;
   }
 
-  // Resuelve reactivamente el objeto de boleto que se muestra actualmente en el formulario escalonado.
+  // Clave sintetica del pasajero unico actualmente visible en el formulario.
+  $: currentPaxKey    = pasajeroKeys[currentPassengerIndex] ?? 'pax_0';
+
+  // Primer boleto de este pasajero (para mostrar info del vuelo representativo).
   $: currentBoleto    = todosLosBoletos[currentPassengerIndex];
 
-  // Verdadero cuando el usuario ve el primer boleto, deshabilita el boton Anterior.
+  // Verdadero cuando el usuario ve el primer pasajero, deshabilita el boton Anterior.
   $: isFirstPassenger = currentPassengerIndex === 0;
 
-  // Verdadero cuando el usuario ve el ultimo boleto, cambia el boton Siguiente por el de Enviar.
-  $: isLastPassenger  = currentPassengerIndex === todosLosBoletos.length - 1;
+  // Verdadero cuando el usuario ve el ultimo pasajero, cambia el boton Siguiente por el de Enviar.
+  $: isLastPassenger  = currentPassengerIndex === cantidadPasajerosUnicos - 1;
 </script>
 
 <!-- Contenedor principal del formulario de datos de pasajeros -->
@@ -602,9 +630,9 @@
             </ul>
           </div>
 
-          <!-- Pestanas de navegacion entre boletos del formulario por pasos -->
+          <!-- Pestanas de navegacion entre pasajeros unicos del formulario por pasos -->
           <div class="passenger-tabs">
-            {#each todosLosBoletos as boleto, index}
+            {#each pasajeroKeys as paxKey, index}
               <button
                 class="passenger-tab"
                 class:passenger-tab--active={index === currentPassengerIndex}
@@ -612,7 +640,7 @@
                 on:click={() => currentPassengerIndex = index}
               >
                 <span class="passenger-tab__number">{index + 1}</span>
-                <span class="passenger-tab__label">Boleto {index + 1}</span>
+                <span class="passenger-tab__label">Pasajero {index + 1}</span>
               </button>
             {/each}
           </div>
@@ -639,56 +667,56 @@
 
               <article class="passenger-form-card">
                 <h3 class="passenger-form-card__title">
-                  Datos del Pasajero {currentPassengerIndex + 1} de {todosLosBoletos.length}
+                  Datos del Pasajero {currentPassengerIndex + 1} de {cantidadPasajerosUnicos}
                 </h3>
                 <div class="passenger-form-card__content">
                   <div class="form-row">
                     <div class="form-field">
-                      <label for="nombre-{currentBoleto.boletoId}" class="form-field__label">Nombre *</label>
-                      <input type="text" id="nombre-{currentBoleto.boletoId}" class="form-field__input"
-                        bind:value={passengerData[currentBoleto.boletoId].nombre}
+                      <label for="nombre-{currentPaxKey}" class="form-field__label">Nombre *</label>
+                      <input type="text" id="nombre-{currentPaxKey}" class="form-field__input"
+                        bind:value={passengerData[currentPaxKey].nombre}
                         placeholder="Nombre(s)" autocomplete="off" required />
                     </div>
                     <div class="form-field">
-                      <label for="apellido-{currentBoleto.boletoId}" class="form-field__label">Apellido *</label>
-                      <input type="text" id="apellido-{currentBoleto.boletoId}" class="form-field__input"
-                        bind:value={passengerData[currentBoleto.boletoId].apellido}
+                      <label for="apellido-{currentPaxKey}" class="form-field__label">Apellido *</label>
+                      <input type="text" id="apellido-{currentPaxKey}" class="form-field__input"
+                        bind:value={passengerData[currentPaxKey].apellido}
                         placeholder="Apellido(s)" autocomplete="off" required />
                     </div>
                   </div>
                   <div class="form-row">
                     <div class="form-field">
-                      <label for="pasaporte-{currentBoleto.boletoId}" class="form-field__label">Número de Pasaporte (solo números) *</label>
-                      <input type="text" id="pasaporte-{currentBoleto.boletoId}" class="form-field__input"
-                        class:form-field__input--error={pasaporteErrors[currentBoleto.boletoId]}
-                        value={passengerData[currentBoleto.boletoId].pasaporte}
+                      <label for="pasaporte-{currentPaxKey}" class="form-field__label">Número de Pasaporte (solo números) *</label>
+                      <input type="text" id="pasaporte-{currentPaxKey}" class="form-field__input"
+                        class:form-field__input--error={pasaporteErrors[currentPaxKey]}
+                        value={passengerData[currentPaxKey].pasaporte}
                         on:input={(e) => {
                           const raw = e.target.value;
                           const soloNumeros = raw.replace(/[^0-9]/g, '');
-                          passengerData[currentBoleto.boletoId].pasaporte = soloNumeros;
+                          passengerData[currentPaxKey].pasaporte = soloNumeros;
                           passengerData = { ...passengerData };
-                          pasaporteErrors[currentBoleto.boletoId] = raw !== soloNumeros ? 'Solo se permiten números.' : '';
+                          pasaporteErrors[currentPaxKey] = raw !== soloNumeros ? 'Solo se permiten números.' : '';
                           pasaporteErrors = { ...pasaporteErrors };
                         }}
                         placeholder="12345678" autocomplete="off" required />
-                      {#if pasaporteErrors[currentBoleto.boletoId]}
-                        <span class="form-field__error">{pasaporteErrors[currentBoleto.boletoId]}</span>
+                      {#if pasaporteErrors[currentPaxKey]}
+                        <span class="form-field__error">{pasaporteErrors[currentPaxKey]}</span>
                       {/if}
                     </div>
                     <div class="form-field">
-                      <label for="pais-{currentBoleto.boletoId}" class="form-field__label">País *</label>
+                      <label for="pais-{currentPaxKey}" class="form-field__label">País *</label>
                       <div class="autocomplete">
-                        <input type="text" id="pais-{currentBoleto.boletoId}" class="form-field__input"
-                          bind:value={paisQueries[currentBoleto.boletoId]}
-                          on:input={() => onPaisInput(currentBoleto.boletoId)}
-                          on:blur={() => validarPaisSeleccionado(currentBoleto.boletoId)}
+                        <input type="text" id="pais-{currentPaxKey}" class="form-field__input"
+                          bind:value={paisQueries[currentPaxKey]}
+                          on:input={() => onPaisInput(currentPaxKey)}
+                          on:blur={() => validarPaisSeleccionado(currentPaxKey)}
                           placeholder="Escribe tu país..." autocomplete="off" required />
-                        {#if paisesSugeridos[currentBoleto.boletoId]?.length > 0}
+                        {#if paisesSugeridos[currentPaxKey]?.length > 0}
                           <ul class="autocomplete__list">
-                            {#each paisesSugeridos[currentBoleto.boletoId] as pais}
+                            {#each paisesSugeridos[currentPaxKey] as pais}
                               <li class="autocomplete__item">
                                 <button type="button" class="autocomplete__btn"
-                                  on:click={() => seleccionarPais(currentBoleto.boletoId, pais)}>
+                                  on:click={() => seleccionarPais(currentPaxKey, pais)}>
                                   {pais.country}
                                 </button>
                               </li>
@@ -700,52 +728,52 @@
                   </div>
                   <div class="form-row">
                     <div class="form-field">
-                      <label for="telefono-{currentBoleto.boletoId}" class="form-field__label">
+                      <label for="telefono-{currentPaxKey}" class="form-field__label">
                         Teléfono de contacto *
-                        {#if dialCodes[currentBoleto.boletoId]}
-                          <span class="form-field__label-hint">— {phoneDigitCounts[currentBoleto.boletoId]} dígitos</span>
+                        {#if dialCodes[currentPaxKey]}
+                          <span class="form-field__label-hint">— {phoneDigitCounts[currentPaxKey]} dígitos</span>
                         {/if}
                       </label>
-                      <div class="phone-field" class:phone-field--error={phoneErrors[currentBoleto.boletoId]}>
-                        {#if dialCodes[currentBoleto.boletoId]}
-                          <span class="phone-field__prefix">{dialCodes[currentBoleto.boletoId]}</span>
+                      <div class="phone-field" class:phone-field--error={phoneErrors[currentPaxKey]}>
+                        {#if dialCodes[currentPaxKey]}
+                          <span class="phone-field__prefix">{dialCodes[currentPaxKey]}</span>
                         {/if}
-                        <input type="tel" id="telefono-{currentBoleto.boletoId}" class="form-field__input"
-                          bind:value={passengerData[currentBoleto.boletoId].telefono}
-                          on:input={(e) => onPhoneInput(e, currentBoleto.boletoId)}
-                          placeholder={dialCodes[currentBoleto.boletoId] ? getPhonePlaceholder(phoneDigitCounts[currentBoleto.boletoId]) : 'Selecciona un país primero'}
-                          disabled={!dialCodes[currentBoleto.boletoId]}
+                        <input type="tel" id="telefono-{currentPaxKey}" class="form-field__input"
+                          bind:value={passengerData[currentPaxKey].telefono}
+                          on:input={(e) => onPhoneInput(e, currentPaxKey)}
+                          placeholder={dialCodes[currentPaxKey] ? getPhonePlaceholder(phoneDigitCounts[currentPaxKey]) : 'Selecciona un país primero'}
+                          disabled={!dialCodes[currentPaxKey]}
                           autocomplete="off" required />
                       </div>
-                      {#if passengerData[currentBoleto.boletoId]?.telefono && !phoneErrors[currentBoleto.boletoId] && dialCodes[currentBoleto.boletoId]}
-                        {@const d = passengerData[currentBoleto.boletoId].telefono.replace(/\D/g, '').length}
-                        {@const total = phoneDigitCounts[currentBoleto.boletoId]}
+                      {#if passengerData[currentPaxKey]?.telefono && !phoneErrors[currentPaxKey] && dialCodes[currentPaxKey]}
+                        {@const d = passengerData[currentPaxKey].telefono.replace(/\D/g, '').length}
+                        {@const total = phoneDigitCounts[currentPaxKey]}
                         {#if d === total}
                           <span class="form-field__ok">✓ Número completo</span>
                         {:else}
                           <span class="form-field__hint">{d}/{total} dígitos</span>
                         {/if}
                       {/if}
-                      {#if phoneErrors[currentBoleto.boletoId]}
-                        <span class="form-field__error">{phoneErrors[currentBoleto.boletoId]}</span>
+                      {#if phoneErrors[currentPaxKey]}
+                        <span class="form-field__error">{phoneErrors[currentPaxKey]}</span>
                       {/if}
                     </div>
                     <div class="form-field">
-                      <label for="ciudad-{currentBoleto.boletoId}" class="form-field__label">Ciudad *</label>
+                      <label for="ciudad-{currentPaxKey}" class="form-field__label">Ciudad *</label>
                       <div class="autocomplete">
-                        <input type="text" id="ciudad-{currentBoleto.boletoId}" class="form-field__input"
-                          bind:value={ciudadQueries[currentBoleto.boletoId]}
-                          on:input={() => onCiudadInput(currentBoleto.boletoId)}
-                          on:blur={() => validarCiudadSeleccionada(currentBoleto.boletoId)}
-                          placeholder={paisesSeleccionados[currentBoleto.boletoId] ? 'Escribe tu ciudad...' : 'Primero selecciona un país'}
-                          disabled={!paisesSeleccionados[currentBoleto.boletoId]}
+                        <input type="text" id="ciudad-{currentPaxKey}" class="form-field__input"
+                          bind:value={ciudadQueries[currentPaxKey]}
+                          on:input={() => onCiudadInput(currentPaxKey)}
+                          on:blur={() => validarCiudadSeleccionada(currentPaxKey)}
+                          placeholder={paisesSeleccionados[currentPaxKey] ? 'Escribe tu ciudad...' : 'Primero selecciona un país'}
+                          disabled={!paisesSeleccionados[currentPaxKey]}
                           autocomplete="off" required />
-                        {#if ciudadesSugeridas[currentBoleto.boletoId]?.length > 0}
+                        {#if ciudadesSugeridas[currentPaxKey]?.length > 0}
                           <ul class="autocomplete__list">
-                            {#each ciudadesSugeridas[currentBoleto.boletoId] as ciudad}
+                            {#each ciudadesSugeridas[currentPaxKey] as ciudad}
                               <li class="autocomplete__item">
                                 <button type="button" class="autocomplete__btn"
-                                  on:click={() => seleccionarCiudad(currentBoleto.boletoId, ciudad)}>
+                                  on:click={() => seleccionarCiudad(currentPaxKey, ciudad)}>
                                   {ciudad}
                                 </button>
                               </li>
