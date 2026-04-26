@@ -47,16 +47,14 @@ public class ComentarioRepository {
     }
 
     /**
-     * Recalcula y actualiza el rating de un hotel en base al promedio de sus resenas activas.
+     * Llama al procedimiento SP_ACTUALIZAR_RATING_HOTEL que internamente usa
+     * FN_CALCULAR_RATING_HOTEL para recalcular y persistir el rating del hotel.
      * @param hotelId ID del hotel cuyo rating se debe actualizar.
+     * @return el nuevo rating calculado, o null si ocurrió un error.
      */
-    public void actualizarRatingHotel(int hotelId) {
-        String sql = "UPDATE Hotel " +
-                "SET Rating = (" +
-                "  SELECT AVG(Resena) FROM Comentario " +
-                "  WHERE HotelID = ? AND Resena IS NOT NULL" +
-                ") WHERE ID = ?";
-        DatabaseManager.executeUpdate(sql, hotelId, hotelId);
+    public Double actualizarRatingHotel(int hotelId) {
+        String sql = "{CALL SP_ACTUALIZAR_RATING_HOTEL(?, ?, ?)}";
+        return DatabaseManager.executeCallableRating(sql, hotelId);
     }
 
     /**

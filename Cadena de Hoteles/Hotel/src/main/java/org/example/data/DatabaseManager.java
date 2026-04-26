@@ -20,6 +20,31 @@ public class DatabaseManager {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
+    public static Double executeCallableRating(String sql, Object... params) {
+        try (Connection conn = getConnection();
+             CallableStatement stmt = conn.prepareCall(sql)) {
+
+            stmt.setInt(1, (Integer) params[0]);          // p_hotel_id
+            stmt.registerOutParameter(2, Types.VARCHAR);   // p_resultado
+            stmt.registerOutParameter(3, Types.NUMERIC);   // p_nuevo_rating
+            stmt.execute();
+
+            String resultado = stmt.getString(2);
+            if (!"OK".equals(resultado)) {
+                throw new DataAccessException("SP_ACTUALIZAR_RATING_HOTEL falló: " + resultado, null);
+            }
+
+            double nuevoRating = stmt.getDouble(3);
+            return stmt.wasNull() ? null : nuevoRating;
+
+        } catch (DataAccessException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new DataAccessException("Error ejecutando stored procedure de rating", e);
+        }
+    }
+
     public static <T> List<T> executeQuery(
             String sql,
             ResultSetMapper<T> mapper,
