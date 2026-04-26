@@ -16,6 +16,16 @@ public class UsuarioNacionalidadRepository {
      * @param usuarioId       ID del usuario al que se le asignan las nacionalidades.
      * @param nacionalidadIds lista de IDs de nacionalidades a asociar.
      */
+    /**
+     * Elimina todas las nacionalidades asociadas a un usuario.
+     * Se usa antes de re-insertar la lista completa actualizada.
+     * @param usuarioId ID del usuario.
+     */
+    public void eliminarPorUsuario(int usuarioId) {
+        String sql = "DELETE FROM UsuarioNacionalidad WHERE Usuario_ID = ?";
+        DatabaseManager.executeUpdate(sql, usuarioId);
+    }
+
     public void asignarNacionalidades(int usuarioId, List<Integer> nacionalidadIds) {
         String sql = "INSERT INTO UsuarioNacionalidad (Usuario_ID, Nacionalidad_ID) VALUES (?, ?)";
 

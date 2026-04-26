@@ -29,6 +29,28 @@ public class UsuarioRepository {
         return !result.isEmpty() && result.get(0) > 0;
     }
 
+    /** Verifica si el username está en uso por un usuario diferente al indicado. */
+    public boolean existeUsernameExceptoId(String username, int excluirId) {
+        String sql = "SELECT COUNT(*) FROM Usuario WHERE Username = ? AND ID != ?";
+        List<Integer> result = DatabaseManager.executeQuery(sql, rs -> rs.getInt(1), username, excluirId);
+        return !result.isEmpty() && result.get(0) > 0;
+    }
+
+    /** Verifica si el correo está en uso por un usuario diferente al indicado. */
+    public boolean existeCorreoExceptoId(String correo, int excluirId) {
+        String sql = "SELECT COUNT(*) FROM Usuario WHERE Correo = ? AND ID != ?";
+        List<Integer> result = DatabaseManager.executeQuery(sql, rs -> rs.getInt(1), correo, excluirId);
+        return !result.isEmpty() && result.get(0) > 0;
+    }
+
+    /** Verifica si el pasaporte está en uso por un usuario diferente al indicado. */
+    public boolean existePasaporteExceptoId(String pasaporte, int excluirId) {
+        if (pasaporte == null || pasaporte.isBlank()) return false;
+        String sql = "SELECT COUNT(*) FROM Usuario WHERE Pasaporte = ? AND ID != ?";
+        List<Integer> result = DatabaseManager.executeQuery(sql, rs -> rs.getInt(1), pasaporte, excluirId);
+        return !result.isEmpty() && result.get(0) > 0;
+    }
+
     /**
      * Verifica si ya existe un usuario registrado con el correo dado.
      * @param correo correo electronico a verificar.
@@ -80,20 +102,21 @@ public class UsuarioRepository {
             String apellido,
             String telefono,
             java.sql.Date fechaNacimiento,
-            int ciudadId
+            int ciudadId,
+            String preferenciasOferta
     ) {
         String sql = """
                 INSERT INTO Usuario
                     (Correo, Contrasena, Pasaporte, Username, Nombre, Apellido,
-                     Rol_ID, Telefono, Fecha_Nacimiento, Ciudad_ID)
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+                     Rol_ID, Telefono, Fecha_Nacimiento, Ciudad_ID, Preferencias_Oferta)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
                 """;
 
         try {
             return DatabaseManager.executeInsertReturnId(
                     sql, "ID",
                     correo, contrasenaHasheada, pasaporte, username,
-                    nombre, apellido, telefono, fechaNacimiento, ciudadId
+                    nombre, apellido, telefono, fechaNacimiento, ciudadId, preferenciasOferta
             );
         } catch (DataAccessException e) {
             Throwable cause = e.getCause();
@@ -120,6 +143,7 @@ public class UsuarioRepository {
         String sql = """
                 SELECT u.ID, u.Username, u.Correo, u.Pasaporte, u.Nombre, u.Apellido,
                        u.Telefono, u.Fecha_Nacimiento, u.Rol_ID,
+                       u.Preferencias_Oferta,
                        c.Nombre AS Ciudad, p.Nombre AS Pais
                 FROM   Usuario u
                 LEFT JOIN Ciudad c ON u.Ciudad_ID = c.ID
@@ -144,6 +168,7 @@ public class UsuarioRepository {
             dto.setRolId(rs.getInt("Rol_ID"));
             dto.setCiudad(rs.getString("Ciudad"));
             dto.setPais(rs.getString("Pais"));
+            dto.setPreferenciasOferta(rs.getString("Preferencias_Oferta"));
             return dto;
         }, usuarioId);
 
@@ -252,5 +277,43 @@ public class UsuarioRepository {
     public void actualizarRol(int usuarioId, int nuevoRolId) {
         String sql = "UPDATE Usuario SET Rol_ID = ? WHERE ID = ?";
         DatabaseManager.executeUpdate(sql, nuevoRolId, usuarioId);
+    }
+
+    // ── Actualizaciones de perfil editables ────────────────────────────────────
+
+    /** Actualiza nombre, apellido y fecha de nacimiento del usuario. */
+    public void actualizarDatosPersonales(int usuarioId, String nombre, String apellido, java.sql.Date fechaNacimiento) {
+        String sql = "UPDATE Usuario SET Nombre = ?, Apellido = ?, Fecha_Nacimiento = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, nombre, apellido, fechaNacimiento, usuarioId);
+    }
+
+    /** Actualiza el username del usuario. */
+    public void actualizarUsername(int usuarioId, String username) {
+        String sql = "UPDATE Usuario SET Username = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, username, usuarioId);
+    }
+
+    /** Actualiza el correo del usuario. */
+    public void actualizarCorreo(int usuarioId, String correo) {
+        String sql = "UPDATE Usuario SET Correo = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, correo, usuarioId);
+    }
+
+    /** Actualiza el pasaporte del usuario. */
+    public void actualizarPasaporte(int usuarioId, String pasaporte) {
+        String sql = "UPDATE Usuario SET Pasaporte = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, pasaporte, usuarioId);
+    }
+
+    /** Actualiza la ciudad del usuario. */
+    public void actualizarCiudad(int usuarioId, int ciudadId) {
+        String sql = "UPDATE Usuario SET Ciudad_ID = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, ciudadId, usuarioId);
+    }
+
+    /** Actualiza las preferencias de ofertas del usuario (JSON string o null). */
+    public void actualizarPreferencias(int usuarioId, String preferenciasOferta) {
+        String sql = "UPDATE Usuario SET Preferencias_Oferta = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, preferenciasOferta, usuarioId);
     }
 }

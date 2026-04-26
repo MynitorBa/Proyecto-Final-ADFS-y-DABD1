@@ -2,7 +2,9 @@ package org.example.helpers;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import java.util.Properties;
 
 /**
@@ -58,6 +60,44 @@ public class EmailHelper {
             Transport.send(message);
         } catch (MessagingException e) {
             throw new RuntimeException("Error enviando correo: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Envia un correo electronico con un archivo adjunto al destinatario indicado.
+     *
+     * @param destinatario  direccion de correo del receptor.
+     * @param asunto        asunto del mensaje.
+     * @param cuerpoHtml    contenido del mensaje en formato HTML.
+     * @param adjunto       bytes del archivo adjunto.
+     * @param nombreArchivo nombre del archivo adjunto (con extension).
+     * @param contentType   tipo MIME del adjunto (ej. "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet").
+     * @throws RuntimeException si ocurre un error durante el envio del correo.
+     */
+    public static void enviarConAdjunto(String destinatario, String asunto, String cuerpoHtml,
+                                         byte[] adjunto, String nombreArchivo, String contentType) {
+        try {
+            Session session = crearSesion();
+            Message message = new MimeMessage(session);
+            message.setFrom(new InternetAddress(CORREO));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destinatario));
+            message.setSubject(asunto);
+
+            MimeBodyPart htmlPart = new MimeBodyPart();
+            htmlPart.setContent(cuerpoHtml, "text/html; charset=utf-8");
+
+            MimeBodyPart attachPart = new MimeBodyPart();
+            attachPart.setFileName(nombreArchivo);
+            attachPart.setContent(adjunto, contentType);
+
+            Multipart multipart = new MimeMultipart();
+            multipart.addBodyPart(htmlPart);
+            multipart.addBodyPart(attachPart);
+
+            message.setContent(multipart);
+            Transport.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Error enviando correo con adjunto: " + e.getMessage(), e);
         }
     }
 }

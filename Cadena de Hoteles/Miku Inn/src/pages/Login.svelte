@@ -48,6 +48,32 @@
   /** Flag que evita limpiar el error del servidor antes de que el usuario lo vea. @type {boolean} */
   let errorShown = false;
 
+  /** Indica si el captcha fue verificado. @type {boolean} */
+  let captchaVerified = false;
+
+  /** Indica si la verificacion del captcha esta en proceso. @type {boolean} */
+  let captchaLoading = false;
+
+  /** Indica si hubo un error en la verificacion del captcha. @type {boolean} */
+  let captchaError = false;
+
+  /**
+   * Simula la verificacion del captcha con un pequeno retraso y un 5% de
+   * probabilidad de fallo para imitar el comportamiento de reCAPTCHA.
+   */
+  function handleCaptchaClick() {
+    if (captchaVerified) return;
+    captchaLoading = true; captchaError = false;
+    setTimeout(() => {
+      captchaLoading = false;
+      if (Math.random() > 0.05) { captchaVerified = true; }
+      else { captchaError = true; setTimeout(() => { captchaError = false; }, 3000); }
+    }, 1500);
+  }
+
+  /** Reinicia el estado del captcha. */
+  function resetCaptcha() { captchaVerified = false; captchaLoading = false; captchaError = false; }
+
   onMount(() => {
     // Si el usuario tenia "recordarme" activo, pre-rellena el campo de email
     const saved = localStorage.getItem('rememberEmail');
@@ -73,6 +99,7 @@
     errors = {};
     if (!formData.email.trim()) errors.email = 'El usuario o email es requerido';
     if (!formData.password) errors.password = 'La contraseña es requerida';
+    if (!captchaVerified) errors.captcha = 'Debes verificar que no eres un robot';
     return Object.keys(errors).length === 0;
   }
 
@@ -236,6 +263,50 @@
               <span class="login__checkbox-text">Recordarme</span>
             </label>
 
+          </div>
+
+          <!-- Captcha simulado estilo reCAPTCHA -->
+          <div class="captcha-container">
+            <div class="captcha-box" class:verified={captchaVerified} class:error={captchaError}>
+              <button type="button" class="captcha-label" on:click={handleCaptchaClick}
+                style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:0.875rem;padding:0;">
+                <div class="captcha-checkbox">
+                  {#if captchaLoading}
+                    <div class="captcha-spinner"></div>
+                  {:else if captchaVerified}
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  {/if}
+                </div>
+                <span class="captcha-text">No soy un robot</span>
+              </button>
+              <div class="captcha-logo">
+                <div class="recaptcha-badge">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#667eea"/>
+                    <path d="M2 17L12 22L22 17" stroke="#667eea" stroke-width="2"/>
+                    <path d="M2 12L12 17L22 12" stroke="#667eea" stroke-width="2"/>
+                  </svg>
+                  <div class="recaptcha-text">
+                    <span>reCAPTCHA</span>
+                    <div class="recaptcha-links"><span>Privacidad</span><span>-</span><span>Términos</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {#if errors.captcha}<span class="login__error-text">{errors.captcha}</span>{/if}
+            {#if captchaError}
+              <div class="captcha-error-message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                Error en la verificación. Intenta de nuevo.
+                <button type="button" class="retry-captcha" on:click={resetCaptcha}>Reintentar</button>
+              </div>
+            {/if}
           </div>
 
           <!-- Boton de envio con spinner mientras procesa -->

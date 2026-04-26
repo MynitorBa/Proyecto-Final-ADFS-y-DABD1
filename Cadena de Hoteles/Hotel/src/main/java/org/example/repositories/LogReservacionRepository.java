@@ -29,6 +29,9 @@ public class LogReservacionRepository {
 
     public static final int TIPO_RESERVACION_EXPIRADA_AUTO = 18;
 
+    public static final int TIPO_CANCELACION_ADMIN_EXITOSA = 19;
+    public static final int TIPO_CANCELACION_ADMIN_FALLIDA = 20;
+
     /**
      * Registra un evento de reservacion en la tabla LogReservacion.
      * Si el INSERT falla, imprime el error en consola sin interrumpir el flujo principal.

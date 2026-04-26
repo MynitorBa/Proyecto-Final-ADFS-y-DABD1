@@ -20,6 +20,7 @@ public class UsuarioPerfilResponseDTO {
     private String       pais;
     private String       ciudad;
     private List<String> nacionalidades;
+    private String       preferenciasOferta;
 
     /**
      * Retorna el identificador unico del usuario.
@@ -164,4 +165,7 @@ public class UsuarioPerfilResponseDTO {
      * @param nacionalidades lista de nacionalidades.
      */
     public void setNacionalidades(List<String> nacionalidades) { this.nacionalidades = nacionalidades; }
+
+    public String getPreferenciasOferta() { return preferenciasOferta; }
+    public void setPreferenciasOferta(String preferenciasOferta) { this.preferenciasOferta = preferenciasOferta; }
 }

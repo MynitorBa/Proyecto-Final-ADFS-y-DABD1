@@ -157,5 +157,121 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
             return await command.ExecuteNonQueryAsync() > 0;
         }
+
+        /// <summary>
+        /// Verifica si ya existe un usuario con el username indicado, excluyendo al usuario actual.
+        /// </summary>
+        public async Task<bool> ExisteUsername(string username, int exceptoId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var command = new SqlCommand(
+                "SELECT COUNT(1) FROM Usuario WHERE Username = @Username AND Id <> @ExceptoId", connection);
+            command.Parameters.AddWithValue("@Username", username);
+            command.Parameters.AddWithValue("@ExceptoId", exceptoId);
+            return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
+        }
+
+        /// <summary>
+        /// Verifica si ya existe un usuario con el pasaporte indicado, excluyendo al usuario actual.
+        /// </summary>
+        public async Task<bool> ExistePasaporte(string pasaporte, int exceptoId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var command = new SqlCommand(
+                "SELECT COUNT(1) FROM Usuario WHERE Pasaporte = @Pasaporte AND Id <> @ExceptoId", connection);
+            command.Parameters.AddWithValue("@Pasaporte", pasaporte);
+            command.Parameters.AddWithValue("@ExceptoId", exceptoId);
+            return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
+        }
+
+        /// <summary>
+        /// Actualiza los datos personales del usuario (nombre, apellido, username, pasaporte,
+        /// fecha de nacimiento, pais y ciudad). Obtiene o crea el pais y la ciudad si no existen.
+        /// Opera dentro de una transaccion para garantizar consistencia.
+        /// </summary>
+        public async Task<bool> ActualizarDatosPersonales(int usuarioId, ActualizarDatosPersonalesDTO dto)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                // 1. Obtener o crear Pais
+                int paisId;
+                using (var cmd = new SqlCommand(
+                    "SELECT Id FROM Pais WHERE Nombre = @Nombre", connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Nombre", dto.Pais);
+                    var result = await cmd.ExecuteScalarAsync();
+                    if (result != null)
+                    {
+                        paisId = (int)result;
+                    }
+                    else
+                    {
+                        using var ins = new SqlCommand(
+                            "INSERT INTO Pais (Nombre) OUTPUT INSERTED.ID VALUES (@Nombre)",
+                            connection, transaction);
+                        ins.Parameters.AddWithValue("@Nombre", dto.Pais);
+                        paisId = (int)(await ins.ExecuteScalarAsync())!;
+                    }
+                }
+
+                // 2. Obtener o crear Ciudad
+                int ciudadId;
+                using (var cmd = new SqlCommand(
+                    "SELECT Id FROM Ciudad WHERE Nombre = @Nombre AND PaisID = @PaisId",
+                    connection, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Nombre", dto.Ciudad);
+                    cmd.Parameters.AddWithValue("@PaisId", paisId);
+                    var result = await cmd.ExecuteScalarAsync();
+                    if (result != null)
+                    {
+                        ciudadId = (int)result;
+                    }
+                    else
+                    {
+                        using var ins = new SqlCommand(
+                            "INSERT INTO Ciudad (Nombre, PaisID) OUTPUT INSERTED.ID VALUES (@Nombre, @PaisId)",
+                            connection, transaction);
+                        ins.Parameters.AddWithValue("@Nombre", dto.Ciudad);
+                        ins.Parameters.AddWithValue("@PaisId", paisId);
+                        ciudadId = (int)(await ins.ExecuteScalarAsync())!;
+                    }
+                }
+
+                // 3. Actualizar Usuario
+                using var update = new SqlCommand(@"
+                    UPDATE Usuario SET
+                        Nombre          = @Nombre,
+                        Apellido        = @Apellido,
+                        Username        = @Username,
+                        Pasaporte       = @Pasaporte,
+                        FechaNacimiento = @FechaNacimiento,
+                        CiudadId        = @CiudadId
+                    WHERE Id = @UsuarioId", connection, transaction);
+
+                update.Parameters.AddWithValue("@Nombre",    dto.Nombre);
+                update.Parameters.AddWithValue("@Apellido",  dto.Apellido);
+                update.Parameters.AddWithValue("@Username",  dto.Username);
+                update.Parameters.AddWithValue("@Pasaporte", dto.Pasaporte);
+                update.Parameters.AddWithValue("@FechaNacimiento",
+                    dto.FechaNacimiento.HasValue ? dto.FechaNacimiento.Value : DBNull.Value);
+                update.Parameters.AddWithValue("@CiudadId",   ciudadId);
+                update.Parameters.AddWithValue("@UsuarioId",  usuarioId);
+
+                var rows = await update.ExecuteNonQueryAsync();
+                transaction.Commit();
+                return rows > 0;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }

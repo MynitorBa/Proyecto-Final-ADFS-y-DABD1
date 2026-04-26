@@ -214,6 +214,43 @@
 /* Contenedor de select de ancho completo */
 .filter-group__select { width: 100%; }
 
+/* Filtro de calificacion: pila vertical de botones de estrella */
+.filter-rating {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+}
+.filter-rating__btn {
+    width: 100%;
+    background: #fcfbf9;
+    border: 1.5px solid var(--perla-dark);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: var(--transition);
+    letter-spacing: 1px;
+}
+.filter-rating__btn:hover { border-color: var(--primary-color); color: var(--secondary-color); }
+.filter-rating__btn--active {
+    border-color: var(--primary-color);
+    background: rgba(212,175,55,.08);
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+/* Estrellas de calificacion en la tarjeta de vuelo */
+.flight-card__rating {
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    margin-top: 0.1rem;
+}
+
 /* Filtro de modo de vuelo: pila vertical de botones de alternancia */
 .filter-flight-mode {
     display: flex;
@@ -489,6 +526,8 @@
 
 /* Grilla de seleccion de clase de asiento de dos columnas */
 .flight-card__class-selection { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+/* Cuando solo hay un boton visible (filtro de clase activo), ocupa todo el ancho */
+.flight-card__class-selection:has(> .class-option:only-child) { grid-template-columns: 1fr; }
 
 /* Boton de opcion de clase individual: boton asimetrico en blanco apagado */
 .class-option {

@@ -91,6 +91,22 @@ func (s *PerfilService) ObtenerTelefonoYPais(usuarioID int) (telefono, pais stri
 	return s.repo.ObtenerTelefonoYPais(usuarioID)
 }
 
+// ActualizarInfoPersonal
+//
+// Delega la actualizacion de informacion personal al repositorio.
+// Retorna el campo en conflicto si hay duplicado ("correo", "username", "pasaporte")
+// o "" con nil si todo fue exitoso.
+func (s *PerfilService) ActualizarInfoPersonal(usuarioID int, nombre, apellido, correo, username, pasaporte, fechaNacimiento string) (string, error) {
+	return s.repo.ActualizarInfoPersonal(usuarioID, nombre, apellido, correo, username, pasaporte, fechaNacimiento)
+}
+
+// ActualizarOfertas
+//
+// Actualiza la preferencia del usuario para recibir correos de ofertas cada 5 dias.
+func (s *PerfilService) ActualizarOfertas(usuarioID int, recibir bool) error {
+	return s.repo.ActualizarOfertas(usuarioID, recibir)
+}
+
 // CambiarContrasena
 //
 // Genera el hash bcrypt de la nueva contrasena y lo persiste en la base de datos

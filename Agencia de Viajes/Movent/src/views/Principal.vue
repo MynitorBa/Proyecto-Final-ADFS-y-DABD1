@@ -312,6 +312,95 @@
       </div>
     </section>
 
+    <!-- DESCUBRIR: paneles personalizados según ciudad de origen del usuario -->
+    <section class="descubrir-section" v-if="paneles.length > 0 || cargandoPaneles">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">
+              <template v-if="origenNombre">Descubre desde {{ origenNombre }}</template>
+              <template v-else>Destinos Populares</template>
+            </h2>
+            <p class="section-description">
+              <template v-if="origenNombre">Los mejores destinos disponibles desde tu ciudad</template>
+              <template v-else>Los destinos más buscados por viajeros como tú</template>
+            </p>
+          </div>
+        </div>
+
+        <!-- Skeleton mientras carga -->
+        <div v-if="cargandoPaneles" class="descubrir-grid">
+          <div v-for="i in 5" :key="i" class="panel-card panel-card--skeleton"></div>
+        </div>
+
+        <!-- Paneles reales -->
+        <div v-else class="descubrir-grid">
+          <div
+            v-for="(panel, i) in paneles"
+            :key="i"
+            :class="['panel-card', `panel-card--grad-${(i % 6) + 1}`]"
+            @click="explorarPanel(panel)"
+            role="button"
+            tabindex="0"
+            @keydown.enter="explorarPanel(panel)"
+          >
+            <!-- Badge de tipo -->
+            <div class="panel-card__badge">
+              <template v-if="panel.tipo === 'vuelo'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+                Vuelo
+              </template>
+              <template v-else>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Hotel
+              </template>
+            </div>
+
+            <!-- Icono central grande -->
+            <div class="panel-card__icon">
+              <template v-if="panel.tipo === 'vuelo'">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="52" height="52"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+              </template>
+              <template v-else>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="52" height="52"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </template>
+            </div>
+
+            <!-- Info del destino -->
+            <div class="panel-card__body">
+              <p class="panel-card__ciudad">{{ panel.ciudad }}</p>
+              <p class="panel-card__pais">{{ panel.pais }}</p>
+              <p v-if="panel.precioDesde > 0" class="panel-card__precio">
+                Desde <strong>${{ panel.precioDesde.toFixed(0) }}</strong>
+              </p>
+            </div>
+
+            <!-- CTA -->
+            <div class="panel-card__footer">
+              <span v-if="buscandoPanel === i" class="panel-card__searching">
+                <svg class="panel-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                Buscando...
+              </span>
+              <span v-else class="panel-card__cta">
+                {{ panel.tipo === 'vuelo' ? 'Ver vuelos' : 'Ver hoteles' }} →
+              </span>
+            </div>
+
+            <!-- Indicador "desde tu ciudad" solo para vuelos con origen conocido -->
+            <div v-if="panel.tipo === 'vuelo' && origenNombre" class="panel-card__origen-tag">
+              desde {{ origenNombre }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje si es anónimo: sugerencia para personalizar -->
+        <p v-if="!usuarioLogueado" class="descubrir-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <router-link to="/ingreso" class="descubrir-hint__link">Inicia sesión</router-link> para ver vuelos personalizados desde tu ciudad de origen.
+        </p>
+      </div>
+    </section>
+
     <!-- FEATURES: beneficios de usar Movent -->
     <section class="features-section">
       <div class="container">
@@ -854,14 +943,159 @@ const onScroll = () => { showScrollTop.value = window.scrollY > 300 }
 /** Hace scroll suave hasta el tope de la página. */
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
+// ── Paneles de descubrir ──────────────────────────────────────────────────────
+
+/** Paneles de destinos sugeridos devueltos por /api/descubrir. */
+const paneles = ref([])
+
+/** Indica si los paneles están cargando. */
+const cargandoPaneles = ref(true)
+
+/** Nombre de la ciudad de origen del usuario (para el título de la sección). */
+const origenNombre = ref('')
+
+/** Datos del origen del usuario (ciudad + pais). */
+const origenData = ref({ ciudad: '', pais: '' })
+
+/** Indica si el usuario está autenticado. */
+const usuarioLogueado = ref(false)
+
+/** Índice del panel que está siendo buscado (para mostrar spinner en ese panel). */
+const buscandoPanel = ref(-1)
+
+/**
+ * Carga los paneles de descubrimiento personalizados según el origen del usuario.
+ * Si está autenticado obtiene su ciudad/país del perfil antes de llamar al endpoint.
+ */
+async function cargarPaneles() {
+  cargandoPaneles.value = true
+  try {
+    const sesionRaw = sessionStorage.getItem('usuario_sesion') || localStorage.getItem('usuario_sesion')
+    let ciudad = '', pais = ''
+
+    if (sesionRaw) {
+      usuarioLogueado.value = true
+      try {
+        // Obtener ciudad/país del perfil
+        const perfilRes = await fetch(`${API}/api/perfil`, { credentials: 'include' })
+        if (perfilRes.ok) {
+          const perfil = await perfilRes.json()
+          ciudad = perfil.ciudad || ''
+          pais   = perfil.pais   || ''
+          origenNombre.value = ciudad || ''
+          origenData.value = { ciudad, pais }
+        }
+      } catch { /* perfil no crítico */ }
+    }
+
+    const qs = ciudad && pais ? `?ciudad=${encodeURIComponent(ciudad)}&pais=${encodeURIComponent(pais)}` : ''
+    const res = await fetch(`${API}/api/descubrir${qs}`)
+    if (res.ok) {
+      const data = await res.json()
+      paneles.value = data.paneles || []
+    }
+  } catch { /* silencioso, no interrumpe la página */ } finally {
+    cargandoPaneles.value = false
+  }
+}
+
+/**
+ * Gestiona el clic en un panel: lanza la búsqueda correspondiente y navega
+ * a la vista de resultados. Para vuelos usa la ciudad del usuario como origen.
+ * Para hoteles no necesita origen.
+ *
+ * @param {object} panel - Panel seleccionado con tipo, ciudad, pais.
+ * @param {number} idx   - Índice del panel (para mostrar el spinner correcto).
+ */
+async function explorarPanel(panel, idx) {
+  if (buscandoPanel.value !== -1) return
+  buscandoPanel.value = idx ?? paneles.value.indexOf(panel)
+
+  const manana = new Date()
+  manana.setDate(manana.getDate() + 7)
+  const fechaBase = manana.toISOString().split('T')[0]
+
+  try {
+    if (panel.tipo === 'vuelo') {
+      const { ciudad: oCiudad, pais: oPais } = origenData.value
+
+      // Sin origen conocido: pre-llena destino en el buscador y hace scroll
+      if (!oCiudad || !oPais) {
+        dPaisQ.value   = panel.pais
+        dCiudadQ.value = panel.ciudad
+        destino.value  = { pais: panel.pais, ciudad: panel.ciudad }
+        searchType.value = 'flights'
+        document.querySelector('.search-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+
+      const body = {
+        origen: oCiudad, origenPais: oPais,
+        destino: panel.ciudad, destinoPais: panel.pais,
+        fecha: fechaBase, cantidadPasajeros: 1,
+      }
+      const res = await fetch(`${API}/api/busqueda/vuelos`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error(`${res.status}`)
+      const resultados = await res.json()
+      router.push({
+        path: '/resultados-vuelos',
+        state: {
+          resultados,
+          busqueda: { ...body, tipoVuelo: 'ida' },
+        },
+      })
+
+    } else {
+      // Hotel: no necesita origen
+      const pasado = new Date(manana)
+      pasado.setDate(pasado.getDate() + 3)
+      const body = {
+        ciudad: panel.ciudad, pais: panel.pais,
+        fechaCheckIn: fechaBase,
+        fechaCheckOut: pasado.toISOString().split('T')[0],
+        cantidadPersonas: 1,
+      }
+      const res = await fetch(`${API}/api/busqueda/hoteles`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error(`${res.status}`)
+      const resultados = await res.json()
+      router.push({
+        path: '/resultados-hoteles',
+        state: {
+          resultados,
+          busqueda: { ...body },
+        },
+      })
+    }
+  } catch {
+    // Si falla la búsqueda, pre-llena el destino en el buscador y hace scroll
+    dPaisQ.value   = panel.pais
+    dCiudadQ.value = panel.ciudad
+    destino.value  = { pais: panel.pais, ciudad: panel.ciudad }
+    searchType.value = panel.tipo === 'vuelo' ? 'flights' : 'hotels'
+    document.querySelector('.search-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  } finally {
+    buscandoPanel.value = -1
+  }
+}
+
 onMounted(async () => {
   window.addEventListener('scroll', onScroll)
 
-  // Cargar estadísticas reales desde el backend al montar la vista
+  // Estadísticas y paneles en paralelo
   try {
     const res = await fetch(`${API}/api/stats`)
     if (res.ok) stats.value = await res.json()
   } catch {}
+
+  cargarPaneles()
 })
 
 onUnmounted(() => window.removeEventListener('scroll', onScroll))

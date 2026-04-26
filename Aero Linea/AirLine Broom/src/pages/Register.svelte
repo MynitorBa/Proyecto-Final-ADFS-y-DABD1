@@ -39,8 +39,42 @@
   /** True cuando el usuario ha marcado el checkbox de recibir promociones. @type {boolean} */
   let receivePromotions = false;
 
-  /** True cuando el usuario ha marcado el checkbox de CAPTCHA. @type {boolean} */
-  let captchaVerified = false;
+  /** Token generado por reCAPTCHA v2 tras completar el desafio. @type {string} */
+  let captchaToken = '';
+
+  /** ID del widget de reCAPTCHA para poder resetearlo. @type {number|null} */
+  let recaptchaWidgetId = null;
+
+  /** Clave publica de reCAPTCHA v2 (test key — siempre pasa). @type {string} */
+  const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+
+  function renderCaptcha() {
+    if (window.grecaptcha && document.getElementById('recaptcha-register')) {
+      recaptchaWidgetId = window.grecaptcha.render('recaptcha-register', {
+        sitekey: RECAPTCHA_SITE_KEY,
+        callback: (token) => { captchaToken = token; },
+        'expired-callback': () => { captchaToken = ''; },
+        'error-callback':   () => { captchaToken = ''; }
+      });
+    }
+  }
+
+  function loadRecaptcha() {
+    if (window.grecaptcha) { renderCaptcha(); return; }
+    window.onRecaptchaLoad = renderCaptcha;
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
+  function resetCaptcha() {
+    captchaToken = '';
+    if (window.grecaptcha && recaptchaWidgetId !== null) {
+      window.grecaptcha.reset(recaptchaWidgetId);
+    }
+  }
 
   /** Mensaje de error global de envio mostrado debajo del formulario. @type {string} */
   let submitError = '';
@@ -196,6 +230,7 @@
   onMount(async () => {
     sessionStorage.clear();
     limpiarFormulario();
+    loadRecaptcha();
 
     try {
       const res = await fetch('https://countriesnow.space/api/v0.1/countries');
@@ -239,7 +274,7 @@
     };
     acceptTerms = false;
     receivePromotions = false;
-    captchaVerified = false;
+    captchaToken = '';
     submitError = '';
     submitSuccess = false;
     errores = { correo: '', username: '', pasaporte: '', contrasena: '', pais: '', ciudad: '', nacionalidad: '', telefono: '' };
@@ -439,7 +474,7 @@
     if (!passwordValid) { errores.contrasena = 'Minimo 8 caracteres, 1 mayuscula y 1 numero.'; return; }
     if (registerData.contrasena !== registerData.confirmPassword) { submitError = 'Las contrasenas no coinciden.'; return; }
     if (!acceptTerms) { submitError = 'Debes aceptar los terminos y condiciones.'; return; }
-    if (!captchaVerified) { submitError = 'Confirma que no eres un robot.'; return; }
+    if (!captchaToken) { submitError = 'Por favor completa la verificacion de seguridad.'; return; }
 
     if (!paisSeleccionado || !registerData.pais) {
       errores.pais = 'Debes seleccionar un pais de la lista.';
@@ -508,6 +543,7 @@
       setTimeout(() => navigateTo('login'), 2000);
     } catch {
       submitError = 'No se pudo crear la cuenta. Intenta de nuevo.';
+      resetCaptcha();
     } finally {
       submitting = false;
     }
@@ -764,22 +800,9 @@
                 </label>
               </div>
 
-              <!-- Widget de verificacion CAPTCHA de no soy un robot -->
+              <!-- Widget de reCAPTCHA v2 para verificacion de seguridad -->
               <div class="register-form__captcha">
-                <div class="captcha-box">
-                  <label class="captcha-box__checkbox">
-                    <input type="checkbox" bind:checked={captchaVerified} class="captcha-box__input" />
-                    <span class="captcha-box__label">No soy un robot</span>
-                  </label>
-                  <div class="captcha-box__logo">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                      <rect width="40" height="40" rx="4" fill="#f1f1f1"/>
-                      <circle cx="20" cy="20" r="8" stroke="#4285F4" stroke-width="2"/>
-                      <path d="M20 12V20L24 24" stroke="#4285F4" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <span class="captcha-box__text">reCAPTCHA</span>
-                  </div>
-                </div>
+                <div id="recaptcha-register"></div>
               </div>
 
               <!-- Mensaje de error global y boton de envio del formulario -->
@@ -787,7 +810,7 @@
                 <div class="register-form__error">{submitError}</div>
               {/if}
 
-              <button type="submit" class="register-form__submit" disabled={submitting}>
+              <button type="submit" class="register-form__submit" disabled={submitting || !captchaToken}>
                 {submitting ? 'Verificando...' : 'Crear cuenta'}
               </button>
 

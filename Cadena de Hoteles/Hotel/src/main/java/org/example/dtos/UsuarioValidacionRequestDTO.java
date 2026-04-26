@@ -20,6 +20,7 @@ public class UsuarioValidacionRequestDTO {
     private String       pais;                 // nombre del pais como string
     private String       ciudad;               // nombre de la ciudad como string
     private List<String> nacionalidades;       // lista de nombres como strings
+    private String       preferenciasOferta;   // JSON con preferencias, null si no desea ofertas
 
     /**
      * Retorna el nombre de usuario elegido para el registro.
@@ -152,4 +153,7 @@ public class UsuarioValidacionRequestDTO {
      * @param nacionalidades lista de nacionalidades.
      */
     public void setNacionalidades(List<String> nacionalidades) { this.nacionalidades = nacionalidades; }
+
+    public String getPreferenciasOferta() { return preferenciasOferta; }
+    public void setPreferenciasOferta(String preferenciasOferta) { this.preferenciasOferta = preferenciasOferta; }
 }

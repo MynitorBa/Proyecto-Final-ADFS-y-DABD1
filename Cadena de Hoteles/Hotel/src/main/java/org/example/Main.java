@@ -22,6 +22,7 @@ import org.example.services.*;
 import org.example.controllers.PdfReservacionController;
 import org.example.controllers.DestinosController;
 import org.example.controllers.AdminBusquedaController;
+import org.example.controllers.MetricasHotelController;
 import org.example.controllers.EmailReservacionController;
 import org.example.controllers.CancelacionAgenciaController;
 import org.example.controllers.BusquedaAgenciaController;
@@ -84,6 +85,7 @@ public class Main {
         SesionRepository               sesionRepository               = new SesionRepository();
         UsuarioNacionalidadRepository  usuarioNacionalidadRepository  = new UsuarioNacionalidadRepository();
         UsuarioRepository              usuarioRepository              = new UsuarioRepository();
+        OfertasRepository              ofertasRepository              = new OfertasRepository();
 
         AerolineaAliadaRepository      aerolineaAliadaRepository      = new AerolineaAliadaRepository();
         TokenAerolineaRepository       tokenAerolineaRepository       = new TokenAerolineaRepository();
@@ -105,6 +107,7 @@ public class Main {
         DownsService              downsService              = new DownsService(downsRepository, comentarioRepository);
         EmailReservacionService   emailReservacionService   = new EmailReservacionService(pdfReservacionRepository);
         ExpiracionService         expiracionService         = new ExpiracionService(reservacionRepository, logReservacionRepository);
+        OfertasEmailService       ofertasEmailService       = new OfertasEmailService(ofertasRepository);
         HandshakeService          handshakeService          = new HandshakeService(agenciaRepository);
         HotelAgenciaService       hotelAgenciaService       = new HotelAgenciaService(hotelAgenciaRepository);
         // Service de notificacion a agencias externas — se crea antes de HotelService porque
@@ -113,7 +116,7 @@ public class Main {
         AgenciaNotificadorExternoService agenciaNotificadorExternoService =
                 new AgenciaNotificadorExternoService();
 
-        HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository, agenciaNotificadorExternoService);
+        HotelService              hotelService              = new HotelService(hotelRepository, ciudadRepository, paisRepository, agenciaNotificadorExternoService, logReservacionRepository);
         ImagenService             imagenService             = new ImagenService(imagenRepository);
         PagoAgenciaService        pagoAgenciaService        = new PagoAgenciaService(pagoAgenciaRepository, logReservacionRepository);
         PagoService               pagoService               = new PagoService(pagoRepository, tokenValidacionRepository, logReservacionRepository);
@@ -121,7 +124,7 @@ public class Main {
         ReservacionAgenciaService reservacionAgenciaService = new ReservacionAgenciaService(reservacionAgenciaRepository, logReservacionRepository);
         ReservacionService        reservacionService        = new ReservacionService(reservacionRepository, logReservacionRepository);
         SesionService             sesionService             = new SesionService(sesionRepository);
-        UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository, logRepository);
+        UsuarioService            usuarioService            = new UsuarioService(usuarioRepository, paisRepository, ciudadRepository, nacionalidadRepository, usuarioNacionalidadRepository, logRepository, ofertasEmailService);
 
         BusquedaAerolineaService  busquedaAerolineaService  = new BusquedaAerolineaService(aerolineaAliadaRepository);
         TokenAerolineaService     tokenAerolineaService     = new TokenAerolineaService(tokenAerolineaRepository, aerolineaAliadaRepository);
@@ -137,10 +140,13 @@ public class Main {
         // AdminReservacionService recibe el notificador para enviar aviso a la agencia
         // y el correo al usuario al cancelar una reservacion desde el panel admin
         AdminReservacionService adminReservacionService =
-                new AdminReservacionService(adminReservacionRepository, agenciaNotificadorExternoService);
+                new AdminReservacionService(adminReservacionRepository, agenciaNotificadorExternoService, logReservacionRepository);
 
         // Hilo de expiracion de reservaciones pendientes
         expiracionService.iniciar();
+
+        // Hilo de envio de ofertas por correo cada 1 hora
+        ofertasEmailService.iniciar();
 
         Javalin app = ServerConfig.createServer();
 
@@ -200,11 +206,19 @@ public class Main {
         new EmailReservacionController(emailReservacionService).registerRoutes(app);
         new AdminBusquedaController(adminBusquedaService).registerRoutes(app);
 
+        // Controller de metricas del panel de administracion
+        MetricasHotelRepository metricasHotelRepository = new MetricasHotelRepository();
+        MetricasHotelService    metricasHotelService    = new MetricasHotelService(metricasHotelRepository, adminBusquedaRepository);
+        new MetricasHotelController(metricasHotelService).registerRoutes(app);
+
         // Rutas base de salud del servidor
         app.get("/", ctx -> ctx.json("OK"));
         app.get("/health", ctx -> ctx.json("OK"));
 
-        // Detiene el hilo de expiracion cuando la JVM se apaga
-        Runtime.getRuntime().addShutdownHook(new Thread(expiracionService::detener));
+        // Detiene los hilos de background cuando la JVM se apaga
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            expiracionService.detener();
+            ofertasEmailService.detener();
+        }));
     }
 }

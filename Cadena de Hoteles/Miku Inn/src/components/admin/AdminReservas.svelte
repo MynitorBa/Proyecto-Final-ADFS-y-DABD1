@@ -131,13 +131,17 @@
    */
   async function confirmarCancelacion() {
     if (!reservaCancelando) return;
+    if (!motivoCancelacion.trim()) {
+      mensajeCancelar = 'Debes ingresar un motivo de cancelación.';
+      return;
+    }
     cancelando = true;
     mensajeCancelar = null;
     try {
       const res = await fetch(`${API_BASE}/admin/reservaciones/${reservaCancelando.id}/cancelar`, {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motivo: motivoCancelacion || 'Cancelada por administrador' })
+        body: JSON.stringify({ motivo: motivoCancelacion.trim() })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
@@ -326,7 +330,7 @@
       </div>
 
       <label class="adm__cancel-motivo-label" for="motivo-cancel">
-        Motivo de cancelación <span style="text-transform:none; font-weight:400">(opcional)</span>
+        Motivo de cancelación <span style="color:#f85149;font-weight:700">*</span>
       </label>
       <textarea id="motivo-cancel" class="adm__cancel-motivo-textarea" bind:value={motivoCancelacion} rows="3" placeholder="Ej: Solicitud del cliente, error en la reserva..."></textarea>
 

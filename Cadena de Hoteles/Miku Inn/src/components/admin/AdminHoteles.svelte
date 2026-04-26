@@ -72,7 +72,7 @@
   let tabDetalle = 'info';
 
   /** Copia editable de los datos basicos del hotel en la pestana de informacion. @type {Object} */
-  let editInfoHotel = { nombre: '', direccion: '', descripcion: '', rating: 0, estadoId: 1 };
+  let editInfoHotel = { nombre: '', direccion: '', descripcion: '', estadoId: 1 };
 
   /** Indica si se esta guardando la informacion basica del hotel. @type {boolean} */
   let guardandoInfo = false;
@@ -272,7 +272,7 @@
    */
   function abrirDetalleHotel(h) {
     hotelDetalle = { ...h };
-    editInfoHotel = { nombre: h.nombre ?? '', direccion: h.direccion ?? '', descripcion: h.descripcion ?? '', rating: h.rating ?? 0, estadoId: h.estadoId ?? 1 };
+    editInfoHotel = { nombre: h.nombre ?? '', direccion: h.direccion ?? '', descripcion: h.descripcion ?? '', estadoId: h.estadoId ?? 1 };
     tabDetalle = 'info'; mensajeInfo = null; vistaHoteles = 'detalle'; amenidadesHotel = [];
     cargarHabitacionesDetalle(h.id); cargarAmenidadesHotel(h.id);
   }
@@ -292,7 +292,7 @@
     try {
       const res = await fetch(`${API_BASE}/admin/hoteles/${hotelDetalle.id}`, {
         method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: editInfoHotel.nombre, direccion: editInfoHotel.direccion, descripcion: editInfoHotel.descripcion, rating: Number(editInfoHotel.rating), estadoId: Number(editInfoHotel.estadoId) })
+        body: JSON.stringify({ nombre: editInfoHotel.nombre, direccion: editInfoHotel.direccion, descripcion: editInfoHotel.descripcion, estadoId: Number(editInfoHotel.estadoId) })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
@@ -999,7 +999,7 @@
       <div class="adm__form-grid">
         <div class="adm__field adm__field--full"><label>Nombre del Hotel</label><input type="text" bind:value={editInfoHotel.nombre} /></div>
         <div class="adm__field adm__field--full"><label>Dirección</label><input type="text" bind:value={editInfoHotel.direccion} /></div>
-        <div class="adm__field"><label>Rating (0–5)</label><input type="number" bind:value={editInfoHotel.rating} min="0" max="5" step="0.1" /></div>
+
         <div class="adm__field adm__field--full"><label>Descripción</label><textarea bind:value={editInfoHotel.descripcion} rows="4"></textarea></div>
       </div>
       {#if mensajeInfo}<div class="adm__feedback adm__feedback--{mensajeInfo.tipo}" style="margin-top:1rem">{mensajeInfo.texto}</div>{/if}

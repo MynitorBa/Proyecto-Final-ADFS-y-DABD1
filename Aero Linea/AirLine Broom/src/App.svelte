@@ -16,7 +16,7 @@
   import HeaderSimple from './components/HeaderSimple.svelte';
   import Footer from './components/Footer.svelte';
   import Loading from './components/Loading.svelte';
-  import FlightNotification from './components/FlightNotification.svelte';
+
 
   import Home from './pages/Home.svelte';
   import Vuelos from './pages/Vuelos.svelte';
@@ -65,9 +65,6 @@
 
   /** Nombre de la pagina actualmente renderizada en el router outlet. @type {string} */
   let currentPage = 'home';
-
-  /** Aeropuerto sugerido desde FlightNotification para pre-llenar el buscador del Home. @type {object|null} */
-  let suggestedAeropuerto = null;
 
   /** ID del vuelo cuya vista de detalle se esta mostrando. @type {number|null} */
   let currentFlightId = null;
@@ -311,22 +308,6 @@
   }
 
   /**
-   * Recibe una sugerencia de aeropuerto del componente FlightNotification.
-   * Guarda el aeropuerto en suggestedAeropuerto para que el buscador del Home
-   * pre-llene el campo de destino. Si el usuario no esta en home, navega primero
-   * y luego hace scroll a la seccion de busqueda.
-   * @param {object} aeropuertoData - Datos del aeropuerto a pre-llenar en el buscador.
-   */
-  function handleDestinationSuggestion(aeropuertoData) {
-    suggestedAeropuerto = aeropuertoData;
-    if (currentPage !== 'home') navigateTo('home');
-    setTimeout(() => {
-      const searchSection = document.querySelector('.broom-home__search-section');
-      if (searchSection) searchSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-  }
-
-  /**
    * Paginas del flujo de compra que muestran el header simplificado
    * en lugar del header de navegacion completo.
    * @type {string[]}
@@ -359,9 +340,6 @@
   <Loading />
 {:else}
 
-  <!-- Notificacion flotante de vuelos sugeridos por destino -->
-  <FlightNotification on:suggest={e => handleDestinationSuggestion(e.detail)} />
-
   <!-- Header principal o simplificado segun la pagina activa -->
   {#if showHeader}
     {#if useSimpleHeader}
@@ -375,7 +353,7 @@
   {#key pageKey}
 
     {#if currentPage === 'home'}
-      <Home {navigateTo} {suggestedAeropuerto} />
+      <Home {navigateTo} />
 
     {:else if currentPage === 'vuelos'}
       <Vuelos {navigateTo} {searchParams} />

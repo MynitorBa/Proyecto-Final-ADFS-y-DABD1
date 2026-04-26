@@ -3,6 +3,7 @@ package org.example.services;
 import org.example.dtos.ResultadoNotificacionDTO;
 import org.example.helpers.EmailHelper;
 import org.example.repositories.AdminReservacionRepository;
+import org.example.repositories.LogReservacionRepository;
 
 import java.time.Year;
 import java.util.List;
@@ -32,17 +33,21 @@ public class AdminReservacionService {
 
     private final AdminReservacionRepository      repo;
     private final AgenciaNotificadorExternoService notificadorAgencia;
+    private final LogReservacionRepository         logRepo;
 
     /**
      * Crea una instancia de AdminReservacionService con sus dependencias inyectadas.
      *
      * @param repo               repository de reservaciones del administrador.
      * @param notificadorAgencia service que notifica al sistema externo de la agencia.
+     * @param logRepo            repository para registrar eventos de auditoria.
      */
     public AdminReservacionService(AdminReservacionRepository      repo,
-                                   AgenciaNotificadorExternoService notificadorAgencia) {
+                                   AgenciaNotificadorExternoService notificadorAgencia,
+                                   LogReservacionRepository         logRepo) {
         this.repo               = repo;
         this.notificadorAgencia = notificadorAgencia;
+        this.logRepo            = logRepo;
     }
 
     /**
@@ -51,6 +56,15 @@ public class AdminReservacionService {
      */
     public List<Map<String, Object>> listarTodas() {
         return repo.listarTodas();
+    }
+
+    /**
+     * Retorna las N reservaciones mas recientes (version ligera para el dashboard).
+     * @param n cantidad maxima de filas.
+     * @return lista de mapas con datos resumidos.
+     */
+    public List<Map<String, Object>> listarRecientes(int n) {
+        return repo.listarRecientes(n);
     }
 
     /**
@@ -68,13 +82,17 @@ public class AdminReservacionService {
      * @return {@link ResultadoNotificacionDTO} con el resultado de la notificacion a la agencia.
      * @throws IllegalArgumentException si la reservacion no existe o su estado no permite cancelacion.
      */
-    public ResultadoNotificacionDTO cancelarReservacion(int reservacionId, String motivo) {
+    public ResultadoNotificacionDTO cancelarReservacion(int reservacionId, String motivo,
+                                                        String ip, String userAgent) {
 
         // ------------------------------------------------------------------
         // PASO 1: Validar existencia y estado — solo lectura, ningun UPDATE aun
         // ------------------------------------------------------------------
         Object[] datos = repo.obtenerReservacion(reservacionId);
         if (datos == null) {
+            logRepo.registrar(LogReservacionRepository.TIPO_CANCELACION_ADMIN_FALLIDA,
+                    reservacionId, null, null, null, null, false, ip, userAgent,
+                    "Reservacion #" + reservacionId + " no encontrada");
             throw new IllegalArgumentException("Reservacion #" + reservacionId + " no encontrada");
         }
 
@@ -82,6 +100,9 @@ public class AdminReservacionService {
         String estado   = (String) datos[2];
 
         if (estadoId != 1 && estadoId != 2) {
+            logRepo.registrar(LogReservacionRepository.TIPO_CANCELACION_ADMIN_FALLIDA,
+                    reservacionId, null, null, null, null, false, ip, userAgent,
+                    "Cancelacion rechazada: estado actual es \"" + estado + "\"");
             throw new IllegalArgumentException(
                     "No se puede cancelar: estado actual es \"" + estado + "\""
             );
@@ -103,6 +124,13 @@ public class AdminReservacionService {
         // PASO 4: Ahora si, cancelar en nuestra BD (EstadoID = 4)
         // ------------------------------------------------------------------
         repo.cancelarReservacion(reservacionId, motivo);
+
+        // Log de auditoria: cancelacion admin exitosa
+        String noResLog = (datosUsuario != null) ? (String) datosUsuario[2] : null;
+        Double totalLog  = (datosUsuario != null) ? (Double) datosUsuario[3] : null;
+        logRepo.registrar(LogReservacionRepository.TIPO_CANCELACION_ADMIN_EXITOSA,
+                reservacionId, null, null, noResLog, totalLog, true, ip, userAgent,
+                "Cancelada por admin. Motivo: " + motivo.trim());
 
         // ------------------------------------------------------------------
         // PASO 5: Correo al usuario (best-effort: un error aqui no aborta nada)
