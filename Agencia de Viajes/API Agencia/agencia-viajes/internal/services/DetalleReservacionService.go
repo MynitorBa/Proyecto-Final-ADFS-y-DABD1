@@ -104,23 +104,61 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(c *gin.Context, usuarioI
 		return nil, fmt.Errorf("error al reservar en aerolínea: %w", err)
 	}
 
-	totalBase := respAerolinea["total"].(float64)
+	// Calcular totalConGanancia por grupo de dirección (ida / regreso) para que el resultado
+	// coincida exactamente con lo que la búsqueda mostró al usuario.
+	// La búsqueda aplica el markup a precioTuristaTotal de cada dirección por separado:
+	//   round(precioTuristaTotal_ida * mult) + round(precioTuristaTotal_regreso * mult)
+	// Si aplicamos el markup al total combinado el orden de redondeo puede dar ±0.01.
+	// Solución: el frontend etiqueta cada vuelo con grupoId (0=ida, 1=regreso).
+	// Aquí sumamos los precios de boletos de Broom por grupo → obtenemos precioTuristaTotal
+	// de cada dirección → aplicamos markup por grupo → sumamos.
 
-	var totalPasajeros int
-	for _, v := range req.Vuelos {
-		if v.CantidadPasajeros > 0 {
-			totalPasajeros += v.CantidadPasajeros
+	// Extraer precio por vueloId desde los boletos de la respuesta de Broom
+	boletosPorVuelo := map[string]float64{} // vueloId (string) → precio por boleto (= round(precio*factor))
+	if boletosList, ok := respAerolinea["boletos"].([]interface{}); ok {
+		for _, b := range boletosList {
+			if boleto, ok := b.(map[string]interface{}); ok {
+				numVuelo, _ := boleto["numeroVuelo"].(string)
+				precio, _ := boleto["precio"].(float64)
+				if numVuelo != "" {
+					boletosPorVuelo[numVuelo] = precio
+				}
+			}
 		}
 	}
 
-	var totalConGanancia float64
-	if totalPasajeros > 0 {
-		precioBaseBoleto := totalBase / float64(totalPasajeros)
-		precioBoletoConGanancia := math.Round(precioBaseBoleto*(1+porcentajeGanancia/100)*100) / 100
-		totalConGanancia = math.Round(precioBoletoConGanancia*float64(totalPasajeros)*100) / 100
-	} else {
-		totalConGanancia = math.Round(totalBase*(1+porcentajeGanancia/100)*100) / 100
+	// Agrupar vuelos por grupoId
+	grupoVuelos := map[int][]dto.SeleccionVuelo{}
+	for _, v := range req.Vuelos {
+		grupoVuelos[v.GrupoID] = append(grupoVuelos[v.GrupoID], v)
 	}
+
+	multiplicador := 1 + porcentajeGanancia/100
+	var totalConGanancia float64
+
+	for _, vuelosGrupo := range grupoVuelos {
+		cantPax := vuelosGrupo[0].CantidadPasajeros
+		if cantPax <= 0 {
+			cantPax = 1
+		}
+		// Sumar precios de boletos de este grupo → totalBaseGrupo = precioTuristaTotal_direccion * cantPax
+		var totalBaseGrupo float64
+		for _, v := range vuelosGrupo {
+			vueloIdStr := strconv.Itoa(v.VueloId)
+			if precio, ok := boletosPorVuelo[vueloIdStr]; ok {
+				totalBaseGrupo += precio * float64(cantPax)
+			}
+		}
+		if totalBaseGrupo == 0 {
+			// Fallback: usar proporción del total global si no hay boletos detallados
+			totalBaseGrupo = respAerolinea["total"].(float64) / float64(len(grupoVuelos))
+		}
+		// precioPersonaGrupo = precioTuristaTotal_direccion (mismo valor que usó aplicarGanancia en búsqueda)
+		precioPersonaGrupo := totalBaseGrupo / float64(cantPax)
+		precioPersonaConGanancia := math.Round(precioPersonaGrupo*multiplicador*100) / 100
+		totalConGanancia += math.Round(precioPersonaConGanancia*float64(cantPax)*100) / 100
+	}
+	totalConGanancia = math.Round(totalConGanancia*100) / 100
 
 	idReservaProveedor := fmt.Sprintf("%v", respAerolinea["reservacionId"])
 	err = s.repo.InsertarDetalle(
@@ -143,7 +181,7 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(c *gin.Context, usuarioI
 	return map[string]interface{}{
 		"mensaje":            "detalle de vuelo agregado exitosamente",
 		"reservacion_id":     req.ReservacionID,
-		"total_base":         totalBase,
+		"total_base":         respAerolinea["total"],
 		"total_con_ganancia": totalConGanancia,
 		"detalle":            respAerolinea,
 	}, nil

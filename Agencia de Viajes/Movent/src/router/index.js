@@ -75,9 +75,22 @@ const router = createRouter({
   },
 })
 
+// Rutas que requieren sesión activa (cualquier usuario autenticado)
+const RUTAS_PRIVADAS = [
+  '/mis-reservaciones',
+  '/perfil',
+  '/notificaciones',
+  '/checkout',
+  '/confirmacion',
+  '/reservar',
+  '/seleccion-asientos',
+]
+
 router.beforeEach((to, from) => {
-  const esRutaAdmin = to.path.startsWith('/admin')
-  if (!esRutaAdmin) return true
+  const esRutaAdmin   = to.path.startsWith('/admin')
+  const esRutaPrivada = RUTAS_PRIVADAS.some(r => to.path === r || to.path.startsWith(r + '/'))
+
+  if (!esRutaAdmin && !esRutaPrivada) return true
 
   const sesionRaw = sessionStorage.getItem('usuario_sesion')
                  || localStorage.getItem('usuario_sesion')
@@ -86,6 +99,9 @@ router.beforeEach((to, from) => {
 
   try {
     const sesion = JSON.parse(sesionRaw)
+
+    // Rutas privadas de usuario normal — basta con tener sesión
+    if (esRutaPrivada && !esRutaAdmin) return true
 
     // /admin/webservice solo para rol 3 (WebService)
     if (to.path.startsWith('/admin/webservice')) {

@@ -665,10 +665,15 @@ function limpiarSesionReserva() {
   sessionStorage.removeItem('paquete_seleccionado')
 }
 
-/** Limpia la sesión si el usuario navega fuera del flujo de reserva. */
+/** Limpia la sesión si el usuario navega fuera del flujo de reserva.
+ *  Si hay una reservación activa con tiempo restante, NO limpia —
+ *  el usuario puede retomar desde el botón del carrito en el encabezado. */
 onBeforeRouteLeave((to) => {
   if (!FLUJO_RESERVA.includes(to.path)) {
     if (timerInterval.value) clearInterval(timerInterval.value)
+    // Mantener sesión si la reservación sigue vigente (el usuario puede continuar luego)
+    const expiresAt = Number(sessionStorage.getItem('_reserva_expires_at') || 0)
+    if (reservacionId.value && expiresAt > Date.now()) return
     limpiarSesionReserva()
   }
 })
@@ -1050,7 +1055,8 @@ function buildVuelosPayload() {
       vuelosArr = [...expandirVuelo(ida, ida.clase), ...expandirVuelo(regreso, regreso.clase)]
     } else {
       const pax = item.value.busqueda?.cantidadPasajeros || 1
-      proveedorId = parseProveedorId(item.value.id)
+      // Para reservaciones recuperadas (item.value.id === null), usar proveedor_id del detalle
+      proveedorId = item.value.id ? parseProveedorId(item.value.id) : (detalleVuelo.value?.proveedor_id ?? null)
       if (item.value.tramos?.length > 1) {
         // Vuelo con escala: generar una entrada por cada tramo usando su propio vueloId.
         // La clase se selecciona a nivel del vuelo padre y aplica a todos los tramos.
@@ -1063,29 +1069,35 @@ function buildVuelosPayload() {
             return true
           })
           .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }))
-      } else {
+      } else if (item.value.id) {
         // Vuelo directo (o escala con un solo tramo): comportamiento original.
+        // Para reservaciones recuperadas (id=null) los boletos ya existen en el proveedor.
         vuelosArr = [{ vueloId: parseVueloId(item.value.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }]
       }
     }
   } else if (tipoItem.value === 'paquete') {
     const v = item.value.vuelo, pax = item.value.cantidadPersonas || 1
-    proveedorId = parseProveedorId(v.id)
-    const expandirVueloPaq = (vx, clase) => {
-      if (vx.tramos?.length > 1) {
-        return vx.tramos
-          .filter(t => {
-            if (!t?.id) { console.warn('[buildVuelosPayload paquete] tramo sin id ignorado:', t); return false }
-            return true
-          })
-          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+    // Para reservaciones recuperadas (v.id === null) usar proveedor_id del detalle de vuelo
+    proveedorId = v?.id ? parseProveedorId(v.id) : (detalleVuelo.value?.proveedor_id ?? null)
+    if (v?.id) {
+      // Reserva nueva: construir payload de vuelos para el proveedor
+      const expandirVueloPaq = (vx, clase) => {
+        if (vx.tramos?.length > 1) {
+          return vx.tramos
+            .filter(t => {
+              if (!t?.id) { console.warn('[buildVuelosPayload paquete] tramo sin id ignorado:', t); return false }
+              return true
+            })
+            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+        }
+        return [{ vueloId: parseVueloId(vx.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
       }
-      return [{ vueloId: parseVueloId(vx.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+      vuelosArr = expandirVueloPaq(v, v.clase)
+      if (item.value.vueloRegreso) {
+        vuelosArr = [...vuelosArr, ...expandirVueloPaq(item.value.vueloRegreso, item.value.vueloRegreso.clase)]
+      }
     }
-    vuelosArr = expandirVueloPaq(v, v.clase)
-    if (item.value.vueloRegreso) {
-      vuelosArr = [...vuelosArr, ...expandirVueloPaq(item.value.vueloRegreso, item.value.vueloRegreso.clase)]
-    }
+    // Para reservación recuperada: vuelosArr queda vacío (boletos ya existen en el proveedor)
   }
   return { proveedorId, vuelosArr }
 }
@@ -1269,10 +1281,8 @@ onMounted(async () => {
   else if (hotel)   { item.value = JSON.parse(hotel);   tipoItem.value = 'hotel'   }
   else if (paquete) { item.value = JSON.parse(paquete); tipoItem.value = 'paquete' }
 
-  if (!item.value) { creandoReserva.value = false; return }
-
   // Cargar porcentaje de descuento desde el backend si el tipo es paquete
-  if (tipoItem.value === 'paquete') {
+  if (item.value && tipoItem.value === 'paquete') {
     try {
       const rd = await fetch(`${API}/api/configuracion/descuento`)
       if (rd.ok) {
@@ -1286,20 +1296,9 @@ onMounted(async () => {
   const savedReservacionId = sessionStorage.getItem('_reserva_id')
   const savedNoReservacion = sessionStorage.getItem('_reserva_no')
 
-  if (savedExpiresAt && savedReservacionId) {
-    const segsRestantes = Math.floor((Number(savedExpiresAt) - Date.now()) / 1000)
-    if (segsRestantes > 30) {
-      reservacionId.value = savedReservacionId
-      noReservacion.value = savedNoReservacion || ''
-      startTimer(segsRestantes, Number(savedExpiresAt))
-      creandoReserva.value = false
-      return
-    }
-    sessionStorage.removeItem('_reserva_expires_at')
-    sessionStorage.removeItem('_reserva_id')
-    sessionStorage.removeItem('_reserva_no')
-  }
-
+  // Prioridad 1: el usuario acaba de seleccionar un ítem en una página de resultados.
+  // window.__reservaPromise siempre gana sobre cualquier sesión cacheada, para evitar
+  // que una reserva anterior (aún vigente en sessionStorage) bloquee la nueva selección.
   if (window.__reservaPromise) {
     try {
       const resultado = await window.__reservaPromise
@@ -1333,10 +1332,185 @@ onMounted(async () => {
             }
           }
         }
+        // Mostrar la reserva en el carrito del encabezado sin esperar al formulario,
+        // y guardar la expiración para que onBeforeRouteLeave no limpie si el usuario sale a medias.
+        sessionStorage.setItem('checkout_data', JSON.stringify({
+          reservacionId: resultado.reserva.id,
+          noReservacion: resultado.reserva.no_reservacion,
+          tipoItem:      tipoItem.value,
+          detalleVuelo:  detalleVuelo.value || null,
+          detalleHotel:  detalleHotel.value || null,
+          item:          item.value || null,
+        }))
+        sessionStorage.setItem('_reserva_expires_at', String(resultado.expiresAt || (Date.now() + resultado.segundos * 1000)))
+        window.dispatchEvent(new StorageEvent('storage', { key: 'checkout_data' }))
         startTimer(resultado.segundos, resultado.expiresAt)
         creandoReserva.value = false; return
       }
     } catch { window.__reservaPromise = null }
+  }
+
+  // Prioridad 2: el usuario regresa a una reserva en curso (ej. botón del carrito).
+  // Solo aplica cuando NO había una nueva selección (window.__reservaPromise era null).
+  // reservacionId se convierte explícitamente a número para que el payload JSON enviado
+  // al backend sea un entero, no un string (sessionStorage siempre devuelve strings).
+  if (savedExpiresAt && savedReservacionId) {
+    const segsRestantes = Math.floor((Number(savedExpiresAt) - Date.now()) / 1000)
+    if (segsRestantes > 30) {
+      reservacionId.value = Number(savedReservacionId)
+      noReservacion.value = savedNoReservacion || ''
+      // Restaurar detalles de precio del checkout_data guardado para que el total
+      // aparezca correctamente en checkout y confirmación al terminar el formulario
+      try {
+        const cdGuardado = JSON.parse(sessionStorage.getItem('checkout_data') || '{}')
+        if (cdGuardado.detalleVuelo) detalleVuelo.value = cdGuardado.detalleVuelo
+        if (cdGuardado.detalleHotel) detalleHotel.value = cdGuardado.detalleHotel
+        if (!tipoItem.value && cdGuardado.tipoItem) tipoItem.value = cdGuardado.tipoItem
+        // Restaurar item completo si fue guardado en Priority 1 (misma sesión de browser)
+        if (!item.value && cdGuardado.item) item.value = cdGuardado.item
+      } catch {}
+      // Si no hay item (ej. browser nuevo, checkout_data vacío), usar stub mínimo.
+      // Para vuelos forzamos tipoVuelo='ida' para que el template del resumen se active
+      // y muestre al menos el total; sin esto caería en "No hay ningún item seleccionado."
+      if (!item.value) {
+        item.value = tipoItem.value === 'vuelo'
+          ? { tipoVuelo: 'ida', busqueda: { cantidadPasajeros: 1 } }
+          : {}
+      }
+      startTimer(segsRestantes, Number(savedExpiresAt))
+      creandoReserva.value = false
+      return
+    }
+    sessionStorage.removeItem('_reserva_expires_at')
+    sessionStorage.removeItem('_reserva_id')
+    sessionStorage.removeItem('_reserva_no')
+  }
+
+  // Prioridad 3: recuperar reservación pendiente desde el servidor.
+  // Aplica cuando sessionStorage fue limpiado (nueva pestaña, reinicio de sesión)
+  // pero la reservación aún existe en la BD y no ha expirado.
+  // Un usuario solo puede tener una reservación pendiente vigente a la vez.
+  if (!item.value) {
+    try {
+      const pendResp = await fetch(`${API}/api/reservaciones/mias/pendiente`, { credentials: 'include' })
+      if (pendResp.ok && pendResp.status === 200) {
+        const pend = await pendResp.json()
+        if (pend?.id) {
+          const expiresMs     = pend.fecha_expiracion ? new Date(pend.fecha_expiracion.replace(' ', 'T')).getTime() : 0
+          // Siempre mostrar la reserva aunque el tiempo haya expirado (el backend rechaza el pago si es necesario).
+          // Solo descartamos si no hay ID válido (condición de arriba lo garantiza).
+          const segsRestantes = expiresMs > 0 ? Math.max(0, Math.floor((expiresMs - Date.now()) / 1000)) : 0
+          reservacionId.value = pend.id
+          noReservacion.value = pend.no_reservacion || ''
+          tipoItem.value      = ({ 1: 'vuelo', 2: 'hotel', 3: 'paquete' })[pend.tipo_reserva] || 'vuelo'
+          // Recopilar datos de cada detalle para reconstruir item.value
+          let vueloRaw = null, hotelHab = null, hotelProveedorId = null
+          for (const det of (pend.detalles || [])) {
+            if (det.tipo_detalle_id === 1) {
+              // Wrap data_proveedor en { detalle: ... } para que boletos computed funcione
+              // (la API interna retorna { detalle: { boletos: [...] } } pero Broom GET retorna { boletos: [...] })
+              detalleVuelo.value = { detalle: det.data_proveedor || {}, total_con_ganancia: det.total ?? 0, proveedor_id: det.proveedor_id ?? null }
+              vueloRaw = det.data_proveedor
+            }
+            if (det.tipo_detalle_id === 2) {
+              // data_proveedor de hotel es un array de habitaciones (respuesta Broom)
+              detalleHotel.value = { total_con_ganancia: det.total ?? 0 }
+              const habs = Array.isArray(det.data_proveedor) ? det.data_proveedor : []
+              hotelHab = habs[0] || {}
+              hotelProveedorId = det.proveedor_id ?? null
+            }
+          }
+          // Reconstruir item.value según tipo de reservación
+          const vueloBoletos = vueloRaw?.boletos || []
+          const b0 = vueloBoletos[0] || {}
+          if (tipoItem.value === 'paquete') {
+            // Inferir cantidadPersonas: dividir total de boletos entre vuelos únicos
+            const vulosUnicos = new Set(vueloBoletos.map(b => b.numeroVuelo)).size || 1
+            const cantidadPersonas = Math.max(1, Math.round(vueloBoletos.length / vulosUnicos))
+            const checkIn = hotelHab?.fechaCheckIn || ''
+            const checkOut = hotelHab?.fechaCheckOut || ''
+            const noches = checkIn && checkOut
+              ? Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)
+              : 0
+            item.value = {
+              vuelo: {
+                id:           null, // no recuperable; buildVuelosPayload lo maneja con null-safe
+                origenCodigo: b0.origenCodigo  || '',
+                aerolinea:    b0.avionMarca    || '',
+                destinoCodigo:b0.destinoCodigo || '',
+                clase:        b0.clase         || '',
+                tramos:       [],
+              },
+              hotel: {
+                nombreHotel:    hotelHab?.nombreHotel    || '',
+                ciudad:         '',
+                tipoHabitacion: hotelHab?.tipoHabitacion || '',
+              },
+              noches,
+              cantidadPersonas,
+              _recovered: true, // flag para que buildVuelosPayload use proveedor_id del detalle
+            }
+          } else if (tipoItem.value === 'hotel') {
+            const checkIn = hotelHab?.fechaCheckIn || ''
+            const checkOut = hotelHab?.fechaCheckOut || ''
+            const noches = checkIn && checkOut
+              ? Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000)
+              : 0
+            item.value = {
+              nombreHotel:    hotelHab?.nombreHotel    || '',
+              hotelCiudad:    '',
+              tipoHabitacion: hotelHab?.tipoHabitacion || '',
+              tipoCama:       hotelHab?.tipoCama        || '',
+              noches,
+              busqueda: { checkIn, checkOut, cantidadPersonas: hotelHab?.cantidadPersonas || 1 },
+              proveedorId: hotelProveedorId,
+            }
+          } else {
+            // vuelo solo
+            item.value = {
+              tipoVuelo:     'ida',
+              id:            null,
+              aerolinea:     b0.avionMarca    || '',
+              numeroVuelo:   b0.numeroVuelo   || '',
+              origenCodigo:  b0.origenCodigo  || '',
+              origenCiudad:  b0.origenCiudad  || '',
+              destinoCodigo: b0.destinoCodigo || '',
+              destinoCiudad: b0.destinaCiudad || b0.destinoCiudad || '',
+              horaSalida:    b0.horaSalida    || '',
+              horaLlegada:   b0.horaLlegada   || '',
+              clase:         b0.clase         || '',
+              busqueda: { cantidadPasajeros: vueloBoletos.length || 1 },
+              _recovered: true,
+            }
+          }
+          if (tipoItem.value === 'paquete') {
+            try {
+              const rd = await fetch(`${API}/api/configuracion/descuento`)
+              if (rd.ok) { const dd = await rd.json(); porcentajeDescuento.value = dd.porcentaje_descuento ?? 0 }
+            } catch { /**/ }
+          }
+          // Persistir en sessionStorage para recargas dentro de la misma pestaña
+          sessionStorage.setItem('_reserva_id', String(pend.id))
+          sessionStorage.setItem('_reserva_no', pend.no_reservacion || '')
+          sessionStorage.setItem('_reserva_expires_at', String(expiresMs || Date.now()))
+          sessionStorage.setItem('checkout_data', JSON.stringify({
+            reservacionId: pend.id,
+            noReservacion: pend.no_reservacion,
+            tipoItem:     tipoItem.value,
+            detalleVuelo: detalleVuelo.value || null,
+            detalleHotel: detalleHotel.value || null,
+            item:         item.value || null,
+          }))
+          window.dispatchEvent(new StorageEvent('storage', { key: 'checkout_data' }))
+          if (segsRestantes > 0) startTimer(segsRestantes, expiresMs)
+          creandoReserva.value = false
+          return
+        }
+      }
+    } catch { /**/ }
+    // Sin ítem y sin reservación pendiente en el servidor → pantalla vacía
+    creandoReserva.value = false
+    return
   }
 
   await crearReservacion()
@@ -1522,14 +1696,14 @@ async function handleReservar() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reservacion_id: reservacionId.value,
+          reservacion_id: Number(reservacionId.value),
           proveedor_id:   proveedorId,
           pasajeros:      pasajerosPayload,
         }),
       })
       if (!resP.ok) {
         const e = await resP.json().catch(() => ({}))
-        throw new Error(e?.mensaje || 'Error al guardar datos de pasajeros.')
+        throw new Error(e?.error || e?.mensaje || 'Error al guardar datos de pasajeros.')
       }
     }
 
@@ -1545,6 +1719,7 @@ async function handleReservar() {
       pasajero:                  { ...f, telefono: telefonoCompleto },
       tiempoRestanteAlConfirmar: tiempoRestante.value,
     }))
+    window.dispatchEvent(new StorageEvent('storage', { key: 'checkout_data' }))
 
     if (timerInterval.value) clearInterval(timerInterval.value)
 

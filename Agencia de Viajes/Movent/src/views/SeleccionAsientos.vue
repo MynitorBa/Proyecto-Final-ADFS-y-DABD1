@@ -450,9 +450,15 @@ function limpiarSesionReserva() {
 /** Rutas que pertenecen al flujo de reserva; al salir hacia otra se limpia la sesión. @type {string[]} */
 const FLUJO_RESERVA = ['/reservar', '/seleccion-asientos', '/checkout', '/confirmacion']
 
-/** Guard de navegación: limpia la sesión si el usuario abandona el flujo de reserva. */
+/** Guard de navegación: limpia la sesión si el usuario abandona el flujo de reserva.
+ *  Si la reservación sigue vigente, no limpia — el usuario puede retomar desde el carrito. */
 onBeforeRouteLeave((to) => {
   if (!FLUJO_RESERVA.includes(to.path)) {
+    const expiresAt = Number(sessionStorage.getItem('_reserva_expires_at') || 0)
+    const cdRaw = sessionStorage.getItem('checkout_data')
+    let reservacionId = null
+    try { reservacionId = JSON.parse(cdRaw || '{}').reservacionId } catch {}
+    if (reservacionId && expiresAt > Date.now()) return
     limpiarSesionReserva()
   }
 })

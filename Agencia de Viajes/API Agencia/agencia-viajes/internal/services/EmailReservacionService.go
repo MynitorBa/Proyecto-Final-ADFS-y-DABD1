@@ -72,16 +72,13 @@ func (s *EmailReservacionService) EnviarConfirmacion(reservacionID, usuarioID in
 		return fmt.Errorf("error preparando datos: %w", err)
 	}
 
-	// 3. Si el email o nombre vienen vacíos (ej: reserva de hotel puro),
-	//    consultarlos directamente desde la tabla Usuario de MOVENT.
-	if pdfData.UsuarioEmail == "" || pdfData.UsuarioNombre == "" {
-		if nombre, email, err2 := s.usuRepo.ObtenerNombreYEmail(usuarioID); err2 == nil {
-			if pdfData.UsuarioNombre == "" {
-				pdfData.UsuarioNombre = nombre
-			}
-			if pdfData.UsuarioEmail == "" {
-				pdfData.UsuarioEmail = email
-			}
+	// 3. Siempre usar el correo registrado en Movent como destinatario.
+	//    El email que devuelve el proveedor (ej: Broom AirLine) puede ser distinto
+	//    al correo real del usuario en Movent, por lo que se sobreescribe siempre.
+	if nombre, email, err2 := s.usuRepo.ObtenerNombreYEmail(usuarioID); err2 == nil {
+		pdfData.UsuarioEmail = email
+		if pdfData.UsuarioNombre == "" {
+			pdfData.UsuarioNombre = nombre
 		}
 	}
 

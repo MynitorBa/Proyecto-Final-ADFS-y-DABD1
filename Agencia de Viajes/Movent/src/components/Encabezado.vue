@@ -17,7 +17,7 @@
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Información
         </router-link>
-        <router-link to="/mis-reservaciones" class="nav-link" active-class="active">
+        <router-link v-if="sesion" to="/mis-reservaciones" class="nav-link" active-class="active">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           Mis Reservas
         </router-link>
@@ -53,6 +53,7 @@
             placeholder="Busca un destino..."
             class="search-input"
             autocomplete="off"
+            translate="no"
           />
           <button v-if="searchQuery" class="search-clear" @click="clearSearch" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
@@ -83,7 +84,7 @@
         </div>
 
         <!-- Botón de carrito con indicador de reserva pendiente de pago -->
-        <div class="cart-wrap" ref="cartWrapRef">
+        <div v-if="sesion" class="cart-wrap" ref="cartWrapRef">
           <button
             class="cart-btn"
             :class="{ 'cart-btn--active': reservaActiva, 'cart-btn--open': showCartDropdown }"
@@ -155,8 +156,10 @@
                 <template v-if="!cancelandoDesdeCart">
                   <div class="cart-dropdown__actions">
                     <button class="cart-dropdown__btn-pay" @click="handleCartClick" type="button">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                      Ir a pagar
+                      <svg v-if="cartCtaIcon === 'form'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <svg v-else-if="cartCtaIcon === 'seat'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"/><path d="M15 7h6v6"/></svg>
+                      <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                      {{ cartCtaLabel }}
                     </button>
                   </div>
                   <div class="cart-dropdown__secondary-actions">
@@ -274,8 +277,8 @@
       </div>
     </div>
 
-    <!-- Dropdown de autocompletado con sugerencias de ciudades y pills de tipo -->
-    <div v-if="searchSuggestions.length > 0" class="search-ac-dropdown">
+    <!-- Dropdown de autocompletado con 3 pills por sugerencia -->
+    <div v-if="searchSuggestions.length > 0 && !miniFormMode" class="search-ac-dropdown" translate="no">
       <div class="search-ac-inner">
         <div v-for="(sug, i) in searchSuggestions" :key="`${sug.pais}-${sug.ciudad}`"
           :class="['search-ac-item', { 'search-ac-item--sel': i === selectedIdx }]">
@@ -284,21 +287,134 @@
             <span class="search-ac-item__ciudad">{{ sug.ciudad }}</span>
             <span class="search-ac-item__pais">{{ sug.pais }}</span>
           </div>
-          <!-- Pills de acceso rápido por tipo de búsqueda -->
           <div class="search-ac-item__pills">
-            <span :class="['search-ac-pill','search-ac-pill--vuelo', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-vuelos' }]" @mousedown.prevent.stop="irA(sug, 'vuelos')">
+            <!-- Vuelo: abre mini-form para elegir origen → destino -->
+            <span :class="['search-ac-pill','search-ac-pill--vuelo', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-vuelos' }]"
+              @mousedown.prevent.stop="openMiniForm(sug, 'vuelo')">
               <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
               Vuelo
             </span>
-            <span :class="['search-ac-pill','search-ac-pill--hotel', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-hoteles' }]" @mousedown.prevent.stop="irA(sug, 'hoteles')">
+            <!-- Hotel: búsqueda directa en esa ciudad -->
+            <span :class="['search-ac-pill','search-ac-pill--hotel', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-hoteles' }]"
+              @mousedown.prevent.stop="irA(sug, 'hoteles')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
               Hotel
             </span>
-            <span :class="['search-ac-pill','search-ac-pill--paquete', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-paquete' }]" @mousedown.prevent.stop="irA(sug, 'paquete')">
+            <!-- Paquete: abre mini-form para elegir origen → destino -->
+            <span :class="['search-ac-pill','search-ac-pill--paquete', { 'search-ac-pill--loading': pillLoading === sug.ciudad+'-paquete' }]"
+              @mousedown.prevent.stop="openMiniForm(sug, 'paquete')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
               Paquete
             </span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mini-form de origen→destino para vuelos y paquetes (4 campos: país+ciudad × 2) -->
+    <div v-if="miniFormMode" class="search-ac-dropdown search-mini-form" translate="no">
+      <div class="search-ac-inner smf-inner">
+        <div class="smf-header">
+          <div class="smf-title">
+            <svg v-if="miniFormMode === 'vuelo'" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M21,16L14,11V5A2,2 0 0,0 12,3A2,2 0 0,0 10,5V11L3,16V18L10,15.5V21L8,22.5V24L12,23L16,24V22.5L14,21V15.5L21,18V16Z"/></svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            {{ miniFormMode === 'vuelo' ? 'Buscar vuelos' : 'Buscar paquetes' }}
+          </div>
+          <button class="smf-close" @mousedown.prevent="miniFormMode = ''" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="smf-fields">
+          <!-- ── ORIGEN ── -->
+          <div class="smf-group">
+            <span class="smf-group-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Desde
+            </span>
+            <div class="smf-group-inputs">
+              <!-- País origen -->
+              <div class="smf-ac-wrap">
+                <input class="smf-input" v-model="miniOPaisQ" @input="onMiniOPaisInput"
+                  @focus="miniActive = 'opais'"
+                  placeholder="País origen..." autocomplete="off" translate="no" />
+                <div v-if="miniOPaisSug.length > 0 && miniActive === 'opais'" class="smf-suggestions" translate="no">
+                  <div v-for="p in miniOPaisSug" :key="p.country" class="smf-suggestion"
+                    @mousedown.prevent="selMiniOPais(p)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    {{ p.country }}
+                  </div>
+                </div>
+              </div>
+              <!-- Ciudad origen -->
+              <div class="smf-ac-wrap">
+                <input class="smf-input" v-model="miniOCiudadQ" @input="onMiniOCiudadInput"
+                  @focus="miniActive = 'ociudad'"
+                  :placeholder="miniOCiudadLoading ? 'Cargando ciudades...' : 'Ciudad origen...'"
+                  :disabled="!miniOPaisSel || miniOCiudadLoading"
+                  autocomplete="off" translate="no" />
+                <div v-if="miniOCiudadSug.length > 0 && miniActive === 'ociudad'" class="smf-suggestions" translate="no">
+                  <div v-for="c in miniOCiudadSug" :key="`oc-${c}`" class="smf-suggestion"
+                    @mousedown.prevent="selMiniOCiudad(c)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {{ c }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flecha -->
+          <div class="smf-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </div>
+
+          <!-- ── DESTINO ── -->
+          <div class="smf-group">
+            <span class="smf-group-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Hasta
+            </span>
+            <div class="smf-group-inputs">
+              <!-- País destino -->
+              <div class="smf-ac-wrap">
+                <input class="smf-input" v-model="miniDPaisQ" @input="onMiniDPaisInput"
+                  @focus="miniActive = 'dpais'"
+                  placeholder="País destino..." autocomplete="off" translate="no" />
+                <div v-if="miniDPaisSug.length > 0 && miniActive === 'dpais'" class="smf-suggestions" translate="no">
+                  <div v-for="p in miniDPaisSug" :key="p.country" class="smf-suggestion"
+                    @mousedown.prevent="selMiniDPais(p)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    {{ p.country }}
+                  </div>
+                </div>
+              </div>
+              <!-- Ciudad destino -->
+              <div class="smf-ac-wrap">
+                <input class="smf-input" v-model="miniDCiudadQ" @input="onMiniDCiudadInput"
+                  @focus="miniActive = 'dciudad'"
+                  :placeholder="miniDCiudadLoading ? 'Cargando ciudades...' : 'Ciudad destino...'"
+                  :disabled="!miniDPaisSel || miniDCiudadLoading"
+                  autocomplete="off" translate="no" />
+                <div v-if="miniDCiudadSug.length > 0 && miniActive === 'dciudad'" class="smf-suggestions" translate="no">
+                  <div v-for="c in miniDCiudadSug" :key="`dc-${c}`" class="smf-suggestion"
+                    @mousedown.prevent="selMiniDCiudad(c)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {{ c }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botón buscar -->
+          <button class="smf-btn" @mousedown.prevent="doMiniSearch" type="button"
+            :disabled="!!pillLoading || !miniOrigen.ciudad || !miniDestino.ciudad">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Buscar
+          </button>
         </div>
       </div>
     </div>
@@ -325,7 +441,7 @@
       <div class="mobile-nav-links">
         <router-link to="/principal"        class="mobile-nav-link" @click="showMobileMenu=false">Inicio</router-link>
         <router-link to="/informacion"       class="mobile-nav-link" @click="showMobileMenu=false">Información</router-link>
-        <router-link to="/mis-reservaciones" class="mobile-nav-link" @click="showMobileMenu=false">Mis Reservas</router-link>
+        <router-link v-if="sesion" to="/mis-reservaciones" class="mobile-nav-link" @click="showMobileMenu=false">Mis Reservas</router-link>
         <router-link v-if="sesion" to="/notificaciones" class="mobile-nav-link" @click="showMobileMenu=false">
           Notificaciones
           <span v-if="notifNoLeidas > 0" class="notif-filtro__n">{{ notifNoLeidas }}</span>
@@ -426,6 +542,9 @@ const cartWrapRef      = ref(null)
 /** Ref al contenedor de la barra de búsqueda. @type {import('vue').Ref<HTMLElement|null>} */
 const searchBarRef     = ref(null)
 
+/** Modo de búsqueda activo: 'vuelo' | 'hotel' | 'paquete'. @type {import('vue').Ref<string>} */
+const searchMode        = ref('vuelo')
+
 /** Texto actualmente escrito en la barra de búsqueda. @type {import('vue').Ref<string>} */
 const searchQuery       = ref('')
 
@@ -447,6 +566,31 @@ let searchDebounce = null
 
 /** Cache de países de CountriesNow para no volver a pedirlos. */
 let paisesCache    = null
+
+// ── Mini-form (4 campos: país+ciudad origen → país+ciudad destino) ────────────
+/** Modo activo del mini-form: '' | 'vuelo' | 'paquete'. */
+const miniFormMode       = ref('')
+
+// Origen
+const miniOPaisQ         = ref('');  const miniOPaisSug       = ref([]);  const miniOPaisSel       = ref(null)
+const miniOCiudadQ       = ref('');  const miniOCiudadSug     = ref([]);  const miniOCiudades      = ref([])
+const miniOCiudadLoading = ref(false)
+const miniOrigen         = ref({ pais: '', ciudad: '' })
+
+// Destino
+const miniDPaisQ         = ref('');  const miniDPaisSug       = ref([]);  const miniDPaisSel       = ref(null)
+const miniDCiudadQ       = ref('');  const miniDCiudadSug     = ref([]);  const miniDCiudades      = ref([])
+const miniDCiudadLoading = ref(false)
+const miniDestino        = ref({ pais: '', ciudad: '' })
+
+/** Qué campo del mini-form tiene el foco activo: 'opais'|'ociudad'|'dpais'|'dciudad'|''. */
+const miniActive         = ref('')
+
+/** Cambia el modo activo de búsqueda y limpia sugerencias. */
+function setSearchMode(mode) {
+  searchMode.value = mode
+  searchSuggestions.value = []
+}
 
 /** Indica si hay una reservación pendiente de pago en sesión. @type {import('vue').Ref<boolean>} */
 const reservaActiva       = ref(false)
@@ -555,6 +699,29 @@ const nombreVisible = computed(() => sesion.value?.nombre || sesion.value?.usern
 const iniciales     = computed(() => { const n = nombreVisible.value; return (!n || n === 'Usuario') ? '?' : n.slice(0,2).toUpperCase() })
 
 /**
+ * Determina el texto e ícono del botón CTA del carrito según el estado del flujo.
+ * - Sin pasajero       → "Completar datos"
+ * - Vuelo/paquete + timer → "Seleccionar asientos"
+ * - Resto              → "Ir a pagar"
+ */
+const cartCtaLabel = computed(() => {
+  let cd = {}
+  try { cd = JSON.parse(sessionStorage.getItem('checkout_data') || '{}') } catch {}
+  if (!cd.pasajero) return 'Completar datos'
+  const tipo = cd.tipoItem || ''
+  if ((tipo === 'vuelo' || tipo === 'paquete') && sessionStorage.getItem('_reserva_expires_at')) return 'Seleccionar asientos'
+  return 'Ir a pagar'
+})
+const cartCtaIcon = computed(() => {
+  let cd = {}
+  try { cd = JSON.parse(sessionStorage.getItem('checkout_data') || '{}') } catch {}
+  if (!cd.pasajero) return 'form'
+  const tipo = cd.tipoItem || ''
+  if ((tipo === 'vuelo' || tipo === 'paquete') && sessionStorage.getItem('_reserva_expires_at')) return 'seat'
+  return 'pay'
+})
+
+/**
  * Obtiene la lista de países y ciudades de CountriesNow.
  * Guarda el resultado en caché para no repetir la petición.
  * @returns {Promise<Array>}
@@ -568,31 +735,42 @@ async function getPaises() {
 
 /**
  * Busca ciudades que coincidan con el query en los datos de CountriesNow.
- * Limita los resultados a 6 sugerencias para no saturar el dropdown.
+ * Puntúa cada resultado por ratio (queryLen/nameLen) × bonificación si empieza
+ * con el query, de modo que "United States" aparece antes que "United Arab Emirates"
+ * al escribir "united". Devuelve los 20 mejores.
  * @param {string} q - Texto de búsqueda.
  * @returns {Promise<Array<{ciudad: string, pais: string}>>}
  */
 async function buscarCiudadesQ(q) {
   if (q.length < 2) return []
   const paises = await getPaises()
-  const res = []; const ql = q.toLowerCase(); const seen = new Set()
+  const ql = q.toLowerCase(); const seen = new Set(); const scored = []
   for (const p of paises) {
-    if (p.country.toLowerCase().includes(ql) && p.cities?.length) {
+    const nameLower = p.country.toLowerCase()
+    if (nameLower.includes(ql) && p.cities?.length) {
       const k = `${p.cities[0]}-${p.country}`
-      if (!seen.has(k)) { seen.add(k); res.push({ ciudad: p.cities[0], pais: p.country }) }
+      if (!seen.has(k)) {
+        seen.add(k)
+        const score = (ql.length / nameLower.length) * (nameLower.startsWith(ql) ? 1.5 : 1)
+        scored.push({ ciudad: p.cities[0], pais: p.country, score })
+      }
     }
     if (Array.isArray(p.cities)) {
       for (const city of p.cities) {
-        if (city.toLowerCase().includes(ql)) {
+        const cityLower = city.toLowerCase()
+        if (cityLower.includes(ql)) {
           const k = `${city}-${p.country}`
-          if (!seen.has(k)) { seen.add(k); res.push({ ciudad: city, pais: p.country }) }
+          if (!seen.has(k)) {
+            seen.add(k)
+            const score = (ql.length / cityLower.length) * (cityLower.startsWith(ql) ? 1.5 : 1)
+            scored.push({ ciudad: city, pais: p.country, score })
+          }
         }
-        if (res.length >= 7) break
       }
     }
-    if (res.length >= 7) break
   }
-  return res.slice(0, 6)
+  scored.sort((a, b) => b.score - a.score)
+  return scored.slice(0, 20).map(({ ciudad, pais }) => ({ ciudad, pais }))
 }
 
 /** Dispara la búsqueda de ciudades con debounce de 280ms al escribir en el input. */
@@ -602,7 +780,27 @@ function onSearchInput()  { selectedIdx.value = -1; clearTimeout(searchDebounce)
 function onSearchFocus()  { if (searchQuery.value.trim().length >= 2 && !searchSuggestions.value.length) onSearchInput() }
 
 /** Navega a la primera sugerencia o a la seleccionada con el teclado al presionar Enter. */
-function onSearchEnter()  { const sug = searchSuggestions.value[selectedIdx.value >= 0 ? selectedIdx.value : 0]; if (sug) irA(sug, 'hoteles') }
+function onSearchEnter()  { doSearch() }
+
+/**
+ * Busca con el modo activo y la sugerencia seleccionada (o la primera disponible).
+ * @returns {Promise<void>}
+ */
+async function doSearch() {
+  const idx = selectedIdx.value >= 0 ? selectedIdx.value : 0
+  const sug = searchSuggestions.value[idx]
+  if (sug) { irA(sug, searchMode.value); return }
+  const q = searchQuery.value.trim()
+  if (q.length < 2) return
+  const sugs = await buscarCiudadesQ(q)
+  if (sugs.length > 0) irA(sugs[0], searchMode.value)
+}
+
+/**
+ * Devuelve la fecha de hoy más 3 meses en formato ISO.
+ * @returns {string}
+ */
+function fechaEn3Meses() { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0] }
 
 /**
  * Mueve la selección del teclado en el dropdown hacia arriba o abajo.
@@ -617,56 +815,286 @@ function clearSearch()    { searchQuery.value = ''; searchSuggestions.value = []
 function closeSearch()    { searchSuggestions.value = [] }
 
 /**
- * Realiza la búsqueda de disponibilidad según el tipo elegido y navega a los resultados.
- * Usa Guatemala City como origen por defecto para vuelos y paquetes.
- * @param {{ciudad: string, pais: string}} sug - La sugerencia de destino seleccionada.
- * @param {'hoteles'|'vuelos'|'paquete'} tipo - El tipo de búsqueda a realizar.
- * @returns {Promise<void>}
+ * Fecha de hoy + n días en formato ISO (YYYY-MM-DD).
+ * @param {number} n
+ * @returns {string}
+ */
+function fechaMas(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().split('T')[0] }
+
+/**
+ * Busca hoteles en 4 ventanas de 5 días (próximos 20 días) en paralelo y mezcla hasta 30 resultados únicos.
+ * Así si hoy hay poca disponibilidad, los días siguientes compensan.
+ * @param {string} ciudad
+ * @param {string} pais
+ * @returns {Promise<Array>}
+ */
+async function buscarHotelesMultiVentana(ciudad, pais) {
+  const ventanas = [[0,5],[5,10],[10,15],[15,20]].map(([a,b]) => ({ checkIn: fechaMas(a), checkOut: fechaMas(b) }))
+  const lotes = await Promise.all(ventanas.map(v =>
+    fetch(`${API}/api/busqueda/hoteles`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ciudad, pais, fechaCheckIn: v.checkIn, fechaCheckOut: v.checkOut, cantidadPersonas: 1 })
+    }).then(r => r.ok ? r.json() : []).catch(() => [])
+  ))
+  const seen = new Set(); const merged = []
+  for (const lote of lotes) {
+    const arr = Array.isArray(lote) ? lote : (lote?.resultados ?? lote?.hoteles ?? [])
+    for (const h of arr) {
+      const key = h.hotelId ?? h.id ?? h.nombre ?? h.name ?? JSON.stringify(h).slice(0, 80)
+      if (!seen.has(key)) { seen.add(key); merged.push(h) }
+      if (merged.length >= 30) return merged
+    }
+  }
+  return merged
+}
+
+/**
+ * Busca vuelos en 5 fechas (hoy, +5, +10, +15, +20 días) en paralelo y mezcla hasta 30 únicos.
+ * @param {string} origen  @param {string} origenPais
+ * @param {string} destino @param {string} destinoPais
+ * @returns {Promise<Array>}
+ */
+async function buscarVuelosMultiFecha(origen, origenPais, destino, destinoPais) {
+  const fechas = [0, 5, 10, 15, 20].map(fechaMas)
+  const lotes = await Promise.all(fechas.map(fecha =>
+    fetch(`${API}/api/busqueda/vuelos`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ origen, origenPais, destino, destinoPais, fecha, cantidadPasajeros: 1 })
+    }).then(r => r.ok ? r.json() : []).catch(() => [])
+  ))
+  const seen = new Set(); const merged = []
+  for (const lote of lotes) {
+    const arr = Array.isArray(lote) ? lote : (lote?.resultados ?? lote?.vuelos ?? [])
+    for (const v of arr) {
+      const key = v.vueloId ?? v.id ?? v.vuelo_id ?? JSON.stringify(v).slice(0, 80)
+      if (!seen.has(key)) { seen.add(key); merged.push(v) }
+      if (merged.length >= 30) return merged
+    }
+  }
+  return merged
+}
+
+/**
+ * Navega a resultados según el tipo elegido.
+ * - Hotel: sug es la ciudad/país de destino; busca en ventanas de 20 días.
+ * - Vuelo / Paquete: pill no se usa directamente (abren mini-form), pero se mantiene por si acaso.
+ * @param {{ciudad: string, pais: string}} sug
+ * @param {'hoteles'|'hotel'} tipo
  */
 async function irA(sug, tipo) {
   pillLoading.value = `${sug.ciudad}-${tipo}`
   closeSearch(); searchQuery.value = ''
-  const hoy = fechaHoy(), unMes = fechaEnUnMes()
-  const od = 'Guatemala City', op = 'Guatemala'
-  const ruta = tipo === 'hoteles' ? '/resultados-hoteles' : tipo === 'vuelos' ? '/resultados-vuelos' : '/resultados-paquetes'
+  const hoy = fechaHoy(); const veinteDias = fechaMas(20)
+  const ruta = '/resultados-hoteles'
   try {
-    let state = {}
-    if (tipo === 'hoteles') {
-      const body = { ciudad: sug.ciudad, pais: sug.pais, fechaCheckIn: hoy, fechaCheckOut: unMes, cantidadPersonas: 1 }
-      const r = await fetch(`${API}/api/busqueda/hoteles`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      state = { resultados: r.ok ? await r.json() : [], busqueda: { ciudad: sug.ciudad, pais: sug.pais, checkIn: hoy, checkOut: unMes, cantidadPersonas: 1 } }
-    } else if (tipo === 'vuelos') {
-      const body = { origen: od, origenPais: op, destino: sug.ciudad, destinoPais: sug.pais, fecha: hoy, cantidadPasajeros: 1 }
-      const r = await fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      state = { resultados: r.ok ? await r.json() : [], busqueda: { origen: od, origenPais: op, destino: sug.ciudad, destinoPais: sug.pais, fecha: hoy, cantidadPasajeros: 1, tipoVuelo: 'ida' } }
-    } else {
-      const bv = { origen: od, origenPais: op, destino: sug.ciudad, destinoPais: sug.pais, fecha: hoy, cantidadPasajeros: 1 }
-      const bh = { ciudad: sug.ciudad, pais: sug.pais, fechaCheckIn: hoy, fechaCheckOut: unMes, cantidadPersonas: 1 }
-      const [rv, rh] = await Promise.all([
-        fetch(`${API}/api/busqueda/vuelos`,  { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bv) }),
-        fetch(`${API}/api/busqueda/hoteles`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bh) }),
-      ])
-      state = { resultadosVuelos: rv.ok ? await rv.json() : [], resultadosRegreso: [], resultadosHoteles: rh.ok ? await rh.json() : [], busqueda: { origen: od, origenPais: op, destino: sug.ciudad, destinoPais: sug.pais, fecha: hoy, fechaRegreso: '', checkIn: hoy, checkOut: unMes, cantidadPersonas: 1, tipoVuelo: 'ida' } }
-    }
+    const resultados = await buscarHotelesMultiVentana(sug.ciudad, sug.pais)
+    const state = { resultados, busqueda: { ciudad: sug.ciudad, pais: sug.pais, checkIn: hoy, checkOut: veinteDias, cantidadPersonas: 1 } }
     window.history.pushState(state, '', ruta); window.location.reload()
   } catch {
-    const sv = tipo === 'hoteles' ? { resultados: [], busqueda: { ciudad: sug.ciudad, pais: sug.pais, checkIn: hoy, checkOut: unMes, cantidadPersonas: 1 } }
-             : tipo === 'vuelos'  ? { resultados: [], busqueda: { origen: od, origenPais: op, destino: sug.ciudad, destinoPais: sug.pais, fecha: hoy, cantidadPasajeros: 1, tipoVuelo: 'ida' } } : null
-    if (sv) { window.history.pushState(sv, '', ruta); window.location.reload() }
+    window.history.pushState({ resultados: [], busqueda: { ciudad: sug.ciudad, pais: sug.pais, checkIn: hoy, checkOut: veinteDias, cantidadPersonas: 1 } }, '', ruta)
+    window.location.reload()
   } finally { pillLoading.value = '' }
+}
+
+// ── Mini-form: funciones ─────────────────────────────────────────────────────
+
+/**
+ * Obtiene las ciudades de un país desde countriesnow.
+ * @param {string} country - Nombre del país en inglés.
+ * @returns {Promise<string[]>}
+ */
+async function getCiudades(country) {
+  try {
+    const r = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ country })
+    })
+    const d = await r.json(); return d.data || []
+  } catch { return [] }
+}
+
+/**
+ * Abre el mini-form prellenando la sugerencia clicada como origen.
+ * Carga las ciudades del país de origen en background.
+ * @param {{ciudad:string,pais:string}} sug
+ * @param {'vuelo'|'paquete'} modo
+ */
+async function openMiniForm(sug, modo) {
+  miniFormMode.value   = modo
+  // Pre-fill origin
+  miniOPaisQ.value     = sug.pais
+  miniOPaisSel.value   = { country: sug.pais }
+  miniOrigen.value     = { pais: sug.pais, ciudad: sug.ciudad }
+  miniOCiudadQ.value   = sug.ciudad
+  miniOPaisSug.value   = []; miniOCiudadSug.value = []
+  // Reset destination
+  miniDPaisQ.value     = ''; miniDPaisSel.value   = null
+  miniDCiudadQ.value   = ''; miniDCiudades.value  = []
+  miniDestino.value    = { pais: '', ciudad: '' }
+  miniDPaisSug.value   = []; miniDCiudadSug.value = []
+  miniActive.value     = 'dpais'
+  closeSearch()
+  // Load origin cities in background for the input to be functional if user changes it
+  miniOCiudadLoading.value = true
+  miniOCiudades.value = await getCiudades(sug.pais)
+  miniOCiudadLoading.value = false
+}
+
+// ── Origen: país ──────────────────────────────────────────────────────────────
+async function onMiniOPaisInput() {
+  miniOPaisSel.value = null; miniOCiudadQ.value = ''; miniOCiudades.value = []
+  miniOrigen.value = { pais: '', ciudad: '' }
+  const q = miniOPaisQ.value.trim(); if (q.length < 2) { miniOPaisSug.value = []; return }
+  miniOPaisSug.value = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+}
+
+async function selMiniOPais(p) {
+  miniOPaisSel.value = p; miniOPaisQ.value = p.country; miniOPaisSug.value = []
+  miniOrigen.value.pais = p.country; miniOCiudadQ.value = ''; miniOrigen.value.ciudad = ''
+  miniOCiudadLoading.value = true; miniOCiudades.value = await getCiudades(p.country); miniOCiudadLoading.value = false
+  miniActive.value = 'ociudad'
+}
+
+// ── Origen: ciudad ────────────────────────────────────────────────────────────
+function onMiniOCiudadInput() {
+  const q = miniOCiudadQ.value.toLowerCase(); miniOrigen.value.ciudad = ''
+  miniOCiudadSug.value = q.length < 2 ? [] : miniOCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+}
+
+function selMiniOCiudad(c) {
+  miniOCiudadQ.value = c; miniOCiudadSug.value = []
+  miniOrigen.value.ciudad = c; miniActive.value = 'dpais'
+}
+
+// ── Destino: país ─────────────────────────────────────────────────────────────
+async function onMiniDPaisInput() {
+  miniDPaisSel.value = null; miniDCiudadQ.value = ''; miniDCiudades.value = []
+  miniDestino.value = { pais: '', ciudad: '' }
+  const q = miniDPaisQ.value.trim(); if (q.length < 2) { miniDPaisSug.value = []; return }
+  miniDPaisSug.value = (await getPaises()).filter(x => x.country.toLowerCase().includes(q.toLowerCase())).slice(0, 6)
+}
+
+async function selMiniDPais(p) {
+  miniDPaisSel.value = p; miniDPaisQ.value = p.country; miniDPaisSug.value = []
+  miniDestino.value.pais = p.country; miniDCiudadQ.value = ''; miniDestino.value.ciudad = ''
+  miniDCiudadLoading.value = true; miniDCiudades.value = await getCiudades(p.country); miniDCiudadLoading.value = false
+  miniActive.value = 'dciudad'
+}
+
+// ── Destino: ciudad ───────────────────────────────────────────────────────────
+function onMiniDCiudadInput() {
+  const q = miniDCiudadQ.value.toLowerCase(); miniDestino.value.ciudad = ''
+  miniDCiudadSug.value = q.length < 2 ? [] : miniDCiudades.value.filter(c => c.toLowerCase().includes(q)).slice(0, 6)
+}
+
+function selMiniDCiudad(c) {
+  miniDCiudadQ.value = c; miniDCiudadSug.value = []
+  miniDestino.value.ciudad = c; miniActive.value = ''
+}
+
+/** Dispara la búsqueda con los 4 campos completos. */
+async function doMiniSearch() {
+  if (!miniOrigen.value.pais || !miniOrigen.value.ciudad || !miniDestino.value.pais || !miniDestino.value.ciudad) return
+  await irAConOrigen(
+    { ciudad: miniOrigen.value.ciudad, pais: miniOrigen.value.pais },
+    { ciudad: miniDestino.value.ciudad, pais: miniDestino.value.pais },
+    miniFormMode.value
+  )
+}
+
+/**
+ * Realiza la búsqueda de vuelos o paquetes con origen y destino explícitos.
+ * Para paquetes busca vuelos hacia el destino + hoteles en el destino.
+ * @param {{ciudad:string,pais:string}} orig - Ciudad/país de origen.
+ * @param {{ciudad:string,pais:string}} dest - Ciudad/país de destino.
+ * @param {'vuelo'|'paquete'} tipo - Tipo de búsqueda.
+ */
+/**
+ * Busca vuelos o paquetes con origen y destino explícitos.
+ * Usa multi-fecha (próximos 20 días) para vuelos y multi-ventana para hoteles de paquete.
+ * @param {{ciudad:string,pais:string}} orig
+ * @param {{ciudad:string,pais:string}} dest
+ * @param {'vuelo'|'paquete'} tipo
+ */
+async function irAConOrigen(orig, dest, tipo) {
+  pillLoading.value  = `${orig.ciudad}-${tipo}`
+  miniFormMode.value = ''
+  closeSearch(); searchQuery.value = ''
+  const hoy        = fechaHoy()
+  const veinteDias = fechaMas(20)
+  const esVuelo    = tipo === 'vuelo' || tipo === 'vuelos'
+  const ruta       = esVuelo ? '/resultados-vuelos' : '/resultados-paquetes'
+  try {
+    let state = {}
+    if (esVuelo) {
+      // Multi-fecha: busca en hoy, +5, +10, +15, +20 días y mezcla hasta 30 resultados
+      const resultados = await buscarVuelosMultiFecha(orig.ciudad, orig.pais, dest.ciudad, dest.pais)
+      state = { resultados, busqueda: { origen: orig.ciudad, origenPais: orig.pais, destino: dest.ciudad, destinoPais: dest.pais, fecha: hoy, cantidadPasajeros: 1, tipoVuelo: 'ida' } }
+    } else {
+      // Paquete: multi-fecha vuelos + multi-ventana hoteles en paralelo
+      const [resultadosVuelos, resultadosHoteles] = await Promise.all([
+        buscarVuelosMultiFecha(orig.ciudad, orig.pais, dest.ciudad, dest.pais),
+        buscarHotelesMultiVentana(dest.ciudad, dest.pais),
+      ])
+      state = { resultadosVuelos, resultadosRegreso: [], resultadosHoteles, busqueda: { origen: orig.ciudad, origenPais: orig.pais, destino: dest.ciudad, destinoPais: dest.pais, fecha: hoy, fechaRegreso: '', checkIn: hoy, checkOut: veinteDias, cantidadPersonas: 1, tipoVuelo: 'ida' } }
+    }
+    if (esVuelo) sessionStorage.setItem('_rv_busqueda', JSON.stringify(state.busqueda))
+    window.history.pushState(state, '', ruta); window.location.reload()
+  } catch {
+    const sv = esVuelo
+      ? { resultados: [], busqueda: { origen: orig.ciudad, origenPais: orig.pais, destino: dest.ciudad, destinoPais: dest.pais, fecha: hoy, cantidadPasajeros: 1, tipoVuelo: 'ida' } }
+      : { resultadosVuelos: [], resultadosRegreso: [], resultadosHoteles: [], busqueda: { origen: orig.ciudad, origenPais: orig.pais, destino: dest.ciudad, destinoPais: dest.pais, fecha: hoy, checkIn: hoy, checkOut: veinteDias, cantidadPersonas: 1, tipoVuelo: 'ida' } }
+    if (esVuelo) sessionStorage.setItem('_rv_busqueda', JSON.stringify(sv.busqueda))
+    window.history.pushState(sv, '', ruta); window.location.reload()
+  } finally { pillLoading.value = '' }
+}
+
+/**
+ * Si sesion.value es null (sessionStorage vacío por cierre de browser) pero el
+ * cookie JWT sigue vigente, restaura la sesión consultando /api/sesion.
+ * Esto permite que v-if="sesion" se active y el carrito sea visible.
+ */
+async function _restaurarSesionDesdeServidor() {
+  try {
+    const r = await fetch(`${API}/api/sesion`, { credentials: 'include' })
+    if (!r.ok) return
+    const data = await r.json()
+    const sesionData = {
+      id:       data.usuario_id,
+      username: data.username,
+      rol_id:   data.rol_id,
+      isAdmin:  data.rol_id === 2,
+      isWS:     data.rol_id === 3,
+    }
+    sessionStorage.setItem('usuario_sesion', JSON.stringify(sesionData))
+    sesion.value = sesionData
+  } catch {}
 }
 
 /**
  * Lee checkout_data de sessionStorage y actualiza el estado del carrito.
  * Verifica que la reservación no haya expirado antes de marcarla como activa.
+ * Si sessionStorage está vacío (nueva sesión, modo incógnito) intenta restaurar
+ * la sesión desde el servidor antes de buscar la reservación pendiente.
  */
-function verificarReservaActiva() {
+async function verificarReservaActiva() {
   if (verificandoReserva) return; verificandoReserva = true
   try {
+    // Si no hay sesión local pero el cookie sigue vivo, restaurar antes de continuar
+    if (!sesion.value) await _restaurarSesionDesdeServidor()
+
     const raw = sessionStorage.getItem('checkout_data')
-    if (!raw) { limpiarEstadoCarrito(); return }
+    if (!raw) {
+      await _cargarPendienteDeServidor()
+      return
+    }
     const cd = JSON.parse(raw)
-    if (!cd?.reservacionId) { limpiarEstadoCarrito(); return }
+    if (!cd?.reservacionId) {
+      await _cargarPendienteDeServidor()
+      return
+    }
     let expiraEn = null
     const fh = cd.detalleHotel?.detalle?.fechaExpiracion; if (fh) expiraEn = new Date(fh.replace(' ','T')).getTime()
     if (!expiraEn) { const fv = cd.detalleVuelo?.detalle?.fechaExpiracion; if (fv) expiraEn = new Date(fv.replace(' ','T')).getTime() }
@@ -676,9 +1104,62 @@ function verificarReservaActiva() {
     const tipo = cd.tipoItem || ''
     tipoReservaActiva.value  = tipo === 'vuelo' ? 'Vuelo' : tipo === 'hotel' ? 'Hospedaje' : tipo === 'paquete' ? 'Paquete completo' : ''
     const tv = cd.detalleVuelo?.total_con_ganancia ?? 0, th = cd.detalleHotel?.total_con_ganancia ?? 0
-    const total = tipo === 'vuelo' ? tv : tipo === 'hotel' ? th : tipo === 'paquete' ? tv + th : 0
+    let total = tipo === 'vuelo' ? tv : tipo === 'hotel' ? th : tipo === 'paquete' ? tv + th : 0
+    if (tipo === 'paquete' && total > 0) {
+      try {
+        const rd = await fetch(`${API}/api/configuracion/descuento`, { credentials: 'include' })
+        if (rd.ok) { const dd = await rd.json(); const pct = dd.porcentaje_descuento ?? 0; if (pct > 0) total = Math.round(total * (1 - pct / 100) * 100) / 100 }
+      } catch {}
+    }
     totalReservaActiva.value = total > 0 ? `$${total.toFixed(2)}` : ''
   } catch {} finally { verificandoReserva = false }
+}
+
+/**
+ * Consulta el servidor por una reservación pendiente vigente del usuario y,
+ * si existe, puebla sessionStorage y los refs del carrito con esos datos.
+ * Se usa como fallback cuando sessionStorage no tiene checkout_data
+ * (nueva pestaña, modo incógnito, reinicio del navegador).
+ */
+async function _cargarPendienteDeServidor() {
+  try {
+    const resp = await fetch(`${API}/api/reservaciones/mias`, { credentials: 'include' })
+    if (!resp.ok) { limpiarEstadoCarrito(); return }
+    const lista = await resp.json()
+    // Buscar la primera reservación pendiente (estado_id=1).
+    // No filtramos por fecha_expiracion porque ListarReservaciones tampoco lo hace:
+    // si el backend aún no actualizó el estado, igual la mostramos igual que Mis Reservaciones.
+    const pend = (lista || []).find(r => r.estado_id === 1)
+    if (!pend) { limpiarEstadoCarrito(); return }
+    const expiresMs = pend.fecha_expiracion ? new Date(pend.fecha_expiracion.replace(' ', 'T')).getTime() : 0
+    const tipoItem = ({ 1: 'vuelo', 2: 'hotel', 3: 'paquete' })[pend.tipo_reserva] || ''
+    // det.total es el precio con ganancia guardado en BD — no necesitamos llamar al proveedor
+    let detalleVuelo = null, detalleHotel = null, totalVuelo = 0, totalHotel = 0
+    for (const det of (pend.detalles || [])) {
+      if (det.tipo_detalle_id === 1) { detalleVuelo = { total_con_ganancia: det.total ?? 0 }; totalVuelo = det.total ?? 0 }
+      if (det.tipo_detalle_id === 2) { detalleHotel = { total_con_ganancia: det.total ?? 0 }; totalHotel = det.total ?? 0 }
+    }
+    // Solo persistir checkout_data (para mostrar el carrito en el encabezado).
+    // NO escribir _reserva_id ni _reserva_expires_at: esas claves las usa Reserva.vue
+    // para Priority 2 (retomar reserva). Si las escribimos aquí, la primera búsqueda
+    // nueva del usuario entraría en conflicto con la reserva pendiente antigua.
+    // _reserva_id/_reserva_expires_at solo se escriben cuando el usuario hace click en
+    // "Completar datos" y Reserva.vue detecta la pendiente vía Priority 3.
+    sessionStorage.setItem('checkout_data', JSON.stringify({ reservacionId: pend.id, noReservacion: pend.no_reservacion, tipoItem, detalleVuelo, detalleHotel }))
+    // Actualizar refs del carrito
+    reservaActiva.value       = true
+    reservacionIdActiva.value = pend.id
+    noReservacionActiva.value = pend.no_reservacion || ''
+    tipoReservaActiva.value   = tipoItem === 'vuelo' ? 'Vuelo' : tipoItem === 'hotel' ? 'Hospedaje' : tipoItem === 'paquete' ? 'Paquete completo' : ''
+    let total = tipoItem === 'vuelo' ? totalVuelo : tipoItem === 'hotel' ? totalHotel : tipoItem === 'paquete' ? totalVuelo + totalHotel : 0
+    if (tipoItem === 'paquete' && total > 0) {
+      try {
+        const rd = await fetch(`${API}/api/configuracion/descuento`, { credentials: 'include' })
+        if (rd.ok) { const dd = await rd.json(); const pct = dd.porcentaje_descuento ?? 0; if (pct > 0) total = Math.round(total * (1 - pct / 100) * 100) / 100 }
+      } catch {}
+    }
+    totalReservaActiva.value  = total > 0 ? `$${total.toFixed(2)}` : ''
+  } catch { limpiarEstadoCarrito() }
 }
 
 /** Resetea todos los refs del estado del carrito a sus valores iniciales. */
@@ -696,8 +1177,30 @@ function closeCartDropdown()    { showCartDropdown.value = false; resetCancelCar
 /** Limpia el estado del formulario de cancelación dentro del carrito. */
 function resetCancelCart()      { cancelandoDesdeCart.value = false; cancelMotivoCart.value = ''; cancelErrorCart.value = '' }
 
-/** Cierra el carrito y navega al checkout. */
-function handleCartClick()      { closeCartDropdown(); showMobileMenu.value = false; router.push('/checkout') }
+/**
+ * Cierra el carrito y navega al paso correcto del flujo de reserva según el estado de checkout_data.
+ * - Sin pasajero llenado          → /reservar  (completar formulario)
+ * - Vuelo/Paquete + timer activo  → /seleccion-asientos (elegir asientos)
+ * - Hotel o flujo completo        → /checkout  (pagar)
+ */
+function handleCartClick() {
+  closeCartDropdown(); showMobileMenu.value = false
+  let cd = {}
+  try { cd = JSON.parse(sessionStorage.getItem('checkout_data') || '{}') } catch {}
+
+  // Sin datos de pasajero: debe completar el formulario primero
+  if (!cd.pasajero) {
+    router.push('/reservar'); return
+  }
+
+  // Vuelo o paquete: si el timer sigue activo, falta seleccionar asientos
+  const tipo = cd.tipoItem || ''
+  if ((tipo === 'vuelo' || tipo === 'paquete') && sessionStorage.getItem('_reserva_expires_at')) {
+    router.push('/seleccion-asientos'); return
+  }
+
+  router.push('/checkout')
+}
 
 /**
  * Envía la solicitud de cancelación de la reservación activa desde el carrito.
@@ -750,7 +1253,15 @@ const toggleUserMenu   = () => { showUserMenu.value = !showUserMenu.value; close
 function handleGlobalClick(e) {
   if (showUserMenu.value) showUserMenu.value = false
   if (showCartDropdown.value && cartWrapRef.value && !cartWrapRef.value.contains(e.target)) closeCartDropdown()
-  if (searchSuggestions.value.length > 0) { const header = e.target.closest('.header'); if (!header) closeSearch() }
+  if (searchSuggestions.value.length > 0 || miniFormMode.value) {
+    const header = e.target.closest('.header')
+    if (!header) {
+      closeSearch(); miniFormMode.value = ''
+      miniOPaisSug.value = []; miniOCiudadSug.value = []
+      miniDPaisSug.value = []; miniDCiudadSug.value = []
+      miniActive.value = ''
+    }
+  }
   showMobileMenu.value = false
 }
 

@@ -248,11 +248,15 @@
                   </div>
                   <div class="rp-mod-field">
                     <label class="rp-mod-label">Check-in</label>
-                    <input class="rp-mod-input" type="date" v-model="form.checkIn" :min="hoy" />
+                    <input class="rp-mod-input" type="date" v-model="form.checkIn"
+                      :min="form.fecha || hoy"
+                      :max="maxCheckInForm || undefined" />
                   </div>
                   <div class="rp-mod-field">
                     <label class="rp-mod-label">Check-out</label>
-                    <input class="rp-mod-input" type="date" v-model="form.checkOut" :min="minCheckOut" />
+                    <input class="rp-mod-input" type="date" v-model="form.checkOut"
+                      :min="minCheckOut"
+                      :max="form.tipoVuelo === 'idaVuelta' && form.fechaRegreso ? form.fechaRegreso : undefined" />
                   </div>
                   <div class="rp-mod-field">
                     <label class="rp-mod-label">Personas</label>
@@ -453,6 +457,10 @@
                       <span v-if="vuelo.escalas === 0" class="rv-tag rv-tag--directo">✓ Directo</span>
                       <span v-else class="rv-tag rv-tag--escala">{{ vuelo.escalas }} escala{{ vuelo.escalas !== 1 ? 's' : '' }}</span>
                       <span v-if="vuelo.asientosTurista > 0 && vuelo.asientosTurista <= 5" class="rv-tag rv-tag--urgente">¡Últimos!</span>
+                      <span class="rv-card__fecha-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {{ formatFecha(busqueda.fecha) }}
+                      </span>
                     </div>
                   </div>
                   <div class="rv-card__ruta">
@@ -519,6 +527,10 @@
                     <div class="rv-card__tags">
                       <span v-if="vuelo.escalas === 0" class="rv-tag rv-tag--directo">✓ Directo</span>
                       <span v-else class="rv-tag rv-tag--escala">{{ vuelo.escalas }} escala{{ vuelo.escalas !== 1 ? 's' : '' }}</span>
+                      <span class="rv-card__fecha-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {{ formatFecha(busqueda.fechaRegreso) }}
+                      </span>
                     </div>
                   </div>
                   <div class="rv-card__ruta">
@@ -1112,22 +1124,29 @@ function amenityIconP(nombre) {
 // Estado inicial recuperado desde history.state (inyectado por el buscador principal)
 const state = history.state || {}
 
+// Fallback de sesión: cuando Vue Router reemplaza history.state al navegar a /reservar,
+// los datos de búsqueda y resultados se recuperan desde sessionStorage al volver.
+const _savedRpBusqueda  = (() => { try { return JSON.parse(sessionStorage.getItem('_rp_busqueda')  || 'null') } catch { return null } })()
+const _savedRpVuelos    = (() => { try { return JSON.parse(sessionStorage.getItem('_rp_vuelos')    || 'null') } catch { return null } })()
+const _savedRpRegreso   = (() => { try { return JSON.parse(sessionStorage.getItem('_rp_vuelos_regreso') || 'null') } catch { return null } })()
+const _savedRpHoteles   = (() => { try { return JSON.parse(sessionStorage.getItem('_rp_hoteles')   || 'null') } catch { return null } })()
+
 /**
  * Parámetros de la búsqueda activa: origen/destino, fechas de vuelo, fechas de hotel,
  * personas y tipo de viaje. Se actualizan al rebuscar.
  * @type {import('vue').Ref<{origen: string, origenPais: string, destino: string, destinoPais: string, fecha: string, fechaRegreso: string, checkIn: string, checkOut: string, cantidadPersonas: number, tipoVuelo: string}>}
  */
 const busqueda = ref({
-  origen:           state.busqueda?.origen           || '',
-  origenPais:       state.busqueda?.origenPais       || '',
-  destino:          state.busqueda?.destino          || '',
-  destinoPais:      state.busqueda?.destinoPais      || '',
-  fecha:            state.busqueda?.fecha            || '',
-  fechaRegreso:     state.busqueda?.fechaRegreso     || '',
-  checkIn:          state.busqueda?.checkIn          || '',
-  checkOut:         state.busqueda?.checkOut         || '',
-  cantidadPersonas: state.busqueda?.cantidadPersonas || 1,
-  tipoVuelo:        state.busqueda?.tipoVuelo        || 'ida',
+  origen:           state.busqueda?.origen           || _savedRpBusqueda?.origen           || '',
+  origenPais:       state.busqueda?.origenPais       || _savedRpBusqueda?.origenPais       || '',
+  destino:          state.busqueda?.destino          || _savedRpBusqueda?.destino          || '',
+  destinoPais:      state.busqueda?.destinoPais      || _savedRpBusqueda?.destinoPais      || '',
+  fecha:            state.busqueda?.fecha            || _savedRpBusqueda?.fecha            || '',
+  fechaRegreso:     state.busqueda?.fechaRegreso     || _savedRpBusqueda?.fechaRegreso     || '',
+  checkIn:          state.busqueda?.checkIn          || _savedRpBusqueda?.checkIn          || '',
+  checkOut:         state.busqueda?.checkOut         || _savedRpBusqueda?.checkOut         || '',
+  cantidadPersonas: state.busqueda?.cantidadPersonas || _savedRpBusqueda?.cantidadPersonas || 1,
+  tipoVuelo:        state.busqueda?.tipoVuelo        || _savedRpBusqueda?.tipoVuelo        || 'ida',
 })
 
 /**
@@ -1307,6 +1326,18 @@ const minCheckOut = computed(() => {
   return d.toISOString().split('T')[0]
 })
 
+/**
+ * Fecha máxima permitida para el check-in: el día anterior al check-out o al regreso del vuelo,
+ * lo que sea más restrictivo. Solo aplica para idaVuelta.
+ * @type {import('vue').ComputedRef<string|undefined>}
+ */
+const maxCheckInForm = computed(() => {
+  if (form.tipoVuelo !== 'idaVuelta' || !form.fechaRegreso) return undefined
+  const base = form.checkOut && form.checkOut < form.fechaRegreso ? form.checkOut : form.fechaRegreso
+  const d = new Date(base); d.setDate(d.getDate() - 1)
+  return d.toISOString().split('T')[0]
+})
+
 /** Caché en memoria de la lista de países de CountriesNow. @type {any[]|null} */
 let paisesCache = null
 
@@ -1472,6 +1503,13 @@ async function rebuscar() {
   if (form.checkIn < hoy) { modError.value = 'El check-in no puede ser en el pasado.'; return }
   if (!form.checkOut)     { modError.value = 'Selecciona el check-out del hotel.'; return }
   if (form.checkOut <= form.checkIn) { modError.value = 'El check-out debe ser posterior al check-in.'; return }
+  // Validar que las fechas del hotel estén dentro del rango del vuelo
+  if (form.fecha && form.checkIn < form.fecha) {
+    modError.value = `El check-in del hotel no puede ser antes de la salida del vuelo (${form.fecha}).`; return
+  }
+  if (form.tipoVuelo === 'idaVuelta' && form.fechaRegreso && form.checkOut > form.fechaRegreso) {
+    modError.value = `El check-out del hotel no puede ser después del vuelo de regreso (${form.fechaRegreso}).`; return
+  }
 
   buscando.value = true
   // Cancelar promesa previa al rebuscar
@@ -2092,6 +2130,12 @@ function reservarPaquete() {
     busqueda:         busqueda.value,
   }))
 
+  // Persistir búsqueda y resultados antes de navegar (Vue Router puede limpiar history.state)
+  sessionStorage.setItem('_rp_busqueda', JSON.stringify(busqueda.value))
+  try { sessionStorage.setItem('_rp_vuelos', JSON.stringify(vuelos.value.map(({ proveedorImagen, ...r }) => r))) } catch {}
+  try { if (vuelosRegreso.value.length) sessionStorage.setItem('_rp_vuelos_regreso', JSON.stringify(vuelosRegreso.value.map(({ proveedorImagen, ...r }) => r))) } catch {}
+  try { sessionStorage.setItem('_rp_hoteles', JSON.stringify(todasLasHabitaciones.value.map(({ proveedorImagen, ...r }) => r))) } catch {}
+
   // window.__reservaPromise ya fue disparada en seleccionarVuelo
   // Reserva.vue la awaita en onMounted y la usa si está disponible
   router.push('/reservar')
@@ -2117,6 +2161,11 @@ onMounted(async () => {
     if (!vuelos.value.length || !todasLasHabitaciones.value.length) {
       error.value = 'No hay resultados para esta búsqueda.'
     }
+  } else if (_savedRpVuelos?.length && _savedRpHoteles?.length) {
+    // Fallback: si Vue Router limpió history.state al navegar a /reservar, restaurar desde sessionStorage
+    vuelos.value               = _savedRpVuelos
+    todasLasHabitaciones.value = _savedRpHoteles
+    if (_savedRpRegreso?.length) vuelosRegreso.value = _savedRpRegreso
   } else {
     error.value = 'No hay resultados. Modifica la búsqueda.'
   }

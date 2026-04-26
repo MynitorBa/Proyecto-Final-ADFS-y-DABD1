@@ -246,15 +246,40 @@
               </div>
             </div>
             <div class="rv-paso__sep">→</div>
-            <div :class="['rv-paso', { 'rv-paso--activo': paso === 2, 'rv-paso--pendiente': paso === 1 }]">
-              <span class="rv-paso__num">2</span>
+            <div :class="['rv-paso', { 'rv-paso--activo': paso === 2 && !vueloRegresoTemp, 'rv-paso--done': !!vueloRegresoTemp, 'rv-paso--pendiente': paso === 1 }]">
+              <span class="rv-paso__num">{{ vueloRegresoTemp ? '✓' : '2' }}</span>
               <div>
                 <span class="rv-paso__label">Vuelo de regreso</span>
                 <span class="rv-paso__sub">{{ busqueda.destino }} → {{ busqueda.origen }} · {{ formatFecha(busqueda.fechaRegreso) }}</span>
               </div>
             </div>
-            <button v-if="paso === 2" class="rv-btn rv-btn--ghost rv-paso__back" @click="paso = 1; seleccionadoRegreso = null" type="button">
+            <button v-if="paso === 2 && !vueloRegresoTemp" class="rv-btn rv-btn--ghost rv-paso__back" @click="paso = 1; seleccionadoRegreso = null; vueloIdaTemp = null" type="button">
               ← Cambiar ida
+            </button>
+            <button v-if="vueloRegresoTemp" class="rv-btn rv-btn--ghost rv-paso__back" @click="vueloRegresoTemp = null; seleccionadoRegreso = null" type="button">
+              ← Cambiar regreso
+            </button>
+          </div>
+
+          <!-- Resumen total cuando ida y regreso están seleccionados — permite confirmar o cambiar selección -->
+          <div v-if="esIdaVuelta && paso === 2 && vueloRegresoTemp" class="rv-resumen">
+            <div class="rv-resumen__col">
+              <span class="rv-resumen__lbl">✈ Ida</span>
+              <span class="rv-resumen__val">${{ ((vueloIdaTemp?.precio || 0) * (busqueda.cantidadPasajeros || 1)).toFixed(2) }}</span>
+            </div>
+            <span class="rv-resumen__sep">+</span>
+            <div class="rv-resumen__col">
+              <span class="rv-resumen__lbl">✈ Regreso</span>
+              <span class="rv-resumen__val">${{ ((vueloRegresoTemp?.precio || 0) * (busqueda.cantidadPasajeros || 1)).toFixed(2) }}</span>
+            </div>
+            <span class="rv-resumen__sep">=</span>
+            <div class="rv-resumen__col rv-resumen__col--total">
+              <span class="rv-resumen__lbl">Total</span>
+              <span class="rv-resumen__total">${{ (((vueloIdaTemp?.precio || 0) + (vueloRegresoTemp?.precio || 0)) * (busqueda.cantidadPasajeros || 1)).toFixed(2) }}</span>
+            </div>
+            <button class="rv-btn rv-btn--yellow rv-resumen__cta" @click="confirmarIdaVuelta" type="button">
+              Reservar
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
           </div>
 
@@ -392,6 +417,10 @@
                 </div>
 
                 <div class="rv-card__meta">
+                  <span class="rv-card__meta-item rv-card__fecha">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    {{ formatFecha(paso === 2 ? busqueda.fechaRegreso : busqueda.fecha) }}
+                  </span>
                   <span class="rv-card__meta-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                     {{ vuelo.avionMarca }} {{ vuelo.avionModelo }}
@@ -759,19 +788,25 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 /** Estado inicial de la búsqueda recuperado desde history.state. @type {object} */
 const state = history.state || {}
 
+// Fallback de sesión: cuando Vue Router reemplaza history.state al navegar a /reservar,
+// los datos de búsqueda y resultados se recuperan desde sessionStorage al volver.
+const _savedRvBusqueda = (() => { try { return JSON.parse(sessionStorage.getItem('_rv_busqueda') || 'null') } catch { return null } })()
+const _savedRvVuelos   = (() => { try { return JSON.parse(sessionStorage.getItem('_rv_vuelos')   || 'null') } catch { return null } })()
+const _savedRvRegreso  = (() => { try { return JSON.parse(sessionStorage.getItem('_rv_vuelos_regreso') || 'null') } catch { return null } })()
+
 /**
  * Parámetros de la búsqueda activa: origen, destino, fechas, pasajeros y tipo de vuelo.
  * @type {import('vue').Ref<{origen: string, origenPais: string, destino: string, destinoPais: string, fecha: string, fechaRegreso: string, cantidadPasajeros: number, tipoVuelo: string}>}
  */
 const busqueda = ref({
-  origen:            state.busqueda?.origen            || '',
-  origenPais:        state.busqueda?.origenPais        || '',
-  destino:           state.busqueda?.destino           || '',
-  destinoPais:       state.busqueda?.destinoPais       || '',
-  fecha:             state.busqueda?.fecha             || '',
-  fechaRegreso:      state.busqueda?.fechaRegreso      || '',
-  cantidadPasajeros: state.busqueda?.cantidadPasajeros || 1,
-  tipoVuelo:         state.busqueda?.tipoVuelo         || 'ida',
+  origen:            state.busqueda?.origen            || _savedRvBusqueda?.origen            || '',
+  origenPais:        state.busqueda?.origenPais        || _savedRvBusqueda?.origenPais        || '',
+  destino:           state.busqueda?.destino           || _savedRvBusqueda?.destino           || '',
+  destinoPais:       state.busqueda?.destinoPais       || _savedRvBusqueda?.destinoPais       || '',
+  fecha:             state.busqueda?.fecha             || _savedRvBusqueda?.fecha             || '',
+  fechaRegreso:      state.busqueda?.fechaRegreso      || _savedRvBusqueda?.fechaRegreso      || '',
+  cantidadPasajeros: state.busqueda?.cantidadPasajeros || _savedRvBusqueda?.cantidadPasajeros || 1,
+  tipoVuelo:         state.busqueda?.tipoVuelo         || _savedRvBusqueda?.tipoVuelo         || 'ida',
 })
 
 /** Respuesta cruda de la API para el vuelo de ida, pasada desde la búsqueda. @type {any} */
@@ -806,6 +841,12 @@ const seleccionadoRegreso = ref(null)
 
 /** Paso actual del flujo: 1 = eligiendo ida, 2 = eligiendo regreso. @type {import('vue').Ref<number>} */
 const paso = ref(1)
+
+/** Datos del vuelo de ida seleccionado (para mostrar el resumen). @type {import('vue').Ref<object|null>} */
+const vueloIdaTemp = ref(null)
+
+/** Datos del vuelo de regreso seleccionado (para mostrar el resumen). @type {import('vue').Ref<object|null>} */
+const vueloRegresoTemp = ref(null)
 
 /** Criterio de ordenamiento activo para la lista de vuelos. @type {import('vue').Ref<string>} */
 const ordenar = ref('precio-asc')
@@ -1106,14 +1147,24 @@ const minFechaRegresoForm = computed(() => {
 function toggleModificar() {
   modificarAbierto.value = !modificarAbierto.value
   if (modificarAbierto.value) {
-    form.origenPaisQ = ''; form.origenPaisSug = []; form.origenPaisSel = null
-    form.origenCiudadQ = ''; form.origenCiudadSug = []; form.origenCiudades = []
-    form.origenPais = ''; form.origenCiudad = ''
-    form.destinoPaisQ = ''; form.destinoPaisSug = []; form.destinoPaisSel = null
-    form.destinoCiudadQ = ''; form.destinoCiudadSug = []; form.destinoCiudades = []
-    form.destinoPais = ''; form.destinoCiudad = ''
-    form.fecha = ''; form.cantidadPasajeros = 1
+    // Pre-llenar con la búsqueda activa para que el usuario solo cambie lo que necesita
+    const b = busqueda.value
+    // Usar objeto sintético { country } como paisSel para habilitar el input de ciudad
+    form.origenPaisQ = b.origenPais || ''; form.origenPaisSug = []
+    form.origenPaisSel = b.origenPais ? { country: b.origenPais } : null
+    form.origenCiudadQ = b.origen || ''; form.origenCiudadSug = []
+    form.origenPais = b.origenPais || ''; form.origenCiudad = b.origen || ''
+    form.destinoPaisQ = b.destinoPais || ''; form.destinoPaisSug = []
+    form.destinoPaisSel = b.destinoPais ? { country: b.destinoPais } : null
+    form.destinoCiudadQ = b.destino || ''; form.destinoCiudadSug = []
+    form.destinoPais = b.destinoPais || ''; form.destinoCiudad = b.destino || ''
+    form.fecha = b.fecha || ''; form.fechaRegreso = b.fechaRegreso || ''
+    form.cantidadPasajeros = b.cantidadPasajeros || 1
+    form.tipoVuelo = b.tipoVuelo || 'ida'
     modError.value = ''
+    // Cargar ciudades en background para que el autocomplete funcione al editar la ciudad
+    if (b.origenPais) getCiudades(b.origenPais).then(cs => { form.origenCiudades = cs })
+    if (b.destinoPais) getCiudades(b.destinoPais).then(cs => { form.destinoCiudades = cs })
   }
 }
 
@@ -1231,6 +1282,7 @@ async function rebuscar() {
       if (!tieneVuelos(rawIda)) { modError.value = `No hay vuelos de ${o} a ${d} para el ${form.fecha}.`; return }
       if (!tieneVuelos(rawRegreso)) { modError.value = `No hay vuelos de regreso de ${d} a ${o} para el ${form.fechaRegreso}. Prueba otra fecha.`; return }
       busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, fechaRegreso: form.fechaRegreso, cantidadPasajeros: form.cantidadPasajeros, tipoVuelo: 'idaVuelta' }
+      sessionStorage.setItem('_rv_busqueda', JSON.stringify(busqueda.value))
       erroresProveedores.value = []
       vuelos.value        = mapearRespuesta(rawIda)
       vuelosRegreso.value = mapearRespuesta(rawRegreso)
@@ -1238,6 +1290,7 @@ async function rebuscar() {
       const res = await fetch(`${API}/api/busqueda/vuelos`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyIda) })
       if (!res.ok) throw new Error()
       busqueda.value = { origen: o, origenPais: op, destino: d, destinoPais: dp, fecha: form.fecha, cantidadPasajeros: form.cantidadPasajeros, tipoVuelo: 'ida' }
+      sessionStorage.setItem('_rv_busqueda', JSON.stringify(busqueda.value))
       erroresProveedores.value = []
       vuelos.value        = mapearRespuesta(await res.json())
       vuelosRegreso.value = []
@@ -1253,6 +1306,8 @@ async function rebuscar() {
     resetFiltros()
     seleccionado.value        = null
     seleccionadoRegreso.value = null
+    vueloIdaTemp.value        = null
+    vueloRegresoTemp.value    = null
     paso.value                = 1
     modificarAbierto.value    = false
   } catch { modError.value = 'No se pudieron obtener vuelos. Intenta de nuevo.' }
@@ -1415,19 +1470,26 @@ async function precrearReservacion(itemData) {
     if (itemData.tipoVuelo === 'idaVuelta') {
       const { ida, regreso } = itemData, pax = itemData.busqueda?.cantidadPasajeros || 1
       proveedorId = parseProveedorId(ida.id)
-      const expandirVuelo = (v, clase) => {
+      // grupoId 0=ida, 1=regreso — el backend aplica markup por grupo para que coincida con búsqueda
+      const expandirVuelo = (v, clase, grupoId) => {
         if (v.tramos?.length > 1) {
           return v.tramos
             .filter(t => t?.id)
-            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax, grupoId }))
         }
-        return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+        return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax, grupoId }]
       }
-      vuelosArr = [...expandirVuelo(ida, ida.clase), ...expandirVuelo(regreso, regreso.clase)]
+      vuelosArr = [...expandirVuelo(ida, ida.clase, 0), ...expandirVuelo(regreso, regreso.clase, 1)]
     } else {
       const pax = itemData.busqueda?.cantidadPasajeros || 1
       proveedorId = parseProveedorId(itemData.id)
-      vuelosArr = [{ vueloId: parseVueloId(itemData.id), claseId: claseToId(itemData.clase), cantidadPasajeros: pax }]
+      if (itemData.tramos?.length > 1) {
+        vuelosArr = itemData.tramos
+          .filter(t => t?.id)
+          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(itemData.clase), cantidadPasajeros: pax }))
+      } else {
+        vuelosArr = [{ vueloId: parseVueloId(itemData.id), claseId: claseToId(itemData.clase), cantidadPasajeros: pax }]
+      }
     }
 
     const res2 = await fetch(`${API}/api/reservaciones/detalle/vuelo`, {
@@ -1456,11 +1518,14 @@ async function precrearReservacion(itemData) {
 function seleccionarVuelo(vuelo) {
   if (esIdaVuelta.value && paso.value === 1) {
     seleccionado.value = vuelo.id
-    sessionStorage.setItem('_vuelo_ida_temp', JSON.stringify({
+    const idaData = {
       ...vuelo, clase: vuelo.claseSeleccionada,
       precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva   : vuelo.precioTurista,
       asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
-    }))
+    }
+    sessionStorage.setItem('_vuelo_ida_temp', JSON.stringify(idaData))
+    vueloIdaTemp.value = idaData
+    vueloRegresoTemp.value = null
     paso.value = 2
     window.scrollTo({ top: 0, behavior: 'smooth' })
     return
@@ -1468,21 +1533,12 @@ function seleccionarVuelo(vuelo) {
 
   if (esIdaVuelta.value && paso.value === 2) {
     seleccionadoRegreso.value = vuelo.id
-    const vueloIda = JSON.parse(sessionStorage.getItem('_vuelo_ida_temp') || '{}')
-    sessionStorage.removeItem('_vuelo_ida_temp')
-    sessionStorage.removeItem('hotel_seleccionado')
-    sessionStorage.removeItem('paquete_seleccionado')
-    const itemData = {
-      tipoVuelo: 'idaVuelta',
-      ida:     { ...vueloIda, busqueda: busqueda.value },
-      regreso: { ...vuelo, clase: vuelo.claseSeleccionada,
-        precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva   : vuelo.precioTurista,
-        asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista },
-      busqueda: busqueda.value,
+    vueloRegresoTemp.value = {
+      ...vuelo, clase: vuelo.claseSeleccionada,
+      precio:   vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.precioEjecutiva   : vuelo.precioTurista,
+      asientos: vuelo.claseSeleccionada === 'ejecutiva' ? vuelo.asientosEjecutiva : vuelo.asientosTurista,
     }
-    sessionStorage.setItem('vuelo_seleccionado', JSON.stringify(itemData))
-    window.__reservaPromise = precrearReservacion(itemData)
-    router.push('/reservar')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     return
   }
 
@@ -1497,6 +1553,31 @@ function seleccionarVuelo(vuelo) {
     busqueda: busqueda.value,
   }
   sessionStorage.setItem('vuelo_seleccionado', JSON.stringify(itemData))
+  // Persistir búsqueda y resultados antes de navegar (Vue Router puede limpiar history.state)
+  sessionStorage.setItem('_rv_busqueda', JSON.stringify(busqueda.value))
+  try { sessionStorage.setItem('_rv_vuelos', JSON.stringify(vuelos.value.map(({ proveedorImagen, ...r }) => r))) } catch {}
+  window.__reservaPromise = precrearReservacion(itemData)
+  router.push('/reservar')
+}
+
+/**
+ * Confirma la selección de ida y regreso y navega a /reservar.
+ * Solo se llama desde el botón "Reservar" del panel de resumen idaVuelta.
+ */
+function confirmarIdaVuelta() {
+  if (!vueloIdaTemp.value || !vueloRegresoTemp.value) return
+  sessionStorage.removeItem('hotel_seleccionado')
+  sessionStorage.removeItem('paquete_seleccionado')
+  const itemData = {
+    tipoVuelo: 'idaVuelta',
+    ida:     { ...vueloIdaTemp.value, busqueda: busqueda.value },
+    regreso: { ...vueloRegresoTemp.value, busqueda: busqueda.value },
+    busqueda: busqueda.value,
+  }
+  sessionStorage.setItem('vuelo_seleccionado', JSON.stringify(itemData))
+  sessionStorage.setItem('_rv_busqueda', JSON.stringify(busqueda.value))
+  try { sessionStorage.setItem('_rv_vuelos', JSON.stringify(vuelos.value.map(({ proveedorImagen, ...r }) => r))) } catch {}
+  try { if (vuelosRegreso.value.length) sessionStorage.setItem('_rv_vuelos_regreso', JSON.stringify(vuelosRegreso.value.map(({ proveedorImagen, ...r }) => r))) } catch {}
   window.__reservaPromise = precrearReservacion(itemData)
   router.push('/reservar')
 }
@@ -1511,6 +1592,15 @@ onMounted(() => {
     if (resultadosRegresoRaw && Array.isArray(resultadosRegresoRaw)) {
       vuelosRegreso.value = mapearRespuesta(resultadosRegresoRaw)
     }
+    loading.value = false
+    initVueloObserver()
+    observarVuelos()
+    return
+  }
+  // Fallback: si Vue Router limpió history.state al navegar a /reservar, restaurar desde sessionStorage
+  if (_savedRvVuelos?.length) {
+    vuelos.value = _savedRvVuelos
+    if (_savedRvRegreso?.length) vuelosRegreso.value = _savedRvRegreso
     loading.value = false
     initVueloObserver()
     observarVuelos()

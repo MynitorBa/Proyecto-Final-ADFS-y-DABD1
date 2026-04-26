@@ -139,6 +139,64 @@ func (s *MisReservacionesService) ObtenerDetalle(reservacionID, usuarioID int) (
 		resp.Detalles = append(resp.Detalles, dto.DetalleCompletoResponse{
 			ID:                 f.DetalleID,
 			TipoDetalleID:      f.TipoDetalleID,
+			ProveedorID:        f.ProveedorID,
+			IDReservaProveedor: f.IDReservaProveedor,
+			Total:              f.DetalleTotal,
+			EstadoDetalleID:    f.EstadoDetalleID,
+			ParametrosJson:     params,
+			DataProveedor:      dataProveedor,
+		})
+	}
+
+	return resp, nil
+}
+
+// ObtenerReservacionPendiente
+//
+// Retorna el detalle completo de la reservacion pendiente vigente del usuario,
+// enriquecida con los datos en tiempo real de cada proveedor externo involucrado.
+// Si no existe ninguna reservacion pendiente vigente retorna nil sin error.
+//
+// Parametros:
+//   - usuarioID: identificador del usuario cuya reservacion pendiente se desea obtener
+//
+// Retorna:
+//   - *dto.ReservacionDetalladaResponse: reservacion con detalles completos y datos de proveedores, o nil si no existe
+//   - error: si falla la consulta de reservaciones en BD
+func (s *MisReservacionesService) ObtenerReservacionPendiente(usuarioID int) (*dto.ReservacionDetalladaResponse, error) {
+	filas, err := s.repo.ObtenerReservacionPendiente(usuarioID)
+	if err != nil {
+		return nil, err
+	}
+	if len(filas) == 0 {
+		return nil, nil
+	}
+
+	primera := filas[0]
+	resp := &dto.ReservacionDetalladaResponse{
+		ID:              primera.ReservacionID,
+		NoReservacion:   primera.NoReservacion,
+		TipoReserva:     primera.TipoReservaID,
+		EstadoID:        primera.EstadoID,
+		Total:           primera.Total,
+		FechaCreacion:   primera.FechaCreacion,
+		FechaExpiracion: primera.FechaExpiracion,
+		Detalles:        []dto.DetalleCompletoResponse{},
+	}
+
+	for _, f := range filas {
+		var params interface{}
+		_ = json.Unmarshal([]byte(f.ParametrosJson), &params)
+
+		dataProveedor, err := s.consultarProveedor(f.TipoDetalleID, f.IDReservaProveedor, f.URLAPI, f.TokenEntrada)
+		if err != nil {
+			dataProveedor = map[string]string{"error": err.Error()}
+		}
+
+		resp.Detalles = append(resp.Detalles, dto.DetalleCompletoResponse{
+			ID:                 f.DetalleID,
+			TipoDetalleID:      f.TipoDetalleID,
+			ProveedorID:        f.ProveedorID,
 			IDReservaProveedor: f.IDReservaProveedor,
 			Total:              f.DetalleTotal,
 			EstadoDetalleID:    f.EstadoDetalleID,

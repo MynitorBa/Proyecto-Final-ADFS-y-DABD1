@@ -346,6 +346,11 @@
                 </div>
                 <div class="rh-grupo__head-right">
                   <span class="rh-grupo__proveedor">{{ grupo.proveedorNombre }}</span>
+                  <div class="rh-grupo__fechas-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    {{ formatFecha(busqueda.checkIn) }} → {{ formatFecha(busqueda.checkOut) }}
+                    <span class="rh-grupo__noches-badge">· {{ noches }} noche{{ noches !== 1 ? 's' : '' }}</span>
+                  </div>
                   <div class="rh-grupo__desde">
                     <span class="rh-grupo__desde-lbl">Desde</span>
                     <span class="rh-grupo__desde-precio">{{ fmt(Math.min(...grupo.habitaciones.map(h => h.precioPorNoche))) }}</span>
@@ -889,16 +894,21 @@ const state = history.state || {}
 /** Resultados crudos de hoteles recibidos desde el buscador, o null si no hay. @type {any[]|null} */
 const resultadosRaw = state.resultados || null
 
+// Fallback de sesión: cuando Vue Router reemplaza history.state al navegar a /reservar,
+// los datos de búsqueda y resultados se recuperan desde sessionStorage al volver.
+const _savedRhBusqueda   = (() => { try { return JSON.parse(sessionStorage.getItem('_rh_busqueda')   || 'null') } catch { return null } })()
+const _savedRhHabitaciones = (() => { try { return JSON.parse(sessionStorage.getItem('_rh_habitaciones') || 'null') } catch { return null } })()
+
 /**
  * Parámetros de la búsqueda activa. Se inicializan desde history.state y se actualizan al rebuscar.
  * @type {import('vue').Ref<{ciudad: string, pais: string, checkIn: string, checkOut: string, cantidadPersonas: number}>}
  */
 const busqueda = ref({
-  ciudad:           state.busqueda?.ciudad           || '',
-  pais:             state.busqueda?.pais             || '',
-  checkIn:          state.busqueda?.checkIn          || '',
-  checkOut:         state.busqueda?.checkOut         || '',
-  cantidadPersonas: state.busqueda?.cantidadPersonas || 1,
+  ciudad:           state.busqueda?.ciudad           || _savedRhBusqueda?.ciudad           || '',
+  pais:             state.busqueda?.pais             || _savedRhBusqueda?.pais             || '',
+  checkIn:          state.busqueda?.checkIn          || _savedRhBusqueda?.checkIn          || '',
+  checkOut:         state.busqueda?.checkOut         || _savedRhBusqueda?.checkOut         || '',
+  cantidadPersonas: state.busqueda?.cantidadPersonas || _savedRhBusqueda?.cantidadPersonas || 1,
 })
 
 /** Indica que se está realizando una búsqueda (muestra spinner). @type {import('vue').Ref<boolean>} */
@@ -1807,6 +1817,7 @@ function seleccionarHabitacion(hab, grupo) {
     busqueda: busqueda.value,
   }
   sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
+  _persistirBusquedaHotel()
   window.__reservaPromise = precrearReservacionHotel(itemData)
   router.push('/reservar')
 }
@@ -1836,6 +1847,7 @@ function reservarExtra(extraInfo, grupo) {
     busqueda:        busqueda.value,
   }
   sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
+  _persistirBusquedaHotel()
   window.__reservaPromise = precrearReservacionHotel(itemData)
   router.push('/reservar')
 }
@@ -1863,8 +1875,19 @@ function reservarCombo(comboInfo, grupo) {
     busqueda:        busqueda.value,
   }
   sessionStorage.setItem('hotel_seleccionado', JSON.stringify(itemData))
+  _persistirBusquedaHotel()
   window.__reservaPromise = precrearReservacionHotel(itemData)
   router.push('/reservar')
+}
+
+/** Guarda la búsqueda y resultados en sessionStorage antes de navegar a /reservar. */
+function _persistirBusquedaHotel() {
+  sessionStorage.setItem('_rh_busqueda', JSON.stringify(busqueda.value))
+  try {
+    sessionStorage.setItem('_rh_habitaciones', JSON.stringify(
+      todasLasHabitaciones.value.map(({ proveedorImagen, ...r }) => r)
+    ))
+  } catch {}
 }
 
 /**
@@ -1876,6 +1899,9 @@ onMounted(() => {
   if (resultadosRaw && Array.isArray(resultadosRaw) && resultadosRaw.length > 0) {
     todasLasHabitaciones.value = mapearRespuesta(resultadosRaw)
     if (todasLasHabitaciones.value.length === 0) error.value = 'No hay habitaciones disponibles para los criterios seleccionados.'
+  } else if (_savedRhHabitaciones?.length) {
+    // Fallback: si Vue Router limpió history.state al navegar a /reservar, restaurar desde sessionStorage
+    todasLasHabitaciones.value = _savedRhHabitaciones
   } else {
     error.value = 'No hay resultados. Modifica la búsqueda.'
   }

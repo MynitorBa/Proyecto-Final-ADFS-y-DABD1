@@ -19,23 +19,25 @@ import (
 // Controlador que maneja los endpoints relacionados al procesamiento de pagos
 // de reservaciones existentes en la plataforma.
 type PagoController struct {
-	service   *services.PagoService
-	logSesion *services.LogSesionService
+	service      *services.PagoService
+	logSesion    *services.LogSesionService
+	emailService *services.EmailReservacionService
 }
 
 // NewPagoController
 //
 // Constructor que retorna una nueva instancia de PagoController
-// con el servicio de pagos y el servicio de log inyectados.
+// con el servicio de pagos, el servicio de log y el servicio de email inyectados.
 //
 // Parametros:
 //   - service: puntero al servicio de pagos
 //   - logSesion: puntero al servicio de log de sesion para auditoria
+//   - emailService: puntero al servicio de envio de correos de confirmacion
 //
 // Retorna:
 //   - *PagoController: puntero a la nueva instancia
-func NewPagoController(service *services.PagoService, logSesion *services.LogSesionService) *PagoController {
-	return &PagoController{service: service, logSesion: logSesion}
+func NewPagoController(service *services.PagoService, logSesion *services.LogSesionService, emailService *services.EmailReservacionService) *PagoController {
+	return &PagoController{service: service, logSesion: logSesion, emailService: emailService}
 }
 
 // Pagar
@@ -86,6 +88,12 @@ func (ctrl *PagoController) Pagar(c *gin.Context) {
 	ctrl.logSesion.Registrar(c, helpers.TipoCompraExitosa,
 		&uid, noReservacion,
 		fmt.Sprintf("Compra procesada para reserva %s", noReservacion))
+
+	go func() {
+		if err := ctrl.emailService.EnviarConfirmacion(req.ReservacionID, usuarioID); err != nil {
+			fmt.Printf("[email] error enviando confirmacion reserva %d: %v\n", req.ReservacionID, err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{
 		"mensaje": "Pago procesado y reservación confirmada exitosamente",

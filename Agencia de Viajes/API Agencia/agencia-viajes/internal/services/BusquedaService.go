@@ -401,7 +401,7 @@ func aplicarGanancia(data interface{}, porcentaje float64) interface{} {
 	case map[string]interface{}:
 		for key, val := range v {
 			switch key {
-			case "precioTurista", "precioEjecutiva", "precioPorPersona", "precioPorNoche":
+			case "precioTurista", "precioEjecutiva", "precioTuristaTotal", "precioEjecutivaTotal", "precioPorPersona", "precioPorNoche":
 				if precio, ok := val.(float64); ok {
 					v[key] = math.Round(precio*multiplicador*100) / 100
 				}

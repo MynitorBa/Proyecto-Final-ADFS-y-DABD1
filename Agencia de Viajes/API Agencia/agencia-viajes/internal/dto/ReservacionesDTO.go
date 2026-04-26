@@ -55,6 +55,7 @@ type ReservacionDetalladaResponse struct {
 type DetalleCompletoResponse struct {
 	ID                 int         `json:"id"`                   // ID unico del detalle
 	TipoDetalleID      int         `json:"tipo_detalle_id"`      // Tipo de detalle: 1=Vuelo, 2=Hotel
+	ProveedorID        int         `json:"proveedor_id"`         // ID del proveedor en la base de datos de la agencia
 	IDReservaProveedor string      `json:"id_reserva_proveedor"` // ID de la reserva en el sistema del proveedor
 	Total              float64     `json:"total"`                // Monto total del detalle
 	EstadoDetalleID    int         `json:"estado_detalle_id"`    // ID del estado del detalle

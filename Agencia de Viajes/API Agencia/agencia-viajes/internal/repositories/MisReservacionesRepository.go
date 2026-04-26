@@ -113,6 +113,47 @@ func (r *MisReservacionesRepository) ObtenerReservacionPorID(reservacionID, usua
 	return escanearFilas(rows)
 }
 
+// ObtenerReservacionPendiente
+//
+// Recupera la reservacion mas reciente del usuario que se encuentre en estado
+// pendiente (EstadoID = 1) y cuya fecha de expiracion sea mayor a la hora actual.
+// Dado que el sistema expira las reservaciones anteriores al crear una nueva,
+// un usuario puede tener como maximo una reservacion pendiente vigente.
+//
+// Parametros:
+//   - usuarioID: ID del usuario cuyas reservaciones se desean consultar
+//
+// Retorna:
+//   - []dto.FilaReservacionDetalle: filas planas con datos de la reservacion, sus detalles y proveedor
+//   - error: error de base de datos, nil si la operacion fue exitosa
+func (r *MisReservacionesRepository) ObtenerReservacionPendiente(usuarioID int) ([]dto.FilaReservacionDetalle, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	rows, err := conn.QueryContext(context.Background(), `
+		SELECT
+			r.ID, r.No_Reservacion, r.Tipo_Reserva_ID, r.EstadoID,
+			r.Total, r.Fecha_Creacion, r.Fecha_Expiracion,
+			dr.ID, dr.Tipo_Detalle_ID, dr.ID_Reserva_Proveedor,
+			dr.Total, dr.Estado_Detalle_ID, dr.Parametros_Json,
+			p.ID, p.URL_API, p.Token_HASH_Entrada
+		FROM Reservacion r
+		JOIN Detalles_Reservacion dr ON dr.Reservacion_ID = r.ID
+		JOIN Proveedor p             ON p.ID = dr.Proveedor_ID
+		WHERE r.Usuario_ID = ? AND r.EstadoID = 1
+		ORDER BY r.Fecha_Creacion DESC, dr.ID
+	`, usuarioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return escanearFilas(rows)
+}
+
 // escanearFilas
 //
 // Funcion auxiliar compartida que itera sobre las filas de un resultado SQL

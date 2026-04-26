@@ -61,6 +61,40 @@ func (ctrl *MisReservacionesController) Listar(c *gin.Context) {
 	c.JSON(http.StatusOK, reservaciones)
 }
 
+// ObtenerPendiente
+//
+// Handler HTTP que devuelve la reservacion pendiente vigente del usuario autenticado,
+// enriquecida con datos en tiempo real de los proveedores externos. Se usa como
+// fallback en el frontend cuando sessionStorage se pierde (nueva pestana, reinicio),
+// permitiendo retomar el flujo de checkout sin perder la reservacion pre-creada.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200: objeto con el detalle completo de la reservacion pendiente
+//   - HTTP 204: sin cuerpo si no existe ninguna reservacion pendiente vigente
+//   - HTTP 500: error interno si el servicio falla al consultar la BD
+//
+// Notas:
+//   - Ruta esperada: GET /api/reservaciones/mias/pendiente
+//   - Debe registrarse ANTES de la ruta /:id para que Gin no lo trate como parametro
+func (ctrl *MisReservacionesController) ObtenerPendiente(c *gin.Context) {
+	usuarioID, _ := c.Get("usuario_id")
+
+	reservacion, err := ctrl.service.ObtenerReservacionPendiente(usuarioID.(int))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if reservacion == nil {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	c.JSON(http.StatusOK, reservacion)
+}
+
 // Detalle
 //
 // Handler HTTP que devuelve el detalle completo de una reservacion especifica

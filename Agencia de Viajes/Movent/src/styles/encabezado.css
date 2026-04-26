@@ -44,8 +44,10 @@
 .nav-link:hover  { background: rgba(0,0,0,0.08); color: #000; }
 .nav-link.active { background: #000; color: #FFCC00; font-weight: 700; }
 
-/* Barra de búsqueda con ancho fijo y wrapper para el ícono */
-.search-bar { flex: 0 0 340px; width: 340px; position: relative; }
+/* Barra de búsqueda con input de destino */
+.search-bar {
+  flex: 0 0 340px; width: 340px; position: relative;
+}
 
 .search-input-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
 
@@ -147,6 +149,103 @@
 .search-ac-pill--vuelo:hover   { background: #FFCC00; color: #000; border-color: #000; }
 .search-ac-pill--hotel:hover   { background: #1C1A18; color: #FFCC00; border-color: #1C1A18; }
 .search-ac-pill--paquete:hover { background: #D40511; color: #fff;   border-color: #D40511; }
+
+/* ── Mini-form de origen → destino (4 campos) ───────────────────────────────── */
+
+/* Permite que los dropdowns de sugerencias desborden hacia abajo sin corte */
+.search-mini-form {
+  overflow: visible !important;
+  /* Recrear la sombra/borde sin depender de overflow:hidden */
+  border-radius: 0 0 16px 16px;
+}
+
+.smf-inner {
+  padding: 14px 1.5rem 16px;
+}
+
+/* Cabecera: título + botón cerrar */
+.smf-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.smf-title {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 800; color: #1C1A18; letter-spacing: .01em;
+}
+.smf-close {
+  background: none; border: none; cursor: pointer; color: #9a9089;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%; transition: all 0.15s;
+}
+.smf-close:hover { background: rgba(0,0,0,0.08); color: #1C1A18; }
+
+/* Fila principal: [grupo origen] [flecha] [grupo destino] [botón] */
+.smf-fields {
+  display: flex; align-items: flex-end; gap: 10px;
+}
+
+/* Cada grupo (label encima + dos inputs en fila) */
+.smf-group {
+  display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0;
+}
+
+.smf-group-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-weight: 700; color: #9a9089;
+  text-transform: uppercase; letter-spacing: .05em; padding-left: 2px;
+}
+
+/* Los dos inputs del grupo en fila */
+.smf-group-inputs {
+  display: flex; gap: 6px;
+}
+
+/* Wrapper relativo para posicionar el dropdown interno */
+.smf-ac-wrap { position: relative; flex: 1; min-width: 0; }
+
+.smf-input {
+  width: 100%; padding: 8px 10px; border: 1.5px solid rgba(0,0,0,0.2);
+  border-radius: 9px; font-size: 12.5px; color: #1C1A18; font-family: inherit;
+  background: #fafaf8; outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+}
+.smf-input:focus { border-color: #1C1A18; background: #fff; box-shadow: 0 0 0 2.5px rgba(0,0,0,0.08); }
+.smf-input:disabled { opacity: 0.45; cursor: not-allowed; }
+.smf-input::placeholder { color: rgba(0,0,0,0.32); font-size: 12px; }
+
+/* Dropdown de sugerencias — posicionado absolutamente, desborda el panel */
+.smf-suggestions {
+  position: absolute; top: calc(100% + 4px); left: 0;
+  min-width: 180px; max-width: 260px;
+  background: #fff; border: 1.5px solid #e8e3dc; border-radius: 10px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.16); z-index: 1100;
+  max-height: 200px; overflow-y: auto;
+}
+.smf-suggestion {
+  display: flex; align-items: center; gap: 7px; padding: 9px 12px;
+  font-size: 12.5px; font-weight: 600; color: #3a3530; cursor: pointer;
+  transition: background 0.1s; border-bottom: 1px solid #f5f2ec; white-space: nowrap;
+}
+.smf-suggestion:last-child { border-bottom: none; }
+.smf-suggestion:hover { background: #fffbeb; color: #1C1A18; }
+
+/* Flecha → entre origen y destino */
+.smf-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(0,0,0,0.3); flex-shrink: 0; padding-bottom: 4px;
+}
+
+/* Botón buscar */
+.smf-btn {
+  flex-shrink: 0; display: flex; align-items: center; gap: 7px;
+  padding: 8px 20px; background: #1C1A18; color: #FFCC00;
+  border: 2px solid #1C1A18; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.15s; white-space: nowrap;
+  align-self: flex-end;
+}
+.smf-btn:hover:not(:disabled) { background: #000; border-color: #000; }
+.smf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Botón del carrito con badge rojo y animación de pulso cuando tiene items */
 .cart-wrap { position: relative; }
@@ -410,7 +509,7 @@
 .mobile-divider { height: 1px; background: rgba(0,0,0,0.15); margin: 0.5rem 0; }
 
 /* Responsive: ocultar desktop nav y mostrar hamburguesa */
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
   .desktop-nav { display: none; }
   .search-bar  { display: none; }
   .btn-secondary { display: none; }

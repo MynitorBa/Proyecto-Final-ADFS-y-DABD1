@@ -22,6 +22,7 @@ type SeleccionVuelo struct {
 	VueloId           int `json:"vueloId"`           // ID del vuelo en el catalogo del proveedor
 	ClaseId           int `json:"claseId"`           // ID de la clase de servicio seleccionada
 	CantidadPasajeros int `json:"cantidadPasajeros"` // Numero de pasajeros para este vuelo
+	GrupoID           int `json:"grupoId"`           // Grupo de direccion: 0=ida (default), 1=regreso (idaVuelta)
 }
 
 // AgregarDetalleHotelRequest
