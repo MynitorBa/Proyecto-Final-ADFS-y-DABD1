@@ -371,6 +371,12 @@ builder.Services.AddSingleton<BusquedaTemporalService>();
 builder.Services.AddHostedService<ReservasCleanupService>();
 
 /// <summary>
+/// Background service que envia cada semana la oferta de vuelo mas barata
+/// (directo y con escala) a los usuarios suscritos a notificaciones.
+/// </summary>
+builder.Services.AddHostedService<OfertasSemanalService>();
+
+/// <summary>
 /// Autenticacion por cookies - sesion de 8 horas con sliding expiration.
 /// Retorna 401 si no autenticado y 403 si no tiene permisos.
 /// </summary>

@@ -91,6 +91,9 @@
   /** Payload de seleccion de asientos con grupos de vuelos, pasado a SeleccionAsientos. @type {Array|null} */
   let asientosData = null;
 
+  /** Codigo de reservacion a pre-buscar en MisReservas al navegar desde el buscador global. @type {string|null} */
+  let reservasBuscarCodigo = null;
+
   /**
    * Rutas que requieren sesion autenticada. Usuarios no autenticados
    * son redirigidos al login al intentar acceder.
@@ -284,6 +287,8 @@
       searchParams = data;
     } else if (paginaFinal === 'seleccion-asientos') {
       asientosData = data;
+    } else if (paginaFinal === 'reservas') {
+      reservasBuscarCodigo = data?.buscarCodigo ?? null;
     } else if (paginaFinal === 'datos-pasajeros') {
     } else if (paginaFinal === 'confirmacion') {
       if (data?.reservaciones) reservacionesConfirmadas = data.reservaciones;
@@ -403,7 +408,7 @@
       <Profile {navigateTo} />
 
     {:else if currentPage === 'reservas'}
-      <MisReservas {navigateTo} />
+      <MisReservas {navigateTo} buscarCodigo={reservasBuscarCodigo} />
 
     {:else if currentPage === 'admin'}
       <Admin {navigateTo} />

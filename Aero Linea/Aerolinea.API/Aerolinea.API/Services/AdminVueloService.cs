@@ -13,25 +13,28 @@ namespace Aerolinea.API.Services
     /// </summary>
     public class AdminVueloService
     {
-        private readonly AdminVueloRepository      _adminVueloRepository;
-        private readonly RutaRepository            _rutaRepository;
-        private readonly EmailHelper               _emailHelper;
+        private readonly AdminVueloRepository       _adminVueloRepository;
+        private readonly RutaRepository             _rutaRepository;
+        private readonly EmailHelper                _emailHelper;
         private readonly ILogger<AdminVueloService> _logger;
+        private readonly LogReservacionRepository   _logRepo;
 
         /// <summary>
         /// Inicializa el servicio con los repositorios necesarios para la gestion de vuelos,
         /// rutas, el helper de correo y el logger para registrar errores en notificaciones masivas.
         /// </summary>
         public AdminVueloService(
-            AdminVueloRepository      adminVueloRepository,
-            RutaRepository            rutaRepository,
-            EmailHelper               emailHelper,
-            ILogger<AdminVueloService> logger)
+            AdminVueloRepository       adminVueloRepository,
+            RutaRepository             rutaRepository,
+            EmailHelper                emailHelper,
+            ILogger<AdminVueloService> logger,
+            LogReservacionRepository   logRepo)
         {
             _adminVueloRepository = adminVueloRepository;
             _rutaRepository       = rutaRepository;
             _emailHelper          = emailHelper;
             _logger               = logger;
+            _logRepo              = logRepo;
         }
 
         /// <summary>
@@ -109,7 +112,7 @@ namespace Aerolinea.API.Services
         /// envia un correo de aviso a cada uno de forma individual (best-effort: si un correo
         /// falla se loguea el error y se continua con los restantes sin revertir la cancelacion).
         /// </summary>
-        public async Task<bool> CancelarVuelo(int vueloId)
+        public async Task<bool> CancelarVuelo(int vueloId, string? ip = null, string? userAgent = null)
         {
             if (vueloId <= 0)
                 throw new ArgumentException("ID de vuelo invalido");
@@ -126,9 +129,34 @@ namespace Aerolinea.API.Services
             var cancelado = await _adminVueloRepository.CancelarVuelo(vueloId);
 
             if (!cancelado)
+            {
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminFallida,
+                    null, null, null, null, false, ip, userAgent,
+                    $"Vuelo {vueloId} no pudo cancelarse (ya cancelado o no existe)");
                 return false;
+            }
 
-            // 3. Notificar a cada pasajero afectado con try-catch individual
+            // 3. Registrar un log por cada reservacion afectada
+            foreach (var afectado in afectados)
+            {
+                var reservacionId = afectado.ReservacionID > 0 ? (int?)afectado.ReservacionID : null;
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminExitosa,
+                    reservacionId, null, null, null, true, ip, userAgent,
+                    $"Vuelo {vueloId} cancelado por administrador");
+            }
+
+            // Si no habia reservaciones activas, registrar igualmente el evento del vuelo
+            if (afectados.Count == 0)
+            {
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminExitosa,
+                    null, null, null, null, true, ip, userAgent,
+                    $"Vuelo {vueloId} cancelado por administrador (sin reservaciones activas)");
+            }
+
+            // 4. Notificar a cada pasajero afectado con try-catch individual
             //    Un fallo de correo no revierte la cancelacion del vuelo
             int enviados  = 0;
             int fallidos  = 0;
@@ -228,6 +256,35 @@ namespace Aerolinea.API.Services
         /// para la fecha, hora de salida y aeropuerto de origen indicados.
         /// Permite filtrar aviones no disponibles al momento de crear un vuelo nuevo.
         /// </summary>
+        /// <summary>
+        /// Cambia el avión asignado a un vuelo. Valida mínimo 48h de anticipación
+        /// y que el nuevo avión tenga capacidad suficiente para los boletos ya vendidos.
+        /// </summary>
+        public async Task CambiarAvion(int vueloId, int nuevoAvionId)
+        {
+            var vuelo = await _adminVueloRepository.ObtenerVueloPorId(vueloId);
+            if (vuelo == null)
+                throw new ArgumentException("Vuelo no encontrado");
+
+            var salidaDateTime = vuelo.Fecha.Date + vuelo.HoraSalida;
+            var horasRestantes = (salidaDateTime - DateTime.Now).TotalHours;
+            if (horasRestantes < 48)
+                throw new InvalidOperationException(
+                    $"No se puede cambiar el avión: faltan {horasRestantes:F0}h. Se requieren al menos 48h de anticipación.");
+
+            var avion = await _adminVueloRepository.ObtenerAvionPorId(nuevoAvionId);
+            if (avion == null)
+                throw new ArgumentException("Avión no encontrado");
+
+            var boletosVendidos = await _adminVueloRepository.ObtenerBoletosVendidos(vueloId);
+            if (avion.CapacidadPasajeros < boletosVendidos)
+                throw new ArgumentException(
+                    $"El avión '{avion.Marca} {avion.Modelo}' tiene capacidad para {avion.CapacidadPasajeros} pasajeros, " +
+                    $"pero ya hay {boletosVendidos} boleto(s) vendido(s) en este vuelo.");
+
+            await _adminVueloRepository.CambiarAvionVuelo(vueloId, nuevoAvionId);
+        }
+
         public async Task<HashSet<int>> ObtenerAvionesOcupados(
             DateTime fecha, TimeSpan horaSalida, int aeropuertoOrigenId)
             => await _adminVueloRepository.ObtenerAvionesOcupados(fecha, horaSalida, aeropuertoOrigenId);

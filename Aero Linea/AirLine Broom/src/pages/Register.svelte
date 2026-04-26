@@ -484,7 +484,8 @@
       fechaNacimiento: registerData.fechaNacimiento,
       ciudad:          registerData.ciudad,
       pais:            registerData.pais,
-      nacionalidades:  nacionalidadesValidas
+      nacionalidades:  nacionalidadesValidas,
+      recibirOfertas:  receivePromotions
     };
 
     try {

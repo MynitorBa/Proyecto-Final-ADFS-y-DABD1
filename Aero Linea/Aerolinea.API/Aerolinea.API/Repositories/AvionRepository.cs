@@ -85,7 +85,7 @@ namespace Aerolinea.API.Repositories
 
             var query = @"
                 SELECT a.ID, a.Modelo, a.Marca, a.CapacidadPasajeros,
-                       ia.Imagen
+                       ia.Imagen, a.Activo
                 FROM Avion a
                 LEFT JOIN ImagenAvion ia ON ia.AvionID = a.ID
                 WHERE a.ID = @Id";
@@ -103,7 +103,8 @@ namespace Aerolinea.API.Repositories
                     Modelo = reader.GetString(1),
                     Marca = reader.GetString(2),
                     CapacidadPasajeros = reader.GetInt32(3),
-                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4)
+                    ImagenBase64 = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Activo = reader.GetBoolean(5)
                 };
             }
 

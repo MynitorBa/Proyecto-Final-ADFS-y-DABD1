@@ -211,6 +211,13 @@
     color: var(--text-muted);
 }
 
+/* Contenedor del widget reCAPTCHA, centrado con margen vertical */
+.login-form__captcha {
+    display: flex;
+    justify-content: center;
+    margin: 0.5rem 0 1rem;
+}
+
 /* Cuadro de error: fondo rojo claro con borde rojo y texto rojo */
 .login-form__error {
     background-color: #fff5f5;

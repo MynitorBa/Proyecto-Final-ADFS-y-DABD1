@@ -35,6 +35,7 @@ namespace Aerolinea.API.Services
                 Modelo = a.Modelo,
                 CapacidadPasajeros = a.CapacidadPasajeros,
                 NombreCompleto = $"{a.Marca} {a.Modelo}",
+                Activo = a.Activo,
                 ImagenBase64 = a.ImagenBase64
             }).ToList();
         }
@@ -57,6 +58,7 @@ namespace Aerolinea.API.Services
                 Modelo = avion.Modelo,
                 CapacidadPasajeros = avion.CapacidadPasajeros,
                 NombreCompleto = $"{avion.Marca} {avion.Modelo}",
+                Activo = avion.Activo,
                 ImagenBase64 = avion.ImagenBase64
             };
         }
@@ -92,6 +94,7 @@ namespace Aerolinea.API.Services
                 Modelo = avion.Modelo,
                 CapacidadPasajeros = avion.CapacidadPasajeros,
                 NombreCompleto = $"{avion.Marca} {avion.Modelo}",
+                Activo = avion.Activo,
                 ImagenBase64 = avion.ImagenBase64
             };
         }

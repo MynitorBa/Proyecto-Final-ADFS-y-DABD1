@@ -62,7 +62,17 @@ namespace Aerolinea.API.Services
             int origenId = await _aeropuertoRepository.ObtenerIdPorCiudad(ciudadOrigenId, connection);
             int destinoId = await _aeropuertoRepository.ObtenerIdPorCiudad(ciudadDestinoId, connection);
 
-            // 3. Buscar vuelos
+            // 3. Registrar búsqueda como tipo Agencia (ID=2)
+            await _vueloRepository.GuardarBusqueda(
+                origenId: origenId,
+                destinoId: destinoId,
+                fechaSalida: dto.Fecha,
+                cantidadPersonas: dto.CantidadPasajeros,
+                usuarioId: null,
+                tipoBusquedaId: 2
+            );
+
+            // 4. Buscar vuelos
             var interno = new BuscarVueloDTO
             {
                 OrigenId = origenId,
@@ -82,14 +92,14 @@ namespace Aerolinea.API.Services
                 interno.OrigenId, interno.DestinoId,
                 interno.Fecha, interno.CantidadPasajeros, interno.ClaseId);
 
-            // 4. Aplicar descuento a directos
+            // 5. Aplicar descuento a directos
             foreach (var vuelo in resultado)
             {
                 vuelo.PrecioTurista = AplicarDescuento(vuelo.PrecioTurista, factor);
                 vuelo.PrecioEjecutiva = AplicarDescuento(vuelo.PrecioEjecutiva, factor);
             }
 
-            // 5. Aplicar descuento a vuelos con escala
+            // 6. Aplicar descuento a vuelos con escala
             foreach (var escala in conEscala)
             {
                 escala.PrecioTuristaTotal = AplicarDescuento(escala.PrecioTuristaTotal, factor);

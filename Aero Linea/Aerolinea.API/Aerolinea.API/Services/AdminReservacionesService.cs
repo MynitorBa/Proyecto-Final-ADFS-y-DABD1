@@ -7,21 +7,24 @@ namespace Aerolinea.API.Services
 {
     public class AdminReservacionesService
     {
-        private readonly AdminReservacionesRepository      _repo;
-        private readonly AgenciaNotificadorExternoService  _notificadorAgencia;
-        private readonly EmailHelper                       _emailHelper;
+        private readonly AdminReservacionesRepository       _repo;
+        private readonly AgenciaNotificadorExternoService   _notificadorAgencia;
+        private readonly EmailHelper                        _emailHelper;
         private readonly ILogger<AdminReservacionesService> _logger;
+        private readonly LogReservacionRepository           _logRepo;
 
         public AdminReservacionesService(
-            AdminReservacionesRepository      repo,
-            AgenciaNotificadorExternoService  notificadorAgencia,
-            EmailHelper                       emailHelper,
-            ILogger<AdminReservacionesService> logger)
+            AdminReservacionesRepository       repo,
+            AgenciaNotificadorExternoService   notificadorAgencia,
+            EmailHelper                        emailHelper,
+            ILogger<AdminReservacionesService> logger,
+            LogReservacionRepository           logRepo)
         {
             _repo               = repo;
             _notificadorAgencia = notificadorAgencia;
             _emailHelper        = emailHelper;
             _logger             = logger;
+            _logRepo            = logRepo;
         }
 
         public Task<List<VueloResumenDto>> ObtenerVuelosConReservacionesAsync()
@@ -37,43 +40,77 @@ namespace Aerolinea.API.Services
             => _repo.ObtenerPorIdAsync(id);
 
         public async Task<(bool Ok, string Mensaje, ResultadoNotificacion? Agencia)> CancelarAsync(
-            int reservacionId, string motivo)
+            int reservacionId, string motivo, string? ip = null, string? userAgent = null)
         {
             if (string.IsNullOrWhiteSpace(motivo))
                 return (false, "El motivo de cancelacion es obligatorio.", null);
 
             var usuario = await _repo.ObtenerUsuarioPorReservacionAsync(reservacionId);
             if (usuario == null)
+            {
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminFallida,
+                    reservacionId, null, null, null, false, ip, userAgent,
+                    "Reservacion no encontrada");
                 return (false, "La reservacion no fue encontrada.", null);
+            }
 
             var detalle = await _repo.ObtenerPorIdAsync(reservacionId);
             if (detalle == null)
+            {
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminFallida,
+                    reservacionId, null, null, null, false, ip, userAgent,
+                    "Detalle de reservacion no encontrado");
                 return (false, "La reservacion no fue encontrada.", null);
+            }
 
-            // 1. Notificar a la agencia PRIMERO (antes de cancelar en nuestra BD)
-            //    Asi el detalle en la agencia todavia esta activo y puede cancelarse
-            var resultadoAgencia = await _notificadorAgencia.NotificarCancelacionAsync(
-                reservacionId, motivo.Trim());
-
-            // 2. Cancelar en nuestra BD: cambia estado, cancela boletos y devuelve disponibilidad
-            var cancelado = await _repo.CancelarAsync(reservacionId, motivo.Trim());
-            if (!cancelado)
-                return (false, "La reservacion ya esta cancelada o no existe.", resultadoAgencia);
-
-            // 3. Correo al usuario (best-effort)
             try
             {
-                await _emailHelper.Enviar(
-                    usuario.Email,
-                    $"Broom AirLine \u2013 Reservacion {detalle.NoReservacion} Cancelada",
-                    ConstruirCorreoCancelacion(usuario, detalle, motivo.Trim()));
+                // 1. Notificar a la agencia PRIMERO (antes de cancelar en nuestra BD)
+                var resultadoAgencia = await _notificadorAgencia.NotificarCancelacionAsync(
+                    reservacionId, motivo.Trim());
+
+                // 2. Cancelar en nuestra BD
+                var cancelado = await _repo.CancelarAsync(reservacionId, motivo.Trim());
+                if (!cancelado)
+                {
+                    await _logRepo.Registrar(
+                        LogReservacionRepository.TipoCancelacionAdminFallida,
+                        reservacionId, null, null, null, false, ip, userAgent,
+                        "La reservacion ya esta cancelada o no existe");
+                    return (false, "La reservacion ya esta cancelada o no existe.", resultadoAgencia);
+                }
+
+                // 3. Log de exito
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminExitosa,
+                    reservacionId, null, null, null, true, ip, userAgent,
+                    motivo.Trim());
+
+                // 4. Correo al usuario (best-effort)
+                try
+                {
+                    await _emailHelper.Enviar(
+                        usuario.Email,
+                        $"Broom AirLine \u2013 Reservacion {detalle.NoReservacion} Cancelada",
+                        ConstruirCorreoCancelacion(usuario, detalle, motivo.Trim()));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error correo cancelacion reservacion {Id}", reservacionId);
+                }
+
+                return (true, "Reservacion cancelada exitosamente.", resultadoAgencia);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error correo cancelacion reservacion {Id}", reservacionId);
+                await _logRepo.Registrar(
+                    LogReservacionRepository.TipoCancelacionAdminFallida,
+                    reservacionId, null, null, null, false, ip, userAgent,
+                    ex.Message);
+                throw;
             }
-
-            return (true, "Reservacion cancelada exitosamente.", resultadoAgencia);
         }
 
         private static string ConstruirCorreoCancelacion(

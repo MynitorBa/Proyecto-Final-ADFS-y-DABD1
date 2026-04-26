@@ -548,4 +548,5 @@
 .hf-empty__icon { font-size: 2rem; }
 .hf-empty__title { font-size: 1rem; font-weight: 700; color: #374151; margin: 0; }
 .hf-empty__sub   { font-size: 0.875rem; margin: 0; }
+
 </style>

@@ -41,6 +41,18 @@ namespace Aerolinea.API.Helpers
         }
 
         /// <summary>
+        /// Envia un correo electronico con cuerpo HTML a multiples destinatarios en un solo envio.
+        /// </summary>
+        public async Task EnviarAMultiples(IEnumerable<string> destinatarios, string asunto, string cuerpoHtml)
+        {
+            using var smtp = CrearCliente();
+            var mensaje = new MailMessage { From = new MailAddress(_cfg.SenderEmail), Subject = asunto, Body = cuerpoHtml, IsBodyHtml = true };
+            foreach (var d in destinatarios)
+                mensaje.To.Add(d);
+            await smtp.SendMailAsync(mensaje);
+        }
+
+        /// <summary>
         /// Envia un correo electronico con cuerpo HTML al destinatario e incluye una copia
         /// oculta (BCC) a la direccion indicada, si esta no esta vacia.
         /// </summary>
@@ -54,6 +66,25 @@ namespace Aerolinea.API.Helpers
             };
             if (!string.IsNullOrEmpty(copiaOculta))
                 mensaje.Bcc.Add(copiaOculta);
+            await smtp.SendMailAsync(mensaje);
+        }
+
+        /// <summary>
+        /// Envia un correo electronico con un archivo adjunto a multiples destinatarios.
+        /// </summary>
+        public async Task EnviarConAdjunto(
+            IEnumerable<string> destinatarios,
+            string asunto,
+            string cuerpoHtml,
+            byte[] adjunto,
+            string nombreArchivo,
+            string tipoMime = "application/octet-stream")
+        {
+            using var smtp = CrearCliente();
+            var mensaje = new MailMessage { From = new MailAddress(_cfg.SenderEmail), Subject = asunto, Body = cuerpoHtml, IsBodyHtml = true };
+            foreach (var d in destinatarios) mensaje.To.Add(d);
+            if (adjunto != null && adjunto.Length > 0)
+                mensaje.Attachments.Add(new Attachment(new MemoryStream(adjunto), nombreArchivo, tipoMime));
             await smtp.SendMailAsync(mensaje);
         }
 

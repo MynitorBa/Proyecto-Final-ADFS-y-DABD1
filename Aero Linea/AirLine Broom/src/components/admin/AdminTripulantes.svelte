@@ -30,7 +30,14 @@
   let mostrarInactivos = false;
 
   /** Lista filtrada de tripulantes segun el estado mostrarInactivos. @type {any[]} */
-  $: tripulantesFiltrados = mostrarInactivos ? tripulantes : tripulantes.filter(t => t.activo !== false);
+  $: tripulantesFiltrados = mostrarInactivos
+    ? tripulantes.filter(t => t.activo === false)
+    : tripulantes.filter(t => t.activo !== false);
+
+  /** Conteo de tripulantes activos. @type {number} */
+  $: totalActivos   = tripulantes.filter(t => t.activo !== false).length;
+  /** Conteo de tripulantes inactivos. @type {number} */
+  $: totalInactivos = tripulantes.filter(t => t.activo === false).length;
 
   /** Roles de tripulacion disponibles obtenidos del backend, mapeados a { id, nombre }. @type {{ id: number, nombre: string }[]} */
   let rolesTripulacion   = [];
@@ -74,7 +81,8 @@
   async function cargarTripulantes() {
     loadingTripulantes = true;
     try {
-      const r = await fetch(`${API}/api/tripulacion?incluirInactivos=${mostrarInactivos}`);
+      // Siempre cargamos todos para poder mostrar conteos en ambas pestanas
+      const r = await fetch(`${API}/api/tripulacion?incluirInactivos=true`);
       if (r.ok) tripulantes = await r.json();
       else mostrarToast('error', 'Error al cargar tripulantes');
     } catch { mostrarToast('error', 'Error de conexion al cargar tripulantes'); }
@@ -208,6 +216,10 @@
   let cargandoVuelosModal      = false;
   /** Indica si se esta ejecutando la desactivacion. @type {boolean} */
   let desactivando             = false;
+  /** Indica si el auto-relleno esta guardando en base de datos (overlay bloqueante). @type {boolean} */
+  let autoRellenandoDB         = false;
+  /** Indica si el auto-relleno ya completo la seleccion en la UI. @type {boolean} */
+  let autoRellenadoListo       = false;
 
   // ── Estado de reemplazos por vuelo ───────────────────────────────────────
   /**
@@ -250,9 +262,28 @@
     return pilotos >= 1 && copilotos >= 1 && auxiliares >= 3;
   }
 
+  /**
+   * Mapa reactivo de composiciones por vuelo.
+   * El calculo esta inlineado (no en funcion) para que Svelte detecte todas
+   * las dependencias: reemplazosSeleccionados, equiposVuelo, tripulantes,
+   * tripulanteDesactivar, rolIdPiloto, rolIdCopiloto.
+   */
+  $: composicionesVuelos = Object.fromEntries(
+    vuelosLejanos.map(v => {
+      const equipoActual = (equiposVuelo[v.id] ?? []).filter(t => t.id !== tripulanteDesactivar?.id);
+      const idsReemplazo = reemplazosSeleccionados[v.id] ?? [];
+      const nuevos       = tripulantes.filter(t => idsReemplazo.includes(t.id));
+      const equipoFinal  = [...equipoActual, ...nuevos];
+      const pilotos      = equipoFinal.filter(t => t.rolID === rolIdPiloto).length;
+      const copilotos    = equipoFinal.filter(t => t.rolID === rolIdCopiloto).length;
+      const auxiliares   = equipoFinal.filter(t => t.rolID !== rolIdPiloto && t.rolID !== rolIdCopiloto).length;
+      return [v.id, { pilotos, copilotos, auxiliares, valido: pilotos >= 1 && copilotos >= 1 && auxiliares >= 3 }];
+    })
+  );
+
   /** Verdadero cuando todos los vuelos lejanos tienen composicion valida. */
   $: todosVuelosValidos = vuelosLejanos.length > 0 &&
-    vuelosLejanos.every(v => vueloTieneComposicionValida(v.id));
+    Object.values(composicionesVuelos).every(c => c.valido);
 
   /**
    * Devuelve el resumen de composicion de un vuelo (tras quitar al saliente y agregar reemplazos).
@@ -316,6 +347,7 @@
     vuelosLejanos           = [];
     equiposVuelo            = {};
     reemplazosSeleccionados = {};
+    autoRellenadoListo      = false;
     cargandoVuelosModal     = true;
     mostrarModalDesact      = true;
 
@@ -339,6 +371,59 @@
       }
     } catch { /* silencioso — modal sigue abierto */ }
     finally { cargandoVuelosModal = false; }
+  }
+
+  /**
+   * Auto-rellena los reemplazos en la UI para todos los vuelos lejanos.
+   * Solo actualiza el estado local; la escritura en base de datos ocurre
+   * al presionar "Confirmar desactivacion".
+   */
+  function autorellenarReemplazos() {
+    const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+    const nuevoMapa = {};
+
+    for (const vuelo of vuelosLejanos) {
+      const equipoActual = (equiposVuelo[vuelo.id] ?? []).filter(t => t.id !== tripulanteDesactivar?.id);
+      const idsEquipo    = new Set(equipoActual.map(t => t.id));
+
+      const pilotos_eq    = equipoActual.filter(t => t.rolID === rolIdPiloto).length;
+      const copilotos_eq  = equipoActual.filter(t => t.rolID === rolIdCopiloto).length;
+      const auxiliares_eq = equipoActual.filter(t => t.rolID !== rolIdPiloto && t.rolID !== rolIdCopiloto).length;
+
+      const necesitaPiloto   = pilotos_eq < 1;
+      const necesitaCopiloto = copilotos_eq < 1;
+      const necesitaAux      = Math.max(0, 3 - auxiliares_eq);
+
+      const disponibles = tripulantes.filter(t =>
+        t.activo !== false &&
+        t.id !== tripulanteDesactivar?.id &&
+        !idsEquipo.has(t.id)
+      );
+
+      const seleccion = [];
+      const usados    = new Set();
+
+      function elegirRol(rolId) {
+        const cands = disponibles.filter(t => t.rolID === rolId && !usados.has(t.id));
+        if (cands.length === 0) return false;
+        const elegido = rand(cands);
+        seleccion.push(elegido.id);
+        usados.add(elegido.id);
+        return true;
+      }
+
+      if (necesitaPiloto)   elegirRol(rolIdPiloto);
+      if (necesitaCopiloto) elegirRol(rolIdCopiloto);
+      for (let k = 0; k < necesitaAux; k++) {
+        const cands = disponibles.filter(t => t.rolID !== rolIdPiloto && t.rolID !== rolIdCopiloto && !usados.has(t.id));
+        if (cands.length > 0) { const e = rand(cands); seleccion.push(e.id); usados.add(e.id); }
+      }
+
+      nuevoMapa[vuelo.id] = seleccion;
+    }
+
+    reemplazosSeleccionados = nuevoMapa;
+    autoRellenadoListo      = true;
   }
 
   /**
@@ -388,13 +473,18 @@
     </button>
   </div>
 
-  <!-- Barra de filtro para mostrar tripulantes inactivos -->
+  <!-- Barra de filtro para alternar entre activos e inactivos -->
   <div class="admin-filter-bar">
-    <label class="filter-toggle">
-      <input type="checkbox" bind:checked={mostrarInactivos}
-        on:change={cargarTripulantes}>
-      Mostrar tripulantes inactivos
-    </label>
+    <div class="filtro-tabs">
+      <button class="filtro-tab" class:filtro-tab--active={!mostrarInactivos}
+        on:click={() => { mostrarInactivos = false; }}>
+        Activos <span class="filtro-tab__count">{totalActivos}</span>
+      </button>
+      <button class="filtro-tab" class:filtro-tab--active={mostrarInactivos}
+        on:click={() => { mostrarInactivos = true; }}>
+        Inactivos <span class="filtro-tab__count">{totalInactivos}</span>
+      </button>
+    </div>
   </div>
 
   <!-- Tabla de tripulantes con foto, nombre, apellido y rol -->
@@ -530,6 +620,20 @@
 {#if mostrarModalDesact}
   <div class="modal-overlay" role="dialog" aria-modal="true">
     <div class="modal modal--desact" on:click|stopPropagation>
+
+      <!-- Overlay bloqueante durante la confirmacion de desactivacion -->
+      {#if desactivando}
+        <div class="autofill-overlay" role="status" aria-live="assertive">
+          <div class="autofill-overlay__box">
+            <div class="autofill-spinner"></div>
+            <p class="autofill-overlay__title">Desactivando tripulante…</p>
+            <p class="autofill-overlay__sub">
+              Guardando reemplazos y notificando pasajeros.<br>
+              Por favor no cierres esta ventana.
+            </p>
+          </div>
+        </div>
+      {/if}
       <div class="modal__header modal__header--warning">
         <h3 class="modal__title">Desactivar Tripulante</h3>
         <button class="modal__close" on:click={() => mostrarModalDesact = false} disabled={desactivando}>×</button>
@@ -581,14 +685,14 @@
 
             <!-- ── SELECTOR DE REEMPLAZOS POR VUELO ── -->
             {#each vuelosLejanos as vuelo}
-              {@const composicion = resumenComposicion(vuelo.id)}
-              <div class="vuelo-reemplazo-card" class:vuelo-reemplazo-card--ok={composicion.valido} class:vuelo-reemplazo-card--err={!composicion.valido}>
+              <div class="vuelo-reemplazo-card" class:vuelo-reemplazo-card--ok={(composicionesVuelos[vuelo.id] ?? {valido:false}).valido} class:vuelo-reemplazo-card--err={!(composicionesVuelos[vuelo.id] ?? {valido:false}).valido}>
                 <!-- Cabecera del vuelo -->
                 <div class="vrc-header">
                   <span class="vuelo-num">{vuelo.numeroVuelo}</span>
                   <span class="vuelo-ruta">{vuelo.origen} → {vuelo.destino}</span>
                   <span class="vuelo-fecha">{vuelo.fecha} {vuelo.horaSalida}</span>
-                  {#if composicion.valido}
+                  {#if vuelo.avionNombre}<span class="vuelo-avion">&#9992; {vuelo.avionNombre}</span>{/if}
+                  {#if (composicionesVuelos[vuelo.id] ?? {}).valido}
                     <span class="vrc-badge vrc-badge--ok">Listo</span>
                   {:else}
                     <span class="vrc-badge vrc-badge--err">Incompleto</span>
@@ -597,16 +701,29 @@
 
                 <!-- Composicion actual -->
                 <div class="vrc-composicion">
-                  <span class:comp-ok={composicion.pilotos >= 1} class:comp-err={composicion.pilotos < 1}>
-                    Pilotos: {composicion.pilotos}/1
+                  <span class:comp-ok={(composicionesVuelos[vuelo.id]?.pilotos ?? 0) >= 1} class:comp-err={(composicionesVuelos[vuelo.id]?.pilotos ?? 0) < 1}>
+                    Pilotos: {composicionesVuelos[vuelo.id]?.pilotos ?? 0}/1
                   </span>
-                  <span class:comp-ok={composicion.copilotos >= 1} class:comp-err={composicion.copilotos < 1}>
-                    Copilotos: {composicion.copilotos}/1
+                  <span class:comp-ok={(composicionesVuelos[vuelo.id]?.copilotos ?? 0) >= 1} class:comp-err={(composicionesVuelos[vuelo.id]?.copilotos ?? 0) < 1}>
+                    Copilotos: {composicionesVuelos[vuelo.id]?.copilotos ?? 0}/1
                   </span>
-                  <span class:comp-ok={composicion.auxiliares >= 3} class:comp-err={composicion.auxiliares < 3}>
-                    Auxiliares: {composicion.auxiliares}/3
+                  <span class:comp-ok={(composicionesVuelos[vuelo.id]?.auxiliares ?? 0) >= 3} class:comp-err={(composicionesVuelos[vuelo.id]?.auxiliares ?? 0) < 3}>
+                    Auxiliares: {composicionesVuelos[vuelo.id]?.auxiliares ?? 0}/3
                   </span>
                 </div>
+
+                <!-- Tripulantes que YA estaban en el vuelo (excepto el que se desactiva) -->
+                {#if (equiposVuelo[vuelo.id] ?? []).filter(e => e.id !== tripulanteDesactivar?.id).length > 0}
+                  <p class="vrc-sublabel vrc-sublabel--ya">Ya asignados al vuelo:</p>
+                  <div class="vrc-tripulantes-grid vrc-tripulantes-grid--ya">
+                    {#each (equiposVuelo[vuelo.id] ?? []).filter(e => e.id !== tripulanteDesactivar?.id) as e}
+                      <div class="vrc-trip-ya">
+                        <span class="vrc-trip-nombre">{e.nombre} {e.apellido}</span>
+                        <span class="vrc-trip-rol">{e.nombreRol}</span>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
 
                 <!-- Selector de reemplazos (tripulantes activos disponibles, excluye al saliente y a los ya en el vuelo) -->
                 <p class="vrc-sublabel">Selecciona reemplazos para este vuelo:</p>
@@ -622,7 +739,7 @@
                       <span class="vrc-trip-rol">{t.nombreRol}</span>
                     </button>
                   {/each}
-                  {#if tripulantes.filter(t => t.id !== tripulanteDesactivar?.id && !(equiposVuelo[vuelo.id] ?? []).some(e => e.id === t.id)).length === 0}
+                  {#if tripulantes.filter(t => t.activo !== false && t.id !== tripulanteDesactivar?.id && !(equiposVuelo[vuelo.id] ?? []).some(e => e.id === t.id)).length === 0}
                     <p class="vrc-sin-disponibles">No hay tripulantes disponibles para asignar.</p>
                   {/if}
                 </div>
@@ -639,17 +756,27 @@
           {/if}
 
           <div class="modal__actions">
+            {#if vuelosLejanos.length > 0}
+              <button
+                type="button"
+                class="btn-autorellenar"
+                class:btn-autorellenar--listo={autoRellenadoListo}
+                on:click={autorellenarReemplazos}
+                disabled={desactivando || autoRellenadoListo}
+                title={autoRellenadoListo ? 'Sustitutos ya asignados — confirma para guardar' : 'Selecciona sustitutos aleatorios para todos los vuelos'}>
+                {#if autoRellenadoListo}
+                  &#10003; Sustitutos asignados
+                {:else}
+                  &#9881; Auto-rellenar sustitutos
+                {/if}
+              </button>
+            {/if}
             <button
               class="btn-danger"
+              class:btn-danger--destacado={autoRellenadoListo && todosVuelosValidos}
               on:click={confirmarDesactivarTripulante}
               disabled={desactivando || (vuelosLejanos.length > 0 && !todosVuelosValidos)}>
-              {#if desactivando}
-                Desactivando...
-              {:else if vuelosLejanos.length > 0 && !todosVuelosValidos}
-                Completa los reemplazos para continuar
-              {:else}
-                Confirmar desactivacion
-              {/if}
+              {desactivando ? 'Guardando en base de datos...' : 'Confirmar desactivacion'}
             </button>
             <button class="btn-secondary" on:click={() => mostrarModalDesact = false} disabled={desactivando}>Cancelar</button>
           </div>
@@ -661,8 +788,13 @@
 
 <style>
   .admin-filter-bar { margin-bottom: 1rem; }
-  .filter-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555; }
-  .filter-toggle input { cursor: pointer; }
+  .filtro-tabs { display: flex; gap: 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; width: fit-content; }
+  .filtro-tab { display: flex; align-items: center; gap: 0.45rem; padding: 0.4rem 1.1rem; font-size: 0.875rem; font-weight: 600; border: none; background: #f9fafb; color: #6b7280; cursor: pointer; transition: all 0.18s; }
+  .filtro-tab:hover:not(.filtro-tab--active) { background: #f3f4f6; color: #374151; }
+  .filtro-tab--active { background: #1C1A18; color: #D4AF37; }
+  .filtro-tab__count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; padding: 0 0.35rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+  .filtro-tab--active .filtro-tab__count { background: rgba(212,175,55,0.25); color: #D4AF37; }
+  .filtro-tab:not(.filtro-tab--active) .filtro-tab__count { background: #e5e7eb; color: #374151; }
   .btn-estado { padding: 0.35rem 0.75rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
   .btn-desactivar { background: #fff3cd; color: #856404; }
   .btn-desactivar:hover { background: #ffc107; color: #000; }
@@ -687,11 +819,18 @@
   .vuelo-num   { font-weight: 700; min-width: 70px; }
   .vuelo-ruta  { color: #374151; }
   .vuelo-fecha { color: #6b7280; font-size: 0.75rem; }
+  .vuelo-avion { color: #8B6B4A; font-size: 0.75rem; font-style: italic; }
   .vuelo-horas { margin-left: auto; font-weight: 600; color: #dc2626; font-size: 0.75rem; }
   .desact-ok   { color: #166534; background: #dcfce7; border: 1px solid #86efac; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.875rem; margin-bottom: 1.25rem; }
   .btn-danger  { padding: 0.55rem 1.25rem; background: #dc2626; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
   .btn-danger:hover:not(:disabled) { background: #b91c1c; }
   .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-autorellenar { padding: 0.5rem 1rem; background: #D4AF37; color: #1C1A18; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+  .btn-autorellenar:hover:not(:disabled) { background: #b8962e; }
+  .btn-autorellenar:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-autorellenar--listo { background: #d1fae5; color: #065f46; border: 1.5px solid #6ee7b7; opacity: 1 !important; }
+  .btn-danger--destacado { background: #b91c1c; box-shadow: 0 0 0 3px rgba(220,38,38,0.25); animation: pulsar 1.4s ease-in-out infinite; }
+  @keyframes pulsar { 0%,100% { box-shadow: 0 0 0 3px rgba(220,38,38,0.25); } 50% { box-shadow: 0 0 0 6px rgba(220,38,38,0.08); } }
 
   /* ── Cuotas de composicion ── */
   .cuota-badge { display: inline-block; background: #1C1A18; color: #F2EFEA; font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; margin: 0 0.15rem; }
@@ -711,6 +850,11 @@
   .comp-err { color: #dc2626; }
 
   .vrc-sublabel { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .vrc-sublabel--ya { color: #1d6a3a; margin-top: 0.25rem; }
+
+  /* Grid de tripulantes ya asignados */
+  .vrc-tripulantes-grid--ya { max-height: none; margin-bottom: 0.85rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 7px; padding: 0.4rem; }
+  .vrc-trip-ya { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; padding: 0.4rem 0.65rem; border: 1.5px solid #bbf7d0; border-radius: 7px; background: #dcfce7; font-size: 0.8rem; }
 
   /* Grid de tripulantes disponibles */
   .vrc-tripulantes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.4rem; max-height: 180px; overflow-y: auto; }
@@ -723,4 +867,29 @@
 
   /* Nota de correos */
   .desact-nota-correo { font-size: 0.8rem; color: #6b7280; background: #f3f4f6; border-radius: 6px; padding: 0.6rem 0.85rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+
+  /* ── Overlay bloqueante del auto-relleno ── */
+  .autofill-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(28, 26, 24, 0.82);
+    backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .autofill-overlay__box {
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    background: #fff; border-radius: 12px;
+    padding: 2rem 2.5rem; max-width: 320px; width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    text-align: center;
+  }
+  .autofill-spinner {
+    width: 44px; height: 44px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #D4AF37;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .autofill-overlay__title { font-size: 1rem; font-weight: 700; color: #1C1A18; margin: 0; }
+  .autofill-overlay__sub   { font-size: 0.8rem; color: #6b7280; margin: 0; line-height: 1.5; }
 </style>

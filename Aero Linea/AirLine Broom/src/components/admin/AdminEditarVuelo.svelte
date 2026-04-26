@@ -305,6 +305,41 @@
     finally { guardando = false; }
   }
 
+  /**
+   * Auto-rellena la tripulacion con tripulantes disponibles (no ocupados en esta fecha/hora).
+   * Selecciona aleatoriamente 1 piloto, 1 copiloto y 3 auxiliares de entre los disponibles.
+   * Si no hay suficientes para algún rol, muestra error y no modifica la seleccion.
+   */
+  function autorellenarTripulantes() {
+    const disponibles = tripulacion.filter(t =>
+      t.activo !== false &&
+      !tripulantesOcupadosIds.has(t.id)
+    );
+    const pilotos_d    = disponibles.filter(t => t.rolID === 1);
+    const copilotos_d  = disponibles.filter(t => t.rolID === 2);
+    const auxiliares_d = disponibles.filter(t => t.rolID === 3);
+
+    if (pilotos_d.length < 1)    { mostrarToast('error', 'No hay pilotos disponibles para esta fecha'); return; }
+    if (copilotos_d.length < 1)  { mostrarToast('error', 'No hay copilotos disponibles para esta fecha'); return; }
+    if (auxiliares_d.length < 3) { mostrarToast('error', `No hay suficientes auxiliares disponibles (${auxiliares_d.length}/3)`); return; }
+
+    const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+    const piloto   = rand(pilotos_d);
+    const copiloto = rand(copilotos_d);
+    const pool  = auxiliares_d.filter(a => a.id !== piloto.id && a.id !== copiloto.id);
+    const auxSels = [];
+    const usados  = new Set();
+    while (auxSels.length < 3 && pool.length > 0) {
+      const a = rand(pool);
+      if (!usados.has(a.id)) { usados.add(a.id); auxSels.push(a); }
+      if (usados.size >= pool.length) break;
+    }
+    if (auxSels.length < 3) { mostrarToast('error', 'No hay suficientes auxiliares distintos disponibles'); return; }
+
+    form.tripulantesSeleccionados = [piloto, copiloto, ...auxSels];
+    mostrarToast('success', 'Tripulacion autocompletada: 1P · 1C · 3A');
+  }
+
   /** Cierra el modal al hacer click en el overlay (fuera del dialogo). */
   function handleOverlayClick(e) {
     if (e.target === e.currentTarget) onClose();
@@ -491,7 +526,17 @@
         <div class="admin-form__group">
           <h3 class="admin-form__group-title">Tripulacion</h3>
           <div class="admin-form__field admin-form__field--full">
-            <label for="ev-trip" class="admin-form__label">Agregar Tripulantes</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+              <label for="ev-trip" class="admin-form__label" style="margin-bottom:0">Agregar Tripulantes</label>
+              {#if !bloqueadoPorTiempo}
+                <button type="button"
+                  style="padding:.35rem .85rem;font-size:.8rem;font-weight:600;background:#D4AF37;color:#1C1A18;border:none;border-radius:6px;cursor:pointer;"
+                  on:click={autorellenarTripulantes}
+                  title="Auto-rellena con 1 piloto, 1 copiloto y 3 auxiliares disponibles">
+                  &#9881; Auto-rellenar Tripulacion
+                </button>
+              {/if}
+            </div>
             {#if tripulantesOcupadosIds.size > 0}
               <small class="disponibilidad-hint disponibilidad-hint--warn">
                 {tripulantesOcupadosIds.size} tripulante(s) ya asignado(s) a otro vuelo y no aparecen en la lista

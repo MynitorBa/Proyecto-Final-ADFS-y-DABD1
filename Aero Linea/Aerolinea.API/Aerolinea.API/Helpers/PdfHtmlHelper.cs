@@ -128,88 +128,102 @@ namespace Aerolinea.API.Helpers
 
             return $@"<!DOCTYPE html>
 <html>
-<head><meta charset='UTF-8'></head>
-<body style='margin:0;padding:0;font-family:Segoe UI,Roboto,Arial,sans-serif;font-size:8pt;color:#1C1A18;height:209mm'>
+<head>
+<meta charset='UTF-8'>
+<style>
+  @page {{ size: A4; margin: 0; }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; font-size: 8pt; color: #1C1A18; background: #fff; }}
+  .page-header {{ background: #1C1A18; padding: 14px 22px 10px; }}
+  .page-header-inner {{ width: 100%; border-collapse: collapse; }}
+  .brand {{ font-size: 22pt; font-weight: 800; letter-spacing: 2px; color: #F2EFEA; white-space: nowrap; }}
+  .brand-sub {{ font-size: 6.5pt; color: #B89A7A; margin-top: 1px; }}
+  .res-badge {{ display: inline-block; border: 1px solid #8B6B4A; color: #D4A056; padding: 2px 10px; font-size: 7pt; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }}
+  .res-num {{ font-size: 12pt; font-weight: 700; color: #F2EFEA; margin-top: 5px; }}
+  .res-estado {{ font-size: 8pt; font-weight: 700; color: {ec}; margin-top: 2px; }}
+  .stripe {{ background: #8B6B4A; height: 3px; font-size: 0; line-height: 0; }}
+  .content {{ padding: 12px 22px 18px; }}
+  .main-table {{ width: 100%; border-collapse: collapse; border: 1px solid #D8D1C5; page-break-inside: auto; }}
+  .main-table tr {{ page-break-inside: avoid; page-break-after: auto; }}
+  .section-header td {{ background: #8B6B4A; color: #F2EFEA; padding: 7px 14px; font-size: 8pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; page-break-after: avoid; }}
+  .boleto-row {{ page-break-inside: avoid; }}
+  .footer {{ background: #1C1A18; padding: 10px 22px; }}
+  .footer-inner {{ width: 100%; border-collapse: collapse; }}
+  @media print {{
+    body {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+    .page-header {{ position: running(header); }}
+    .no-break {{ page-break-inside: avoid; }}
+  }}
+</style>
+</head>
+<body>
 
-<table style='width:100%;height:209mm;border-collapse:collapse'>
+<div class='page-header'>
+  <table class='page-header-inner'>
+    <tr>
+      <td style='vertical-align:top'>
+        <div class='brand'>BROOM AIRLINE</div>
+        <div class='brand-sub'>Aerolinea &middot; Guatemala City &middot; distribuidorapine@gmail.com</div>
+      </td>
+      <td style='vertical-align:top;text-align:right'>
+        <div class='res-badge'>Comprobante</div>
+        <div class='res-num'>{E(reservacion.NoReservacion)}</div>
+        <div class='res-estado'>&#9679; {eu}</div>
+      </td>
+    </tr>
+  </table>
+</div>
+<div class='stripe'>&nbsp;</div>
 
-  <tr>
-    <td style='background:#1C1A18;padding:14px 22px 10px;height:1px'>
-      <table style='width:100%;border-collapse:collapse'>
-        <tr>
-          <td style='vertical-align:top'>
-            <div style='font-size:22pt;font-weight:800;letter-spacing:2px;color:#F2EFEA;white-space:nowrap'>BROOM AIRLINE</div>
-            <div style='font-size:6.5pt;color:#B89A7A;margin-top:1px'>Aerolinea &middot; Guatemala City &middot; distribuidorapine@gmail.com</div>
-          </td>
-          <td style='vertical-align:top;text-align:right'>
-            <div style='display:inline-block;border:1px solid #8B6B4A;color:#D4A056;padding:2px 10px;font-size:7pt;font-weight:700;text-transform:uppercase;letter-spacing:2px'>Comprobante</div>
-            <div style='font-size:12pt;font-weight:700;color:#F2EFEA;margin-top:5px'>{E(reservacion.NoReservacion)}</div>
-            <div style='font-size:8pt;font-weight:700;color:{ec};margin-top:2px'>&#9679; {eu}</div>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-  <tr><td style='background:#8B6B4A;height:3px;font-size:0;line-height:0'>&nbsp;</td></tr>
+<div class='content'>
+  <table class='main-table'>
+    <tr class='no-break'><td colspan='10' style='{SEC}'>Datos de la Reservacion</td></tr>
+    <tr class='no-break'>
+      <td style='{IL}'>Nro. Reservacion</td><td colspan='4' style='{IV}'>{E(reservacion.NoReservacion)}</td>
+      <td style='{IL}'>Avion</td><td colspan='4' style='{IV}'>{Nn(avion)}</td>
+    </tr>
+    <tr class='no-break'>
+      <td style='{IL}'>Pasajero</td><td colspan='4' style='{IV}'>{E(reservacion.UsuarioNombre)}</td>
+      <td style='{IL}'>Email</td><td colspan='4' style='{IV}'>{E(reservacion.UsuarioEmail)}</td>
+    </tr>
+    <tr class='no-break'>
+      <td style='{IL}'>Fecha Emision</td><td colspan='4' style='{IV}'>{reservacion.FechaCreacion:yyyy-MM-dd HH:mm}</td>
+      <td style='{IL}'>Estado</td><td colspan='4' style='{IV};font-weight:700;color:{ec}'>{eu}</td>
+    </tr>
+    <tr class='no-break'><td colspan='10' style='{SEC}'>Detalle de Boletos</td></tr>
+    <tr class='no-break'>
+      <th style='{THC}'>#</th><th style='{TH}'>Nro. Boleto</th><th style='{TH}'>Vuelo</th>
+      <th style='{THC}'>Asiento</th><th style='{TH}'>Ruta</th><th style='{THC}'>Clase</th>
+      <th style='{THC}'>Fecha</th><th style='{THC}'>Horario</th><th style='{THC}'>Duracion</th><th style='{THC}'>Subtotal</th>
+    </tr>
+    {filas}
+    {subs}
+    <tr class='no-break'>
+      <td colspan='9' style='background:#3A3531;color:#F2EFEA;padding:8px 14px;font-size:9pt;font-weight:700'>TOTAL RESERVACION</td>
+      <td style='background:#3A3531;color:#F2EFEA;padding:8px 14px;font-size:9pt;font-weight:800;text-align:right'>$ {reservacion.Total:N2}</td>
+    </tr>
+    {paxHtml}
+    {facHtml}
+    <tr class='no-break'><td colspan='10' style='background:#F7F4EF;padding:5px 14px;font-size:7pt;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.5px'>Terminos y Condiciones</td></tr>
+    <tr class='no-break'><td colspan='10' style='padding:7px 14px;font-size:7pt;color:#5a5249;line-height:1.65'>
+      1. Este comprobante es valido unicamente para los vuelos indicados.<br>
+      2. Presentar pasaporte vigente al momento del check-in.<br>
+      3. Abordaje cierra 30 minutos antes de la hora de salida.<br>
+      4. Cancelaciones estan sujetas a la politica vigente de Broom AirLine.<br>
+      5. Este documento es comprobante oficial de reservacion.
+    </td></tr>
+  </table>
+</div>
 
-  <tr>
-    <td style='padding:12px 22px 6px;vertical-align:top;height:1px'>
-      <table style='width:100%;border-collapse:collapse;border:1px solid #D8D1C5'>
-        <tr><td colspan='10' style='{SEC}'>Datos de la Reservacion</td></tr>
-        <tr>
-          <td style='{IL}'>Nro. Reservacion</td><td colspan='4' style='{IV}'>{E(reservacion.NoReservacion)}</td>
-          <td style='{IL}'>Avion</td><td colspan='4' style='{IV}'>{Nn(avion)}</td>
-        </tr>
-        <tr>
-          <td style='{IL}'>Pasajero</td><td colspan='4' style='{IV}'>{E(reservacion.UsuarioNombre)}</td>
-          <td style='{IL}'>Email</td><td colspan='4' style='{IV}'>{E(reservacion.UsuarioEmail)}</td>
-        </tr>
-        <tr>
-          <td style='{IL}'>Fecha Emision</td><td colspan='4' style='{IV}'>{reservacion.FechaCreacion:yyyy-MM-dd HH:mm}</td>
-          <td style='{IL}'>Estado</td><td colspan='4' style='{IV};font-weight:700;color:{ec}'>{eu}</td>
-        </tr>
-        <tr><td colspan='10' style='{SEC}'>Detalle de Boletos</td></tr>
-        <tr>
-          <th style='{THC}'>#</th><th style='{TH}'>Nro. Boleto</th><th style='{TH}'>Vuelo</th>
-          <th style='{THC}'>Asiento</th><th style='{TH}'>Ruta</th><th style='{THC}'>Clase</th>
-          <th style='{THC}'>Fecha</th><th style='{THC}'>Horario</th><th style='{THC}'>Duracion</th><th style='{THC}'>Subtotal</th>
-        </tr>
-        {filas}
-        {subs}
-        <tr>
-          <td colspan='9' style='background:#3A3531;color:#F2EFEA;padding:8px 14px;font-size:9pt;font-weight:700'>TOTAL RESERVACION</td>
-          <td style='background:#3A3531;color:#F2EFEA;padding:8px 14px;font-size:9pt;font-weight:800;text-align:right'>$ {reservacion.Total:N2}</td>
-        </tr>
-        {paxHtml}
-        {facHtml}
-        <tr><td colspan='10' style='background:#F7F4EF;padding:5px 14px;font-size:7pt;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:0.5px'>Terminos y Condiciones</td></tr>
-        <tr><td colspan='10' style='padding:7px 14px;font-size:7pt;color:#5a5249;line-height:1.65'>
-          1. Este comprobante es valido unicamente para los vuelos indicados.<br>
-          2. Presentar pasaporte vigente al momento del check-in.<br>
-          3. Abordaje cierra 30 minutos antes de la hora de salida.<br>
-          4. Cancelaciones estan sujetas a la politica vigente de Broom AirLine.<br>
-          5. Este documento es comprobante oficial de reservacion.
-        </td></tr>
-      </table>
-    </td>
-  </tr>
-
-  <!-- SPACER: llena todo el espacio restante -->
-  <tr><td style='height:100%;font-size:0'>&nbsp;</td></tr>
-
-  <tr><td style='background:#8B6B4A;height:3px;font-size:0;line-height:0'>&nbsp;</td></tr>
-  <tr>
-    <td style='background:#1C1A18;padding:10px 22px;height:1px'>
-      <table style='width:100%;border-collapse:collapse'>
-        <tr>
-          <td style='font-size:6.5pt;color:#B89A7A'>BROOM AIRLINE &middot; distribuidorapine@gmail.com &middot; Guatemala City, Guatemala</td>
-          <td style='font-size:6.5pt;color:#B89A7A;text-align:right'>Comprobante oficial de reservacion</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-
-</table>
+<div class='stripe'>&nbsp;</div>
+<div class='footer'>
+  <table class='footer-inner'>
+    <tr>
+      <td style='font-size:6.5pt;color:#B89A7A'>BROOM AIRLINE &middot; distribuidorapine@gmail.com &middot; Guatemala City, Guatemala</td>
+      <td style='font-size:6.5pt;color:#B89A7A;text-align:right'>Comprobante oficial de reservacion</td>
+    </tr>
+  </table>
+</div>
 
 </body>
 </html>";

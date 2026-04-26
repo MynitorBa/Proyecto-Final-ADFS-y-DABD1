@@ -133,41 +133,162 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        // GET api/metricas/negocio?fechaDesde=&fechaHasta=
+        /// <summary>
+        /// Retorna los 5 graficos de analisis de negocio: embudo de conversion, rendimiento de rutas,
+        /// analisis de cancelaciones, tendencia mensual de ingresos por clase y mapa de calor de
+        /// ocupacion por dia y hora. Solo accesible para administradores.
+        /// </summary>
+        [HttpGet("negocio")]
+        public async Task<IActionResult> ObtenerNegocio(
+            [FromQuery] string? fechaDesde,
+            [FromQuery] string? fechaHasta)
+        {
+            try
+            {
+                var resultado = await _service.ObtenerNegocio(fechaDesde, fechaHasta);
+                return Ok(resultado);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener análisis de negocio: " + ex.Message });
+            }
+        }
+
         // POST api/metricas/exportar-correo
         /// <summary>
         /// Genera un reporte HTML con todos los registros de busqueda segun los filtros indicados
         /// y lo envia por correo electronico a la direccion especificada. No aplica paginacion
         /// al exportar, incluye hasta 9999 registros.
         /// </summary>
+        // POST api/metricas/exportar-correo — envía Excel como adjunto por correo
         [HttpPost("exportar-correo")]
         public async Task<IActionResult> ExportarPorCorreo([FromBody] ExportarMetricasDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Correo) || !dto.Correo.Contains("@"))
-                return BadRequest(new { message = "Correo inválido" });
+            var correosValidos = (dto.Correos ?? new())
+                .Select(c => c.Trim())
+                .Where(c => !string.IsNullOrWhiteSpace(c) && c.Contains("@"))
+                .Distinct().ToList();
+
+            if (correosValidos.Count == 0)
+                return BadRequest(new { message = "Debe indicar al menos un correo válido" });
 
             try
             {
-                // Obtener todo el listado sin paginado
-                var filtro = new MetricasFiltroDTO
+                var sec = dto.Secciones ?? new ExportSecciones();
+                string periodo = $"{dto.FechaDesde ?? "inicio"} → {dto.FechaHasta ?? "hoy"}";
+
+                MetricasResumenDTO? resumen = sec.NecesitaResumen
+                    ? await _service.ObtenerResumen(dto.FechaDesde, dto.FechaHasta) : null;
+                NegocioMetricasDTO? negocio = sec.NecesitaNegocio
+                    ? await _service.ObtenerNegocio(dto.FechaDesde, dto.FechaHasta) : null;
+                ListadoBusquedasDTO? listado = sec.Registro
+                    ? await _service.ObtenerListadoCompleto(new MetricasFiltroDTO
+                      { FechaDesde = dto.FechaDesde, FechaHasta = dto.FechaHasta,
+                        Tipo = dto.Tipo, Usuario = dto.Usuario, TamañoPagina = 9999 }) : null;
+
+                string asunto  = $"Broom AirLine — Reporte de Métricas ({periodo})";
+                string htmlMsg = $"<p style='font-family:sans-serif'>Adjunto el reporte de métricas del período <strong>{periodo}</strong>.</p>" +
+                                 $"<p style='font-family:sans-serif;color:#666'>Generado por el panel administrativo de Broom AirLine.</p>";
+                string fechaTag = $"{(dto.FechaDesde ?? "todo")}_{(dto.FechaHasta ?? "hoy")}";
+
+                byte[] adjunto;
+                string nombre;
+                string mime;
+
+                if (dto.Formato == "csv")
                 {
-                    FechaDesde = dto.FechaDesde,
-                    FechaHasta = dto.FechaHasta,
-                    Tipo = dto.Tipo,
-                    Usuario = dto.Usuario,
-                    TamañoPagina = 9999
-                };
-                var listado = await _service.ObtenerListadoCompleto(filtro);
+                    adjunto = MetricasExportHelper.GenerarCsvZip(resumen, negocio, listado, sec, periodo);
+                    nombre  = $"metricas_broom_{fechaTag}.zip";
+                    mime    = "application/zip";
+                }
+                else if (dto.Formato == "pdf")
+                {
+                    adjunto = MetricasPdfHelper.GenerarPdf(resumen, negocio, listado, sec, periodo);
+                    nombre  = $"metricas_broom_{fechaTag}.pdf";
+                    mime    = "application/pdf";
+                }
+                else // excel (default)
+                {
+                    adjunto = MetricasExportHelper.GenerarExcel(resumen, negocio, listado, sec, periodo);
+                    nombre  = $"metricas_broom_{fechaTag}.xlsx";
+                    mime    = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                }
 
-                string asunto = $"📊 Airbroom — Reporte de Búsquedas ({dto.FechaDesde ?? "inicio"} → {dto.FechaHasta ?? "hoy"})";
-                string html = GenerarHtmlExporte(listado, dto);
+                await _emailHelper.EnviarConAdjunto(correosValidos, asunto, htmlMsg, adjunto, nombre, mime);
 
-                await _emailHelper.Enviar(dto.Correo, asunto, html);
-
-                return Ok(new { message = $"Reporte enviado a {dto.Correo} ({listado.TotalRegistros} registros)" });
+                return Ok(new { message = $"Reporte enviado a {string.Join(", ", correosValidos)}" });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error al enviar el reporte: " + ex.Message });
+            }
+        }
+
+        // POST api/metricas/exportar-pdf — descarga PDF con gráficas reales
+        [HttpPost("exportar-pdf")]
+        public async Task<IActionResult> ExportarPdf([FromBody] ExportarArchivoDTO dto)
+        {
+            try
+            {
+                var sec = dto.Secciones ?? new ExportSecciones();
+                string periodo = $"{dto.FechaDesde ?? "inicio"} → {dto.FechaHasta ?? "hoy"}";
+
+                MetricasResumenDTO? resumen = sec.NecesitaResumen
+                    ? await _service.ObtenerResumen(dto.FechaDesde, dto.FechaHasta) : null;
+                NegocioMetricasDTO? negocio = sec.NecesitaNegocio
+                    ? await _service.ObtenerNegocio(dto.FechaDesde, dto.FechaHasta) : null;
+                ListadoBusquedasDTO? listado = sec.Registro
+                    ? await _service.ObtenerListadoCompleto(new MetricasFiltroDTO
+                      { FechaDesde = dto.FechaDesde, FechaHasta = dto.FechaHasta,
+                        Tipo = dto.Tipo, Usuario = dto.Usuario, TamañoPagina = 9999 }) : null;
+
+                string fecha = $"{(dto.FechaDesde ?? "todo")}_{(dto.FechaHasta ?? "hoy")}";
+                byte[] pdf = MetricasPdfHelper.GenerarPdf(resumen, negocio, listado, sec, periodo);
+                return File(pdf, "application/pdf", $"metricas_broom_{fecha}.pdf");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al generar el PDF: " + ex.Message });
+            }
+        }
+
+        // POST api/metricas/exportar-archivo — descarga Excel o ZIP de CSVs
+        [HttpPost("exportar-archivo")]
+        public async Task<IActionResult> ExportarArchivo([FromBody] ExportarArchivoDTO dto)
+        {
+            try
+            {
+                var sec = dto.Secciones ?? new ExportSecciones();
+                string periodo = $"{dto.FechaDesde ?? "inicio"} → {dto.FechaHasta ?? "hoy"}";
+
+                MetricasResumenDTO? resumen = sec.NecesitaResumen
+                    ? await _service.ObtenerResumen(dto.FechaDesde, dto.FechaHasta) : null;
+                NegocioMetricasDTO? negocio = sec.NecesitaNegocio
+                    ? await _service.ObtenerNegocio(dto.FechaDesde, dto.FechaHasta) : null;
+                ListadoBusquedasDTO? listado = sec.Registro
+                    ? await _service.ObtenerListadoCompleto(new MetricasFiltroDTO
+                      { FechaDesde = dto.FechaDesde, FechaHasta = dto.FechaHasta,
+                        Tipo = dto.Tipo, Usuario = dto.Usuario, TamañoPagina = 9999 }) : null;
+
+                string fecha = $"{(dto.FechaDesde ?? "todo")}_{(dto.FechaHasta ?? "hoy")}";
+
+                if (dto.Formato == "csv")
+                {
+                    byte[] zip = MetricasExportHelper.GenerarCsvZip(resumen, negocio, listado, sec, periodo);
+                    return File(zip, "application/zip", $"metricas_broom_{fecha}.zip");
+                }
+                else
+                {
+                    byte[] excel = MetricasExportHelper.GenerarExcel(resumen, negocio, listado, sec, periodo);
+                    return File(excel,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        $"metricas_broom_{fecha}.xlsx");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al generar el archivo: " + ex.Message });
             }
         }
 
@@ -303,10 +424,22 @@ namespace Aerolinea.API.Controllers
     /// </summary>
     public class ExportarMetricasDTO
     {
-        public string Correo { get; set; } = "";
-        public string? FechaDesde { get; set; }
-        public string? FechaHasta { get; set; }
-        public string? Tipo { get; set; }
-        public string? Usuario { get; set; }
+        public List<string> Correos  { get; set; } = new();
+        public string Formato        { get; set; } = "excel"; // "excel" | "csv" | "pdf"
+        public string? FechaDesde    { get; set; }
+        public string? FechaHasta    { get; set; }
+        public string? Tipo          { get; set; }
+        public string? Usuario       { get; set; }
+        public ExportSecciones? Secciones { get; set; }
+    }
+
+    public class ExportarArchivoDTO
+    {
+        public string Formato        { get; set; } = "excel"; // "excel" | "csv"
+        public string? FechaDesde    { get; set; }
+        public string? FechaHasta    { get; set; }
+        public string? Tipo          { get; set; }
+        public string? Usuario       { get; set; }
+        public ExportSecciones? Secciones { get; set; }
     }
 }

@@ -295,12 +295,14 @@ namespace Aerolinea.API.Repositories
                        CONVERT(VARCHAR(8),  v.HoraSalida, 108)                    AS HoraSalida,
                        CAST(DATEDIFF(MINUTE, GETDATE(),
                            DATEADD(SECOND, DATEDIFF(SECOND, 0, v.HoraSalida),
-                                   CAST(v.Fecha AS DATETIME))) AS FLOAT) / 60.0   AS HorasRestantes
+                                   CAST(v.Fecha AS DATETIME))) AS FLOAT) / 60.0   AS HorasRestantes,
+                       CONCAT(a.Marca, ' ', a.Modelo)                             AS AvionNombre
                 FROM   EquipoPivote ep
                 INNER JOIN Vuelo      v  ON v.ID  = ep.VueloID
                 INNER JOIN Ruta       r  ON r.ID  = v.RutaID
                 INNER JOIN Aeropuerto ao ON ao.ID = r.OrigenID
                 INNER JOIN Aeropuerto ad ON ad.ID = r.DestinoID
+                LEFT  JOIN Avion      a  ON a.ID  = v.AvionID
                 WHERE  ep.MiembroTripulacionID = @TripulanteId
                   AND  v.EstadoID = 1
                   AND  v.Fecha   >= CAST(GETDATE() AS DATE)
@@ -320,7 +322,8 @@ namespace Aerolinea.API.Repositories
                     Destino:        reader.GetString(3),
                     Fecha:          reader.GetString(4),
                     HoraSalida:     reader.GetString(5),
-                    HorasRestantes: Convert.ToDouble(reader[6])
+                    HorasRestantes: Convert.ToDouble(reader[6]),
+                    AvionNombre:    reader.IsDBNull(7) ? null : reader.GetString(7)
                 ));
             }
 
@@ -410,6 +413,20 @@ namespace Aerolinea.API.Repositories
                     await cmdIns.ExecuteNonQueryAsync();
                 }
             }
+        }
+
+        /// <summary>
+        /// Elimina toda la tripulacion asignada a un vuelo (limpia EquipoPivote para ese vuelo).
+        /// </summary>
+        public async Task LimpiarEquipoVuelo(int vueloId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "DELETE FROM EquipoPivote WHERE VueloID = @VueloId";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@VueloId", vueloId);
+            await command.ExecuteNonQueryAsync();
         }
 
         /// <summary>

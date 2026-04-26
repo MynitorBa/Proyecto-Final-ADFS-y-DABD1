@@ -207,5 +207,13 @@ namespace Aerolinea.API.Services
         {
             await _repository.AsignarTripulantesAVuelo(vueloId, tripulanteIds);
         }
+
+        /// <summary>
+        /// Elimina toda la tripulacion asignada a un vuelo.
+        /// </summary>
+        public async Task LimpiarEquipoVuelo(int vueloId)
+        {
+            await _repository.LimpiarEquipoVuelo(vueloId);
+        }
     }
 }

@@ -17,6 +17,9 @@
   /** Funcion para navegar entre las paginas de la aplicacion. @type {function} */
   export let navigateTo;
 
+  /** Codigo de reservacion a pre-buscar, inyectado desde App.svelte cuando se navega desde el buscador global. @type {string|null} */
+  export let buscarCodigo = null;
+
   import { API } from '../lib/api.js';
 
   /** Lista de todos los objetos de reservacion obtenidos para el usuario actual. @type {Array<object>} */
@@ -33,6 +36,9 @@
 
   /** Clave del filtro activo actualmente aplicado a la lista de reservaciones. @type {string} */
   let filtroActivo   = 'todas';
+
+  /** Texto de busqueda para filtrar reservaciones por codigo, numero de vuelo o destino. @type {string} */
+  let buscarTexto    = '';
 
   /** Arreglo de objetos de comentario publicados por el usuario actual, usado para verificar si una ruta ya fue calificada. @type {Array<object>} */
   let misComentarios = [];
@@ -87,6 +93,7 @@
 
   onMount(async () => {
     if (!$sesion) { navigateTo('login'); return; }
+    if (buscarCodigo) buscarTexto = buscarCodigo;
     await Promise.all([cargarReservas(), cargarResumen(), cargarMisComentarios()]);
   });
 
@@ -406,10 +413,26 @@
     { key: 'pendiente',  label: 'Pendientes' },
   ];
 
-  // Subconjunto filtrado de reservas que coincide con la pestana de filtro de estado activa actualmente.
-  $: reservasFiltradas = filtroActivo === 'todas'
-    ? reservas
-    : reservas.filter(r => r.estadoReserva?.toLowerCase() === filtroActivo);
+  // Subconjunto filtrado de reservas que coincide con la pestana de filtro de estado y el texto de busqueda.
+  $: reservasFiltradas = (() => {
+    let base = filtroActivo === 'todas'
+      ? reservas
+      : reservas.filter(r => r.estadoReserva?.toLowerCase() === filtroActivo);
+    if (buscarTexto.trim().length >= 2) {
+      const q = buscarTexto.trim().toLowerCase();
+      base = base.filter(r =>
+        r.noReservacion?.toLowerCase().includes(q) ||
+        r.boletos?.some(b =>
+          b.numeroVuelo?.toLowerCase().includes(q) ||
+          b.codigoAvion?.toLowerCase().includes(q) ||
+          b.destinoCiudad?.toLowerCase().includes(q) ||
+          b.origenCiudad?.toLowerCase().includes(q) ||
+          b.nombrePasajero?.toLowerCase().includes(q)
+        )
+      );
+    }
+    return base;
+  })();
 </script>
 
 <!-- Contenedor de notificaciones toast apiladas en pantalla -->
@@ -663,7 +686,7 @@
         <!-- Acciones del pie del modal para cerrar, descargar o enviar comprobante -->
         <div class="mr-detail__footer-actions">
           <button class="mr-btn mr-btn--ghost" on:click={cerrarDetalle} type="button">Cerrar</button>
-          {#if reservaDetalle.estadoReserva?.toLowerCase() === 'confirmada' || reservaDetalle.estadoReserva?.toLowerCase() === 'completada'}
+          {#if ['confirmada','completada','cancelada'].includes(reservaDetalle.estadoReserva?.toLowerCase())}
             <button class="mr-btn mr-btn--outline" on:click={() => descargarComprobante(reservaDetalle.reservacionId)} disabled={comprobanteLoading} type="button">
               {#if comprobanteLoading}
                 <span class="mr-btn__spinner mr-btn__spinner--dark"></span> Descargando...
@@ -739,6 +762,23 @@
         </div>
       </div>
     {/if}
+
+    <!-- Campo de busqueda por codigo de reservacion, vuelo, destino o pasajero -->
+    <div class="mr-buscar">
+      <svg class="mr-buscar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input
+        type="text"
+        class="mr-buscar__input"
+        bind:value={buscarTexto}
+        placeholder="Buscar por codigo reserva, vuelo, avion, destino..."
+        autocomplete="off"
+      />
+      {#if buscarTexto}
+        <button type="button" class="mr-buscar__clear" on:click={() => buscarTexto = ''} aria-label="Limpiar busqueda">✕</button>
+      {/if}
+    </div>
 
     <!-- Barra de filtros por estado de reservacion con contadores -->
     <div class="mr-filtros">

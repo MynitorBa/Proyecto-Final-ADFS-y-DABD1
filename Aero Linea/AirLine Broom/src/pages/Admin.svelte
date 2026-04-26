@@ -27,6 +27,8 @@
 
   // Modulo de gestion de hoteles aliados para el panel de administracion
   import AdminHotelAliados  from '../components/admin/AdminHotelAliados.svelte';
+  import AdminGestionTripulacion    from '../components/admin/AdminGestionTripulacion.svelte';
+  import AdminGestionAvionesVuelo   from '../components/admin/AdminGestionAvionesVuelo.svelte';
 
   // Modulo de gestion de reservaciones: listado, detalle y cancelacion con notificacion por correo
   import AdminReservas      from '../components/admin/AdminReservas.svelte';
@@ -210,6 +212,8 @@
     { id: 'gestionar-rutas',      label: 'Gestionar Rutas',     icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' },
     { id: 'gestionar-aviones',    label: 'Gestionar Aviones',   icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064' },
     { id: 'gestionar-tripulantes',label: 'Tripulantes',          icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+    { id: 'tripulacion-vuelos',   label: 'Tripulación Vuelos',  icon: 'M12 4l8 4-8 4-8-4 8-4zm0 8l8 4-8 4-8-4 8-4z' },
+    { id: 'aviones-vuelos',       label: 'Aviones Vuelos',      icon: 'M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z' },
     { id: 'gestionar-aeropuertos',label: 'Aeropuertos',          icon: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10' },
     { id: 'historial',            label: 'Historial',            icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { id: 'usuarios',             label: 'Usuarios',             icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
@@ -331,6 +335,8 @@
             {:else if activeSection === 'gestionar-rutas'}Gestionar Rutas
             {:else if activeSection === 'gestionar-aviones'}Gestionar Aviones
             {:else if activeSection === 'gestionar-tripulantes'}Gestionar Tripulantes
+            {:else if activeSection === 'tripulacion-vuelos'}Tripulación de Vuelos
+            {:else if activeSection === 'aviones-vuelos'}Aviones por Vuelo
             {:else if activeSection === 'gestionar-aeropuertos'}Gestionar Aeropuertos
             {:else if activeSection === 'historial'}Historial de Vuelos
             {:else if activeSection === 'usuarios'}Usuarios
@@ -381,6 +387,20 @@
             {mostrarToast}
             {mostrarConfirm}
             on:tripulantesActualizados={onTripulantesActualizados}
+          />
+
+        {:else if activeSection === 'tripulacion-vuelos'}
+          <AdminGestionTripulacion
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
+          />
+
+        {:else if activeSection === 'aviones-vuelos'}
+          <AdminGestionAvionesVuelo
+            {API}
+            {mostrarToast}
+            {mostrarConfirm}
           />
 
         {:else if activeSection === 'gestionar-aeropuertos'}

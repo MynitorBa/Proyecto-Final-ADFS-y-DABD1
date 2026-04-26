@@ -330,6 +330,21 @@
     transform: translateX(0);
 }
 
+/* Variante de boton de resultado para acciones rapidas (vuelo / reservacion) */
+.broom-header__search-result-btn--action {
+    background: #fdf8f3;
+    border-top: 1px solid #f0e8dd;
+}
+.broom-header__search-result-btn--action:hover { background: #f5ede2; }
+
+/* Codigo de accion rapida — icono emoji centrado */
+.broom-header__search-result-code--action {
+    font-size: 1rem;
+    font-weight: normal;
+    min-width: 28px;
+    text-align: center;
+}
+
 /* Lista de enlaces del panel de navegacion desplegable: con relleno dentro del panel hamburguesa */
 .broom-header__nav-list { list-style: none; padding: 0.5rem 1.5rem 1.5rem; }
 /* Cada elemento de navegacion tiene un separador inferior delgado */

@@ -83,5 +83,21 @@ namespace Aerolinea.API.Controllers
             var (exito, mensaje) = await _service.CambiarContrasena(usuarioId, dto);
             return exito ? Ok(new { message = mensaje }) : BadRequest(new { message = mensaje });
         }
+
+        /// <summary>
+        /// Actualiza el correo electronico del usuario especificado tras validar formato y unicidad.
+        /// Solo el propio usuario puede cambiar su correo; retorna 403 si el id de ruta no coincide.
+        /// </summary>
+        [HttpPatch("{usuarioId}/correo")]
+        public async Task<IActionResult> ActualizarCorreo(
+            int usuarioId,
+            [FromBody] ActualizarCorreoDTO dto)
+        {
+            if (!EsPropietario(usuarioId))
+                return StatusCode(403, new { message = "Acceso denegado." });
+
+            var (exito, mensaje) = await _service.ActualizarCorreo(usuarioId, dto.NuevoCorreo);
+            return exito ? Ok(new { message = mensaje }) : BadRequest(new { message = mensaje });
+        }
     }
 }

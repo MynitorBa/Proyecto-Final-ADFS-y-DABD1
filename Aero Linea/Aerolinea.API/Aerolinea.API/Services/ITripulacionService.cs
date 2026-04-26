@@ -19,5 +19,6 @@ namespace Aerolinea.API.Services
         Task<int> DesasignarDeFuturosVuelos(int tripulanteId, IEnumerable<int> vueloIds);
         Task<List<Tripulante>> ObtenerEquipoVuelo(int vueloId);
         Task AsignarTripulantesAVuelo(int vueloId, IEnumerable<int> tripulanteIds);
+        Task LimpiarEquipoVuelo(int vueloId);
     }
 }

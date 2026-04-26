@@ -70,9 +70,8 @@ namespace Aerolinea.API.Controllers
 
         // GET api/mis-reservaciones/{reservacionId}/comprobante
         /// <summary>
-        /// Genera y retorna el comprobante de una reservacion como HTML para que el usuario
-        /// lo abra en una nueva pestana e imprima como PDF desde el navegador.
-        /// No requiere la libreria nativa wkhtmltopdf.
+        /// Genera y retorna el comprobante de una reservacion en formato PDF real usando QuestPDF.
+        /// El navegador descarga directamente el archivo .pdf.
         /// </summary>
         [HttpGet("{reservacionId}/comprobante")]
         public async Task<IActionResult> DescargarComprobante(int reservacionId)
@@ -81,8 +80,9 @@ namespace Aerolinea.API.Controllers
             {
                 int usuarioId = ObtenerUsuarioId();
                 var reservacion = await _service.ObtenerDetalleReservacion(reservacionId, usuarioId);
-                string html = PdfHtmlHelper.GenerarComprobante(reservacion);
-                return Content(html, "text/html; charset=utf-8");
+                byte[] pdf = ComprobantePdfHelper.GenerarPdf(reservacion);
+                string filename = $"comprobante_{reservacion.NoReservacion ?? reservacionId.ToString()}.pdf";
+                return File(pdf, "application/pdf", filename);
             }
             catch (Exception ex)
             {

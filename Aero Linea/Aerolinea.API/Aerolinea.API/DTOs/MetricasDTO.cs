@@ -116,4 +116,94 @@ namespace Aerolinea.API.DTOs
         public int TotalPaginas { get; set; }
         public int PaginaActual { get; set; }
     }
+
+    // ── Análisis de negocio ────────────────────────────────────────────────────
+
+    /// <summary>Embudo: búsquedas → reservaciones → pagadas / expiradas / canceladas.</summary>
+    public class EmbudoNegocioDTO
+    {
+        public int Busquedas     { get; set; }
+        public int Reservaciones { get; set; }
+        public int Pagadas       { get; set; }
+        public int Canceladas    { get; set; }
+        public int Expiradas     { get; set; }
+        public int Pendientes    { get; set; }
+        public int Completadas   { get; set; }
+    }
+
+    /// <summary>Revenue, boletos y búsquedas de una ruta en el período.</summary>
+    public class RutaRendimientoDTO
+    {
+        public string  OrigenCodigo        { get; set; } = "";
+        public string  DestinoCodigo       { get; set; } = "";
+        public string  Ruta                { get; set; } = "";
+        public int     TotalReservaciones  { get; set; }
+        public decimal RevenueTotal        { get; set; }
+        public int     BoletosVendidos     { get; set; }
+        public int     Busquedas           { get; set; }
+    }
+
+    public class CancelacionPorRutaDTO
+    {
+        public string OrigenCodigo  { get; set; } = "";
+        public string DestinoCodigo { get; set; } = "";
+        public int    Total         { get; set; }
+    }
+
+    /// <summary>Reservación cancelada que tenía escala, con la cadena de rutas recorridas.</summary>
+    public class ReservacionEscalaDTO
+    {
+        public int    Id   { get; set; }
+        public string Ruta { get; set; } = "";   // ej. "GUA → MEX → MAD"
+    }
+
+    public class CancelacionPorTipoDTO
+    {
+        public string Tipo  { get; set; } = "";
+        public int    Total { get; set; }
+    }
+
+    public class CancelacionPorAnticipacionDTO
+    {
+        public string Bucket { get; set; } = "";
+        public int    Total  { get; set; }
+    }
+
+    public class CancelacionesAnalisisDTO
+    {
+        public List<CancelacionPorRutaDTO>         PorRuta              { get; set; } = new();
+        public List<CancelacionPorTipoDTO>         PorTipo              { get; set; } = new();
+        public List<CancelacionPorAnticipacionDTO> PorAnticipacion      { get; set; } = new();
+        /// <summary>Reservaciones canceladas que tenían vuelos con escala, con su cadena de rutas.</summary>
+        public List<ReservacionEscalaDTO>          ReservacionesConEscala { get; set; } = new();
+    }
+
+    /// <summary>Revenue mensual por clase (Turista / Ejecutivo).</summary>
+    public class IngresosMensualDTO
+    {
+        public string  Mes           { get; set; } = "";
+        public string  Clase         { get; set; } = "";
+        public decimal Revenue       { get; set; }
+        public int     Reservaciones { get; set; }
+    }
+
+    /// <summary>Celda del mapa de calor: día de semana × hora de salida → ocupación %.</summary>
+    public class HeatmapCeldaDTO
+    {
+        public int    DiaSemana         { get; set; }  // SQL WEEKDAY: 1=Dom, 2=Lun ... 7=Sáb
+        public int    Hora              { get; set; }
+        public double OcupacionPct      { get; set; }
+        public int    AsientosVendidos  { get; set; }
+        public double CapacidadPromedio { get; set; }
+    }
+
+    /// <summary>Respuesta consolidada de los 5 gráficos de análisis de negocio.</summary>
+    public class NegocioMetricasDTO
+    {
+        public EmbudoNegocioDTO         Embudo           { get; set; } = new();
+        public List<RutaRendimientoDTO> RutasRendimiento { get; set; } = new();
+        public CancelacionesAnalisisDTO Cancelaciones    { get; set; } = new();
+        public List<IngresosMensualDTO> IngresosTendencia { get; set; } = new();
+        public List<HeatmapCeldaDTO>    Heatmap          { get; set; } = new();
+    }
 }

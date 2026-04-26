@@ -222,7 +222,10 @@ namespace Aerolinea.API.Repositories
                     v.PrecioTurista,
                     v.PrecioEjecutivo,
                     zho.Nombre AS TzOrigen,
-                    zhd.Nombre AS TzDestino
+                    zhd.Nombre AS TzDestino,
+                    av.ID      AS AvionID,
+                    av.Marca + ' ' + av.Modelo AS AvionNombre,
+                    (SELECT COUNT(*) FROM Boleto b WHERE b.VueloID = v.ID AND b.EstadoBoletoID IN (2, 3)) AS BoletosVendidosReal
                 FROM  Vuelo v
                 INNER JOIN Ruta r              ON r.ID  = v.RutaID
                 INNER JOIN Aeropuerto aorigen  ON aorigen.ID  = r.OrigenID
@@ -271,7 +274,10 @@ namespace Aerolinea.API.Repositories
                     BoletosEjecutivo = bolEjecutivo,
                     AsientosVendidos = boletosVendidos,
                     PrecioTurista = reader.IsDBNull(12) ? 0 : reader.GetDecimal(12),
-                    PrecioEjecutiva = reader.IsDBNull(13) ? 0 : reader.GetDecimal(13)
+                    PrecioEjecutiva = reader.IsDBNull(13) ? 0 : reader.GetDecimal(13),
+                    AvionId = reader.GetInt32(16),
+                    AvionNombre = reader.IsDBNull(17) ? "" : reader.GetString(17),
+                    BoletosVendidosReal = reader.IsDBNull(18) ? 0 : reader.GetInt32(18)
                 });
             }
 
@@ -370,6 +376,7 @@ namespace Aerolinea.API.Repositories
         /// Se usa para construir el correo masivo de notificacion.
         /// </summary>
         public record UsuarioAfectadoVuelo(
+            int    ReservacionID,
             string NoReservacion,
             string NombreUsuario,
             string EmailUsuario,
@@ -395,6 +402,7 @@ namespace Aerolinea.API.Repositories
             // y datos del vuelo (ruta y fecha) en una sola consulta
             var query = @"
                 SELECT DISTINCT
+                    r.ID                          AS ReservacionID,
                     r.NoReservacion,
                     u.Nombre + ' ' + u.Apellido  AS NombreUsuario,
                     u.Correo                      AS EmailUsuario,
@@ -422,13 +430,14 @@ namespace Aerolinea.API.Repositories
             while (await reader.ReadAsync())
             {
                 afectados.Add(new UsuarioAfectadoVuelo(
-                    NoReservacion: reader.IsDBNull(0) ? "" : reader.GetString(0),
-                    NombreUsuario: reader.IsDBNull(1) ? "" : reader.GetString(1),
-                    EmailUsuario:  reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    NumeroVuelo:   reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    OrigenCodigo:  reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    DestinoCodigo: reader.IsDBNull(5) ? "" : reader.GetString(5),
-                    FechaVuelo:    reader.IsDBNull(6) ? "" : reader.GetString(6)
+                    ReservacionID: reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                    NoReservacion: reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    NombreUsuario: reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    EmailUsuario:  reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    NumeroVuelo:   reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    OrigenCodigo:  reader.IsDBNull(5) ? "" : reader.GetString(5),
+                    DestinoCodigo: reader.IsDBNull(6) ? "" : reader.GetString(6),
+                    FechaVuelo:    reader.IsDBNull(7) ? "" : reader.GetString(7)
                 ));
             }
 
@@ -689,6 +698,31 @@ namespace Aerolinea.API.Repositories
                 Marca              = reader.GetString(2),
                 CapacidadPasajeros = reader.GetInt32(3)
             };
+        }
+
+        /// <summary>Actualiza únicamente el avión asignado a un vuelo.</summary>
+        public async Task CambiarAvionVuelo(int vueloId, int nuevoAvionId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var cmd = new SqlCommand(
+                "UPDATE Vuelo SET AvionID = @AvionId WHERE ID = @VueloId",
+                connection);
+            cmd.Parameters.AddWithValue("@AvionId", nuevoAvionId);
+            cmd.Parameters.AddWithValue("@VueloId", vueloId);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>Cuenta los boletos vendidos/reservados (EstadoBoletoID IN (2,3)) para un vuelo.</summary>
+        public async Task<int> ObtenerBoletosVendidos(int vueloId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var cmd = new SqlCommand(
+                "SELECT COUNT(*) FROM Boleto WHERE VueloID = @VueloId AND EstadoBoletoID IN (2, 3)",
+                connection);
+            cmd.Parameters.AddWithValue("@VueloId", vueloId);
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
 
         /// <summary>Obtiene tripulantes por lista de IDs para validar composición de roles.</summary>

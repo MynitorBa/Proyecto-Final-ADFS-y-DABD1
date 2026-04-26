@@ -308,6 +308,46 @@ namespace Aerolinea.API.Controllers
             return Ok(new { message = "Tripulante activado correctamente" });
         }
 
+        // ===== GESTIÓN DE EQUIPO POR VUELO =====
+
+        /// <summary>
+        /// Reemplaza toda la tripulacion de un vuelo con la lista de tripulantes indicada.
+        /// Primero limpia el equipo actual y luego asigna los nuevos. Requiere Administrador.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("vuelo/{vueloId}/equipo")]
+        public async Task<IActionResult> SetEquipoVuelo(int vueloId, [FromBody] List<int> tripulantesIds)
+        {
+            // Validar que falte al menos 1 hora para el despegue
+            var vuelo = await _adminVueloRepo.ObtenerVueloPorId(vueloId);
+            if (vuelo == null)
+                return NotFound(new { message = "Vuelo no encontrado" });
+
+            var salidaDateTime = vuelo.Fecha.Date + vuelo.HoraSalida;
+            var horasRestantes = (salidaDateTime - DateTime.Now).TotalHours;
+            if (horasRestantes < 1)
+                return BadRequest(new
+                {
+                    message = $"No se puede modificar la tripulación: el vuelo despega en {Math.Round(horasRestantes * 60, 0)} minutos. El límite es 1 hora antes del despegue."
+                });
+
+            await _service.LimpiarEquipoVuelo(vueloId);
+            if (tripulantesIds != null && tripulantesIds.Count > 0)
+                await _service.AsignarTripulantesAVuelo(vueloId, tripulantesIds);
+            return Ok(new { message = "Tripulación del vuelo actualizada correctamente" });
+        }
+
+        /// <summary>
+        /// Elimina toda la tripulacion asignada a un vuelo. Requiere Administrador.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpDelete("vuelo/{vueloId}/equipo")]
+        public async Task<IActionResult> LimpiarEquipoVuelo(int vueloId)
+        {
+            await _service.LimpiarEquipoVuelo(vueloId);
+            return Ok(new { message = "Tripulación del vuelo eliminada correctamente" });
+        }
+
         // ===== ENDPOINTS DE IMAGEN =====
 
         /// <summary>

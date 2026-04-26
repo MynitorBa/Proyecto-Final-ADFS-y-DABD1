@@ -28,10 +28,51 @@
   /** True mientras la solicitud de login esta en progreso, usado para deshabilitar el boton de envio. @type {boolean} */
   let submitting = false;
 
+  /** Token generado por reCAPTCHA v2 tras completar el desafio. @type {string} */
+  let captchaToken = '';
+
+  /** ID del widget de reCAPTCHA para poder resetearlo. @type {number|null} */
+  let recaptchaWidgetId = null;
+
+  /** Clave publica de reCAPTCHA v2 (test key — siempre pasa). @type {string} */
+  const RECAPTCHA_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
+
+  function renderCaptcha() {
+    if (window.grecaptcha && document.getElementById('recaptcha-login')) {
+      recaptchaWidgetId = window.grecaptcha.render('recaptcha-login', {
+        sitekey: RECAPTCHA_SITE_KEY,
+        callback: (token) => { captchaToken = token; },
+        'expired-callback': () => { captchaToken = ''; },
+        'error-callback': () => { captchaToken = ''; }
+      });
+    }
+  }
+
+  function loadRecaptcha() {
+    if (window.grecaptcha) {
+      renderCaptcha();
+      return;
+    }
+    window.onRecaptchaLoad = renderCaptcha;
+    const script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+
+  function resetCaptcha() {
+    captchaToken = '';
+    if (window.grecaptcha && recaptchaWidgetId !== null) {
+      window.grecaptcha.reset(recaptchaWidgetId);
+    }
+  }
+
   onMount(() => {
     loginData = { correoOUsername: '', contrasena: '' };
     rememberMe = false;
     loginError = '';
+    loadRecaptcha();
   });
 
   /**
@@ -43,6 +84,12 @@
    */
   async function handleLogin() {
     loginError = '';
+
+    if (!captchaToken) {
+      loginError = 'Por favor completa la verificacion de seguridad.';
+      return;
+    }
+
     submitting = true;
 
     try {
@@ -50,6 +97,7 @@
 
       if (!resultado.ok) {
         loginError = 'Correo, username o contrasena incorrectos.';
+        resetCaptcha();
         return;
       }
 
@@ -57,6 +105,7 @@
 
     } catch (error) {
       loginError = 'No se pudo conectar con el servidor.';
+      resetCaptcha();
       console.error('Error en login:', error);
     } finally {
       submitting = false;
@@ -131,12 +180,17 @@
               </label>
             </div>
 
+            <!-- Widget de reCAPTCHA v2 para verificacion de seguridad -->
+            <div class="login-form__captcha">
+              <div id="recaptcha-login"></div>
+            </div>
+
             <!-- Mensaje de error de autenticacion mostrado condicionalmente -->
             {#if loginError}
               <div class="login-form__error">{loginError}</div>
             {/if}
 
-            <button type="submit" class="login-form__submit" disabled={submitting}>
+            <button type="submit" class="login-form__submit" disabled={submitting || !captchaToken}>
               {submitting ? 'Iniciando sesion...' : 'Iniciar sesion'}
             </button>
 

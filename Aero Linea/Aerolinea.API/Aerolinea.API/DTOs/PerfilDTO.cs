@@ -35,4 +35,12 @@ namespace Aerolinea.API.DTOs
         public string ContrasenaActual { get; set; } = "";
         public string NuevaContrasena { get; set; } = "";
     }
+
+    /// <summary>
+    /// DTO de peticion para que el usuario actualice su correo electronico.
+    /// </summary>
+    public class ActualizarCorreoDTO
+    {
+        public string NuevoCorreo { get; set; } = "";
+    }
 }

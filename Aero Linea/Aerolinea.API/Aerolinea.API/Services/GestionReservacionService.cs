@@ -100,7 +100,12 @@ namespace Aerolinea.API.Services
                             "Enviando correo de cancelacion para reservacion {NoReservacion} a {Email}",
                             noReservacion, emailUsuario);
 
-                        string html = EmailTemplates.CorreoCancelacion(nombreUsuario, noReservacion);
+                        // Intentar obtener detalle completo para enriquecer el correo
+                        ReservacionDetalleDTO? detalle = null;
+                        try { detalle = await _repository.ObtenerReservacionPorId(reservacionId, usuarioId); }
+                        catch { /* Si falla, se envía el correo sin detalle de vuelos */ }
+
+                        string html = EmailTemplates.CorreoCancelacion(nombreUsuario, noReservacion, detalle, motivo);
 
                         await _emailHelper.Enviar(
                             emailUsuario,

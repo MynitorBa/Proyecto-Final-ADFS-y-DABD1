@@ -188,11 +188,10 @@ namespace Aerolinea.API.Repositories
         }
 
         /// <summary>
-        /// Cancela una reservacion pendiente o confirmada del usuario. Valida que la
-        /// reservacion pertenezca al usuario, que este en estado cancelable, y para
-        /// reservaciones confirmadas que falten mas de 24 horas para el vuelo.
-        /// Libera los boletos, devuelve disponibilidad a los vuelos y actualiza
-        /// el estado de la reservacion con el motivo de cancelacion.
+        /// Cancela una reservacion pendiente o confirmada del usuario delegando toda
+        /// la logica transaccional al procedimiento almacenado usp_CancelarReservacion.
+        /// Dicho SP valida propiedad, estado y, para confirmadas, llama internamente a
+        /// dbo.ufn_HorasHastaVuelo para aplicar la regla de las 24 horas antes del vuelo.
         /// Retorna los datos del usuario (NoReservacion, NombreUsuario, EmailUsuario)
         /// para que el servicio pueda enviar el correo de cancelacion.
         /// </summary>
@@ -201,221 +200,110 @@ namespace Aerolinea.API.Repositories
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
-            using var transaction = connection.BeginTransaction();
 
-            try
-            {
-                // 1. Verificar que existe y pertenece al usuario.
-                //    Ademas se obtiene NoReservacion y los datos del usuario para el correo.
-                string queryVerificar = @"
-                    SELECT r.EstadoReservaID,
-                           r.NoReservacion,
-                           u.Nombre + ' ' + u.Apellido AS NombreUsuario,
-                           u.Correo
-                    FROM Reservacion r
-                    INNER JOIN Usuario u ON u.ID = r.UsuarioID
-                    WHERE r.ID = @reservacionId AND r.UsuarioID = @usuarioId";
+            using var cmd = new SqlCommand("usp_CancelarReservacion", connection);
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                int? estadoReserva      = null;
-                string noReservacion    = "";
-                string nombreUsuario    = "";
-                string emailUsuario     = "";
+            cmd.Parameters.AddWithValue("@ReservacionID", reservacionId);
+            cmd.Parameters.AddWithValue("@UsuarioID",     usuarioId);
+            cmd.Parameters.AddWithValue("@Motivo", string.IsNullOrWhiteSpace(motivo)
+                ? (object)DBNull.Value : motivo.Trim());
+            cmd.Parameters.AddWithValue("@EsAdmin", 0);
 
-                using (var cmd = new SqlCommand(queryVerificar, connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
-                    cmd.Parameters.AddWithValue("@usuarioId", usuarioId);
-                    using var reader = await cmd.ExecuteReaderAsync();
-                    if (!await reader.ReadAsync())
-                        throw new Exception("Reservacion no encontrada o no tienes acceso a ella.");
-                    estadoReserva = reader.GetInt32(0);
-                    noReservacion = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    nombreUsuario = reader.IsDBNull(2) ? "" : reader.GetString(2);
-                    emailUsuario  = reader.IsDBNull(3) ? "" : reader.GetString(3);
-                }
+            var pResultado     = cmd.Parameters.Add("@Resultado",     System.Data.SqlDbType.Int);
+            var pMensaje       = cmd.Parameters.Add("@Mensaje",       System.Data.SqlDbType.VarChar, 500);
+            var pNoReservacion = cmd.Parameters.Add("@NoReservacion", System.Data.SqlDbType.VarChar, 50);
+            var pNombreUsuario = cmd.Parameters.Add("@NombreUsuario", System.Data.SqlDbType.VarChar, 200);
+            var pEmailUsuario  = cmd.Parameters.Add("@EmailUsuario",  System.Data.SqlDbType.VarChar, 150);
 
-                // 2. Solo Pendiente (1) o Confirmada (2)
-                if (estadoReserva != 1 && estadoReserva != 2)
-                    throw new Exception("Solo puedes cancelar reservaciones pendientes o confirmadas.");
+            pResultado.Direction     = System.Data.ParameterDirection.Output;
+            pMensaje.Direction       = System.Data.ParameterDirection.Output;
+            pNoReservacion.Direction = System.Data.ParameterDirection.Output;
+            pNombreUsuario.Direction = System.Data.ParameterDirection.Output;
+            pEmailUsuario.Direction  = System.Data.ParameterDirection.Output;
 
-                // 3. Validar 24 horas mínimas antes del vuelo (solo aplica a confirmadas)
-                if (estadoReserva == 2)
-                {
-                    string queryHoras = @"
-                        SELECT MIN(DATEDIFF(HOUR, GETDATE(),
-                            DATEADD(HOUR,   DATEPART(HOUR,   v.HoraSalida),
-                            DATEADD(MINUTE, DATEPART(MINUTE, v.HoraSalida),
-                            CAST(v.Fecha AS DATETIME)))))
-                        FROM Boleto b
-                        INNER JOIN Vuelo v ON v.ID = b.VueloID
-                        WHERE b.ReservacionID  = @reservacionId
-                          AND b.EstadoBoletoID IN (2, 3)";
+            await cmd.ExecuteNonQueryAsync();
 
-                    using (var cmd = new SqlCommand(queryHoras, connection, transaction))
-                    {
-                        cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
-                        var resultado = await cmd.ExecuteScalarAsync();
-                        if (resultado == null || resultado == DBNull.Value)
-                            throw new Exception("No se encontraron vuelos activos en esta reservación.");
+            int    resultado = (int)pResultado.Value;
+            string mensaje   = pMensaje.Value?.ToString() ?? "";
 
-                        int horas = Convert.ToInt32(resultado);
-                        if (horas < 24)
-                            throw new Exception(
-                                $"No puedes cancelar. Faltan menos de 24 horas para tu vuelo (quedan {horas} horas).");
-                    }
-                }
+            if (resultado != 0)
+                throw new Exception(mensaje);
 
-                // 4. Agrupar boletos activos por vuelo y clase para devolver disponibilidad
-                string queryGrupos = @"
-                    SELECT VueloID, ClaseID, COUNT(*) AS Cantidad
-                    FROM Boleto
-                    WHERE ReservacionID  = @reservacionId
-                      AND EstadoBoletoID IN (2, 3)
-                    GROUP BY VueloID, ClaseID";
-
-                var grupos = new List<(int VueloId, int ClaseId, int Cantidad)>();
-                using (var cmd = new SqlCommand(queryGrupos, connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
-                    using var reader = await cmd.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                        grupos.Add((reader.GetInt32(0), reader.GetInt32(1), reader.GetInt32(2)));
-                }
-
-                // 5. Boletos → Cancelado (4)
-                string cancelarBoletos = @"
-                    UPDATE Boleto SET EstadoBoletoID = 4
-                    WHERE ReservacionID  = @reservacionId
-                      AND EstadoBoletoID IN (2, 3)";
-
-                using (var cmd = new SqlCommand(cancelarBoletos, connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                // 6. Devolver disponibilidad por clase
-                foreach (var (vueloId, claseId, cantidad) in grupos)
-                {
-                    string campo = claseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
-                    string devolver = $"UPDATE Vuelo SET {campo} = {campo} + @cantidad WHERE ID = @vueloId";
-
-                    using var cmd = new SqlCommand(devolver, connection, transaction);
-                    cmd.Parameters.AddWithValue("@cantidad", cantidad);
-                    cmd.Parameters.AddWithValue("@vueloId", vueloId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                // 7. Reservación → Cancelada (3)
-                string cancelarReserva = @"
-                    UPDATE Reservacion
-                    SET EstadoReservaID   = 3,
-                        FechaExpiracion   = NULL,
-                        FechaCancelacion  = GETDATE(),
-                        MotivoCancelacion = @motivo
-                    WHERE ID = @reservacionId";
-
-                using (var cmd = new SqlCommand(cancelarReserva, connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
-                    cmd.Parameters.AddWithValue("@motivo", string.IsNullOrWhiteSpace(motivo)
-                        ? (object)DBNull.Value
-                        : motivo.Trim());
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                transaction.Commit();
-
-                // Retornar datos del usuario para que el service pueda enviar el correo
-                return (noReservacion, nombreUsuario, emailUsuario);
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
+            return (
+                pNoReservacion.Value?.ToString() ?? "",
+                pNombreUsuario.Value?.ToString() ?? "",
+                pEmailUsuario.Value?.ToString()  ?? ""
+            );
         }
         //  HELPERS PRIVADOS
 
+        /// <summary>
+        /// Carga los boletos de una reservacion usando la vista vw_BoletoDetalle,
+        /// que fusiona 13 JOINs en una sola consulta incluyendo datos del pasajero.
+        /// Elimina la necesidad de llamar a ObtenerDatosPasajero por separado.
+        /// </summary>
         private async Task CargarBoletos(ReservacionDetalleDTO reservacion, SqlConnection connection)
         {
             string queryBoletos = @"
                 SELECT
-                    b.ID,
-                    b.NoBoleto,
-                    b.NoAsiento,
-                    b.Precio,
-                    c.TipoDeClase   AS Clase,
-                    eb.Estado       AS EstadoBoleto,
-                    v.ID            AS VueloID,
-                    v.NumeroVuelo,
-                    v.Fecha         AS FechaVuelo,
-                    v.HoraSalida,
-                    v.HoraLlegada,
-                    ru.DuracionEstimada,
-                    ru.ID           AS RutaID,
-                    ao.Codigo       AS OrigenCodigo,
-                    ao.Nombre       AS OrigenNombre,
-                    co.Nombre       AS OrigenCiudad,
-                    ad.Codigo       AS DestinoCodigo,
-                    ad.Nombre       AS DestinoNombre,
-                    cd.Nombre       AS DestinoCiudad,
-                    a.Modelo        AS AvionModelo,
-                    a.Marca         AS AvionMarca,
-                    b.DatosPasajeroID
-                FROM Boleto b
-                INNER JOIN Clase        c  ON c.ID  = b.ClaseID
-                INNER JOIN EstadoBoleto eb ON eb.ID = b.EstadoBoletoID
-                INNER JOIN Vuelo        v  ON v.ID  = b.VueloID
-                INNER JOIN Ruta         ru ON ru.ID = v.RutaID
-                INNER JOIN Aeropuerto   ao ON ao.ID = ru.OrigenID
-                INNER JOIN Aeropuerto   ad ON ad.ID = ru.DestinoID
-                INNER JOIN Ciudad       co ON co.ID = ao.CiudadID
-                INNER JOIN Ciudad       cd ON cd.ID = ad.CiudadID
-                INNER JOIN Avion        a  ON a.ID  = v.AvionID
-                WHERE b.ReservacionID = @reservacionId
-                ORDER BY b.NoAsiento";
+                    BoletoID, NoBoleto, NoAsiento, Precio,
+                    Clase, EstadoBoleto, VueloID, NumeroVuelo,
+                    FechaVuelo, HoraSalida, HoraLlegada, DuracionEstimada,
+                    RutaID, OrigenCodigo, OrigenNombre, OrigenCiudad,
+                    DestinoCodigo, DestinoNombre, DestinoCiudad,
+                    AvionModelo, AvionMarca, DatosPasajeroID,
+                    PasajeroNombre, PasajeroApellido, PasajeroPasaporte,
+                    PasajeroTelefono, PasajeroCiudad, PasajeroPais
+                FROM dbo.vw_BoletoDetalle
+                WHERE ReservacionID = @reservacionId
+                ORDER BY NoAsiento";
 
             using var cmd = new SqlCommand(queryBoletos, connection);
             cmd.Parameters.AddWithValue("@reservacionId", reservacion.ReservacionId);
             using var reader = await cmd.ExecuteReaderAsync();
 
-            var temp = new List<(BoletoDetalleDTO boleto, int? pasajeroId)>();
-
             while (await reader.ReadAsync())
             {
-                temp.Add((new BoletoDetalleDTO
+                var boleto = new BoletoDetalleDTO
                 {
-                    BoletoId = reader.GetInt32(0),
-                    NoBoleto = reader.GetString(1),
-                    NoAsiento = reader.GetString(2),
-                    Precio = reader.GetDecimal(3),
-                    Clase = reader.GetString(4),
-                    EstadoBoleto = reader.GetString(5),
-                    VueloId = reader.GetInt32(6),
-                    NumeroVuelo = reader.GetString(7),
-                    FechaVuelo = reader.GetDateTime(8),
-                    HoraSalida = reader.GetTimeSpan(9),
-                    HoraLlegada = reader.GetTimeSpan(10),
+                    BoletoId        = reader.GetInt32(0),
+                    NoBoleto        = reader.GetString(1),
+                    NoAsiento       = reader.GetString(2),
+                    Precio          = reader.GetDecimal(3),
+                    Clase           = reader.GetString(4),
+                    EstadoBoleto    = reader.GetString(5),
+                    VueloId         = reader.GetInt32(6),
+                    NumeroVuelo     = reader.GetString(7),
+                    FechaVuelo      = reader.GetDateTime(8),
+                    HoraSalida      = reader.GetTimeSpan(9),
+                    HoraLlegada     = reader.GetTimeSpan(10),
                     DuracionMinutos = reader.GetInt32(11),
-                    RutaId = reader.GetInt32(12),
-                    OrigenCodigo = reader.GetString(13),
-                    OrigenNombre = reader.GetString(14),
-                    OrigenCiudad = reader.GetString(15),
-                    DestinoCodigo = reader.GetString(16),
-                    DestinoNombre = reader.GetString(17),
-                    DestinoCiudad = reader.GetString(18),
-                    AvionModelo = reader.GetString(19),
-                    AvionMarca = reader.GetString(20)
-                }, reader.IsDBNull(21) ? null : reader.GetInt32(21)));
-            }
+                    RutaId          = reader.GetInt32(12),
+                    OrigenCodigo    = reader.GetString(13),
+                    OrigenNombre    = reader.GetString(14),
+                    OrigenCiudad    = reader.GetString(15),
+                    DestinoCodigo   = reader.GetString(16),
+                    DestinoNombre   = reader.GetString(17),
+                    DestinoCiudad   = reader.GetString(18),
+                    AvionModelo     = reader.GetString(19),
+                    AvionMarca      = reader.GetString(20)
+                };
 
-            reader.Close();
+                if (!reader.IsDBNull(21))
+                {
+                    boleto.Pasajero = new DatosPasajeroInfoDTO
+                    {
+                        Id        = reader.GetInt32(21),
+                        Nombre    = reader.IsDBNull(22) ? "" : reader.GetString(22),
+                        Apellido  = reader.IsDBNull(23) ? "" : reader.GetString(23),
+                        Pasaporte = reader.IsDBNull(24) ? "" : reader.GetString(24),
+                        Telefono  = reader.IsDBNull(25) ? "" : reader.GetString(25),
+                        Ciudad    = reader.IsDBNull(26) ? "" : reader.GetString(26),
+                        Pais      = reader.IsDBNull(27) ? "" : reader.GetString(27)
+                    };
+                }
 
-            foreach (var (boleto, pasajeroId) in temp)
-            {
-                if (pasajeroId.HasValue)
-                    boleto.Pasajero = await ObtenerDatosPasajero(pasajeroId.Value, connection);
                 reservacion.Boletos.Add(boleto);
             }
         }
@@ -537,18 +425,8 @@ namespace Aerolinea.API.Repositories
             if (estado == 1)
                 return new PuedeCancelarDTO { PuedeCancelar = true, Razon = "Reservación pendiente, puede cancelarse." };
 
-            // 3. Si es confirmada, validar 24hrs mínimas antes del vuelo
-            string queryHoras = @"
-        SELECT MIN(DATEDIFF(HOUR, GETDATE(),
-            DATEADD(HOUR,   DATEPART(HOUR,   v.HoraSalida),
-            DATEADD(MINUTE, DATEPART(MINUTE, v.HoraSalida),
-            CAST(v.Fecha AS DATETIME)))))
-        FROM Boleto b
-        INNER JOIN Vuelo v ON v.ID = b.VueloID
-        WHERE b.ReservacionID  = @reservacionId
-          AND b.EstadoBoletoID IN (2, 3)";
-
-            using (var cmd = new SqlCommand(queryHoras, connection))
+            // 3. Si es confirmada, validar 24hrs mínimas antes del vuelo usando la UDF
+            using (var cmd = new SqlCommand("SELECT dbo.ufn_HorasHastaVuelo(@reservacionId)", connection))
             {
                 cmd.Parameters.AddWithValue("@reservacionId", reservacionId);
                 var resultado = await cmd.ExecuteScalarAsync();
@@ -557,6 +435,10 @@ namespace Aerolinea.API.Repositories
                     return new PuedeCancelarDTO { PuedeCancelar = false, Razon = "No se encontraron vuelos activos en esta reservación." };
 
                 int horas = Convert.ToInt32(resultado);
+
+                if (horas == -1)
+                    return new PuedeCancelarDTO { PuedeCancelar = false, Razon = "No se encontraron vuelos activos en esta reservación." };
+
                 if (horas < 24)
                     return new PuedeCancelarDTO
                     {

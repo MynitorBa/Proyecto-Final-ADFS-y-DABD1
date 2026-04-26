@@ -460,7 +460,7 @@ namespace Aerolinea.API.Repositories
         /// </summary>
         public async Task GuardarBusqueda(
             int origenId, int destinoId, DateTime fechaSalida,
-            int cantidadPersonas, int? usuarioId)
+            int cantidadPersonas, int? usuarioId, int tipoBusquedaId = 1)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
@@ -479,12 +479,13 @@ namespace Aerolinea.API.Repositories
 
             using var cmdInsert = new SqlCommand(@"
                 INSERT INTO Busqueda (RutaID, FechaSalida, CantidadPersonas, UsuarioID, TipoBusquedaID, Fecha)
-                VALUES (@RutaId, @FechaSalida, @CantidadPersonas, @UsuarioId, 1, @FechaHoy)", connection);
+                VALUES (@RutaId, @FechaSalida, @CantidadPersonas, @UsuarioId, @TipoBusquedaId, @FechaHoy)", connection);
 
             cmdInsert.Parameters.AddWithValue("@RutaId", rutaId.Value);
             cmdInsert.Parameters.AddWithValue("@FechaSalida", fechaSalida.Date);
             cmdInsert.Parameters.AddWithValue("@CantidadPersonas", cantidadPersonas);
             cmdInsert.Parameters.AddWithValue("@UsuarioId", usuarioId.HasValue ? (object)usuarioId.Value : DBNull.Value);
+            cmdInsert.Parameters.AddWithValue("@TipoBusquedaId", tipoBusquedaId);
             cmdInsert.Parameters.AddWithValue("@FechaHoy", DateTime.Now);
 
             await cmdInsert.ExecuteNonQueryAsync();

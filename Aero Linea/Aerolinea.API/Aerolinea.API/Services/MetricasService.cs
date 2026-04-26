@@ -77,6 +77,32 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
+        /// Retorna los 5 graficos de analisis de negocio consolidados en un solo objeto.
+        /// Incluye embudo de conversion, rendimiento de rutas, cancelaciones, tendencia mensual
+        /// de ingresos por clase y mapa de calor de ocupacion por dia y hora de salida.
+        /// </summary>
+        public async Task<NegocioMetricasDTO> ObtenerNegocio(string? fechaDesde, string? fechaHasta)
+        {
+            DateTime? desde = fechaDesde != null ? DateTime.Parse(fechaDesde) : null;
+            DateTime? hasta = fechaHasta != null ? DateTime.Parse(fechaHasta) : null;
+
+            var embudo           = await _repository.ObtenerEmbudo(desde, hasta);
+            var rutasRendimiento = await _repository.ObtenerRutasRendimiento(desde, hasta);
+            var cancelaciones    = await _repository.ObtenerCancelaciones(desde, hasta);
+            var ingresosTend     = await _repository.ObtenerIngresosTendencia(desde, hasta);
+            var heatmap          = await _repository.ObtenerHeatmap(desde, hasta);
+
+            return new NegocioMetricasDTO
+            {
+                Embudo            = embudo,
+                RutasRendimiento  = rutasRendimiento,
+                Cancelaciones     = cancelaciones,
+                IngresosTendencia = ingresosTend,
+                Heatmap           = heatmap
+            };
+        }
+
+        /// <summary>
         /// Retorna el listado completo de busquedas sin paginacion, aplicando solo los filtros
         /// de fecha, tipo y usuario. Pensado para exportacion de datos en reportes.
         /// </summary>

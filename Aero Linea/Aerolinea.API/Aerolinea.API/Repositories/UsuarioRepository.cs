@@ -38,10 +38,10 @@ namespace Aerolinea.API.Repositories
 
             var query = @"
                 INSERT INTO Usuario (Correo, ContrasenaHash, Pasaporte, Username, Nombre, Apellido,
-                                    Telefono, FechaNacimiento, CiudadId, RolID)
+                                    Telefono, FechaNacimiento, CiudadId, RolID, RecibirOfertas)
                 OUTPUT INSERTED.Id
                 VALUES (@Correo, @ContrasenaHash, @Pasaporte, @Username, @Nombre, @Apellido,
-                        @Telefono, @FechaNacimiento, @CiudadId, @RolID)";
+                        @Telefono, @FechaNacimiento, @CiudadId, @RolID, @RecibirOfertas)";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Correo", usuario.Correo);
@@ -54,6 +54,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@FechaNacimiento", usuario.FechaNacimiento == DateTime.MinValue ? DBNull.Value : usuario.FechaNacimiento);
             command.Parameters.AddWithValue("@CiudadId", usuario.CiudadId == 0 ? DBNull.Value : usuario.CiudadId);
             command.Parameters.AddWithValue("@RolID", usuario.RolID);
+            command.Parameters.AddWithValue("@RecibirOfertas", usuario.RecibirOfertas);
 
             return (int)await command.ExecuteScalarAsync();
         }
@@ -253,6 +254,37 @@ namespace Aerolinea.API.Repositories
                 });
             }
 
+            return lista;
+        }
+
+        /// <summary>
+        /// Retorna la lista de usuarios que aceptaron recibir ofertas semanales,
+        /// incluyendo su nombre, correo y pais registrado (resuelto via Ciudad→Pais).
+        /// </summary>
+        public async Task<List<(int Id, string Nombre, string Correo, string Pais)>> ObtenerUsuariosParaOfertas()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var lista = new List<(int, string, string, string)>();
+            var query = @"
+                SELECT u.Id, u.Nombre, u.Correo, ISNULL(p.Nombre, '') as Pais
+                FROM Usuario u
+                LEFT JOIN Ciudad c ON u.CiudadId = c.Id
+                LEFT JOIN Pais   p ON c.PaisID   = p.Id
+                WHERE u.RecibirOfertas = 1";
+
+            using var command = new SqlCommand(query, connection);
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add((
+                    reader.GetInt32(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    reader.GetString(3)
+                ));
+            }
             return lista;
         }
     }

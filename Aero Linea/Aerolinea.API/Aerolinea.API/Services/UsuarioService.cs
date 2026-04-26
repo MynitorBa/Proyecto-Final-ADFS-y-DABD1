@@ -80,7 +80,8 @@ namespace Aerolinea.API.Services
                     Telefono = dto.Telefono,
                     FechaNacimiento = dto.FechaNacimiento,
                     CiudadId = ciudadId,
-                    RolID = 1
+                    RolID = 1,
+                    RecibirOfertas = dto.RecibirOfertas,
                 };
 
                 int usuarioId = await _repository.CrearUsuario(usuario);

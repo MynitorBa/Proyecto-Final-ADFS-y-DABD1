@@ -162,6 +162,49 @@
   letter-spacing: 0.6px;
 }
 
+/* Barra de busqueda por texto libre encima de los filtros */
+.mr-buscar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid #e5d9cc;
+  border-radius: 10px;
+  padding: 0 0.75rem;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.2s;
+}
+.mr-buscar:focus-within { border-color: #8B6B4A; }
+.mr-buscar__icon {
+  width: 16px;
+  height: 16px;
+  color: #B89A7A;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+.mr-buscar__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0.65rem 0;
+  font-size: 0.875rem;
+  color: #1C1A18;
+  font-family: inherit;
+}
+.mr-buscar__input::placeholder { color: #B89A7A; }
+.mr-buscar__clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #B89A7A;
+  font-size: 0.85rem;
+  padding: 0.25rem;
+  line-height: 1;
+  border-radius: 4px;
+}
+.mr-buscar__clear:hover { color: #8B6B4A; }
+
 /* Fila de pastillas de filtro: se ajusta, separada de la grilla de tarjetas por un borde inferior */
 .mr-filtros {
   display: flex;

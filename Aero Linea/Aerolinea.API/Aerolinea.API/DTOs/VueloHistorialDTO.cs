@@ -27,5 +27,12 @@ namespace Aerolinea.API.Models.DTOs
 
         public decimal PrecioTurista { get; set; }
         public decimal PrecioEjecutiva { get; set; }
+
+        // Datos del avión asignado
+        public int AvionId { get; set; }
+        public string AvionNombre { get; set; } = string.Empty;
+
+        // Boletos realmente vendidos (EstadoBoletoID IN (2,3))
+        public int BoletosVendidosReal { get; set; }
     }
 }

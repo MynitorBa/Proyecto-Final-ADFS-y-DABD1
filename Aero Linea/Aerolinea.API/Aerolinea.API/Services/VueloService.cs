@@ -35,13 +35,14 @@ namespace Aerolinea.API.Services
         /// </summary>
         public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId)
         {
-            // Guardar búsqueda
+            // Guardar búsqueda: 1=Usuario (sesión iniciada), 3=Web (anónimo)
             await _repository.GuardarBusqueda(
                 origenId: dto.OrigenId,
                 destinoId: dto.DestinoId,
                 fechaSalida: dto.Fecha,
                 cantidadPersonas: dto.CantidadPasajeros,
-                usuarioId: usuarioId
+                usuarioId: usuarioId,
+                tipoBusquedaId: usuarioId.HasValue ? 1 : 3
             );
 
             //  Vuelos directos

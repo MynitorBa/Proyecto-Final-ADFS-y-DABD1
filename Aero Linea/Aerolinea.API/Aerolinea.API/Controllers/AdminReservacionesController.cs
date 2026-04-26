@@ -62,7 +62,10 @@ namespace Aerolinea.API.Controllers
 
             try
             {
-                var (ok, mensaje, agencia) = await _svc.CancelarAsync(id, body.Motivo);
+                var ip        = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+
+                var (ok, mensaje, agencia) = await _svc.CancelarAsync(id, body.Motivo, ip, userAgent);
 
                 if (!ok)
                     return mensaje.Contains("no fue encontrada")

@@ -500,34 +500,6 @@
 
         </div>
 
-        <!-- Inputs de fecha nativa: ida obligatoria, regreso solo en ida y vuelta -->
-        <div class="home-date-inputs">
-          <div class="home-date-group">
-            <label for="dep-date" class="home-date-label">
-              {tripType === 'oneway' ? 'Fecha de salida' : 'Fecha de ida'} *
-            </label>
-            <input type="date" id="dep-date" bind:value={departureDate}
-              min={fechaHoy} class="home-date-input"
-              on:change={() => searchError = ''} />
-          </div>
-          {#if tripType === 'roundtrip'}
-            <div class="home-date-group">
-              <label for="ret-date" class="home-date-label">Fecha de regreso *</label>
-              <input type="date" id="ret-date" bind:value={returnDate}
-                min={departureDate || fechaHoy} class="home-date-input"
-                on:change={() => searchError = ''} />
-            </div>
-          {/if}
-        </div>
-
-        <!-- Pista informativa cuando no se han elegido origen y destino aún -->
-        {#if !fromSeleccionado || !toSeleccionado}
-          <div class="home-info-hint">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            <span><strong>Consejo:</strong> Selecciona origen y destino para ver los días con vuelos disponibles en el calendario</span>
-          </div>
-        {/if}
-
         <!-- Calendarios duales con fechas disponibles resaltadas para ida y regreso -->
         {#if loadingFechas}
           <div class="cal-loading">Cargando disponibilidad de vuelos...</div>

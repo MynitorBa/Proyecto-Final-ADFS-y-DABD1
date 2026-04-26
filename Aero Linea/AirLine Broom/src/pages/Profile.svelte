@@ -125,15 +125,28 @@
   /** True mientras la solicitud PATCH de contrasena esta en progreso. @type {boolean} */
   let guardandoPassword = false;
 
+  /** Nuevo correo electronico ingresado por el usuario. @type {string} */
+  let nuevoCorreo = '';
+
+  /** Mensaje de exito mostrado despues de actualizar el correo. @type {string} */
+  let correoMensaje = '';
+
+  /** Mensaje de error mostrado cuando la actualizacion del correo falla. @type {string} */
+  let correoError = '';
+
+  /** True mientras la solicitud PATCH de correo esta en progreso. @type {boolean} */
+  let guardandoCorreo = false;
+
   // Indicadores de fortaleza de contrasena calculados para el input de nueva contrasena.
   $: ps = {
     length:    passwordData.newPassword.length >= 8,
     uppercase: /[A-Z]/.test(passwordData.newPassword),
-    number:    /[0-9]/.test(passwordData.newPassword)
+    number:    /[0-9]/.test(passwordData.newPassword),
+    special:   /[^A-Za-z0-9]/.test(passwordData.newPassword)
   };
 
-  // True cuando los tres requisitos de fortaleza de contrasena se cumplen.
-  $: passwordValid = ps.length && ps.uppercase && ps.number;
+  // True cuando los cuatro requisitos de fortaleza de contrasena se cumplen.
+  $: passwordValid = ps.length && ps.uppercase && ps.number && ps.special;
 
   onMount(async () => {
     if (!usuarioId) { navigateTo('login'); return; }
@@ -253,7 +266,7 @@
     passwordError   = '';
 
     if (!passwordValid) {
-      passwordError = 'La contrasena debe tener al menos 8 caracteres, 1 mayuscula y 1 numero.'; return;
+      passwordError = 'La contrasena debe tener al menos 8 caracteres, 1 mayuscula, 1 numero y 1 caracter especial.'; return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       passwordError = 'Las contrasenas no coinciden.'; return;
@@ -280,6 +293,45 @@
       passwordError = 'Error de conexion.';
     } finally {
       guardandoPassword = false;
+    }
+  }
+
+  /**
+   * Valida el formato del nuevo correo y lo envia via PATCH /api/perfil/:id/correo.
+   * Al tener exito actualiza perfil.correo y establece correoMensaje.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function handleActualizarCorreo() {
+    correoMensaje = '';
+    correoError   = '';
+
+    if (!nuevoCorreo.trim()) {
+      correoError = 'El correo no puede estar vacio.'; return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoCorreo.trim())) {
+      correoError = 'El formato del correo no es valido.'; return;
+    }
+
+    guardandoCorreo = true;
+    try {
+      const res = await fetch(`${API}/api/perfil/${usuarioId}/correo`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevoCorreo: nuevoCorreo.trim() })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        perfil.correo = nuevoCorreo.trim();
+        nuevoCorreo   = '';
+        correoMensaje = data.message;
+      } else {
+        correoError = data.message;
+      }
+    } catch {
+      correoError = 'Error de conexion.';
+    } finally {
+      guardandoCorreo = false;
     }
   }
 
@@ -481,6 +533,48 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Subseccion editable para actualizar el correo electronico -->
+              <div style="margin-top:2.5rem">
+                <h3 class="profile-section__title" style="font-size:1.1rem;margin-bottom:.4rem">
+                  Cambiar Correo Electronico
+                </h3>
+                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.5rem">
+                  Correo actual: <strong>{perfil.correo}</strong>
+                </p>
+
+                <div class="profile-form">
+                  <div class="profile-form__row">
+                    <div class="profile-form__field profile-form__field--full">
+                      <label class="profile-form__label">Nuevo Correo</label>
+                      <input
+                        type="email"
+                        class="profile-form__input"
+                        bind:value={nuevoCorreo}
+                        placeholder="nuevo@correo.com"
+                        autocomplete="off"
+                        on:input={() => { correoError = ''; correoMensaje = ''; }} />
+
+                      {#if correoError}
+                        <span style="color:#c62828;font-size:.82rem;margin-top:.3rem;display:block">
+                          {correoError}
+                        </span>
+                      {/if}
+                      {#if correoMensaje}
+                        <span style="color:#2e7d32;font-size:.85rem;margin-top:.3rem;display:block">
+                          {correoMensaje}
+                        </span>
+                      {/if}
+                    </div>
+                  </div>
+
+                  <button class="profile-form__submit"
+                    on:click={handleActualizarCorreo}
+                    disabled={guardandoCorreo}>
+                    {guardandoCorreo ? 'Guardando...' : 'Guardar Correo'}
+                  </button>
+                </div>
+              </div>
             </section>
 
           {:else if activeTab === 'security'}
@@ -520,6 +614,9 @@
                         </span>
                         <span class="password-strength__item" class:ok={ps.number}>
                           {ps.number ? '✓' : '✗'} 1 numero
+                        </span>
+                        <span class="password-strength__item" class:ok={ps.special}>
+                          {ps.special ? '✓' : '✗'} 1 caracter especial (#, @, !, $...)
                         </span>
                       </div>
                     {/if}

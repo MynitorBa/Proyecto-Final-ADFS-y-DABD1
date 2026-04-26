@@ -19,5 +19,6 @@ namespace Aerolinea.API.DTOs
         public string Ciudad { get; set; }
         public List<string> Nacionalidades { get; set; } = new();
         public int RolID { get; set; } = 2;
+        public bool RecibirOfertas { get; set; } = false;
     }
 }

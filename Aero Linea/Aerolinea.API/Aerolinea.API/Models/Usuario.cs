@@ -18,5 +18,6 @@ namespace Aerolinea.API.Models
         public DateTime FechaNacimiento { get; set; }
         public int CiudadId { get; set; }
         public int RolID { get; set; }
+        public bool RecibirOfertas { get; set; }
     }
 }

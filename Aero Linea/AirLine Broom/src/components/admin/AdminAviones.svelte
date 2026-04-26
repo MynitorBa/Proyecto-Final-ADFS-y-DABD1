@@ -29,8 +29,15 @@
   /** Controla si se muestran tambien los aviones inactivos en la tabla. @type {boolean} */
   let mostrarInactivos = false;
 
-  /** Lista filtrada de aviones segun el estado mostrarInactivos. @type {any[]} */
-  $: avionesFiltrados = mostrarInactivos ? aviones : aviones.filter(a => a.activo !== false);
+  /** Lista filtrada de aviones: Activos muestra solo activos, Inactivos muestra solo inactivos. @type {any[]} */
+  $: avionesFiltrados = mostrarInactivos
+    ? aviones.filter(a => a.activo === false)
+    : aviones.filter(a => a.activo !== false);
+
+  /** Conteo de aviones activos. @type {number} */
+  $: totalActivos   = aviones.filter(a => a.activo !== false).length;
+  /** Conteo de aviones inactivos. @type {number} */
+  $: totalInactivos = aviones.filter(a => a.activo === false).length;
 
   /** Indica si la carga de la lista de aviones esta en progreso. @type {boolean} */
   let loadingAviones = false;
@@ -67,7 +74,8 @@
   async function cargarAviones() {
     loadingAviones = true;
     try {
-      const r = await fetch(`${API}/api/aviones?incluirInactivos=${mostrarInactivos}`);
+      // Siempre cargamos todos para poder mostrar conteos en ambas pestanas
+      const r = await fetch(`${API}/api/aviones?incluirInactivos=true`);
       if (r.ok) aviones = await r.json();
       else mostrarToast('error', 'Error al cargar aviones');
     } catch { mostrarToast('error', 'Error de conexion al cargar aviones'); }
@@ -242,6 +250,7 @@
       });
       if (res.ok) {
         mostrarToast('success', 'Avion reactivado correctamente');
+        mostrarInactivos = false;  // volver a pestaña Activos para ver el avión reactivado
         await cargarAviones();
       } else {
         const err = await res.json();
@@ -291,6 +300,7 @@
           msg += ` — ${data.vuelosCancelados} vuelo(s) cancelado(s), ${data.pasajerosNotificados} pasajero(s) notificado(s)`;
         mostrarToast('success', msg);
         mostrarModalDesact = false;
+        mostrarInactivos = true;   // cambiar a pestaña Inactivos para que el admin vea el avión y pueda reactivarlo
         await cargarAviones();
       } else {
         mostrarToast('error', data.message || 'Error al desactivar el avion');
@@ -315,13 +325,18 @@
     </button>
   </div>
 
-  <!-- Barra de filtro para mostrar aviones inactivos -->
+  <!-- Barra de filtro para alternar entre activos e inactivos -->
   <div class="admin-filter-bar">
-    <label class="filter-toggle">
-      <input type="checkbox" bind:checked={mostrarInactivos}
-        on:change={cargarAviones}>
-      Mostrar aviones inactivos
-    </label>
+    <div class="filtro-tabs">
+      <button class="filtro-tab" class:filtro-tab--active={!mostrarInactivos}
+        on:click={() => { mostrarInactivos = false; }}>
+        Activos <span class="filtro-tab__count">{totalActivos}</span>
+      </button>
+      <button class="filtro-tab" class:filtro-tab--active={mostrarInactivos}
+        on:click={() => { mostrarInactivos = true; }}>
+        Inactivos <span class="filtro-tab__count">{totalInactivos}</span>
+      </button>
+    </div>
   </div>
 
   <!-- Tabla de aviones con imagen, marca, modelo y capacidad de pasajeros -->
@@ -530,8 +545,13 @@
 
 <style>
   .admin-filter-bar { margin-bottom: 1rem; }
-  .filter-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: #555; }
-  .filter-toggle input { cursor: pointer; }
+  .filtro-tabs { display: flex; gap: 0; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; width: fit-content; }
+  .filtro-tab { display: flex; align-items: center; gap: 0.45rem; padding: 0.4rem 1.1rem; font-size: 0.875rem; font-weight: 600; border: none; background: #f9fafb; color: #6b7280; cursor: pointer; transition: all 0.18s; }
+  .filtro-tab:hover:not(.filtro-tab--active) { background: #f3f4f6; color: #374151; }
+  .filtro-tab--active { background: #1C1A18; color: #D4AF37; }
+  .filtro-tab__count { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; padding: 0 0.35rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; background: rgba(255,255,255,0.18); color: inherit; }
+  .filtro-tab--active .filtro-tab__count { background: rgba(212,175,55,0.25); color: #D4AF37; }
+  .filtro-tab:not(.filtro-tab--active) .filtro-tab__count { background: #e5e7eb; color: #374151; }
   .btn-estado { padding: 0.35rem 0.75rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
   .btn-desactivar { background: #fff3cd; color: #856404; }
   .btn-desactivar:hover { background: #ffc107; color: #000; }

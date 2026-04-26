@@ -1,5 +1,6 @@
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Models.DTOs;
+
 using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -87,7 +88,9 @@ namespace Aerolinea.API.Controllers
         {
             try
             {
-                var resultado = await _adminVueloService.CancelarVuelo(id);
+                var ip        = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = Request.Headers["User-Agent"].ToString();
+                var resultado = await _adminVueloService.CancelarVuelo(id, ip, userAgent);
                 if (!resultado)
                     return NotFound(new { message = "No se pudo cancelar el vuelo. Es posible que ya esté cancelado." });
 
@@ -142,6 +145,32 @@ namespace Aerolinea.API.Controllers
             catch (Exception)
             {
                 return StatusCode(500, new { message = "Ocurrió un error inesperado al editar el vuelo. Intenta de nuevo." });
+            }
+        }
+
+        /// <summary>
+        /// Cambia el avión asignado a un vuelo. Requiere al menos 48h de anticipación
+        /// y que el nuevo avión tenga capacidad >= boletos ya vendidos.
+        /// </summary>
+        [HttpPut("{id}/avion")]
+        public async Task<IActionResult> CambiarAvion(int id, [FromBody] CambiarAvionDTO dto)
+        {
+            try
+            {
+                await _adminVueloService.CambiarAvion(id, dto.AvionId);
+                return Ok(new { message = "Avión del vuelo actualizado correctamente" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Error inesperado al cambiar el avión." });
             }
         }
 

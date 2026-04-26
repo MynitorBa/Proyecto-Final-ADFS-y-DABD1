@@ -35,6 +35,9 @@ namespace Aerolinea.API.Repositories
 
         public const int TipoReservacionExpiradaAuto = 22;
 
+        public const int TipoCancelacionAdminExitosa = 23;
+        public const int TipoCancelacionAdminFallida = 24;
+
         private readonly DbConnectionFactory _connectionFactory;
 
         public LogReservacionRepository(DbConnectionFactory connectionFactory)

@@ -7,12 +7,13 @@ namespace Aerolinea.API.DTOs
     /// HorasRestantes < 0 indica que el calculo se realizo en el pasado (raro en prod).
     /// </summary>
     public record VueloActivoInfoDTO(
-        int    Id,
-        string NumeroVuelo,
-        string Origen,
-        string Destino,
-        string Fecha,
-        string HoraSalida,
-        double HorasRestantes
+        int     Id,
+        string  NumeroVuelo,
+        string  Origen,
+        string  Destino,
+        string  Fecha,
+        string  HoraSalida,
+        double  HorasRestantes,
+        string? AvionNombre = null
     );
 }

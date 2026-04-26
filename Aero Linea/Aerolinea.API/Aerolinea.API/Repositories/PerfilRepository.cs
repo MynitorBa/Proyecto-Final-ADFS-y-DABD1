@@ -78,6 +78,22 @@ namespace Aerolinea.API.Repositories
         }
 
         /// <summary>
+        /// Retorna el correo electronico del usuario indicado.
+        /// Retorna null si el usuario no existe.
+        /// </summary>
+        public async Task<string?> ObtenerCorreo(int usuarioId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT Correo FROM Usuario WHERE Id = @UsuarioId", connection);
+            command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            var result = await command.ExecuteScalarAsync();
+            return result?.ToString();
+        }
+
+        /// <summary>
         /// Retorna el hash de la contrasena almacenada para el usuario indicado.
         /// Retorna null si el usuario no existe.
         /// </summary>
@@ -105,6 +121,39 @@ namespace Aerolinea.API.Repositories
             using var command = new SqlCommand(
                 "UPDATE Usuario SET ContrasenaHash = @Hash WHERE Id = @UsuarioId", connection);
             command.Parameters.AddWithValue("@Hash", nuevoHash);
+            command.Parameters.AddWithValue("@UsuarioId", usuarioId);
+            return await command.ExecuteNonQueryAsync() > 0;
+        }
+
+        /// <summary>
+        /// Verifica si ya existe un usuario con el correo indicado, excluyendo al usuario actual.
+        /// Retorna true si el correo ya esta en uso por otro usuario.
+        /// </summary>
+        public async Task<bool> ExisteCorreo(string correo, int exceptoId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT COUNT(1) FROM Usuario WHERE Correo = @Correo AND Id <> @ExceptoId", connection);
+            command.Parameters.AddWithValue("@Correo", correo);
+            command.Parameters.AddWithValue("@ExceptoId", exceptoId);
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
+        }
+
+        /// <summary>
+        /// Actualiza el correo electronico del usuario indicado.
+        /// Retorna true si la actualizacion afecto al menos una fila.
+        /// </summary>
+        public async Task<bool> ActualizarCorreo(int usuarioId, string nuevoCorreo)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "UPDATE Usuario SET Correo = @Correo WHERE Id = @UsuarioId", connection);
+            command.Parameters.AddWithValue("@Correo", nuevoCorreo);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
             return await command.ExecuteNonQueryAsync() > 0;
         }

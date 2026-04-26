@@ -104,19 +104,37 @@
   }
 
   /**
-   * Filtra la lista de aeropuertos contra el searchQuery actual (ciudad, nombre, codigo o pais)
-   * y actualiza searchResults. Oculta el dropdown si la consulta tiene menos de 1 caracter.
+   * Filtra aeropuertos y genera acciones rapidas de busqueda por codigo de vuelo/avion
+   * y por codigo de reservacion. Cada item del dropdown tiene un campo `tipo`:
+   * 'aeropuerto', 'vuelo' o 'reservacion'.
    */
   function onSearchInput() {
     const q = searchQuery.toLowerCase().trim();
     if (q.length < 1) { searchResults = []; showSearchResults = false; return; }
-    searchResults = aeropuertos.filter(a =>
+
+    const resultados = [];
+
+    // Aeropuertos matching (max 5)
+    const matchAeropuertos = aeropuertos.filter(a =>
       a.ciudad?.toLowerCase().includes(q) ||
       a.nombre?.toLowerCase().includes(q) ||
       a.codigo?.toLowerCase().includes(q) ||
       a.pais?.toLowerCase().includes(q)
-    ).slice(0, 8);
-    showSearchResults = searchResults.length > 0;
+    ).slice(0, 5).map(a => ({ tipo: 'aeropuerto', data: a }));
+    resultados.push(...matchAeropuertos);
+
+    // Accion rapida: buscar vuelo por codigo (codigo avion, numero vuelo)
+    if (q.length >= 2) {
+      resultados.push({ tipo: 'vuelo', query: searchQuery.trim() });
+    }
+
+    // Accion rapida: buscar reservacion (solo si hay sesion activa)
+    if (q.length >= 2 && $sesion) {
+      resultados.push({ tipo: 'reservacion', query: searchQuery.trim().toUpperCase() });
+    }
+
+    searchResults = resultados;
+    showSearchResults = resultados.length > 0;
   }
 
   /**
@@ -159,13 +177,23 @@
   }
 
   /**
-   * Selecciona un aeropuerto del dropdown de autocompletado y activa una busqueda de vuelos
-   * usando el nombre de ciudad de ese aeropuerto como consulta.
-   * @param {any} aeropuerto - El objeto de aeropuerto seleccionado del dropdown.
+   * Selecciona un item del dropdown de autocompletado. Segun el tipo:
+   * - 'aeropuerto': busca vuelos por ciudad del aeropuerto
+   * - 'vuelo': busca vuelos usando el query directo (codigo avion / numero vuelo)
+   * - 'reservacion': navega a Mis Reservas con el codigo pre-buscado
+   * @param {any} result - Item del dropdown con campo `tipo` y datos asociados.
    */
-  function selectSearchResult(aeropuerto) {
+  function selectSearchResult(result) {
     showSearchResults = false;
-    buscarYNavegar(aeropuerto.ciudad);
+    if (result.tipo === 'aeropuerto') {
+      buscarYNavegar(result.data.ciudad);
+    } else if (result.tipo === 'vuelo') {
+      buscarYNavegar(result.query);
+    } else if (result.tipo === 'reservacion') {
+      searchQuery = '';
+      menuActive = false;
+      navigateTo('reservas', { buscarCodigo: result.query });
+    }
   }
 
   /**
@@ -175,7 +203,10 @@
    */
   function handleSearchKeydown(e) {
     if (e.key === 'Enter') {
-      if (searchResults.length > 0) selectSearchResult(searchResults[0]);
+      // Prefer first aeropuerto result; fallback to direct query
+      const firstAeropuerto = searchResults.find(r => r.tipo === 'aeropuerto');
+      if (firstAeropuerto) selectSearchResult(firstAeropuerto);
+      else if (searchResults.length > 0) selectSearchResult(searchResults[0]);
       else if (searchQuery.trim().length >= 2) buscarYNavegar(searchQuery);
     } else if (e.key === 'Escape') {
       showSearchResults = false;
@@ -270,7 +301,9 @@
       >
       <button class="broom-header__search-btn" aria-label="Buscar"
         on:click={() => {
-          if (searchResults.length > 0) selectSearchResult(searchResults[0]);
+          const firstAeropuerto = searchResults.find(r => r.tipo === 'aeropuerto');
+          if (firstAeropuerto) selectSearchResult(firstAeropuerto);
+          else if (searchResults.length > 0) selectSearchResult(searchResults[0]);
           else if (searchQuery.trim().length >= 2) buscarYNavegar(searchQuery);
         }}
         disabled={searching}>
@@ -282,16 +315,36 @@
 
       {#if showSearchResults && searchResults.length > 0}
         <ul class="broom-header__search-results">
-          {#each searchResults as a}
+          {#each searchResults as r}
             <li class="broom-header__search-result-item">
-              <button type="button" class="broom-header__search-result-btn" on:click={() => selectSearchResult(a)}>
-                <span class="broom-header__search-result-code">{a.codigo}</span>
-                <div class="broom-header__search-result-info">
-                  <span class="broom-header__search-result-city">{a.ciudad}</span>
-                  <span class="broom-header__search-result-detail">{a.nombre} · {a.pais}</span>
-                </div>
-                <span class="broom-header__search-result-arrow">→</span>
-              </button>
+              {#if r.tipo === 'aeropuerto'}
+                <button type="button" class="broom-header__search-result-btn" on:click={() => selectSearchResult(r)}>
+                  <span class="broom-header__search-result-code">{r.data.codigo}</span>
+                  <div class="broom-header__search-result-info">
+                    <span class="broom-header__search-result-city">{r.data.ciudad}</span>
+                    <span class="broom-header__search-result-detail">{r.data.nombre} · {r.data.pais}</span>
+                  </div>
+                  <span class="broom-header__search-result-arrow">→</span>
+                </button>
+              {:else if r.tipo === 'vuelo'}
+                <button type="button" class="broom-header__search-result-btn broom-header__search-result-btn--action" on:click={() => selectSearchResult(r)}>
+                  <span class="broom-header__search-result-code broom-header__search-result-code--action">✈</span>
+                  <div class="broom-header__search-result-info">
+                    <span class="broom-header__search-result-city">Buscar vuelo: {r.query}</span>
+                    <span class="broom-header__search-result-detail">Por numero de vuelo o codigo de avion</span>
+                  </div>
+                  <span class="broom-header__search-result-arrow">→</span>
+                </button>
+              {:else if r.tipo === 'reservacion'}
+                <button type="button" class="broom-header__search-result-btn broom-header__search-result-btn--action" on:click={() => selectSearchResult(r)}>
+                  <span class="broom-header__search-result-code broom-header__search-result-code--action">📋</span>
+                  <div class="broom-header__search-result-info">
+                    <span class="broom-header__search-result-city">Ver reservacion: {r.query}</span>
+                    <span class="broom-header__search-result-detail">Buscar en Mis Reservas</span>
+                  </div>
+                  <span class="broom-header__search-result-arrow">→</span>
+                </button>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -355,7 +408,9 @@
       >
       <button class="broom-header__search-btn" aria-label="Buscar"
         on:click={() => {
-          if (searchResults.length > 0) selectSearchResult(searchResults[0]);
+          const firstAeropuerto = searchResults.find(r => r.tipo === 'aeropuerto');
+          if (firstAeropuerto) selectSearchResult(firstAeropuerto);
+          else if (searchResults.length > 0) selectSearchResult(searchResults[0]);
           else if (searchQuery.trim().length >= 2) buscarYNavegar(searchQuery);
         }}
         disabled={searching}>
@@ -367,16 +422,36 @@
 
       {#if showSearchResults && searchResults.length > 0}
         <ul class="broom-header__search-results">
-          {#each searchResults as a}
+          {#each searchResults as r}
             <li class="broom-header__search-result-item">
-              <button type="button" class="broom-header__search-result-btn" on:click={() => selectSearchResult(a)}>
-                <span class="broom-header__search-result-code">{a.codigo}</span>
-                <div class="broom-header__search-result-info">
-                  <span class="broom-header__search-result-city">{a.ciudad}</span>
-                  <span class="broom-header__search-result-detail">{a.nombre} · {a.pais}</span>
-                </div>
-                <span class="broom-header__search-result-arrow">→</span>
-              </button>
+              {#if r.tipo === 'aeropuerto'}
+                <button type="button" class="broom-header__search-result-btn" on:click={() => selectSearchResult(r)}>
+                  <span class="broom-header__search-result-code">{r.data.codigo}</span>
+                  <div class="broom-header__search-result-info">
+                    <span class="broom-header__search-result-city">{r.data.ciudad}</span>
+                    <span class="broom-header__search-result-detail">{r.data.nombre} · {r.data.pais}</span>
+                  </div>
+                  <span class="broom-header__search-result-arrow">→</span>
+                </button>
+              {:else if r.tipo === 'vuelo'}
+                <button type="button" class="broom-header__search-result-btn broom-header__search-result-btn--action" on:click={() => selectSearchResult(r)}>
+                  <span class="broom-header__search-result-code broom-header__search-result-code--action">✈</span>
+                  <div class="broom-header__search-result-info">
+                    <span class="broom-header__search-result-city">Buscar vuelo: {r.query}</span>
+                    <span class="broom-header__search-result-detail">Por numero de vuelo o codigo de avion</span>
+                  </div>
+                  <span class="broom-header__search-result-arrow">→</span>
+                </button>
+              {:else if r.tipo === 'reservacion'}
+                <button type="button" class="broom-header__search-result-btn broom-header__search-result-btn--action" on:click={() => selectSearchResult(r)}>
+                  <span class="broom-header__search-result-code broom-header__search-result-code--action">📋</span>
+                  <div class="broom-header__search-result-info">
+                    <span class="broom-header__search-result-city">Ver reservacion: {r.query}</span>
+                    <span class="broom-header__search-result-detail">Buscar en Mis Reservas</span>
+                  </div>
+                  <span class="broom-header__search-result-arrow">→</span>
+                </button>
+              {/if}
             </li>
           {/each}
         </ul>
