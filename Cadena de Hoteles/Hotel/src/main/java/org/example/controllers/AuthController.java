@@ -62,7 +62,7 @@ public class AuthController {
             Cookie cookie = new Cookie(COOKIE_NAME, resultado.token());
             cookie.setHttpOnly(true);
             cookie.setSecure(true);
-            cookie.setSameSite(SameSite.STRICT);
+            cookie.setSameSite(SameSite.NONE);
             cookie.setMaxAge(COOKIE_MAX_AGE);
             cookie.setPath("/");
             ctx.cookie(cookie);
