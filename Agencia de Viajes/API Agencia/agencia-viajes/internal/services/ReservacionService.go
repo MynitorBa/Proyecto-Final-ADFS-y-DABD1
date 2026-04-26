@@ -9,10 +9,7 @@ import (
 	"agencia-viajes/internal/repositories"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // ReservacionService
@@ -63,11 +60,8 @@ func (s *ReservacionService) CrearReservacion(usuarioID, tipoReservaID int) (dto
 		return dto.CrearReservacionResponse{}, fmt.Errorf("error expirando reservaciones anteriores: %w", err)
 	}
 
-	// 2. Crear nueva reservación
-	noReservacion := strings.ToUpper(strings.ReplaceAll(uuid.New().String(), "-", "")[:8])
-	fechaExpiracion := time.Now().Add(10 * time.Minute).Format("2006-01-02 15:04:05")
-
-	id, err := s.repo.CrearReservacion(usuarioID, tipoReservaID, noReservacion, fechaExpiracion)
+	// 2. El SP genera el código, calcula expiración e inserta
+	id, noReservacion, fechaExpiracion, err := s.repo.CrearReservacion(usuarioID, tipoReservaID)
 	if err != nil {
 		return dto.CrearReservacionResponse{}, fmt.Errorf("error creando reservación: %w", err)
 	}

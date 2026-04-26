@@ -9,6 +9,7 @@ import (
 	"agencia-viajes/internal/dto"
 	"context"
 	"database/sql"
+	"time"
 )
 
 // ReservacionRepository
@@ -50,29 +51,36 @@ func NewReservacionRepository(db *sql.DB) *ReservacionRepository {
 func (r *ReservacionRepository) CrearReservacion(
 	usuarioID int,
 	tipoReservaID int,
-	noReservacion string,
-	fechaExpiracion string,
-) (int, error) {
+) (id int, noReservacion string, fechaExpiracion string, err error) {
 	conn, err := r.db.Conn(context.Background())
 	if err != nil {
-		return 0, err
+		return 0, "", "", err
 	}
 	defer conn.Close()
 
-	const estadoPendiente = 1
-
-	result, err := conn.ExecContext(context.Background(), `
-		INSERT INTO Reservacion
-			(No_Reservacion, Total, EstadoID, Usuario_ID, Fecha_Expiracion, Fecha_Creacion, Tipo_Reserva_ID)
-		VALUES (?, 0, ?, ?, ?, NOW(), ?)`,
-		noReservacion, estadoPendiente, usuarioID, fechaExpiracion, tipoReservaID,
+	// Llamar el procedimiento
+	_, err = conn.ExecContext(context.Background(),
+		"CALL SP_CREAR_RESERVACION(?, ?, @id, @no_reservacion, @fecha_exp)",
+		usuarioID, tipoReservaID,
 	)
 	if err != nil {
-		return 0, err
+		return 0, "", "", err
 	}
 
-	id, _ := result.LastInsertId()
-	return int(id), nil
+	// Leer los OUT params
+	var fechaExp *time.Time
+	err = conn.QueryRowContext(context.Background(),
+		"SELECT @id, @no_reservacion, CAST(@fecha_exp AS DATETIME)",
+	).Scan(&id, &noReservacion, &fechaExp)
+	if err != nil {
+		return 0, "", "", err
+	}
+
+	if fechaExp != nil {
+		fechaExpiracion = fechaExp.Format("2006-01-02 15:04:05")
+	}
+
+	return id, noReservacion, fechaExpiracion, nil
 }
 
 // ExpirarReservacionesPendientes
@@ -362,11 +370,10 @@ func (r *ReservacionRepository) ObtenerDetallesDeReservacion(reservacionID int) 
 	defer conn.Close()
 
 	rows, err := conn.QueryContext(context.Background(), `
-		SELECT dr.ID_Reserva_Proveedor, p.ID, p.URL_API, p.Token_HASH_Entrada, dr.Tipo_Detalle_ID
-		FROM Detalles_Reservacion dr
-		JOIN Proveedor p ON dr.Proveedor_ID = p.ID
-		WHERE dr.Reservacion_ID = ?
-	`, reservacionID)
+        SELECT ID_Reserva_Proveedor, ProveedorID, URL_API, Token_HASH_Entrada, Tipo_Detalle_ID
+        FROM VW_DETALLES_CON_PROVEEDOR
+        WHERE Reservacion_ID = ?
+    `, reservacionID)
 	if err != nil {
 		return nil, err
 	}
