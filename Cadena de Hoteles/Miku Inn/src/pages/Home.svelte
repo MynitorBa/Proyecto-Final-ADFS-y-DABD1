@@ -160,6 +160,30 @@
       }
       await validarAlianzaToken();
     }
+
+    // Cargar destinos disponibles para la sección explorar
+    try {
+      const res = await fetch(`${API}/destinos`);
+      if (res.ok) {
+        destinos = await res.json();
+        destinosPorPais = agruparPorPais(destinos);
+        paisesDestino   = Object.keys(destinosPorPais).sort();
+        if (paisesDestino.length > 0) paisDestinoSeleccionado = paisesDestino[0];
+      }
+    } catch (_) {}
+    destinosLoading = false;
+
+    // Cargar origen del usuario si tiene sesión
+    if (isLoggedIn) {
+      try {
+        const res = await fetch(`${API}/usuarios/perfil`, { credentials: 'include' });
+        if (res.ok) {
+          const perfil = await res.json();
+          userPaisOrigen   = perfil.pais   || null;
+          userCiudadOrigen = perfil.ciudad || null;
+        }
+      } catch (_) {}
+    }
   });
 
   // Sincroniza el campo de ciudad si llega una nueva sugerencia en tiempo real
@@ -408,6 +432,149 @@
     }
   }
 
+  // ── Sección de exploración de destinos ──────────────────────────────────────
+
+  /** Lista completa de hoteles activos del sistema. @type {any[]} */
+  let destinos = [];
+
+  /** Hoteles agrupados por país destino. @type {Record<string, any[]>} */
+  let destinosPorPais = {};
+
+  /** Lista de países únicos disponibles como destino. @type {string[]} */
+  let paisesDestino = [];
+
+  /** País destino actualmente expandido en el panel. @type {string|null} */
+  let paisDestinoSeleccionado = null;
+
+  /** Hotel con detalle visible (móvil). @type {any|null} */
+  let hotelDetalle = null;
+
+  /** País de origen del usuario (de su perfil). @type {string|null} */
+  let userPaisOrigen = null;
+
+  /** Ciudad de origen del usuario (de su perfil). @type {string|null} */
+  let userCiudadOrigen = null;
+
+  /** True mientras se cargan los destinos. @type {boolean} */
+  let destinosLoading = true;
+
+  /** Referencia al elemento hero para el scroll. @type {Element|null} */
+  let heroRef = null;
+
+  /**
+   * Agrupa un array de hoteles por su campo `pais`.
+   * @param {any[]} lista
+   * @returns {Record<string, any[]>}
+   */
+  function agruparPorPais(lista) {
+    return lista.reduce((acc, h) => {
+      (acc[h.pais] = acc[h.pais] || []).push(h);
+      return acc;
+    }, {});
+  }
+
+  /**
+   * Alterna la expansión del panel de un país destino.
+   * @param {string} pais
+   */
+  function seleccionarPaisDestino(pais) {
+    paisDestinoSeleccionado = paisDestinoSeleccionado === pais ? null : pais;
+    hotelDetalle = null;
+  }
+
+  /** True mientras se ejecuta una búsqueda directa desde un panel. @type {boolean} */
+  let buscandoDirecto = false;
+
+  /** ID del hotel cuya búsqueda directa está en curso (para mostrar spinner). @type {number|null} */
+  let buscandoHotelId = null;
+
+  /**
+   * Busca directamente en el backend usando el país y ciudad del hotel
+   * y navega a search-results como si el usuario hubiera llenado el formulario.
+   * Usa fechas de hoy/mañana y 1 huésped como valores por defecto.
+   * @param {any} hotel
+   */
+  async function irABuscar(hotel) {
+    if (buscandoDirecto) return;
+    buscandoDirecto = true;
+    buscandoHotelId = hotel.id;
+
+    const todayStr    = toLocalDateStr(new Date());
+    const mananaDate  = new Date(); mananaDate.setDate(mananaDate.getDate() + 1);
+    const mananaStr   = toLocalDateStr(mananaDate);
+
+    try {
+      const res = await fetch(`${API}/busqueda`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          pais:             hotel.pais,
+          ciudad:           hotel.ciudad,
+          fechaCheckIn:     todayStr,
+          fechaCheckOut:    mananaStr,
+          cantidadPersonas: 1
+        })
+      });
+
+      const hotels = res.ok ? await res.json() : [];
+      navigateTo('search-results', {
+        pais:             hotel.pais,
+        ciudad:           hotel.ciudad,
+        fechaCheckIn:     todayStr,
+        fechaCheckOut:    mananaStr,
+        cantidadPersonas: 1,
+        hotels,
+        porcentajeDescuento: null
+      });
+    } catch (_) {
+      navigateTo('search-results', {
+        pais: hotel.pais, ciudad: hotel.ciudad,
+        fechaCheckIn: todayStr, fechaCheckOut: mananaStr,
+        cantidadPersonas: 1, hotels: [], porcentajeDescuento: null
+      });
+    } finally {
+      buscandoDirecto = false;
+      buscandoHotelId = null;
+    }
+  }
+
+  /**
+   * Genera las iniciales del nombre del hotel para usar como placeholder de imagen.
+   * @param {string} nombre
+   * @returns {string}
+   */
+  function iniciales(nombre) {
+    return nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  }
+
+  /**
+   * Retorna el color de fondo del placeholder según el índice del hotel.
+   * @param {number} i
+   * @returns {string}
+   */
+  function placeholderColor(i) {
+    const colores = [
+      'linear-gradient(135deg,#1e3a5f,#2563eb)',
+      'linear-gradient(135deg,#1e3351,#7c3aed)',
+      'linear-gradient(135deg,#1e3a2e,#059669)',
+      'linear-gradient(135deg,#3b2e0a,#d97706)',
+      'linear-gradient(135deg,#3b1f1f,#dc2626)',
+      'linear-gradient(135deg,#1e2e3a,#0891b2)',
+    ];
+    return colores[i % colores.length];
+  }
+
+  /**
+   * Retorna el color de acento del chip de país según índice.
+   * @param {number} i
+   * @returns {string}
+   */
+  function chipAccent(i) {
+    const accents = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2'];
+    return accents[i % accents.length];
+  }
+
   /**
    * Caracteristicas destacadas de la cadena para la seccion de beneficios.
    * Cada item tiene un icono SVG inline, un titulo y una descripcion.
@@ -425,7 +592,7 @@
 <div class="home-page">
 
   <!-- Seccion hero con imagen de fondo y el formulario de busqueda -->
-  <section class="home__hero-section">
+  <section class="home__hero-section" bind:this={heroRef}>
     <div class="home__hero-overlay"></div>
     <div class="home__hero-content">
       <div class="hero-text">
@@ -548,6 +715,334 @@
       </div>
     </div>
   </section>
+
+  <!-- Seccion de los 5 pasos del flujo de compra -->
+  <section class="steps-section">
+    <div class="home__container">
+      <div class="home__section-header">
+        <h2 class="home__section-title">Tu reserva en 5 pasos</h2>
+        <p class="home__section-description">Desde la búsqueda hasta el check-out, todo en un solo lugar</p>
+      </div>
+
+      <div class="steps-track">
+        <!-- Línea conectora entre pasos -->
+        <div class="steps-connector" aria-hidden="true"></div>
+
+        <!-- Paso 1: Buscar -->
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-icon-wrap step-icon-wrap--search">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Busca tu destino</h3>
+          <p class="step-desc">Elige país, ciudad, fechas y número de huéspedes en nuestro buscador</p>
+          <div class="step-badge">Buscador</div>
+        </div>
+
+        <!-- Paso 2: Seleccionar hotel -->
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-icon-wrap step-icon-wrap--hotel">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Elige tu hotel</h3>
+          <p class="step-desc">Compara hoteles, fotos, amenidades y tipo de habitación — doble, suite y más</p>
+          <div class="step-badge">Resultados</div>
+        </div>
+
+        <!-- Paso 3: Reservar -->
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-icon-wrap step-icon-wrap--reserva">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M8 14h.01M12 14h.01M16 14h.01"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Confirma tu reserva</h3>
+          <p class="step-desc">Revisa el resumen de tu estancia y confirma los detalles de la reservación</p>
+          <div class="step-badge">Reserva</div>
+        </div>
+
+        <!-- Paso 4: Pagar -->
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <div class="step-icon-wrap step-icon-wrap--pago">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <h3 class="step-title">Realiza el pago</h3>
+          <p class="step-desc">Pago seguro con tarjeta. Descuentos automáticos si vienes de una aerolínea aliada</p>
+          <div class="step-badge">Pago</div>
+        </div>
+
+        <!-- Paso 5: Disfrutar -->
+        <div class="step-card">
+          <div class="step-num">5</div>
+          <div class="step-icon-wrap step-icon-wrap--enjoy">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+              <line x1="9" y1="9" x2="9.01" y2="9"/>
+              <line x1="15" y1="9" x2="15.01" y2="9"/>
+            </svg>
+          </div>
+          <h3 class="step-title">¡A disfrutar!</h3>
+          <p class="step-desc">Recibe tu confirmación por correo con todos los detalles y vive la experiencia Miku Inn</p>
+          <div class="step-badge step-badge--gold">¡Listo!</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seccion Explora Destinos: DESDE → HACIA con panel expandible por país -->
+  <section class="destinos-section">
+    <div class="home__container">
+
+      <!-- Encabezado con indicador de origen si el usuario tiene sesión -->
+      <div class="destinos-header">
+        <div class="destinos-title-wrap">
+          <h2 class="home__section-title" style="margin-bottom:0.4rem;">Explora nuestros destinos</h2>
+          <p class="home__section-description" style="margin:0;">Selecciona un país y descubre los hoteles disponibles</p>
+        </div>
+        {#if userPaisOrigen}
+          <div class="destinos-origen-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10z"/>
+            </svg>
+            Desde: <strong>{userCiudadOrigen ? userCiudadOrigen + ', ' : ''}{userPaisOrigen}</strong>
+          </div>
+        {/if}
+      </div>
+
+      {#if destinosLoading}
+        <!-- Skeleton de carga -->
+        <div class="destinos-skeleton-row">
+          {#each Array(5) as _}
+            <div class="destinos-chip-skeleton"></div>
+          {/each}
+        </div>
+      {:else if paisesDestino.length === 0}
+        <p class="destinos-empty">No hay destinos disponibles por el momento.</p>
+      {:else}
+
+        <!-- Fila de chips de países destino -->
+        <div class="destinos-chips-row" role="list">
+          {#each paisesDestino as pais, i}
+            <button
+              type="button"
+              class="destinos-chip"
+              class:destinos-chip--active={paisDestinoSeleccionado === pais}
+              style="--chip-accent:{chipAccent(i)}"
+              on:click={() => seleccionarPaisDestino(pais)}
+              role="listitem"
+              aria-pressed={paisDestinoSeleccionado === pais}
+            >
+              <!-- Avion icono (hacia) -->
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+              {pais}
+              <span class="destinos-chip-count">{destinosPorPais[pais].length}</span>
+            </button>
+          {/each}
+        </div>
+
+        <!-- Panel expandible del país seleccionado -->
+        {#if paisDestinoSeleccionado && destinosPorPais[paisDestinoSeleccionado]}
+          <div class="destinos-panel">
+
+            <!-- Título del panel con flecha DESDE→HACIA -->
+            <div class="destinos-panel-title">
+              {#if userPaisOrigen}
+                <span class="destinos-desde">{userPaisOrigen}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+              {:else}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+              {/if}
+              <span class="destinos-hacia">{paisDestinoSeleccionado}</span>
+              <span class="destinos-panel-count">
+                {destinosPorPais[paisDestinoSeleccionado].length}
+                {destinosPorPais[paisDestinoSeleccionado].length === 1 ? 'hotel' : 'hoteles'}
+              </span>
+            </div>
+
+            <!-- Grid de tarjetas de hotel -->
+            <div class="destinos-hotel-grid">
+              {#each destinosPorPais[paisDestinoSeleccionado] as hotel, idx}
+                <div class="destinos-hotel-card">
+
+                  <!-- Imagen o placeholder con iniciales -->
+                  <div
+                    class="destinos-hotel-img"
+                    style="background:{hotel.imagenesIds && hotel.imagenesIds.length > 0
+                      ? 'none'
+                      : placeholderColor(idx)}"
+                  >
+                    {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
+                      <img
+                        src="{API}/imagenes/{hotel.imagenesIds[0]}"
+                        alt={hotel.nombre}
+                        loading="lazy"
+                        on:error={(e) => { e.target.style.display='none'; }}
+                      />
+                    {:else}
+                      <span class="destinos-hotel-iniciales">{iniciales(hotel.nombre)}</span>
+                    {/if}
+
+                    <!-- Badge de rating -->
+                    {#if hotel.rating > 0}
+                      <div class="destinos-rating-badge">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        {hotel.rating.toFixed(1)}
+                      </div>
+                    {/if}
+                  </div>
+
+                  <!-- Contenido de la tarjeta -->
+                  <div class="destinos-hotel-body">
+                    <h4 class="destinos-hotel-nombre">{hotel.nombre}</h4>
+                    <div class="destinos-hotel-ciudad">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      {hotel.ciudad}
+                    </div>
+                    {#if hotel.descripcion}
+                      <p class="destinos-hotel-desc">
+                        {hotel.descripcion.length > 80
+                          ? hotel.descripcion.slice(0, 80) + '…'
+                          : hotel.descripcion}
+                      </p>
+                    {/if}
+                    <button
+                      type="button"
+                      class="destinos-buscar-btn"
+                      class:destinos-buscar-btn--loading={buscandoHotelId === hotel.id}
+                      disabled={buscandoDirecto}
+                      on:click={() => irABuscar(hotel)}
+                    >
+                      {#if buscandoHotelId === hotel.id}
+                        <svg class="home__spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        </svg>
+                        Buscando...
+                      {:else}
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        Ver disponibilidad
+                      {/if}
+                    </button>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      {/if}
+    </div>
+  </section>
+
+  <!-- Seccion Hoteles mejor valorados: top hoteles por rating, búsqueda directa -->
+  {#if !destinosLoading && destinos.length > 0}
+  {@const topHoteles = [...destinos].filter(h => h.rating > 0).sort((a,b) => b.rating - a.rating).slice(0, 6)}
+  {#if topHoteles.length > 0}
+  <section class="top-section">
+    <div class="home__container">
+      <div class="home__section-header">
+        <h2 class="home__section-title">Hoteles mejor valorados</h2>
+        <p class="home__section-description">Los favoritos de nuestros huéspedes — click para ver disponibilidad</p>
+      </div>
+
+      <div class="top-hotel-grid">
+        {#each topHoteles as hotel, idx}
+          <button
+            type="button"
+            class="top-hotel-card"
+            class:top-hotel-card--loading={buscandoHotelId === hotel.id}
+            disabled={buscandoDirecto}
+            on:click={() => irABuscar(hotel)}
+            aria-label="Ver disponibilidad en {hotel.nombre}"
+          >
+            <!-- Imagen / placeholder -->
+            <div
+              class="top-hotel-img"
+              style="background:{hotel.imagenesIds && hotel.imagenesIds.length > 0 ? 'none' : placeholderColor(idx)}"
+            >
+              {#if hotel.imagenesIds && hotel.imagenesIds.length > 0}
+                <img
+                  src="{API}/imagenes/{hotel.imagenesIds[0]}"
+                  alt={hotel.nombre}
+                  loading="lazy"
+                  on:error={(e) => { e.target.style.display='none'; }}
+                />
+              {:else}
+                <span class="destinos-hotel-iniciales" style="font-size:2rem;">{iniciales(hotel.nombre)}</span>
+              {/if}
+
+              <!-- Overlay oscuro al hover -->
+              <div class="top-hotel-overlay">
+                {#if buscandoHotelId === hotel.id}
+                  <svg class="home__spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                {:else}
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <span>Ver disponibilidad</span>
+                {/if}
+              </div>
+
+              <!-- Badge de posición -->
+              <div class="top-hotel-pos">#{idx + 1}</div>
+
+              <!-- Badge de rating -->
+              <div class="destinos-rating-badge" style="bottom:8px;top:auto;left:8px;right:auto;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                {hotel.rating.toFixed(1)}
+              </div>
+            </div>
+
+            <!-- Info del hotel -->
+            <div class="top-hotel-body">
+              <h4 class="destinos-hotel-nombre">{hotel.nombre}</h4>
+              <div class="destinos-hotel-ciudad">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                {hotel.ciudad}, {hotel.pais}
+              </div>
+            </div>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+  {/if}
+  {/if}
 
   <!-- Seccion de caracteristicas y beneficios de Miku Inn -->
   <section class="features-section">

@@ -8,6 +8,7 @@ import org.example.helpers.CamposDuplicadosException;
 import org.example.helpers.CredencialesInvalidasException;
 import org.example.helpers.PasswordHelper;
 import org.example.repositories.CiudadRepository;
+import org.example.repositories.LogRepository;
 import org.example.repositories.NacionalidadRepository;
 import org.example.repositories.PaisRepository;
 import org.example.repositories.UsuarioNacionalidadRepository;
@@ -39,6 +40,8 @@ class UsuarioServiceTest {
     @Mock private CiudadRepository              ciudadRepository;
     @Mock private NacionalidadRepository        nacionalidadRepository;
     @Mock private UsuarioNacionalidadRepository usuarioNacionalidadRepository;
+    @Mock private LogRepository                 logRepository;
+    @Mock private OfertasEmailService           ofertasEmailService;
 
     private UsuarioService service;
 
@@ -52,7 +55,9 @@ class UsuarioServiceTest {
                 paisRepository,
                 ciudadRepository,
                 nacionalidadRepository,
-                usuarioNacionalidadRepository
+                usuarioNacionalidadRepository,
+                logRepository,
+                ofertasEmailService
         );
     }
 

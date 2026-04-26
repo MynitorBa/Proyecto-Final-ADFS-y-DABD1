@@ -160,6 +160,91 @@ func (ctrl *PerfilController) ActualizarTelefono(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Teléfono actualizado correctamente"})
 }
 
+// ActualizarInfoPersonal
+//
+// Actualiza nombre, apellido, correo, username, pasaporte y fecha de nacimiento
+// del usuario autenticado. Devuelve 409 si alguno de los campos unicos
+// (correo, username, pasaporte) ya esta en uso por otro usuario.
+func (ctrl *PerfilController) ActualizarInfoPersonal(c *gin.Context) {
+	usuarioID := c.GetInt("usuario_id")
+
+	var req struct {
+		Nombre          string `json:"nombre"`
+		Apellido        string `json:"apellido"`
+		Correo          string `json:"correo"`
+		Username        string `json:"username"`
+		Pasaporte       string `json:"pasaporte"`
+		FechaNacimiento string `json:"fecha_nacimiento"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	req.Nombre    = strings.TrimSpace(req.Nombre)
+	req.Apellido  = strings.TrimSpace(req.Apellido)
+	req.Correo    = strings.TrimSpace(strings.ToLower(req.Correo))
+	req.Username  = strings.TrimSpace(req.Username)
+	req.Pasaporte = strings.TrimSpace(strings.ToUpper(req.Pasaporte))
+
+	if req.Nombre == "" || req.Apellido == "" || req.Correo == "" || req.Username == "" || req.Pasaporte == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Todos los campos son requeridos"})
+		return
+	}
+
+	campo, err := ctrl.service.ActualizarInfoPersonal(
+		usuarioID, req.Nombre, req.Apellido, req.Correo,
+		req.Username, req.Pasaporte, req.FechaNacimiento,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo actualizar la información"})
+		return
+	}
+	if campo != "" {
+		msgs := map[string]string{
+			"correo":    "Este correo ya está registrado por otro usuario.",
+			"username":  "Este nombre de usuario ya está en uso.",
+			"pasaporte": "Este pasaporte ya está registrado por otro usuario.",
+		}
+		c.JSON(http.StatusConflict, gin.H{"campo": campo, "error": msgs[campo]})
+		return
+	}
+
+	uid := usuarioID
+	ctrl.logSesion.Registrar(c, helpers.TipoCambioPerfil,
+		&uid, fmt.Sprintf("usuario_id=%d", usuarioID),
+		"Usuario actualizó su información personal")
+
+	c.JSON(http.StatusOK, gin.H{"mensaje": "Información actualizada correctamente"})
+}
+
+// ActualizarOfertas
+//
+// Actualiza la preferencia del usuario autenticado para recibir ofertas por correo.
+// Espera { "recibir_ofertas": true|false } en el body.
+func (ctrl *PerfilController) ActualizarOfertas(c *gin.Context) {
+	usuarioID := c.GetInt("usuario_id")
+
+	var req struct {
+		RecibirOfertas bool `json:"recibir_ofertas"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	if err := ctrl.service.ActualizarOfertas(usuarioID, req.RecibirOfertas); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo actualizar la preferencia"})
+		return
+	}
+
+	msg := "Te has suscrito a ofertas de Movent"
+	if !req.RecibirOfertas {
+		msg = "Te has dado de baja de las ofertas de Movent"
+	}
+	c.JSON(http.StatusOK, gin.H{"mensaje": msg})
+}
+
 // CambiarContrasena
 //
 // Cambia la contrasena del usuario autenticado aplicando las siguientes

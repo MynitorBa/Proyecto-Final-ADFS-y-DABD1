@@ -124,10 +124,10 @@
     white-space: nowrap;
 }
 
-/* Grilla de formulario de busqueda de cuatro columnas: dos columnas anchas de origen/destino, una de fecha, un boton */
+/* Grilla de formulario de busqueda de cinco columnas: dos columnas anchas de origen/destino, pasajeros, clase y boton */
 .broom-home__form-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1.4fr 1fr auto;
+    grid-template-columns: 1.4fr 1.4fr .8fr .8fr auto;
     gap: 1rem;
     align-items: flex-end;
 }
@@ -516,6 +516,45 @@
     z-index: 2;
 }
 
+/* Estado de carga de la tarjeta: cursor de espera, sin zoom, opacidad reducida */
+.broom-home__destination-card--loading {
+    cursor: wait;
+    opacity: .85;
+}
+.broom-home__destination-card--loading .broom-home__destination-image-visual {
+    transform: none !important;
+}
+
+/* Spinner de busqueda centrado sobre la imagen del destino */
+.broom-home__destination-spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(28,26,24,.45);
+    z-index: 3;
+}
+.broom-home__destination-spinner svg {
+    width: 40px; height: 40px;
+    stroke: var(--primary-color);
+    animation: spinDest .8s linear infinite;
+}
+@keyframes spinDest {
+    to { transform: rotate(360deg); }
+}
+
+/* Mensaje de error al buscar destino destacado */
+.broom-home__dest-error {
+    background: #fff4e5;
+    border-left: 3px solid var(--primary-color);
+    color: #7a4f1e;
+    font-size: .85rem;
+    padding: .6rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.25rem;
+}
+
 /* Area de contenido de la tarjeta debajo de la imagen con relleno comodo */
 .broom-home__destination-content { padding: 1.25rem 1.5rem 1.5rem; }
 /* Nombre de ciudad de destino en color secundario con peso medio */
@@ -570,9 +609,15 @@
     transform: translateX(-4px);
 }
 
-/* A 1100px: la grilla del formulario pasa a cuatro columnas de igual ancho */
-@media (max-width: 1100px) {
-    .broom-home__form-grid { grid-template-columns: 1fr 1fr 1fr auto; }
+/* A 1200px: la grilla del formulario pasa a cuatro columnas de igual ancho */
+@media (max-width: 1200px) {
+    .broom-home__form-grid { grid-template-columns: 1fr 1fr 1fr 1fr auto; }
+}
+/* A 900px: dos columnas mas boton */
+@media (max-width: 900px) and (min-width: 769px) {
+    .broom-home__form-grid { grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
+    .broom-home__form-group--btn { grid-column: 1 / -1; }
+    .broom-home__search-btn { width: 100%; justify-content: center; }
 }
 
 /* A 900px: el relleno del hero se reduce; el calendario dual colapsa a una columna */
@@ -623,4 +668,430 @@
     .broom-home__destinations-title { font-size: 1.6rem; }
     .cal-container { padding: 1rem; }
     .cal-nav__title { font-size: .75rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TITULOS Y SUBTITULOS COMPARTIDOS (paneles 3-4-5)
+   ══════════════════════════════════════════════════════════════════════ */
+.broom-home__panel-title {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.4rem;
+    padding-left: 1rem;
+    border-left: 4px solid var(--primary-color);
+    color: var(--secondary-color);
+}
+.broom-home__panel-title--center {
+    padding-left: 0;
+    border-left: none;
+    text-align: center;
+}
+.broom-home__panel-sub {
+    font-size: .88rem;
+    color: var(--text-muted);
+    margin: 0 0 2rem;
+    padding-left: 1.35rem;
+    line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   PANEL 3 — BENEFICIOS (fila horizontal compacta)
+   ══════════════════════════════════════════════════════════════════════ */
+.broom-home__benefits {
+    padding: 3.5rem 2rem;
+    background: var(--white);
+    border-top: 1px solid var(--perla-dark);
+}
+.broom-home__benefits-container {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+.broom-home__benefits-container .broom-home__panel-title--center {
+    margin-bottom: 2rem;
+}
+/* 4 items en fila, cada uno con icono izq + texto der */
+.broom-home__benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--perla-dark);
+    border: 1px solid var(--perla-dark);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.broom-home__benefit-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5rem 1.4rem;
+    background: #fcfbf9;
+    transition: background .15s;
+}
+.broom-home__benefit-item:hover { background: var(--white); }
+.broom-home__benefit-icon {
+    width: 42px; height: 42px;
+    background: rgba(201,169,97,.12);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.broom-home__benefit-icon svg { width: 20px; height: 20px; stroke: var(--primary-color); }
+.broom-home__benefit-title {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin: 0 0 .15rem;
+}
+.broom-home__benefit-desc {
+    font-size: .75rem;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+/* CTA centrado debajo de los beneficios */
+.broom-home__benefits-cta {
+    text-align: center;
+    margin-top: 2rem;
+}
+.broom-home__benefits-cta-btn {
+    display: inline-block;
+    padding: .75rem 2.5rem;
+    background: var(--secondary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 0 16px 0 16px;
+    font-size: .88rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.broom-home__benefits-cta-btn:hover {
+    background: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212,175,55,.25);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   PANEL 4 — CLASES DE VUELO
+   ══════════════════════════════════════════════════════════════════════ */
+.broom-home__classes {
+    padding: 4rem 2rem;
+    background: linear-gradient(to bottom, var(--bg-color), #ede8e0);
+}
+.broom-home__classes-container {
+    max-width: 960px;
+    margin: 0 auto;
+}
+.broom-home__classes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+.broom-home__class-card {
+    background: var(--white);
+    border-radius: 16px 4px 16px 4px;
+    padding: 2rem 1.75rem;
+    box-shadow: 0 4px 18px rgba(28,26,24,.07);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    border-left: 4px solid var(--perla-dark);
+    transition: var(--transition);
+}
+.broom-home__class-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(28,26,24,.12);
+}
+.broom-home__class-card--exec {
+    border-left-color: var(--primary-color);
+    background: linear-gradient(135deg, #fffdf7 0%, var(--white) 100%);
+}
+/* Cabecera: icono + badge en fila */
+.broom-home__class-header {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+}
+.broom-home__class-icon {
+    width: 44px; height: 44px;
+    background: rgba(28,26,24,.07);
+    border-radius: 10px 0 10px 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.broom-home__class-icon svg { width: 20px; height: 20px; stroke: var(--secondary-color); }
+.broom-home__class-icon--exec { background: rgba(201,169,97,.15); }
+.broom-home__class-icon--exec svg { stroke: var(--primary-color); }
+.broom-home__class-badge {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: rgba(28,26,24,.08);
+    color: var(--secondary-color);
+    padding: .2rem .65rem;
+    border-radius: 20px;
+}
+.broom-home__class-badge--exec {
+    background: rgba(201,169,97,.2);
+    color: #7a5c1e;
+}
+.broom-home__class-features {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    gap: .5rem; flex: 1;
+}
+.broom-home__class-features li {
+    font-size: .82rem;
+    color: var(--text-muted);
+    padding-left: 1.3rem;
+    position: relative;
+    line-height: 1.4;
+}
+.broom-home__class-features li::before {
+    content: '✓';
+    position: absolute; left: 0;
+    color: var(--secondary-color);
+    font-weight: 700; font-size: .75rem;
+}
+.broom-home__class-features--exec li::before { color: var(--primary-color); }
+.broom-home__class-btn {
+    width: 100%;
+    padding: .75rem 1rem;
+    border: 1.5px solid var(--secondary-color);
+    border-radius: 0 12px 0 12px;
+    background: transparent;
+    color: var(--secondary-color);
+    font-size: .85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.broom-home__class-btn:hover {
+    background: var(--secondary-color);
+    color: var(--white);
+    transform: translateY(-1px);
+}
+.broom-home__class-btn--exec { border-color: var(--primary-color); color: #7a5c1e; }
+.broom-home__class-btn--exec:hover { background: var(--primary-color); color: var(--white); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   PANEL 5 — CÓMO RESERVAR (3 pasos compactos)
+   ══════════════════════════════════════════════════════════════════════ */
+.broom-home__how {
+    padding: 3.5rem 2rem 4rem;
+    background: var(--secondary-color);
+}
+.broom-home__how-container { max-width: 900px; margin: 0 auto; }
+.broom-home__how .broom-home__panel-title--center {
+    color: var(--white);
+    margin-bottom: 2rem;
+}
+/* Fila de pasos con flecha entre ellos */
+.broom-home__how-steps {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 2.5rem;
+}
+/* Cada paso: burbuja + texto en fila */
+.broom-home__how-step {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(201,169,97,.2);
+    border-radius: 12px;
+    padding: 1.25rem 1.1rem;
+}
+/* Burbuja del ícono */
+.broom-home__how-bubble {
+    width: 46px; height: 46px;
+    border: 1.5px solid rgba(201,169,97,.45);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(201,169,97,.1);
+    flex-shrink: 0;
+}
+.broom-home__how-bubble svg { width: 20px; height: 20px; stroke: var(--primary-color); }
+.broom-home__how-text { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.broom-home__how-num {
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: rgba(201,169,97,.6);
+    text-transform: uppercase;
+}
+.broom-home__how-title {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+}
+.broom-home__how-desc {
+    font-size: .75rem;
+    color: rgba(255,255,255,.55);
+    margin: 0;
+    line-height: 1.4;
+}
+/* Flecha entre pasos */
+.broom-home__how-arrow {
+    color: rgba(201,169,97,.5);
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.broom-home__how-cta { text-align: center; }
+.broom-home__how-btn {
+    background: var(--primary-color);
+    color: var(--white);
+    border: none;
+    padding: .85rem 2.5rem;
+    border-radius: 0 16px 0 16px;
+    font-size: .9rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 18px rgba(201,169,97,.25);
+}
+.broom-home__how-btn:hover {
+    background: #b8942d;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(201,169,97,.4);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   PANEL 6 — MÁS DESTINOS DISPONIBLES
+   ══════════════════════════════════════════════════════════════════════ */
+.broom-home__more-dest {
+    padding: 4rem 2rem;
+    background: var(--bg-color);
+    border-top: 1px solid var(--perla-dark);
+}
+.broom-home__more-dest-container {
+    max-width: 1300px;
+    margin: 0 auto;
+}
+.broom-home__panel-sub--center { text-align: center; }
+
+/* Grilla responsive de tarjetas de destino sin imagen, centrada */
+.broom-home__more-dest-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: .75rem;
+    margin-top: 2rem;
+    justify-items: stretch;
+}
+@media (min-width: 900px) {
+    .broom-home__more-dest-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+@media (max-width: 600px) {
+    .broom-home__more-dest-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tarjeta compacta de destino: botón con código IATA grande, ciudad y país */
+.broom-home__more-dest-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .2rem;
+    padding: 1rem 1.1rem 1rem 1.1rem;
+    background: var(--white);
+    border: 1px solid var(--perla-dark);
+    border-radius: 0 14px 0 14px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: var(--transition);
+    overflow: hidden;
+}
+.broom-home__more-dest-card:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 24px rgba(212,175,55,.12);
+    transform: translateY(-3px);
+}
+.broom-home__more-dest-card:disabled { opacity: .7; cursor: wait; }
+
+.broom-home__more-dest-card--loading {
+    background: #fdfcf9;
+}
+
+/* Código IATA grande en dorado */
+.broom-home__more-dest-code {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    line-height: 1;
+}
+/* Nombre de ciudad */
+.broom-home__more-dest-city {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--secondary-color);
+    margin-top: .15rem;
+}
+/* País en gris */
+.broom-home__more-dest-country {
+    font-size: .72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+/* Flecha → en la esquina inferior derecha */
+.broom-home__more-dest-arrow {
+    position: absolute;
+    bottom: .8rem; right: .8rem;
+    width: 16px; height: 16px;
+    stroke: var(--perla-dark);
+    transition: stroke var(--transition), transform var(--transition);
+}
+.broom-home__more-dest-card:hover .broom-home__more-dest-arrow {
+    stroke: var(--primary-color);
+    transform: translateX(3px);
+}
+
+/* Spinner de carga */
+.broom-home__more-dest-spin {
+    position: absolute;
+    bottom: .8rem; right: .8rem;
+    width: 18px; height: 18px;
+    stroke: var(--primary-color);
+    animation: spinDest .8s linear infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE — paneles 3-4-5
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .broom-home__benefits-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+    .broom-home__how-steps { flex-direction: column; align-items: stretch; }
+    .broom-home__how-arrow { transform: rotate(90deg); align-self: center; }
+}
+@media (max-width: 768px) {
+    .broom-home__benefits,
+    .broom-home__classes,
+    .broom-home__how { padding: 2.5rem 1.25rem; }
+    .broom-home__classes-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .broom-home__benefits-grid { grid-template-columns: 1fr; }
+    .broom-home__how-step { flex-direction: column; text-align: center; align-items: center; }
 }

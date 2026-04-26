@@ -122,6 +122,8 @@ func main() {
 	actualizacionProveedorController := controllers.NewActualizacionProveedorController(actualizacionProveedorService, logSesionService, db)
 	notificacionesController := controllers.NewNotificacionesController(notificacionesService)
 	adminCancelacionController := controllers.NewAdminCancelacionController(adminCancelacionService, logSesionService)
+	metricasController := controllers.NewMetricasController(db, logSesionService)
+	ofertasService := services.NewOfertasService(db)
 
 	webServiceRepo := repositories.NewWebServiceRepository(db)
 	webServiceService := services.NewWebServiceService(webServiceRepo)
@@ -129,6 +131,8 @@ func main() {
 
 	expiracionService.Iniciar()
 	defer expiracionService.Detener()
+	ofertasService.Iniciar()
+	defer ofertasService.Detener()
 
 	api := router.Group("/api")
 	{
@@ -152,6 +156,7 @@ func main() {
 		api.GET("/comentarios/vuelo/:proveedorId/:rutaId", comentarioController.ObtenerComentariosVuelo)
 		api.GET("/comentarios/hotel/:proveedorId/:hotelId", comentarioController.ObtenerComentariosHotel)
 		api.GET("/stats", statsController.ObtenerStats)
+		api.GET("/descubrir", statsController.Descubrir)
 		api.GET("/configuracion/descuento", configuracionController.ObtenerDescuento)
 
 		api.POST("/contacto", controllers.EnviarContacto)
@@ -163,6 +168,8 @@ func main() {
 
 			protegido.GET("/perfil", perfilController.ObtenerPerfil)
 			protegido.PUT("/perfil/telefono", perfilController.ActualizarTelefono)
+			protegido.PUT("/perfil/info", perfilController.ActualizarInfoPersonal)
+			protegido.PATCH("/perfil/ofertas", perfilController.ActualizarOfertas)
 			protegido.PUT("/perfil/contrasena", perfilController.CambiarContrasena)
 
 			protegido.POST("/reservaciones", reservacionController.CrearReservacion)
@@ -199,6 +206,13 @@ func main() {
 				admin.POST("/proveedores/:id/handshake", handshakeController.IniciarHandshake)
 				admin.POST("/proveedores/:id/handshake-hotelera", handshakeHoteleraController.IniciarHandshake)
 				admin.GET("/admin/usuarios", usuarioController.ObtenerTodos)
+
+				// ── Métricas avanzadas ──────────────────────────────────────
+				admin.GET("/admin/metricas/resumen", metricasController.ObtenerResumen)
+				admin.GET("/admin/metricas/negocio", metricasController.ObtenerNegocio)
+				admin.POST("/admin/metricas/listado", metricasController.ListadoBusquedas)
+				admin.POST("/admin/metricas/exportar-archivo", metricasController.ExportarArchivo)
+				admin.POST("/admin/metricas/exportar-correo", metricasController.ExportarCorreo)
 			}
 
 			// Endpoints del panel operacional: accesibles por Admin y WebService

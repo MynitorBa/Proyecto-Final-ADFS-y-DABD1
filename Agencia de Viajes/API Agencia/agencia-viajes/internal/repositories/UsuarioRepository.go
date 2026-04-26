@@ -144,12 +144,17 @@ func (r *UsuarioRepository) CrearUsuario(req dto.RegistroUsuarioRequest, ciudadI
 		return 0, err
 	}
 
+	recibirOfertas := 0
+	if req.RecibirOfertas {
+		recibirOfertas = 1
+	}
+
 	result, err := conn.ExecContext(context.Background(), `
-        INSERT INTO Usuario (Nombre, Apellido, Correo, Username, Contrasena, Pasaporte, Telefono, FechaNacimiento, CiudadID, RolID, EstadoID)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        INSERT INTO Usuario (Nombre, Apellido, Correo, Username, Contrasena, Pasaporte, Telefono, FechaNacimiento, CiudadID, RolID, EstadoID, Recibir_Ofertas)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		req.Nombre, req.Apellido, req.Correo, req.Username,
 		hashedPassword, req.Pasaporte, req.Telefono, req.FechaNacimiento,
-		ciudadID, rolID, estadoID,
+		ciudadID, rolID, estadoID, recibirOfertas,
 	)
 	if err != nil {
 		return 0, err

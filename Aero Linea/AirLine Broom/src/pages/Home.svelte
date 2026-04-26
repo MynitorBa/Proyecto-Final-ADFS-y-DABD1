@@ -10,12 +10,12 @@
   import '../styles/home.css';
   import logoHero from '../assets/BroomHero1.png';
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
+  import { sesion } from '../stores/sesion.js';
+  import FlightNotification from '../components/FlightNotification.svelte';
 
   /** Funcion usada para navegar entre paginas de la aplicacion. @type {function} */
   export let navigateTo;
-
-  /** Objeto de aeropuerto opcional pre-rellenado como destino al llegar desde una tarjeta de destino destacado o la animacion del avion en vuelo. @type {object|null} */
-  export let suggestedAeropuerto = null;
 
   import { API } from '../lib/api.js';
 
@@ -79,6 +79,30 @@
   /** True mientras la solicitud POST de busqueda de vuelos esta en progreso, deshabilita el boton de envio. @type {boolean} */
   let buscando    = false;
 
+  /** Clase preferida seleccionada en el formulario: '' = todas, '1' = Turista, '2' = Ejecutiva. @type {string} */
+  let clasePreferida = '';
+
+  /** Cantidad de destinos visibles actualmente (se incrementa de 4 en 4 al pulsar "Ver mas"). @type {number} */
+  let destinosVisibles = 4;
+
+  /**
+   * Preselecciona la clase en el formulario, hace scroll suave hasta la seccion de busqueda
+   * y foca el campo de origen. Usado por los paneles de Clases y Como reservar.
+   * @param {string} clase - '1' Turista, '2' Ejecutiva, '' cualquiera.
+   */
+  function irAlFormulario(clase = '') {
+    clasePreferida = clase;
+    document.querySelector('.broom-home__search-section')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('fromCity')?.focus(), 400);
+  }
+
+  /** ID del aeropuerto destino que se esta buscando actualmente (para spinner en la tarjeta). @type {number|null} */
+  let destinoBuscando = null;
+
+  /** Mensaje de error al intentar buscar vuelos desde un destino destacado. @type {string} */
+  let errorDestino = '';
+
   /** Etiquetas abreviadas de dias de la semana usadas como encabezados de columna en la grilla del calendario. @type {Array<string>} */
   const diasSemana  = ['LU','MA','MI','JU','VI','SA','DO'];
 
@@ -88,6 +112,10 @@
 
   // Aeropuertos con imagen en base64 almacenada, usados para poblar la grilla de destinos destacados.
   $: destinosConImagen = aeropuertos.filter(a => a.imagenBase64);
+
+  // Aeropuertos del panel 6: sin imagen, excluyendo los primeros destinosVisibles del panel 2.
+  $: idsDestacados = new Set(destinosConImagen.slice(0, destinosVisibles).map(a => a.id));
+  $: destinosSinImagen = aeropuertos.filter(a => !a.imagenBase64 && !idsDestacados.has(a.id));
 
   onMount(async () => {
     try {
@@ -100,25 +128,6 @@
     }
   });
 
-  // Cuando llega un aeropuerto sugerido (por ejemplo, de la animacion del avion en vuelo), se selecciona
-  // automaticamente como destino y se resalta brevemente el campo de destino con una clase CSS.
-  $: if (suggestedAeropuerto) {
-    /** @type {any} */
-    const ap = suggestedAeropuerto;
-    if (ap.id) {
-      toSeleccionado = ap;
-      toQuery = `${ap.ciudad} (${ap.codigo})`;
-      toSugeridos = [];
-
-      setTimeout(() => {
-        const f = document.getElementById('toCity');
-        if (f) {
-          f.classList.add('broom-home__form-input--highlighted');
-          setTimeout(() => f.classList.remove('broom-home__form-input--highlighted'), 2000);
-        }
-      }, 50);
-    }
-  }
 
   // Recarga automaticamente las fechas disponibles cada vez que cambian los pasajeros, el origen o el destino.
   $: if (passengers && fromSeleccionado && toSeleccionado) cargarFechasDisponibles();
@@ -327,6 +336,110 @@
   }
 
   /**
+   * Callback del avion flotante (FlightNotification). Solo pre-rellena el campo "Hacia" con el
+   * aeropuerto sugerido, hace scroll al formulario y foca el campo "Desde" para que el usuario
+   * lo complete. Si ya habia un origen seleccionado, el calendario se activa automaticamente.
+   * @param {object} aeropuerto - Objeto del aeropuerto sugerido por la notificacion.
+   */
+  function sugerirDestino(aeropuerto) {
+    toSeleccionado = aeropuerto;
+    toQuery = `${aeropuerto.ciudad} (${aeropuerto.codigo})`;
+    toSugeridos = [];
+    document.querySelector('.broom-home__search-section')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('fromCity')?.focus(), 400);
+  }
+
+  /**
+   * Maneja el clic en una tarjeta de destino destacado. Si el usuario esta autenticado, intenta obtener
+   * su ciudad registrada, encontrar el aeropuerto de origen correspondiente, buscar las fechas disponibles
+   * y navegar directamente a Vuelos con los resultados. Si falla cualquier paso, hace fallback llenando
+   * el formulario con el destino seleccionado.
+   * @async
+   * @param {object} destino - Objeto del aeropuerto destino con id, ciudad, codigo, pais, nombre.
+   * @returns {Promise<void>}
+   */
+  async function irAlDestino(destino) {
+    errorDestino = '';
+    destinoBuscando = destino.id;
+    const fallback = () => {
+      toQuery = `${destino.ciudad} (${destino.codigo})`;
+      toSeleccionado = destino;
+      destinoBuscando = null;
+    };
+    try {
+      const sesionActual = get(sesion);
+      if (!sesionActual) { fallback(); return; }
+
+      // Obtener perfil para conocer la ciudad del usuario
+      const perfilRes = await fetch(`${API}/api/perfil/${sesionActual.usuarioId}`, { credentials: 'include' });
+      if (!perfilRes.ok) { fallback(); return; }
+      const perfil = await perfilRes.json();
+
+      const ciudadUsuario = (perfil.ciudad ?? '').toLowerCase().trim();
+      const paisUsuario   = (perfil.pais   ?? '').toLowerCase().trim();
+
+      // Buscar aeropuerto que coincida con la ciudad (y pais) del usuario
+      let origen = aeropuertos.find(a =>
+        a.ciudad?.toLowerCase() === ciudadUsuario && a.pais?.toLowerCase() === paisUsuario
+      );
+      if (!origen && ciudadUsuario)
+        origen = aeropuertos.find(a => a.ciudad?.toLowerCase() === ciudadUsuario);
+
+      // Sin aeropuerto de origen o mismo destino → fallback al formulario
+      if (!origen || origen.id === destino.id) { fallback(); return; }
+
+      // Buscar fechas disponibles para la ruta origen→destino
+      const fechasRes = await fetch(
+        `${API}/api/aeropuertos/fechas-disponibles?origenId=${origen.id}&destinoId=${destino.id}&cantidadPersonas=1`,
+        { credentials: 'include' }
+      );
+      if (!fechasRes.ok) { fallback(); return; }
+
+      const fechasRaw = await fechasRes.json();
+      const hoy = new Date().toISOString().split('T')[0];
+      const primeraFecha = fechasRaw.map(f => f.split('T')[0]).find(f => f >= hoy);
+
+      if (!primeraFecha) {
+        // Sin fechas disponibles: llenar formulario y mostrar aviso
+        fromQuery = `${origen.ciudad} (${origen.codigo})`; fromSeleccionado = origen;
+        toQuery   = `${destino.ciudad} (${destino.codigo})`; toSeleccionado = destino;
+        errorDestino = `No hay vuelos disponibles de ${origen.ciudad} hacia ${destino.ciudad}.`;
+        destinoBuscando = null;
+        return;
+      }
+
+      // Buscar vuelos en la primera fecha disponible
+      const buscarRes = await fetch(`${API}/api/vuelos/buscar`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ origenId: origen.id, destinoId: destino.id, fecha: primeraFecha, cantidadPasajeros: 1 })
+      });
+      if (!buscarRes.ok) { fallback(); return; }
+      const vuelosIda = await buscarRes.json();
+
+      // Navegar directamente a la pagina de vuelos con los resultados
+      navigateTo('vuelos', {
+        vuelosIda,
+        vuelosVuelta: { directos: [], conEscala: [] },
+        searchData: {
+          origenId:      origen.id,     destinoId:     destino.id,
+          origenNombre:  origen.ciudad, destinoNombre: destino.ciudad,
+          origenCodigo:  origen.codigo, destinoCodigo: destino.codigo,
+          fechaIda:      primeraFecha,  fechaVuelta:   '',
+          pasajeros:     1,             tripType:      'oneway',
+          clasePreferida: ''
+        }
+      });
+    } catch (err) {
+      console.error('Error al buscar destino:', err);
+      fallback();
+    } finally {
+      destinoBuscando = null;
+    }
+  }
+
+  /**
    * Valida los campos del formulario de busqueda, luego envia la busqueda a /api/vuelos/buscar para ambos
    * tramos de ida y (si es ida y vuelta) regreso en secuencia. Al tener exito navega a la pagina 'vuelos'
    * pasando los resultados y todos los parametros de busqueda. Establece searchError en fallos de validacion
@@ -391,7 +504,8 @@
           fechaIda:      departureDate,
           fechaVuelta:   returnDate || '',
           pasajeros:     passengers,
-          tripType
+          tripType,
+          clasePreferida
         }
       });
     } catch (err) {
@@ -402,6 +516,9 @@
     }
   }
 </script>
+
+<!-- Notificacion flotante — solo visible en Home, click pre-rellena el campo Hacia y va al formulario -->
+<FlightNotification onDestinationClick={sugerirDestino} />
 
 <div class="broom-home">
 
@@ -484,6 +601,15 @@
               {#each Array(9) as _, i}
                 <option value={i + 1}>{i + 1} {i === 0 ? 'Pasajero' : 'Pasajeros'}</option>
               {/each}
+            </select>
+          </div>
+
+          <div class="broom-home__form-group">
+            <label for="homeClase" class="broom-home__form-label">Clase</label>
+            <select id="homeClase" bind:value={clasePreferida} class="broom-home__form-input broom-home__form-select">
+              <option value="">Cualquiera</option>
+              <option value="1">Turista</option>
+              <option value="2">Ejecutiva</option>
             </select>
           </div>
 
@@ -609,12 +735,18 @@
   <section class="broom-home__destinations">
     <div class="broom-home__destinations-container">
       <h2 class="broom-home__destinations-title">Destinos destacados</h2>
+      {#if errorDestino}
+        <p class="broom-home__dest-error">{errorDestino}</p>
+      {/if}
       <div class="broom-home__destinations-grid">
-        {#each destinosConImagen as aeropuerto}
+        {#each destinosConImagen.slice(0, destinosVisibles) as aeropuerto}
+          {@const cargando = destinoBuscando === aeropuerto.id}
           <article class="broom-home__destination-card"
-            on:click={() => { toQuery = `${aeropuerto.ciudad} (${aeropuerto.codigo})`; toSeleccionado = aeropuerto; }}
+            class:broom-home__destination-card--loading={cargando}
+            on:click={() => !destinoBuscando && irAlDestino(aeropuerto)}
             role="button" tabindex="0"
-            on:keydown={e => e.key === 'Enter' && navigateTo('vuelos')}>
+            on:keydown={e => e.key === 'Enter' && !destinoBuscando && irAlDestino(aeropuerto)}
+            aria-busy={cargando}>
             <div class="broom-home__destination-image">
               <img
                 src={aeropuerto.imagenBase64.startsWith("data:") ? aeropuerto.imagenBase64 : `data:image/jpeg;base64,${aeropuerto.imagenBase64}`}
@@ -622,20 +754,252 @@
                 class="broom-home__destination-image-visual"
               />
               <div class="broom-home__destination-badge">{aeropuerto.codigo}</div>
+              {#if cargando}
+                <div class="broom-home__destination-spinner" aria-label="Buscando vuelos...">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" stroke-opacity="0.3"/>
+                    <path d="M12 2 a10 10 0 0 1 10 10" stroke-linecap="round"/>
+                  </svg>
+                </div>
+              {/if}
             </div>
             <div class="broom-home__destination-content">
               <h3 class="broom-home__destination-name">{aeropuerto.ciudad}</h3>
               <p class="broom-home__destination-meta">{aeropuerto.pais}</p>
-              <p class="broom-home__destination-description">{aeropuerto.nombre}</p>
+              <p class="broom-home__destination-description">
+                {cargando ? 'Buscando vuelos disponibles...' : aeropuerto.nombre}
+              </p>
             </div>
           </article>
         {/each}
       </div>
-      <div class="broom-home__destinations-actions">
-        <button type="button" class="broom-home__destinations-btn" on:click={() => navigateTo('destinos-destacados')}>
-          Ver mas destinos
+      {#if destinosVisibles < destinosConImagen.length}
+        <div class="broom-home__destinations-actions">
+          <button type="button" class="broom-home__destinations-btn"
+            on:click={() => destinosVisibles += 4}>
+            Ver más destinos ({Math.min(4, destinosConImagen.length - destinosVisibles)} más)
+          </button>
+        </div>
+      {/if}
+    </div>
+  </section>
+  {/if}
+
+  <!-- Panel 3: Beneficios — fila horizontal compacta -->
+  <section class="broom-home__benefits">
+    <div class="broom-home__benefits-container">
+      <h2 class="broom-home__panel-title broom-home__panel-title--center">¿Por qué volar con Broom?</h2>
+      <div class="broom-home__benefits-grid">
+
+        <div class="broom-home__benefit-item">
+          <div class="broom-home__benefit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="broom-home__benefit-title">Puntualidad</h3>
+            <p class="broom-home__benefit-desc">94% de vuelos a tiempo</p>
+          </div>
+        </div>
+
+        <div class="broom-home__benefit-item">
+          <div class="broom-home__benefit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="broom-home__benefit-title">Seguridad</h3>
+            <p class="broom-home__benefit-desc">Flota moderna certificada</p>
+          </div>
+        </div>
+
+        <div class="broom-home__benefit-item">
+          <div class="broom-home__benefit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="broom-home__benefit-title">Comodidad</h3>
+            <p class="broom-home__benefit-desc">Asientos y servicio de calidad</p>
+          </div>
+        </div>
+
+        <div class="broom-home__benefit-item">
+          <div class="broom-home__benefit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="broom-home__benefit-title">Atención personalizada</h3>
+            <p class="broom-home__benefit-desc">Tripulación capacitada 24/7</p>
+          </div>
+        </div>
+
+      </div>
+      <div class="broom-home__benefits-cta">
+        <button type="button" class="broom-home__benefits-cta-btn" on:click={() => irAlFormulario('')}>
+          Buscar mi vuelo ahora
         </button>
       </div>
+    </div>
+  </section>
+
+  <!-- Panel 4: Nuestras clases de vuelo -->
+  <section class="broom-home__classes">
+    <div class="broom-home__classes-container">
+      <h2 class="broom-home__panel-title">Nuestras clases de vuelo</h2>
+      <p class="broom-home__panel-sub">Elige la experiencia que mejor se adapte a ti</p>
+      <div class="broom-home__classes-grid">
+
+        <div class="broom-home__class-card">
+          <div class="broom-home__class-header">
+            <div class="broom-home__class-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              </svg>
+            </div>
+            <span class="broom-home__class-badge">Turista</span>
+          </div>
+          <ul class="broom-home__class-features">
+            <li>Asiento estándar con amplio espacio</li>
+            <li>Equipaje de mano incluido</li>
+            <li>Snack y bebida a bordo</li>
+            <li>Entretenimiento en pantalla</li>
+            <li>Check-in web gratuito</li>
+          </ul>
+          <button type="button" class="broom-home__class-btn"
+            on:click={() => irAlFormulario('1')}>
+            Reservar en Turista
+          </button>
+        </div>
+
+        <div class="broom-home__class-card broom-home__class-card--exec">
+          <div class="broom-home__class-header">
+            <div class="broom-home__class-icon broom-home__class-icon--exec">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </div>
+            <span class="broom-home__class-badge broom-home__class-badge--exec">Ejecutiva</span>
+          </div>
+          <ul class="broom-home__class-features broom-home__class-features--exec">
+            <li>Asiento premium totalmente reclinable</li>
+            <li>Equipaje de bodega incluido</li>
+            <li>Menú gourmet y bebidas premium</li>
+            <li>Pantalla personal de alta resolución</li>
+            <li>Embarque y desembarque prioritario</li>
+          </ul>
+          <button type="button" class="broom-home__class-btn broom-home__class-btn--exec"
+            on:click={() => irAlFormulario('2')}>
+            Reservar en Ejecutiva
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Panel 5: Cómo reservar — 3 pasos compactos -->
+  <section class="broom-home__how">
+    <div class="broom-home__how-container">
+      <h2 class="broom-home__panel-title broom-home__panel-title--center">¿Cómo reservar?</h2>
+      <div class="broom-home__how-steps">
+
+        <div class="broom-home__how-step">
+          <div class="broom-home__how-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <div class="broom-home__how-text">
+            <span class="broom-home__how-num">01</span>
+            <h3 class="broom-home__how-title">Busca tu vuelo</h3>
+            <p class="broom-home__how-desc">Selecciona origen, destino y fecha.</p>
+          </div>
+        </div>
+
+        <div class="broom-home__how-arrow" aria-hidden="true">→</div>
+
+        <div class="broom-home__how-step">
+          <div class="broom-home__how-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div class="broom-home__how-text">
+            <span class="broom-home__how-num">02</span>
+            <h3 class="broom-home__how-title">Elige tu opción</h3>
+            <p class="broom-home__how-desc">Turista o Ejecutiva, tú decides.</p>
+          </div>
+        </div>
+
+        <div class="broom-home__how-arrow" aria-hidden="true">→</div>
+
+        <div class="broom-home__how-step">
+          <div class="broom-home__how-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <div class="broom-home__how-text">
+            <span class="broom-home__how-num">03</span>
+            <h3 class="broom-home__how-title">Confirma y paga</h3>
+            <p class="broom-home__how-desc">Pago seguro, confirmación inmediata.</p>
+          </div>
+        </div>
+
+      </div>
+      <div class="broom-home__how-cta">
+        <button type="button" class="broom-home__how-btn"
+          on:click={() => irAlFormulario('')}>
+          Comenzar ahora
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Panel 6: Más destinos disponibles — misma lógica funcional que destinos destacados -->
+  {#if destinosSinImagen.length > 0}
+  <section class="broom-home__more-dest">
+    <div class="broom-home__more-dest-container">
+      <h2 class="broom-home__panel-title broom-home__panel-title--center">Más destinos disponibles</h2>
+      <p class="broom-home__panel-sub broom-home__panel-sub--center">Haz clic en cualquier destino para buscar vuelos disponibles desde tu ciudad</p>
+      <div class="broom-home__more-dest-grid">
+        {#each destinosSinImagen as ap}
+          {@const cargando = destinoBuscando === ap.id}
+          <button
+            type="button"
+            class="broom-home__more-dest-card"
+            class:broom-home__more-dest-card--loading={cargando}
+            on:click={() => !destinoBuscando && irAlDestino(ap)}
+            disabled={!!destinoBuscando}
+            aria-busy={cargando}
+          >
+            <span class="broom-home__more-dest-code">{ap.codigo}</span>
+            <span class="broom-home__more-dest-city">{cargando ? 'Buscando...' : ap.ciudad}</span>
+            <span class="broom-home__more-dest-country">{ap.pais}</span>
+            {#if cargando}
+              <svg class="broom-home__more-dest-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+                <path d="M12 2 a10 10 0 0 1 10 10" stroke-linecap="round"/>
+              </svg>
+            {:else}
+              <svg class="broom-home__more-dest-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            {/if}
+          </button>
+        {/each}
+      </div>
+      {#if errorDestino}
+        <p class="broom-home__dest-error" style="margin-top:1rem;">{errorDestino}</p>
+      {/if}
     </div>
   </section>
   {/if}

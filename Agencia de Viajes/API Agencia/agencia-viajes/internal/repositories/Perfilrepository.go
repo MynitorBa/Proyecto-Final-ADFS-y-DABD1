@@ -60,13 +60,15 @@ func (r *PerfilRepository) ObtenerPerfil(usuarioID int) (map[string]interface{},
 		pasaporte, telefono                string
 		fechaNacimiento                    sql.NullString
 		ciudad, pais                       sql.NullString
+		recibirOfertas                     int
 	)
 
 	err = conn.QueryRowContext(context.Background(), `
 		SELECT
 			u.Nombre, u.Apellido, u.Correo, u.Username,
 			u.Pasaporte, u.Telefono, u.FechaNacimiento,
-			c.Nombre AS Ciudad, p.Nombre AS Pais
+			c.Nombre AS Ciudad, p.Nombre AS Pais,
+			u.Recibir_Ofertas
 		FROM Usuario u
 		LEFT JOIN Ciudad c ON u.CiudadID = c.ID
 		LEFT JOIN Pais   p ON c.PaisID   = p.ID
@@ -74,7 +76,7 @@ func (r *PerfilRepository) ObtenerPerfil(usuarioID int) (map[string]interface{},
 	`, usuarioID).Scan(
 		&nombre, &apellido, &correo, &username,
 		&pasaporte, &telefono, &fechaNacimiento,
-		&ciudad, &pais,
+		&ciudad, &pais, &recibirOfertas,
 	)
 	if err != nil {
 		return nil, err
@@ -111,7 +113,91 @@ func (r *PerfilRepository) ObtenerPerfil(usuarioID int) (map[string]interface{},
 		"ciudad":          ciudad.String,
 		"pais":            pais.String,
 		"nacionalidades":  nacs,
+		"recibirOfertas":  recibirOfertas == 1,
 	}, nil
+}
+
+// ActualizarInfoPersonal
+//
+// Actualiza los campos de informacion personal del usuario: nombre, apellido,
+// correo, username, pasaporte y fecha de nacimiento. Verifica unicidad de
+// correo, username y pasaporte excluyendo al propio usuario.
+//
+// Parametros:
+//   - usuarioID: ID del usuario a actualizar
+//   - nombre, apellido, correo, username, pasaporte, fechaNacimiento: nuevos valores
+//
+// Retorna:
+//   - "correo" si el correo ya esta en uso por otro usuario
+//   - "username" si el username ya esta en uso por otro usuario
+//   - "pasaporte" si el pasaporte ya esta en uso por otro usuario
+//   - "" y nil si la actualizacion fue exitosa
+//   - "" y error si falla la base de datos
+func (r *PerfilRepository) ActualizarInfoPersonal(usuarioID int, nombre, apellido, correo, username, pasaporte, fechaNacimiento string) (string, error) {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+
+	// Verificar unicidad de correo
+	var count int
+	conn.QueryRowContext(context.Background(),
+		"SELECT COUNT(*) FROM Usuario WHERE Correo = ? AND ID != ?", correo, usuarioID,
+	).Scan(&count)
+	if count > 0 {
+		return "correo", nil
+	}
+
+	// Verificar unicidad de username
+	conn.QueryRowContext(context.Background(),
+		"SELECT COUNT(*) FROM Usuario WHERE Username = ? AND ID != ?", username, usuarioID,
+	).Scan(&count)
+	if count > 0 {
+		return "username", nil
+	}
+
+	// Verificar unicidad de pasaporte
+	conn.QueryRowContext(context.Background(),
+		"SELECT COUNT(*) FROM Usuario WHERE Pasaporte = ? AND ID != ?", pasaporte, usuarioID,
+	).Scan(&count)
+	if count > 0 {
+		return "pasaporte", nil
+	}
+
+	_, err = conn.ExecContext(context.Background(), `
+		UPDATE Usuario
+		SET Nombre = ?, Apellido = ?, Correo = ?, Username = ?, Pasaporte = ?, FechaNacimiento = ?
+		WHERE ID = ?
+	`, nombre, apellido, correo, username, pasaporte, fechaNacimiento, usuarioID)
+	return "", err
+}
+
+// ActualizarOfertas
+//
+// Actualiza la preferencia del usuario para recibir correos de ofertas.
+//
+// Parametros:
+//   - usuarioID: ID del usuario
+//   - recibir: true para suscribirse, false para cancelar suscripcion
+//
+// Retorna:
+//   - error: error de base de datos, nil si la operacion fue exitosa
+func (r *PerfilRepository) ActualizarOfertas(usuarioID int, recibir bool) error {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	val := 0
+	if recibir {
+		val = 1
+	}
+	_, err = conn.ExecContext(context.Background(),
+		"UPDATE Usuario SET Recibir_Ofertas = ? WHERE ID = ?", val, usuarioID,
+	)
+	return err
 }
 
 // ActualizarTelefono

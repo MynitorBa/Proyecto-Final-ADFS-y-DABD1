@@ -272,6 +272,111 @@
     box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
 }
 
+/* ── Modo edicion: cabecera con titulo + boton Editar en la misma fila ── */
+.profile-section__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.profile-section__head .profile-section__title { margin-bottom: 0; }
+.profile-section__head .profile-section__subtitle { margin-top: .2rem; }
+
+/* Boton "Editar datos" con icono SVG */
+.profile-edit-btn {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .55rem 1.1rem;
+    border: 1.5px solid var(--secondary-color);
+    border-radius: 0 10px 0 10px;
+    background: transparent;
+    color: var(--secondary-color);
+    font-size: .82rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.profile-edit-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.profile-edit-btn:hover {
+    background: var(--secondary-color);
+    color: var(--white);
+    transform: translateY(-1px);
+}
+
+/* Fila de botones Guardar + Cancelar */
+.profile-form__actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Boton Cancelar: contorno sin relleno */
+.profile-form__cancel {
+    padding: .9rem 2rem;
+    border: 1.5px solid var(--perla-dark);
+    border-radius: 0 16px 0 16px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: .88rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.profile-form__cancel:hover:not(:disabled) {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+.profile-form__cancel:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Alertas de exito / error en datos personales */
+.profile-alert {
+    padding: .7rem 1.1rem;
+    border-radius: 6px;
+    font-size: .85rem;
+    margin-bottom: 1rem;
+    border-left: 3px solid;
+}
+.profile-alert--ok  { background: #f0fdf4; border-color: #22c55e; color: #166534; }
+.profile-alert--err { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
+
+/* Dropdown de autocomplete en modo edicion */
+.profile-autocomplete {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0; right: 0;
+    background: var(--white);
+    border: 1px solid var(--perla-dark);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 8px 24px rgba(28,26,24,.12);
+    list-style: none;
+    margin: 0; padding: 0;
+    z-index: 500;
+    max-height: 220px;
+    overflow-y: auto;
+}
+.profile-autocomplete li { border-bottom: 1px solid var(--perla-dark); }
+.profile-autocomplete li:last-child { border-bottom: none; }
+.profile-autocomplete__btn {
+    width: 100%;
+    background: none; border: none;
+    text-align: left;
+    padding: .6rem 1rem;
+    font-size: .85rem;
+    font-family: inherit;
+    color: var(--secondary-color);
+    cursor: pointer;
+    transition: background .12s;
+}
+.profile-autocomplete__btn:hover { background: #fcfbf9; }
+
 /* Seccion de consejos de seguridad separada del formulario por un divisor punteado */
 .security-info {
     margin-top: 4rem;
@@ -338,3 +443,4 @@
         padding: 1.5rem;
     }
 }
+

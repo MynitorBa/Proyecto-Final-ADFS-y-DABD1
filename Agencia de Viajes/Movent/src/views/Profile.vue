@@ -33,53 +33,164 @@
             </div>
           </div>
 
-          <!-- Tarjeta: información personal de solo lectura -->
+          <!-- Tarjeta: información personal editable -->
           <div class="prf-card">
-            <div class="prf-card__head">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Información personal
+            <div class="prf-card__head" style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="display:flex;align-items:center;gap:6px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Información personal
+              </span>
+              <button v-if="!editandoInfo" type="button" class="prf-btn prf-btn--ghost" style="padding:4px 12px;font-size:12px;" @click="iniciarEdicionInfo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar
+              </button>
             </div>
             <div class="prf-card__body">
-              <div class="prf-info-grid">
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Nombre</span>
-                  <span class="prf-info-cell__val">{{ perfil.nombre }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Apellido</span>
-                  <span class="prf-info-cell__val">{{ perfil.apellido }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Username</span>
-                  <span class="prf-info-cell__val">{{ perfil.username }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Correo</span>
-                  <span class="prf-info-cell__val">{{ perfil.correo }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Pasaporte</span>
-                  <span class="prf-info-cell__val">{{ perfil.pasaporte || '—' }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Fecha de nacimiento</span>
-                  <span class="prf-info-cell__val">{{ formatFecha(perfil.fechaNacimiento) || '—' }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">Ciudad</span>
-                  <span class="prf-info-cell__val">{{ perfil.ciudad || '—' }}</span>
-                </div>
-                <div class="prf-info-cell">
-                  <span class="prf-info-cell__lbl">País</span>
-                  <span class="prf-info-cell__val">{{ perfil.pais || '—' }}</span>
-                </div>
-                <div v-if="perfil.nacionalidades?.length" class="prf-info-cell prf-info-cell--full">
-                  <span class="prf-info-cell__lbl">Nacionalidades</span>
-                  <div class="prf-nac-tags">
-                    <span v-for="n in perfil.nacionalidades" :key="n" class="prf-nac-tag">{{ n }}</span>
+
+              <!-- Vista de lectura -->
+              <template v-if="!editandoInfo">
+                <div class="prf-info-grid">
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Nombre</span>
+                    <span class="prf-info-cell__val">{{ perfil.nombre }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Apellido</span>
+                    <span class="prf-info-cell__val">{{ perfil.apellido }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Username</span>
+                    <span class="prf-info-cell__val">{{ perfil.username }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Correo</span>
+                    <span class="prf-info-cell__val">{{ perfil.correo }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Pasaporte</span>
+                    <span class="prf-info-cell__val">{{ perfil.pasaporte || '—' }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Fecha de nacimiento</span>
+                    <span class="prf-info-cell__val">{{ formatFecha(perfil.fechaNacimiento) || '—' }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">Ciudad</span>
+                    <span class="prf-info-cell__val">{{ perfil.ciudad || '—' }}</span>
+                  </div>
+                  <div class="prf-info-cell">
+                    <span class="prf-info-cell__lbl">País</span>
+                    <span class="prf-info-cell__val">{{ perfil.pais || '—' }}</span>
+                  </div>
+                  <div v-if="perfil.nacionalidades?.length" class="prf-info-cell prf-info-cell--full">
+                    <span class="prf-info-cell__lbl">Nacionalidades</span>
+                    <div class="prf-nac-tags">
+                      <span v-for="n in perfil.nacionalidades" :key="n" class="prf-nac-tag">{{ n }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
+
+              <!-- Formulario de edición -->
+              <template v-else>
+                <div class="prf-info-grid">
+                  <div class="prf-field">
+                    <label class="prf-label">Nombre</label>
+                    <div class="prf-input-wrap" :class="{ 'prf-input-wrap--error': infoErrors.nombre }">
+                      <input class="prf-input" v-model="infoForm.nombre" placeholder="Nombre" />
+                    </div>
+                    <span v-if="infoErrors.nombre" class="prf-error">{{ infoErrors.nombre }}</span>
+                  </div>
+                  <div class="prf-field">
+                    <label class="prf-label">Apellido</label>
+                    <div class="prf-input-wrap" :class="{ 'prf-input-wrap--error': infoErrors.apellido }">
+                      <input class="prf-input" v-model="infoForm.apellido" placeholder="Apellido" />
+                    </div>
+                    <span v-if="infoErrors.apellido" class="prf-error">{{ infoErrors.apellido }}</span>
+                  </div>
+                  <div class="prf-field">
+                    <label class="prf-label">Username</label>
+                    <div class="prf-input-wrap" :class="{ 'prf-input-wrap--error': infoErrors.username }">
+                      <input class="prf-input" v-model="infoForm.username" placeholder="nombre_usuario" @input="infoForm.username = infoForm.username.replace(/[^a-zA-Z0-9_.]/g, '')" />
+                    </div>
+                    <span v-if="infoErrors.username" class="prf-error">{{ infoErrors.username }}</span>
+                  </div>
+                  <div class="prf-field">
+                    <label class="prf-label">Correo</label>
+                    <div class="prf-input-wrap" :class="{ 'prf-input-wrap--error': infoErrors.correo }">
+                      <input class="prf-input" v-model="infoForm.correo" type="email" placeholder="correo@ejemplo.com" />
+                    </div>
+                    <span v-if="infoErrors.correo" class="prf-error">{{ infoErrors.correo }}</span>
+                  </div>
+                  <div class="prf-field">
+                    <label class="prf-label">Pasaporte</label>
+                    <div class="prf-input-wrap" :class="{ 'prf-input-wrap--error': infoErrors.pasaporte }">
+                      <input class="prf-input" v-model="infoForm.pasaporte" placeholder="AB123456" @input="infoForm.pasaporte = infoForm.pasaporte.toUpperCase()" />
+                    </div>
+                    <span v-if="infoErrors.pasaporte" class="prf-error">{{ infoErrors.pasaporte }}</span>
+                  </div>
+                  <div class="prf-field">
+                    <label class="prf-label">Fecha de nacimiento</label>
+                    <div class="prf-input-wrap">
+                      <input class="prf-input" v-model="infoForm.fechaNacimiento" type="date" />
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                  <button class="prf-btn prf-btn--primary" @click="guardarInfo" :disabled="savingInfo" type="button">
+                    <span v-if="savingInfo" class="prf-btn__spin"></span>
+                    <template v-else>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+                      Guardar cambios
+                    </template>
+                  </button>
+                  <button class="prf-btn prf-btn--ghost" @click="editandoInfo = false" :disabled="savingInfo" type="button">
+                    Cancelar
+                  </button>
+                </div>
+              </template>
+
+            </div>
+          </div>
+
+          <!-- Tarjeta: preferencia de ofertas por correo -->
+          <div class="prf-card">
+            <div class="prf-card__head">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Ofertas por correo
+            </div>
+            <div class="prf-card__body">
+              <p style="font-size:.85rem;color:#6a6058;margin:0 0 16px;line-height:1.6;">
+                Recibe cada 5 días las mejores ofertas de paquetes, vuelos y hoteles directamente en tu correo.
+                Puedes activarlo o desactivarlo en cualquier momento.
+              </p>
+              <label style="display:flex;align-items:center;gap:14px;cursor:pointer;user-select:none;">
+                <div style="position:relative;width:46px;height:26px;flex-shrink:0;" @click="toggleOfertas">
+                  <input type="checkbox" :checked="perfil.recibirOfertas" style="opacity:0;position:absolute;" />
+                  <div :style="{
+                    width:'46px', height:'26px', borderRadius:'13px',
+                    background: perfil.recibirOfertas ? '#FFCC00' : '#3a3028',
+                    transition:'background .2s', position:'relative'
+                  }">
+                    <div :style="{
+                      position:'absolute', top:'3px',
+                      left: perfil.recibirOfertas ? '23px' : '3px',
+                      width:'20px', height:'20px', borderRadius:'50%',
+                      background: perfil.recibirOfertas ? '#1a1410' : '#6a6058',
+                      transition:'left .2s'
+                    }"></div>
+                  </div>
+                </div>
+                <div>
+                  <p style="margin:0;font-size:.9rem;font-weight:600;color:#f0e8dc;">
+                    {{ perfil.recibirOfertas ? 'Suscrito a ofertas' : 'No suscrito' }}
+                  </p>
+                  <p style="margin:0;font-size:.78rem;color:#6a6058;">
+                    {{ perfil.recibirOfertas ? 'Recibirás ofertas cada 5 días por correo' : 'Actívalo para recibir promociones exclusivas' }}
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -465,6 +576,103 @@ async function cambiarContrasena() {
     }
   } finally {
     savingPwd.value = false
+  }
+}
+
+// ── Edición de información personal ──────────────────────────────────────────
+
+/** Controla si se muestra el formulario de edicion o la vista de lectura. */
+const editandoInfo = ref(false)
+
+/** Previene doble envio al guardar informacion personal. */
+const savingInfo = ref(false)
+
+/** Errores por campo del formulario de informacion personal. */
+const infoErrors = ref({})
+
+/** Datos del formulario de edicion de informacion personal. */
+const infoForm = ref({
+  nombre: '', apellido: '', correo: '', username: '',
+  pasaporte: '', fechaNacimiento: ''
+})
+
+/**
+ * Copia los valores actuales del perfil al formulario antes de abrir el editor.
+ */
+function iniciarEdicionInfo() {
+  infoForm.value = {
+    nombre:          perfil.value.nombre         || '',
+    apellido:        perfil.value.apellido        || '',
+    correo:          perfil.value.correo          || '',
+    username:        perfil.value.username        || '',
+    pasaporte:       perfil.value.pasaporte       || '',
+    fechaNacimiento: perfil.value.fechaNacimiento
+      ? perfil.value.fechaNacimiento.slice(0, 10)
+      : '',
+  }
+  infoErrors.value = {}
+  editandoInfo.value = true
+}
+
+/**
+ * Envía los cambios de informacion personal al servidor.
+ * Muestra errores por campo si hay duplicados (409).
+ */
+async function guardarInfo() {
+  infoErrors.value = {}
+  savingInfo.value = true
+  try {
+    await apiFetch(`${API}/api/perfil/info`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre:           infoForm.value.nombre.trim(),
+        apellido:         infoForm.value.apellido.trim(),
+        correo:           infoForm.value.correo.trim().toLowerCase(),
+        username:         infoForm.value.username.trim(),
+        pasaporte:        infoForm.value.pasaporte.trim().toUpperCase(),
+        fecha_nacimiento: infoForm.value.fechaNacimiento,
+      })
+    })
+    // Actualizar el objeto local del perfil con los nuevos valores
+    perfil.value.nombre          = infoForm.value.nombre.trim()
+    perfil.value.apellido        = infoForm.value.apellido.trim()
+    perfil.value.correo          = infoForm.value.correo.trim().toLowerCase()
+    perfil.value.username        = infoForm.value.username.trim()
+    perfil.value.pasaporte       = infoForm.value.pasaporte.trim().toUpperCase()
+    perfil.value.fechaNacimiento = infoForm.value.fechaNacimiento
+    editandoInfo.value = false
+    addToast('Información actualizada correctamente')
+  } catch (err) {
+    const msg = (err.message || '').toLowerCase()
+    if (msg.includes('correo'))    infoErrors.value.correo    = err.message
+    else if (msg.includes('username')) infoErrors.value.username = err.message
+    else if (msg.includes('pasaporte')) infoErrors.value.pasaporte = err.message
+    else addToast(err.message || 'Error al actualizar', 'error')
+  } finally {
+    savingInfo.value = false
+  }
+}
+
+// ── Toggle de ofertas ─────────────────────────────────────────────────────────
+
+/**
+ * Cambia la suscripcion de ofertas del usuario y lo persiste en el servidor.
+ */
+async function toggleOfertas() {
+  const nuevo = !perfil.value.recibirOfertas
+  try {
+    await apiFetch(`${API}/api/perfil/ofertas`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recibir_ofertas: nuevo })
+    })
+    perfil.value.recibirOfertas = nuevo
+    addToast(nuevo
+      ? 'Te has suscrito a las ofertas de Movent'
+      : 'Te has dado de baja de las ofertas')
+  } catch (err) {
+    addToast(err.message || 'Error al actualizar preferencia', 'error')
   }
 }
 

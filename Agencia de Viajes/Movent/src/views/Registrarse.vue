@@ -253,6 +253,17 @@
               <span class="checkbox-custom"></span>
               <span>Acepto la <button type="button" class="link-btn">Política de Privacidad</button> <span class="req">*</span></span>
             </label>
+
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="recibirOfertas" />
+              <span class="checkbox-custom"></span>
+              <span>
+                Quiero recibir ofertas de paquetes de viaje por correo
+                <span class="hint-text" style="display:block;margin-top:2px;font-size:0.78rem;">
+                  Recibirás promociones exclusivas cada 5 días con los mejores precios y descuentos. Puedes cancelarte en cualquier momento desde tu perfil.
+                </span>
+              </span>
+            </label>
           </div>
 
           <!-- Botón de envío con spinner mientras procesa -->
@@ -378,6 +389,9 @@ const acceptTerms         = ref(false)
 
 /** Estado del checkbox de política de privacidad (UX, no se envía al backend). @type {import('vue').Ref<boolean>} */
 const acceptPrivacy       = ref(false)
+
+/** Suscripcion a ofertas por correo cada 5 dias (se envia al backend). @type {import('vue').Ref<boolean>} */
+const recibirOfertas      = ref(false)
 
 /** Errores devueltos por el backend en respuestas 409 (por campo). @type {import('vue').Ref<object>} */
 const errors              = ref({})
@@ -642,6 +656,7 @@ async function handleRegister() {
       ciudad:           (ciudadQuery.value || '').trim(),
       pais:             (paisQuery.value || '').trim(),
       nacionalidades:   nacsEnviar,
+      recibir_ofertas:  recibirOfertas.value,
     }
 
     const res  = await fetch(`${API_BASE}/api/usuarios/registro`, {
