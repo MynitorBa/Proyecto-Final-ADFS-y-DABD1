@@ -148,6 +148,10 @@
     checkIn  = toLocalDateStr(todayDate);
     checkOut = toLocalDateStr(tomorrow);
 
+    // ✅ Si ya hay datos de alianza (post-login), sobreescribe las fechas por defecto
+    if (alianzaAutocompletarData?.fechaIda)    checkIn  = alianzaAutocompletarData.fechaIda;
+    if (alianzaAutocompletarData?.fechaVuelta) checkOut = alianzaAutocompletarData.fechaVuelta;
+
     // Si llega una sugerencia de destino desde otra pagina, la pre-rellena
     if (destinationSuggestion) ciudadQuery = destinationSuggestion;
 
@@ -190,26 +194,36 @@
   $: if (destinationSuggestion) ciudadQuery = destinationSuggestion;
 
   // Cuando App ya valido el token (caso post-login), setea los campos directamente
-  $: if (alianzaAutocompletarData) {
-    paisSeleccionado   = { country: alianzaAutocompletarData.pais };
-    paisQuery          = alianzaAutocompletarData.pais;
-    ciudadQuery        = alianzaAutocompletarData.ciudad;
-    ciudadSeleccionada = true;
-    porcentajeDescuento = alianzaAutocompletarData.porcentajeDescuento ?? null;
-    if (porcentajeDescuento) {
-      sessionStorage.setItem('alianzaDescuento', String(porcentajeDescuento));
-      sessionStorage.setItem('alianzaPct', String(porcentajeDescuento));
-    }
-    if (alianzaAutocompletarData.token) {
-      sessionStorage.setItem('alianzaTokenActivo', alianzaAutocompletarData.token);
-      sessionStorage.setItem('alianzaCiudad', alianzaAutocompletarData.ciudad);
-      sessionStorage.setItem('alianzaPais',   alianzaAutocompletarData.pais);
-    }
-    if (onAlianzaValidada) onAlianzaValidada(porcentajeDescuento);
-    // Avisar a App que los datos fueron consumidos para que no vuelvan a
-    // autocomplete la proxima vez que Home remonte.
-    if (onAlianzaAutocompletarConsumida) onAlianzaAutocompletarConsumida();
+ $: if (alianzaAutocompletarData) {
+  const _pais        = alianzaAutocompletarData.pais;
+  const _ciudad      = alianzaAutocompletarData.ciudad;
+  const _pct         = alianzaAutocompletarData.porcentajeDescuento ?? null;
+  const _fechaIda    = alianzaAutocompletarData.fechaIda;
+  const _fechaVuelta = alianzaAutocompletarData.fechaVuelta;
+  const _token       = alianzaAutocompletarData.token;
+
+  paisSeleccionado    = { country: _pais };
+  paisQuery           = _pais;
+  ciudadQuery         = _ciudad;
+  ciudadSeleccionada  = true;
+  porcentajeDescuento = _pct;
+
+  if (_fechaIda)    checkIn  = _fechaIda;
+  if (_fechaVuelta) checkOut = _fechaVuelta;
+
+  if (_pct) {
+    sessionStorage.setItem('alianzaDescuento', String(_pct));
+    sessionStorage.setItem('alianzaPct', String(_pct));
   }
+  if (_token) {
+    sessionStorage.setItem('alianzaTokenActivo', _token);
+    sessionStorage.setItem('alianzaCiudad', _ciudad);
+    sessionStorage.setItem('alianzaPais',   _pais);
+  }
+
+  if (onAlianzaValidada) onAlianzaValidada(_pct);
+
+}
 
   /**
    * Valida el token de alianza contra el backend. Si es valido autocompleta
@@ -219,37 +233,37 @@
    * @returns {Promise<void>}
    */
   async function validarAlianzaToken() {
-    try {
-      const res = await fetch(`${API}/alianza/validar?token=${alianzaToken}`, {
-        method: 'GET',
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        console.log('[alianza] respuesta backend:', data);
-        paisSeleccionado  = { country: data.pais };
-        paisQuery         = data.pais;
-        ciudadQuery       = data.ciudad;
-        ciudadSeleccionada = true;
-        porcentajeDescuento = data.porcentajeDescuento ?? null;
-        if (porcentajeDescuento) sessionStorage.setItem('alianzaDescuento', String(porcentajeDescuento));
-        // alianzaPct guarda el porcentaje original del token y nunca se borra
-        // mientras el token sigue activo — permite restaurar el descuento
-        // si el usuario vuelve a buscar en la ciudad correcta.
-        if (porcentajeDescuento) sessionStorage.setItem('alianzaPct', String(porcentajeDescuento));
-        // Guardar ciudad/país del token para validar que la búsqueda sea en esa misma ubicación
-        sessionStorage.setItem('alianzaCiudad', data.ciudad);
-        sessionStorage.setItem('alianzaPais',   data.pais);
-        sessionStorage.setItem('alianzaTokenActivo', alianzaToken);
-        if (onAlianzaValidada) onAlianzaValidada(porcentajeDescuento);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        searchError = err.mensaje || 'Token de alianza inválido o expirado.';
-      }
-    } catch (_) {
-      searchError = 'Error al validar el token de alianza.';
+  try {
+    const res = await fetch(`${API}/alianza/validar?token=${alianzaToken}`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      paisSeleccionado   = { country: data.pais };
+      paisQuery          = data.pais;
+      ciudadQuery        = data.ciudad;
+      ciudadSeleccionada = true;
+      porcentajeDescuento = data.porcentajeDescuento ?? null;
+
+      //  Rellenar fechas si vienen en el token
+      if (data.fechaIda)    checkIn  = data.fechaIda;
+      if (data.fechaVuelta) checkOut = data.fechaVuelta;
+
+      if (porcentajeDescuento) sessionStorage.setItem('alianzaDescuento', String(porcentajeDescuento));
+      if (porcentajeDescuento) sessionStorage.setItem('alianzaPct', String(porcentajeDescuento));
+      sessionStorage.setItem('alianzaCiudad', data.ciudad);
+      sessionStorage.setItem('alianzaPais',   data.pais);
+      sessionStorage.setItem('alianzaTokenActivo', alianzaToken);
+      if (onAlianzaValidada) onAlianzaValidada(porcentajeDescuento);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      searchError = err.mensaje || 'Token de alianza inválido o expirado.';
     }
+  } catch (_) {
+    searchError = 'Error al validar el token de alianza.';
   }
+}
 
   // --- Logica del autocomplete de pais ---
 

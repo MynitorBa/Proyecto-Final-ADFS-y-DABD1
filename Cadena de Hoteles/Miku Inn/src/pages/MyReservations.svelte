@@ -1,60 +1,226 @@
 <script>
   /**
    * @file MyReservations.svelte
-   * @description Pagina de mis reservaciones. Muestra todas las reservas del usuario
-   * autenticado, permite filtrarlas, ver el detalle en un panel lateral, descargar
-   * la factura en PDF, cancelar una reserva activa y dejar una resena cuando la
-   * estadia ya fue completada.
+   * @description Pagina de mis reservaciones con cambio de fechas ATOMICO.
+   * Todos los cambios de fechas de una reservacion se acumulan y se envian
+   * juntos en una sola peticion. Si alguno falla, ningun detalle se persiste.
    */
 
   import '../styles/myreservations.css';
 
-  /** Funcion de navegacion inyectada por el router padre. @type {Function} */
   export let navigateTo = (/** @type {string} */ _page, /** @type {any} */ _data = null) => {};
 
-  /** URL base de la API del backend. @type {string} */
-      import { API } from '../lib/api.js';
+  import { API } from '../lib/api.js';
 
-
-  /** Lista de reservaciones agrupadas del usuario. @type {any[]} */
   let reservations        = [];
-
-  /** Indica si la carga inicial todavia esta en curso. @type {boolean} */
   let loading             = true;
-
-  /** Mensaje de error si la carga falla. @type {string} */
   let loadError           = '';
-
-  /** Reservacion seleccionada para el panel de detalle. @type {any} */
   let selectedReservation = null;
+  let hotelesConResena    = new Set();
+  let comentario          = { resena: 5, contenido: '' };
+  let comentarioSaving    = false;
+  let comentarioError     = '';
+  let comentarioOk        = false;
+  let downloadingId       = null;
+  let downloadError       = '';
 
-  /** IDs de hoteles en los que el usuario ya dejo una resena. @type {Set<number>} */
-  let hotelesConResena = new Set();
+  // ---------------------------------------------------------------------------
+  // Estado del cambio de fechas ATOMICO
+  // pendingChanges: Map<detalleId, { fechaCheckIn, fechaCheckOut }>
+  // Solo se activa cuando hay al menos una habitacion con fechas modificadas.
+  // ---------------------------------------------------------------------------
 
-  /** Datos del comentario/resena que el usuario esta por enviar. @type {{ resena: number, contenido: string }} */
-  let comentario       = { resena: 5, contenido: '' };
-
-  /** Indica si el comentario se esta enviando al servidor. @type {boolean} */
-  let comentarioSaving = false;
-
-  /** Mensaje de error al enviar el comentario. @type {string} */
-  let comentarioError  = '';
-
-  /** Indica si el comentario fue enviado con exito. @type {boolean} */
-  let comentarioOk     = false;
-
-  /** ID de la reservacion cuya factura se esta descargando en este momento. @type {any} */
-  let downloadingId = null;
-
-  /** Mensaje de error al intentar descargar la factura PDF. @type {string} */
-  let downloadError = '';
+  /** Indica si el panel de edicion atomica esta abierto. @type {boolean} */
+  let atomicEditOpen    = false;
 
   /**
-   * Descarga la factura PDF de una reservacion y la abre como archivo.
-   * @async
-   * @param {number} reservacionId - ID de la reservacion a descargar.
-   * @returns {Promise<void>}
+   * Mapa de cambios pendientes: detalleId -> { newCheckIn, newCheckOut }.
+   * Se carga con las fechas actuales al abrir el panel.
+   * @type {Map<number, { newCheckIn: string, newCheckOut: string, original: { checkIn: string, checkOut: string } }>}
    */
+  let pendingChanges    = new Map();
+
+  /** Indica si la peticion atomica esta en vuelo. @type {boolean} */
+  let atomicSaving      = false;
+
+  /** Mensaje de error del flujo atomico. @type {string} */
+  let atomicError       = '';
+
+  /** Indica si el guardado atomico fue exitoso. @type {boolean} */
+  let atomicOk          = false;
+
+  /**
+   * Abre el panel de edicion atomica para la reservacion seleccionada.
+   * Pre-carga todas las habitaciones con sus fechas actuales.
+   */
+  function openAtomicEdit() {
+    if (!selectedReservation) return;
+    pendingChanges = new Map(
+      selectedReservation.habitaciones.map(h => [
+        h.detalleId,
+        {
+          newCheckIn:  h.fechaCheckIn  ? h.fechaCheckIn.toString().split(' ')[0]  : '',
+          newCheckOut: h.fechaCheckOut ? h.fechaCheckOut.toString().split(' ')[0] : '',
+          original: {
+            checkIn:  h.fechaCheckIn  ? h.fechaCheckIn.toString().split(' ')[0]  : '',
+            checkOut: h.fechaCheckOut ? h.fechaCheckOut.toString().split(' ')[0] : '',
+          }
+        }
+      ])
+    );
+    atomicEditOpen = true;
+    atomicError    = '';
+    atomicOk       = false;
+    atomicSaving   = false;
+  }
+
+  /** Cierra y limpia el panel de edicion atomica. */
+  function closeAtomicEdit() {
+    atomicEditOpen = false;
+    pendingChanges = new Map();
+    atomicError    = '';
+    atomicOk       = false;
+  }
+
+  /**
+   * Actualiza el campo newCheckIn o newCheckOut de un detalle en pendingChanges.
+   * @param {number} detalleId
+   * @param {'newCheckIn'|'newCheckOut'} field
+   * @param {string} value
+   */
+  function updatePending(detalleId, field, value) {
+  const entry = pendingChanges.get(detalleId);
+  if (!entry) return;
+
+  let updated = { ...entry, [field]: value };
+
+  // Si cambia el check-in, desplazar el check-out automáticamente
+  // para mantener la misma cantidad de noches
+  if (field === 'newCheckIn' && value) {
+    const diasOriginales = Math.round(
+      (new Date(entry.original.checkOut) - new Date(entry.original.checkIn)) / 86400000
+    );
+    const nuevoCheckIn  = new Date(value);
+    const nuevoCheckOut = new Date(nuevoCheckIn);
+    nuevoCheckOut.setDate(nuevoCheckOut.getDate() + diasOriginales);
+    updated.newCheckOut = nuevoCheckOut.toISOString().split('T')[0];
+  }
+
+  pendingChanges.set(detalleId, updated);
+  pendingChanges = new Map(pendingChanges);
+}
+
+  /**
+   * Devuelve true si al menos un detalle tiene fechas distintas a las originales.
+   * @returns {boolean}
+   */
+  function hasChanges() {
+    for (const [, v] of pendingChanges) {
+      if (v.newCheckIn !== v.original.checkIn || v.newCheckOut !== v.original.checkOut) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Validacion frontend antes de enviar.
+   * Retorna un mensaje de error o cadena vacia si todo esta bien.
+   * @returns {string}
+   */
+ function validateChanges() {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  for (const [detalleId, v] of pendingChanges) {
+    if (!v.newCheckIn || !v.newCheckOut) {
+      return `Detalle #${detalleId}: ambas fechas son requeridas.`;
+    }
+
+    const ci  = new Date(v.newCheckIn);
+    const co  = new Date(v.newCheckOut);
+
+    if (ci < hoy) {
+      return `Una habitación tiene check-in anterior a hoy.`;
+    }
+
+    // *** REGLA PRINCIPAL: misma duracion ***
+    const diasOriginales = Math.round(
+      (new Date(v.original.checkOut) - new Date(v.original.checkIn)) / 86400000
+    );
+    const diasNuevos = Math.round((co - ci) / 86400000);
+
+    if (diasNuevos !== diasOriginales) {
+      return `Una habitación está reservada por ${diasOriginales} noche(s). ` +
+             `Solo puedes mover las fechas, no cambiar la duración.`;
+    }
+
+    // Validar 48 horas sobre el check-in ACTUAL
+    const checkInActual  = new Date(v.original.checkIn);
+    const horasRestantes = (checkInActual - new Date()) / 36e5;
+    if (horasRestantes <= 48) {
+      return `Una habitación tiene check-in en menos de 48 horas y no puede modificarse.`;
+    }
+  }
+  return '';
+}
+
+  /**
+   * Envia todos los cambios pendientes en una sola peticion PATCH atomica.
+   * El backend valida y persiste todos o ninguno.
+   * @async
+   */
+  async function submitAtomicChanges() {
+    if (!selectedReservation) return;
+
+    const validationError = validateChanges();
+    if (validationError) { atomicError = validationError; return; }
+
+    if (!hasChanges()) { atomicError = 'No has modificado ninguna fecha.'; return; }
+
+    // Construir payload: solo incluir detalles cuyas fechas cambiaron
+    const cambios = [];
+    for (const [detalleId, v] of pendingChanges) {
+      cambios.push({
+        detalleId,
+        fechaCheckIn:  v.newCheckIn,
+        fechaCheckOut: v.newCheckOut,
+      });
+    }
+
+    atomicSaving = true;
+    atomicError  = '';
+
+    try {
+      const res = await fetch(
+        `${API}/reservaciones/${selectedReservation.id}/fechas`,
+        {
+          method:      'PATCH',
+          credentials: 'include',
+          headers:     { 'Content-Type': 'application/json' },
+          body:        JSON.stringify({ cambios }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        atomicError = data.mensaje || data.message || `Error ${res.status}`;
+      } else {
+        atomicOk = true;
+        await fetchAll();
+        selectedReservation = reservations.find(r => r.id === selectedReservation.id) ?? null;
+        setTimeout(closeAtomicEdit, 2000);
+      }
+    } catch (e) {
+      atomicError = /** @type {any} */ (e).message || 'Error de conexión al cambiar las fechas';
+    } finally {
+      atomicSaving = false;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Resto de la logica (sin cambios respecto al original)
+  // ---------------------------------------------------------------------------
+
   async function downloadFactura(reservacionId) {
     downloadingId = reservacionId;
     downloadError = '';
@@ -83,12 +249,6 @@
     }
   }
 
-  /**
-   * Agrupa las filas planas devueltas por la API en objetos de reservacion,
-   * cada uno con un array de habitaciones anidado.
-   * @param {any[]} rows - Filas crudas de la API.
-   * @returns {any[]} Array de reservaciones agrupadas.
-   */
   function groupReservations(rows) {
     const map = new Map();
     for (const row of rows) {
@@ -124,12 +284,6 @@
     return Array.from(map.values());
   }
 
-  /**
-   * Carga las reservaciones del usuario y los hoteles que ya tienen resena.
-   * Se llama al montar el componente y al reintentar tras error.
-   * @async
-   * @returns {Promise<void>}
-   */
   async function fetchAll() {
     loading = true; loadError = '';
     try {
@@ -160,15 +314,8 @@
     }
   }
 
-  // Carga inicial al montar el componente
   fetchAll();
 
-  /**
-   * Devuelve la etiqueta visual y clase CSS correspondiente al estado de una reservacion.
-   * El icono se devuelve como markup SVG para renderizarse con {@html}.
-   * @param {string|null|undefined} estado - Estado de la reservacion.
-   * @returns {{ text: string|null|undefined, cls: string, icon: string }}
-   */
   function getStatus(estado) {
     const e = (estado || '').toLowerCase();
     const checkSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -183,12 +330,6 @@
     return { text: estado, cls: 'pending', icon: clockSvg };
   }
 
-  /**
-   * Calcula la cantidad de noches entre check-in y check-out.
-   * @param {string} checkIn - Fecha de entrada.
-   * @param {string} checkOut - Fecha de salida.
-   * @returns {number} Numero de noches (minimo 0).
-   */
   function calcNights(checkIn, checkOut) {
     if (!checkIn || !checkOut) return 0;
     return Math.max(0, Math.ceil(
@@ -196,43 +337,25 @@
     ));
   }
 
-  /**
-   * Formatea una fecha ISO a solo la parte de fecha (YYYY-MM-DD).
-   * @param {any} str - Cadena de fecha.
-   * @returns {string}
-   */
   function fmtDate(str) {
     if (!str) return '—';
     return str.toString().split(' ')[0];
   }
 
-  /**
-   * Formatea un numero como moneda USD.
-   * @param {number} p - Valor a formatear.
-   * @returns {string}
-   */
   function fmt(p) {
     return new Intl.NumberFormat('es-GT', {
       style: 'currency', currency: 'USD', minimumFractionDigits: 0
     }).format(p);
   }
 
-  /**
-   * Pares [valor, etiqueta] para los botones de filtro de estado.
-   * @type {[string, string][]}
-   */
   const FILTERS = [
     ['all','Todas'],['pendiente','Pendientes'],['confirmada','Confirmadas'],
     ['completada','Completadas'],['cancelada','Canceladas'],['expirada','Expiradas']
   ];
 
-  /** Filtro activo actualmente. @type {string} */
   let filter = 'all';
-
-  /** Texto de busqueda por codigo de reserva. @type {string} */
   let search = '';
 
-  // Lista de reservaciones que pasan el filtro y la busqueda activos.
   $: filtered = reservations.filter(r => {
     const estado = (r.estado || '').toLowerCase();
     const matchFilter = filter === 'all' || estado === filter;
@@ -241,22 +364,11 @@
     return matchFilter && matchSearch;
   });
 
-  /** ID de la reservacion que esta siendo cancelada. @type {any} */
   let cancelingId  = null;
-
-  /** Motivo escrito por el usuario para la cancelacion. @type {string} */
   let cancelMotivo = '';
-
-  /** Mensaje de error en el flujo de cancelacion. @type {string} */
   let cancelError  = '';
-
-  /** Indica si la peticion de cancelacion esta en vuelo. @type {boolean} */
   let cancelSaving = false;
 
-  /**
-   * Abre el dialogo de cancelacion para la reservacion indicada.
-   * @param {number} id - ID de la reservacion a cancelar.
-   */
   function openCancelDialog(id) {
     cancelingId  = id;
     cancelMotivo = '';
@@ -264,20 +376,12 @@
     cancelSaving = false;
   }
 
-  /**
-   * Cierra el dialogo de cancelacion y limpia su estado.
-   */
   function closeCancelDialog() {
-    cancelingId = null;
+    cancelingId  = null;
     cancelMotivo = '';
     cancelError  = '';
   }
 
-  /**
-   * Envia la solicitud de cancelacion al servidor con el motivo ingresado.
-   * @async
-   * @returns {Promise<void>}
-   */
   async function confirmCancel() {
     if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo para cancelar.'; return; }
     cancelSaving = true; cancelError = '';
@@ -302,25 +406,15 @@
     }
   }
 
-  /**
-   * Abre el panel lateral de detalle para una reservacion y reinicia
-   * el formulario de comentario.
-   * @param {any} r - Objeto de reservacion.
-   */
   function openPanel(r) {
     selectedReservation = r;
     comentario       = { resena: 5, contenido: '' };
     comentarioError  = '';
     comentarioOk     = false;
     downloadError    = '';
+    closeAtomicEdit();
   }
 
-  /**
-   * Envia la resena del usuario para el hotel de la reservacion seleccionada.
-   * Solo disponible cuando la reservacion esta en estado "completada".
-   * @async
-   * @returns {Promise<void>}
-   */
   async function submitComentario() {
     if (!selectedReservation) return;
     const hotelId = selectedReservation.hotelId
@@ -358,15 +452,17 @@
   }
 </script>
 
-<!-- Cierra el panel con Escape -->
+<!-- Cierra paneles con Escape -->
 <svelte:window on:keydown={(e) => {
-  if (e.key === 'Escape' && selectedReservation) selectedReservation = null;
+  if (e.key === 'Escape') {
+    if (atomicEditOpen) { closeAtomicEdit(); return; }
+    if (selectedReservation) { selectedReservation = null; }
+  }
 }} />
 
 <div class="wrap">
   <div class="inner">
 
-    <!-- Encabezado principal de la pagina -->
     <header class="hdr">
       <div>
         <h1>Mis Reservas</h1>
@@ -374,7 +470,6 @@
       </div>
     </header>
 
-    <!-- Barra de filtros y busqueda por codigo -->
     <div class="controls">
       <div class="filters">
         {#each FILTERS as [val, label]}
@@ -389,7 +484,6 @@
       </div>
     </div>
 
-    <!-- Estado de carga -->
     {#if loading}
       <div class="empty">
         <div class="empty-icon">
@@ -398,7 +492,6 @@
         <h2>Cargando reservaciones...</h2>
       </div>
 
-    <!-- Estado de error con boton de reintento -->
     {:else if loadError}
       <div class="empty">
         <div class="empty-icon">
@@ -410,7 +503,6 @@
       </div>
 
     {:else}
-      <!-- Lista de tarjetas de reservacion -->
       <div class="list">
         {#if filtered.length === 0}
           <div class="empty">
@@ -426,8 +518,6 @@
             {@const hab = r.habitaciones?.[0]}
             {@const nights = calcNights(hab?.fechaCheckIn, hab?.fechaCheckOut)}
             <div class="card">
-
-              <!-- Imagen placeholder con badge de estado -->
               <div class="img-wrap">
                 <div class="img-placeholder">
                   <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.2">
@@ -438,7 +528,6 @@
                 <span class="badge {s.cls}">{@html s.icon} {s.text}</span>
               </div>
 
-              <!-- Informacion resumida de la reservacion -->
               <div class="info">
                 <div class="info-hdr">
                   <div>
@@ -451,7 +540,6 @@
                   </div>
                 </div>
 
-                <!-- Grid de datos rapidos: fechas, noches, huespedes, total -->
                 <div class="grid">
                   <div class="cell">
                     <span class="lbl">
@@ -504,7 +592,6 @@
                 {/if}
               </div>
 
-              <!-- Acciones de la tarjeta: detalle, PDF y cancelar -->
               <div class="actions">
                 <button class="abtn primary" on:click={() => openPanel(r)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -527,7 +614,6 @@
                   <button class="abtn danger" on:click={() => openCancelDialog(r.id)}>Cancelar Reserva</button>
                 {/if}
               </div>
-
             </div>
           {/each}
         {/if}
@@ -537,18 +623,21 @@
   </div>
 </div>
 
-<!-- Panel lateral deslizante con el detalle completo de la reservacion -->
+<!-- ============================================================
+     PANEL LATERAL - DETALLE DE RESERVACION
+     ============================================================ -->
 {#if selectedReservation}
   {@const sr = selectedReservation}
   {@const ss = getStatus(sr.estado)}
   {@const esCompletada = (sr.estado || '').toLowerCase() === 'completada'}
   {@const yaReseno = hotelesConResena.has(sr.hotelId)}
+  {@const esModificable = sr.estado?.toLowerCase() === 'pendiente' || sr.estado?.toLowerCase() === 'confirmada'}
+
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="panel-overlay" on:click|self={() => selectedReservation = null}>
+  <div class="panel-overlay" on:click|self={() => { selectedReservation = null; closeAtomicEdit(); }}>
     <div class="panel" role="dialog" aria-modal="true" aria-label="Detalle de reservación">
 
-      <!-- Encabezado del panel con hotel, codigo y badge de estado -->
       <div class="panel-header">
         <div class="panel-header-info">
           <div class="panel-hotel-name">{sr.nombreHotel}</div>
@@ -556,7 +645,7 @@
         </div>
         <div class="panel-header-right">
           <span class="panel-badge {ss.cls}">{@html ss.icon} {ss.text}</span>
-          <button class="panel-close" on:click={() => selectedReservation = null} aria-label="Cerrar">
+          <button class="panel-close" on:click={() => { selectedReservation = null; closeAtomicEdit(); }} aria-label="Cerrar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -566,7 +655,7 @@
 
       <div class="panel-body">
 
-        <!-- Boton para descargar la factura PDF desde el panel -->
+        <!-- Descargar factura -->
         <div class="panel-download-wrap">
           <button
             class="panel-download-btn"
@@ -589,7 +678,7 @@
           {/if}
         </div>
 
-        <!-- Informacion general de la reservacion -->
+        <!-- Informacion general -->
         <div class="panel-section">
           <h4 class="panel-section-title">Información general</h4>
           <div class="panel-info-grid">
@@ -616,19 +705,18 @@
           </div>
         </div>
 
-        <!-- Detalle de las habitaciones reservadas -->
+        <!-- Habitaciones reservadas -->
         <div class="panel-section">
           <h4 class="panel-section-title">
             Habitaciones reservadas
             <span class="panel-section-count">{sr.habitaciones.length}</span>
           </h4>
+
           {#each sr.habitaciones as h}
             <div class="panel-room">
               <div class="panel-room-top">
                 <div class="panel-room-title-wrap">
                   <strong class="panel-room-name">{h.tipoHabitacion}</strong>
-
-                  <!-- Numero fisico de la habitacion -->
                   {#if h.numeroHabitacion}
                     <span class="panel-room-number">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -638,7 +726,6 @@
                       Hab. {h.numeroHabitacion}
                     </span>
                   {/if}
-
                   <span class="panel-room-bed">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                     {h.tipoCama}
@@ -650,7 +737,20 @@
               <div class="panel-room-meta">
                 <div class="panel-room-meta-item">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>{h.fechaCheckIn} → {h.fechaCheckOut}</span>
+                  <!-- Si hay cambio pendiente para esta habitacion, mostrar las fechas nuevas con indicador -->
+                  {#if atomicEditOpen && pendingChanges.has(h.detalleId)}
+                    {@const pc = pendingChanges.get(h.detalleId)}
+                    {#if pc.newCheckIn !== pc.original.checkIn || pc.newCheckOut !== pc.original.checkOut}
+                      <span class="dates-changed">
+                        {pc.newCheckIn} → {pc.newCheckOut}
+                        <span class="dates-changed-tag">nuevo</span>
+                      </span>
+                    {:else}
+                      <span>{h.fechaCheckIn} → {h.fechaCheckOut}</span>
+                    {/if}
+                  {:else}
+                    <span>{h.fechaCheckIn} → {h.fechaCheckOut}</span>
+                  {/if}
                 </div>
                 <div class="panel-room-meta-item">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -663,14 +763,119 @@
               </div>
             </div>
           {/each}
+
+          <!-- -------------------------------------------------------
+               BLOQUE DE CAMBIO DE FECHAS ATOMICO
+               Se muestra debajo de todas las habitaciones, solo cuando
+               la reservacion es pendiente o confirmada.
+               ------------------------------------------------------- -->
+          {#if esModificable}
+            {#if !atomicEditOpen}
+              <!-- Boton para abrir el editor atomico -->
+              <button class="atomic-edit-btn" on:click={openAtomicEdit}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                  <line x1="12" y1="14" x2="12" y2="18"/>
+                  <line x1="10" y1="16" x2="14" y2="16"/>
+                </svg>
+                Cambiar fechas de todas las habitaciones
+              </button>
+
+            {:else}
+              <!-- Panel de edicion atomica -->
+              <div class="atomic-edit-panel">
+                <div class="atomic-edit-header">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span>Cambio de fechas — todas o ninguna</span>
+                  <span class="atomic-edit-info">
+                    Si alguna fecha es inválida o no está disponible, ningún cambio se guardará.
+                  </span>
+                </div>
+
+                {#if atomicOk}
+                  <div class="atomic-ok">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Todas las fechas fueron actualizadas correctamente
+                  </div>
+                {:else}
+                  <!-- Filas de edicion por habitacion -->
+                  {#each sr.habitaciones as h}
+                    {@const pc = pendingChanges.get(h.detalleId)}
+                    {#if pc}
+                      <div class="atomic-room-row">
+                        <div class="atomic-room-label">
+                          <strong>{h.tipoHabitacion}</strong>
+                          {#if h.numeroHabitacion}
+                            <span class="atomic-room-num">#{h.numeroHabitacion}</span>
+                          {/if}
+                        </div>
+                        <div class="atomic-dates-fields">
+                          <div class="atomic-date-field">
+                            <label class="panel-lbl">Check-in</label>
+                            <input
+                              type="date"
+                              class="change-dates-input"
+                              value={pc.newCheckIn}
+                              min={new Date().toISOString().split('T')[0]}
+                              on:change={(e) => updatePending(h.detalleId, 'newCheckIn', e.target.value)}
+                            />
+                          </div>
+                          <div class="atomic-date-field">
+                            <label class="panel-lbl">Check-out</label>
+                            <input
+                              type="date"
+                              class="change-dates-input"
+                              value={pc.newCheckOut}
+                              min={pc.newCheckIn || new Date().toISOString().split('T')[0]}
+                              on:change={(e) => updatePending(h.detalleId, 'newCheckOut', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+
+                  {#if atomicError}
+                    <div class="change-dates-error">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                      {atomicError}
+                    </div>
+                  {/if}
+
+                  <div class="atomic-edit-actions">
+                    <button class="change-dates-cancel-btn" on:click={closeAtomicEdit} disabled={atomicSaving}>
+                      Cancelar
+                    </button>
+                    <button class="change-dates-submit-btn" on:click={submitAtomicChanges} disabled={atomicSaving}>
+                      {#if atomicSaving}
+                        <span class="comment-spinner" style="border-color:rgba(255,255,255,.3);border-top-color:white;"></span>
+                        Guardando...
+                      {:else}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                        Confirmar todos los cambios
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          {/if}
+          <!-- fin bloque atomico -->
         </div>
 
-        <!-- Desglose de costos por habitacion y total -->
+        <!-- Desglose de costos -->
         <div class="panel-section panel-totals">
           <h4 class="panel-section-title">Desglose de costos</h4>
           {#each sr.habitaciones as h}
             <div class="panel-total-row">
-              <!-- Tipo de habitacion + numero para identificar la linea facilmente -->
               <span>
                 {h.tipoHabitacion}
                 {#if h.numeroHabitacion}
@@ -686,7 +891,7 @@
           </div>
         </div>
 
-        <!-- Seccion de resena: solo visible si la estadia fue completada -->
+        <!-- Seccion de resena -->
         {#if esCompletada}
           <div class="panel-section panel-comment-section">
             <h4 class="panel-section-title">
@@ -695,21 +900,16 @@
             </h4>
 
             {#if yaReseno && !comentarioOk}
-              <!-- Aviso de resena ya existente para este hotel -->
               <div class="comment-already">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Ya dejaste una reseña para <strong>{sr.nombreHotel}</strong>. Solo se permite una reseña por hotel.
               </div>
-
             {:else if comentarioOk}
-              <!-- Confirmacion de envio exitoso -->
               <div class="comment-success">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 ¡Gracias por tu reseña! Tu comentario fue enviado correctamente.
               </div>
-
             {:else}
-              <!-- Formulario de calificacion con estrellas y campo de texto -->
               <div class="stars-row">
                 <span class="panel-lbl" style="margin-bottom:.5rem;display:block">Calificación</span>
                 <div class="stars">
@@ -753,8 +953,8 @@
           </div>
         {/if}
 
-        <!-- Boton de cancelacion visible solo para reservas pendientes o confirmadas -->
-        {#if sr.estado?.toLowerCase() === 'pendiente' || sr.estado?.toLowerCase() === 'confirmada'}
+        <!-- Boton cancelar reservacion -->
+        {#if esModificable}
           <button class="panel-cancel-btn" on:click={() => openCancelDialog(sr.id)}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             Cancelar esta reservación
@@ -766,7 +966,9 @@
   </div>
 {/if}
 
-<!-- Modal de confirmacion de cancelacion con campo de motivo -->
+<!-- ============================================================
+     MODAL DE CONFIRMACION DE CANCELACION
+     ============================================================ -->
 {#if cancelingId !== null}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->

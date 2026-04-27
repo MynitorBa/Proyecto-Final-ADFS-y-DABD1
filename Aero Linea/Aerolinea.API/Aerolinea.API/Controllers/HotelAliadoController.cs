@@ -25,6 +25,20 @@ namespace Aerolinea.API.Controllers
             _service = service;
         }
 
+        // ── Público: hoteles recomendados para el usuario final ───────────────
+        /// <summary>
+        /// Retorna el nombre y la URL Home de todos los hoteles aliados activos
+        /// que tienen su home configurada. Accesible para cualquier usuario autenticado.
+        /// Se usa para mostrar recomendaciones de hoteles aliados en la interfaz.
+        /// </summary>
+        [Authorize]
+        [HttpGet("recomendaciones")]
+        public async Task<IActionResult> ObtenerRecomendaciones()
+        {
+            var hoteles = await _service.ObtenerHotelesHome();
+            return Ok(hoteles);
+        }
+
         // POST api/hoteles-aliados/busqueda
         /// <summary>
         /// Busca hoteles disponibles en la ciudad destino del pasajero
@@ -185,7 +199,7 @@ namespace Aerolinea.API.Controllers
         {
             try
             {
-                await _service.ActualizarUrls(id, dto.Url, dto.UrlParaUsuario);
+                await _service.ActualizarUrls(id, dto.Url, dto.UrlParaUsuario, dto.UrlHomeAliado);
                 return Ok(new { message = "URLs actualizadas correctamente." });
             }
             catch (Exception ex)

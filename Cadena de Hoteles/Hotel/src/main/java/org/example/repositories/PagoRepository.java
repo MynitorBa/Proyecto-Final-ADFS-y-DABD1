@@ -19,17 +19,23 @@ public class PagoRepository {
      * @return arreglo con {ID, No_Reservacion, Total, Estado, EstadoID} o null si no existe o no pertenece al usuario.
      */
     public Object[] obtenerReservacionParaPago(int reservacionId, int usuarioId) {
-        String sql = "SELECT r.ID, r.No_Reservacion, r.Total, er.Estado, r.EstadoID " +
+        // Agregamos el JOIN con DetallesReservacion para obtener el rango de estancia
+        String sql = "SELECT r.ID, r.No_Reservacion, r.Total, er.Estado, r.EstadoID, " +
+                "MIN(dr.FECHACHECKIN) as FECHA_INICIO, MAX(dr.FECHACHECKOUT) as FECHA_FIN " +
                 "FROM Reservacion r " +
                 "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
-                "WHERE r.ID = ? AND r.Usuario_ID = ?";
+                "JOIN DetallesReservacion dr ON r.ID = dr.ReservacionID " +
+                "WHERE r.ID = ? AND r.Usuario_ID = ? " +
+                "GROUP BY r.ID, r.No_Reservacion, r.Total, er.Estado, r.EstadoID";
 
         List<Object[]> result = DatabaseManager.executeQuery(sql, rs -> new Object[]{
                 rs.getInt("ID"),
                 rs.getString("No_Reservacion"),
                 rs.getDouble("Total"),
                 rs.getString("Estado"),
-                rs.getInt("EstadoID")
+                rs.getInt("EstadoID"),
+                rs.getDate("FECHA_INICIO"), // Índice 5
+                rs.getDate("FECHA_FIN")     // Índice 6
         }, reservacionId, usuarioId);
 
         return result.isEmpty() ? null : result.get(0);

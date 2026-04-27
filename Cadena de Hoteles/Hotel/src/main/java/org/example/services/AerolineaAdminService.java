@@ -1,9 +1,6 @@
 package org.example.services;
 
-import org.example.dtos.AerolineaAdminDTO;
-import org.example.dtos.CrearAerolineaAdminRequestDTO;
-import org.example.dtos.EditarAerolineaRequestDTO;
-import org.example.dtos.UsuarioWebserviceLibreDTO;
+import org.example.dtos.*;
 import org.example.repositories.AerolineaAdminRepository;
 
 import java.util.List;
@@ -56,5 +53,12 @@ public class AerolineaAdminService {
      */
     public List<UsuarioWebserviceLibreDTO> listarWebserviceLibres() {
         return repo.listarWebserviceLibres();
+    }
+
+    /**
+     * Retorna nombre y URLHome de las aerolineas activas para recomendaciones.
+     */
+    public List<AerolineaHomeDTO> listarHome() {
+        return repo.listarHome();
     }
 }

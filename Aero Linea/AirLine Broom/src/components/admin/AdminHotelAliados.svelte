@@ -4,11 +4,11 @@
  * @description Seccion del panel de administracion para gestionar hoteles aliados. Muestra una
  * barra de estadisticas resumidas (total, activos, inactivos, sin usuario asignado) y una tabla
  * de todos los hoteles aliados. Proporciona tres dialogos modales: uno para crear un nuevo hotel
- * (con nombre, URL de API, URL publica y usuario webservice), uno para asignar un usuario
- * webservice disponible a un hotel existente, y uno para editar ambas URLs de un hotel. El estado
- * del hotel puede cambiarse inline mediante un elemento select en la fila de la tabla. Un boton
- * de handshake inicia el flujo de autenticacion entre la aerolinea y el hotel aliado, generando
- * y almacenando un token de sesion en HotelAliado.TokenHASH.
+ * (con nombre, URL de API, URL publica, URL home aliado y usuario webservice), uno para asignar
+ * un usuario webservice disponible a un hotel existente, y uno para editar las tres URLs de un
+ * hotel. El estado del hotel puede cambiarse inline mediante un elemento select en la fila de la
+ * tabla. Un boton de handshake inicia el flujo de autenticacion entre la aerolinea y el hotel
+ * aliado, generando y almacenando un token de sesion en HotelAliado.TokenHASH.
  * Todas las mutaciones llaman a la API del backend y actualizan el estado local al tener exito.
  */
 // @ts-nocheck
@@ -49,6 +49,9 @@
   /** Valor del campo URL publica en el formulario de creacion. @type {string} */
   let crearUrlParaUsuario = '';
 
+  /** Valor del campo URL home aliado en el formulario de creacion (opcional). @type {string} */
+  let crearUrlHomeAliado = '';
+
   /** ID del usuario webservice seleccionado en el formulario de creacion. @type {string} */
   let crearUsuarioId     = '';
 
@@ -82,6 +85,9 @@
 
   /** Valor de la URL publica que se esta editando en el modal de URLs. @type {string} */
   let urlParaUsuarioEditando = '';
+
+  /** Valor de la URL home aliado que se esta editando en el modal de URLs (opcional). @type {string} */
+  let urlHomeAliadoEditando = '';
 
   /** La fila del hotel que se esta editando en el modal de URLs. @type {any} */
   let hotelUrls          = null;
@@ -135,29 +141,43 @@
    * Reinicia los campos del formulario de creacion de hotel y los errores, luego abre el modal de creacion.
    */
   function abrirModalCrear() {
-    crearNombre = ''; crearUrl = ''; crearUrlParaUsuario = ''; crearUsuarioId = '';
-    crearErrores = {};
-    modalCrear = true;
+    crearNombre        = '';
+    crearUrl           = '';
+    crearUrlParaUsuario= '';
+    crearUrlHomeAliado = '';
+    crearUsuarioId     = '';
+    crearErrores       = {};
+    modalCrear         = true;
   }
 
   /**
-   * Valida todos los campos del formulario de creacion de hotel. Rellena crearErrores con los
-   * mensajes por campo y retorna false si la validacion falla.
-   * @returns {boolean} True cuando todos los campos son validos.
+   * Valida todos los campos obligatorios del formulario de creacion de hotel.
+   * La URLHomeAliado es opcional: si se proporciona se valida el formato, si no se omite.
+   * Rellena crearErrores con los mensajes por campo y retorna false si la validacion falla.
+   * @returns {boolean} True cuando todos los campos requeridos son validos.
    */
   function validarCrear() {
     crearErrores = {};
-    if (!crearNombre.trim()) crearErrores.nombre = 'Requerido.';
-    if (!crearUrl.trim()) crearErrores.url = 'Requerido.';
-    else if (!/^https?:\/\/.+/.test(crearUrl.trim())) crearErrores.url = 'URL invalida (http:// o https://).';
-    if (!crearUrlParaUsuario.trim()) crearErrores.urlParaUsuario = 'Requerido.';
-    else if (!/^https?:\/\/.+/.test(crearUrlParaUsuario.trim())) crearErrores.urlParaUsuario = 'URL invalida (http:// o https://).';
-    if (!crearUsuarioId) crearErrores.usuario = 'Debes seleccionar un usuario Webservice.';
+    if (!crearNombre.trim())
+      crearErrores.nombre = 'Requerido.';
+    if (!crearUrl.trim())
+      crearErrores.url = 'Requerido.';
+    else if (!/^https?:\/\/.+/.test(crearUrl.trim()))
+      crearErrores.url = 'URL invalida (http:// o https://).';
+    if (!crearUrlParaUsuario.trim())
+      crearErrores.urlParaUsuario = 'Requerido.';
+    else if (!/^https?:\/\/.+/.test(crearUrlParaUsuario.trim()))
+      crearErrores.urlParaUsuario = 'URL invalida (http:// o https://).';
+    if (crearUrlHomeAliado.trim() && !/^https?:\/\/.+/.test(crearUrlHomeAliado.trim()))
+      crearErrores.urlHomeAliado = 'URL invalida (http:// o https://).';
+    if (!crearUsuarioId)
+      crearErrores.usuario = 'Debes seleccionar un usuario Webservice.';
     return Object.keys(crearErrores).length === 0;
   }
 
   /**
    * Valida el formulario de creacion y, si es valido, envia con POST el nuevo hotel al backend.
+   * Incluye urlHomeAliado si fue proporcionada (campo opcional).
    * Al tener exito cierra el modal y recarga todos los datos. En caso de fallo muestra un toast de error.
    * @async
    * @returns {Promise<void>}
@@ -166,15 +186,19 @@
     if (!validarCrear()) return;
     creando = true;
     try {
+      const body = {
+        nombre:         crearNombre.trim(),
+        url:            crearUrl.trim(),
+        urlParaUsuario: crearUrlParaUsuario.trim(),
+        usuarioWEBIs:   parseInt(crearUsuarioId),
+      };
+      if (crearUrlHomeAliado.trim())
+        body.urlHomeAliado = crearUrlHomeAliado.trim();
+
       const r = await fetch(`${API}/api/hoteles-aliados`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre:         crearNombre.trim(),
-          url:            crearUrl.trim(),
-          urlParaUsuario: crearUrlParaUsuario.trim(),
-          usuarioWEBIs:   parseInt(crearUsuarioId),
-        })
+        body: JSON.stringify(body),
       });
       const data = await r.json();
       if (r.ok) {
@@ -226,36 +250,53 @@
   }
 
   /**
-   * Pre-rellena el modal de URLs con las URLs actuales del hotel y lo abre.
+   * Pre-rellena el modal de URLs con las URLs actuales del hotel (incluyendo URLHomeAliado) y lo abre.
    * @param {any} hotel - El objeto fila del hotel de la tabla.
    */
   function abrirModalUrls(hotel) {
-    hotelUrls              = hotel;
-    urlEditando            = hotel.url            ?? '';
-    urlParaUsuarioEditando = hotel.urlParaUsuario ?? '';
-    modalUrls              = true;
+    hotelUrls                 = hotel;
+    urlEditando               = hotel.url             ?? '';
+    urlParaUsuarioEditando    = hotel.urlParaUsuario  ?? '';
+    urlHomeAliadoEditando     = hotel.urlHomeAliado   ?? '';
+    modalUrls                 = true;
   }
 
   /**
-   * Valida ambos valores de URL y envia con PUT las URLs actualizadas al backend.
+   * Valida la URL de API y la URL publica (obligatorias). La URLHomeAliado es opcional:
+   * si se proporciona se valida el formato. Envia con PUT las URLs actualizadas al backend.
    * Al tener exito cierra el modal y recarga todos los datos. Muestra toasts de error en caso de fallos.
    * @async
    * @returns {Promise<void>}
    */
   async function handleGuardarUrls() {
-    if (!urlEditando.trim())            { mostrarToast('error', 'La URL de la API no puede estar vacia.'); return; }
-    if (!/^https?:\/\/.+/.test(urlEditando.trim())) { mostrarToast('error', 'URL de API invalida.'); return; }
-    if (!urlParaUsuarioEditando.trim()) { mostrarToast('error', 'La URL publica no puede estar vacia.'); return; }
-    if (!/^https?:\/\/.+/.test(urlParaUsuarioEditando.trim())) { mostrarToast('error', 'URL publica invalida.'); return; }
+    if (!urlEditando.trim()) {
+      mostrarToast('error', 'La URL de la API no puede estar vacia.'); return;
+    }
+    if (!/^https?:\/\/.+/.test(urlEditando.trim())) {
+      mostrarToast('error', 'URL de API invalida.'); return;
+    }
+    if (!urlParaUsuarioEditando.trim()) {
+      mostrarToast('error', 'La URL publica no puede estar vacia.'); return;
+    }
+    if (!/^https?:\/\/.+/.test(urlParaUsuarioEditando.trim())) {
+      mostrarToast('error', 'URL publica invalida.'); return;
+    }
+    if (urlHomeAliadoEditando.trim() && !/^https?:\/\/.+/.test(urlHomeAliadoEditando.trim())) {
+      mostrarToast('error', 'URL home aliado invalida.'); return;
+    }
+
     guardandoUrls = true;
     try {
+      const body = {
+        url:            urlEditando.trim(),
+        urlParaUsuario: urlParaUsuarioEditando.trim(),
+        urlHomeAliado:  urlHomeAliadoEditando.trim() || null,
+      };
+
       const r = await fetch(`${API}/api/hoteles-aliados/${hotelUrls.id}/url`, {
         method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url:            urlEditando.trim(),
-          urlParaUsuario: urlParaUsuarioEditando.trim()
-        })
+        body: JSON.stringify(body),
       });
       const data = await r.json();
       if (r.ok) {
@@ -297,9 +338,6 @@
 
   /**
    * Inicia el flujo de autenticacion handshake entre la aerolinea y el hotel aliado seleccionado.
-   * Llama a POST /api/hoteles-aliados/{id}/handshake en el backend, que genera un token,
-   * lo envia al endpoint /api/aerolineas/handshake del hotel y almacena el token de sesion
-   * en HotelAliado.TokenHASH. El hotel debe tener su URL configurada antes de llamar a esta funcion.
    * @async
    * @param {any} hotel - El objeto fila del hotel de la tabla.
    * @returns {Promise<void>}
@@ -329,7 +367,9 @@
 
 </script>
 
-<!-- Modal de creacion de nuevo hotel aliado con nombre, URLs y usuario webservice -->
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODAL: Crear nuevo hotel aliado
+     ═══════════════════════════════════════════════════════════════════════ -->
 {#if modalCrear}
   <div class="ag-overlay" on:click={() => modalCrear = false} role="dialog" aria-modal="true">
     <div class="ag-modal" on:click|stopPropagation>
@@ -339,6 +379,8 @@
       </div>
 
       <div class="ag-modal__body">
+
+        <!-- Nombre -->
         <div class="ag-field">
           <label class="ag-field__label">Nombre del hotel <span class="ag-required">*</span></label>
           <input class="ag-field__input" class:ag-field__input--err={crearErrores.nombre}
@@ -346,7 +388,7 @@
           {#if crearErrores.nombre}<p class="ag-field__err">{crearErrores.nombre}</p>{/if}
         </div>
 
-        <!-- URL base de la API del hotel para que la aerolinea se comunique con el -->
+        <!-- URL base de la API del hotel -->
         <div class="ag-field">
           <label class="ag-field__label">URL de la API del hotel <span class="ag-required">*</span></label>
           <input class="ag-field__input" class:ag-field__input--err={crearErrores.url}
@@ -357,7 +399,7 @@
           {#if crearErrores.url}<p class="ag-field__err">{crearErrores.url}</p>{/if}
         </div>
 
-        <!-- URL publica del hotel que se mostrara a los pasajeros en los resultados -->
+        <!-- URL publica para usuarios -->
         <div class="ag-field">
           <label class="ag-field__label">URL publica para usuarios <span class="ag-required">*</span></label>
           <input class="ag-field__input" class:ag-field__input--err={crearErrores.urlParaUsuario}
@@ -368,6 +410,18 @@
           {#if crearErrores.urlParaUsuario}<p class="ag-field__err">{crearErrores.urlParaUsuario}</p>{/if}
         </div>
 
+        <!-- URL Home Aliado (opcional) -->
+        <div class="ag-field">
+          <label class="ag-field__label">URL Home del aliado <span style="font-size:.72rem; color:var(--text-muted); font-weight:400;">(opcional)</span></label>
+          <input class="ag-field__input" class:ag-field__input--err={crearErrores.urlHomeAliado}
+            type="url" bind:value={crearUrlHomeAliado} placeholder="https://www.mi-hotel.com/home" maxlength="300" />
+          <p style="font-size:.72rem; color:var(--text-muted); margin:.1rem 0 0;">
+            URL de la pagina de inicio del hotel aliado que se mostrara como recomendacion a los usuarios.
+          </p>
+          {#if crearErrores.urlHomeAliado}<p class="ag-field__err">{crearErrores.urlHomeAliado}</p>{/if}
+        </div>
+
+        <!-- Usuario Webservice -->
         <div class="ag-field">
           <label class="ag-field__label">
             Usuario Webservice <span class="ag-required">*</span>
@@ -402,7 +456,9 @@
   </div>
 {/if}
 
-<!-- Modal para asignar un usuario webservice disponible a un hotel existente -->
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODAL: Asignar usuario webservice a un hotel existente
+     ═══════════════════════════════════════════════════════════════════════ -->
 {#if modalAsignar}
   <div class="ag-overlay" on:click={() => modalAsignar = false} role="dialog" aria-modal="true">
     <div class="ag-modal ag-modal--sm" on:click|stopPropagation>
@@ -443,7 +499,9 @@
   </div>
 {/if}
 
-<!-- Modal para editar la URL de la API y la URL publica de un hotel aliado -->
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODAL: Editar URLs del hotel (API, publica y home aliado)
+     ═══════════════════════════════════════════════════════════════════════ -->
 {#if modalUrls}
   <div class="ag-overlay" on:click={() => modalUrls = false} role="dialog" aria-modal="true">
     <div class="ag-modal" on:click|stopPropagation>
@@ -454,18 +512,37 @@
       <div class="ag-modal__body">
         <p class="ag-modal__desc">Hotel: <strong>{hotelUrls?.nombre}</strong></p>
 
-        <!-- Campo para la URL base de la API del hotel -->
+        <!-- URL base de la API del hotel -->
         <div class="ag-field">
-          <label class="ag-field__label">URL de la API del hotel</label>
+          <label class="ag-field__label">URL de la API del hotel <span class="ag-required">*</span></label>
           <input class="ag-field__input" type="url" placeholder="https://api.mi-hotel.com"
             bind:value={urlEditando} maxlength="300" />
+          <p style="font-size:.72rem; color:var(--text-muted); margin:.1rem 0 0;">
+            URL interna usada por la aerolinea para consultar disponibilidad y hacer handshake.
+          </p>
         </div>
 
-        <!-- Campo para la URL publica visible a los pasajeros -->
+        <!-- URL publica visible a los pasajeros -->
         <div class="ag-field">
-          <label class="ag-field__label">URL publica para usuarios</label>
+          <label class="ag-field__label">URL publica para usuarios <span class="ag-required">*</span></label>
           <input class="ag-field__input" type="url" placeholder="https://www.mi-hotel.com"
             bind:value={urlParaUsuarioEditando} maxlength="300" />
+          <p style="font-size:.72rem; color:var(--text-muted); margin:.1rem 0 0;">
+            URL visible para los pasajeros en los resultados de busqueda.
+          </p>
+        </div>
+
+        <!-- URL Home Aliado (opcional) -->
+        <div class="ag-field">
+          <label class="ag-field__label">
+            URL Home del aliado
+            <span style="font-size:.72rem; color:var(--text-muted); font-weight:400;">(opcional)</span>
+          </label>
+          <input class="ag-field__input" type="url" placeholder="https://www.mi-hotel.com/home"
+            bind:value={urlHomeAliadoEditando} maxlength="300" />
+          <p style="font-size:.72rem; color:var(--text-muted); margin:.1rem 0 0;">
+            Pagina de inicio del hotel aliado mostrada como recomendacion a usuarios. Dejar vacia para quitar.
+          </p>
         </div>
       </div>
       <div class="ag-modal__footer">
@@ -480,10 +557,11 @@
   </div>
 {/if}
 
-<!-- Seccion principal de gestion de hoteles aliados con estadisticas y tabla -->
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SECCION PRINCIPAL: tabla de hoteles aliados
+     ═══════════════════════════════════════════════════════════════════════ -->
 <section class="admin-section">
 
-  <!-- Encabezado de seccion con titulo y botones de actualizar y crear hotel -->
   <div class="section-header">
     <div>
       <h2 class="admin-section__title">Hoteles Aliados</h2>
@@ -491,7 +569,11 @@
     </div>
     <div style="display:flex; gap:.75rem;">
       <button class="btn-add" on:click={cargarTodo} style="background:#4b5563">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>Actualizar
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round"
+          style="display:inline-block;vertical-align:middle;margin-right:4px">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+        </svg>Actualizar
       </button>
       <button class="btn-add" on:click={abrirModalCrear}>
         + Nuevo Hotel
@@ -507,7 +589,6 @@
       <p class="placeholder-card__text">No hay hoteles aliados registrados todavia.</p>
     </div>
 
-  <!-- Tabla de hoteles con usuario asignado, URLs editables, handshake y selector de estado -->
   {:else}
     <div class="vuelos-table">
       <table class="table">
@@ -517,6 +598,7 @@
             <th class="table__header">Nombre</th>
             <th class="table__header">URL API</th>
             <th class="table__header">URL Publica</th>
+            <th class="table__header">URL Home</th>
             <th class="table__header">Usuario Webservice</th>
             <th class="table__header">Estado</th>
             <th class="table__header">Acciones</th>
@@ -531,10 +613,10 @@
                 <strong>{h.nombre}</strong>
               </td>
 
-              <!-- URL base de la API del hotel; truncada para no romper el layout -->
+              <!-- URL base de la API del hotel -->
               <td class="table__cell" data-label="URL API">
                 {#if h.url}
-                  <span style="font-size:.78rem; color:var(--text-muted); word-break:break-all; max-width:140px; display:block;">
+                  <span style="font-size:.78rem; color:var(--text-muted); word-break:break-all; max-width:130px; display:block;">
                     {h.url}
                   </span>
                 {:else}
@@ -545,11 +627,30 @@
               <!-- URL publica del hotel que se muestra a los pasajeros -->
               <td class="table__cell" data-label="URL Publica">
                 {#if h.urlParaUsuario}
-                  <span style="font-size:.78rem; color:var(--text-muted); word-break:break-all; max-width:140px; display:block;">
+                  <span style="font-size:.78rem; color:var(--text-muted); word-break:break-all; max-width:130px; display:block;">
                     {h.urlParaUsuario}
                   </span>
                 {:else}
                   <span style="font-size:.75rem; color:#9ca3af; font-style:italic">Sin URL</span>
+                {/if}
+              </td>
+
+              <!-- URL Home Aliado: mostrada con icono de enlace externo si existe -->
+              <td class="table__cell" data-label="URL Home">
+                {#if h.urlHomeAliado}
+                  <a href={h.urlHomeAliado} target="_blank" rel="noopener noreferrer"
+                    style="font-size:.78rem; color:#6366f1; word-break:break-all; max-width:130px; display:flex; align-items:center; gap:3px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      {h.urlHomeAliado.replace(/^https?:\/\//, '')}
+                    </span>
+                  </a>
+                {:else}
+                  <span style="font-size:.75rem; color:#9ca3af; font-style:italic">Sin URL home</span>
                 {/if}
               </td>
 
@@ -576,32 +677,55 @@
 
               <td class="table__cell" data-label="Acciones">
                 <div class="table__actions">
-                  <!-- Boton para editar ambas URLs del hotel aliado -->
+                  <!-- Editar las tres URLs del hotel aliado -->
                   <button class="table__action-btn ag-btn-asignar"
                     style="background:#6366f1"
                     on:click={() => abrirModalUrls(h)}
                     title="Editar URLs">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>URLs
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      style="display:inline-block;vertical-align:middle;margin-right:4px">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>URLs
                   </button>
 
-                  <!-- Boton para asignar o reasignar usuario Webservice al hotel -->
+                  <!-- Asignar o reasignar usuario Webservice al hotel -->
                   <button class="table__action-btn ag-btn-asignar"
                     on:click={() => abrirModalAsignar(h)}
                     title="Asignar usuario Webservice">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Asignar
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      style="display:inline-block;vertical-align:middle;margin-right:4px">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>Asignar
                   </button>
 
-                  <!-- Boton para iniciar el handshake de autenticacion con el hotel aliado.
-                       Requiere que el hotel tenga la URL de API configurada previamente. -->
+                  <!-- Handshake de autenticacion con el hotel aliado -->
                   <button class="table__action-btn ag-btn-asignar"
                     style="background:#059669"
                     on:click={() => handleHandshake(h)}
                     disabled={handshakeEnCurso === h.id}
                     title="Iniciar handshake de autenticacion con el hotel">
                     {#if handshakeEnCurso === h.id}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>Conectando...
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="display:inline-block;vertical-align:middle;margin-right:4px">
+                        <path d="M5 22h14"/><path d="M5 2h14"/>
+                        <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/>
+                        <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
+                      </svg>Conectando...
                     {:else}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>Handshake
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="display:inline-block;vertical-align:middle;margin-right:4px">
+                        <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
+                        <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
+                        <path d="m21 3 1 11h-2"/>
+                        <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
+                        <path d="M3 4h8"/>
+                      </svg>Handshake
                     {/if}
                   </button>
                 </div>

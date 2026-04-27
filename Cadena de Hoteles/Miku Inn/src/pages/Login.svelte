@@ -145,7 +145,7 @@
 
       loginSuccess = true;
       dispatch('login', { name: data.username, rolId: data.rolId });
-      setTimeout(() => navigateTo('home'), 1500);
+      //setTimeout(() => navigateTo('home'), 1500);
 
     } catch (err) {
       serverError = `Error de conexión: ${err.message}`;

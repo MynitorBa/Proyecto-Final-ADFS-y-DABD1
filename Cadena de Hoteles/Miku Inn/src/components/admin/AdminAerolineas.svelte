@@ -41,7 +41,7 @@
   let aerolineaEditando = null;
 
   /** Copia mutable de los campos de la aerolinea en edicion. @type {Object} */
-  let editAerolinea = { nombre: '', url: '', urlParaUsuario: '', porcentajeDescuento: 0, estadoId: 1 };
+  let editAerolinea = { nombre: '', url: '', urlParaUsuario: '', urlHome: '', porcentajeDescuento: 0, estadoId: 1 };
 
   /** Indica si se esta enviando la peticion para guardar cambios de la aerolinea. @type {boolean} */
   let guardandoAerolinea = false;
@@ -55,7 +55,7 @@
   let showModalCrear = false;
 
   /** Datos del formulario para crear una nueva aerolinea. @type {Object} */
-  let nuevaAerolinea = { nombre: '', url: '', urlParaUsuario: '', usuarioWebisId: '' };
+  let nuevaAerolinea = { nombre: '', url: '', urlParaUsuario: '', urlHome: '', usuarioWebisId: '' };
 
   /** Lista de usuarios webservice sin entidad asignada para el selector del modal. @type {Array<Object>} */
   let usuariosLibres = [];
@@ -112,6 +112,7 @@
       nombre:              ae.nombre              ?? '',
       url:                 ae.url                 ?? '',
       urlParaUsuario:      ae.urlParaUsuario       ?? '',
+      urlHome:             ae.urlHome              ?? '',
       porcentajeDescuento: ae.porcentajeDescuento ?? 0,
       estadoId:            ae.estadoId            ?? 1,
     };
@@ -146,6 +147,10 @@
       mensajeEditar = { tipo: 'error', texto: 'La URL para el usuario final es obligatoria.' };
       return;
     }
+    if (!editAerolinea.urlHome.trim()) {
+      mensajeEditar = { tipo: 'error', texto: 'La URL Home es obligatoria.' };
+      return;
+    }
     guardandoAerolinea = true;
     mensajeEditar = null;
     try {
@@ -156,6 +161,7 @@
           nombre:              editAerolinea.nombre.trim(),
           url:                 editAerolinea.url.trim(),
           urlParaUsuario:      editAerolinea.urlParaUsuario.trim(),
+          urlHome:             editAerolinea.urlHome.trim(),
           porcentajeDescuento: Number(editAerolinea.porcentajeDescuento),
           estadoId:            Number(editAerolinea.estadoId),
         })
@@ -187,7 +193,7 @@
    * @returns {Promise<void>}
    */
   async function abrirCrear() {
-    nuevaAerolinea = { nombre: '', url: '', urlParaUsuario: '', usuarioWebisId: '' };
+    nuevaAerolinea = { nombre: '', url: '', urlParaUsuario: '', urlHome: '', usuarioWebisId: '' };
     mensajeCrear = null;
     showModalCrear = true;
     cargandoUsuarios = true;
@@ -230,6 +236,10 @@
       mensajeCrear = { tipo: 'error', texto: 'La URL para el usuario final es obligatoria.' };
       return;
     }
+    if (!nuevaAerolinea.urlHome.trim()) {
+      mensajeCrear = { tipo: 'error', texto: 'La URL Home es obligatoria.' };
+      return;
+    }
     if (!nuevaAerolinea.usuarioWebisId) {
       mensajeCrear = { tipo: 'error', texto: 'Debe seleccionar un usuario webservice.' };
       return;
@@ -244,6 +254,7 @@
           nombre:         nuevaAerolinea.nombre.trim(),
           url:            nuevaAerolinea.url.trim(),
           urlParaUsuario: nuevaAerolinea.urlParaUsuario.trim(),
+          urlHome:        nuevaAerolinea.urlHome.trim(),
           usuarioWebisId: Number(nuevaAerolinea.usuarioWebisId),
         })
       });
@@ -298,11 +309,11 @@
     <div class="adm__table-wrap">
       <table class="adm__table">
         <thead>
-          <tr><th>ID</th><th>Nombre</th><th>Usuario WS</th><th>Descuento %</th><th>URL Sistema</th><th>Estado</th><th>Acciones</th></tr>
+          <tr><th>ID</th><th>Nombre</th><th>Usuario WS</th><th>Descuento %</th><th>URL Sistema</th><th>URL Home</th><th>Estado</th><th>Acciones</th></tr>
         </thead>
         <tbody>
           {#if aerolineasFiltradas.length === 0}
-            <tr><td colspan="7" class="adm__empty-cell">{busquedaAerolinea ? 'Sin resultados para esa búsqueda.' : 'No hay aerolineas registradas.'}</td></tr>
+            <tr><td colspan="8" class="adm__empty-cell">{busquedaAerolinea ? 'Sin resultados para esa búsqueda.' : 'No hay aerolineas registradas.'}</td></tr>
           {:else}
             <!-- Fila por cada aerolinea filtrada -->
             {#each aerolineasFiltradas as ae (ae.id)}
@@ -316,7 +327,8 @@
                   {/if}
                 </td>
                 <td><span style="font-weight:700;color:#2dd4bf">{ae.porcentajeDescuento?.toFixed(2)}%</span></td>
-                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem;color:var(--adm-text-muted)" title={ae.url}>{ae.url ?? '—'}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem;color:var(--adm-text-muted)" title={ae.url}>{ae.url ?? '—'}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.8rem;color:var(--adm-text-muted)" title={ae.urlHome}>{ae.urlHome ?? '—'}</td>
                 <td><span class="adm__badge {badge(ae.estado)}">{ae.estado}</span></td>
                 <td>
                   <!-- Boton para abrir el modal de edicion de la aerolinea -->
@@ -364,6 +376,10 @@
         <div class="adm__field">
           <label for="ea-url-usuario">URL para el usuario final</label>
           <input id="ea-url-usuario" type="text" bind:value={editAerolinea.urlParaUsuario} placeholder="http://sistema.com/reservar" />
+        </div>
+        <div class="adm__field">
+          <label for="ea-url-home">URL Home (recomendaciones)</label>
+          <input id="ea-url-home" type="text" bind:value={editAerolinea.urlHome} placeholder="http://sistema.com/home" />
         </div>
         <div class="adm__field">
           <label for="ea-descuento">Porcentaje de descuento (0–100)</label>
@@ -427,6 +443,10 @@
         <div class="adm__field">
           <label for="na-url-usuario">URL para el usuario final *</label>
           <input id="na-url-usuario" type="text" bind:value={nuevaAerolinea.urlParaUsuario} placeholder="http://sistema.com/reservar" />
+        </div>
+        <div class="adm__field">
+          <label for="na-url-home">URL Home (recomendaciones) *</label>
+          <input id="na-url-home" type="text" bind:value={nuevaAerolinea.urlHome} placeholder="http://sistema.com/home" />
         </div>
 
         <!-- Selector de usuario webservice libre: solo muestra usuarios sin entidad asignada -->

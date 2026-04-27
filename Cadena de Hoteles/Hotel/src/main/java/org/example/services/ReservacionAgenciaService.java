@@ -261,4 +261,145 @@ public class ReservacionAgenciaService {
 
         return detalles;
     }
+
+
+
+    /**
+     * Cambia el rango de fechas de multiples detalles de una reservacion de agencia de forma atomica.
+     * Cada detalle debe mantener exactamente la misma duracion original (solo se mueve el rango).
+     * El total no se recalcula. Si alguna validacion falla, nada se persiste.
+     *
+     * @param reservacionId ID de la reservacion padre.
+     * @param cambios       lista de cambios con detalleId, fechaCheckIn y fechaCheckOut.
+     * @param agenciaId     ID de la agencia autenticada.
+     */
+    public ReservacionAgenciaResponseDTO cambiarFechasMultiple(
+            int reservacionId,
+            List<org.example.dtos.CambioFechasMultipleRequestDTO.CambioDetalle> cambios,
+            int agenciaId, String ip, String userAgent) {
+        try {
+            if (cambios == null || cambios.isEmpty()) {
+                throw new IllegalArgumentException("Debes incluir al menos un cambio de fechas");
+            }
+
+            List<Object[]> persistir = new ArrayList<>();
+
+            for (org.example.dtos.CambioFechasMultipleRequestDTO.CambioDetalle cambio : cambios) {
+
+                Object[] detalle = repository.obtenerDetalleDeAgencia(cambio.getDetalleId(), agenciaId);
+                if (detalle == null) {
+                    throw new IllegalArgumentException(
+                            "El detalle " + cambio.getDetalleId() +
+                                    " no existe o no pertenece a esta agencia"
+                    );
+                }
+
+                String estado         = (String) detalle[7];
+                int    habitacionId   = (int)    detalle[2];
+                int    resIdDelDetalle= (int)    detalle[1];
+                double totalActual    = (double) detalle[6]; // total original — no cambia
+
+                if (resIdDelDetalle != reservacionId) {
+                    throw new IllegalArgumentException(
+                            "El detalle " + cambio.getDetalleId() +
+                                    " no pertenece a la reservacion " + reservacionId
+                    );
+                }
+                if (!estado.equals("pendiente") && !estado.equals("confirmada")) {
+                    throw new IllegalArgumentException(
+                            "Solo se pueden cambiar fechas de reservaciones pendientes o confirmadas"
+                    );
+                }
+
+                // Dias originales de este detalle
+                Date fechaCheckInActual  = (Date) detalle[3];
+                Date fechaCheckOutActual = (Date) detalle[4];
+                long diasOriginales = ChronoUnit.DAYS.between(
+                        fechaCheckInActual.toLocalDate(),
+                        fechaCheckOutActual.toLocalDate()
+                );
+
+                // Validar 48 horas sobre el check-in ACTUAL
+                long horasHastaCheckIn = ChronoUnit.HOURS.between(
+                        LocalDateTime.now(), fechaCheckInActual.toLocalDate().atTime(0, 0)
+                );
+                if (horasHastaCheckIn <= 48) {
+                    throw new IllegalArgumentException(
+                            "La habitación " + habitacionId +
+                                    " no permite cambios con menos de 48 horas de anticipación al check-in actual"
+                    );
+                }
+
+                LocalDate checkIn  = LocalDate.parse(cambio.getFechaCheckIn());
+                LocalDate checkOut = LocalDate.parse(cambio.getFechaCheckOut());
+                LocalDate hoy      = LocalDate.now();
+
+                if (checkIn.isBefore(hoy)) {
+                    throw new IllegalArgumentException(
+                            "La fecha de check-in no puede ser anterior a hoy " +
+                                    "(habitación " + habitacionId + ")"
+                    );
+                }
+
+                // *** REGLA: misma duracion, solo se mueve el rango ***
+                long diasNuevos = ChronoUnit.DAYS.between(checkIn, checkOut);
+                if (diasNuevos != diasOriginales) {
+                    throw new IllegalArgumentException(
+                            "La habitación " + habitacionId + " está reservada por " +
+                                    diasOriginales + " noche(s). No puedes cambiar la duración, solo mover las fechas."
+                    );
+                }
+
+                Date fechaCheckIn  = Date.valueOf(checkIn);
+                Date fechaCheckOut = Date.valueOf(checkOut);
+
+                if (repository.existeTraslapeExcluyendoDetalle(
+                        habitacionId, fechaCheckIn, fechaCheckOut, cambio.getDetalleId())) {
+                    throw new IllegalArgumentException(
+                            "La habitación " + habitacionId +
+                                    " no está disponible del " + cambio.getFechaCheckIn() +
+                                    " al " + cambio.getFechaCheckOut()
+                    );
+                }
+
+                persistir.add(new Object[]{ fechaCheckIn, fechaCheckOut, totalActual, cambio.getDetalleId() });
+            }
+
+            repository.actualizarFechasDetallesAtomico(persistir);
+
+            Object[] datos = repository.obtenerReservacion(reservacionId);
+
+            ReservacionAgenciaResponseDTO response = new ReservacionAgenciaResponseDTO();
+            response.setId((int)    datos[0]);
+            response.setNoReservacion((String) datos[1]);
+            response.setTotal((double)  datos[2]);
+            response.setFechaCreacion((String)  datos[3]);
+            response.setFechaExpiracion((String) datos[4]);
+            response.setEstado((String) datos[5]);
+
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CAMBIO_FECHAS_AGENCIA_EXITOSO,
+                    response.getId(), null, agenciaId,
+                    response.getNoReservacion(), response.getTotal(),
+                    true, ip, userAgent,
+                    "Cambio atomico (misma duracion) de " + cambios.size() + " detalle(s)"
+            );
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CAMBIO_FECHAS_AGENCIA_FALLIDO,
+                    null, null, agenciaId, null, null,
+                    false, ip, userAgent, e.getMessage()
+            );
+            throw e;
+        } catch (Exception e) {
+            logReservacionRepository.registrar(
+                    LogReservacionRepository.TIPO_CAMBIO_FECHAS_AGENCIA_ERROR_INTERNO,
+                    null, null, agenciaId, null, null,
+                    false, ip, userAgent, e.getMessage()
+            );
+            throw new RuntimeException("Error interno al cambiar fechas de agencia", e);
+        }
+    }
 }

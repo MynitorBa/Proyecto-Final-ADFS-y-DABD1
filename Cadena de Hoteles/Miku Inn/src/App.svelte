@@ -5,6 +5,8 @@
    * del cliente, la sesion del usuario y decide que pagina y layout se muestran
    * en cada momento.
    */
+  import { tick } from 'svelte';
+
 
   // @ts-nocheck
   import { onMount } from 'svelte';
@@ -114,8 +116,7 @@
     alianzaDescuento = descuento;
   }
 
-  function onAlianzaAutocompletarConsumida() {
-  alianzaAutocompletarData = null;
+function onAlianzaAutocompletarConsumida() {
 }
 
   /**
@@ -288,34 +289,51 @@
    * tenga que hacer otra llamada y evitando flashes en los campos.
    * @param {CustomEvent} event - Evento con detail: { name, email, rolId }.
    */
+  
   async function handleLogin(event) {
-    const name  = event.detail?.name  ?? event.detail?.email ?? 'Usuario';
-    const rolId = event.detail?.rolId ?? null;
-    isLoggedIn = true; userName = name; userRolId = rolId;
+  const name  = event.detail?.name  ?? event.detail?.email ?? 'Usuario';
+  const rolId = event.detail?.rolId ?? null;
+  isLoggedIn = true; userName = name; userRolId = rolId;
 
-    const pendingToken = sessionStorage.getItem('pendingAlianzaToken');
-    if (pendingToken) {
-      sessionStorage.removeItem('pendingAlianzaToken');
-      try {
-        const res = await fetch(`${API}/alianza/validar?token=${pendingToken}`, {
-          method: 'GET', credentials: 'include'
-        });
-        if (res.ok) {
-          const data = await res.json();
-          alianzaAutocompletarData = { pais: data.pais, ciudad: data.ciudad, porcentajeDescuento: data.porcentajeDescuento ?? null, token: pendingToken };
-          alianzaDescuento = data.porcentajeDescuento ?? null;
-          if (alianzaDescuento) sessionStorage.setItem('alianzaTokenActivo', pendingToken);
-        }
-      } catch (_) {}
-      alianzaToken = null;
-      currentPage  = 'home';
-      pageKey      = Date.now();
-      window.history.pushState({}, '', '/home');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      navigateTo('home');
-    }
+  const pendingToken = sessionStorage.getItem('pendingAlianzaToken');
+  if (pendingToken) {
+    sessionStorage.removeItem('pendingAlianzaToken');
+    try {
+      const res = await fetch(`${API}/alianza/validar?token=${pendingToken}`, {
+        method: 'GET', credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alianzaAutocompletarData = {
+          pais:                data.pais,
+          ciudad:              data.ciudad,
+          porcentajeDescuento: data.porcentajeDescuento ?? null,
+          token:               pendingToken,
+          fechaIda:            data.fechaIda   ?? null,
+          fechaVuelta:         data.fechaVuelta ?? null
+        };
+        alianzaDescuento = data.porcentajeDescuento ?? null;
+        if (alianzaDescuento) sessionStorage.setItem('alianzaTokenActivo', pendingToken);
+      }
+    } catch (_) {}
+
+    alianzaToken = null;
+    currentPage  = 'home';
+    window.history.pushState({}, '', '/home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    await tick();
+    await tick(); // dos ticks para asegurar que el bloque reactivo de Home terminó
+    alianzaAutocompletarData = null;
+
+  } else {
+    alianzaToken = null;
+    currentPage  = 'home';
+    pageKey      = Date.now();
+    window.history.pushState({}, '', '/home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
 
   /**
    * Cierra la sesion del usuario en el backend, limpia el estado local

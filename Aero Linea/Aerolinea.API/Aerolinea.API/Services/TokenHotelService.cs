@@ -50,10 +50,16 @@ namespace Aerolinea.API.Services
             if (aliado == null)
                 throw new Exception("Hotel aliado no encontrado o no activo");
 
+            // Validaciones antes de llamar al hotel
+            if (dto.FechaVuelta <= dto.FechaIda)
+                throw new Exception("La fecha de vuelta debe ser posterior a la fecha de ida");
+
             var body = new
             {
                 ciudad = dto.Ciudad,
-                pais = dto.Pais
+                pais = dto.Pais,
+                fechaIda = dto.FechaIda.ToString("yyyy-MM-dd"),   
+                fechaVuelta = dto.FechaVuelta.ToString("yyyy-MM-dd")  
             };
 
             var content = new StringContent(
@@ -62,18 +68,12 @@ namespace Aerolinea.API.Services
                 "application/json"
             );
 
-            // Aplica el override para salir del contenedor si es necesario
             var urlDestino = AplicarHostOverride(aliado.Url);
-
-            var request = new HttpRequestMessage(
-                HttpMethod.Post,
-                $"{urlDestino}/aerolinea/token"
-            );
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{urlDestino}/aerolinea/token");
             request.Headers.Add("X-Aerolinea-Token", aliado.TokenHash);
             request.Content = content;
 
             var response = await _httpClient.SendAsync(request);
-
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
@@ -81,11 +81,10 @@ namespace Aerolinea.API.Services
             }
 
             var json = await response.Content.ReadAsStringAsync();
-
             var resultado = JsonSerializer.Deserialize<TokenHotelResponseDTO>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return resultado;
+            return resultado!;
         }
     }
 }

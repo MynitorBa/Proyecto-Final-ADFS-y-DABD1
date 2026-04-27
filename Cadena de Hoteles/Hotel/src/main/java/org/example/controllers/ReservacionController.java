@@ -2,6 +2,8 @@ package org.example.controllers;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import org.example.dtos.CambioFechasMultipleRequestDTO;
+import org.example.dtos.CambioFechasRequestDTO;
 import org.example.dtos.ReservacionRequestDTO;
 import org.example.services.ReservacionService;
 
@@ -27,12 +29,10 @@ public class ReservacionController {
      * @param app instancia de Javalin donde se registran las rutas.
      */
     public void registerRoutes(Javalin app) {
+        app.post("/reservaciones",                                    this::handleCrearReservacion);
+        app.get("/reservaciones",                                     this::handleObtenerReservaciones);
 
-        // Crea una nueva reservacion en nombre del usuario autenticado
-        app.post("/reservaciones", this::handleCrearReservacion);
-
-        // Retorna todas las reservaciones registradas por el usuario autenticado
-        app.get("/reservaciones", this::handleObtenerReservaciones);
+        app.patch("/reservaciones/{id}/fechas",                       this::handleCambiarFechasMultiple);
     }
 
     void handleCrearReservacion(Context ctx) {
@@ -52,5 +52,47 @@ public class ReservacionController {
     void handleObtenerReservaciones(Context ctx) {
         int usuarioId = ctx.attribute("usuarioId");
         ctx.status(200).json(reservacionService.obtenerReservaciones(usuarioId));
+    }
+
+    void handleCambiarFechas(Context ctx) {
+        int usuarioId = ctx.attribute("usuarioId");
+        int detalleId = Integer.parseInt(ctx.pathParam("detalleId"));
+        var body      = ctx.bodyAsClass(CambioFechasRequestDTO.class);
+        try {
+            var resultado = reservacionService.cambiarFechas(
+                    detalleId,
+                    body.getFechaCheckIn(),
+                    body.getFechaCheckOut(),
+                    usuarioId,
+                    ctx.ip(),
+                    ctx.userAgent()
+            );
+            ctx.status(200).json(resultado);
+        } catch (SecurityException e) {
+            ctx.status(403).json(Map.of("mensaje", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    void handleCambiarFechasMultiple(Context ctx) {
+        int usuarioId     = ctx.attribute("usuarioId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+        var body          = ctx.bodyAsClass(CambioFechasMultipleRequestDTO.class);
+        try {
+            var resultado = reservacionService.cambiarFechasMultiple(
+                    reservacionId, body.getCambios(),
+                    usuarioId, ctx.ip(), ctx.userAgent()
+            );
+            ctx.status(200).json(resultado);
+        } catch (SecurityException e) {
+            ctx.status(403).json(Map.of("mensaje", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
     }
 }

@@ -70,20 +70,43 @@ public class PagoService {
             if (request.getTokenAlianza() != null && !request.getTokenAlianza().isBlank()) {
                 TokenValidacionResponseDTO datosToken = tokenValidacionRepository
                         .buscarTokenValido(request.getTokenAlianza());
+
                 if (datosToken == null) {
-                    throw new IllegalArgumentException("Token de alianza invalido, ya utilizado o expirado");
+                    throw new IllegalArgumentException("Token de alianza inválido, ya utilizado o expirado");
                 }
 
+                // 1. Validar Ciudad
                 String ciudadHotel = pagoRepository.obtenerCiudadReservacion(reservacionId);
                 if (ciudadHotel == null || !ciudadHotel.equalsIgnoreCase(datosToken.getCiudad())) {
+                    throw new IllegalArgumentException("El token de alianza no aplica para hoteles en esta ciudad");
+                }
+
+                // 2. Validar Rango de Fechas (Estancia dentro del rango de vuelo)
+                // Extraemos las fechas del objeto reservacion que viene del Repository actualizado
+                java.util.Date fechaInicioHotel = (java.util.Date) reservacion[5];
+                java.util.Date fechaFinHotel    = (java.util.Date) reservacion[6];
+
+// CORRECCIÓN: Convertir el String del DTO a java.sql.Date para poder comparar
+                java.util.Date fechaIdaVuelo    = java.sql.Date.valueOf(datosToken.getFechaIda());
+                java.util.Date fechaVueltaVuelo = java.sql.Date.valueOf(datosToken.getFechaVuelta());
+
+// Validación lógica: CheckIn no puede ser antes de la Ida, CheckOut no puede ser después de la Vuelta
+                if (fechaInicioHotel.before(fechaIdaVuelo) || fechaFinHotel.after(fechaVueltaVuelo)) {
                     throw new IllegalArgumentException(
-                            "El token de alianza no aplica para hoteles en esta ciudad"
+                            "Las fechas de hospedaje deben estar dentro del rango del vuelo (Vuelo: "
+                                    + datosToken.getFechaIda() + " al " + datosToken.getFechaVuelta() + ")"
                     );
                 }
 
+                // 3. Aplicar Descuento
                 double factor = 1.0 - (datosToken.getPorcentajeDescuento() / 100.0);
                 total = Math.round(total * factor * 100.0) / 100.0;
+
+                // 4. Persistir cambios de precio en la base de datos
+                // Actualizamos el total de la cabecera de la reservación
                 pagoRepository.actualizarTotalReservacion(reservacionId, total);
+
+                // Actualizamos proporcionalmente cada detalle (habitación) de la reserva
                 pagoRepository.actualizarTotalDetalles(reservacionId, factor);
             }
 
