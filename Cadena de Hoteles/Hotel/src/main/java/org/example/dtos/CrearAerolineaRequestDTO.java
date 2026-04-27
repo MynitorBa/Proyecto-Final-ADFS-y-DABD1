@@ -15,6 +15,11 @@ public class CrearAerolineaRequestDTO {
     /** URL de redireccion que se mostrara a los usuarios finales al reservar desde la aerolinea. */
     private String urlParaUsuario;
 
+    private String urlHome;
+
+    public String getUrlHome() { return urlHome; }
+    public void setUrlHome(String urlHome) { this.urlHome = urlHome; }
+
     /**
      * Retorna el nombre comercial de la nueva aerolinea.
      * @return nombre de la aerolinea.

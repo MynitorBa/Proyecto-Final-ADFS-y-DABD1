@@ -14,6 +14,11 @@ public class AerolineaWebserviceDTO {
     private int    estadoId;
     private String estado;
 
+    private String urlHome;
+
+    public String getUrlHome() { return urlHome; }
+    public void setUrlHome(String urlHome) { this.urlHome = urlHome; }
+
     /** URL del sistema externo (endpoint de la API de la aerolinea). */
     private String url;
 

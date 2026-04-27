@@ -14,6 +14,11 @@ public class CrearAerolineaAdminRequestDTO {
     /** ID del usuario webservice al que se vinculara la aerolinea. */
     private int usuarioWebisId;
 
+    private String urlHome;
+
+    public String getUrlHome() { return urlHome; }
+    public void setUrlHome(String urlHome) { this.urlHome = urlHome; }
+
     /**
      * Retorna el nombre comercial de la nueva aerolinea.
      * @return nombre de la aerolinea.

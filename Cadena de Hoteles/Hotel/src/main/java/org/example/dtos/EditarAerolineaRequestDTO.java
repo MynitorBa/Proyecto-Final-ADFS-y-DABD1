@@ -12,6 +12,11 @@ public class EditarAerolineaRequestDTO {
     private double porcentajeDescuento;
     private int    estadoId;
 
+    private String urlHome;
+
+    public String getUrlHome() { return urlHome; }
+    public void setUrlHome(String urlHome) { this.urlHome = urlHome; }
+
     /**
      * Retorna el nombre comercial actualizado de la aerolinea.
      * @return nombre de la aerolinea.

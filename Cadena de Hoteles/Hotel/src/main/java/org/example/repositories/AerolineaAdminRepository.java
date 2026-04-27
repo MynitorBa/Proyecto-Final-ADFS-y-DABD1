@@ -1,10 +1,7 @@
 package org.example.repositories;
 
 import org.example.data.DatabaseManager;
-import org.example.dtos.AerolineaAdminDTO;
-import org.example.dtos.CrearAerolineaAdminRequestDTO;
-import org.example.dtos.EditarAerolineaRequestDTO;
-import org.example.dtos.UsuarioWebserviceLibreDTO;
+import org.example.dtos.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -38,6 +35,7 @@ public class AerolineaAdminRepository {
         dto.setEstado(estadoId == 1 ? "Activo" : "Inactivo");
         dto.setUrl(rs.getString("URL"));
         dto.setUrlParaUsuario(rs.getString("URLPARAUSUARIO"));
+        dto.setUrlHome(rs.getString("URLHOME"));
         return dto;
     }
 
@@ -50,7 +48,7 @@ public class AerolineaAdminRepository {
         // LEFT JOIN con Usuario para obtener username; LEFT JOIN por si el usuario fue eliminado
         String sql = "SELECT a.ID, a.Nombre, a.UsuarioWebis, " +
                 "NVL(u.Username, '—') AS Username, " +
-                "a.PorcentajeDescuento, a.EstadoID, a.URL, a.URLParaUsuario " +
+                "a.PorcentajeDescuento, a.EstadoID, a.URL, a.URLParaUsuario, a.URLHome " +
                 "FROM AerolineaAliado a " +
                 "LEFT JOIN Usuario u ON a.UsuarioWebis = u.ID " +
                 "ORDER BY a.ID";
@@ -74,6 +72,8 @@ public class AerolineaAdminRepository {
             throw new IllegalArgumentException("La URL para el usuario final es obligatoria");
         if (req.getUsuarioWebisId() <= 0)
             throw new IllegalArgumentException("Debe seleccionar un usuario webservice valido");
+        if (req.getUrlHome() == null || req.getUrlHome().isBlank())
+            throw new IllegalArgumentException("La URL Home es obligatoria");
 
         // Verifica que el usuario no tenga ya una aerolinea registrada
         String checkAerolinea = "SELECT COUNT(*) AS C FROM AerolineaAliado WHERE UsuarioWebis = ?";
@@ -90,15 +90,16 @@ public class AerolineaAdminRepository {
         // El descuento inicia en 0; TOKENHASH recibe '1' como valor inicial ya que no puede ser NULL;
         // EstadoID se resuelve dinamicamente desde EstadoAliado para no depender de un ID fijo
         String sql = "INSERT INTO AerolineaAliado " +
-                "(Nombre, UsuarioWebis, PorcentajeDescuento, EstadoID, URL, URLParaUsuario, TokenHASH) " +
+                "(Nombre, UsuarioWebis, PorcentajeDescuento, EstadoID, URL, URLParaUsuario, URLHome, TokenHASH) " +
                 "VALUES (?, ?, 0, " +
                 "(SELECT ID FROM EstadoAliado WHERE LOWER(TRIM(Estado)) = 'activo' AND ROWNUM = 1), " +
-                "?, ?, '1')";
+                "?, ?, ?, '1')";
         int nuevoId = DatabaseManager.executeInsertReturnId(sql, "ID",
                 req.getNombre().trim(),
                 req.getUsuarioWebisId(),
                 req.getUrl().trim(),
-                req.getUrlParaUsuario().trim()
+                req.getUrlParaUsuario().trim(),
+                req.getUrlHome().trim()
         );
 
         // Obtiene el username del usuario asignado para incluirlo en el DTO de respuesta
@@ -117,6 +118,7 @@ public class AerolineaAdminRepository {
         dto.setEstado("Activo");
         dto.setUrl(req.getUrl().trim());
         dto.setUrlParaUsuario(req.getUrlParaUsuario().trim());
+        dto.setUrlHome(req.getUrlHome().trim());
         return dto;
     }
 
@@ -139,12 +141,15 @@ public class AerolineaAdminRepository {
         // EstadoAliado: 1=Activo, 2=Inactivo
         if (req.getEstadoId() != 1 && req.getEstadoId() != 2)
             throw new IllegalArgumentException("Estado invalido. Use 1 (Activo) o 2 (Inactivo)");
+        if (req.getUrlHome() == null || req.getUrlHome().isBlank())
+            throw new IllegalArgumentException("La URL Home es obligatoria");
 
         DatabaseManager.executeUpdate(
-                "UPDATE AerolineaAliado SET Nombre=?, URL=?, URLParaUsuario=?, PorcentajeDescuento=?, EstadoID=? WHERE ID=?",
+                "UPDATE AerolineaAliado SET Nombre=?, URL=?, URLParaUsuario=?, URLHome=?, PorcentajeDescuento=?, EstadoID=? WHERE ID=?",
                 req.getNombre().trim(),
                 req.getUrl().trim(),
                 req.getUrlParaUsuario().trim(),
+                req.getUrlHome().trim(),
                 req.getPorcentajeDescuento(),
                 req.getEstadoId(),
                 aerolineaId
@@ -169,6 +174,22 @@ public class AerolineaAdminRepository {
             UsuarioWebserviceLibreDTO dto = new UsuarioWebserviceLibreDTO();
             dto.setId(rs.getInt("ID"));
             dto.setUsername(rs.getString("USERNAME"));
+            return dto;
+        });
+    }
+
+    /**
+     * Retorna nombre y URLHome de todas las aerolineas activas, para el endpoint de recomendaciones.
+     */
+    public List<AerolineaHomeDTO> listarHome() {
+        String sql = "SELECT ID, Nombre, URLHome FROM AerolineaAliado " +
+                "WHERE EstadoID = (SELECT ID FROM EstadoAliado WHERE LOWER(TRIM(Estado)) = 'activo' AND ROWNUM = 1) " +
+                "ORDER BY ID";
+        return DatabaseManager.executeQuery(sql, rs -> {
+            AerolineaHomeDTO dto = new AerolineaHomeDTO();
+            dto.setId(rs.getInt("ID"));
+            dto.setNombre(rs.getString("Nombre"));
+            dto.setUrlHome(rs.getString("URLHome"));
             return dto;
         });
     }

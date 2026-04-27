@@ -36,6 +36,7 @@ public class AerolineaWebserviceRepository {
         // Mapea las dos URLs de la aerolinea
         dto.setUrl(rs.getString("URL"));
         dto.setUrlParaUsuario(rs.getString("URLPARAUSUARIO"));
+        dto.setUrlHome(rs.getString("URLHOME"));
         return dto;
     }
 
@@ -47,7 +48,7 @@ public class AerolineaWebserviceRepository {
      */
     public List<AerolineaWebserviceDTO> listarPorUsuario(int usuarioId) {
         // Consulta directa sin JOIN para evitar fallo si EstadoID no existe en EstadoAliado
-        String sql = "SELECT ID, Nombre, UsuarioWebis, PorcentajeDescuento, EstadoID, URL, URLParaUsuario " +
+        String sql = "SELECT ID, Nombre, UsuarioWebis, PorcentajeDescuento, EstadoID, URL, URLParaUsuario, URLHome " +
                 "FROM AerolineaAliado " +
                 "WHERE UsuarioWebis = ? " +
                 "ORDER BY ID";
@@ -72,6 +73,8 @@ public class AerolineaWebserviceRepository {
             throw new IllegalArgumentException("La URL del sistema externo es obligatoria");
         if (req.getUrlParaUsuario() == null || req.getUrlParaUsuario().isBlank())
             throw new IllegalArgumentException("La URL para el usuario final es obligatoria");
+        if (req.getUrlHome() == null || req.getUrlHome().isBlank())
+            throw new IllegalArgumentException("La URL Home es obligatoria");
 
         // Verifica que el usuario no tenga ya una aerolinea registrada
         String checkAerolinea = "SELECT COUNT(*) AS C FROM AerolineaAliado WHERE UsuarioWebis = ?";
@@ -89,15 +92,16 @@ public class AerolineaWebserviceRepository {
         // puede ser NULL en Oracle; sera reemplazado al establecer la primera conexion.
         // EstadoID se resuelve dinamicamente desde EstadoAliado para no depender de un ID fijo
         String sql = "INSERT INTO AerolineaAliado " +
-                "(Nombre, UsuarioWebis, PorcentajeDescuento, EstadoID, URL, URLParaUsuario, TokenHASH) " +
+                "(Nombre, UsuarioWebis, PorcentajeDescuento, EstadoID, URL, URLParaUsuario, URLHome, TokenHASH) " +
                 "VALUES (?, ?, 0, " +
                 "(SELECT ID FROM EstadoAliado WHERE LOWER(TRIM(Estado)) = 'activo' AND ROWNUM = 1), " +
-                "?, ?, '1')";
+                "?, ?, ?, '1')";
         int nuevoId = DatabaseManager.executeInsertReturnId(sql, "ID",
                 req.getNombre().trim(),
                 usuarioId,
                 req.getUrl().trim(),
-                req.getUrlParaUsuario().trim()
+                req.getUrlParaUsuario().trim(),
+                req.getUrlHome().trim()
         );
 
         // Construye y retorna el DTO con los datos insertados
@@ -110,6 +114,7 @@ public class AerolineaWebserviceRepository {
         dto.setEstado("Activo");
         dto.setUrl(req.getUrl().trim());
         dto.setUrlParaUsuario(req.getUrlParaUsuario().trim());
+        dto.setUrlHome(req.getUrlHome().trim());
         return dto;
     }
 

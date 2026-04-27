@@ -2,46 +2,16 @@ package org.example;
 
 import io.javalin.Javalin;
 import org.example.config.ServerConfig;
-import org.example.controllers.AgenciaController;
-import org.example.controllers.HotelAgenciaController;
-import org.example.controllers.AuthController;
-import org.example.controllers.BusquedaController;
-import org.example.controllers.CancelacionController;
-import org.example.controllers.ComentarioController;
-import org.example.controllers.DownsController;
-import org.example.controllers.HotelController;
-import org.example.controllers.ImagenController;
-import org.example.controllers.PagoController;
-import org.example.controllers.ReservacionController;
-import org.example.controllers.SesionController;
-import org.example.controllers.UsuarioController;
+import org.example.controllers.*;
 import org.example.data.DatabaseTest;
 import org.example.helpers.AuthMiddleware;
 import org.example.repositories.*;
 import org.example.services.*;
-import org.example.controllers.PdfReservacionController;
-import org.example.controllers.DestinosController;
-import org.example.controllers.AdminBusquedaController;
-import org.example.controllers.MetricasHotelController;
-import org.example.controllers.EmailReservacionController;
-import org.example.controllers.CancelacionAgenciaController;
-import org.example.controllers.BusquedaAgenciaController;
-import org.example.controllers.ImagenAgenciaController;
 
-
-import org.example.controllers.BusquedaAerolineaController;
-import org.example.controllers.TokenAerolineaController;
-import org.example.controllers.TokenValidacionController;
-
-import org.example.controllers.ReservacionAgenciaController;
-import org.example.controllers.PagoAgenciaController;
 
 // Controllers de gestion de entidades webservice
-import org.example.controllers.AerolineaWebserviceController;
-import org.example.controllers.AerolineaAdminController;
 
 // Controller de handshake con aerolineas aliadas externas
-import org.example.controllers.HandshakeAerolineaController;
 
 import java.util.Map;
 
@@ -166,6 +136,7 @@ public class Main {
         AuthMiddleware.registrar(app);
 
         // Controllers generales
+        new AerolineaHomeController(aerolineaAdminService).registerRoutes(app);
         new AuthController(authService).registerRoutes(app);
         new SesionController(sesionService).registerRoutes(app);
         new UsuarioController(usuarioService).registerRoutes(app);

@@ -17,6 +17,11 @@ public class AerolineaAdminDTO {
     private String url;
     private String urlParaUsuario;
 
+    private String urlHome;
+
+    public String getUrlHome() { return urlHome; }
+    public void setUrlHome(String urlHome) { this.urlHome = urlHome; }
+
     /**
      * Retorna el identificador unico de la aerolinea.
      * @return ID de la aerolinea.
