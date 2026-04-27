@@ -78,8 +78,8 @@
 
   /**
    * Maneja el submit del formulario de busqueda. Consulta los destinos disponibles,
-   * filtra por el texto ingresado, lanza busquedas por ciudad/pais y navega
-   * a la pagina de resultados con los hoteles encontrados.
+   * filtra por el texto ingresado, registra la busqueda (siempre una entrada por accion
+   * del usuario), lanza busquedas por ciudad/pais y navega a la pagina de resultados.
    * @async
    * @param {SubmitEvent} e - Evento de submit del formulario.
    * @returns {Promise<void>}
@@ -119,27 +119,52 @@
         }
       }
 
-      // Si no hay coincidencias, intentar busqueda directa con el query
-      if (ciudadesMatch.size === 0) {
-        ciudadesMatch.set('direct-ciudad', { ciudad: query, pais: '' });
-        ciudadesMatch.set('direct-pais', { ciudad: '', pais: query });
-      }
-
-      // 3. POST /busqueda por cada ciudad/pais encontrado
       const checkIn  = getFutureDate(1);
       const checkOut = getFutureDate(2);
 
-      const promesas = Array.from(ciudadesMatch.values()).map(async ({ ciudad, pais }) => {
+      // 3. Registrar UNA sola entrada de busqueda para trazar la accion del usuario.
+      //    Si hay ciudades coincidentes usamos la primera (datos reales de BD).
+      //    Si no hay coincidencias usamos la primera ciudad del catalogo como proxy
+      //    para garantizar que la busqueda siempre quede registrada en Busqueda.
+      const ciudadParaRegistro = ciudadesMatch.size > 0
+        ? Array.from(ciudadesMatch.values())[0]
+        : hotelesBasicos.length > 0
+          ? { ciudad: hotelesBasicos[0].ciudad, pais: hotelesBasicos[0].pais }
+          : null;
+
+      if (ciudadParaRegistro) {
+        fetch(`${API}/busqueda`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            ciudad: ciudadParaRegistro.ciudad,
+            pais:   ciudadParaRegistro.pais,
+            fechaCheckIn:     checkIn,
+            fechaCheckOut:    checkOut,
+            cantidadPersonas: 1
+          })
+        }).catch(() => {});  // fire-and-forget; errores silenciosos
+      }
+
+      // 4. POST /busqueda?registrar=false por cada ciudad para obtener disponibilidad.
+      //    Se pasa registrar=false para NO duplicar el registro ya hecho en el paso 3.
+      //    Si no hay coincidencias, intentar directamente con el query como ciudad/pais.
+      const ciudadesParaBuscar = ciudadesMatch.size > 0
+        ? Array.from(ciudadesMatch.values())
+        : [{ ciudad: query, pais: query }];
+
+      const promesas = ciudadesParaBuscar.map(async ({ ciudad, pais }) => {
         try {
-          const r = await fetch(`${API}/busqueda`, {
+          const r = await fetch(`${API}/busqueda?registrar=false`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-              pais: pais || ciudad,
-              ciudad: ciudad || pais,
-              fechaCheckIn: checkIn,
-              fechaCheckOut: checkOut,
+              ciudad,
+              pais,
+              fechaCheckIn:     checkIn,
+              fechaCheckOut:    checkOut,
               cantidadPersonas: 1
             })
           });
@@ -151,7 +176,7 @@
       const resultados = await Promise.all(promesas);
       const hoteles = resultados.flat();
 
-      // 4. Deduplicar resultados por ID de hotel
+      // 5. Deduplicar resultados por ID de hotel
       const seen = new Set();
       const hotelesUnicos = hoteles.filter(h => {
         if (seen.has(h.id)) return false;
@@ -159,16 +184,16 @@
         return true;
       });
 
-      // 5. Determinar labels de ciudad y pais para la pagina de resultados
+      // 6. Determinar labels de ciudad y pais para la pagina de resultados
       let ciudadLabel = query;
       let paisLabel   = '';
       if (ciudadesMatch.size >= 1) {
         const first = Array.from(ciudadesMatch.values())[0];
         if (first.ciudad) ciudadLabel = first.ciudad;
-        if (first.pais) paisLabel = first.pais;
+        if (first.pais)   paisLabel   = first.pais;
       }
 
-      // 6. Navegar a resultados con los hoteles encontrados
+      // 7. Navegar a resultados con los hoteles encontrados
       navigateTo('search-results', {
         pais:             paisLabel,
         ciudad:           ciudadLabel,

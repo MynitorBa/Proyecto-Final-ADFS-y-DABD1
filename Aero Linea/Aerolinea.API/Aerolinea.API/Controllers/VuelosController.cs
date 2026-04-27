@@ -1,6 +1,7 @@
 using Aerolinea.API.DTOs;
 using Aerolinea.API.Helpers;
 using Aerolinea.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Aerolinea.API.Controllers
@@ -37,7 +38,10 @@ namespace Aerolinea.API.Controllers
 
             try
             {
+                int? usuarioId = SessionHelper.GetUsuarioId(HttpContext);
                 var vuelos = await _service.BusquedaGeneral(query.Trim());
+                // Registrar en métricas (best-effort, no falla si la migración no se ejecutó)
+                _ = _service.RegistrarBusquedaGeneral(query.Trim(), usuarioId);
                 return Ok(vuelos);
             }
             catch (Exception ex)

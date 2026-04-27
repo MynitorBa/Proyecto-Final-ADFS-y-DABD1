@@ -101,7 +101,7 @@
                 </div>
                 <div>
                   <p class="adm-kpi__lbl">Total Búsquedas</p>
-                  <p class="adm-kpi__val">{{ resumen.kpi?.totalBusquedas ?? '--' }}</p>
+                  <p class="adm-kpi__val">{{ resumen?.kpi?.totalBusquedas ?? '--' }}</p>
                 </div>
               </div>
               <div class="adm-kpi">
@@ -110,7 +110,7 @@
                 </div>
                 <div>
                   <p class="adm-kpi__lbl">Búsquedas Vuelo</p>
-                  <p class="adm-kpi__val">{{ resumen.kpi?.busquedasVuelo ?? '--' }}</p>
+                  <p class="adm-kpi__val">{{ resumen?.kpi?.busquedasVuelo ?? '--' }}</p>
                 </div>
               </div>
               <div class="adm-kpi">
@@ -119,7 +119,7 @@
                 </div>
                 <div>
                   <p class="adm-kpi__lbl">Búsquedas Hotel</p>
-                  <p class="adm-kpi__val">{{ resumen.kpi?.busquedasHotel ?? '--' }}</p>
+                  <p class="adm-kpi__val">{{ resumen?.kpi?.busquedasHotel ?? '--' }}</p>
                 </div>
               </div>
               <div class="adm-kpi adm-kpi--dark">
@@ -128,7 +128,7 @@
                 </div>
                 <div>
                   <p class="adm-kpi__lbl">Reservaciones</p>
-                  <p class="adm-kpi__val">{{ resumen.kpi?.totalReservaciones ?? '--' }}</p>
+                  <p class="adm-kpi__val">{{ resumen?.kpi?.totalReservaciones ?? '--' }}</p>
                 </div>
               </div>
               <div class="adm-kpi">
@@ -137,7 +137,7 @@
                 </div>
                 <div>
                   <p class="adm-kpi__lbl">Ingresos Totales</p>
-                  <p class="adm-kpi__val">${{ fmt(resumen.kpi?.ingresosTotales) }}</p>
+                  <p class="adm-kpi__val">${{ fmt(resumen?.kpi?.ingresosTotales) }}</p>
                 </div>
               </div>
               <div class="adm-kpi">
@@ -146,7 +146,7 @@
                 </div>
                 <div>
                   <p class="adm-kpi__lbl">Ganancia MOVENT</p>
-                  <p class="adm-kpi__val">${{ fmt(resumen.kpi?.gananciaMovent) }}</p>
+                  <p class="adm-kpi__val">${{ fmt(resumen?.kpi?.gananciaMovent) }}</p>
                 </div>
               </div>
             </div>
@@ -157,7 +157,8 @@
               <!-- Búsquedas por día (línea SVG) -->
               <div class="met-card">
                 <p class="met-card__titulo">Búsquedas por Día</p>
-                <template v-if="resumen.busquedasPorDia?.length">
+                <p class="met-card__desc">Número de búsquedas registradas cada día dentro del período. Útil para detectar picos de demanda y días con mayor tráfico.</p>
+                <template v-if="resumen?.busquedasPorDia?.length">
                   <svg :viewBox="`0 0 560 170`" class="met-svg">
                     <defs>
                       <linearGradient id="gradBusc" x1="0" y1="0" x2="0" y2="1">
@@ -179,36 +180,56 @@
                     <template v-for="(pt, i) in busquedaDiaPts" :key="i">
                       <circle :cx="pt.x" :cy="pt.y" r="3" fill="#D4AF37"/>
                     </template>
-                    <!-- etiquetas eje X (cada 5) -->
-                    <template v-for="(b, i) in resumen.busquedasPorDia" :key="i">
-                      <template v-if="i % Math.ceil(resumen.busquedasPorDia.length / 7) === 0">
+                    <!-- etiquetas eje X (cada N para no saturar) -->
+                    <template v-for="(b, i) in (resumen?.busquedasPorDia ?? [])" :key="i">
+                      <template v-if="i % Math.max(1, Math.ceil((resumen?.busquedasPorDia?.length ?? 1) / 8)) === 0">
                         <text :x="busquedaDiaPts[i]?.x" y="160" text-anchor="middle" font-size="8" fill="#9a9089">
-                          {{ b.fecha?.slice(5) }}
+                          {{ formatDiaLabel(b.fecha) }}
                         </text>
                       </template>
                     </template>
                   </svg>
+                  <!-- Rango y semanas -->
+                  <p v-if="resumen?.busquedasPorDia?.length" class="met-rango-fechas">
+                    {{ formatRangoMes(resumen.busquedasPorDia[0]?.fecha) }}
+                    &rarr;
+                    {{ formatRangoMes(resumen.busquedasPorDia[resumen.busquedasPorDia.length - 1]?.fecha) }}
+                    &nbsp;&middot;&nbsp;
+                    {{ Math.ceil((resumen.busquedasPorDia.length) / 7) }} sem.
+                  </p>
                 </template>
                 <p v-else class="met-vacio">Sin datos en este período</p>
               </div>
 
-              <!-- Búsquedas por tipo (barras horizontales) -->
-              <div class="met-card">
+              <!-- Búsquedas por tipo (donut con %) -->
+              <div class="met-card met-card--center">
                 <p class="met-card__titulo">Búsquedas por Tipo</p>
-                <div class="met-barras-h" v-if="resumen.busquedasPorTipo?.length">
-                  <div v-for="bt in resumen.busquedasPorTipo" :key="bt.tipo" class="met-barra-h-row">
-                    <span class="met-barra-h-lbl">{{ bt.tipo }}</span>
-                    <div class="met-barra-h-track">
-                      <div class="met-barra-h-fill"
-                        :style="{
-                          width: maxBusTipo > 0 ? (bt.total/maxBusTipo*100) + '%' : '0%',
-                          background: bt.tipo === 'Vuelo' ? '#D4AF37' : '#3B82F6'
-                        }">
+                <p class="met-card__desc">Distribución de búsquedas entre vuelos y hoteles. Indica cuál tipo de servicio tiene mayor interés en los usuarios.</p>
+                <template v-if="resumen?.busquedasPorTipo?.length">
+                  <div class="met-donut-wrap">
+                    <svg viewBox="0 0 112 112" class="met-donut-svg met-donut-svg--sm">
+                      <template v-for="(seg, i) in busquedaTipoDonut" :key="i">
+                        <circle cx="56" cy="56" r="44"
+                          fill="none" :stroke="seg.color" stroke-width="20"
+                          :stroke-dasharray="seg.dash"
+                          :stroke-dashoffset="seg.offset"
+                          transform="rotate(-90 56 56)"/>
+                      </template>
+                      <text x="56" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#1C1A18">
+                        {{ busquedaTipoTotal }}
+                      </text>
+                      <text x="56" y="64" text-anchor="middle" font-size="8" fill="#9a9089">búsquedas</text>
+                    </svg>
+                    <div class="met-donut-leyenda">
+                      <div v-for="(bt, i) in (resumen?.busquedasPorTipo ?? [])" :key="bt.tipo" class="met-donut-item">
+                        <span class="met-donut-punto" :style="{ background: busquedaTipoColors[i] }"></span>
+                        <span class="met-donut-lbl">{{ bt.tipo }}</span>
+                        <span class="met-donut-val">{{ bt.total }}</span>
+                        <span class="met-donut-pct">{{ busquedaTipoTotal > 0 ? ((bt.total / busquedaTipoTotal) * 100).toFixed(1) + '%' : '—' }}</span>
                       </div>
                     </div>
-                    <span class="met-barra-h-val">{{ bt.total }}</span>
                   </div>
-                </div>
+                </template>
                 <p v-else class="met-vacio">Sin datos</p>
               </div>
 
@@ -220,8 +241,9 @@
               <!-- Top destinos -->
               <div class="met-card">
                 <p class="met-card__titulo">Destinos más Buscados</p>
-                <div class="met-barras-h" v-if="resumen.destinosPopulares?.length">
-                  <div v-for="dest in resumen.destinosPopulares" :key="dest.ciudad + dest.pais" class="met-barra-h-row">
+                <p class="met-card__desc">Ciudades destino consultadas con mayor frecuencia. Refleja las preferencias de viaje y permite anticipar demanda por ruta.</p>
+                <div class="met-barras-h" v-if="resumen?.destinosPopulares?.length">
+                  <div v-for="dest in (resumen?.destinosPopulares ?? [])" :key="dest.ciudad + dest.pais" class="met-barra-h-row">
                     <span class="met-barra-h-lbl met-barra-h-lbl--lg">
                       {{ dest.ciudad }}<span class="met-pais">, {{ dest.pais }}</span>
                     </span>
@@ -231,6 +253,13 @@
                       </div>
                     </div>
                     <span class="met-barra-h-val">{{ dest.total }}</span>
+                    <span class="met-barra-h-pct">{{ totalBusquedasDestinos > 0 ? ((dest.total / totalBusquedasDestinos) * 100).toFixed(1) + '%' : '' }}</span>
+                  </div>
+                  <div v-if="resumen?.destinosPopulares?.length" class="met-barra-h-row met-barra-h-row--total">
+                    <span class="met-barra-h-lbl met-barra-h-lbl--lg">Total</span>
+                    <div class="met-barra-h-track"><div class="met-barra-h-fill" style="width:100%"></div></div>
+                    <span class="met-barra-h-val">{{ totalBusquedasDestinos }}</span>
+                    <span class="met-barra-h-pct">100%</span>
                   </div>
                 </div>
                 <p v-else class="met-vacio">Sin datos</p>
@@ -239,7 +268,8 @@
               <!-- Reservaciones por tipo (donut SVG) -->
               <div class="met-card met-card--center">
                 <p class="met-card__titulo">Reservaciones por Tipo</p>
-                <template v-if="resumen.reservacionesPorTipo?.length">
+                <p class="met-card__desc">Solo incluye reservaciones activas (confirmadas, en curso, completadas). Muestra qué tipo de servicio genera más reservas reales.</p>
+                <template v-if="resumen?.reservacionesPorTipo?.length">
                   <div class="met-donut-wrap">
                     <svg viewBox="0 0 160 160" class="met-donut-svg">
                       <template v-for="(seg, i) in donutSegments" :key="i">
@@ -257,10 +287,11 @@
                       <text x="80" y="90" text-anchor="middle" font-size="9" fill="#9a9089">reservaciones</text>
                     </svg>
                     <div class="met-donut-leyenda">
-                      <div v-for="(rt, i) in resumen.reservacionesPorTipo" :key="rt.tipo" class="met-donut-item">
+                      <div v-for="(rt, i) in (resumen?.reservacionesPorTipo ?? [])" :key="rt.tipo" class="met-donut-item">
                         <span class="met-donut-punto" :style="{ background: donutColors[i] }"></span>
                         <span class="met-donut-lbl">{{ rt.tipo }}</span>
                         <span class="met-donut-val">{{ rt.total }}</span>
+                        <span class="met-donut-pct">{{ totalReservaciones > 0 ? ((rt.total / totalReservaciones) * 100).toFixed(0) + '%' : '—' }}</span>
                       </div>
                     </div>
                   </div>
@@ -273,61 +304,179 @@
             <!-- ═══ PANEL 4: Análisis de Negocio ══════════════════════════════ -->
             <template v-if="!loadingNegocio">
 
-              <!-- Embudo de conversión -->
-              <div class="met-card met-card--wide" v-if="negocio?.embudo">
-                <p class="met-card__titulo">Embudo de Conversión</p>
-                <div class="met-embudo">
-                  <div v-for="etapa in embudoEtapas" :key="etapa.label" class="met-embudo-fila">
-                    <span class="met-embudo-lbl">{{ etapa.label }}</span>
-                    <div class="met-embudo-barra-track">
-                      <div class="met-embudo-barra"
-                        :style="{
-                          width: negocio?.embudo?.busquedas > 0
-                            ? (etapa.val / negocio.embudo.busquedas * 100) + '%'
-                            : '0%',
-                          background: etapa.color
-                        }">
+              <!-- Embudo (2/3) + Cancelaciones (1/3) -->
+              <div class="met-grid-embudo-cancel">
+
+                <!-- Embudo de conversión -->
+                <div class="met-card" v-if="negocio?.embudo">
+                  <p class="met-card__titulo">Embudo de Conversión</p>
+                  <p class="met-card__desc">Muestra cuántos usuarios avanzan de búsqueda a reservación y cuántas reservaciones llegan a estado activo. El porcentaje de cada etapa es relativo a la suma de todas las etapas (100% en total).</p>
+                  <div class="met-embudo">
+                    <div v-for="etapa in embudoEtapas" :key="etapa.label" class="met-embudo-fila">
+                      <span class="met-embudo-lbl">{{ etapa.label }}</span>
+                      <div class="met-embudo-barra-track">
+                        <div class="met-embudo-barra"
+                          :style="{
+                            width: embudoSumaTotal > 0
+                              ? (etapa.val / embudoSumaTotal * 100) + '%'
+                              : '0%',
+                            background: etapa.color
+                          }">
+                        </div>
                       </div>
+                      <span class="met-embudo-val">{{ etapa.val }}</span>
+                      <span class="met-embudo-pct">
+                        {{ embudoSumaTotal > 0
+                            ? ((etapa.val / embudoSumaTotal) * 100).toFixed(1) + '%'
+                            : '—' }}
+                      </span>
                     </div>
-                    <span class="met-embudo-val">{{ etapa.val }}</span>
-                    <span class="met-embudo-pct">
-                      {{ negocio?.embudo?.busquedas > 0
-                          ? ((etapa.val / negocio.embudo.busquedas) * 100).toFixed(1) + '%'
-                          : '—' }}
-                    </span>
+                    <div class="met-embudo-fila met-barra-h-row--total">
+                      <span class="met-embudo-lbl">Total</span>
+                      <div class="met-embudo-barra-track"><div class="met-embudo-barra" style="width:100%;background:#1C1A18"></div></div>
+                      <span class="met-embudo-val">{{ embudoSumaTotal }}</span>
+                      <span class="met-embudo-pct">100%</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="met-card met-card--wide" v-else>
-                <p class="met-card__titulo">Embudo de Conversión</p>
-                <p class="met-vacio">Sin datos en este período</p>
-              </div>
+                <div class="met-card" v-else>
+                  <p class="met-card__titulo">Embudo de Conversión</p>
+                  <p class="met-vacio">Sin datos en este período</p>
+                </div>
 
-              <!-- Proveedores + Cancelaciones -->
-              <div class="met-grid-2">
-
-                <!-- Top proveedores -->
+                <!-- Cancelaciones por tipo -->
                 <div class="met-card">
+                  <p class="met-card__titulo">Cancelaciones por Tipo</p>
+                  <p class="met-card__desc">Reservaciones canceladas en el período, agrupadas por tipo de reservación. Permite identificar qué servicio tiene mayor tasa de abandono.</p>
+                  <div class="met-barras-h" v-if="negocio?.cancelaciones?.length">
+                    <div v-for="ct in (negocio?.cancelaciones ?? [])" :key="ct.tipo" class="met-barra-h-row">
+                      <span class="met-barra-h-lbl">{{ ct.tipo }}</span>
+                      <div class="met-barra-h-track">
+                        <div class="met-barra-h-fill met-barra-h-fill--rojo"
+                          :style="{ width: maxCancelaciones > 0 ? (ct.total/maxCancelaciones*100) + '%' : '0%' }">
+                        </div>
+                      </div>
+                      <span class="met-barra-h-val">{{ ct.total }}</span>
+                      <span class="met-barra-h-pct">{{ totalCancelaciones > 0 ? ((ct.total / totalCancelaciones) * 100).toFixed(0) + '%' : '' }}</span>
+                    </div>
+                    <div class="met-barra-h-row met-barra-h-row--total">
+                      <span class="met-barra-h-lbl">Total</span>
+                      <div class="met-barra-h-track"><div class="met-barra-h-fill met-barra-h-fill--rojo" style="width:100%"></div></div>
+                      <span class="met-barra-h-val">{{ totalCancelaciones }}</span>
+                      <span class="met-barra-h-pct">100%</span>
+                    </div>
+                  </div>
+                  <p v-else class="met-vacio">Sin cancelaciones en el período</p>
+                </div>
+
+              </div><!-- /met-grid-embudo-cancel -->
+
+              <!-- Proveedores (ancho completo) -->
+              <div class="met-card met-card--wide">
                   <p class="met-card__titulo">Rendimiento de Proveedores</p>
-                  <div class="met-tabla-scroll" v-if="negocio?.proveedores?.length">
+                  <p class="met-card__desc">Ingresos y ganancia por proveedor, separados según el tipo de reservación. "Paquetes" muestra la contribución de cada proveedor dentro de reservaciones combinadas vuelo+hotel.</p>
+                  <!-- Layout: lista izquierda + comparación derecha -->
+                  <div class="met-prov-layout" v-if="hayProveedoresAgrupados">
+                  <div class="met-prov-lista">
+                    <!-- Vuelo directo -->
+                    <template v-if="provVuelo.length">
+                      <div class="met-prov-grupo-lbl met-prov-grupo-lbl--vuelo">
+                        <svg viewBox="0 0 24 24" fill="#92701F" width="11" height="11"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                        Vuelo directo
+                      </div>
+                      <div v-for="p in provVuelo" :key="p.nombre+'-v'" class="met-prov-fila">
+                        <span class="met-prov-nombre">{{ p.nombre }}</span>
+                        <span class="met-prov-chip met-prov-chip--reserv">{{ p.reservaciones }} reserv.</span>
+                        <span class="met-prov-ing">${{ fmt(p.ingresos) }}</span>
+                        <span class="met-prov-gan">${{ fmt(p.ganancia) }}</span>
+                      </div>
+                    </template>
+                    <!-- Hotel directo -->
+                    <template v-if="provHotel.length">
+                      <div class="met-prov-grupo-lbl met-prov-grupo-lbl--hotel">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2" width="11" height="11"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        Hotel directo
+                      </div>
+                      <div v-for="p in provHotel" :key="p.nombre+'-h'" class="met-prov-fila">
+                        <span class="met-prov-nombre">{{ p.nombre }}</span>
+                        <span class="met-prov-chip met-prov-chip--reserv">{{ p.reservaciones }} reserv.</span>
+                        <span class="met-prov-ing">${{ fmt(p.ingresos) }}</span>
+                        <span class="met-prov-gan">${{ fmt(p.ganancia) }}</span>
+                      </div>
+                    </template>
+                    <!-- Paquete - Vuelo -->
+                    <template v-if="provPaqVuelo.length">
+                      <div class="met-prov-grupo-lbl met-prov-grupo-lbl--paq">
+                        <svg viewBox="0 0 24 24" fill="#5B21B6" width="11" height="11"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.4-.1.9.3 1.1l5.5 3.1-3 3-1.7-.5c-.3-.1-.7 0-.9.2l-.5.5c-.2.2-.2.6 0 .8l2.1 2.1c.2.2.6.2.8 0l.5-.5c.2-.2.3-.6.2-.9l-.5-1.7 3-3 3.1 5.5c.2.4.7.5 1.1.3l.5-.3c.4-.2.6-.7.5-1.1z"/></svg>
+                        Paquete · Vuelo
+                      </div>
+                      <div v-for="p in provPaqVuelo" :key="p.nombre+'-pv'" class="met-prov-fila">
+                        <span class="met-prov-nombre">{{ p.nombre }}</span>
+                        <span class="met-prov-chip met-prov-chip--reserv">{{ p.reservaciones }} reserv.</span>
+                        <span class="met-prov-ing">${{ fmt(p.ingresos) }}</span>
+                        <span class="met-prov-gan">${{ fmt(p.ganancia) }}</span>
+                      </div>
+                    </template>
+                    <!-- Paquete - Hotel -->
+                    <template v-if="provPaqHotel.length">
+                      <div class="met-prov-grupo-lbl met-prov-grupo-lbl--paq">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#5B21B6" stroke-width="2" width="11" height="11"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        Paquete · Hotel
+                      </div>
+                      <div v-for="p in provPaqHotel" :key="p.nombre+'-ph'" class="met-prov-fila">
+                        <span class="met-prov-nombre">{{ p.nombre }}</span>
+                        <span class="met-prov-chip met-prov-chip--reserv">{{ p.reservaciones }} reserv.</span>
+                        <span class="met-prov-ing">${{ fmt(p.ingresos) }}</span>
+                        <span class="met-prov-gan">${{ fmt(p.ganancia) }}</span>
+                      </div>
+                    </template>
+                    <!-- Fila total -->
+                    <div class="met-prov-fila met-prov-fila--total">
+                      <span class="met-prov-nombre">Total período</span>
+                      <span class="met-prov-chip">{{ provTotalReserv }} reserv.</span>
+                      <span class="met-prov-ing">${{ fmt(provTotalIngresos) }}</span>
+                      <span class="met-prov-gan">${{ fmt(provTotalGanancia) }}</span>
+                    </div>
+                  </div><!-- /met-prov-lista -->
+
+                  <!-- Panel de comparación mensual (columna derecha) -->
+                  <div v-if="tendenciaComparacion" class="met-prov-comp-panel">
+                    <p class="met-prov-comp-panel-titulo">Comparación mensual</p>
+                    <div :class="['met-prov-comp-panel-badge', tendenciaComparacion.pct >= 0 ? 'met-prov-comp-panel-badge--up' : 'met-prov-comp-panel-badge--down']">
+                      {{ tendenciaComparacion.pct >= 0 ? '▲' : '▼' }}
+                      {{ Math.abs(tendenciaComparacion.pct) > 9999 ? '+9999' : Math.abs(tendenciaComparacion.pct).toFixed(1) }}%
+                    </div>
+                    <div class="met-prov-comp-panel-meses">
+                      <div class="met-prov-comp-panel-mes">
+                        <span class="met-prov-comp-panel-mes-lbl">{{ tendenciaComparacion.anterior }}</span>
+                        <span class="met-prov-comp-panel-mes-val">${{ fmt(tendenciaComparacion.ingAnterior) }}</span>
+                      </div>
+                      <div class="met-prov-comp-panel-flecha">→</div>
+                      <div class="met-prov-comp-panel-mes met-prov-comp-panel-mes--act">
+                        <span class="met-prov-comp-panel-mes-lbl">{{ tendenciaComparacion.actual }}</span>
+                        <span class="met-prov-comp-panel-mes-val">${{ fmt(tendenciaComparacion.ingActual) }}</span>
+                      </div>
+                    </div>
+                    <div :class="['met-prov-comp-panel-diff', tendenciaComparacion.diff >= 0 ? 'met-prov-comp-panel-diff--pos' : 'met-prov-comp-panel-diff--neg']">
+                      {{ tendenciaComparacion.diff >= 0 ? '+' : '' }}${{ fmt(tendenciaComparacion.diff) }}
+                    </div>
+                    <p class="met-prov-comp-panel-hint">vs mes anterior en ingresos totales</p>
+                  </div>
+                  </div><!-- /met-prov-layout -->
+                  <!-- Tabla plana de fallback (versión anterior del servidor sin tipoReservaId) -->
+                  <div class="met-tabla-scroll" v-else-if="(negocio?.proveedores?.length ?? 0) > 0">
                     <table class="met-tabla">
                       <thead>
                         <tr>
                           <th>Proveedor</th>
-                          <th>Tipo</th>
                           <th class="met-num">Reserv.</th>
                           <th class="met-num">Ingresos</th>
                           <th class="met-num">Ganancia</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="p in (negocio?.proveedores ?? [])" :key="p.nombre">
+                        <tr v-for="p in negocio.proveedores" :key="p.nombre">
                           <td>{{ p.nombre }}</td>
-                          <td>
-                            <span :class="p.tipoId === 1 ? 'met-badge met-badge--vuelo' : 'met-badge met-badge--hotel'">
-                              {{ p.tipo }}
-                            </span>
-                          </td>
                           <td class="met-num">{{ p.reservaciones }}</td>
                           <td class="met-num">${{ fmt(p.ingresos) }}</td>
                           <td class="met-num met-ganancia">${{ fmt(p.ganancia) }}</td>
@@ -338,28 +487,10 @@
                   <p v-else class="met-vacio">Sin datos</p>
                 </div>
 
-                <!-- Cancelaciones por tipo -->
-                <div class="met-card">
-                  <p class="met-card__titulo">Cancelaciones por Tipo</p>
-                  <div class="met-barras-h" v-if="negocio?.cancelaciones?.length">
-                    <div v-for="ct in (negocio?.cancelaciones ?? [])" :key="ct.tipo" class="met-barra-h-row">
-                      <span class="met-barra-h-lbl">{{ ct.tipo }}</span>
-                      <div class="met-barra-h-track">
-                        <div class="met-barra-h-fill met-barra-h-fill--rojo"
-                          :style="{ width: maxCancelaciones > 0 ? (ct.total/maxCancelaciones*100) + '%' : '0%' }">
-                        </div>
-                      </div>
-                      <span class="met-barra-h-val">{{ ct.total }}</span>
-                    </div>
-                  </div>
-                  <p v-else class="met-vacio">Sin cancelaciones en el período</p>
-                </div>
-
-              </div>
-
               <!-- Tendencia de ingresos mensual (línea SVG multi-serie) -->
               <div class="met-card met-card--wide" v-if="negocio?.tendencia?.length">
                 <p class="met-card__titulo">Tendencia de Ingresos Mensuales</p>
+                <p class="met-card__desc">Evolución mes a mes de los ingresos generados (solo reservaciones confirmadas, completadas o en curso). Compara vuelo, hotel y paquete en el mismo período.</p>
                 <svg viewBox="0 0 700 180" class="met-svg">
                   <defs>
                     <linearGradient id="gradVuelo" x1="0" y1="0" x2="0" y2="1">
@@ -374,7 +505,7 @@
                   <template v-for="pct in [0,0.25,0.5,0.75,1]" :key="pct">
                     <line :x1="48" :y1="148 - pct*120" :x2="684" :y2="148 - pct*120" stroke="#EBE6E0" stroke-width="1"/>
                     <text :x="44" :y="151 - pct*120" text-anchor="end" font-size="9" fill="#9a9089">
-                      {{ Math.round(maxTendencia * pct) }}
+                      {{ fmtK(maxTendencia * pct) }}
                     </text>
                   </template>
                   <!-- Vuelo -->
@@ -383,6 +514,8 @@
                   <!-- Hotel -->
                   <polygon v-if="tendenciaHotelPts.length > 1" :points="tendenciaAreaHotel" fill="url(#gradHotel)"/>
                   <polyline v-if="tendenciaHotelPts.length > 1" :points="tendenciaLineHotel" fill="none" stroke="#3B82F6" stroke-width="2"/>
+                  <!-- Paquete -->
+                  <polyline v-if="tendenciaLastPaquete" :points="ptsToLine(tendenciaPts('Paquete'))" fill="none" stroke="#7C3AED" stroke-width="2"/>
                   <!-- Etiquetas eje X -->
                   <template v-for="(mes, i) in mesesUnicos" :key="mes">
                     <text :x="tendenciaX(i)" y="165" text-anchor="middle" font-size="8" fill="#9a9089">{{ mes }}</text>
@@ -395,11 +528,30 @@
                   <circle cx="150" cy="12" r="4" fill="#7C3AED"/>
                   <text x="158" y="16" font-size="9" fill="#5a5047">Paquete</text>
                 </svg>
+                <!-- Totales por tipo debajo del gráfico -->
+                <div class="met-tend-totales">
+                  <div v-if="tendenciaTotales.Vuelo > 0" class="met-tend-total met-tend-total--vuelo">
+                    <span class="met-tend-dot met-tend-dot--vuelo"></span>
+                    <span class="met-tend-tipo">Vuelo</span>
+                    <span class="met-tend-monto">${{ fmt(tendenciaTotales.Vuelo) }}</span>
+                  </div>
+                  <div v-if="tendenciaTotales.Hotel > 0" class="met-tend-total met-tend-total--hotel">
+                    <span class="met-tend-dot met-tend-dot--hotel"></span>
+                    <span class="met-tend-tipo">Hotel</span>
+                    <span class="met-tend-monto">${{ fmt(tendenciaTotales.Hotel) }}</span>
+                  </div>
+                  <div v-if="tendenciaTotales.Paquete > 0" class="met-tend-total met-tend-total--paquete">
+                    <span class="met-tend-dot met-tend-dot--paquete"></span>
+                    <span class="met-tend-tipo">Paquete</span>
+                    <span class="met-tend-monto">${{ fmt(tendenciaTotales.Paquete) }}</span>
+                  </div>
+                </div>
               </div>
 
               <!-- Heatmap búsquedas por hora y día -->
               <div class="met-card met-card--wide" v-if="negocio?.heatmap?.length">
                 <p class="met-card__titulo">Mapa de Calor — Búsquedas por Hora y Día</p>
+                <p class="met-card__desc">Intensidad de búsquedas según la hora del día y el día de la semana. Colores más intensos indican mayor actividad. Ideal para planificar horarios de soporte o campañas.</p>
                 <div class="met-heatmap-scroll">
                   <div class="met-heatmap">
                     <div class="met-heatmap-col met-heatmap-col--lbl">
@@ -411,8 +563,24 @@
                       <div v-for="dia in diasSemana" :key="dia" class="met-heatmap-cell"
                         :style="{ opacity: heatmapOpacity(dia, hora) }"
                         :title="`${dia} ${hora}h: ${heatmapVal(dia, hora)}`">
+                        <span v-if="heatmapVal(dia, hora) > 0" class="met-heatmap-num">{{ heatmapVal(dia, hora) }}</span>
                       </div>
                     </div>
+                  </div>
+                </div>
+                <!-- Leyenda de 3 niveles centrada -->
+                <div class="met-heatmap-legend">
+                  <div class="met-heatmap-legend-item">
+                    <div class="met-heatmap-legend-sq" style="opacity:0.12"></div>
+                    <span>Poca demanda</span>
+                  </div>
+                  <div class="met-heatmap-legend-item">
+                    <div class="met-heatmap-legend-sq" style="opacity:0.55"></div>
+                    <span>Demanda media</span>
+                  </div>
+                  <div class="met-heatmap-legend-item">
+                    <div class="met-heatmap-legend-sq" style="opacity:1"></div>
+                    <span>Alta demanda</span>
                   </div>
                 </div>
               </div>
@@ -422,12 +590,16 @@
             <!-- ═══ PANEL 5: Listado paginado de búsquedas ════════════════════ -->
             <div class="met-card met-card--wide">
               <div class="met-listado-header">
-                <p class="met-card__titulo met-card__titulo--inline">Registro de Búsquedas</p>
+                <div>
+                  <p class="met-card__titulo met-card__titulo--inline">Registro de Búsquedas</p>
+                  <p class="met-card__desc met-card__desc--inline">Historial detallado de cada búsqueda realizada. Filtra por tipo o usuario para rastrear comportamiento específico.</p>
+                </div>
                 <div class="met-listado-filtros">
                   <select v-model="filtroTipo" @change="cargarListado(1)" class="met-select">
                     <option value="">Todos los tipos</option>
                     <option value="Vuelo">Vuelo</option>
                     <option value="Hotel">Hotel</option>
+                    <option value="Paquete">Paquete</option>
                   </select>
                   <input v-model="filtroUsuario" @input="debounceListado"
                     placeholder="Buscar usuario..." class="met-input" />
@@ -460,7 +632,10 @@
                           </span>
                         </td>
                         <td>{{ r.usuario }}</td>
-                        <td class="met-muted">{{ r.ciudadOrigen || '—' }}</td>
+                        <td>
+                          <span v-if="r.ciudadOrigen">{{ r.ciudadOrigen }}</span>
+                          <span v-else class="met-sin-origen">Sin origen</span>
+                        </td>
                         <td>{{ r.ciudadDestino }}</td>
                       </tr>
                     </tbody>
@@ -509,7 +684,27 @@
               <button v-for="f in formatos" :key="f.key"
                 :class="['met-formato-btn', { 'met-formato-btn--active': expFormato === f.key }]"
                 @click="expFormato = f.key">
-                <span class="met-formato-icon">{{ f.icon }}</span>
+                <!-- Excel SVG -->
+                <svg v-if="f.key === 'excel'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M8 8l8 8M16 8l-8 8"/>
+                  <path d="M3 10h18M3 14h18"/>
+                </svg>
+                <!-- CSV SVG -->
+                <svg v-else-if="f.key === 'csv'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="8" y1="13" x2="16" y2="13"/>
+                  <line x1="8" y1="17" x2="16" y2="17"/>
+                  <line x1="8" y1="9" x2="10" y2="9"/>
+                </svg>
+                <!-- PDF SVG -->
+                <svg v-else-if="f.key === 'pdf'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M9 13h2a2 2 0 0 1 0 4H9v-4z"/>
+                  <path d="M15 13h1a2 2 0 0 1 0 4"/>
+                </svg>
                 {{ f.label }}
               </button>
             </div>
@@ -597,20 +792,21 @@ const exportando   = ref(false)
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 const periodos = [
+  { key: 'hoy',  label: 'Hoy',     dias: 0   },
   { key: '7d',   label: '7 días',  dias: 7   },
   { key: '30d',  label: '30 días', dias: 30  },
-  { key: '90d',  label: '3 meses', dias: 90  },
+  { key: '1m',   label: '1 mes',   dias: 31  },
   { key: 'yr',   label: '1 año',   dias: 365 },
   { key: 'todo', label: 'Todo',    dias: null },
 ]
 const formatos = [
-  { key: 'excel', label: 'Excel',  icon: '📊' },
-  { key: 'csv',   label: 'CSV',    icon: '📄' },
-  { key: 'pdf',   label: 'PDF',    icon: '📑' },
+  { key: 'excel', label: 'Excel' },
+  { key: 'csv',   label: 'CSV'   },
+  { key: 'pdf',   label: 'PDF'   },
 ]
 const donutColors = ['#D4AF37', '#3B82F6', '#7C3AED', '#10B981']
 const diasSemana  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
-const horas       = [0,2,4,6,8,10,12,14,16,18,20,22]
+const horas       = Array.from({ length: 24 }, (_, i) => i) // 0-23
 
 // ── Helpers de fecha ─────────────────────────────────────────────────────────
 function hoy() {
@@ -628,6 +824,29 @@ function formatFecha(f) {
 function fmt(v) {
   if (v === undefined || v === null) return '0.00'
   return Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+function fmtK(v) {
+  if (!v || v === 0) return '0'
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.0', '') + 'M'
+  if (v >= 1_000) return (v / 1_000).toFixed(0) + 'K'
+  return Math.round(v).toString()
+}
+// Formatea "2026-04-18" → "Lun 18"
+const DIAS_ABR = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
+const MESES_ABR = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+function formatDiaLabel(fecha) {
+  if (!fecha) return ''
+  // fecha puede venir como "2026-04-18" o con T00:00:00Z
+  const iso = fecha.slice(0, 10)
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(y, m - 1, d)
+  return `${DIAS_ABR[dt.getDay()]} ${d}`
+}
+function formatRangoMes(fecha) {
+  if (!fecha) return ''
+  const iso = fecha.slice(0, 10)
+  const [, m, d] = iso.split('-').map(Number)
+  return `${d} ${MESES_ABR[m - 1]}`
 }
 
 // ── Carga de datos ────────────────────────────────────────────────────────────
@@ -702,6 +921,9 @@ function setPeriodo(p) {
   if (p.key === 'todo') {
     fechaDesde.value = '2020-01-01'
     fechaHasta.value = hoy()
+  } else if (p.key === 'hoy') {
+    fechaDesde.value = hoy()
+    fechaHasta.value = hoy()
   } else {
     const d = new Date()
     fechaHasta.value = d.toISOString().slice(0, 10)
@@ -759,6 +981,76 @@ const maxBusTipo = computed(() => Math.max(...(resumen.value?.busquedasPorTipo ?
 const maxDestino = computed(() => Math.max(...(resumen.value?.destinosPopulares ?? []).map(d => d.total), 1))
 const maxCancelaciones = computed(() => Math.max(...(negocio.value?.cancelaciones ?? []).map(c => c.total), 1))
 
+// Total búsquedas para calcular % de destinos
+const totalBusquedasDestinos = computed(() =>
+  (resumen.value?.destinosPopulares ?? []).reduce((s, d) => s + d.total, 0)
+)
+
+// Total cancelaciones para % por tipo
+const totalCancelaciones = computed(() =>
+  (negocio.value?.cancelaciones ?? []).reduce((s, c) => s + c.total, 0)
+)
+
+// Pie/donut de búsquedas por tipo con porcentajes
+const busquedaTipoColors = ['#D4AF37', '#3B82F6', '#7C3AED']
+const busquedaTipoTotal = computed(() =>
+  (resumen.value?.busquedasPorTipo ?? []).reduce((s, b) => s + b.total, 0)
+)
+const busquedaTipoDonut = computed(() => {
+  const items = resumen.value?.busquedasPorTipo ?? []
+  const total = busquedaTipoTotal.value
+  const circ = 2 * Math.PI * 44
+  let acc = 0
+  return items.map((bt, i) => {
+    const pct = total > 0 ? bt.total / total : 0
+    const seg = {
+      color: busquedaTipoColors[i] ?? '#ccc',
+      dash: `${pct * circ} ${circ}`,
+      offset: -acc * circ,
+      pct: total > 0 ? (pct * 100).toFixed(1) : '0.0',
+    }
+    acc += pct
+    return seg
+  })
+})
+
+// Proveedores agrupados por tipo de reservación
+const provVuelo     = computed(() => (negocio.value?.proveedores ?? []).filter(p => p.tipoId === 1 && p.tipoReservaId === 1))
+const provHotel     = computed(() => (negocio.value?.proveedores ?? []).filter(p => p.tipoId === 2 && p.tipoReservaId === 2))
+const provPaqVuelo  = computed(() => (negocio.value?.proveedores ?? []).filter(p => p.tipoId === 1 && p.tipoReservaId === 3))
+const provPaqHotel  = computed(() => (negocio.value?.proveedores ?? []).filter(p => p.tipoId === 2 && p.tipoReservaId === 3))
+// Agrupados con tipoReservaId → activo después de reinicio del servidor
+const hayProveedoresAgrupados = computed(() =>
+  provVuelo.value.length + provHotel.value.length + provPaqVuelo.value.length + provPaqHotel.value.length > 0
+)
+// Fallback: servidor todavía corriendo la versión anterior (sin tipoReservaId)
+const hayProveedores = computed(() =>
+  hayProveedoresAgrupados.value || (negocio.value?.proveedores?.length ?? 0) > 0
+)
+
+// Totales de proveedores
+const todosProveedores = computed(() => [
+  ...provVuelo.value, ...provHotel.value, ...provPaqVuelo.value, ...provPaqHotel.value,
+])
+const provTotalIngresos  = computed(() => todosProveedores.value.reduce((s, p) => s + p.ingresos, 0))
+const provTotalGanancia  = computed(() => todosProveedores.value.reduce((s, p) => s + p.ganancia, 0))
+const provTotalReserv    = computed(() => todosProveedores.value.reduce((s, p) => s + p.reservaciones, 0))
+
+// Comparación mes actual vs mes anterior usando datos de tendencia
+const tendenciaComparacion = computed(() => {
+  const meses = [...new Set((negocio.value?.tendencia ?? []).map(t => t.mes))].sort()
+  if (meses.length < 2) return null
+  const actual   = meses[meses.length - 1]
+  const anterior = meses[meses.length - 2]
+  const data = negocio.value?.tendencia ?? []
+  const ingActual   = data.filter(t => t.mes === actual).reduce((s, t) => s + t.ingresos, 0)
+  const ingAnterior = data.filter(t => t.mes === anterior).reduce((s, t) => s + t.ingresos, 0)
+  if (ingAnterior === 0) return null
+  const pct = ((ingActual - ingAnterior) / ingAnterior) * 100
+  const diff = ingActual - ingAnterior
+  return { actual, anterior, ingActual, ingAnterior, pct, diff }
+})
+
 // Donut
 const totalReservaciones = computed(() =>
   (resumen.value?.reservacionesPorTipo ?? []).reduce((s, r) => s + r.total, 0)
@@ -777,19 +1069,25 @@ const donutSegments = computed(() => {
   })
 })
 
-// Embudo
+// Embudo — porcentaje relativo a la SUMA de todos los valores (suman 100%)
 const embudoEtapas = computed(() => {
   const e = negocio.value?.embudo
   if (!e) return []
   return [
-    { label: 'Búsquedas',       val: e.busquedas,     color: '#D4AF37' },
-    { label: 'Reservaciones',   val: e.reservaciones,  color: '#3B82F6' },
-    { label: 'Activas',         val: e.activas,        color: '#10B981' },
-    { label: 'Completadas',     val: e.completadas,    color: '#059669' },
-    { label: 'Canceladas',      val: e.canceladas,     color: '#DC2626' },
-    { label: 'Expiradas',       val: e.expiradas,      color: '#9CA3AF' },
-    { label: 'Pendientes',      val: e.pendientes,     color: '#F59E0B' },
+    { label: 'Búsquedas',     val: e.busquedas,    color: '#D4AF37' },
+    { label: 'Reservaciones', val: e.reservaciones, color: '#3B82F6' },
+    { label: 'Activas',       val: e.activas,       color: '#10B981' },
+    { label: 'Completadas',   val: e.completadas,   color: '#059669' },
+    { label: 'Canceladas',    val: e.canceladas,    color: '#DC2626' },
+    { label: 'Expiradas',     val: e.expiradas,     color: '#9CA3AF' },
+    { label: 'Pendientes',    val: e.pendientes,    color: '#F59E0B' },
   ]
+})
+// Suma total del embudo para calcular %
+const embudoSumaTotal = computed(() => {
+  const e = negocio.value?.embudo
+  if (!e) return 1
+  return Math.max(1, e.busquedas + e.reservaciones + e.activas + e.completadas + e.canceladas + e.expiradas + e.pendientes)
 })
 
 // Tendencia mensual
@@ -841,6 +1139,24 @@ const tendenciaLineVuelo  = computed(() => ptsToLine(tendenciaVueloPts.value))
 const tendenciaAreaVuelo  = computed(() => ptsToArea(tendenciaVueloPts.value))
 const tendenciaLineHotel  = computed(() => ptsToLine(tendenciaHotelPts.value))
 const tendenciaAreaHotel  = computed(() => ptsToArea(tendenciaHotelPts.value))
+
+// Total acumulado por tipo (para etiqueta al final de cada línea)
+const tendenciaTotales = computed(() => {
+  const data = negocio.value?.tendencia ?? []
+  const out = { Vuelo: 0, Hotel: 0, Paquete: 0 }
+  for (const t of data) { if (t.tipoNombre in out) out[t.tipoNombre] += t.ingresos }
+  return out
+})
+// Último punto de cada línea (para posición de etiqueta)
+const tendenciaLastVuelo  = computed(() => { const p = tendenciaVueloPts.value; return p.length ? p[p.length - 1] : null })
+const tendenciaLastHotel  = computed(() => { const p = tendenciaHotelPts.value; return p.length ? p[p.length - 1] : null })
+const tendenciaLastPaquete = computed(() => {
+  const data = negocio.value?.tendencia ?? []
+  const paqData = data.filter(t => t.tipoNombre === 'Paquete')
+  if (!paqData.length) return null
+  const pts = tendenciaPts('Paquete')
+  return pts.length ? pts[pts.length - 1] : null
+})
 
 // Heatmap
 function heatmapVal(dia, hora) {
@@ -941,9 +1257,12 @@ async function handleExportar() {
 .met-card { background: #fff; border: 1px solid #ddd6cc; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 .met-card--wide  { width: 100%; }
 .met-card--center { display: flex; flex-direction: column; align-items: center; }
-.met-card__titulo { font-size: 13px; font-weight: 700; color: #1C1A18; margin: 0 0 14px; letter-spacing: 0.3px; }
+.met-card__titulo { font-size: 13px; font-weight: 700; color: #1C1A18; margin: 0 0 4px; letter-spacing: 0.3px; }
 .met-card__titulo--inline { margin: 0; }
-.met-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.met-card__desc { font-size: 11px; color: #9a9089; margin: 0 0 12px; line-height: 1.5; }
+.met-card__desc--inline { margin: 2px 0 0; }
+.met-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
+.met-grid-embudo-cancel { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start; }
 .met-vacio { color: #9a9089; font-size: 12px; text-align: center; padding: 20px 0; }
 
 /* ── SVG gráficas ───────────────────────────────────────────────────────────── */
@@ -992,13 +1311,13 @@ async function handleExportar() {
 .met-badge--hotel  { background: #DBEAFE; color: #1E40AF; }
 
 /* ── Heatmap ─────────────────────────────────────────────────────────────────── */
-.met-heatmap-scroll { overflow-x: auto; }
-.met-heatmap { display: flex; gap: 2px; }
-.met-heatmap-col { display: flex; flex-direction: column; gap: 2px; }
-.met-heatmap-col--lbl { }
-.met-heatmap-lbl-top { height: 18px; font-size: 9px; color: #9a9089; display: flex; align-items: center; justify-content: center; padding: 0 2px; }
-.met-heatmap-cell { width: 26px; height: 22px; background: #D4AF37; border-radius: 3px; }
-.met-heatmap-cell--lbl { background: transparent; font-size: 9px; color: #9a9089; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; }
+.met-heatmap-scroll { width: 100%; }
+.met-heatmap { display: flex; gap: 2px; width: 100%; }
+.met-heatmap-col { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.met-heatmap-col--lbl { flex: 0 0 26px; }
+.met-heatmap-lbl-top { height: 14px; font-size: 7px; color: #9a9089; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.met-heatmap-cell { width: 100%; height: 20px; background: #D4AF37; border-radius: 3px; }
+.met-heatmap-cell--lbl { background: transparent; font-size: 8px; color: #9a9089; display: flex; align-items: center; justify-content: flex-end; white-space: nowrap; overflow: hidden; padding-right: 2px; }
 
 /* ── Listado ─────────────────────────────────────────────────────────────────── */
 .met-listado-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
@@ -1061,8 +1380,222 @@ async function handleExportar() {
 .adm-spinner--sm  { width: 24px; height: 24px; border-width: 3px; }
 .adm-spinner--xs  { width: 14px; height: 14px; border-width: 2px; display: inline-block; }
 
+/* ── Donut extra ─────────────────────────────────────────────────────────────── */
+.met-donut-svg--sm { width: 112px; height: 112px; }
+.met-donut-pct { font-size: 10px; color: #9a9089; margin-left: 4px; }
+
+/* ── Barras extra ────────────────────────────────────────────────────────────── */
+.met-barra-h-pct { font-size: 10px; color: #9a9089; width: 42px; text-align: right; flex-shrink: 0; }
+
+/* ── Secciones de tabla proveedores ──────────────────────────────────────────── */
+.met-tabla-section td { background: #1C1A18; padding: 5px 10px; }
+.met-tabla-section-lbl { font-size: 10px; font-weight: 800; color: #FFCC00; letter-spacing: 0.8px; text-transform: uppercase; }
+.met-tabla-subsection td { background: #F5F2EC; }
+.met-tabla-subsection-lbl { font-size: 10px; color: #9a9089; padding-left: 18px !important; font-style: italic; }
+
+/* ── Rango de fechas bajo gráfica ────────────────────────────────────────────── */
+.met-rango-fechas { font-size: 10px; color: #9a9089; text-align: center; margin-top: 4px; }
+
+/* ── Origen vacío en registro ────────────────────────────────────────────────── */
+.met-sin-origen { font-size: 10px; color: #bbb6af; font-style: italic; }
+
+/* ── Fila total en barras horizontales y embudo ──────────────────────────────── */
+.met-barra-h-row--total .met-barra-h-lbl,
+.met-barra-h-row--total .met-barra-h-val,
+.met-barra-h-row--total .met-barra-h-pct,
+.met-barra-h-row--total .met-embudo-lbl,
+.met-barra-h-row--total .met-embudo-val,
+.met-barra-h-row--total .met-embudo-pct {
+  font-weight: 800;
+  color: #1C1A18;
+}
+.met-barra-h-row--total {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #ddd6cc;
+}
+
+/* ── Número dentro de celda del heatmap ──────────────────────────────────────── */
+.met-heatmap-cell { position: relative; display: flex; align-items: center; justify-content: center; }
+.met-heatmap-num {
+  font-size: 7px;
+  font-weight: 700;
+  color: #1C1A18;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Leyenda del heatmap (3 cuadros centrados) ───────────────────────────────── */
+.met-heatmap-legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 0 4px;
+}
+.met-heatmap-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #5a5047;
+}
+.met-heatmap-legend-sq {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: #D4AF37;
+  flex-shrink: 0;
+}
+
+/* ── Totales tendencia (pills debajo del chart) ───────────────────────────────── */
+.met-tend-totales {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+}
+.met-tend-total {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.met-tend-total--vuelo  { background: #FFF8DC; color: #7A5C00; border: 1px solid #D4AF37; }
+.met-tend-total--hotel  { background: #EFF6FF; color: #1E40AF; border: 1px solid #93C5FD; }
+.met-tend-total--paquete { background: #F5F3FF; color: #5B21B6; border: 1px solid #C4B5FD; }
+.met-tend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.met-tend-dot--vuelo   { background: #D4AF37; }
+.met-tend-dot--hotel   { background: #3B82F6; }
+.met-tend-dot--paquete { background: #7C3AED; }
+.met-tend-tipo { font-weight: 500; opacity: 0.8; }
+.met-tend-monto { font-weight: 800; }
+
+/* ── Proveedores rediseño ─────────────────────────────────────────────────────── */
+.met-prov-lista { display: flex; flex-direction: column; gap: 2px; }
+.met-prov-grupo-lbl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 6px 8px 3px;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+.met-prov-grupo-lbl:first-child { margin-top: 0; }
+.met-prov-grupo-lbl--vuelo  { color: #92701F; background: #FFFBEA; }
+.met-prov-grupo-lbl--hotel  { color: #1E40AF; background: #EFF6FF; }
+.met-prov-grupo-lbl--paq    { color: #5B21B6; background: #F5F3FF; }
+.met-prov-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #FAFAF8;
+  border: 1px solid #f0ebe3;
+  font-size: 11px;
+}
+.met-prov-fila:hover { background: #F5F2EC; }
+.met-prov-nombre { flex: 1; font-weight: 600; color: #1C1A18; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.met-prov-chip { font-size: 10px; color: #9a9089; white-space: nowrap; }
+.met-prov-ing  { font-size: 11px; color: #1C1A18; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.met-prov-gan  { font-size: 11px; color: #059669; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.met-prov-fila--total {
+  margin-top: 6px;
+  border-top: 2px solid #ddd6cc;
+  background: #F5F2EC !important;
+  border-color: #ddd6cc;
+}
+.met-prov-fila--total .met-prov-nombre { font-weight: 800; color: #1C1A18; }
+.met-prov-fila--total .met-prov-ing    { font-weight: 800; color: #1C1A18; }
+.met-prov-fila--total .met-prov-gan    { font-weight: 800; }
+
+/* Layout proveedores: lista + panel comparación */
+.met-prov-layout {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+.met-prov-layout .met-prov-lista { flex: 1; min-width: 0; }
+
+/* Panel de comparación mensual (columna derecha, grande) */
+.met-prov-comp-panel {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: #FAFAF8;
+  border: 1px solid #e8e2d8;
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+}
+.met-prov-comp-panel-titulo {
+  font-size: 9px;
+  font-weight: 700;
+  color: #9a9089;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin: 0;
+}
+.met-prov-comp-panel-badge {
+  font-size: 22px;
+  font-weight: 900;
+  padding: 6px 16px;
+  border-radius: 16px;
+  line-height: 1.2;
+}
+.met-prov-comp-panel-badge--up   { background: #DCFCE7; color: #166534; }
+.met-prov-comp-panel-badge--down { background: #FEE2E2; color: #991B1B; }
+.met-prov-comp-panel-meses {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+.met-prov-comp-panel-mes {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+.met-prov-comp-panel-mes-lbl { font-size: 9px; color: #9a9089; }
+.met-prov-comp-panel-mes-val { font-size: 13px; font-weight: 800; color: #1C1A18; font-variant-numeric: tabular-nums; }
+.met-prov-comp-panel-mes--act .met-prov-comp-panel-mes-val { color: #059669; }
+.met-prov-comp-panel-flecha { color: #9a9089; font-size: 16px; }
+.met-prov-comp-panel-diff {
+  font-size: 16px;
+  font-weight: 900;
+  padding: 6px 14px;
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.met-prov-comp-panel-diff--pos { background: #DCFCE7; color: #166534; }
+.met-prov-comp-panel-diff--neg { background: #FEE2E2; color: #991B1B; }
+.met-prov-comp-panel-hint {
+  font-size: 9px;
+  color: #bbb6af;
+  margin: 0;
+  line-height: 1.4;
+}
+
 @media (max-width: 900px) {
   .met-grid-2 { grid-template-columns: 1fr; }
+  .met-grid-embudo-cancel { grid-template-columns: 1fr; }
   .met-topbar-actions { flex-direction: column; align-items: flex-start; }
 }
 </style>

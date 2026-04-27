@@ -36,7 +36,18 @@ public class BusquedaService {
      * @return lista de hoteles con toda la informacion necesaria para mostrar resultados.
      * @throws IllegalArgumentException si la ciudad no existe en la base de datos.
      */
+    /** Sobrecarga que siempre registra la busqueda (comportamiento original). */
     public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, Integer usuarioId) {
+        return buscar(request, usuarioId, true);
+    }
+
+    /**
+     * Busca hoteles disponibles segun los criterios del request.
+     * @param registrar si es false, no guarda la busqueda en la tabla Busqueda
+     *                  (util para checks de disponibilidad internos sin contaminar las metricas).
+     */
+    public List<HotelResultadoDTO> buscar(BusquedaRequestDTO request, Integer usuarioId,
+                                          boolean registrar) {
 
         Integer ciudadId = busquedaRepository.buscarCiudadId(request.getCiudad(), request.getPais());
         if (ciudadId == null) {
@@ -49,10 +60,12 @@ public class BusquedaService {
         Date fechaCheckIn  = Date.valueOf(LocalDate.parse(request.getFechaCheckIn()));
         Date fechaCheckOut = Date.valueOf(LocalDate.parse(request.getFechaCheckOut()));
 
-        busquedaRepository.guardarBusqueda(
-                ciudadId, fechaCheckIn, fechaCheckOut,
-                request.getCantidadPersonas(), usuarioId
-        );
+        if (registrar) {
+            busquedaRepository.guardarBusqueda(
+                    ciudadId, fechaCheckIn, fechaCheckOut,
+                    request.getCantidadPersonas(), usuarioId
+            );
+        }
 
         List<HotelResultadoDTO> hoteles = busquedaRepository.buscarHotelesPorCiudad(ciudadId);
 

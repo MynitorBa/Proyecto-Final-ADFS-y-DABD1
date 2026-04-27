@@ -2,6 +2,7 @@ package org.example.controllers;
 
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import org.example.helpers.MetricasPdfHelper;
 import org.example.services.MetricasHotelService;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class MetricasHotelController {
         app.post("/admin/metricas/listado",          this::handleListado);
         app.post("/admin/metricas/exportar-archivo", this::handleExportarArchivo);
         app.post("/admin/metricas/exportar-correo",  this::handleExportarCorreo);
+        app.post("/admin/metricas/exportar-pdf",     this::handleExportarPdf);
     }
 
     // GET /admin/metricas/resumen?fechaDesde=YYYY-MM-DD&fechaHasta=YYYY-MM-DD
@@ -144,6 +146,34 @@ public class MetricasHotelController {
                     + " destinatario" + (validos.size() > 1 ? "s" : "")));
         } catch (Exception e) {
             ctx.status(500).json(Map.of("mensaje", "Error enviando correo: " + e.getMessage()));
+        }
+    }
+
+    // POST /admin/metricas/exportar-pdf
+    // Body: { fechaDesde, fechaHasta, tipo, usuario, secciones }
+    void handleExportarPdf(Context ctx) {
+        if (!esAdmin(ctx)) return;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = ctx.bodyAsClass(Map.class);
+
+        String desde   = str(body.get("fechaDesde"));
+        String hasta   = str(body.get("fechaHasta"));
+        String tipo    = str(body.get("tipo"));
+        String usuario = str(body.get("usuario"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Boolean> secciones = body.get("secciones") instanceof Map
+                ? (Map<String, Boolean>) body.get("secciones")
+                : Map.of();
+
+        try {
+            byte[] pdf = service.exportarPdf(desde, hasta, tipo, usuario, secciones);
+            ctx.contentType("application/pdf");
+            ctx.header("Content-Disposition",
+                    "attachment; filename=\"metricas_miku_" + desde + "_" + hasta + ".pdf\"");
+            ctx.result(pdf);
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of("mensaje", "Error generando PDF: " + e.getMessage()));
         }
     }
 

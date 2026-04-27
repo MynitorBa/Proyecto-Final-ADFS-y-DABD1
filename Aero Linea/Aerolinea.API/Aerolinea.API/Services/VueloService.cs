@@ -29,6 +29,14 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
+        /// Registra en metricas una busqueda general realizada desde el encabezado.
+        /// </summary>
+        public async Task RegistrarBusquedaGeneral(string query, int? usuarioId)
+        {
+            await _repository.GuardarBusquedaGeneral(query, usuarioId);
+        }
+
+        /// <summary>
         /// Busca vuelos disponibles entre dos aeropuertos en una fecha y con los filtros indicados.
         /// Registra la busqueda en la base de datos para metricas. Retorna vuelos directos
         /// y con escala, ambos filtrados por rango de precio si se especifica.

@@ -458,6 +458,31 @@ namespace Aerolinea.API.Repositories
         /// Registra una busqueda de vuelos en la tabla Busqueda para uso en metricas.
         /// Solo inserta el registro si existe una ruta directa entre los aeropuertos indicados.
         /// </summary>
+        /// <summary>
+        /// Registra una busqueda de texto libre del encabezado para metricas.
+        /// Requiere que la migracion 07_busqueda_general_migration.sql haya sido ejecutada
+        /// (RutaID nullable + TipoBusqueda ID=4 'General'). Si no, falla silenciosamente.
+        /// </summary>
+        public async Task GuardarBusquedaGeneral(string query, int? usuarioId)
+        {
+            try
+            {
+                using var connection = _connectionFactory.CreateConnection();
+                await connection.OpenAsync();
+
+                using var cmd = new SqlCommand(@"
+                    INSERT INTO Busqueda (RutaID, FechaSalida, CantidadPersonas, UsuarioID, TipoBusquedaID, Fecha)
+                    VALUES (NULL, CAST(GETDATE() AS DATE), 1, @UsuarioId, 4, GETDATE())", connection);
+                cmd.Parameters.AddWithValue("@UsuarioId",
+                    usuarioId.HasValue ? (object)usuarioId.Value : DBNull.Value);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch
+            {
+                // Best-effort: no interrumpir la búsqueda si el registro falla
+            }
+        }
+
         public async Task GuardarBusqueda(
             int origenId, int destinoId, DateTime fechaSalida,
             int cantidadPersonas, int? usuarioId, int tipoBusquedaId = 1)

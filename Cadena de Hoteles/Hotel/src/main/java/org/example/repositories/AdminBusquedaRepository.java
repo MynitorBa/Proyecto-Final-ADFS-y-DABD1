@@ -282,6 +282,9 @@ public class AdminBusquedaRepository {
             boolean esRest = tipoBusqueda != null && tipoBusqueda.equalsIgnoreCase("Agencia");
             row.put("tipo",     esRest ? "REST" : "Web");
             row.put("usuario",  rs.getString("Usuario") != null ? rs.getString("Usuario") : rs.getString("Agencia"));
+            // Fecha real de la búsqueda (timestamp completo)
+            java.sql.Timestamp ts = rs.getTimestamp("FechaHora");
+            row.put("fechaHora", ts != null ? ts.toString().substring(0, 16).replace(' ', 'T') : null);
             return row;
         }, params.toArray());
     }

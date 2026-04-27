@@ -95,6 +95,38 @@ public class MetricasHotelRepository {
         }, fechaDesde, fechaHasta);
     }
 
+    /**
+     * Division de BUSQUEDAS por canal: Registrado, Agencia, No registrado.
+     * Usa la tabla Busqueda (TipoBusquedaID: 1=usuario web, 2=agencia/REST, NULL=anonimo).
+     * Retorna [{canal: "Registrado"|"Agencia"|"No registrado", total: N}].
+     */
+    public List<Map<String, Object>> busquedasPorCanal(String fechaDesde, String fechaHasta) {
+        String sql =
+            "SELECT " +
+            "  CASE " +
+            "    WHEN b.TipoBusquedaID = 2 THEN 'Agencia' " +
+            "    WHEN b.UsuarioID IS NOT NULL THEN 'Registrado' " +
+            "    ELSE 'No registrado' " +
+            "  END AS Canal, " +
+            "  COUNT(*) AS Total " +
+            "FROM Busqueda b " +
+            "WHERE TRUNC(b.Fecha) >= TO_DATE(?, 'YYYY-MM-DD') " +
+            "  AND TRUNC(b.Fecha) <= TO_DATE(?, 'YYYY-MM-DD') " +
+            "GROUP BY CASE " +
+            "    WHEN b.TipoBusquedaID = 2 THEN 'Agencia' " +
+            "    WHEN b.UsuarioID IS NOT NULL THEN 'Registrado' " +
+            "    ELSE 'No registrado' " +
+            "  END " +
+            "ORDER BY Total DESC";
+
+        return DatabaseManager.executeQuery(sql, rs -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("canal", rs.getString("Canal"));
+            row.put("total", rs.getInt("Total"));
+            return row;
+        }, fechaDesde, fechaHasta);
+    }
+
     // ───────────────────────── PANEL 2: NEGOCIO ─────────────────────────────
 
     /**

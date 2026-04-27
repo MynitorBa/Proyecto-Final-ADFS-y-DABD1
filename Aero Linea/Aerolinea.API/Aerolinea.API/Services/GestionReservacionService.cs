@@ -179,5 +179,63 @@ namespace Aerolinea.API.Services
         {
             return await _repository.PuedeCancelar(reservacionId, usuarioId);
         }
+
+        /// <summary>
+        /// Edita los datos del pasajero de un boleto propio. Solo permitido si el vuelo
+        /// sale en mas de 24 horas y la reservacion esta en estado Pendiente o Confirmada.
+        /// </summary>
+        public async Task EditarDatosPasajero(int boletoId, int usuarioId, EditarDatosPasajeroDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+                throw new ArgumentException("El nombre es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Apellido))
+                throw new ArgumentException("El apellido es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Pasaporte))
+                throw new ArgumentException("El pasaporte es obligatorio.");
+            if (string.IsNullOrWhiteSpace(dto.Telefono))
+                throw new ArgumentException("El teléfono es obligatorio.");
+
+            await _repository.EditarDatosPasajero(boletoId, usuarioId, dto);
+        }
+
+        /// <summary>
+        /// Retorna la lista de vuelos elegibles para cambiar la reservacion del usuario.
+        /// </summary>
+        public async Task<List<VueloElegibleDTO>> ObtenerVuelosElegibles(int reservacionId, int usuarioId)
+            => await _repository.ObtenerVuelosElegibles(reservacionId, usuarioId);
+
+        /// <summary>
+        /// Ejecuta el cambio de vuelo y envia correo de confirmacion al usuario.
+        /// </summary>
+        public async Task CambiarVuelo(int reservacionId, int nuevoVueloId, int usuarioId)
+        {
+            var (noRes, noVuelo, fecha, hora, nombre, email, total) =
+                await _repository.EjecutarCambioVuelo(reservacionId, nuevoVueloId, usuarioId);
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                try
+                {
+                    // Obtener detalle del vuelo para la ruta del correo
+                    var detalle = await _repository.ObtenerReservacionPorId(reservacionId, usuarioId);
+                    string origenCod = detalle?.Boletos?.FirstOrDefault()?.OrigenCodigo ?? "";
+                    string origenCiu = detalle?.Boletos?.FirstOrDefault()?.OrigenCiudad ?? "";
+                    string destCod   = detalle?.Boletos?.FirstOrDefault()?.DestinoCodigo ?? "";
+                    string destCiu   = detalle?.Boletos?.FirstOrDefault()?.DestinoCiudad ?? "";
+
+                    string html = EmailTemplates.CorreoCambioVuelo(
+                        nombre, noRes, origenCod, origenCiu, destCod, destCiu,
+                        noVuelo, fecha, hora, total);
+
+                    await _emailHelper.Enviar(email,
+                        $"Broom AirLine — Tu reservación {noRes} fue reprogramada",
+                        html);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al enviar correo de cambio de vuelo para reservacion {Id}", reservacionId);
+                }
+            }
+        }
     }
 }

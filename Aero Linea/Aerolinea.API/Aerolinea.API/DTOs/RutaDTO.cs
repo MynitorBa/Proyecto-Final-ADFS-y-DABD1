@@ -27,6 +27,9 @@ namespace Aerolinea.API.Models.DTOs
 
         /// <summary>Cantidad de vuelos creados bajo esta ruta.</summary>
         public int TotalVuelos { get; set; }
+
+        /// <summary>Indica si la ruta esta activa. Una ruta inactiva no acepta nuevos vuelos.</summary>
+        public bool Activo { get; set; } = true;
     }
 
     /// <summary>

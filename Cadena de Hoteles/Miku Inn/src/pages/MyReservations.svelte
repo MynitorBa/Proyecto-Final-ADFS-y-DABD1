@@ -40,6 +40,19 @@
    */
   let pendingChanges    = new Map();
 
+  /**
+   * Fecha de check-in global que se aplica a TODAS las habitaciones.
+   * El usuario ingresa una sola fecha y se replica en todos los detalles.
+   * @type {string}
+   */
+  let globalCheckIn  = '';
+
+  /**
+   * Fecha de check-out global que se aplica a TODAS las habitaciones.
+   * @type {string}
+   */
+  let globalCheckOut = '';
+
   /** Indica si la peticion atomica esta en vuelo. @type {boolean} */
   let atomicSaving      = false;
 
@@ -51,10 +64,12 @@
 
   /**
    * Abre el panel de edicion atomica para la reservacion seleccionada.
-   * Pre-carga todas las habitaciones con sus fechas actuales.
+   * Inicializa una sola fecha global tomada de la primera habitacion.
    */
   function openAtomicEdit() {
     if (!selectedReservation) return;
+    const primera = selectedReservation.habitaciones[0];
+    // Un solo par de fechas global que aplica a todas las habitaciones
     pendingChanges = new Map(
       selectedReservation.habitaciones.map(h => [
         h.detalleId,
@@ -68,6 +83,9 @@
         }
       ])
     );
+    // Fecha global = fechas de la primera habitación
+    globalCheckIn  = primera?.fechaCheckIn  ? primera.fechaCheckIn.toString().split(' ')[0]  : '';
+    globalCheckOut = primera?.fechaCheckOut ? primera.fechaCheckOut.toString().split(' ')[0] : '';
     atomicEditOpen = true;
     atomicError    = '';
     atomicOk       = false;
@@ -78,95 +96,67 @@
   function closeAtomicEdit() {
     atomicEditOpen = false;
     pendingChanges = new Map();
+    globalCheckIn  = '';
+    globalCheckOut = '';
     atomicError    = '';
     atomicOk       = false;
   }
 
   /**
-   * Actualiza el campo newCheckIn o newCheckOut de un detalle en pendingChanges.
-   * @param {number} detalleId
-   * @param {'newCheckIn'|'newCheckOut'} field
-   * @param {string} value
-   */
-  function updatePending(detalleId, field, value) {
-  const entry = pendingChanges.get(detalleId);
-  if (!entry) return;
-
-  let updated = { ...entry, [field]: value };
-
-  // Si cambia el check-in, desplazar el check-out automáticamente
-  // para mantener la misma cantidad de noches
-  if (field === 'newCheckIn' && value) {
-    const diasOriginales = Math.round(
-      (new Date(entry.original.checkOut) - new Date(entry.original.checkIn)) / 86400000
-    );
-    const nuevoCheckIn  = new Date(value);
-    const nuevoCheckOut = new Date(nuevoCheckIn);
-    nuevoCheckOut.setDate(nuevoCheckOut.getDate() + diasOriginales);
-    updated.newCheckOut = nuevoCheckOut.toISOString().split('T')[0];
-  }
-
-  pendingChanges.set(detalleId, updated);
-  pendingChanges = new Map(pendingChanges);
-}
-
-  /**
-   * Devuelve true si al menos un detalle tiene fechas distintas a las originales.
-   * @returns {boolean}
-   */
-  function hasChanges() {
-    for (const [, v] of pendingChanges) {
-      if (v.newCheckIn !== v.original.checkIn || v.newCheckOut !== v.original.checkOut) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Validacion frontend antes de enviar.
+   * Validacion frontend antes de enviar la fecha global.
    * Retorna un mensaje de error o cadena vacia si todo esta bien.
    * @returns {string}
    */
- function validateChanges() {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-
-  for (const [detalleId, v] of pendingChanges) {
-    if (!v.newCheckIn || !v.newCheckOut) {
-      return `Detalle #${detalleId}: ambas fechas son requeridas.`;
+  function validateChanges() {
+    if (!globalCheckIn || !globalCheckOut) {
+      return 'Debes ingresar el check-in y el check-out.';
     }
 
-    const ci  = new Date(v.newCheckIn);
-    const co  = new Date(v.newCheckOut);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const ci = new Date(globalCheckIn);
+    const co = new Date(globalCheckOut);
 
-    if (ci < hoy) {
-      return `Una habitación tiene check-in anterior a hoy.`;
+    if (ci < hoy) return 'El check-in no puede ser anterior a hoy.';
+    if (co <= ci)  return 'El check-out debe ser posterior al check-in.';
+
+    // Validar que la duración coincide con la original (todas las habitaciones
+    // tienen la misma duración, así que basta con la primera)
+    const primera = pendingChanges.values().next().value;
+    if (primera) {
+      const diasOriginales = Math.round(
+        (new Date(primera.original.checkOut) - new Date(primera.original.checkIn)) / 86400000
+      );
+      const diasNuevos = Math.round((co - ci) / 86400000);
+      if (diasNuevos !== diasOriginales) {
+        return `La reservación es por ${diasOriginales} noche(s). ` +
+               `Solo puedes mover las fechas, no cambiar la duración.`;
+      }
+
+      // Validar 48 horas de anticipación sobre el check-in ACTUAL
+      const checkInActual  = new Date(primera.original.checkIn);
+      const horasRestantes = (checkInActual - new Date()) / 36e5;
+      if (horasRestantes <= 48) {
+        return 'El check-in actual está a menos de 48 horas y no puede modificarse.';
+      }
     }
 
-    // *** REGLA PRINCIPAL: misma duracion ***
-    const diasOriginales = Math.round(
-      (new Date(v.original.checkOut) - new Date(v.original.checkIn)) / 86400000
-    );
-    const diasNuevos = Math.round((co - ci) / 86400000);
-
-    if (diasNuevos !== diasOriginales) {
-      return `Una habitación está reservada por ${diasOriginales} noche(s). ` +
-             `Solo puedes mover las fechas, no cambiar la duración.`;
-    }
-
-    // Validar 48 horas sobre el check-in ACTUAL
-    const checkInActual  = new Date(v.original.checkIn);
-    const horasRestantes = (checkInActual - new Date()) / 36e5;
-    if (horasRestantes <= 48) {
-      return `Una habitación tiene check-in en menos de 48 horas y no puede modificarse.`;
-    }
+    return '';
   }
-  return '';
-}
 
   /**
-   * Envia todos los cambios pendientes en una sola peticion PATCH atomica.
+   * Devuelve true si las fechas globales difieren de las originales.
+   * @returns {boolean}
+   */
+  function hasChanges() {
+    const primera = pendingChanges.values().next().value;
+    if (!primera) return false;
+    return globalCheckIn  !== primera.original.checkIn ||
+           globalCheckOut !== primera.original.checkOut;
+  }
+
+  /**
+   * Envia la fecha global a todas las habitaciones en una sola peticion PATCH atomica.
    * El backend valida y persiste todos o ninguno.
    * @async
    */
@@ -178,13 +168,13 @@
 
     if (!hasChanges()) { atomicError = 'No has modificado ninguna fecha.'; return; }
 
-    // Construir payload: solo incluir detalles cuyas fechas cambiaron
+    // Aplicar la misma fecha global a TODAS las habitaciones
     const cambios = [];
-    for (const [detalleId, v] of pendingChanges) {
+    for (const [detalleId] of pendingChanges) {
       cambios.push({
         detalleId,
-        fechaCheckIn:  v.newCheckIn,
-        fechaCheckOut: v.newCheckOut,
+        fechaCheckIn:  globalCheckIn,
+        fechaCheckOut: globalCheckOut,
       });
     }
 
@@ -806,42 +796,42 @@
                     Todas las fechas fueron actualizadas correctamente
                   </div>
                 {:else}
-                  <!-- Filas de edicion por habitacion -->
+                  <!-- Habitaciones afectadas (solo lectura) -->
                   {#each sr.habitaciones as h}
-                    {@const pc = pendingChanges.get(h.detalleId)}
-                    {#if pc}
-                      <div class="atomic-room-row">
-                        <div class="atomic-room-label">
-                          <strong>{h.tipoHabitacion}</strong>
-                          {#if h.numeroHabitacion}
-                            <span class="atomic-room-num">#{h.numeroHabitacion}</span>
-                          {/if}
-                        </div>
-                        <div class="atomic-dates-fields">
-                          <div class="atomic-date-field">
-                            <label class="panel-lbl">Check-in</label>
-                            <input
-                              type="date"
-                              class="change-dates-input"
-                              value={pc.newCheckIn}
-                              min={new Date().toISOString().split('T')[0]}
-                              on:change={(e) => updatePending(h.detalleId, 'newCheckIn', e.target.value)}
-                            />
-                          </div>
-                          <div class="atomic-date-field">
-                            <label class="panel-lbl">Check-out</label>
-                            <input
-                              type="date"
-                              class="change-dates-input"
-                              value={pc.newCheckOut}
-                              min={pc.newCheckIn || new Date().toISOString().split('T')[0]}
-                              on:change={(e) => updatePending(h.detalleId, 'newCheckOut', e.target.value)}
-                            />
-                          </div>
-                        </div>
+                    <div class="atomic-room-row" style="justify-content:space-between; align-items:center">
+                      <div class="atomic-room-label">
+                        <strong>{h.tipoHabitacion}</strong>
+                        {#if h.numeroHabitacion}
+                          <span class="atomic-room-num">#{h.numeroHabitacion}</span>
+                        {/if}
                       </div>
-                    {/if}
+                      <span style="font-size:.75rem; color:var(--mr-text-muted, #9ca3af)">
+                        {h.fechaCheckIn?.toString().split(' ')[0] ?? '—'} → {h.fechaCheckOut?.toString().split(' ')[0] ?? '—'}
+                      </span>
+                    </div>
                   {/each}
+
+                  <!-- Un solo par de fechas que aplica a TODAS las habitaciones -->
+                  <div class="atomic-dates-fields" style="margin-top:.75rem; padding-top:.75rem; border-top:1px solid rgba(255,255,255,.07)">
+                    <div class="atomic-date-field">
+                      <label class="panel-lbl">Check-in</label>
+                      <input
+                        type="date"
+                        class="change-dates-input"
+                        bind:value={globalCheckIn}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div class="atomic-date-field">
+                      <label class="panel-lbl">Check-out</label>
+                      <input
+                        type="date"
+                        class="change-dates-input"
+                        bind:value={globalCheckOut}
+                        min={globalCheckIn || new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                  </div>
 
                   {#if atomicError}
                     <div class="change-dates-error">

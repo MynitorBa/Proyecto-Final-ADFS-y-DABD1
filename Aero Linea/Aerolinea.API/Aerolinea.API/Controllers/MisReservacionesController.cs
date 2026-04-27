@@ -153,6 +153,75 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        // PATCH api/mis-reservaciones/boleto/{boletoId}/pasajero
+        /// <summary>
+        /// Edita los datos del pasajero (Nombre, Apellido, Pasaporte, Telefono) de un boleto
+        /// propio. Solo permitido si la reservacion esta Pendiente o Confirmada y el vuelo
+        /// sale en mas de 24 horas.
+        /// </summary>
+        [HttpPatch("boleto/{boletoId}/pasajero")]
+        public async Task<IActionResult> EditarDatosPasajero(int boletoId, [FromBody] EditarDatosPasajeroDTO dto)
+        {
+            try
+            {
+                int usuarioId = ObtenerUsuarioId();
+                await _service.EditarDatosPasajero(boletoId, usuarioId, dto);
+                return Ok(new { message = "Datos del pasajero actualizados correctamente." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // GET api/mis-reservaciones/{reservacionId}/vuelos-elegibles
+        /// <summary>
+        /// Retorna la lista de vuelos elegibles para cambiar el vuelo de una reservacion.
+        /// Filtra por mismo pais de origen, mismo destino, mismo precio y disponibilidad.
+        /// </summary>
+        [HttpGet("{reservacionId}/vuelos-elegibles")]
+        public async Task<IActionResult> ObtenerVuelosElegibles(int reservacionId)
+        {
+            try
+            {
+                int usuarioId = ObtenerUsuarioId();
+                var vuelos = await _service.ObtenerVuelosElegibles(reservacionId, usuarioId);
+                return Ok(vuelos);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // POST api/mis-reservaciones/{reservacionId}/cambiar-vuelo
+        /// <summary>
+        /// Cambia el vuelo de una reservacion activa del usuario a un vuelo elegible diferente.
+        /// Reasigna los boletos y envia correo de confirmacion.
+        /// </summary>
+        [HttpPost("{reservacionId}/cambiar-vuelo")]
+        public async Task<IActionResult> CambiarVuelo(int reservacionId, [FromBody] CambiarVueloRequestDTO dto)
+        {
+            try
+            {
+                int usuarioId = ObtenerUsuarioId();
+                await _service.CambiarVuelo(reservacionId, dto.NuevoVueloId, usuarioId);
+                return Ok(new { message = "Vuelo cambiado exitosamente. Recibirás un correo de confirmación." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         private int ObtenerUsuarioId()
         {
             int? id = SessionHelper.GetUsuarioId(HttpContext);

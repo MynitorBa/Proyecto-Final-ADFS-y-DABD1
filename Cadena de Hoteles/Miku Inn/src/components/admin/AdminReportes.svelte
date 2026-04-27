@@ -468,6 +468,33 @@
     } catch (_) {}
     finally { enviandoExportar = false; }
   }
+
+  async function exportarPdf() {
+    try {
+      const params = {
+        fechaDesde: metFechaDesde,
+        fechaHasta: metFechaHasta,
+        tipo:       metTipo    || null,
+        usuario:    metUsuario || null,
+        secciones:  expSec
+      };
+      const r = await fetch(`${API_BASE}/admin/metricas/exportar-pdf`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      if (r.ok) {
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `metricas_miku_${metFechaDesde}_${metFechaHasta}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (_) {}
+  }
 </script>
 
 <!-- Seccion de metricas con KPIs, graficas SVG, listado y exportacion -->
@@ -668,27 +695,70 @@
       {/if}
     </div>
 
-    <!-- Canal split -->
+    <!-- Canal split — RESERVACIONES (solo usuarios con cuenta y agencias) -->
     {#if metricasResumen.canalSplit && metricasResumen.canalSplit.length > 0}
       {@const totalCanal = metricasResumen.canalSplit.reduce((s,c) => s + c.total, 0) || 1}
-      {@const canalColores = {'Directo':'#D4AF37','Agencia':'#1C1A18'}}
+      {@const canalColores = { 'Directo':'#D4AF37', 'Agencia':'#667eea' }}
+      {@const canalDesc    = { 'Directo':'Usuario con cuenta registrada', 'Agencia':'Agencia de viaje externa integrada' }}
       <div class="met-canal-wrap">
         <h3 class="met-canal__titulo">Reservaciones por canal</h3>
         <p class="met-canal__subtitulo">
-          Directo: usuario registrado · Agencia: agencia de viaje externa ·
-          Total: {totalCanal.toLocaleString()} reservaciones en el período
+          Distribución de las <strong style="color:var(--text)">{totalCanal.toLocaleString()}</strong> reservaciones confirmadas según quién las originó.
+          Solo usuarios con cuenta pueden reservar.
         </p>
         <div class="met-canal-pills">
           {#each metricasResumen.canalSplit as canal}
             {@const pct   = ((canal.total/totalCanal)*100).toFixed(1)}
             {@const color = canalColores[canal.canal] ?? '#6b7280'}
-            <div class="met-canal-pill">
-              <div class="met-canal-bar" style="--pct:{pct}%;--color:{color}"></div>
-              <span class="met-canal-tipo" style="color:{color}">{canal.canal}</span>
-              <span class="met-canal-num">
-                {canal.total.toLocaleString()} reservaciones
-                <em>— {pct}% del total</em>
-              </span>
+            {@const desc  = canalDesc[canal.canal]   ?? canal.canal}
+            <div class="met-canal-pill" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;gap:.5rem">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+                <span style="width:10px;height:10px;border-radius:50%;background:{color};flex-shrink:0"></span>
+                <span class="met-canal-tipo" style="color:{color};font-size:.82rem">{canal.canal}</span>
+                <span style="font-size:.7rem;color:var(--text-muted);margin-left:auto">{desc}</span>
+              </div>
+              <div class="met-canal-bar" style="--pct:{pct}%;--color:{color};height:9px;border-radius:5px;margin-bottom:.35rem"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span class="met-canal-num" style="font-size:.82rem;font-weight:700;color:var(--text)">{canal.total.toLocaleString()} reservaciones</span>
+                <span style="font-size:.85rem;font-weight:800;color:{color}">{pct}%</span>
+              </div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+
+    <!-- Búsquedas por canal — incluye anónimos -->
+    {#if metricasResumen.busquedasPorCanal && metricasResumen.busquedasPorCanal.length > 0}
+      {@const totalBusq = metricasResumen.busquedasPorCanal.reduce((s,c) => s + c.total, 0) || 1}
+      {@const busqColores = { 'Registrado':'#D4AF37', 'Agencia':'#667eea', 'No registrado':'#6b7280' }}
+      {@const busqDesc    = {
+        'Registrado':    'Usuario con sesión activa',
+        'Agencia':       'Petición desde agencia externa (API)',
+        'No registrado': 'Visitante sin cuenta (anónimo)'
+      }}
+      <div class="met-canal-wrap" style="border-top:1px solid var(--border);padding-top:1.25rem">
+        <h3 class="met-canal__titulo">Búsquedas por canal <span style="font-size:.75rem;font-weight:400;color:var(--text-muted)">— incluye anónimos</span></h3>
+        <p class="met-canal__subtitulo">
+          De las <strong style="color:var(--text)">{totalBusq.toLocaleString()}</strong> búsquedas registradas, cuántas vinieron de cada tipo de visitante.
+          Los no registrados buscan pero no pueden reservar.
+        </p>
+        <div class="met-canal-pills">
+          {#each metricasResumen.busquedasPorCanal as canal}
+            {@const pct   = ((canal.total/totalBusq)*100).toFixed(1)}
+            {@const color = busqColores[canal.canal] ?? '#6b7280'}
+            {@const desc  = busqDesc[canal.canal]    ?? canal.canal}
+            <div class="met-canal-pill" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;gap:.5rem">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+                <span style="width:10px;height:10px;border-radius:50%;background:{color};flex-shrink:0"></span>
+                <span class="met-canal-tipo" style="color:{color};font-size:.82rem">{canal.canal}</span>
+                <span style="font-size:.7rem;color:var(--text-muted);margin-left:auto">{desc}</span>
+              </div>
+              <div class="met-canal-bar" style="--pct:{pct}%;--color:{color};height:9px;border-radius:5px;margin-bottom:.35rem"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span class="met-canal-num" style="font-size:.82rem;font-weight:700;color:var(--text)">{canal.total.toLocaleString()} búsquedas</span>
+                <span style="font-size:.85rem;font-weight:800;color:{color}">{pct}%</span>
+              </div>
             </div>
           {/each}
         </div>
@@ -747,6 +817,33 @@
               <span class="neg-kpi-label">{k.label}</span>
             </div>
           {/each}
+          <!-- Separador + total 100% -->
+          <div style="display:flex;flex-direction:column;gap:.1rem;margin-left:auto;padding-left:1.5rem;border-left:1px solid var(--border2)">
+            <span class="neg-kpi-val" style="color:var(--text);font-size:1.5rem">100%</span>
+            <span class="neg-kpi-num" style="font-weight:800">{embBase.toLocaleString()}</span>
+            <span class="neg-kpi-label">Total</span>
+          </div>
+        </div>
+        <!-- Barra total combinada -->
+        <div style="margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:.75rem">
+            <span style="font-size:.75rem;color:var(--text-muted);min-width:72px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Total</span>
+            <div style="flex:1;height:11px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden;display:flex">
+              {#each [
+                { val: emb.completadas, color:'#8b5cf6' },
+                { val: emb.pagadas,     color:'#10b981' },
+                { val: emb.pendientes,  color:'#60a5fa' },
+                { val: emb.expiradas,   color:'#f59e0b' },
+                { val: emb.canceladas,  color:'#ef4444' },
+              ] as s}
+                {@const pct = embBase > 0 ? (s.val / embBase * 100) : 0}
+                {#if pct > 0}
+                  <div style="width:{pct}%;background:{s.color};height:100%"></div>
+                {/if}
+              {/each}
+            </div>
+            <span style="font-size:.8rem;font-weight:800;color:var(--text);min-width:36px;text-align:right">100%</span>
+          </div>
         </div>
       </div>
 
@@ -757,7 +854,8 @@
         {#if !negocioData.topHoteles || negocioData.topHoteles.length === 0}
           <div class="met-empty">Sin datos en el período seleccionado</div>
         {:else}
-          {@const totalIng = negocioData.topHoteles.reduce((s,h) => s + (h.ingresosTotales ?? 0), 0)}
+          {@const totalIng  = negocioData.topHoteles.reduce((s,h) => s + (h.ingresosTotales ?? 0), 0)}
+          {@const totalRes  = negocioData.topHoteles.reduce((s,h) => s + (h.totalReservaciones ?? 0), 0)}
           <div class="ruta-total-banner">
             <span class="ruta-total-label">Total generado en el período</span>
             <span class="ruta-total-val">Q {totalIng.toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
@@ -767,7 +865,7 @@
               <span>#</span>
               <span>Hotel</span>
               <span class="ruta-col-center">Reservaciones</span>
-              <span>Ingresos del total</span>
+              <span>% del total · Ingresos</span>
             </div>
             {#each negocioData.topHoteles as hotel, i}
               {@const tieneIngresos = (hotel.ingresosTotales ?? 0) > 0}
@@ -778,19 +876,32 @@
                 <span class="ruta-col-center ruta-stat">{hotel.totalReservaciones}</span>
                 <span class="ruta-ing-wrap">
                   {#if tieneIngresos}
-                    <span class="ruta-ing-pct-label">{pctTotal.toFixed(2)}%</span>
+                    <span class="ruta-ing-pct-label">{pctTotal.toFixed(1)}%</span>
                     <span class="ruta-ing-bar-bg">
                       <span class="ruta-ing-bar" style="width:{pctTotal}%"></span>
                     </span>
                     <span class="ruta-ing-val">Q {(hotel.ingresosTotales ?? 0).toLocaleString('es-GT',{maximumFractionDigits:0})}</span>
                   {:else}
-                    <span class="ruta-ing-pct-label">0.00%</span>
+                    <span class="ruta-ing-pct-label" style="color:var(--text-muted)">0%</span>
                     <span class="ruta-ing-bar-bg"><span class="ruta-ing-bar" style="width:0%"></span></span>
                     <span class="ruta-ing-val" style="color:#b8b0a5">Q 0</span>
                   {/if}
                 </span>
               </div>
             {/each}
+            <!-- Fila total -->
+            <div class="ruta-tabla-row" style="background:rgba(212,175,55,.06);border-top:1.5px solid rgba(212,175,55,.22)">
+              <span></span>
+              <span style="font-size:.8rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.05em">Total</span>
+              <span class="ruta-col-center ruta-stat" style="font-weight:800;color:var(--text)">{totalRes.toLocaleString()}</span>
+              <span class="ruta-ing-wrap">
+                <span class="ruta-ing-pct-label" style="color:var(--gold);font-size:.8rem">100%</span>
+                <span class="ruta-ing-bar-bg">
+                  <span class="ruta-ing-bar" style="width:100%;background:linear-gradient(to right,var(--gold),#edd97a)"></span>
+                </span>
+                <span class="ruta-ing-val" style="color:var(--gold)">Q {totalIng.toLocaleString('es-GT',{maximumFractionDigits:0})}</span>
+              </span>
+            </div>
           </div>
         {/if}
       </div>
@@ -799,52 +910,51 @@
       <div class="neg-card">
         <h3 class="met-grafica__titulo" style="padding:0 0 .25rem">Análisis de cancelaciones</h3>
         <p class="met-grafica__subtitulo" style="padding:0 0 .75rem">
-          Quién canceló: usuario final, agencia externa o administrador del sistema
+          Quién originó la cancelación: usuario final, agencia externa o administrador del sistema.
         </p>
         {#if !negocioData.cancelaciones || negocioData.cancelaciones.length === 0}
           <div class="met-empty">Sin cancelaciones en el período</div>
         {:else}
           {@const totalCancTipo = negocioData.cancelaciones.reduce((s,c)=>s+c.total,0) || 1}
-          {@const coloresCancelTipo = {'Administrador':'#1C1A18','Agencia':'#D4AF37','Usuario':'#10b981'}}
-          {@const segCancelTipo = (() => {
-            let ang = -90;
-            return negocioData.cancelaciones.map(t => {
-              const pct = t.total / totalCancTipo;
-              const start = ang; ang += pct * 360;
-              return { ...t, start, angle: pct*360,
-                color: coloresCancelTipo[t.tipo] ?? '#6b7280',
-                pct: (pct*100).toFixed(1) };
-            });
-          })()}
-          <div class="neg-tipo-wrap">
-            <svg viewBox="0 0 120 120" class="neg-tipo-svg">
-              {#each segCancelTipo as seg}
-                {#if seg.angle > 0.5}
-                  {@const cx=60}{@const cy=60}{@const R=50}{@const r=28}
-                  {@const s=seg.start*Math.PI/180}{@const e=(seg.start+seg.angle)*Math.PI/180}
-                  {@const large=seg.angle>180?1:0}
-                  {@const x1=cx+R*Math.cos(s)}{@const y1=cy+R*Math.sin(s)}
-                  {@const x2=cx+R*Math.cos(e)}{@const y2=cy+R*Math.sin(e)}
-                  {@const x3=cx+r*Math.cos(e)}{@const y3=cy+r*Math.sin(e)}
-                  {@const x4=cx+r*Math.cos(s)}{@const y4=cy+r*Math.sin(s)}
-                  <path d="M{x1},{y1} A{R},{R} 0 {large},1 {x2},{y2} L{x3},{y3} A{r},{r} 0 {large},0 {x4},{y4} Z"
-                    fill={seg.color} stroke="white" stroke-width="2">
-                    <title>{seg.tipo}: {seg.total} ({seg.pct}%)</title>
-                  </path>
-                {/if}
-              {/each}
-              <circle cx="60" cy="60" r="24" fill="white"/>
-              <text x="60" y="64" text-anchor="middle" font-size="11" font-weight="700" fill="#1C1A18">{totalCancTipo}</text>
-            </svg>
-            <div class="neg-tipo-leyenda">
-              {#each segCancelTipo as seg}
-                <div class="neg-ley-row">
-                  <span class="met-leyenda-dot" style="background:{seg.color}"></span>
-                  <span>{seg.tipo}</span>
-                  <span class="neg-ley-num">{seg.total} <em>({seg.pct}%)</em></span>
+          {@const metaCancelTipo = {
+            'Administrador': { color:'#667eea', icon:'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', desc:'Sistema / acción del admin' },
+            'Agencia':        { color:'#D4AF37', icon:'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', desc:'Cancelada por agencia externa' },
+            'Usuario':        { color:'#10b981', icon:'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', desc:'Cancelada por el propio usuario' },
+          }}
+          <!-- Total de cancelaciones -->
+          <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;padding:.6rem .9rem;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span style="font-size:.8rem;color:#ef4444;font-weight:700">{totalCancTipo.toLocaleString()} cancelaciones totales en el período</span>
+          </div>
+          <!-- Tarjetas por tipo -->
+          <div style="display:flex;flex-direction:column;gap:.65rem">
+            {#each negocioData.cancelaciones as c}
+              {@const meta  = metaCancelTipo[c.tipo] ?? { color:'#6b7280', icon:'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', desc:c.tipo }}
+              {@const pct   = (c.total / totalCancTipo * 100)}
+              <div style="display:flex;align-items:center;gap:1rem;padding:.85rem 1.1rem;background:var(--bg2);border:1px solid var(--border);border-left:3px solid {meta.color};border-radius:0 10px 10px 0;transition:background .15s">
+                <!-- Icono -->
+                <div style="width:40px;height:40px;border-radius:10px;background:{meta.color}1a;border:1px solid {meta.color}33;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{meta.color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="{meta.icon}"/>
+                  </svg>
                 </div>
-              {/each}
-            </div>
+                <!-- Info -->
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+                    <span style="font-size:.88rem;font-weight:700;color:var(--text)">{c.tipo}</span>
+                    <span style="font-size:.7rem;color:var(--text-muted)">{meta.desc}</span>
+                  </div>
+                  <div style="height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden">
+                    <div style="width:{pct}%;height:100%;background:{meta.color};border-radius:4px;transition:width .4s ease"></div>
+                  </div>
+                </div>
+                <!-- Cifras -->
+                <div style="text-align:right;flex-shrink:0">
+                  <div style="font-size:1.1rem;font-weight:800;color:{meta.color}">{pct.toFixed(1)}%</div>
+                  <div style="font-size:.78rem;color:var(--text-muted)">{c.total.toLocaleString()} canc.</div>
+                </div>
+              </div>
+            {/each}
           </div>
         {/if}
       </div>
@@ -963,8 +1073,11 @@
                         {/each}
                       {:else if meses.length===1}
                         {@const rev=byKey[`${meses[0]}|${cl}`]??0}
+                        {@const x=PAD.l+gW/2}
                         {@const y=PAD.t+gH-(rev/maxR)*gH}
-                        <circle cx={PAD.l+gW/2} cy={y} r="5" fill={color} stroke="white" stroke-width="1.5">
+                        {@const yBase=PAD.t+gH}
+                        <line x1={x} y1={yBase} x2={x} y2={y} stroke={colorPale} stroke-width="1.5" stroke-dasharray="4,4" opacity="0.55"/>
+                        <circle cx={x} cy={y} r="5" fill={color} stroke="white" stroke-width="1.5">
                           <title>{cl}: Q{rev.toLocaleString('es-GT',{minimumFractionDigits:2})}</title>
                         </circle>
                       {/if}
@@ -984,27 +1097,61 @@
                     <span style="color:#b8b0a5;font-size:10px;margin-left:.5rem">· · · mes anterior</span>
                   </div>
                 </div>
-                <div class="tend-resumen">
+                <div class="tend-resumen" style="min-width:160px">
+                  <!-- Mes anterior -->
+                  {#if meses.length >= 2}
+                    {@const penultimoMes = meses[meses.length-2]}
+                    <div class="tend-resumen__bloque">
+                      <p class="tend-resumen__titulo" style="color:#6b7280">Mes anterior <span class="tend-resumen__mes">({mesFmt(penultimoMes)})</span></p>
+                      {#each canales as cl, ci}
+                        {@const val = byKey[`${penultimoMes}|${cl}`] ?? 0}
+                        <div class="tend-resumen__fila">
+                          <span class="tend-resumen__dot" style="background:{ci===0?'#D4AF37':'#667eea'};opacity:.55"></span>
+                          <span class="tend-resumen__clase">{cl}</span>
+                          <span class="tend-resumen__val" style="color:#8b949e">Q{val.toLocaleString('es-GT',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                        </div>
+                      {/each}
+                    </div>
+                    <div class="tend-resumen__sep"></div>
+                  {/if}
+                  <!-- Mes actual + delta -->
                   <div class="tend-resumen__bloque">
                     <p class="tend-resumen__titulo">Mes actual <span class="tend-resumen__mes">({mesFmt(ultimoMes)})</span></p>
                     {#each canales as cl, ci}
-                      {@const val = byKey[`${ultimoMes}|${cl}`] ?? 0}
-                      <div class="tend-resumen__fila">
-                        <span class="tend-resumen__dot" style="background:{ci===0?'#D4AF37':'#1C1A18'}"></span>
+                      {@const val    = byKey[`${ultimoMes}|${cl}`] ?? 0}
+                      {@const prev   = meses.length >= 2 ? (byKey[`${meses[meses.length-2]}|${cl}`] ?? 0) : 0}
+                      {@const delta  = prev > 0 ? ((val - prev) / prev * 100) : null}
+                      <div class="tend-resumen__fila" style="align-items:flex-start;flex-wrap:wrap;gap:.2rem">
+                        <span class="tend-resumen__dot" style="background:{ci===0?'#D4AF37':'#667eea'};margin-top:3px"></span>
                         <span class="tend-resumen__clase">{cl}</span>
-                        <span class="tend-resumen__val">Q{val.toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                        <span class="tend-resumen__val">Q{val.toLocaleString('es-GT',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                        {#if delta !== null}
+                          <span style="font-size:.65rem;font-weight:700;color:{delta>=0?'#10b981':'#ef4444'};margin-left:auto;white-space:nowrap">
+                            {delta>=0?'▲':'▼'}{Math.abs(delta).toFixed(1)}%
+                          </span>
+                        {/if}
                       </div>
                     {/each}
                   </div>
                   <div class="tend-resumen__sep"></div>
+                  <!-- Total período -->
                   <div class="tend-resumen__bloque">
-                    <p class="tend-resumen__titulo">Total período</p>
+                    <p class="tend-resumen__titulo" style="color:var(--gold)">Total período</p>
                     {#each canales as cl, ci}
                       {@const tot = meses.reduce((s,m)=>s+(byKey[`${m}|${cl}`]??0),0)}
                       <div class="tend-resumen__fila">
-                        <span class="tend-resumen__dot" style="background:{ci===0?'#D4AF37':'#1C1A18'}"></span>
+                        <span class="tend-resumen__dot" style="background:{ci===0?'#D4AF37':'#667eea'}"></span>
                         <span class="tend-resumen__clase">{cl}</span>
-                        <span class="tend-resumen__val tend-resumen__val--total">Q{tot.toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+                        <span class="tend-resumen__val tend-resumen__val--total" style="color:var(--gold)">Q{tot.toLocaleString('es-GT',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                      </div>
+                    {/each}
+                    <!-- Gran total combinado -->
+                    {#each [canales.reduce((s,cl)=>s+meses.reduce((ss,m)=>ss+(byKey[`${m}|${cl}`]??0),0),0)] as grandTotal}
+                      <div style="margin-top:.4rem;padding-top:.4rem;border-top:1px dashed rgba(212,175,55,.3)">
+                        <div style="display:flex;align-items:center;justify-content:space-between">
+                          <span style="font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Combinado</span>
+                          <span style="font-size:.88rem;font-weight:900;color:var(--gold)">Q{grandTotal.toLocaleString('es-GT',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+                        </div>
                       </div>
                     {/each}
                   </div>
@@ -1258,6 +1405,13 @@
               </svg>
               Por correo
             </button>
+            <button class="exp-format-tab" class:exp-format-tab--active={expFormato==='pdf'}
+              on:click={() => expFormato='pdf'}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+              </svg>
+              PDF
+            </button>
           </div>
         </div>
 
@@ -1302,18 +1456,25 @@
           <button class="btn-secondary" on:click={() => { mostrarModalExportar = false; correosExportar = ['']; }}>
             Cancelar
           </button>
-          <button class="btn-primary" disabled={enviandoExportar || !Object.values(expSec).some(v=>v)}
-            on:click={handleExportar}>
-            {#if enviandoExportar}
-              {expFormato === 'email' ? 'Enviando...' : 'Generando...'}
-            {:else if expFormato === 'email'}
-              Enviar por correo
-            {:else if expFormato === 'excel'}
-              Descargar Excel
-            {:else}
-              Descargar CSV
-            {/if}
-          </button>
+          {#if expFormato === 'pdf'}
+            <button class="btn-primary" disabled={!Object.values(expSec).some(v=>v)}
+              on:click={() => { exportarPdf(); mostrarModalExportar = false; }}>
+              Descargar PDF
+            </button>
+          {:else}
+            <button class="btn-primary" disabled={enviandoExportar || !Object.values(expSec).some(v=>v)}
+              on:click={handleExportar}>
+              {#if enviandoExportar}
+                {expFormato === 'email' ? 'Enviando...' : 'Generando...'}
+              {:else if expFormato === 'email'}
+                Enviar por correo
+              {:else if expFormato === 'excel'}
+                Descargar Excel
+              {:else}
+                Descargar CSV
+              {/if}
+            </button>
+          {/if}
         </div>
 
       </div>

@@ -6,5 +6,6 @@ namespace Aerolinea.API.Services
     {
         Task<List<VueloDetalleDTO>> BusquedaGeneral(string query);
         Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloDTO dto, int? usuarioId);
+        Task RegistrarBusquedaGeneral(string query, int? usuarioId);
     }
 }

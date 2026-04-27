@@ -349,16 +349,21 @@
 
   /**
    * Retorna true si la combinacion de itinerario de escala y clase dada esta actualmente seleccionada para la
-   * direccion activa, emparejada por el ID del primer tramo.
+   * direccion activa, comparando toda la secuencia de tramos (no solo el primero).
    * @param {object} escala - El objeto de itinerario de escala a verificar.
    * @param {object} clase - El objeto de clase a verificar.
    * @returns {boolean} Si esta escala+clase es la seleccion activa.
    */
   function isSelectedEscala(escala, clase) {
     const s = currentView === 'outbound' ? selectedOutbound : selectedReturn;
-    return s.type === 'escala' &&
-      s.escala?.tramos?.[0]?.id === escala?.tramos?.[0]?.id &&
-      s.clase?.id === clase.id;
+    if (s.type !== 'escala' || s.clase?.id !== clase.id) return false;
+
+    const selectedTramos = s.escala?.tramos ?? [];
+    const currentTramos = escala?.tramos ?? [];
+
+    if (selectedTramos.length !== currentTramos.length) return false;
+
+    return selectedTramos.every((t, idx) => t.id === currentTramos[idx]?.id);
   }
 
   /**
@@ -875,7 +880,7 @@
             <div class="flights-list">
               {#each listaEscalas as escala}
                 {@const selObj = currentView === 'outbound' ? selectedOutbound : selectedReturn}
-                {@const estaSeleccionado = selObj.type === 'escala' && selObj.escala?.tramos?.[0]?.id === escala?.tramos?.[0]?.id}
+                {@const estaSeleccionado = selObj.type === 'escala' && selObj.escala?.tramos?.length === escala?.tramos?.length && selObj.escala?.tramos?.every((t, idx) => t.id === escala?.tramos?.[idx]?.id)}
 
                 <div class="flight-card flight-card--escala" class:flight-card--selected={estaSeleccionado}>
                   <svg class="flight-card__deco" viewBox="0 0 200 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

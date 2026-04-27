@@ -64,6 +64,8 @@ public class HotelController {
         app.get   ("/admin/reservaciones",                                 this::handleListarReservaciones);
         app.get   ("/admin/reservaciones/recientes",                       this::handleListarReservacionesRecientes);
         app.patch ("/admin/reservaciones/{id}/cancelar",                   this::handleCancelarReservacion);
+        app.patch ("/admin/reservaciones/{id}/editar",                     this::handleEditarReservacion);
+        app.get   ("/admin/reservaciones/{id}/detalles",                   this::handleDetallesReservacion);
         app.get   ("/admin/metricas",                                      this::handleObtenerMetricas);
 
 
@@ -453,6 +455,40 @@ public class HotelController {
             ctx.json(respuesta);
         } catch (IllegalArgumentException e) {
             ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+    /** Retorna los detalles de habitaciones de una reservacion para edicion. */
+    void handleDetallesReservacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        int reservacionId = id(ctx, "id");
+        ctx.json(adminReservacionService.obtenerDetalles(reservacionId));
+    }
+
+    /**
+     * Edita las fechas de una reservacion desde el panel de administracion.
+     * Body esperado: { cambios: [{detalleId, fechaCheckIn, fechaCheckOut}], comentario }
+     */
+    @SuppressWarnings("unchecked")
+    void handleEditarReservacion(Context ctx) {
+        if (!esAdmin(ctx)) { deny(ctx); return; }
+        int reservacionId = id(ctx, "id");
+        try {
+            Map<String, Object> body      = ctx.bodyAsClass(Map.class);
+            java.util.List<Map<String, Object>> cambios =
+                    (java.util.List<Map<String, Object>>) body.get("cambios");
+            String comentario = body.get("comentario") != null
+                    ? body.get("comentario").toString() : "";
+
+            if (cambios == null || cambios.isEmpty())
+                throw new IllegalArgumentException("Se requiere al menos un cambio de fechas");
+
+            adminReservacionService.editarReservacion(reservacionId, cambios, comentario);
+            ctx.json(Map.of("mensaje", "Reservación actualizada correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
         }
     }
 

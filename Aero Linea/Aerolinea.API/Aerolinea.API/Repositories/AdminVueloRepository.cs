@@ -228,7 +228,9 @@ namespace Aerolinea.API.Repositories
                     zhd.Nombre AS TzDestino,
                     av.ID      AS AvionID,
                     av.Marca + ' ' + av.Modelo AS AvionNombre,
-                    (SELECT COUNT(*) FROM Boleto b WHERE b.VueloID = v.ID AND b.EstadoBoletoID IN (2, 3)) AS BoletosVendidosReal
+                    (SELECT COUNT(*) FROM Boleto b WHERE b.VueloID = v.ID AND b.EstadoBoletoID IN (2, 3)) AS BoletosVendidosReal,
+                    r.OrigenID  AS AeropuertoOrigenId,
+                    r.DestinoID AS AeropuertoDestinoId
                 FROM  Vuelo v
                 INNER JOIN Ruta r              ON r.ID  = v.RutaID
                 INNER JOIN Aeropuerto aorigen  ON aorigen.ID  = r.OrigenID
@@ -280,7 +282,9 @@ namespace Aerolinea.API.Repositories
                     PrecioEjecutiva = reader.IsDBNull(13) ? 0 : reader.GetDecimal(13),
                     AvionId = reader.GetInt32(16),
                     AvionNombre = reader.IsDBNull(17) ? "" : reader.GetString(17),
-                    BoletosVendidosReal = reader.IsDBNull(18) ? 0 : reader.GetInt32(18)
+                    BoletosVendidosReal = reader.IsDBNull(18) ? 0 : reader.GetInt32(18),
+                    AeropuertoOrigenId  = reader.GetInt32(19),
+                    AeropuertoDestinoId = reader.GetInt32(20)
                 });
             }
 
@@ -806,30 +810,22 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                // Actualizar datos del vuelo
+                // Actualizar datos del vuelo (precio y boletos NO se modifican)
                 using (var cmd = new SqlCommand(@"
                     UPDATE Vuelo SET
-                        Fecha            = @fecha,
-                        HoraSalida       = @horaSalida,
-                        HoraLlegada      = @horaLlegada,
-                        FechaLlegada     = @fechaLlegada,
-                        AvionID          = @avionId,
-                        PrecioTurista    = @precioTurista,
-                        PrecioEjecutivo  = @PrecioEjecutiva,
-                        BoletosTurista   = @boletosTurista,
-                        BoletosEjecutivo = @boletosEjecutivo
+                        Fecha        = @fecha,
+                        HoraSalida   = @horaSalida,
+                        HoraLlegada  = @horaLlegada,
+                        FechaLlegada = @fechaLlegada,
+                        AvionID      = @avionId
                     WHERE ID = @vueloId", connection, transaction))
                 {
-                    cmd.Parameters.AddWithValue("@fecha",            dto.Fecha.Date);
-                    cmd.Parameters.AddWithValue("@horaSalida",       TimeSpan.Parse(dto.HoraSalida));
-                    cmd.Parameters.AddWithValue("@horaLlegada",      horaLlegada);
-                    cmd.Parameters.AddWithValue("@fechaLlegada",     fechaLlegada.Date);
-                    cmd.Parameters.AddWithValue("@avionId",          dto.AvionId);
-                    cmd.Parameters.AddWithValue("@precioTurista",    dto.PrecioTurista);
-                    cmd.Parameters.AddWithValue("@PrecioEjecutiva",  dto.PrecioEjecutiva);
-                    cmd.Parameters.AddWithValue("@boletosTurista",   dto.BoletosTurista);
-                    cmd.Parameters.AddWithValue("@boletosEjecutivo", dto.BoletosEjecutivo);
-                    cmd.Parameters.AddWithValue("@vueloId",          vueloId);
+                    cmd.Parameters.AddWithValue("@fecha",        dto.Fecha.Date);
+                    cmd.Parameters.AddWithValue("@horaSalida",   TimeSpan.Parse(dto.HoraSalida));
+                    cmd.Parameters.AddWithValue("@horaLlegada",  horaLlegada);
+                    cmd.Parameters.AddWithValue("@fechaLlegada", fechaLlegada.Date);
+                    cmd.Parameters.AddWithValue("@avionId",      dto.AvionId);
+                    cmd.Parameters.AddWithValue("@vueloId",      vueloId);
                     await cmd.ExecuteNonQueryAsync();
                 }
 
@@ -946,6 +942,53 @@ namespace Aerolinea.API.Repositories
                               ?? ("", "", null);
 
             return (nuevaRutaId, 120, tzO, tzD);
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        //  TRIPULANTES DE UN VUELO
+        // ─────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Retorna la lista de tripulantes asignados a un vuelo concreto,
+        /// incluyendo nombre completo, rol e imagen en Base64.
+        /// </summary>
+        public async Task<List<TripulanteDTO>> ObtenerTripulantesDelVuelo(int vueloId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT mt.ID,
+                       mt.Nombre,
+                       mt.Apellido,
+                       mt.RolID,
+                       rt.Cargo AS NombreRol,
+                       mt.Imagen AS ImagenBase64
+                FROM   EquipoPivote ep
+                INNER JOIN MiembroTripulacion mt ON mt.ID = ep.MiembroTripulacionID
+                INNER JOIN RolTripulacion     rt ON rt.ID = mt.RolID
+                WHERE  ep.VueloID = @VueloId
+                ORDER BY rt.Cargo, mt.Nombre";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@VueloId", vueloId);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            var lista = new List<TripulanteDTO>();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new TripulanteDTO
+                {
+                    Id             = reader.GetInt32(0),
+                    Nombre         = reader.GetString(1),
+                    Apellido       = reader.GetString(2),
+                    RolID          = reader.GetInt32(3),
+                    NombreRol      = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    NombreCompleto = $"{reader.GetString(1)} {reader.GetString(2)}",
+                    ImagenBase64   = reader.IsDBNull(5) ? null : reader.GetString(5)
+                });
+            }
+            return lista;
         }
     }
 }

@@ -27,6 +27,23 @@ namespace Aerolinea.API.Repositories
         }
 
         /// <summary>
+        /// Cache del resultado de la verificación de columna Activo en Ruta.
+        /// </summary>
+        private static bool? _tieneActivoRuta;
+
+        /// <summary>
+        /// Retorna (y cachea) si la columna Activo existe en la tabla Ruta.
+        /// </summary>
+        private static async Task<bool> TieneActivoRutaAsync(SqlConnection connection)
+        {
+            if (_tieneActivoRuta.HasValue)
+                return _tieneActivoRuta.Value;
+
+            _tieneActivoRuta = await ColumnaExiste(connection, "Ruta", "Activo");
+            return _tieneActivoRuta.Value;
+        }
+
+        /// <summary>
         /// Retorna (y cachea) si la tabla ZonaHoraria y la columna ZonaHorariaID existen.
         /// Solo consulta INFORMATION_SCHEMA la primera vez; las siguientes devuelven el valor cacheado.
         /// </summary>
@@ -44,6 +61,7 @@ namespace Aerolinea.API.Repositories
         /// Retorna todas las rutas con informacion de aeropuertos y zonas horarias.
         /// Si la tabla ZonaHoraria o la columna ZonaHorariaID no existen en el esquema
         /// actual, omite los JOINs correspondientes y retorna null en esos campos.
+        /// Si la columna Activo no existe aun, retorna true para todas las rutas.
         /// </summary>
         public async Task<List<RutaDTO>> ObtenerTodas()
         {
@@ -52,30 +70,35 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             bool tieneZonaHoraria = await TieneZonaHorariaAsync(connection);
+            bool tieneActivo      = await TieneActivoRutaAsync(connection);
+
+            string activoCol = tieneActivo ? "r.Activo" : "CAST(1 AS BIT) AS Activo";
 
             string query = tieneZonaHoraria
-                ? @"SELECT
+                ? $@"SELECT
                         r.ID,
                         ao.Codigo AS CodigoOrigen,  ao.Nombre AS NombreOrigen,
                         zho.Nombre AS TzOrigen,
                         ad.Codigo AS CodigoDestino, ad.Nombre AS NombreDestino,
                         zhd.Nombre AS TzDestino,
                         r.DuracionEstimada,
-                        (SELECT COUNT(*) FROM Vuelo v WHERE v.RutaID = r.ID) AS TotalVuelos
+                        (SELECT COUNT(*) FROM Vuelo v WHERE v.RutaID = r.ID) AS TotalVuelos,
+                        {activoCol}
                     FROM   Ruta r
                     INNER JOIN Aeropuerto ao ON ao.ID = r.OrigenID
                     INNER JOIN Aeropuerto ad ON ad.ID = r.DestinoID
                     LEFT  JOIN ZonaHoraria zho ON zho.ID = ao.ZonaHorariaID
                     LEFT  JOIN ZonaHoraria zhd ON zhd.ID = ad.ZonaHorariaID
                     ORDER BY ao.Codigo, ad.Codigo"
-                : @"SELECT
+                : $@"SELECT
                         r.ID,
                         ao.Codigo AS CodigoOrigen,  ao.Nombre AS NombreOrigen,
                         NULL AS TzOrigen,
                         ad.Codigo AS CodigoDestino, ad.Nombre AS NombreDestino,
                         NULL AS TzDestino,
                         r.DuracionEstimada,
-                        (SELECT COUNT(*) FROM Vuelo v WHERE v.RutaID = r.ID) AS TotalVuelos
+                        (SELECT COUNT(*) FROM Vuelo v WHERE v.RutaID = r.ID) AS TotalVuelos,
+                        {activoCol}
                     FROM   Ruta r
                     INNER JOIN Aeropuerto ao ON ao.ID = r.OrigenID
                     INNER JOIN Aeropuerto ad ON ad.ID = r.DestinoID
@@ -96,7 +119,8 @@ namespace Aerolinea.API.Repositories
                     Destino = reader.GetString(5),
                     ZonaHorariaDestino = reader.IsDBNull(6) ? null : reader.GetString(6),
                     DuracionEstimada = reader.GetInt32(7),
-                    TotalVuelos = reader.GetInt32(8)
+                    TotalVuelos = reader.GetInt32(8),
+                    Activo = reader.GetBoolean(9)
                 });
             }
 
@@ -216,6 +240,154 @@ namespace Aerolinea.API.Repositories
             cmdCrear.Parameters.AddWithValue("@Duracion", duracionEstimada);
 
             return Convert.ToInt32(await cmdCrear.ExecuteScalarAsync());
+        }
+
+        /// <summary>
+        /// Verifica si alguna reservacion activa (Pendiente o Confirmada) tiene boletos
+        /// en vuelos que pertenecen a la ruta indicada. Una ruta con reservaciones activas
+        /// no puede ser desactivada.
+        /// </summary>
+        public async Task<bool> TieneReservacionesActivas(int rutaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            // EstadoReservaID: Pendiente=1, Confirmada=2
+            var query = @"
+                SELECT COUNT(1)
+                FROM   Boleto b
+                INNER JOIN Reservacion r ON r.ID = b.ReservacionID
+                INNER JOIN Vuelo       v ON v.ID = b.VueloID
+                WHERE  v.RutaID = @rutaId
+                  AND  r.EstadoReservaID IN (1, 2)";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@rutaId", rutaId);
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+        }
+
+        /// <summary>
+        /// Desactiva una ruta (Activo = 0). Requiere que la columna Activo exista en la tabla Ruta
+        /// (ALTER TABLE Ruta ADD Activo BIT NOT NULL DEFAULT 1).
+        /// Retorna false si la ruta no existe.
+        /// </summary>
+        public async Task<bool> DesactivarRuta(int rutaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "UPDATE Ruta SET Activo = 0 WHERE ID = @rutaId";
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@rutaId", rutaId);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+
+        /// <summary>
+        /// Reactiva una ruta previamente desactivada (Activo = 1).
+        /// Retorna false si la ruta no existe.
+        /// </summary>
+        public async Task<bool> ActivarRuta(int rutaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = "UPDATE Ruta SET Activo = 1 WHERE ID = @rutaId";
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@rutaId", rutaId);
+            return await cmd.ExecuteNonQueryAsync() > 0;
+        }
+
+        /// <summary>
+        /// Retorna los codigos IATA y nombres de ciudad de origen y destino de la ruta indicada.
+        /// </summary>
+        public async Task<(string origenCodigo, string origenCiudad, string destinoCodigo, string destinoCiudad)> ObtenerDescripcionRuta(int rutaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT ao.Codigo, co.Nombre, ad.Codigo, cd.Nombre
+                FROM Ruta r
+                INNER JOIN Aeropuerto ao ON ao.ID = r.OrigenID
+                INNER JOIN Ciudad     co ON co.ID = ao.CiudadID
+                INNER JOIN Aeropuerto ad ON ad.ID = r.DestinoID
+                INNER JOIN Ciudad     cd ON cd.ID = ad.CiudadID
+                WHERE r.ID = @rutaId";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@rutaId", rutaId);
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return (
+                    reader.IsDBNull(0) ? "" : reader.GetString(0),
+                    reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    reader.IsDBNull(3) ? "" : reader.GetString(3)
+                );
+            }
+            return ("", "", "", "");
+        }
+
+        /// <summary>
+        /// Retorna los correos y nombres de contacto de todos los usuarios WebService
+        /// de las agencias registradas en el sistema.
+        /// </summary>
+        public async Task<List<(string email, string nombreContacto, string nombreAgencia)>> ObtenerEmailsAgencias()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT DISTINCT u.Correo, u.Nombre + ' ' + u.Apellido AS NombreContacto, ag.Nombre AS NombreAgencia
+                FROM Agencia ag
+                INNER JOIN Usuario u ON u.ID = ag.UsuarioWebID
+                WHERE u.Correo IS NOT NULL AND u.Correo <> ''";
+
+            using var cmd = new SqlCommand(query, connection);
+            using var reader = await cmd.ExecuteReaderAsync();
+            var lista = new List<(string, string, string)>();
+            while (await reader.ReadAsync())
+            {
+                lista.Add((
+                    reader.IsDBNull(0) ? "" : reader.GetString(0),
+                    reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2)
+                ));
+            }
+            return lista;
+        }
+
+        /// <summary>
+        /// Retorna los vuelos futuros (hoy en adelante) de una ruta dada, ordenados por fecha y hora.
+        /// </summary>
+        public async Task<List<(string NumeroVuelo, string FechaSalida, string HoraSalida)>> ObtenerVuelosFuturosPorRuta(int rutaId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var query = @"
+                SELECT v.NumeroVuelo, CONVERT(VARCHAR(10), v.Fecha, 23) AS FechaSalida,
+                       LEFT(CAST(v.HoraSalida AS VARCHAR(8)), 5) AS HoraSalida
+                FROM Vuelo v
+                WHERE v.RutaID = @rutaId
+                  AND v.Fecha >= CAST(GETDATE() AS DATE)
+                ORDER BY v.Fecha, v.HoraSalida";
+
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddWithValue("@rutaId", rutaId);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            var lista = new List<(string, string, string)>();
+            while (await reader.ReadAsync())
+            {
+                lista.Add((
+                    reader.IsDBNull(0) ? "" : reader.GetString(0),
+                    reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2)
+                ));
+            }
+            return lista;
         }
 
         private static async Task<bool> TablaExiste(SqlConnection connection, string tabla)

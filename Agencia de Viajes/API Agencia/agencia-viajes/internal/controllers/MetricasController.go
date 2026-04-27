@@ -231,7 +231,7 @@ func (ctrl *MetricasController) ObtenerResumen(c *gin.Context) {
 	}
 	var resTipos []ResTipo
 	rows, _ = conn.QueryContext(context.Background(), `
-		SELECT r.Tipo_Reserva_ID, COUNT(*), COALESCE(SUM(dt.Total),0)
+		SELECT r.Tipo_Reserva_ID, COUNT(DISTINCT r.ID), COALESCE(SUM(dt.Total),0)
 		FROM Reservacion r LEFT JOIN detalles_reservacion dt ON dt.Reservacion_ID=r.ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
 		GROUP BY r.Tipo_Reserva_ID ORDER BY 2 DESC
@@ -306,25 +306,27 @@ func (ctrl *MetricasController) ObtenerNegocio(c *gin.Context) {
 		Nombre        string  `json:"nombre"`
 		Tipo          string  `json:"tipo"`
 		TipoID        int     `json:"tipoId"`
+		TipoReservaID int     `json:"tipoReservaId"`
 		Reservaciones int     `json:"reservaciones"`
 		Ingresos      float64 `json:"ingresos"`
 		Ganancia      float64 `json:"ganancia"`
 	}
 	var proveedores []ProveedorRend
 	rows, _ := conn.QueryContext(context.Background(), `
-		SELECT p.Nombre, p.Tipo_Proveedor_ID,
+		SELECT p.Nombre, p.Tipo_Proveedor_ID, r.Tipo_Reserva_ID,
 		       COUNT(DISTINCT dt.Reservacion_ID),
 		       COALESCE(SUM(dt.Total),0),
 		       COALESCE(SUM(dt.Total - dt.Total/(1+p.Porcentaje_Ganancia/100)),0)
 		FROM detalles_reservacion dt JOIN Proveedor p ON dt.Proveedor_ID=p.ID
 		JOIN Reservacion r ON r.ID=dt.Reservacion_ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
-		GROUP BY p.ID, p.Nombre, p.Tipo_Proveedor_ID ORDER BY 4 DESC LIMIT 10
+		GROUP BY p.ID, p.Nombre, p.Tipo_Proveedor_ID, r.Tipo_Reserva_ID
+		ORDER BY p.Tipo_Proveedor_ID, 5 DESC
 	`, d, h)
 	if rows != nil {
 		for rows.Next() {
 			var p ProveedorRend
-			rows.Scan(&p.Nombre, &p.TipoID, &p.Reservaciones, &p.Ingresos, &p.Ganancia)
+			rows.Scan(&p.Nombre, &p.TipoID, &p.TipoReservaID, &p.Reservaciones, &p.Ingresos, &p.Ganancia)
 			if p.TipoID == 1 {
 				p.Tipo = "Aerolínea"
 			} else {
@@ -644,7 +646,7 @@ func (ctrl *MetricasController) cargarDatosExport(desde, hasta time.Time) helper
 
 	// Reservaciones por tipo
 	rows, _ = conn.QueryContext(context.Background(), `
-		SELECT r.Tipo_Reserva_ID, COUNT(*), COALESCE(SUM(dt.Total),0)
+		SELECT r.Tipo_Reserva_ID, COUNT(DISTINCT r.ID), COALESCE(SUM(dt.Total),0)
 		FROM Reservacion r LEFT JOIN detalles_reservacion dt ON dt.Reservacion_ID=r.ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
 		GROUP BY r.Tipo_Reserva_ID ORDER BY 2 DESC
@@ -684,28 +686,42 @@ func (ctrl *MetricasController) cargarDatosExport(desde, hasta time.Time) helper
 		{"Pendientes", strconv.Itoa(b7)},
 	}
 
-	// Proveedores
+	// Proveedores (agrupados por tipo de reservacion + tipo de proveedor)
 	rows, _ = conn.QueryContext(context.Background(), `
-		SELECT p.Nombre, p.Tipo_Proveedor_ID, COUNT(DISTINCT dt.Reservacion_ID),
+		SELECT p.Nombre, p.Tipo_Proveedor_ID, r.Tipo_Reserva_ID,
+		       COUNT(DISTINCT dt.Reservacion_ID),
 		       COALESCE(SUM(dt.Total),0),
 		       COALESCE(SUM(dt.Total - dt.Total/(1+p.Porcentaje_Ganancia/100)),0)
 		FROM detalles_reservacion dt JOIN Proveedor p ON dt.Proveedor_ID=p.ID
 		JOIN Reservacion r ON r.ID=dt.Reservacion_ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
-		GROUP BY p.ID, p.Nombre, p.Tipo_Proveedor_ID ORDER BY 4 DESC LIMIT 10
+		GROUP BY p.ID, p.Nombre, p.Tipo_Proveedor_ID, r.Tipo_Reserva_ID
+		ORDER BY r.Tipo_Reserva_ID, p.Tipo_Proveedor_ID, 5 DESC
 	`, d, h)
 	if rows != nil {
 		for rows.Next() {
 			var nombre string
-			var tid, cnt int
+			var tipoP, tipoR, cnt int
 			var ing, gan float64
-			rows.Scan(&nombre, &tid, &cnt, &ing, &gan)
-			tipoP := "Hotel"
-			if tid == 1 {
-				tipoP = "Aerolinea"
+			rows.Scan(&nombre, &tipoP, &tipoR, &cnt, &ing, &gan)
+			// Etiqueta de grupo: combina tipoReserva + tipoProveedor
+			grupo := "Hotel directo"
+			switch {
+			case tipoR == 1:
+				grupo = "Vuelo directo"
+			case tipoR == 2:
+				grupo = "Hotel directo"
+			case tipoR == 3 && tipoP == 1:
+				grupo = "Paquete · Vuelo"
+			case tipoR == 3 && tipoP == 2:
+				grupo = "Paquete · Hotel"
+			}
+			provTipo := "Hotel"
+			if tipoP == 1 {
+				provTipo = "Aerolinea"
 			}
 			data.Proveedores = append(data.Proveedores, []string{
-				nombre, tipoP, strconv.Itoa(cnt),
+				nombre, grupo, provTipo, strconv.Itoa(cnt),
 				fmt.Sprintf("%.2f", ing), fmt.Sprintf("%.2f", gan),
 			})
 		}

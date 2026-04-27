@@ -147,15 +147,25 @@ namespace Aerolinea.API.Helpers
             foreach (var boleto in reservacion.Boletos)
             {
                 string bgColor = idx % 2 == 0 ? "#F2EFEA" : "#ffffff";
+                string rutaLinea1 = $"{e(boleto.OrigenCodigo)} → {e(boleto.DestinoCodigo)}";
+                string rutaLinea2 = !string.IsNullOrWhiteSpace(boleto.OrigenCiudad) && !string.IsNullOrWhiteSpace(boleto.DestinoCiudad)
+                    ? $"{e(boleto.OrigenCiudad)} → {e(boleto.DestinoCiudad)}"
+                    : "";
+                string horaSalida  = $"{boleto.HoraSalida.Hours:D2}:{boleto.HoraSalida.Minutes:D2}";
+                string horaLlegada = $"{boleto.HoraLlegada.Hours:D2}:{boleto.HoraLlegada.Minutes:D2}";
                 filasBoletos += $@"
                 <tr style='background-color:{bgColor};'>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{idx}</td>
-                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.NumeroVuelo)}</td>
+                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);font-weight:600;'>{e(boleto.NumeroVuelo)}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.NoAsiento)}</td>
-                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.OrigenCodigo)} → {e(boleto.DestinoCodigo)}</td>
+                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>
+                        <span style='font-weight:600;'>{rutaLinea1}</span>
+                        {(rutaLinea2.Length > 0 ? $"<br><span style='font-size:11px;color:#8B6B4A;'>{rutaLinea2}</span>" : "")}
+                    </td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(139,107,74,0.15);'>{e(boleto.Clase)}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.FechaVuelo:yyyy-MM-dd}</td>
-                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{boleto.HoraSalida.Hours:D2}:{boleto.HoraSalida.Minutes:D2}</td>
+                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{horaSalida}</td>
+                    <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:center;border-bottom:1px solid rgba(139,107,74,0.15);'>{horaLlegada}</td>
                     <td style='padding:12px 10px;font-size:13px;color:#3A3531;text-align:right;font-weight:700;border-bottom:1px solid rgba(139,107,74,0.15);'>Q {boleto.Precio:N2}</td>
                 </tr>";
                 idx++;
@@ -262,6 +272,7 @@ namespace Aerolinea.API.Helpers
                     <th style='padding:12px 10px;font-size:11px;color:#F2EFEA;text-align:left;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'>Clase</th>
                     <th style='padding:12px 10px;font-size:11px;color:#F2EFEA;text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'>Fecha</th>
                     <th style='padding:12px 10px;font-size:11px;color:#F2EFEA;text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'>Salida</th>
+                    <th style='padding:12px 10px;font-size:11px;color:#F2EFEA;text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'>Llegada</th>
                     <th style='padding:12px 10px;font-size:11px;color:#F2EFEA;text-align:right;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;'>Precio</th>
                 </tr>
                 {filasBoletos}
@@ -690,6 +701,107 @@ namespace Aerolinea.API.Helpers
         }
 
         // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE CAMBIO DE VUELO — enviado masivamente a pasajeros cuando
+        //  el administrador modifica fecha, hora o avion de un vuelo activo
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de aviso que se envia a cada pasajero afectado
+        /// cuando el administrador edita un vuelo (fecha, hora, avion o tripulacion).
+        /// Incluye la informacion original y los nuevos datos del vuelo, junto con el
+        /// motivo del cambio proporcionado por el administrador.
+        /// </summary>
+        public static string CorreoCambioVuelo(
+            string nombreUsuario,
+            string noReservacion,
+            string numeroVuelo,
+            string origenCodigo,
+            string destinoCodigo,
+            string fechaOriginal,
+            string nuevaFecha,
+            string nuevaHora,
+            string motivo)
+        {
+            var e = EmailHelper.Esc;
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:22px;color:#F2EFEA;font-weight:700;'>Cambios en tu Vuelo</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Broom AirLine</p>
+    </div>
+    <div style='height:3px;background:#8B6B4A;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+        <p style='font-size:15px;color:#1C1A18;margin:0 0 6px;'>Hola, <strong>{e(nombreUsuario)}</strong>:</p>
+        <p style='font-size:14px;color:#3A3531;margin:0 0 24px;line-height:1.6;'>
+            Queremos informarte que se han realizado cambios en uno de los vuelos de tu reservacion.
+            Tu reservacion permanece activa. A continuacion encontras el detalle de los cambios:
+        </p>
+
+        <!-- DETALLE DE RESERVACION -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.25);border-radius:4px 16px 4px 16px;padding:20px;border-left:4px solid #8B6B4A;margin-bottom:20px;'>
+            <h3 style='margin:0 0 14px;font-size:11px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;'>Detalle del Vuelo</h3>
+            <table style='width:100%;border-collapse:collapse;table-layout:fixed;'>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;width:140px;vertical-align:top;'>N. Reservacion</td>
+                    <td style='padding:8px 0;font-size:15px;color:#1C1A18;font-weight:700;font-family:monospace;'>{e(noReservacion)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Vuelo</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(numeroVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Ruta</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(origenCodigo)} &rarr; {e(destinoCodigo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Fecha anterior</td>
+                    <td style='padding:8px 0;font-size:14px;color:#6b7280;text-decoration:line-through;'>{e(fechaOriginal)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Nueva fecha</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:700;'>{e(nuevaFecha)} &nbsp; {e(nuevaHora)}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- MOTIVO DEL CAMBIO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;margin-bottom:20px;'>
+            <h4 style='margin:0 0 8px;font-size:11px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Motivo del Cambio</h4>
+            <p style='margin:0;font-size:14px;color:#3A3531;line-height:1.6;'>{e(motivo)}</p>
+        </div>
+
+        <!-- MENSAJE DE CONTACTO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;'>
+            <p style='margin:0;font-size:13px;color:#3A3531;line-height:1.7;'>
+                Lamentamos los inconvenientes ocasionados. Si tienes preguntas sobre tu reservacion,
+                contactanos a <a href='mailto:distribuidorapine@gmail.com' style='color:#8B6B4A;font-weight:600;'>distribuidorapine@gmail.com</a>.
+                Gracias por tu comprension y por volar con Broom AirLine.
+            </p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine &middot; Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         //  CORREO DE CAMBIO DE PERSONAL — enviado a pasajeros cuando
         //  se actualiza la tripulacion de un vuelo activo
         // ══════════════════════════════════════════════════════════════════
@@ -916,6 +1028,177 @@ namespace Aerolinea.API.Helpers
 </body>
 </html>";
         }
+        // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE RUTA DESACTIVADA — enviado a agencias cuando el admin
+        //  desactiva una ruta del sistema
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de aviso que se envia a los usuarios WebService
+        /// de todas las agencias registradas cuando una ruta es desactivada por el
+        /// administrador. Informa los aeropuertos y ciudades afectadas para que la
+        /// agencia actualice su oferta de vuelos.
+        /// </summary>
+        public static string CorreoRutaDesactivada(
+            string nombreContacto,
+            string nombreAgencia,
+            string origenCodigo,
+            string origenCiudad,
+            string destinoCodigo,
+            string destinoCiudad)
+        {
+            var e = EmailHelper.Esc;
+            string ruta = $"{e(origenCodigo)} ({e(origenCiudad)}) → {e(destinoCodigo)} ({e(destinoCiudad)})";
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:26px;color:#F2EFEA;font-weight:800;letter-spacing:1.5px;'>BROOM AIRLINE</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Aviso a Agencias de Viaje</p>
+    </div>
+    <div style='height:3px;background:#8B6B4A;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+
+        <p style='margin:0 0 16px;font-size:15px;color:#1C1A18;'>
+            Estimado/a <strong>{e(nombreContacto)}</strong> de <strong>{e(nombreAgencia)}</strong>,
+        </p>
+        <p style='margin:0 0 20px;font-size:14px;color:#3A3531;line-height:1.7;'>
+            Le informamos que la siguiente ruta ha sido <strong style='color:#8B6B4A;'>desactivada</strong>
+            en nuestro sistema y ya no estará disponible para nuevas reservaciones:
+        </p>
+
+        <!-- Ruta destacada -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.3);border-left:4px solid #8B6B4A;border-radius:4px 12px 4px 12px;padding:18px 20px;margin-bottom:20px;text-align:center;'>
+            <div style='font-size:22px;font-weight:800;color:#1C1A18;letter-spacing:1px;'>{ruta}</div>
+        </div>
+
+        <p style='margin:0 0 16px;font-size:14px;color:#3A3531;line-height:1.7;'>
+            Por favor actualice su catálogo de rutas y evite ofrecer vuelos en este trayecto.
+            Las reservaciones ya realizadas permanecen vigentes y no se ven afectadas por este cambio.
+        </p>
+        <p style='margin:0;font-size:14px;color:#3A3531;line-height:1.7;'>
+            Si tiene alguna consulta, contáctenos a través de su canal habitual de soporte.
+        </p>
+
+    </div>
+
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE RUTA ACTIVADA — enviado a agencias cuando se reactiva una ruta
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de notificacion de ruta reactivada. Informa a las agencias
+        /// que la ruta vuelve a estar operativa y lista los proximos vuelos programados.
+        /// </summary>
+        public static string CorreoRutaActivada(
+            string nombreContacto,
+            string nombreAgencia,
+            string origenCodigo,
+            string origenCiudad,
+            string destinoCodigo,
+            string destinoCiudad,
+            List<(string NumeroVuelo, string FechaSalida, string HoraSalida)> vuelosFuturos)
+        {
+            var e = EmailHelper.Esc;
+            string ruta = $"{e(origenCodigo)} ({e(origenCiudad)}) → {e(destinoCodigo)} ({e(destinoCiudad)})";
+
+            var filasVuelos = new System.Text.StringBuilder();
+            foreach (var (numero, fecha, hora) in vuelosFuturos.Take(10))
+            {
+                filasVuelos.Append($@"
+                <tr>
+                    <td style='padding:7px 12px;font-size:13px;color:#1C1A18;font-weight:600;border-bottom:1px solid #f0ebe4;'>{e(numero)}</td>
+                    <td style='padding:7px 12px;font-size:13px;color:#3A3531;border-bottom:1px solid #f0ebe4;'>{e(fecha)}</td>
+                    <td style='padding:7px 12px;font-size:13px;color:#3A3531;border-bottom:1px solid #f0ebe4;'>{e(hora)}</td>
+                </tr>");
+            }
+
+            string seccionVuelos = vuelosFuturos.Count > 0
+                ? $@"
+        <p style='margin:0 0 12px;font-size:14px;color:#3A3531;font-weight:600;'>Próximos vuelos en esta ruta:</p>
+        <table style='width:100%;border-collapse:collapse;background:#F9F7F4;border-radius:8px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);'>
+            <thead>
+                <tr style='background:#8B6B4A;'>
+                    <th style='padding:9px 12px;font-size:11px;color:#F2EFEA;text-align:left;letter-spacing:.8px;'>VUELO</th>
+                    <th style='padding:9px 12px;font-size:11px;color:#F2EFEA;text-align:left;letter-spacing:.8px;'>FECHA</th>
+                    <th style='padding:9px 12px;font-size:11px;color:#F2EFEA;text-align:left;letter-spacing:.8px;'>HORA</th>
+                </tr>
+            </thead>
+            <tbody>{filasVuelos}</tbody>
+        </table>"
+                : "<p style='margin:0;font-size:13px;color:#8B6B4A;font-style:italic;'>No hay vuelos programados próximamente en esta ruta.</p>";
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:26px;color:#F2EFEA;font-weight:800;letter-spacing:1.5px;'>BROOM AIRLINE</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Aviso a Agencias de Viaje</p>
+    </div>
+    <div style='height:3px;background:#198754;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+
+        <p style='margin:0 0 16px;font-size:15px;color:#1C1A18;'>
+            Estimado/a <strong>{e(nombreContacto)}</strong> de <strong>{e(nombreAgencia)}</strong>,
+        </p>
+        <p style='margin:0 0 20px;font-size:14px;color:#3A3531;line-height:1.7;'>
+            Nos complace informarle que la siguiente ruta ha sido <strong style='color:#198754;'>reactivada</strong>
+            y ya está disponible nuevamente para reservaciones:
+        </p>
+
+        <!-- Ruta destacada -->
+        <div style='background:#d1fae5;border:1px solid #6ee7b7;border-left:4px solid #198754;border-radius:4px 12px 4px 12px;padding:18px 20px;margin-bottom:20px;text-align:center;'>
+            <div style='font-size:22px;font-weight:800;color:#065f46;letter-spacing:1px;'>{ruta}</div>
+            <div style='margin-top:8px;font-size:13px;color:#065f46;font-weight:600;'>✓ Ruta operativa</div>
+        </div>
+
+        <div style='margin-bottom:20px;'>
+            {seccionVuelos}
+        </div>
+
+        <p style='margin:0;font-size:14px;color:#3A3531;line-height:1.7;'>
+            Ya puede ofrecer esta ruta a sus clientes. Si tiene alguna consulta, contáctenos a través de su canal habitual de soporte.
+        </p>
+
+    </div>
+
+    <div style='height:3px;background:#198754;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
         // ══════════════════════════════════════════════════════════════════
         //  CORREO DE OFERTA SEMANAL — enviado semanalmente a usuarios suscritos
         // ══════════════════════════════════════════════════════════════════
@@ -1154,6 +1437,85 @@ namespace Aerolinea.API.Helpers
   </table>
   </td></tr>
 </table>
+</body>
+</html>";
+        }
+        // ══════════════════════════════════════════════════════════════════
+        //  CORREO CAMBIO DE VUELO — confirmacion al usuario tras cambiar de vuelo
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de confirmacion de cambio de vuelo para el usuario.
+        /// </summary>
+        public static string CorreoCambioVuelo(
+            string nombreUsuario,
+            string noReservacion,
+            string origenCodigo,
+            string origenCiudad,
+            string destinoCodigo,
+            string destinoCiudad,
+            string nuevoNumeroVuelo,
+            string nuevaFecha,
+            string nuevaHoraSalida,
+            decimal precioTotal)
+        {
+            var e = EmailHelper.Esc;
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:26px;color:#F2EFEA;font-weight:800;letter-spacing:1.5px;'>BROOM AIRLINE</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Confirmación de Cambio de Vuelo</p>
+    </div>
+    <div style='height:3px;background:#8B6B4A;'></div>
+
+    <div style='padding:28px 24px;background:#ffffff;'>
+        <p style='margin:0 0 16px;font-size:15px;color:#1C1A18;'>¡Hola <strong>{e(nombreUsuario)}</strong>!</p>
+        <p style='margin:0 0 20px;font-size:14px;color:#3A3531;line-height:1.7;'>
+            Tu reservación ha sido <strong style='color:#198754;'>reprogramada exitosamente</strong> a un nuevo vuelo.
+        </p>
+
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.25);border-left:4px solid #8B6B4A;border-radius:4px 12px 4px 12px;padding:18px 20px;margin-bottom:20px;'>
+            <p style='margin:0 0 4px;font-size:11px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Reservación</p>
+            <p style='margin:0 0 14px;font-size:17px;font-weight:800;color:#1C1A18;'>{e(noReservacion)}</p>
+            <p style='margin:0 0 4px;font-size:11px;color:#8B6B4A;font-weight:700;text-transform:uppercase;letter-spacing:1px;'>Ruta</p>
+            <p style='margin:0 0 14px;font-size:15px;font-weight:700;color:#1C1A18;'>{e(origenCodigo)} ({e(origenCiudad)}) → {e(destinoCodigo)} ({e(destinoCiudad)})</p>
+            <table style='width:100%;border-collapse:collapse;'>
+                <tr>
+                    <td style='padding:6px 0;font-size:13px;color:#8B6B4A;width:140px;'>Nuevo vuelo</td>
+                    <td style='padding:6px 0;font-size:14px;color:#1C1A18;font-weight:700;'>{e(nuevoNumeroVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:6px 0;font-size:13px;color:#8B6B4A;'>Nueva fecha</td>
+                    <td style='padding:6px 0;font-size:14px;color:#1C1A18;font-weight:700;'>{e(nuevaFecha)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:6px 0;font-size:13px;color:#8B6B4A;'>Hora de salida</td>
+                    <td style='padding:6px 0;font-size:14px;color:#1C1A18;font-weight:700;'>{e(nuevaHoraSalida)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:6px 0;font-size:13px;color:#8B6B4A;'>Total pagado</td>
+                    <td style='padding:6px 0;font-size:15px;color:#1C1A18;font-weight:800;'>Q{precioTotal:N2}</td>
+                </tr>
+            </table>
+        </div>
+
+        <p style='margin:0;font-size:13px;color:#3A3531;line-height:1.7;'>
+            Tus asientos han sido reasignados automáticamente. Si tienes alguna duda, contáctanos.
+        </p>
+    </div>
+
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
 </body>
 </html>";
         }
