@@ -7,6 +7,9 @@
     {
         public string Ciudad { get; set; }
         public string Pais { get; set; }
+
+        public DateOnly FechaIda { get; set; }
+        public DateOnly FechaVuelta { get; set; }
     }
 
     /// <summary>

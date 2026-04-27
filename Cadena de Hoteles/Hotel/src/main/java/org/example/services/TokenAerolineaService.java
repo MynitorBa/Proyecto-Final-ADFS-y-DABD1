@@ -6,6 +6,7 @@ import org.example.repositories.AerolineaAliadaRepository;
 import org.example.repositories.TokenAerolineaRepository;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -49,6 +50,23 @@ public class TokenAerolineaService {
             throw new IllegalArgumentException("Token invalido o aerolinea no activa");
         }
 
+        // Valida que las fechas no sean nulas o vacias
+        if (request.getFechaIda() == null || request.getFechaIda().isBlank()) {
+            throw new IllegalArgumentException("La fecha de ida es obligatoria");
+        }
+        if (request.getFechaVuelta() == null || request.getFechaVuelta().isBlank()) {
+            throw new IllegalArgumentException("La fecha de vuelta es obligatoria");
+        }
+
+        // Convierte String a LocalDate (espera formato yyyy-MM-dd)
+        LocalDate fechaIda    = LocalDate.parse(request.getFechaIda());
+        LocalDate fechaVuelta = LocalDate.parse(request.getFechaVuelta());
+
+        // Valida que la fecha de vuelta sea posterior a la de ida
+        if (!fechaVuelta.isAfter(fechaIda)) {
+            throw new IllegalArgumentException("La fecha de vuelta debe ser posterior a la fecha de ida");
+        }
+
         // Resuelve el ID de la ciudad destino
         Integer ciudadId = tokenRepository.buscarCiudadId(request.getCiudad(), request.getPais());
         if (ciudadId == null) {
@@ -59,17 +77,19 @@ public class TokenAerolineaService {
         }
 
         // Genera el token de un solo uso y calcula su expiracion
-        String token            = UUID.randomUUID().toString();
-        LocalDateTime ahora     = LocalDateTime.now();
+        String token             = UUID.randomUUID().toString();
+        LocalDateTime ahora      = LocalDateTime.now();
         LocalDateTime expiracion = ahora.plusMinutes(15);
-        Timestamp tsExpiracion  = Timestamp.valueOf(expiracion);
+        Timestamp tsExpiracion   = Timestamp.valueOf(expiracion);
 
-        tokenRepository.insertarToken(aerolineaId, ciudadId, token, tsExpiracion);
+        // Convierte LocalDate a java.sql.Date para Oracle
+        java.sql.Date sqlFechaIda    = java.sql.Date.valueOf(fechaIda);
+        java.sql.Date sqlFechaVuelta = java.sql.Date.valueOf(fechaVuelta);
 
-        // Obtiene la URLParaUsuario de la aerolinea para construir la URL de redireccion
-        String urlBase = aerolineaRepository.obtenerAerolineaPorToken(tokenHash).getUrlAerolinea();
-        String urlRedireccion = urlBase + "?token=" + token;
+        tokenRepository.insertarToken(aerolineaId, ciudadId, token, tsExpiracion, sqlFechaIda, sqlFechaVuelta);
 
+        String urlBase         = aerolineaRepository.obtenerAerolineaPorToken(tokenHash).getUrlAerolinea();
+        String urlRedireccion  = urlBase + "?token=" + token;
         String fechaFormateada = expiracion.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         return new TokenAerolineaResponseDTO(token, urlRedireccion, fechaFormateada);

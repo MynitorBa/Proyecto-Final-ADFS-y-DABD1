@@ -59,14 +59,10 @@
     /// </summary>
     public class CrearHotelWebserviceDTO
     {
-        // Nombre identificador del hotel aliado en el sistema
         public string Nombre { get; set; } = string.Empty;
-
-        // URL base de la API del hotel para que la aerolinea se comunique con el
         public string Url { get; set; } = string.Empty;
-
-        // URL publica del hotel que se mostrara a los pasajeros
         public string UrlParaUsuario { get; set; } = string.Empty;
+        public string? UrlHomeAliado { get; set; } 
     }
 
     /// <summary>
@@ -77,15 +73,10 @@
     {
         public int ID { get; set; }
         public string Nombre { get; set; } = string.Empty;
-
-        // ID del estado del aliado segun el catalogo EstadoAliado
         public int EstadoID { get; set; }
-
-        // URL base de la API del hotel registrada al crear
         public string Url { get; set; } = string.Empty;
-
-        // URL publica del hotel para mostrar a los pasajeros
         public string UrlParaUsuario { get; set; } = string.Empty;
+        public string? UrlHomeAliado { get; set; } 
     }
 
     // ── DTOs exclusivos del panel de administracion ───────────────────────────
@@ -99,23 +90,12 @@
     {
         public int ID { get; set; }
         public string Nombre { get; set; } = string.Empty;
-
-        // ID de estado del hotel segun catalogo EstadoAliado (1=Activo, 2=Inactivo, 3=Suspendido)
         public int EstadoID { get; set; }
-
-        // URL de la API del hotel
         public string Url { get; set; } = string.Empty;
-
-        // URL publica del hotel para los pasajeros
         public string UrlParaUsuario { get; set; } = string.Empty;
-
-        // ID del usuario Webservice vinculado al hotel; null si no tiene ninguno
+        public string? UrlHomeAliado { get; set; } 
         public int? UsuarioWEBIs { get; set; }
-
-        // Nombre del usuario Webservice vinculado; null si no esta asignado
         public string? UsuarioNombre { get; set; }
-
-        // Username del usuario Webservice vinculado; null si no esta asignado
         public string? UsuarioUsername { get; set; }
     }
 
@@ -126,15 +106,10 @@
     public class CrearHotelAdminDTO
     {
         public string Nombre { get; set; } = string.Empty;
-
-        // URL base de la API del hotel para la comunicacion con la aerolinea
-        public string Url { get; set; } = string.Empty;
-
-        // URL publica del hotel para mostrar a los pasajeros
-        public string UrlParaUsuario { get; set; } = string.Empty;
-
-        // ID del usuario Webservice al que se asignara el hotel
         public int UsuarioWEBIs { get; set; }
+        public string Url { get; set; } = string.Empty;
+        public string UrlParaUsuario { get; set; } = string.Empty;
+        public string? UrlHomeAliado { get; set; }  
     }
 
     /// <summary>
@@ -152,11 +127,9 @@
     /// </summary>
     public class ActualizarUrlHotelDTO
     {
-        // Nueva URL base de la API del hotel
         public string Url { get; set; } = string.Empty;
-
-        // Nueva URL publica del hotel para los pasajeros
         public string UrlParaUsuario { get; set; } = string.Empty;
+        public string? UrlHomeAliado { get; set; }  // nullable
     }
 
     /// <summary>
@@ -166,5 +139,16 @@
     public class AsignarUsuarioHotelDTO
     {
         public int UsuarioId { get; set; }
+    }
+
+    /// <summary>
+    /// DTO de recomendación de hotel aliado para el usuario final.
+    /// Solo expone el nombre y la URL de la home del hotel.
+    /// </summary>
+    public class HotelHomeDTO
+    {
+        public int ID { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string? UrlHomeAliado { get; set; }
     }
 }

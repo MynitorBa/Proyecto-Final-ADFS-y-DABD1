@@ -653,3 +653,138 @@
     .confirmacion__hoteles { padding: 1.25rem; }
     .confirmacion__hoteles-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Modal sugerencia hotel solo ida ──────────────────────────────────── */
+.conf-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.conf-modal {
+  background: var(--color-fondo-tarjeta, #1a1a2e);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem 1.75rem 1.75rem;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.conf-modal__cerrar {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-texto-secundario, #888);
+  padding: 4px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+.conf-modal__cerrar:hover { color: var(--color-texto-primario, #fff); }
+
+.conf-modal__icono {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(212, 160, 86, 0.12);
+  border: 1px solid rgba(212, 160, 86, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #D4A056;
+  margin-bottom: 0.25rem;
+}
+
+.conf-modal__titulo {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-texto-primario, #fff);
+  margin: 0;
+}
+
+.conf-modal__ciudad {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #D4A056;
+  background: rgba(212, 160, 86, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin: 0;
+}
+
+.conf-modal__texto {
+  font-size: 0.88rem;
+  color: var(--color-texto-secundario, #aaa);
+  line-height: 1.6;
+  margin: 0.25rem 0 0;
+}
+
+.conf-modal__sugerencia {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: left;
+  margin-top: 0.25rem;
+}
+
+.conf-modal__sugerencia-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--color-texto-secundario, #aaa);
+  line-height: 1.45;
+}
+.conf-modal__sugerencia-fila svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #D4A056;
+}
+
+.conf-modal__btn-cerrar {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 160, 86, 0.4);
+  background: rgba(212, 160, 86, 0.1);
+  color: #D4A056;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.conf-modal__btn-cerrar:hover {
+  background: rgba(212, 160, 86, 0.2);
+  border-color: rgba(212, 160, 86, 0.65);
+}
+
+/* Hotel card — variante link directo (solo ida) */
+.hotel-card__btn--link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+}

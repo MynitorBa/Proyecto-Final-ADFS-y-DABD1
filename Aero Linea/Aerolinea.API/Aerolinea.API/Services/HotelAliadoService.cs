@@ -222,14 +222,23 @@ namespace Aerolinea.API.Services
         /// Actualiza la URL de la API y la URL publica de un hotel aliado.
         /// Ninguna de las dos URLs puede estar vacia.
         /// </summary>
-        public async Task ActualizarUrls(int hotelId, string url, string urlParaUsuario)
+        public async Task ActualizarUrls(int hotelId, string url, string urlParaUsuario, string? urlHomeAliado)
         {
             if (string.IsNullOrWhiteSpace(url))
                 throw new Exception("La URL de la API no puede estar vacía.");
             if (string.IsNullOrWhiteSpace(urlParaUsuario))
                 throw new Exception("La URL publica no puede estar vacía.");
-            bool ok = await _repository.ActualizarUrls(hotelId, url.Trim(), urlParaUsuario.Trim());
+            // urlHomeAliado es opcional, no se valida como obligatoria
+
+            bool ok = await _repository.ActualizarUrls(hotelId, url.Trim(), urlParaUsuario.Trim(), urlHomeAliado?.Trim());
             if (!ok) throw new Exception("No se encontró el hotel indicado.");
         }
+
+        /// <summary>
+        /// Retorna el nombre y URL home de todos los hoteles aliados activos
+        /// que tienen URLHomeAliado configurada. Para recomendación al usuario final.
+        /// </summary>
+        public async Task<List<HotelHomeDTO>> ObtenerHotelesHome()
+            => await _repository.ObtenerHotelesHome();
     }
 }

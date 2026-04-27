@@ -204,9 +204,9 @@ namespace Aerolinea.API.Repositories
             const int estadoActivo = 1;
 
             var query = @"
-                INSERT INTO HotelAliado (Nombre, UsuarioWEBIs, EstadoID, TokenHASH, URL, URLParaUsuario)
-                OUTPUT INSERTED.ID
-                VALUES (@Nombre, @UsuarioWEBIs, @EstadoID, '', @URL, @URLParaUsuario)";
+        INSERT INTO HotelAliado (Nombre, UsuarioWEBIs, EstadoID, TokenHASH, URL, URLParaUsuario, URLHomeAliado)
+        OUTPUT INSERTED.ID
+        VALUES (@Nombre, @UsuarioWEBIs, @EstadoID, '', @URL, @URLParaUsuario, @URLHomeAliado)";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Nombre", dto.Nombre);
@@ -214,6 +214,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@EstadoID", estadoActivo);
             command.Parameters.AddWithValue("@URL", dto.Url);
             command.Parameters.AddWithValue("@URLParaUsuario", dto.UrlParaUsuario);
+            command.Parameters.AddWithValue("@URLHomeAliado", (object?)dto.UrlHomeAliado ?? DBNull.Value);
 
             int nuevoId = (int)await command.ExecuteScalarAsync();
 
@@ -223,7 +224,8 @@ namespace Aerolinea.API.Repositories
                 Nombre = dto.Nombre,
                 EstadoID = estadoActivo,
                 Url = dto.Url,
-                UrlParaUsuario = dto.UrlParaUsuario
+                UrlParaUsuario = dto.UrlParaUsuario,
+                UrlHomeAliado = dto.UrlHomeAliado
             };
         }
 
@@ -238,9 +240,9 @@ namespace Aerolinea.API.Repositories
             await connection.OpenAsync();
 
             using var command = new SqlCommand(@"
-                SELECT ID, Nombre, EstadoID, URL, URLParaUsuario
-                FROM HotelAliado
-                WHERE UsuarioWEBIs = @UsuarioId", connection);
+        SELECT ID, Nombre, EstadoID, URL, URLParaUsuario, URLHomeAliado
+        FROM HotelAliado
+        WHERE UsuarioWEBIs = @UsuarioId", connection);
             command.Parameters.AddWithValue("@UsuarioId", usuarioId);
 
             using var reader = await command.ExecuteReaderAsync();
@@ -252,7 +254,8 @@ namespace Aerolinea.API.Repositories
                     Nombre = reader.GetString(1),
                     EstadoID = reader.GetInt32(2),
                     Url = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
-                    UrlParaUsuario = reader.IsDBNull(4) ? string.Empty : reader.GetString(4)
+                    UrlParaUsuario = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                    UrlHomeAliado = reader.IsDBNull(5) ? null : reader.GetString(5)
                 };
             }
             return null;
@@ -270,13 +273,13 @@ namespace Aerolinea.API.Repositories
             var lista = new List<HotelAdminDTO>();
 
             using var command = new SqlCommand(@"
-                SELECT h.ID, h.Nombre, h.EstadoID, h.URL, h.URLParaUsuario,
-                       h.UsuarioWEBIs,
-                       u.Nombre   AS UsuarioNombre,
-                       u.Username AS UsuarioUsername
-                FROM HotelAliado h
-                LEFT JOIN Usuario u ON h.UsuarioWEBIs = u.Id
-                ORDER BY h.ID", connection);
+    SELECT h.ID, h.Nombre, h.EstadoID, h.URL, h.URLParaUsuario, h.URLHomeAliado,
+           h.UsuarioWEBIs,
+           u.Nombre   AS UsuarioNombre,
+           u.Username AS UsuarioUsername
+    FROM HotelAliado h
+    LEFT JOIN Usuario u ON h.UsuarioWEBIs = u.Id
+    ORDER BY h.ID", connection);
 
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -288,9 +291,10 @@ namespace Aerolinea.API.Repositories
                     EstadoID = reader.GetInt32(2),
                     Url = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
                     UrlParaUsuario = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
-                    UsuarioWEBIs = reader.IsDBNull(5) ? null : reader.GetInt32(5),
-                    UsuarioNombre = reader.IsDBNull(6) ? null : reader.GetString(6),
-                    UsuarioUsername = reader.IsDBNull(7) ? null : reader.GetString(7)
+                    UrlHomeAliado = reader.IsDBNull(5) ? null : reader.GetString(5),   
+                    UsuarioWEBIs = reader.IsDBNull(6) ? null : reader.GetInt32(6),
+                    UsuarioNombre = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    UsuarioUsername = reader.IsDBNull(8) ? null : reader.GetString(8)
                 });
             }
             return lista;
@@ -309,9 +313,9 @@ namespace Aerolinea.API.Repositories
             const int estadoActivo = 1;
 
             var query = @"
-                INSERT INTO HotelAliado (Nombre, UsuarioWEBIs, EstadoID, TokenHASH, URL, URLParaUsuario)
-                OUTPUT INSERTED.ID
-                VALUES (@Nombre, @UsuarioWEBIs, @EstadoID, '', @URL, @URLParaUsuario)";
+        INSERT INTO HotelAliado (Nombre, UsuarioWEBIs, EstadoID, TokenHASH, URL, URLParaUsuario, URLHomeAliado)
+        OUTPUT INSERTED.ID
+        VALUES (@Nombre, @UsuarioWEBIs, @EstadoID, '', @URL, @URLParaUsuario, @URLHomeAliado)";
 
             using var command = new SqlCommand(query, connection);
             command.Parameters.AddWithValue("@Nombre", dto.Nombre);
@@ -319,6 +323,7 @@ namespace Aerolinea.API.Repositories
             command.Parameters.AddWithValue("@EstadoID", estadoActivo);
             command.Parameters.AddWithValue("@URL", dto.Url);
             command.Parameters.AddWithValue("@URLParaUsuario", dto.UrlParaUsuario);
+            command.Parameters.AddWithValue("@URLHomeAliado", (object?)dto.UrlHomeAliado ?? DBNull.Value);
 
             int nuevoId = (int)await command.ExecuteScalarAsync();
 
@@ -329,6 +334,7 @@ namespace Aerolinea.API.Repositories
                 EstadoID = estadoActivo,
                 Url = dto.Url,
                 UrlParaUsuario = dto.UrlParaUsuario,
+                UrlHomeAliado = dto.UrlHomeAliado,
                 UsuarioWEBIs = dto.UsuarioWEBIs
             };
         }
@@ -369,19 +375,53 @@ namespace Aerolinea.API.Repositories
         /// Actualiza la URL de la API y la URL publica para usuarios de un hotel aliado.
         /// Retorna true si la actualizacion fue exitosa.
         /// </summary>
-        public async Task<bool> ActualizarUrls(int hotelId, string url, string urlParaUsuario)
+        public async Task<bool> ActualizarUrls(int hotelId, string url, string urlParaUsuario, string? urlHomeAliado)
         {
             using var connection = _connectionFactory.CreateConnection();
             await connection.OpenAsync();
 
             using var command = new SqlCommand(@"
-                UPDATE HotelAliado
-                SET URL = @Url, URLParaUsuario = @UrlParaUsuario
-                WHERE ID = @HotelId", connection);
+        UPDATE HotelAliado
+        SET URL = @Url, URLParaUsuario = @UrlParaUsuario, URLHomeAliado = @UrlHomeAliado
+        WHERE ID = @HotelId", connection);
             command.Parameters.AddWithValue("@Url", url);
             command.Parameters.AddWithValue("@UrlParaUsuario", urlParaUsuario);
+            command.Parameters.AddWithValue("@UrlHomeAliado", (object?)urlHomeAliado ?? DBNull.Value);
             command.Parameters.AddWithValue("@HotelId", hotelId);
             return await command.ExecuteNonQueryAsync() > 0;
+        }
+
+
+        /// <summary>
+        /// Retorna el nombre y la URL Home de todos los hoteles aliados activos.
+        /// Destinado a la recomendación de hoteles para el usuario final.
+        /// Solo incluye hoteles que tienen URLHomeAliado configurada.
+        /// </summary>
+        public async Task<List<HotelHomeDTO>> ObtenerHotelesHome()
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var lista = new List<HotelHomeDTO>();
+
+            using var command = new SqlCommand(@"
+        SELECT h.ID, h.Nombre, h.URLHomeAliado
+        FROM HotelAliado h
+        JOIN EstadoAliado e ON h.EstadoID = e.ID
+        WHERE LOWER(TRIM(e.Estado)) = 'activo'
+          AND h.URLHomeAliado IS NOT NULL", connection);
+
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new HotelHomeDTO
+                {
+                    ID = reader.GetInt32(0),
+                    Nombre = reader.GetString(1),
+                    UrlHomeAliado = reader.GetString(2)
+                });
+            }
+            return lista;
         }
     }
 }

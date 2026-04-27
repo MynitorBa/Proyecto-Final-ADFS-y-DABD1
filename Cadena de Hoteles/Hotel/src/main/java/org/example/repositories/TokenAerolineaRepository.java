@@ -55,11 +55,13 @@ public class TokenAerolineaRepository {
      * @param fechaExpiracion   timestamp calculado como now() mas 15 minutos.
      */
     public void insertarToken(int aerolineaAliadoId, int ciudadId,
-                              String token, Timestamp fechaExpiracion) {
-        String sql = "INSERT INTO TokenAerolinea " +
-                "(Usado, FechaUso, FechaExpiracion, Token, AerolineaAliadoID, CiudadID, ReservacionID) " +
-                "VALUES (0, NULL, ?, ?, ?, ?, NULL)";
+                              String token, Timestamp fechaExpiracion,
+                              java.sql.Date fechaIda, java.sql.Date fechaVuelta) {
 
-        DatabaseManager.executeUpdate(sql, fechaExpiracion, token, aerolineaAliadoId, ciudadId);
+        String sql = "INSERT INTO TokenAerolinea " +
+                "(Usado, FechaUso, FechaExpiracion, Token, AerolineaAliadoID, CiudadID, ReservacionID, FechaIda, FechaVuelta) " +
+                "VALUES (0, NULL, ?, ?, ?, ?, NULL, ?, ?)";
+
+        DatabaseManager.executeUpdate(sql, fechaExpiracion, token, aerolineaAliadoId, ciudadId, fechaIda, fechaVuelta);
     }
 }
