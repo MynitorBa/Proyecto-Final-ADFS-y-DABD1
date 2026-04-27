@@ -45,6 +45,30 @@ public class DatabaseManager {
         }
     }
 
+    @FunctionalInterface
+    public interface TransactionBlock {
+        void run(Connection conn) throws SQLException;
+    }
+
+    public static void executeInTransaction(TransactionBlock block) {
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                block.run(conn);
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw new DataAccessException("Transacción revertida", e);
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (DataAccessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DataAccessException("Error abriendo conexión para transacción", e);
+        }
+    }
+
     public static <T> List<T> executeQuery(
             String sql,
             ResultSetMapper<T> mapper,

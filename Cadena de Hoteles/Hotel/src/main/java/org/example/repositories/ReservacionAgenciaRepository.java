@@ -293,4 +293,101 @@ public class ReservacionAgenciaRepository {
             return dto;
         }, reservacionId, agenciaId);
     }
+
+
+
+
+
+
+    /**
+     * Retorna el detalle de un DetallesReservacion por ID, verificando que la reservacion
+     * pertenezca a la agencia indicada. Incluye estado y checkout original para validar
+     * duracion y regla de 48 horas.
+     * @param detalleId ID del detalle a consultar.
+     * @param agenciaId ID de la agencia propietaria.
+     * @return arreglo con {ID, ReservacionID, HabitacionID, FechaCheckIn, FechaCheckOut,
+     *         CantidadPersonas, Total, Estado} o null si no existe o no pertenece.
+     */
+    public Object[] obtenerDetalleDeAgencia(int detalleId, int agenciaId) {
+        String sql =
+                "SELECT dr.ID, dr.ReservacionID, dr.HabitacionID, dr.FechaCheckIn, dr.FechaCheckOut, " +
+                        "       dr.CantidadPersonas, dr.Total, LOWER(TRIM(er.Estado)) AS Estado " +
+                        "FROM DetallesReservacion dr " +
+                        "JOIN Reservacion r   ON dr.ReservacionID = r.ID " +
+                        "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
+                        "JOIN Agencia a        ON r.Usuario_ID = a.UsuarioWEBIs_ID " +
+                        "WHERE dr.ID = ? AND a.ID = ?";
+
+        List<Object[]> result = DatabaseManager.executeQuery(sql, rs -> new Object[]{
+                rs.getInt("ID"),
+                rs.getInt("ReservacionID"),
+                rs.getInt("HabitacionID"),
+                rs.getDate("FechaCheckIn"),
+                rs.getDate("FechaCheckOut"),
+                rs.getInt("CantidadPersonas"),
+                rs.getDouble("Total"),
+                rs.getString("Estado")
+        }, detalleId, agenciaId);
+
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+    /**
+     * Verifica traslape de fechas para una habitacion excluyendo un detalle especifico.
+     */
+    public boolean existeTraslapeExcluyendoDetalle(int habitacionId, Date checkIn,
+                                                   Date checkOut, int detalleIdExcluir) {
+        String sql =
+                "SELECT COUNT(*) AS total " +
+                        "FROM DetallesReservacion dr " +
+                        "JOIN Reservacion r   ON dr.ReservacionID = r.ID " +
+                        "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
+                        "WHERE dr.HabitacionID = ? " +
+                        "AND dr.ID != ? " +
+                        "AND LOWER(TRIM(er.Estado)) IN ('pendiente', 'confirmada') " +
+                        "AND dr.FechaCheckIn  < ? " +
+                        "AND dr.FechaCheckOut > ?";
+
+        List<Integer> result = DatabaseManager.executeQuery(
+                sql, rs -> rs.getInt("total"),
+                habitacionId, detalleIdExcluir, checkOut, checkIn
+        );
+        return !result.isEmpty() && result.get(0) > 0;
+    }
+
+    /**
+     * Actualiza fechas y total de multiples detalles en una sola transaccion atomica.
+     * Si cualquier UPDATE falla se hace rollback de todos.
+     * Como el cambio es solo de rango (misma duracion), el total no cambia.
+     */
+    public void actualizarFechasDetallesAtomico(List<Object[]> actualizaciones) {
+        String sqlDetalle =
+                "UPDATE DetallesReservacion " +
+                        "SET FechaCheckIn = ?, FechaCheckOut = ?, Total = ? " +
+                        "WHERE ID = ?";
+
+        // El total de la reservacion padre no cambia — misma duracion, mismo precio
+        // pero se recalcula igual por consistencia
+        String sqlTotal =
+                "UPDATE Reservacion r " +
+                        "SET r.Total = (SELECT SUM(d.Total) FROM DetallesReservacion d WHERE d.ReservacionID = r.ID) " +
+                        "WHERE r.ID = (SELECT ReservacionID FROM DetallesReservacion WHERE ID = ?)";
+
+        DatabaseManager.executeInTransaction(conn -> {
+            for (Object[] params : actualizaciones) {
+                // params = { fechaCheckIn(Date), fechaCheckOut(Date), total(double), detalleId(int) }
+                try (java.sql.PreparedStatement stmtDetalle = conn.prepareStatement(sqlDetalle)) {
+                    stmtDetalle.setDate(1,   (java.sql.Date) params[0]);
+                    stmtDetalle.setDate(2,   (java.sql.Date) params[1]);
+                    stmtDetalle.setDouble(3, (Double)        params[2]);
+                    stmtDetalle.setInt(4,    (Integer)       params[3]);
+                    stmtDetalle.executeUpdate();
+                }
+                try (java.sql.PreparedStatement stmtTotal = conn.prepareStatement(sqlTotal)) {
+                    stmtTotal.setInt(1, (Integer) params[3]);
+                    stmtTotal.executeUpdate();
+                }
+            }
+        });
+    }
 }

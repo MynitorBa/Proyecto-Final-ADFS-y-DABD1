@@ -32,6 +32,14 @@ public class LogReservacionRepository {
     public static final int TIPO_CANCELACION_ADMIN_EXITOSA = 19;
     public static final int TIPO_CANCELACION_ADMIN_FALLIDA = 20;
 
+    public static final int TIPO_CAMBIO_FECHAS_EXITOSO        = 21;
+    public static final int TIPO_CAMBIO_FECHAS_FALLIDO        = 22;
+    public static final int TIPO_CAMBIO_FECHAS_ERROR_INTERNO  = 23;
+
+    public static final int TIPO_CAMBIO_FECHAS_AGENCIA_EXITOSO       = 24;
+    public static final int TIPO_CAMBIO_FECHAS_AGENCIA_FALLIDO       = 25;
+    public static final int TIPO_CAMBIO_FECHAS_AGENCIA_ERROR_INTERNO = 26;
+
     /**
      * Registra un evento de reservacion en la tabla LogReservacion.
      * Si el INSERT falla, imprime el error en consola sin interrumpir el flujo principal.

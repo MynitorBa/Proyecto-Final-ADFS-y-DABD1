@@ -522,3 +522,214 @@
   padding: .05rem .35rem;
   margin-left: .3rem;
 }
+
+
+
+/* Botón para iniciar el cambio de fechas de una habitación */
+.change-dates-btn {
+  display: inline-flex; align-items: center; gap: .35rem;
+  margin-top: .75rem; padding: .4rem .9rem;
+  background: white; border: 1.5px solid #667eea;
+  border-radius: 8px; color: #667eea;
+  font-size: .8rem; font-weight: 600; cursor: pointer;
+  transition: all .2s;
+}
+.change-dates-btn:hover { background: #667eea; color: white; }
+
+/* Contenedor del formulario inline de cambio de fechas */
+.change-dates-form {
+  margin-top: .875rem; padding: .875rem;
+  background: #f0f4ff; border: 1.5px solid #c7d2fe;
+  border-radius: 10px;
+}
+
+/* Fila de los dos campos de fecha en paralelo */
+.change-dates-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .625rem;
+  margin-bottom: .75rem;
+}
+
+/* Campo individual de fecha */
+.change-dates-field { display: flex; flex-direction: column; gap: .3rem; }
+
+/* Input de tipo date */
+.change-dates-input {
+  padding: .5rem .75rem;
+  border: 1.5px solid #c7d2fe; border-radius: 8px;
+  font-size: .875rem; color: #1e293b; background: white;
+  cursor: pointer; transition: border-color .15s, box-shadow .15s;
+}
+.change-dates-input:focus {
+  outline: none; border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102,126,234,.12);
+}
+
+/* Error de validación del formulario de fechas */
+.change-dates-error {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .5rem .75rem; margin-bottom: .625rem;
+  background: #fef2f2; border: 1.5px solid #fecaca;
+  border-radius: 8px; color: #ef4444; font-size: .8rem;
+}
+
+/* Botones de acción del formulario de fechas */
+.change-dates-actions {
+  display: flex; gap: .5rem; justify-content: flex-end;
+}
+
+.change-dates-cancel-btn {
+  padding: .45rem 1rem;
+  background: white; border: 1.5px solid #e2e8f0;
+  border-radius: 8px; color: #64748b;
+  font-size: .85rem; font-weight: 600; cursor: pointer;
+  transition: all .15s;
+}
+.change-dates-cancel-btn:hover:not(:disabled) { border-color: #94a3b8; color: #1e293b; }
+.change-dates-cancel-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.change-dates-submit-btn {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .45rem 1rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white; border: none; border-radius: 8px;
+  font-size: .85rem; font-weight: 700; cursor: pointer;
+  transition: opacity .15s;
+}
+.change-dates-submit-btn:hover:not(:disabled) { opacity: .88; }
+.change-dates-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Confirmación de éxito al cambiar las fechas */
+.change-dates-ok {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .625rem .875rem;
+  background: #ecfdf5; border: 1.5px solid #6ee7b7;
+  border-radius: 8px; color: #065f46;
+  font-size: .85rem; font-weight: 600;
+}
+
+.atomic-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    margin-top: .9rem;
+    padding: .45rem .9rem;
+    border-radius: 8px;
+    border: 1.5px solid #667eea;
+    background: transparent;
+    color: #667eea;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .atomic-edit-btn:hover {
+    background: #667eea;
+    color: #fff;
+  }
+
+  /* Panel contenedor del editor atomico */
+  .atomic-edit-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1.5px solid #667eea33;
+    border-radius: 12px;
+    background: #f7f8ff;
+  }
+
+  /* Cabecera del panel atomico */
+  .atomic-edit-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem .6rem;
+    margin-bottom: .85rem;
+    font-size: .83rem;
+    font-weight: 700;
+    color: #4a4e8a;
+  }
+  .atomic-edit-info {
+    font-weight: 400;
+    color: #888;
+    font-size: .78rem;
+    flex-basis: 100%;
+  }
+
+  /* Fila de una habitacion dentro del editor atomico */
+  .atomic-room-row {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    padding: .7rem 0;
+    border-bottom: 1px solid #e8eaf0;
+  }
+  .atomic-room-row:last-of-type {
+    border-bottom: none;
+  }
+  .atomic-room-label {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .84rem;
+    color: #333;
+  }
+  .atomic-room-num {
+    font-size: .75rem;
+    color: #888;
+    background: #eee;
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+  .atomic-dates-fields {
+    display: flex;
+    gap: .7rem;
+    flex-wrap: wrap;
+  }
+  .atomic-date-field {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    flex: 1;
+    min-width: 130px;
+  }
+
+  /* Botones de accion del editor atomico */
+  .atomic-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .6rem;
+    margin-top: 1rem;
+    padding-top: .75rem;
+    border-top: 1px solid #e8eaf0;
+  }
+
+  /* Indicador de fechas modificadas en el resumen de la habitacion */
+  .dates-changed {
+    color: #667eea;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+  }
+  .dates-changed-tag {
+    font-size: .7rem;
+    background: #667eea;
+    color: #fff;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 700;
+    letter-spacing: .03em;
+  }
+
+  /* Mensaje de exito atomico */
+  .atomic-ok {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    background: #e6f9f0;
+    border: 1px solid #6fcf97;
+    border-radius: 8px;
+    color: #1a7a4a;
+    font-size: .85rem;
+    font-weight: 600;
+  }

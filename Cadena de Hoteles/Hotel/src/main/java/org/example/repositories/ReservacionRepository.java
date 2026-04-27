@@ -4,6 +4,7 @@ import org.example.data.DatabaseManager;
 import org.example.dtos.ReservacionDetalleDTO;
 
 import java.sql.Date;
+import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -222,5 +223,117 @@ public class ReservacionRepository {
         DatabaseManager.executeUpdate(sqlUpdate);
 
         return ids;
+    }
+
+
+
+
+
+
+    /**
+     * Verifica traslape de fechas para una habitacion, excluyendo un detalle especifico.
+     * Util al cambiar fechas de un detalle existente para no colisionar con si mismo.
+     */
+    public boolean existeTraslapeExcluyendoDetalle(int habitacionId, Date checkIn,
+                                                   Date checkOut, int detalleIdExcluir) {
+        String sql =
+                "SELECT COUNT(*) AS total " +
+                        "FROM DetallesReservacion dr " +
+                        "JOIN Reservacion r ON dr.ReservacionID = r.ID " +
+                        "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
+                        "WHERE dr.HabitacionID = ? " +
+                        "AND dr.ID != ? " +
+                        "AND LOWER(TRIM(er.Estado)) IN ('pendiente', 'confirmada') " +
+                        "AND dr.FechaCheckIn  < ? " +
+                        "AND dr.FechaCheckOut > ?";
+
+        List<Integer> result = DatabaseManager.executeQuery(
+                sql, rs -> rs.getInt("total"),
+                habitacionId, detalleIdExcluir, checkOut, checkIn
+        );
+        return !result.isEmpty() && result.get(0) > 0;
+    }
+
+    /**
+     * Actualiza las fechas y el total de un detalle de reservacion.
+     * Tambien recalcula y actualiza el total general de la reservacion padre.
+     */
+    public void actualizarFechasDetalle(int detalleId, Date checkIn,
+                                        Date checkOut, int personas, double nuevoTotal) {
+        String sqlDetalle =
+                "UPDATE DetallesReservacion " +
+                        "SET FechaCheckIn = ?, FechaCheckOut = ?, CantidadPersonas = ?, Total = ? " +
+                        "WHERE ID = ?";
+        DatabaseManager.executeUpdate(sqlDetalle, checkIn, checkOut, personas, nuevoTotal, detalleId);
+
+        // Recalcular el total general sumando todos los detalles de la reservacion
+        String sqlTotal =
+                "UPDATE Reservacion r " +
+                        "SET r.Total = (SELECT SUM(d.Total) FROM DetallesReservacion d WHERE d.ReservacionID = r.ID) " +
+                        "WHERE r.ID = (SELECT ReservacionID FROM DetallesReservacion WHERE ID = ?)";
+        DatabaseManager.executeUpdate(sqlTotal, detalleId);
+    }
+
+    /**
+     * Retorna el detalle de reservacion por ID, incluyendo el estado de la reservacion padre
+     * y el ID del usuario dueno, para validar permisos antes de modificar.
+     */
+    public Object[] obtenerDetalle(int detalleId) {
+        String sql =
+                "SELECT dr.ID, dr.ReservacionID, dr.HabitacionID, dr.FechaCheckIn, dr.FechaCheckOut, " +
+                        "       dr.CantidadPersonas, dr.Total, r.Usuario_ID, LOWER(TRIM(er.Estado)) AS Estado " +
+                        "FROM DetallesReservacion dr " +
+                        "JOIN Reservacion r  ON dr.ReservacionID = r.ID " +
+                        "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
+                        "WHERE dr.ID = ?";
+
+        List<Object[]> result = DatabaseManager.executeQuery(sql, rs -> new Object[]{
+                rs.getInt("ID"),
+                rs.getInt("ReservacionID"),
+                rs.getInt("HabitacionID"),
+                rs.getDate("FechaCheckIn"),
+                rs.getDate("FechaCheckOut"),
+                rs.getInt("CantidadPersonas"),
+                rs.getDouble("Total"),
+                rs.getInt("Usuario_ID"),
+                rs.getString("Estado")
+        }, detalleId);
+
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+
+    /**
+     * Actualiza fechas y total de multiples detalles en una sola transaccion.
+     * Si cualquier UPDATE falla, se hace rollback de todos.
+     */
+    public void actualizarFechasDetallesAtomico(List<Object[]> actualizaciones) {
+
+        String sqlDetalle =
+                "UPDATE DetallesReservacion " +
+                        "SET FechaCheckIn = ?, FechaCheckOut = ?, Total = ? " +
+                        "WHERE ID = ?";
+
+        String sqlTotal =
+                "UPDATE Reservacion r " +
+                        "SET r.Total = (SELECT SUM(d.Total) FROM DetallesReservacion d WHERE d.ReservacionID = r.ID) " +
+                        "WHERE r.ID = (SELECT ReservacionID FROM DetallesReservacion WHERE ID = ?)";
+
+        DatabaseManager.executeInTransaction(conn -> {
+            for (Object[] params : actualizaciones) {
+                // params = { fechaCheckIn(Date), fechaCheckOut(Date), total(double), detalleId(int) }
+                try (PreparedStatement stmtDetalle = conn.prepareStatement(sqlDetalle)) {
+                    stmtDetalle.setDate(1,   (java.sql.Date)   params[0]);
+                    stmtDetalle.setDate(2,   (java.sql.Date)   params[1]);
+                    stmtDetalle.setDouble(3, (Double)          params[2]);
+                    stmtDetalle.setInt(4,    (Integer)         params[3]);
+                    stmtDetalle.executeUpdate();
+                }
+                try (PreparedStatement stmtTotal = conn.prepareStatement(sqlTotal)) {
+                    stmtTotal.setInt(1, (Integer) params[3]);
+                    stmtTotal.executeUpdate();
+                }
+            }
+        });
     }
 }

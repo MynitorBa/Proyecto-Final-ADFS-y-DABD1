@@ -39,6 +39,9 @@ public class ReservacionAgenciaController {
 
         // Retorna el detalle completo de una reservacion perteneciente a la agencia autenticada
         app.get("/agencia/reservaciones/{id}", this::handleObtenerDetalleReservacion);
+
+        app.patch("/agencia/reservaciones/{id}/fechas", this::handleCambiarFechasMultiple);
+
     }
 
     void handleCrearReservacion(Context ctx) {
@@ -88,6 +91,26 @@ public class ReservacionAgenciaController {
             ctx.status(200).json(detalle);
         } catch (IllegalArgumentException e) {
             ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
+        }
+    }
+
+
+
+    void handleCambiarFechasMultiple(Context ctx) {
+        if (!AgenciaAuthMiddleware.verificar(ctx)) return;
+        int agenciaId     = ctx.attribute("agenciaId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+        var body          = ctx.bodyAsClass(org.example.dtos.CambioFechasMultipleRequestDTO.class);
+        try {
+            var resultado = reservacionAgenciaService.cambiarFechasMultiple(
+                    reservacionId, body.getCambios(),
+                    agenciaId, ctx.ip(), ctx.userAgent()
+            );
+            ctx.status(200).json(resultado);
+        } catch (IllegalArgumentException e) {
+            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
         } catch (RuntimeException e) {
             ctx.status(500).json(Map.of("mensaje", e.getMessage()));
         }
