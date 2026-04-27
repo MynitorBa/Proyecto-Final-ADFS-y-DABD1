@@ -1,0 +1,8 @@
+services:
+  frontend:
+    build:
+      args:
+        - VITE_API_URL=https://biology-indicators-event-smithsonian.trycloudflare.com
+  backend:
+    environment:
+      - CORS_EXTRA_ORIGINS=http://localhost:5173,http://localhost:5001,https://propose-gsm-duty-ethernet.trycloudflare.com
