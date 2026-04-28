@@ -79,16 +79,27 @@ function Ensure-Up {
     Write-Info "Levantando aerolinea-$n..."
     $needsBuild = (-not (Test-ImageExists $n "backend")) -or (-not (Test-ImageExists $n "frontend"))
     if ($needsBuild) {
-        docker-compose --env-file $f -p "aerolinea-$n" up -d --build 2>&1 | Select-Object -Last 5
+        docker-compose --env-file $f -p "aerolinea-$n" up -d --build 2>&1 | Select-Object -Last 8
     } else {
-        docker-compose --env-file $f -p "aerolinea-$n" up -d 2>&1 | Select-Object -Last 5
+        docker-compose --env-file $f -p "aerolinea-$n" up -d 2>&1 | Select-Object -Last 8
     }
 
-    Start-Sleep -Seconds 3
+    # Polling: esperar hasta 90s a que el backend este corriendo
+    Write-Info "Esperando que aerolinea-$n este lista..."
+    $timeout = 90
+    $elapsed = 0
+    $interval = 5
+    while ($elapsed -lt $timeout) {
+        Start-Sleep -Seconds $interval
+        $elapsed += $interval
+        if (Test-BackendRunning $n) { break }
+        Write-Info "  ... ${elapsed}s / ${timeout}s"
+    }
+
     if (Test-BackendRunning $n) {
         Write-Ok "aerolinea-$n activo  ->  http://localhost:$( 3000 + $n )"
     } else {
-        Write-Err "aerolinea-$n no pudo levantarse - revisa logs"
+        Write-Err "aerolinea-$n no pudo levantarse en ${timeout}s - revisa: .\launch.ps1 logs-backend $n"
     }
 }
 
@@ -100,7 +111,7 @@ function Stop-Instance {
     if (-not (Test-BackendRunning $n)) { Write-Skip "aerolinea-$n ya estaba detenida"; return }
     Write-Info "Bajando aerolinea-$n..."
     docker-compose --env-file $f -p "aerolinea-$n" down 2>&1 | Select-Object -Last 3
-    Write-Ok "aerolinea-$n detenida  (datos de DB conservados)"
+    Write-Ok "aerolinea-$n detenida"
 }
 
 # --- REBUILDS -----------------------------------------------------
@@ -165,7 +176,113 @@ function Nuke-Instance {
     if (-not (Test-Path $f)) { Write-Warn "No existe $f"; return }
     Write-Warn "Eliminando contenedores, imagenes Y VOLUMEN DB de aerolinea-$n..."
     docker-compose --env-file $f -p "aerolinea-$n" down --rmi all --volumes 2>&1 | Select-Object -Last 5
+    # BUGFIX: docker-compose down --volumes NO borra volumenes con nombre explicito (name:).
+    # Hay que eliminarlo directamente por el nombre calculado.
+    $volName = "aerolinea-$n-db-data"
+    $volExists = docker volume ls --format "{{.Name}}" 2>&1 | Where-Object { $_ -eq $volName }
+    if ($volExists) {
+        Write-Warn "Eliminando volumen nombrado: $volName"
+        docker volume rm $volName -f 2>&1 | Out-Null
+        Write-Ok "Volumen $volName eliminado"
+    }
     Write-Ok "aerolinea-$n eliminada completamente (incluye datos de DB)"
+}
+
+# --- DESTROY ALL --------------------------------------------------
+# Elimina ABSOLUTAMENTE TODO lo relacionado con aerolineas:
+# contenedores, imagenes, volumenes de DB y archivos .env.
+# Escanea instancias 1..20 para no dejar nada huerfano.
+function Destroy-All {
+    Write-Host ""
+    Write-Host "╔══════════════════════════════════════════════════════════╗" -ForegroundColor Red
+    Write-Host "║              ⚠  DESTROY ALL - AEROLINEAS  ⚠              ║" -ForegroundColor Red
+    Write-Host "║                                                          ║" -ForegroundColor Red
+    Write-Host "║  Esto eliminara SIN RECUPERACION:                        ║" -ForegroundColor Red
+    Write-Host "║   • Todos los contenedores  (db, backend, frontend)      ║" -ForegroundColor Red
+    Write-Host "║   • Todas las imagenes Docker de aerolinea               ║" -ForegroundColor Red
+    Write-Host "║   • Todos los volumenes de SQL Server (datos de BD)      ║" -ForegroundColor Red
+    Write-Host "║   • Todos los archivos .env.aerolineaN                   ║" -ForegroundColor Red
+    Write-Host "╚══════════════════════════════════════════════════════════╝" -ForegroundColor Red
+    Write-Host ""
+    $confirm = Read-Host "Escribi DESTROY para confirmar"
+    if ($confirm -ne "DESTROY") { Write-Info "Cancelado. No se elimino nada."; return }
+
+    Write-Header "FASE 1 — Bajar y eliminar stacks con .env conocidos (1..20)"
+    for ($i = 1; $i -le 20; $i++) {
+        $f = ".env.aerolinea$i"
+        if (Test-Path $f) {
+            Write-Info "Eliminando stack aerolinea-$i via $f..."
+            docker-compose --env-file $f -p "aerolinea-$i" down --rmi all --volumes 2>&1 | Select-Object -Last 3
+            Write-Ok "Stack aerolinea-$i eliminado"
+        }
+    }
+
+    Write-Header "FASE 2 — Forzar eliminacion de contenedores huerfanos"
+    $containers = docker ps -a --format "{{.Names}}" 2>&1 |
+                  Where-Object { $_ -match "^aerolinea-\d" }
+    if ($containers) {
+        $containers | ForEach-Object {
+            Write-Warn "Eliminando contenedor huerfano: $_"
+            docker rm -f $_ 2>&1 | Out-Null
+        }
+        Write-Ok "Contenedores huerfanos eliminados"
+    } else {
+        Write-Skip "No quedan contenedores aerolinea huerfanos"
+    }
+
+    Write-Header "FASE 3 — Eliminar imagenes Docker de aerolinea"
+    $images = docker images --format "{{.Repository}}:{{.Tag}}" 2>&1 |
+              Where-Object { $_ -match "aerolinea" }
+    if ($images) {
+        $images | ForEach-Object {
+            Write-Warn "Eliminando imagen: $_"
+            docker rmi -f $_ 2>&1 | Out-Null
+        }
+        Write-Ok "Imagenes eliminadas"
+    } else {
+        Write-Skip "No quedan imagenes aerolinea"
+    }
+
+    Write-Header "FASE 4 — Eliminar volumenes Docker de aerolinea"
+    # Primero: forzar eliminacion por nombre calculado (fix: compose no borra volumenes con name: explicito)
+    for ($i = 1; $i -le 20; $i++) {
+        $volName = "aerolinea-$i-db-data"
+        $volExists = docker volume ls --format "{{.Name}}" 2>&1 | Where-Object { $_ -eq $volName }
+        if ($volExists) {
+            Write-Warn "Eliminando volumen nombrado: $volName"
+            docker volume rm $volName -f 2>&1 | Out-Null
+        }
+    }
+    # Segundo: barrer cualquier volumen aerolinea restante
+    $volumes = docker volume ls --format "{{.Name}}" 2>&1 |
+               Where-Object { $_ -match "aerolinea" }
+    if ($volumes) {
+        $volumes | ForEach-Object {
+            Write-Warn "Eliminando volumen: $_"
+            docker volume rm -f $_ 2>&1 | Out-Null
+        }
+        Write-Ok "Volumenes eliminados"
+    } else {
+        Write-Skip "No quedan volumenes aerolinea"
+    }
+
+    Write-Header "FASE 5 — Eliminar archivos .env.aerolineaN"
+    $envFiles = Get-ChildItem -Path "." -Filter ".env.aerolinea*" -File -ErrorAction SilentlyContinue
+    if ($envFiles) {
+        $envFiles | ForEach-Object {
+            Write-Warn "Eliminando $_"
+            Remove-Item $_.FullName -Force
+        }
+        Write-Ok "Archivos .env eliminados"
+    } else {
+        Write-Skip "No se encontraron archivos .env.aerolineaN"
+    }
+
+    Write-Host ""
+    Write-Host "✅ DESTROY ALL completado." -ForegroundColor Green
+    Write-Host "   No queda ningun rastro de aerolineas en Docker ni en disco." -ForegroundColor Green
+    Write-Host "   Para volver a levantar: .\launch.ps1 up [N]" -ForegroundColor Cyan
+    Write-Host ""
 }
 
 # --- LOGS ---------------------------------------------------------
@@ -229,6 +346,7 @@ function Show-Help {
     Write-Host ""
     Write-Host "PELIGROSO:" -ForegroundColor Red
     Write-Host "  .\launch.ps1 nuke [N]                Elimina TODO incluyendo datos de DB"
+    Write-Host "  .\launch.ps1 destroy-all             Elimina ABSOLUTAMENTE TODO (todas las instancias)"
     Write-Host "  .\launch.ps1 clean-images            Elimina imagenes huerfanas"
     Write-Host ""
     Write-Host "EJEMPLOS:" -ForegroundColor Green
@@ -362,8 +480,14 @@ switch ($Action) {
             if (Test-Path $f) {
                 docker-compose --env-file $f -p "aerolinea-$i" down --rmi all --volumes 2>&1 | Select-Object -Last 3
             } else {
-                # Si no existe el .env, intentar bajar igual con nombre del proyecto
                 docker-compose -p "aerolinea-$i" down --rmi all --volumes 2>&1 | Out-Null
+            }
+            # BUGFIX: eliminar volumen nombrado explicito que compose no borra solo
+            $volName = "aerolinea-$i-db-data"
+            $volExists = docker volume ls --format "{{.Name}}" 2>&1 | Where-Object { $_ -eq $volName }
+            if ($volExists) {
+                Write-Warn "Forzando eliminacion de volumen: $volName"
+                docker volume rm $volName -f 2>&1 | Out-Null
             }
             Write-Ok "aerolinea-$i eliminada completamente"
         }
@@ -387,6 +511,11 @@ switch ($Action) {
         Write-Ok "Reinicio completo: $started aerolineas recreadas desde cero"
         Write-Info "Nota: el db-init aplica schema+seed automaticamente al arrancar."
         Write-Info "Si el backend da error al inicio, espera 30s y revisa: .\launch.ps1 logs-db-init 1"
+    }
+
+    "destroy-all" {
+        Test-Deps
+        Destroy-All
     }
 
     "clean-images" {

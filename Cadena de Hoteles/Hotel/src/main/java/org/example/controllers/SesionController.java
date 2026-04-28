@@ -12,6 +12,9 @@ import io.jsonwebtoken.Claims;
  */
 public class SesionController {
 
+    private static final String COOKIE_NAME =
+            System.getenv().getOrDefault("COOKIE_NAME", "auth_token");
+
     private final SesionService sesionService;
 
     /**
@@ -32,15 +35,13 @@ public class SesionController {
     }
 
     void handleSesion(Context ctx) {
-        String token = ctx.cookie("auth_token");
+        String token = ctx.cookie(COOKIE_NAME);
 
-        // Si no hay token o es invalido, retorna un estado sin sesion sin lanzar error
         if (token == null || token.isBlank() || !JwtHelper.esValido(token)) {
             ctx.status(200).json(sesionService.sinSesion());
             return;
         }
 
-        // Extrae los datos del usuario desde el token JWT para construir la respuesta de sesion
         Claims claims    = JwtHelper.verificarToken(token);
         int    usuarioId = JwtHelper.getUsuarioId(claims);
         String username  = JwtHelper.getUsername(claims);
