@@ -24,7 +24,12 @@ services:
       retries: 10
       start_period: 30s
 
-  # Contenedor efimero que aplica el esquema y los datos iniciales una sola vez
+  # Contenedor efimero que aplica el esquema y los datos iniciales una sola vez.
+  # 01_schema.sql  - Crea todas las tablas, indices, FKs, UDF, SP, trigger y vista.
+  # 02_seed.sql    - Inserta catalogos maestros (idempotente).
+  # 03_soft_delete_migration.sql - Agrega columnas Activo a Avion/MiembroTripulacion/Ruta
+  #                  y renombra FKs si la BD existia antes de la v2. En instalaciones
+  #                  frescas no hace nada (las columnas ya vienen en el schema).
   db-init:
     image: mcr.microsoft.com/mssql-tools
     container_name: ${COMPOSE_PROJECT_NAME}-db-init
@@ -35,10 +40,18 @@ services:
       - ./sql:/sql
     command: >
       /bin/bash -c "
-        echo 'Creando esquema...' &&
+        echo 'Creando schema y objetos...' &&
         /opt/mssql-tools/bin/sqlcmd -S db -U sa -P '${DB_PASSWORD}' -i /sql/01_schema.sql &&
         echo 'Cargando seed...' &&
         /opt/mssql-tools/bin/sqlcmd -S db -U sa -P '${DB_PASSWORD}' -i /sql/02_seed.sql &&
+        echo 'Aplicando migracion v2 (soft-delete + renombre FKs)...' &&
+        /opt/mssql-tools/bin/sqlcmd -S db -U sa -P '${DB_PASSWORD}' -i /sql/03_soft_delete_migration.sql &&
+        if [ -f /sql/07_data.sql ]; then
+          echo 'Cargando datos iniciales (07_data.sql)...' &&
+          /opt/mssql-tools/bin/sqlcmd -S db -U sa -P '${DB_PASSWORD}' -i /sql/07_data.sql;
+        else
+          echo 'Sin datos iniciales (07_data.sql no encontrado, OK)';
+        fi &&
         echo 'Base de datos lista'
       "
     restart: "no"
@@ -92,8 +105,8 @@ services:
     build:
       context: "../AirLine Broom"
       dockerfile: Dockerfile
-      args:                                          
-      - VITE_API_URL=http://localhost:${BACKEND_PORT}
+      args:
+        - VITE_API_URL=http://localhost:${BACKEND_PORT}
     container_name: ${COMPOSE_PROJECT_NAME}-frontend
     ports:
       - "${FRONTEND_PORT}:5173"

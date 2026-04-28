@@ -351,6 +351,73 @@ function Show-Status {
     Write-Host ""
 }
 
+function Destroy-All {
+    param([int]$total)
+    Write-Warn "ADVERTENCIA MAXIMA: Esto elimina TODO para $total hoteles."
+    Write-Warn "  - Contenedores Docker"
+    Write-Warn "  - Imagenes Docker"
+    Write-Warn "  - Usuarios Oracle (incluye TODOS los datos de la base de datos)"
+    Write-Warn "  - Archivos .env"
+    Write-Warn "No hay vuelta atras. Los datos de Oracle se pierden para siempre."
+    $confirm = Read-Host "Escribi DESTRUIR para confirmar"
+    if ($confirm -ne "DESTRUIR") { Write-Info "Cancelado."; return }
+
+    Write-Header "PASO 1: Eliminando Docker (contenedores + imagenes)"
+    for ($i = 1; $i -le $total; $i++) {
+        $f = ".env.hotel$i"
+        if (Test-Path $f) {
+            Write-Info "Eliminando Docker hotel-$i..."
+            docker-compose --env-file $f -p "hotel-$i" down --rmi all 2>&1 | Out-Null
+            Write-Ok "Docker hotel-$i eliminado"
+        } else {
+            Write-Skip "No existe .env.hotel$i, intentando eliminar imagenes directamente..."
+            docker rmi "hotel-$i-frontend" "hotel-$i-backend" -f 2>&1 | Out-Null
+        }
+    }
+
+    Write-Header "PASO 2: Eliminando usuarios Oracle (DROP USER CASCADE)"
+    if ($script:HasSqlplus) {
+        $conn = "${ORACLE_SYSDBA_USER}/${ORACLE_SYSDBA_PASS}@${ORACLE_HOST}:${ORACLE_PORT}/${ORACLE_SERVICE}"
+        for ($i = 1; $i -le $total; $i++) {
+            $user = "hotel$i"
+            Write-Info "Eliminando Oracle '$user'..."
+            $tmp = "$env:TEMP\destroy_${user}.sql"
+            @"
+BEGIN
+    EXECUTE IMMEDIATE 'DROP USER $user CASCADE';
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
+EXIT;
+"@ | Set-Content -Path $tmp -Encoding ASCII
+            & sqlplus -S $conn "@$tmp" 2>&1 | Out-Null
+            Remove-Item $tmp -ErrorAction SilentlyContinue
+            Write-Ok "Oracle '$user' eliminado"
+        }
+    } else {
+        Write-Warn "sqlplus no disponible - Oracle no fue limpiado"
+    }
+
+    Write-Header "PASO 3: Eliminando archivos .env"
+    for ($i = 1; $i -le $total; $i++) {
+        $f = ".env.hotel$i"
+        if (Test-Path $f) {
+            Remove-Item $f -Force
+            Write-Ok "Eliminado $f"
+        } else {
+            Write-Skip "$f no existia"
+        }
+    }
+
+    Write-Header "PASO 4: Limpiando imagenes huerfanas de Docker"
+    docker image prune -f | Out-Null
+
+    Write-Host ""
+    Write-Ok "DESTRUCCION COMPLETA de $total hoteles finalizada." -ForegroundColor Red
+    Write-Warn "Para volver a usar el sistema corre: .\launch.ps1 up $total"
+}
+
 function Show-Help {
     Write-Host "`n=== GUIA DE COMANDOS - HOTELES DOCKER ===" -ForegroundColor Cyan
     Write-Host ""
@@ -375,8 +442,9 @@ function Show-Help {
     Write-Host "  .\launch.ps1 oracle-only [N]        Solo configura Oracle para N hoteles"
     Write-Host ""
     Write-Host "PELIGROSO:" -ForegroundColor Red
-    Write-Host "  .\launch.ps1 nuke [N]               Elimina contenedores e imagenes de N hoteles"
+    Write-Host "  .\launch.ps1 nuke [N]               Elimina contenedores e imagenes de N hoteles (Oracle intacto)"
     Write-Host "  .\launch.ps1 clean-images           Elimina imagenes huerfanas de Docker"
+    Write-Host "  .\launch.ps1 destroy-all [N]        BORRA TODO: Docker + Oracle + .env de N hoteles (IRREVERSIBLE)"
     Write-Host ""
     Write-Host "EJEMPLOS:" -ForegroundColor Green
     Write-Host "  .\launch.ps1 up 10                  Levanta 10 hoteles"
@@ -547,6 +615,11 @@ EXIT;
         Write-Host ""
         Write-Info "Imagenes de hotel actuales:"
         docker images | Select-String "hotel"
+    }
+
+    "destroy-all" {
+        Test-Deps
+        Destroy-All $N
     }
 
     "help" { Show-Help }

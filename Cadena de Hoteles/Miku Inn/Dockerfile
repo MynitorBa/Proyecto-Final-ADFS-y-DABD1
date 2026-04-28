@@ -7,7 +7,8 @@ WORKDIR /app
 
 # 1. Copia archivos de dependencias
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm install --ignore-scripts
+RUN npm rebuild rollup
 
 # 2. Copia el resto del código fuente
 COPY . .

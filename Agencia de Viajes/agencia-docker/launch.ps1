@@ -309,10 +309,81 @@ function Show-Help {
     Write-Host "  .\launch.ps1 logs-frontend [N]       Logs frontend"
     Write-Host "  .\launch.ps1 envcheck [N]            Variables de entorno"
     Write-Host "  .\launch.ps1 nuke [N]                Elimina Docker (MySQL intacto)"
+    Write-Host "  .\launch.ps1 destroy-all [N]         DESTRUYE TODO: Docker + MySQL + .env"
     Write-Host "  .\launch.ps1 clean-images            Imagenes huerfanas"
     Write-Host ""
     Write-Host "PUERTOS: Frontend 600N | Backend 800N | MySQL 3306 (compartido)" -ForegroundColor Yellow
     Write-Host "DB: usa root sin contrasena (XAMPP default)" -ForegroundColor Yellow
+    Write-Host ""
+}
+
+function Destroy-All {
+    param([int]$total)
+    Write-Host "`n=== DESTRUCCION TOTAL - AGENCIAS ===" -ForegroundColor Red
+    Write-Host ""
+    Write-Warn "Esta operacion es IRREVERSIBLE y eliminara:"
+    Write-Warn "  - Contenedores Docker (backend y frontend) de $total agencias"
+    Write-Warn "  - Imagenes Docker de las $total agencias"
+    Write-Warn "  - Bases de datos MySQL: agencia_viajes_1 .. agencia_viajes_$total"
+    Write-Warn "  - Archivos de entorno: .env.agencia1 .. .env.agencia$total"
+    Write-Host ""
+    $confirm = Read-Host "Escribi DESTRUIR para confirmar"
+    if ($confirm -ne "DESTRUIR") { Write-Info "Cancelado. No se realizo ninguna accion."; return }
+
+    # PASO 1 - Docker: contenedores e imagenes
+    Write-Header "PASO 1 / 3 - Eliminando Docker (contenedores + imagenes)"
+    for ($i = 1; $i -le $total; $i++) {
+        $f = ".env.agencia$i"
+        Write-Info "Docker agencia-$i..."
+        if (Test-Path $f) {
+            docker-compose --env-file $f -p "agencia-$i" down --rmi all --volumes --remove-orphans 2>&1 | Out-Null
+        } else {
+            # Sin .env intentamos bajar igual usando el project name
+            docker-compose -p "agencia-$i" down --rmi all --volumes --remove-orphans 2>&1 | Out-Null
+        }
+        # Por si quedaron imagenes con nombre explicito
+        docker rmi "agencia-$i-backend"  -f 2>&1 | Out-Null
+        docker rmi "agencia-$i-frontend" -f 2>&1 | Out-Null
+        Write-Ok "Docker agencia-$i eliminado"
+    }
+
+    # PASO 2 - MySQL: bases de datos
+    Write-Header "PASO 2 / 3 - Eliminando bases de datos MySQL"
+    if ($script:HasMysql) {
+        $mysqlArgs = Get-MysqlArgs
+        for ($i = 1; $i -le $total; $i++) {
+            $dbName = "agencia_viajes_$i"
+            Write-Info "Eliminando BD '$dbName'..."
+            $dropSql = "DROP DATABASE IF EXISTS ``$dbName``; FLUSH PRIVILEGES;"
+            $out = $dropSql | & mysql @mysqlArgs 2>&1
+            if ("$out" -match "ERROR") {
+                Write-Err "Error al eliminar '$dbName': $out"
+            } else {
+                Write-Ok "BD '$dbName' eliminada"
+            }
+        }
+    } else {
+        Write-Warn "Cliente mysql no disponible - elimina las BDs manualmente en XAMPP/phpMyAdmin"
+        for ($i = 1; $i -le $total; $i++) {
+            Write-Warn "  -> DROP DATABASE IF EXISTS ``agencia_viajes_$i``;"
+        }
+    }
+
+    # PASO 3 - Archivos .env
+    Write-Header "PASO 3 / 3 - Eliminando archivos .env"
+    for ($i = 1; $i -le $total; $i++) {
+        $f = ".env.agencia$i"
+        if (Test-Path $f) {
+            Remove-Item $f -Force
+            Write-Ok "Eliminado $f"
+        } else {
+            Write-Skip "$f no existia"
+        }
+    }
+
+    Write-Host ""
+    Write-Host "=== DESTRUCCION COMPLETA ===" -ForegroundColor Red
+    Write-Ok "Se eliminaron $total agencias: Docker, MySQL y .env borrados por completo."
     Write-Host ""
 }
 
@@ -394,6 +465,10 @@ switch ($Action) {
         }
         Write-Host ""; Show-Status $N
         Write-Ok "Reinicio completo: $started agencias recreadas desde cero"
+    }
+    "destroy-all" {
+        Test-Deps
+        Destroy-All $N
     }
     "clean-images" {
         docker image prune -f
