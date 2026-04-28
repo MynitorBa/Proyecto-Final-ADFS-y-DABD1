@@ -263,6 +263,26 @@ public class AgenciaRepository {
     }
 
     /**
+     * Busca el ID y porcentaje de descuento de una agencia a partir de su URL registrada.
+     * @param urlAgencia URL unica asociada a la agencia.
+     * @return objeto con ID y PorcentajeDescuento, o null si no se encuentra ninguna con esa URL.
+     */
+    public AgenciaDTO obtenerAgenciaConPorcentajePorURL(String urlAgencia) {
+        String sql = """
+                SELECT ID, PorcentajeDescuento
+                FROM Agencia
+                WHERE URL_Agencia = ?
+                """;
+        List<AgenciaDTO> result = DatabaseManager.executeQuery(sql, rs -> {
+            AgenciaDTO dto = new AgenciaDTO();
+            dto.setId(rs.getInt("ID"));
+            dto.setPorcentajeDescuento(rs.getDouble("PorcentajeDescuento"));
+            return dto;
+        }, urlAgencia);
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+    /**
      * Guarda los tokens de entrada y salida asociados a una agencia.
      * @param agenciaId    ID de la agencia a actualizar.
      * @param tokenEntrada hash del token de entrada.

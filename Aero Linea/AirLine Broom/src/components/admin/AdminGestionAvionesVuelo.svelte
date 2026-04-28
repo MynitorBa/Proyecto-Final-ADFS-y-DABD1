@@ -75,6 +75,8 @@
   $: avionesDisponibles = todosAviones.filter(a => {
     // Excluir ocupados, excepto el actual del vuelo
     if (avionesOcupados.has(a.id) && a.id !== vueloGestionar?.avionId) return false;
+    // Excluir aviones con menor capacidad que el actual (integridad de ruta)
+    if (avionActual && a.capacidadPasajeros < avionActual.capacidadPasajeros) return false;
     // Filtrar por búsqueda
     if (busquedaAvion.trim()) {
       const q = busquedaAvion.trim().toLowerCase();
@@ -85,7 +87,9 @@
 
   $: avionSeleccionado = todosAviones.find(a => a.id === avionSeleccionadoId);
   $: vendidos          = vueloGestionar?.boletosVendidosReal ?? 0;
-  $: capacidadOk       = avionSeleccionado ? avionSeleccionado.capacidadPasajeros >= vendidos : false;
+  $: capacidadVsVendidos = avionSeleccionado ? avionSeleccionado.capacidadPasajeros >= vendidos : false;
+  $: capacidadVsAvionAnterior = avionSeleccionado && avionActual ? avionSeleccionado.capacidadPasajeros >= avionActual.capacidadPasajeros : true;
+  $: capacidadOk       = capacidadVsVendidos && capacidadVsAvionAnterior;
   $: mismoAvion        = avionSeleccionadoId === vueloGestionar?.avionId;
 
   async function abrirModal(vuelo) {
@@ -120,9 +124,17 @@
       return;
     }
     if (!capacidadOk) {
-      mostrarToast('error',
-        `${avionSeleccionado?.nombreCompleto ?? 'El avión'} tiene capacidad para ` +
-        `${avionSeleccionado?.capacidadPasajeros} pasajeros, pero hay ${vendidos} boleto(s) vendido(s)`);
+      let mensajeError = '';
+      if (!capacidadVsVendidos) {
+        mensajeError = `${avionSeleccionado?.nombreCompleto ?? 'El avión'} tiene capacidad para ` +
+          `${avionSeleccionado?.capacidadPasajeros} pasajeros, pero hay ${vendidos} boleto(s) vendido(s)`;
+      } else if (!capacidadVsAvionAnterior) {
+        const capacidadActual = avionActual?.capacidadPasajeros ?? 0;
+        mensajeError = `No se puede cambiar a un avión con menor capacidad. ` +
+          `Avión actual: ${avionActual?.nombreCompleto ?? `${avionActual?.marca} ${avionActual?.modelo}`} (${capacidadActual} pasajeros). ` +
+          `Avión seleccionado: ${avionSeleccionado?.nombreCompleto ?? `${avionSeleccionado?.marca} ${avionSeleccionado?.modelo}`} (${avionSeleccionado?.capacidadPasajeros} pasajeros)`;
+      }
+      mostrarToast('error', mensajeError);
       return;
     }
 

@@ -35,6 +35,10 @@ public class EmailReservacionController {
         // Solo accesible para rol 1 (Administrador) y rol 2 (Usuario registrado)
         app.get("/reservaciones/{id}/correo", this::handleEnviarCorreoReservacion);
 
+        // Envia el correo de actualizacion cuando se cambia una habitacion
+        // Diferente al correo de confirmacion, indicando que es una actualizacion
+        app.get("/reservaciones/{id}/correo-actualizacion-habitacion", this::handleEnviarCorreoActualizacionHabitacion);
+
         // Recibe el formulario de contacto publico y notifica al administrador por correo
         app.post("/contacto", this::handleContacto);
 
@@ -56,6 +60,27 @@ public class EmailReservacionController {
         try {
             emailService.enviarCorreoReservacion(reservacionId, usuarioId);
             ctx.status(200).json(Map.of("mensaje", "Correo enviado correctamente"));
+        } catch (IllegalArgumentException e) {
+            ctx.status(404).json(Map.of("mensaje", e.getMessage()));
+        } catch (RuntimeException e) {
+            ctx.status(500).json(Map.of("mensaje", "Error al enviar el correo: " + e.getMessage()));
+        }
+    }
+
+    void handleEnviarCorreoActualizacionHabitacion(Context ctx) {
+        int usuarioId     = ctx.attribute("usuarioId");
+        int rolId         = ctx.attribute("rolId");
+        int reservacionId = Integer.parseInt(ctx.pathParam("id"));
+
+        // Verifica que el rol tenga permiso para solicitar el envio del correo
+        if (rolId != 1 && rolId != 2) {
+            ctx.status(403).json(Map.of("mensaje", "Acceso denegado"));
+            return;
+        }
+
+        try {
+            emailService.enviarCorreoActualizacionHabitacion(reservacionId, usuarioId);
+            ctx.status(200).json(Map.of("mensaje", "Correo de actualización enviado correctamente"));
         } catch (IllegalArgumentException e) {
             ctx.status(404).json(Map.of("mensaje", e.getMessage()));
         } catch (RuntimeException e) {

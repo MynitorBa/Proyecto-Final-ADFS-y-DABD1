@@ -26,6 +26,8 @@ type ReservacionPDFData struct {
 	EstadoReserva string
 	FechaCreacion string
 	Total         float64
+	Subtotal      float64
+	MontoImpuestos float64
 	TipoReserva   int
 	UsuarioNombre string
 	UsuarioEmail  string

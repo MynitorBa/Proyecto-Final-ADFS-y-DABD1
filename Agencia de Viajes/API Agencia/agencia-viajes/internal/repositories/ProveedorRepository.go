@@ -122,8 +122,9 @@ func (r *ProveedorRepository) ExisteTipoProveedor(tipoID int) (bool, error) {
 
 // CrearProveedor
 //
-// Inserta un nuevo proveedor en la base de datos con estado activo (EstadoID = 1)
-// y tokens vacios que seran generados y guardados posteriormente.
+// Inserta un nuevo proveedor en la base de datos con estado activo (EstadoID = 1),
+// porcentaje de ganancia fijo en 0%, y tokens vacios que seran generados y guardados posteriormente.
+// NOTA: El porcentaje de ganancia es siempre 0% y NO puede ser modificado.
 //
 // Parametros:
 //   - req: DTO con los datos necesarios para crear el proveedor
@@ -139,6 +140,7 @@ func (r *ProveedorRepository) CrearProveedor(req dto.CrearProveedorRequest) (dto
 	defer conn.Close()
 
 	const estadoActivo = 1
+	const porcentajeGanancia = 0 // Porcentaje fijo para todos los proveedores
 
 	result, err := conn.ExecContext(context.Background(), `
 		INSERT INTO Proveedor
@@ -149,7 +151,7 @@ func (r *ProveedorRepository) CrearProveedor(req dto.CrearProveedorRequest) (dto
 		req.URLAPI,
 		req.UsuarioID,
 		estadoActivo,
-		req.PorcentajeGanancia,
+		porcentajeGanancia,
 		req.ImagenBase64,
 	)
 	if err != nil {
@@ -165,7 +167,7 @@ func (r *ProveedorRepository) CrearProveedor(req dto.CrearProveedorRequest) (dto
 		URLAPI:             req.URLAPI,
 		UsuarioID:          req.UsuarioID,
 		EstadoID:           estadoActivo,
-		PorcentajeGanancia: req.PorcentajeGanancia,
+		PorcentajeGanancia: porcentajeGanancia,
 		ImagenBase64:       req.ImagenBase64,
 	}, nil
 }
@@ -194,6 +196,34 @@ func (r *ProveedorRepository) GuardarTokens(proveedorID int, tokenEntrada, token
 		SET Token_HASH_Entrada = ?, Token_HASH_Salida = ?
 		WHERE ID = ?`,
 		tokenEntrada, tokenSalida, proveedorID,
+	)
+	return err
+}
+
+// ActualizarPorcentajeGanancia
+//
+// Actualiza el porcentaje de ganancia de un proveedor con el valor retornado
+// durante el handshake. Se utiliza para sincronizar el porcentaje configurado
+// en el proveedor externo con el registrado en la base de datos de agencia.
+//
+// Parametros:
+//   - proveedorID: ID del proveedor a actualizar
+//   - porcentaje: nuevo porcentaje de ganancia retornado por el proveedor
+//
+// Retorna:
+//   - error: error de base de datos, nil si la operacion fue exitosa
+func (r *ProveedorRepository) ActualizarPorcentajeGanancia(proveedorID int, porcentaje float64) error {
+	conn, err := r.db.Conn(context.Background())
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	_, err = conn.ExecContext(context.Background(), `
+		UPDATE Proveedor
+		SET Porcentaje_Ganancia = ?
+		WHERE ID = ?`,
+		porcentaje, proveedorID,
 	)
 	return err
 }

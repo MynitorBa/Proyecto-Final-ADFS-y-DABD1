@@ -147,51 +147,9 @@
   }
 
   // ── Cambiar vuelo (Admin) ────────────────────────────────────────────────────
-  let cambiarVueloOpen       = false;
-  let cambiarVueloCargando   = false;
-  let cambiarVueloElegibles  = [];
-  let cambiarVueloError      = '';
-  let cambiarVueloSeleccion  = null;
-  let cambiarVueloGuardando  = false;
-  let cambiarVueloReservacionId = null;
-
-  async function abrirCambiarVuelo(reservacionId) {
-    cambiarVueloReservacionId = reservacionId;
-    cambiarVueloElegibles = []; cambiarVueloError = ''; cambiarVueloSeleccion = null;
-    cambiarVueloOpen = true; cambiarVueloCargando = true;
-    try {
-      const r = await fetch(`${API}/api/admin/reservaciones/${reservacionId}/vuelos-elegibles`, { credentials: 'include' });
-      const data = await r.json();
-      if (r.ok) cambiarVueloElegibles = data;
-      else cambiarVueloError = data.message || 'Error al buscar vuelos disponibles.';
-    } catch { cambiarVueloError = 'Error de conexión.'; }
-    finally { cambiarVueloCargando = false; }
-  }
-
-  async function confirmarCambioVuelo() {
-    if (!cambiarVueloSeleccion) { cambiarVueloError = 'Selecciona un vuelo.'; return; }
-    cambiarVueloGuardando = true; cambiarVueloError = '';
-    try {
-      const r = await fetch(`${API}/api/admin/reservaciones/${cambiarVueloReservacionId}/cambiar-vuelo`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nuevoVueloId: cambiarVueloSeleccion })
-      });
-      const data = await r.json();
-      if (r.ok) {
-        mostrarToast('success', 'Vuelo cambiado correctamente.');
-        cambiarVueloOpen = false;
-        // Recargar lista de reservas del vuelo actual
-        if (vueloActual?.vueloId) {
-          const rv = await fetch(`${API}/api/admin/reservaciones/vuelo/${vueloActual.vueloId}`, { credentials: 'include' });
-          if (rv.ok) reservas = await rv.json();
-        }
-        // Si el detalle estaba abierto, recargarlo también
-        if (reservaDetalle?.reservacionId) await abrirDetalle({ reservacionId: reservaDetalle.reservacionId });
-      } else { cambiarVueloError = data.message || 'Error al cambiar el vuelo.'; }
-    } catch { cambiarVueloError = 'Error de conexión.'; }
-    finally { cambiarVueloGuardando = false; }
-  }
+  // ── CAMBIAR VUELO DESHABILITADO ────────────────────────────────────────────────
+  // Funcionalidad removida: es peligrosa para la integridad del sistema
+  // Los vuelos NO pueden ser cambiados una vez la reserva está creada
 
   // ── Teléfono con máscara por país (misma lógica que MisReservas) ─────────
   const knownDigits = {
@@ -484,11 +442,7 @@
           <!-- Cambiar vuelo (Admin) -->
           {#if !cancelarAbierto}
             <div class="ar-cancel-trigger" style="display:flex;gap:.75rem;flex-wrap:wrap">
-              <button class="ar-btn" style="background:#2563eb;color:#fff;display:inline-flex;align-items:center;gap:.4rem"
-                on:click={() => abrirCambiarVuelo(reservaDetalle.reservacionId)} type="button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-                Cambiar vuelo
-              </button>
+              <!-- Cambiar vuelo DESHABILITADO - No se permite por seguridad -->
               <button class="ar-btn ar-btn--danger-outline" on:click={() => cancelarAbierto=true} type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 Cancelar reservacion (Admin)
@@ -594,67 +548,7 @@
   </div>
 {/if}
 
-<!-- Modal de cambiar vuelo (Admin) -->
-{#if cambiarVueloOpen}
-  <div class="ar-overlay" on:click={() => cambiarVueloOpen = false} role="dialog" aria-modal="true">
-    <div class="ar-modal" on:click|stopPropagation style="max-width:620px;max-height:88vh;overflow-y:auto">
-      <div class="ar-modal__head">
-        <div class="ar-modal__head-left">
-          <span class="ar-modal__reserva-num">Cambiar a otro vuelo</span>
-        </div>
-        <button class="ar-modal__close" on:click={() => cambiarVueloOpen = false}>×</button>
-      </div>
-      <div style="padding:1rem 1.5rem 0">
-        <p style="margin:0 0 1rem;font-size:.85rem;color:#6b7280">Vuelos disponibles con mismo origen (país), destino, precio y clase:</p>
-      </div>
-
-      {#if cambiarVueloCargando}
-        <div style="padding:2rem;text-align:center;color:#8B6B4A">Buscando vuelos disponibles...</div>
-      {:else if cambiarVueloError && cambiarVueloElegibles.length === 0}
-        <div style="padding:1rem 1.5rem">
-          <p style="color:#ef4444;font-size:.85rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.75rem">{cambiarVueloError}</p>
-        </div>
-      {:else if cambiarVueloElegibles.length === 0}
-        <div style="padding:1.5rem;text-align:center;color:#6b7280;font-size:.9rem">
-          No hay vuelos elegibles para cambio (mismo origen, destino y precio).
-        </div>
-      {:else}
-        <div style="padding:0 1.5rem;display:flex;flex-direction:column;gap:.6rem">
-          {#each cambiarVueloElegibles as v}
-            <label style="display:flex;align-items:flex-start;gap:.75rem;padding:.85rem 1rem;border:2px solid {cambiarVueloSeleccion === v.vueloId ? '#2563eb' : '#e5e7eb'};border-radius:10px;cursor:pointer;background:{cambiarVueloSeleccion === v.vueloId ? '#eff6ff' : '#fff'};transition:border-color .15s">
-              <input type="radio" name="ar-vuelo" value={v.vueloId} bind:group={cambiarVueloSeleccion} style="margin-top:.25rem;accent-color:#2563eb;flex-shrink:0" />
-              <div style="flex:1;min-width:0">
-                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
-                  <span style="font-weight:700;font-size:.93rem;color:#1C1A18">{v.numeroVuelo}</span>
-                  <span style="font-size:.78rem;color:#6b7280;background:#f3f4f6;padding:.1rem .45rem;border-radius:999px">{v.origenCodigo} → {v.destinoCodigo}</span>
-                </div>
-                <div style="font-size:.8rem;color:#374151;margin-top:.2rem">{v.fechaSalida} · {v.horaSalida} → {v.horaLlegada}</div>
-                <div style="font-size:.78rem;color:#6b7280;margin-top:.2rem">{v.origenCiudad} ({v.origenPais}) → {v.destinoCiudad}</div>
-                <div style="display:flex;gap:.75rem;margin-top:.25rem;font-size:.8rem">
-                  <span style="color:#059669;font-weight:600">Q{v.precioTotal?.toFixed(2)} total</span>
-                  <span style="color:#6b7280">{v.asientosDisponibles} asiento(s) libre(s)</span>
-                </div>
-              </div>
-            </label>
-          {/each}
-        </div>
-      {/if}
-
-      {#if cambiarVueloError && cambiarVueloElegibles.length > 0}
-        <p style="margin:.5rem 1.5rem 0;color:#ef4444;font-size:.82rem">{cambiarVueloError}</p>
-      {/if}
-
-      <div class="ar-cancel-panel__actions" style="margin:1rem 1.5rem 1.5rem">
-        <button class="ar-btn ar-btn--ghost" on:click={() => cambiarVueloOpen = false} disabled={cambiarVueloGuardando} type="button">Cancelar</button>
-        <button class="ar-btn" style="background:#2563eb;color:#fff;opacity:{cambiarVueloSeleccion && !cambiarVueloGuardando ? 1 : 0.5}"
-          disabled={!cambiarVueloSeleccion || cambiarVueloGuardando}
-          on:click={confirmarCambioVuelo} type="button">
-          {cambiarVueloGuardando ? 'Procesando...' : 'Confirmar cambio'}
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
+<!-- Modal de cambio de vuelo DESHABILITADO - No se permite cambiar de vuelo por seguridad -->
 
 <!-- ═══════════════ CONTENIDO PRINCIPAL ═══════════════ -->
 <section class="admin-section ar-section">

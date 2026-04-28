@@ -132,15 +132,13 @@ func (ctrl *MetricasController) ObtenerResumen(c *gin.Context) {
 		FROM Reservacion WHERE Fecha_Creacion BETWEEN ? AND ?
 	`, d, h).Scan(&kpi.TotalReservaciones, &kpi.ReservasPagadas)
 
-	var base float64
 	conn.QueryRowContext(context.Background(), `
-		SELECT COALESCE(SUM(dt.Total),0), COALESCE(SUM(dt.Total/(1+p.Porcentaje_Ganancia/100)),0)
+		SELECT COALESCE(SUM(dt.Total),0), COALESCE(SUM(dt.Total * p.Porcentaje_Ganancia / 100),0)
 		FROM Reservacion r
 		JOIN detalles_reservacion dt ON dt.Reservacion_ID=r.ID
 		JOIN Proveedor p ON dt.Proveedor_ID=p.ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
-	`, d, h).Scan(&kpi.IngresosTotales, &base)
-	kpi.GananciaMovent = kpi.IngresosTotales - base
+	`, d, h).Scan(&kpi.IngresosTotales, &kpi.GananciaMovent)
 
 	conn.QueryRowContext(context.Background(), `
 		SELECT COALESCE(AVG(Total),0) FROM Reservacion
@@ -316,7 +314,7 @@ func (ctrl *MetricasController) ObtenerNegocio(c *gin.Context) {
 		SELECT p.Nombre, p.Tipo_Proveedor_ID, r.Tipo_Reserva_ID,
 		       COUNT(DISTINCT dt.Reservacion_ID),
 		       COALESCE(SUM(dt.Total),0),
-		       COALESCE(SUM(dt.Total - dt.Total/(1+p.Porcentaje_Ganancia/100)),0)
+		       COALESCE(SUM(dt.Total * p.Porcentaje_Ganancia / 100),0)
 		FROM detalles_reservacion dt JOIN Proveedor p ON dt.Proveedor_ID=p.ID
 		JOIN Reservacion r ON r.ID=dt.Reservacion_ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
@@ -578,14 +576,12 @@ func (ctrl *MetricasController) cargarDatosExport(desde, hasta time.Time) helper
 		FROM Reservacion WHERE Fecha_Creacion BETWEEN ? AND ?
 	`, d, h).Scan(&data.KPITotalReservaciones, &data.KPIReservasPagadas)
 
-	var base float64
 	conn.QueryRowContext(context.Background(), `
-		SELECT COALESCE(SUM(dt.Total),0), COALESCE(SUM(dt.Total/(1+p.Porcentaje_Ganancia/100)),0)
+		SELECT COALESCE(SUM(dt.Total),0), COALESCE(SUM(dt.Total * p.Porcentaje_Ganancia / 100),0)
 		FROM Reservacion r JOIN detalles_reservacion dt ON dt.Reservacion_ID=r.ID
 		JOIN Proveedor p ON dt.Proveedor_ID=p.ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?
-	`, d, h).Scan(&data.KPIIngresos, &base)
-	data.KPIGanancia = data.KPIIngresos - base
+	`, d, h).Scan(&data.KPIIngresos, &data.KPIGanancia)
 
 	conn.QueryRowContext(context.Background(), `
 		SELECT COALESCE(AVG(Total),0) FROM Reservacion
@@ -691,7 +687,7 @@ func (ctrl *MetricasController) cargarDatosExport(desde, hasta time.Time) helper
 		SELECT p.Nombre, p.Tipo_Proveedor_ID, r.Tipo_Reserva_ID,
 		       COUNT(DISTINCT dt.Reservacion_ID),
 		       COALESCE(SUM(dt.Total),0),
-		       COALESCE(SUM(dt.Total - dt.Total/(1+p.Porcentaje_Ganancia/100)),0)
+		       COALESCE(SUM(dt.Total * p.Porcentaje_Ganancia / 100),0)
 		FROM detalles_reservacion dt JOIN Proveedor p ON dt.Proveedor_ID=p.ID
 		JOIN Reservacion r ON r.ID=dt.Reservacion_ID
 		WHERE r.EstadoID IN (2,5,6) AND r.Fecha_Creacion BETWEEN ? AND ?

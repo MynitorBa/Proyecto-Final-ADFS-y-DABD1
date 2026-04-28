@@ -69,39 +69,3 @@ func (ctrl *AsientoVueloController) ObtenerAsientos(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// CambiarAsiento
-//
-// Handler HTTP que actualiza el asiento de un boleto especifico dentro de una
-// reservacion. Valida la sesion del usuario y delega la operacion al servicio,
-// que verifica que el boleto pertenezca a la reserva del usuario.
-//
-// Parametros:
-//   - c: contexto de Gin con la solicitud HTTP
-//
-// Retorna:
-//   - HTTP 200: mensaje de confirmacion indicando que el cambio fue procesado por la aerolinea
-//   - HTTP 400: error si los datos enviados son invalidos o el servicio retorna un error
-//   - HTTP 401: error si el usuario no esta autenticado
-func (ctrl *AsientoVueloController) CambiarAsiento(c *gin.Context) {
-	val, exists := c.Get("usuario_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
-		return
-	}
-	usuarioID := val.(int)
-
-	var req dto.CambiarAsientoVueloRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "datos de cambio de asiento inválidos"})
-		return
-	}
-
-	if err := ctrl.service.CambiarAsientoVuelo(c, usuarioID, req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Solicitud de cambio procesada con éxito por la aerolínea",
-	})
-}

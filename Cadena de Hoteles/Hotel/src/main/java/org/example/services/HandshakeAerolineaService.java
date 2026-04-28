@@ -26,16 +26,16 @@ public class HandshakeAerolineaService {
     /**
      * Procesa el handshake de una aerolinea aliada externa.
      * Busca la aerolinea por su URL registrada en la base de datos, genera un token de respuesta
-     * y guarda el token de entrada y el de salida vinculados a ese registro.
+     * y guarda los tokens para que la aerolinea pueda autenticarse en llamadas futuras.
      *
      * @param dto datos del handshake con la URL de la aerolinea y el token de entrada.
-     * @return DTO con el token de salida generado para que la aerolinea lo use en requests futuros.
+     * @return DTO con el token de salida (sin incluir porcentaje para aerolíneas).
      * @throws IllegalArgumentException si no existe una aerolinea registrada con esa URL
      *                                  o si los tokens no se pudieron persistir en la base de datos.
      */
     public HandshakeResponseDTO procesarHandshake(HandshakeRequestDTO dto) {
 
-        // Busca la aerolinea aliada registrada con esa URL
+        // Busca la aerolinea aliada registrada con esa URL, obteniendo su ID
         Integer aerolineaId = repo.obtenerAerolineaIdPorURL(dto.getUrlAgencia());
         if (aerolineaId == null)
             throw new IllegalArgumentException(
@@ -50,6 +50,7 @@ public class HandshakeAerolineaService {
             throw new IllegalArgumentException(
                     "No se pudieron guardar los tokens de la aerolinea aliada.");
 
+        // Retorna solo el token (sin porcentaje para aerolíneas)
         return new HandshakeResponseDTO(tokenSalida);
     }
 }

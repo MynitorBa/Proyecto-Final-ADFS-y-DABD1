@@ -455,14 +455,23 @@ func BuildHTMLEmail(data ReservacionPDFData) string {
       %s
       %s
       <tr><td style="padding:16px 28px 20px;">
-        <table width="100%%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;">
+        <table width="100%%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #ddd6cc;">
           <tr>
-            <td style="background:#1C1A18;padding:14px 20px;width:60%%;">
-              <div style="font-size:11px;font-weight:bold;color:#9a9089;letter-spacing:1.5px;text-transform:uppercase;">Total reservacion</div>
-              <div style="font-size:10px;color:#4a4035;margin-top:3px;">Incluye impuestos y servicios</div>
+            <td style="background:#f5f2ec;padding:12px 16px;border-bottom:1px solid #ddd6cc;">
+              <div style="font-size:11px;color:#5a5047;">Subtotal (precio base)</div>
+              <div style="font-size:14px;font-weight:bold;color:#1C1A18;margin-top:2px;">$ %.2f</div>
             </td>
-            <td style="background:#FFCC00;padding:14px 20px;text-align:right;width:40%%;">
-              <div style="font-size:22px;font-weight:bold;color:#1C1A18;">$ %.2f</div>
+          </tr>
+          <tr>
+            <td style="background:#fff;padding:12px 16px;border-bottom:1px solid #ddd6cc;">
+              <div style="font-size:11px;color:#5a5047;">Impuestos y servicios</div>
+              <div style="font-size:14px;font-weight:bold;color:#1C1A18;margin-top:2px;">$ %.2f</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#1C1A18;padding:14px 16px;">
+              <div style="font-size:11px;font-weight:bold;color:#FFCC00;letter-spacing:1.2px;text-transform:uppercase;">Total reservacion</div>
+              <div style="font-size:18px;font-weight:bold;color:#FFCC00;margin-top:4px;">$ %.2f</div>
             </td>
           </tr>
         </table>
@@ -509,7 +518,7 @@ func BuildHTMLEmail(data ReservacionPDFData) string {
 		ifEmpty(data.UsuarioNombre, "viajero"),
 		tipoLabel(data.TipoReserva),
 		secBoletos, secHabs,
-		data.Total,
+		data.Subtotal, data.MontoImpuestos, data.Total,
 	)
 }
 
@@ -767,4 +776,37 @@ func calcNoches(ci, co string) int {
 		return 0
 	}
 	return d
+}
+
+// BuildHTMLEmailActualizacion
+//
+// Construye el cuerpo HTML de un correo de actualización de habitación o asiento.
+// Es similar a BuildHTMLEmail pero con un mensaje que indica que la reservación
+// ha sido actualizada, no confirmada. Reutiliza la misma estructura visual.
+//
+// Parametros:
+//   - data: struct ReservacionPDFData con los datos de la reservación
+//   - tipo: tipo de actualización ("habitación" o "asiento")
+//
+// Retorna:
+//   - string: HTML completo listo para enviar por correo
+func BuildHTMLEmailActualizacion(data ReservacionPDFData, tipo string) string {
+	// Reutiliza la mayoría del HTML de BuildHTMLEmail pero con mensaje de actualización
+	htmlBase := BuildHTMLEmail(data)
+
+	// Reemplaza "Comprobante" por "Actualización"
+	htmlBase = strings.ReplaceAll(htmlBase,
+		"<div style=\"font-size:9px;color:#6b6358;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;\">Comprobante</div>",
+		"<div style=\"font-size:9px;color:#6b6358;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;\">Actualización</div>")
+
+	// Reemplaza el mensaje de confirmación por mensaje de actualización
+	tipoMsg := "habitación"
+	if tipo == "asiento" {
+		tipoMsg = "asiento de vuelo"
+	}
+	htmlBase = strings.ReplaceAll(htmlBase,
+		"Tu reservacion de <strong>%s</strong> ha sido procesada correctamente.",
+		fmt.Sprintf("Tu %s ha sido actualizada exitosamente.", tipoMsg))
+
+	return htmlBase
 }

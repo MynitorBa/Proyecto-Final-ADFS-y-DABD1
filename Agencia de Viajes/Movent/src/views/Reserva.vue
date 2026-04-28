@@ -436,7 +436,7 @@
                 </div>
                 <div class="res-summary__precio-wrap">
                   <span class="res-summary__precio-lbl">Total</span>
-                  <span class="res-summary__precio">${{ (detalleVuelo?.total_con_ganancia ?? (item.precio || 0) * (item.busqueda?.cantidadPasajeros || 1)).toFixed(2) }}</span>
+                  <span class="res-summary__precio">${{ (detalleVuelo?.total ?? (item.precio || 0) * (item.busqueda?.cantidadPasajeros || 1)).toFixed(2) }}</span>
                 </div>
               </template>
 
@@ -482,7 +482,7 @@
                 </div>
                 <div class="res-summary__precio-wrap">
                   <span class="res-summary__precio-lbl">Total ({{ item.busqueda?.cantidadPasajeros || 1 }} pax)</span>
-                  <span class="res-summary__precio">${{ (detalleVuelo?.total_con_ganancia ?? (((item.ida?.precio || 0) + (item.regreso?.precio || 0)) * (item.busqueda?.cantidadPasajeros || 1))).toFixed(2) }}</span>
+                  <span class="res-summary__precio">${{ (detalleVuelo?.total ?? (((item.ida?.precio || 0) + (item.regreso?.precio || 0)) * (item.busqueda?.cantidadPasajeros || 1))).toFixed(2) }}</span>
                 </div>
               </template>
 
@@ -512,7 +512,7 @@
                 <div class="res-summary__precio-wrap">
                   <span class="res-summary__precio-lbl">Total ({{ item.noches }} noches)</span>
                   <span class="res-summary__precio">
-                    ${{ (detalleHotel?.total_con_ganancia ?? item.totalEstancia ?? 0).toFixed(2) }}
+                    ${{ (detalleHotel?.total ?? item.totalEstancia ?? 0).toFixed(2) }}
                   </span>
                 </div>
               </template>
@@ -556,11 +556,11 @@
                   <div class="res-desglose">
                     <div class="res-desglose__row">
                       <span>✈ Vuelo{{ item.vueloRegreso ? 's' : '' }}</span>
-                      <span>${{ (detalleVuelo?.total_con_ganancia ?? ((item.vuelo?.precio || 0) + (item.vueloRegreso?.precio || 0)) * (item.cantidadPersonas || 1)).toFixed(2) }}</span>
+                      <span>${{ (detalleVuelo?.total ?? ((item.vuelo?.precio || 0) + (item.vueloRegreso?.precio || 0)) * (item.cantidadPersonas || 1)).toFixed(2) }}</span>
                     </div>
                     <div class="res-desglose__row">
                       <span>🏨 Hotel ({{ item.noches }}n)</span>
-                      <span>${{ (detalleHotel?.total_con_ganancia ?? (item.hotel?.precioNoche || 0) * (item.noches || 1)).toFixed(2) }}</span>
+                      <span>${{ (detalleHotel?.total ?? (item.hotel?.precioNoche || 0) * (item.noches || 1)).toFixed(2) }}</span>
                     </div>
                   </div>
                   <!-- Subtotal antes del descuento -->
@@ -973,8 +973,8 @@ function claseToId(clase) { return clase === 'ejecutiva' ? 2 : 1 }
  * @type {import('vue').ComputedRef<number>}
  */
 const totalPaquete = computed(() => {
-  const tv = detalleVuelo.value?.total_con_ganancia ?? 0
-  const th = detalleHotel.value?.total_con_ganancia ?? 0
+  const tv = detalleVuelo.value?.total ?? 0
+  const th = detalleHotel.value?.total ?? 0
   if (tv > 0 && th > 0) return tv + th
   return item.value?.precioTotal ?? 0
 })
@@ -1042,21 +1042,23 @@ function buildVuelosPayload() {
       // Expande un vuelo a N entradas: una por tramo si es con escala, una si es directo.
       // La clase se hereda del vuelo padre (seleccionada a nivel de resultado de búsqueda).
       const expandirVuelo = (v, clase) => {
+        const precio = clase === 'ejecutiva' ? v.precioEjecutiva : v.precioTurista
         if (v.tramos?.length > 1) {
           return v.tramos
             .filter(t => {
               if (!t?.id) { console.warn('[buildVuelosPayload idaVuelta] tramo sin id ignorado:', t); return false }
               return true
             })
-            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax, precio }))
         }
-        return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+        return [{ vueloId: parseVueloId(v.id), claseId: claseToId(clase), cantidadPasajeros: pax, precio }]
       }
       vuelosArr = [...expandirVuelo(ida, ida.clase), ...expandirVuelo(regreso, regreso.clase)]
     } else {
       const pax = item.value.busqueda?.cantidadPasajeros || 1
       // Para reservaciones recuperadas (item.value.id === null), usar proveedor_id del detalle
       proveedorId = item.value.id ? parseProveedorId(item.value.id) : (detalleVuelo.value?.proveedor_id ?? null)
+      const precio = item.value.clase === 'ejecutiva' ? item.value.precioEjecutiva : item.value.precioTurista
       if (item.value.tramos?.length > 1) {
         // Vuelo con escala: generar una entrada por cada tramo usando su propio vueloId.
         // La clase se selecciona a nivel del vuelo padre y aplica a todos los tramos.
@@ -1068,11 +1070,11 @@ function buildVuelosPayload() {
             }
             return true
           })
-          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }))
+          .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax, precio }))
       } else if (item.value.id) {
         // Vuelo directo (o escala con un solo tramo): comportamiento original.
         // Para reservaciones recuperadas (id=null) los boletos ya existen en el proveedor.
-        vuelosArr = [{ vueloId: parseVueloId(item.value.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax }]
+        vuelosArr = [{ vueloId: parseVueloId(item.value.id), claseId: claseToId(item.value.clase), cantidadPasajeros: pax, precio }]
       }
     }
   } else if (tipoItem.value === 'paquete') {
@@ -1082,15 +1084,16 @@ function buildVuelosPayload() {
     if (v?.id) {
       // Reserva nueva: construir payload de vuelos para el proveedor
       const expandirVueloPaq = (vx, clase) => {
+        const precio = clase === 'ejecutiva' ? vx.precioEjecutiva : vx.precioTurista
         if (vx.tramos?.length > 1) {
           return vx.tramos
             .filter(t => {
               if (!t?.id) { console.warn('[buildVuelosPayload paquete] tramo sin id ignorado:', t); return false }
               return true
             })
-            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax }))
+            .map(t => ({ vueloId: parseVueloId(t.id), claseId: claseToId(clase), cantidadPasajeros: pax, precio }))
         }
-        return [{ vueloId: parseVueloId(vx.id), claseId: claseToId(clase), cantidadPasajeros: pax }]
+        return [{ vueloId: parseVueloId(vx.id), claseId: claseToId(clase), cantidadPasajeros: pax, precio }]
       }
       vuelosArr = expandirVueloPaq(v, v.clase)
       if (item.value.vueloRegreso) {
@@ -1149,6 +1152,15 @@ function buildHotelPayload(reservacionIdArg) {
   if (!item.value) return null
   const rooms = item.value.habitacionesDisponibles || []
   if (!rooms.length) return null
+
+  const criteriosBusqueda = {
+    ciudad: item.value.busqueda?.ciudad,
+    pais: item.value.busqueda?.pais,
+    fechaCheckIn: item.value.busqueda?.checkIn,
+    fechaCheckOut: item.value.busqueda?.checkOut,
+    cantidadPersonas: item.value.busqueda?.cantidadPersonas || 1,
+  }
+
   return {
     reservacionId: reservacionIdArg,
     proveedorId:   item.value.proveedorId,
@@ -1158,6 +1170,7 @@ function buildHotelPayload(reservacionIdArg) {
       fechaCheckOut:    item.value.busqueda?.checkOut,
       cantidadPersonas: item.value.busqueda?.cantidadPersonas || 1,
     }],
+    criteriosBusqueda,
   }
 }
 
@@ -1409,12 +1422,12 @@ onMounted(async () => {
             if (det.tipo_detalle_id === 1) {
               // Wrap data_proveedor en { detalle: ... } para que boletos computed funcione
               // (la API interna retorna { detalle: { boletos: [...] } } pero Broom GET retorna { boletos: [...] })
-              detalleVuelo.value = { detalle: det.data_proveedor || {}, total_con_ganancia: det.total ?? 0, proveedor_id: det.proveedor_id ?? null }
+              detalleVuelo.value = { detalle: det.data_proveedor || {}, total: det.total ?? 0, proveedor_id: det.proveedor_id ?? null }
               vueloRaw = det.data_proveedor
             }
             if (det.tipo_detalle_id === 2) {
               // data_proveedor de hotel es un array de habitaciones (respuesta Broom)
-              detalleHotel.value = { total_con_ganancia: det.total ?? 0 }
+              detalleHotel.value = { total: det.total ?? 0 }
               const habs = Array.isArray(det.data_proveedor) ? det.data_proveedor : []
               hotelHab = habs[0] || {}
               hotelProveedorId = det.proveedor_id ?? null

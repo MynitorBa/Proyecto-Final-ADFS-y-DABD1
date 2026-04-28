@@ -182,45 +182,13 @@ namespace Aerolinea.API.Controllers
             }
         }
 
-        // GET api/mis-reservaciones/{reservacionId}/vuelos-elegibles
-        /// <summary>
-        /// Retorna la lista de vuelos elegibles para cambiar el vuelo de una reservacion.
-        /// Filtra por mismo pais de origen, mismo destino, mismo precio y disponibilidad.
-        /// </summary>
-        [HttpGet("{reservacionId}/vuelos-elegibles")]
-        public async Task<IActionResult> ObtenerVuelosElegibles(int reservacionId)
-        {
-            try
-            {
-                int usuarioId = ObtenerUsuarioId();
-                var vuelos = await _service.ObtenerVuelosElegibles(reservacionId, usuarioId);
-                return Ok(vuelos);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+        // GET api/mis-reservaciones/{reservacionId}/vuelos-elegibles — DESHABILITADO
+        // ENDPOINT REMOVIDO: No se permite cambiar de vuelo una vez creada la reserva
+        // Razón: Integridad del sistema, datos de pasajeros, asientos y facturación
 
-        // POST api/mis-reservaciones/{reservacionId}/cambiar-vuelo
-        /// <summary>
-        /// Cambia el vuelo de una reservacion activa del usuario a un vuelo elegible diferente.
-        /// Reasigna los boletos y envia correo de confirmacion.
-        /// </summary>
-        [HttpPost("{reservacionId}/cambiar-vuelo")]
-        public async Task<IActionResult> CambiarVuelo(int reservacionId, [FromBody] CambiarVueloRequestDTO dto)
-        {
-            try
-            {
-                int usuarioId = ObtenerUsuarioId();
-                await _service.CambiarVuelo(reservacionId, dto.NuevoVueloId, usuarioId);
-                return Ok(new { message = "Vuelo cambiado exitosamente. Recibirás un correo de confirmación." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+        // POST api/mis-reservaciones/{reservacionId}/cambiar-vuelo — DESHABILITADO
+        // ENDPOINT REMOVIDO: No se permite cambiar de vuelo una vez creada la reserva
+        // Razón: Integridad del sistema, datos de pasajeros, asientos y facturación
 
         private int ObtenerUsuarioId()
         {

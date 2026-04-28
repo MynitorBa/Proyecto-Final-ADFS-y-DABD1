@@ -174,6 +174,32 @@ namespace Aerolinea.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Cambia la tripulación asignada a un vuelo. Requiere al menos 48h de anticipación
+        /// y exactamente 5 tripulantes: 1 piloto, 1 copiloto, 3 auxiliares.
+        /// </summary>
+        [HttpPut("{id}/tripulacion")]
+        public async Task<IActionResult> CambiarTripulacion(int id, [FromBody] CambiarTripulacionDTO dto)
+        {
+            try
+            {
+                await _adminVueloService.CambiarTripulacion(id, dto);
+                return Ok(new { message = "Tripulación del vuelo actualizada correctamente" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Error inesperado al cambiar la tripulación." });
+            }
+        }
+
         // ── GET /api/admin/vuelos/siguiente-numero ───────────────────────────
         /// <summary>
         /// Devuelve el siguiente numero de secuencia disponible para un prefijo de vuelo.

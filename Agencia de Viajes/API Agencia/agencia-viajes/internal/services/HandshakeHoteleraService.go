@@ -7,6 +7,7 @@ package services
 
 import (
 	"agencia-viajes/internal/config"
+	"agencia-viajes/internal/dto"
 	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
 	"bytes"
@@ -51,7 +52,7 @@ func NewHandshakeHoteleraService(db *sql.DB, cfg *config.Config) *HandshakeHotel
 // Ejecuta el flujo completo de handshake con una hotelera proveedora.
 // Obtiene la URL del proveedor, genera un token de entrada para la agencia,
 // lo envia a la hotelera junto con la URL de la agencia, recibe el token
-// de salida del proveedor y guarda ambos tokens en BD.
+// de salida y el porcentaje de ganancia, y guarda ambos en BD.
 //
 // Parametros:
 //   - proveedorID: identificador del proveedor hotelera con quien hacer handshake
@@ -77,35 +78,41 @@ func (s *HandshakeHoteleraService) IniciarHandshake(proveedorID int) (string, er
 		return "", errors.New("error generando token")
 	}
 
-	// 3. Enviar token a la hotelera y recibir su token
-	tokenSalida, err := s.llamarHandshakeHotelera(urlAPI, tokenEntrada)
+	// 3. Enviar token a la hotelera y recibir su token y porcentaje
+	respuesta, err := s.llamarHandshakeHotelera(urlAPI, tokenEntrada)
 	if err != nil {
 		return "", fmt.Errorf("error en handshake con hotelera: %w", err)
 	}
 
 	// 4. Guardar ambos tokens en la BD
-	err = s.repo.GuardarTokens(proveedorID, tokenEntrada, tokenSalida)
+	err = s.repo.GuardarTokens(proveedorID, tokenEntrada, respuesta.TokenSalida)
 	if err != nil {
 		return "", errors.New("error guardando tokens")
 	}
 
-	return tokenSalida, nil
+	// 5. Actualizar porcentaje de ganancia con el valor del proveedor
+	err = s.repo.ActualizarPorcentajeGanancia(proveedorID, respuesta.PorcentajeGanancia)
+	if err != nil {
+		return "", errors.New("error actualizando porcentaje de ganancia")
+	}
+
+	return respuesta.TokenSalida, nil
 }
 
 // llamarHandshakeHotelera
 //
 // Realiza la llamada HTTP POST al endpoint de handshake de la hotelera,
 // enviando el token de entrada de la agencia y su URL publica. Retorna
-// el token de salida que el proveedor asigna a esta agencia.
+// la respuesta completa con token y porcentaje de ganancia.
 //
 // Parametros:
 //   - urlAPI: URL base del API del proveedor hotelera
 //   - tokenEntrada: token generado por la agencia para identificarse ante la hotelera
 //
 // Retorna:
-//   - string: token de salida asignado por la hotelera para autenticar sus llamadas
+//   - *dto.HandshakeResponse: respuesta con token de salida y porcentaje de ganancia
 //   - error: si la peticion HTTP falla, la hotelera retorna error o no incluye token_salida
-func (s *HandshakeHoteleraService) llamarHandshakeHotelera(urlAPI, tokenEntrada string) (string, error) {
+func (s *HandshakeHoteleraService) llamarHandshakeHotelera(urlAPI, tokenEntrada string) (*dto.HandshakeResponse, error) {
 	body, _ := json.Marshal(map[string]string{
 		"token_entrada": tokenEntrada,
 		"url_agencia":   s.serverURL,
@@ -113,23 +120,22 @@ func (s *HandshakeHoteleraService) llamarHandshakeHotelera(urlAPI, tokenEntrada 
 
 	resp, err := http.Post(urlAPI+"/api/agencias/handshake", "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("la hotelera respondió con status %d", resp.StatusCode)
+		return nil, fmt.Errorf("la hotelera respondió con status %d", resp.StatusCode)
 	}
 
-	var resultado map[string]string
+	var resultado dto.HandshakeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&resultado); err != nil {
-		return "", errors.New("respuesta inválida de la hotelera")
+		return nil, errors.New("respuesta inválida de la hotelera")
 	}
 
-	tokenSalida, ok := resultado["token_salida"]
-	if !ok || tokenSalida == "" {
-		return "", errors.New("la hotelera no devolvió token_salida")
+	if resultado.TokenSalida == "" {
+		return nil, errors.New("la hotelera no devolvió token_salida")
 	}
 
-	return tokenSalida, nil
+	return &resultado, nil
 }

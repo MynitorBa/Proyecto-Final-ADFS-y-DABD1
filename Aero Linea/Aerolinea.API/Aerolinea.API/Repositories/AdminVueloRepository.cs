@@ -720,6 +720,43 @@ namespace Aerolinea.API.Repositories
             await cmd.ExecuteNonQueryAsync();
         }
 
+        /// <summary>Reemplaza la tripulacion completa de un vuelo con la nueva lista de tripulantes.</summary>
+        public async Task CambiarTripulacionVuelo(int vueloId, List<int> nuevosTripulantesIds)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                // Eliminar tripulación actual
+                using (var cmdDel = new SqlCommand(
+                    "DELETE FROM EquipoPivote WHERE VueloID = @vueloId", connection, transaction))
+                {
+                    cmdDel.Parameters.AddWithValue("@vueloId", vueloId);
+                    await cmdDel.ExecuteNonQueryAsync();
+                }
+
+                // Insertar nueva tripulación
+                foreach (var tripId in nuevosTripulantesIds)
+                {
+                    using var cmdIns = new SqlCommand(
+                        "INSERT INTO EquipoPivote (VueloID, MiembroTripulacionID) VALUES (@vueloId, @tripId)",
+                        connection, transaction);
+                    cmdIns.Parameters.AddWithValue("@vueloId", vueloId);
+                    cmdIns.Parameters.AddWithValue("@tripId", tripId);
+                    await cmdIns.ExecuteNonQueryAsync();
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
         /// <summary>Cuenta los boletos vendidos/reservados (EstadoBoletoID IN (2,3)) para un vuelo.</summary>
         public async Task<int> ObtenerBoletosVendidos(int vueloId)
         {
@@ -730,6 +767,51 @@ namespace Aerolinea.API.Repositories
                 connection);
             cmd.Parameters.AddWithValue("@VueloId", vueloId);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        }
+
+        /// <summary>Obtiene tripulantes con información completa por lista de IDs (incluyendo nombres de roles).</summary>
+        public async Task<List<TripulanteDTO>> ObtenerTripulantesDTOPorIds(List<int> ids)
+        {
+            if (ids.Count == 0) return new List<TripulanteDTO>();
+
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            var paramNames = ids.Select((_, i) => $"@id{i}").ToList();
+            string inClause = string.Join(", ", paramNames);
+
+            using var cmd = new SqlCommand(
+                $@"SELECT mt.ID,
+                          mt.Nombre,
+                          mt.Apellido,
+                          mt.RolID,
+                          rt.Cargo AS NombreRol,
+                          mt.Imagen AS ImagenBase64
+                   FROM   MiembroTripulacion mt
+                   INNER JOIN RolTripulacion rt ON rt.ID = mt.RolID
+                   WHERE  mt.ID IN ({inClause})",
+                connection);
+
+            for (int i = 0; i < ids.Count; i++)
+                cmd.Parameters.AddWithValue(paramNames[i], ids[i]);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            var lista = new List<TripulanteDTO>();
+            while (await reader.ReadAsync())
+            {
+                lista.Add(new TripulanteDTO
+                {
+                    Id             = reader.GetInt32(0),
+                    Nombre         = reader.GetString(1),
+                    Apellido       = reader.GetString(2),
+                    RolID          = reader.GetInt32(3),
+                    NombreRol      = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    NombreCompleto = $"{reader.GetString(1)} {reader.GetString(2)}",
+                    ImagenBase64   = reader.IsDBNull(5) ? null : reader.GetString(5)
+                });
+            }
+
+            return lista;
         }
 
         /// <summary>Obtiene tripulantes por lista de IDs para validar composición de roles.</summary>

@@ -18,11 +18,12 @@ import Contacto            from '../views/Contacto.vue'
 import ResultadosVuelos    from '../views/ResultadosVuelos.vue'
 import ResultadosHoteles   from '../views/ResultadosHoteles.vue'
 import ResultadosPaquetes  from '../views/ResultadosPaquetes.vue'
-import Dashboard           from '../views/admin/Dashboard.vue'
-import GestionRoles        from '../views/admin/GestionRoles.vue'
-import GestionProveedores  from '../views/admin/GestionProveedores.vue'
-import GestionFinanzas     from '../views/admin/GestionFinanzas.vue'
-import AdminMetricas       from '../views/admin/AdminMetricas.vue'
+import Dashboard            from '../views/admin/Dashboard.vue'
+import GestionReservaciones from '../views/admin/GestionReservaciones.vue'
+import GestionRoles         from '../views/admin/GestionRoles.vue'
+import GestionProveedores   from '../views/admin/GestionProveedores.vue'
+import GestionFinanzas      from '../views/admin/GestionFinanzas.vue'
+import AdminMetricas        from '../views/admin/AdminMetricas.vue'
 import WebService          from '../views/WebService.vue'
 import Profile             from '../views/Profile.vue'
 import Notificaciones      from '../views/Notificaciones.vue'
@@ -58,13 +59,14 @@ const routes = [
   { path: '/resultados-hoteles',  component: ResultadosHoteles,  name: 'resultadosHoteles' },
   { path: '/resultados-paquetes', component: ResultadosPaquetes, name: 'resultadosPaquetes' },
 
-  { path: '/admin',             redirect: '/admin/dashboard', name: 'admin' },
-  { path: '/admin/dashboard',   component: Dashboard,         name: 'dashboard' },
-  { path: '/admin/roles',       component: GestionRoles,      name: 'gestionRoles' },
-  { path: '/admin/proveedores', component: GestionProveedores, name: 'gestionProveedores' },
-  { path: '/admin/paquetes',    component: GestionFinanzas,   name: 'gestionFinanzas' },
-  { path: '/admin/metricas',    component: AdminMetricas,     name: 'adminMetricas' },
-  { path: '/admin/webservice',  component: WebService,        name: 'webService' },
+  { path: '/admin',                redirect: '/admin/dashboard', name: 'admin' },
+  { path: '/admin/dashboard',      component: Dashboard,         name: 'dashboard' },
+  { path: '/admin/reservaciones',  component: GestionReservaciones, name: 'gestionReservaciones' },
+  { path: '/admin/roles',          component: GestionRoles,      name: 'gestionRoles' },
+  { path: '/admin/proveedores',    component: GestionProveedores, name: 'gestionProveedores' },
+  { path: '/admin/paquetes',       component: GestionFinanzas,   name: 'gestionFinanzas' },
+  { path: '/admin/metricas',       component: AdminMetricas,     name: 'adminMetricas' },
+  { path: '/admin/webservice',     component: WebService,        name: 'webService' },
 
   { path: '/:pathMatch(.*)*', redirect: '/principal', name: 'notFound' },
 ]

@@ -21,8 +21,9 @@ import java.util.UUID;
 
 /**
  * Service para la gestion de reservaciones realizadas por agencias.
- * Maneja la creacion con descuento aplicado, consulta de reservaciones
- * y expiracion manual de reservaciones pendientes.
+ * Maneja la creacion de reservaciones SIN aplicar descuento (devuelve precios originales),
+ * consulta de reservaciones y expiracion manual de reservaciones pendientes.
+ * El descuento es responsabilidad de Movent (nivel logico/negocio).
  */
 public class ReservacionAgenciaService {
 
@@ -40,13 +41,14 @@ public class ReservacionAgenciaService {
     }
 
     /**
-     * Crea una nueva reservacion para una agencia aplicando su descuento.
-     * Valida disponibilidad de cada habitacion, calcula totales con el descuento
-     * de la agencia, genera el numero de reservacion y persiste los detalles.
+     * Crea una nueva reservacion para una agencia SIN aplicar descuento.
+     * Devuelve precios originales. El descuento es responsabilidad de Movent.
+     * Valida disponibilidad de cada habitacion, calcula totales con precios originales,
+     * genera el numero de reservacion y persiste los detalles.
      * La reservacion expira automaticamente en 10 minutos si no se paga.
      * @param request   datos de la reservacion: lista de habitaciones con fechas y personas.
      * @param agenciaId ID de la agencia que realiza la reservacion.
-     * @return DTO con los datos de la reservacion creada y el desglose por habitacion.
+     * @return DTO con los datos de la reservacion creada y el desglose por habitacion (precios originales).
      * @throws IllegalArgumentException si la agencia no esta activa, no hay habitaciones,
      *                                  las fechas son invalidas o alguna habitacion no esta disponible.
      */
@@ -63,7 +65,8 @@ public class ReservacionAgenciaService {
             if (request.getHabitaciones() == null || request.getHabitaciones().isEmpty())
                 throw new IllegalArgumentException("Debe incluir al menos una habitacion");
 
-            double factor       = 1.0 - (porcentajeDescuento / 100.0);
+            // NO aplicar descuento: devolver precios originales SIN modificar
+            // El descuento es responsabilidad de Movent (nivel logico/negocio)
             double totalGeneral = 0;
             List<HabitacionAgenciaResponseDTO> desglose = new ArrayList<>();
 
@@ -86,8 +89,8 @@ public class ReservacionAgenciaService {
 
                 double[] precios = repository.obtenerPrecios(item.getHabitacionId());
 
-                double precioPorNoche   = Math.round(precios[0] * factor * 100.0) / 100.0;
-                double precioPorPersona = Math.round(precios[1] * factor * 100.0) / 100.0;
+                double precioPorNoche   = precios[0];
+                double precioPorPersona = precios[1];
                 int    capacidadMaxima  = precios.length > 2 ? (int) precios[2] : Integer.MAX_VALUE;
                 int    personasExtra    = Math.max(0, item.getCantidadPersonas() - capacidadMaxima);
 
@@ -120,7 +123,7 @@ public class ReservacionAgenciaService {
             for (int i = 0; i < desglose.size(); i++) {
                 HabitacionAgenciaResponseDTO hab = desglose.get(i);
                 HabitacionReservaRequestDTO item = request.getHabitaciones().get(i);
-                repository.crearDetalle(
+                int detalleId = repository.crearDetalle(
                         reservacionId,
                         hab.getHabitacionId(),
                         Date.valueOf(LocalDate.parse(item.getFechaCheckIn())),
@@ -128,6 +131,7 @@ public class ReservacionAgenciaService {
                         item.getCantidadPersonas(),
                         hab.getTotal()
                 );
+                hab.setDetalleId(detalleId);
             }
 
             Object[] datos = repository.obtenerReservacion(reservacionId);

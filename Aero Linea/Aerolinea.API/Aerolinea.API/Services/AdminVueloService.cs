@@ -310,8 +310,11 @@ namespace Aerolinea.API.Services
         /// Permite filtrar aviones no disponibles al momento de crear un vuelo nuevo.
         /// </summary>
         /// <summary>
-        /// Cambia el avión asignado a un vuelo. Valida mínimo 48h de anticipación
-        /// y que el nuevo avión tenga capacidad suficiente para los boletos ya vendidos.
+        /// Cambia el avión asignado a un vuelo. Valida:
+        /// 1. Mínimo 48h de anticipación
+        /// 2. Nuevo avión tenga capacidad >= boletos vendidos
+        /// 3. Nuevo avión tenga capacidad >= capacidad del avión anterior (integridad de ruta)
+        /// Notifica a todos los usuarios con reservas en este vuelo.
         /// </summary>
         public async Task CambiarAvion(int vueloId, int nuevoAvionId)
         {
@@ -325,17 +328,176 @@ namespace Aerolinea.API.Services
                 throw new InvalidOperationException(
                     $"No se puede cambiar el avión: faltan {horasRestantes:F0}h. Se requieren al menos 48h de anticipación.");
 
-            var avion = await _adminVueloRepository.ObtenerAvionPorId(nuevoAvionId);
-            if (avion == null)
+            var avionNuevo = await _adminVueloRepository.ObtenerAvionPorId(nuevoAvionId);
+            if (avionNuevo == null)
                 throw new ArgumentException("Avión no encontrado");
 
+            // Obtener avión actual para validar capacidad
+            var avionActual = await _adminVueloRepository.ObtenerAvionPorId(vuelo.AvionId);
+            if (avionActual == null)
+                throw new ArgumentException("Avión actual del vuelo no encontrado");
+
             var boletosVendidos = await _adminVueloRepository.ObtenerBoletosVendidos(vueloId);
-            if (avion.CapacidadPasajeros < boletosVendidos)
+
+            // Validación 1: Capacidad >= boletos vendidos
+            if (avionNuevo.CapacidadPasajeros < boletosVendidos)
                 throw new ArgumentException(
-                    $"El avión '{avion.Marca} {avion.Modelo}' tiene capacidad para {avion.CapacidadPasajeros} pasajeros, " +
+                    $"El avión '{avionNuevo.Marca} {avionNuevo.Modelo}' tiene capacidad para {avionNuevo.CapacidadPasajeros} pasajeros, " +
                     $"pero ya hay {boletosVendidos} boleto(s) vendido(s) en este vuelo.");
 
+            // Validación 2: Capacidad >= capacidad del avión anterior (integridad de ruta)
+            if (avionNuevo.CapacidadPasajeros < avionActual.CapacidadPasajeros)
+                throw new ArgumentException(
+                    $"No se puede cambiar a un avión con menor capacidad. " +
+                    $"Avión actual '{avionActual.Marca} {avionActual.Modelo}' tiene capacidad para {avionActual.CapacidadPasajeros} pasajeros, " +
+                    $"pero el avión seleccionado '{avionNuevo.Marca} {avionNuevo.Modelo}' solo tiene {avionNuevo.CapacidadPasajeros}.");
+
+            // Obtener afectados ANTES de hacer el cambio
+            var afectados = await _adminVueloRepository.ObtenerAfectadosPorVuelo(vueloId);
+
+            // Ejecutar el cambio
             await _adminVueloRepository.CambiarAvionVuelo(vueloId, nuevoAvionId);
+
+            // Notificar a usuarios afectados (best-effort)
+            int enviados = 0, fallidos = 0;
+            foreach (var afectado in afectados)
+            {
+                if (string.IsNullOrEmpty(afectado.EmailUsuario))
+                    continue;
+
+                try
+                {
+                    string html = EmailTemplates.CorreoCambioAvion(
+                        afectado.NombreUsuario,
+                        afectado.NoReservacion,
+                        afectado.NumeroVuelo,
+                        afectado.OrigenCodigo,
+                        afectado.DestinoCodigo,
+                        $"{avionActual.Marca} {avionActual.Modelo} ({avionActual.CapacidadPasajeros} pasajeros)",
+                        $"{avionNuevo.Marca} {avionNuevo.Modelo} ({avionNuevo.CapacidadPasajeros} pasajeros)");
+
+                    await _emailHelper.Enviar(
+                        afectado.EmailUsuario,
+                        $"Broom AirLine - Actualización Vuelo {afectado.NumeroVuelo}",
+                        html);
+
+                    enviados++;
+                }
+                catch (Exception ex)
+                {
+                    fallidos++;
+                    _logger.LogError(ex,
+                        "Error al notificar cambio de avión en vuelo {VueloId} a usuario {Email}",
+                        vueloId, afectado.EmailUsuario);
+                }
+            }
+
+            _logger.LogInformation(
+                "Notificaciones de cambio de avión en vuelo {VueloId}: {Enviados} enviadas, {Fallidos} fallidas",
+                vueloId, enviados, fallidos);
+        }
+
+        /// <summary>
+        /// Cambia la tripulación de un vuelo. Valida:
+        /// - 48+ horas de anticipación
+        /// - Exactamente 5 tripulantes: 1 piloto, 1 copiloto, 3 auxiliares
+        /// - Que todos los tripulantes existan en el sistema
+        /// Notifica a los pasajeros afectados por cambio de tripulación.
+        /// </summary>
+        public async Task CambiarTripulacion(int vueloId, CambiarTripulacionDTO dto)
+        {
+            if (vueloId <= 0)
+                throw new ArgumentException("ID de vuelo inválido");
+
+            if (dto.TripulantesIds == null || dto.TripulantesIds.Count == 0)
+                throw new ArgumentException("Debe proporcionar una lista de tripulantes");
+
+            var vuelo = await _adminVueloRepository.ObtenerVueloPorId(vueloId);
+            if (vuelo == null)
+                throw new ArgumentException("Vuelo no encontrado");
+
+            var salidaDateTime = vuelo.Fecha.Date + vuelo.HoraSalida;
+            var horasRestantes = (salidaDateTime - DateTime.Now).TotalHours;
+            if (horasRestantes < 48)
+                throw new InvalidOperationException(
+                    $"No se puede cambiar la tripulación: faltan {horasRestantes:F0}h. Se requieren al menos 48h de anticipación.");
+
+            // Validar cantidad exacta
+            if (dto.TripulantesIds.Count != 5)
+                throw new ArgumentException(
+                    $"La tripulación debe tener exactamente 5 miembros. Se proporcionaron {dto.TripulantesIds.Count}.");
+
+            // Obtener los tripulantes con información completa para validar roles
+            var tripulantesDTONuevos = await _adminVueloRepository.ObtenerTripulantesDTOPorIds(dto.TripulantesIds);
+
+            if (tripulantesDTONuevos.Count != dto.TripulantesIds.Count)
+                throw new ArgumentException("Uno o más tripulantes no existen en el sistema");
+
+            // Validar composición de roles
+            // Roles: 1 Piloto, 1 Copiloto, 3 Auxiliares
+            var pilotos = tripulantesDTONuevos.Where(t => t.RolID == 1).Count(); // RolID 1 es Piloto
+            var copilotos = tripulantesDTONuevos.Where(t => t.RolID == 2).Count(); // RolID 2 es Copiloto
+            var auxiliares = tripulantesDTONuevos.Where(t => t.RolID != 1 && t.RolID != 2).Count();
+
+            if (pilotos != 1)
+                throw new ArgumentException(
+                    $"La tripulación debe tener exactamente 1 piloto. Se proporcionaron {pilotos}.");
+
+            if (copilotos != 1)
+                throw new ArgumentException(
+                    $"La tripulación debe tener exactamente 1 copiloto. Se proporcionaron {copilotos}.");
+
+            if (auxiliares != 3)
+                throw new ArgumentException(
+                    $"La tripulación debe tener exactamente 3 auxiliares. Se proporcionaron {auxiliares}.");
+
+            // Obtener afectados ANTES de hacer el cambio
+            var afectados = await _adminVueloRepository.ObtenerAfectadosPorVuelo(vueloId);
+
+            // Obtener tripulación actual para incluir en el correo
+            var tripulacionActual = await _adminVueloRepository.ObtenerTripulantesDelVuelo(vueloId);
+
+            // Ejecutar el cambio
+            await _adminVueloRepository.CambiarTripulacionVuelo(vueloId, dto.TripulantesIds);
+
+            // Notificar a usuarios afectados (best-effort)
+            int enviados = 0, fallidos = 0;
+            foreach (var afectado in afectados)
+            {
+                if (string.IsNullOrEmpty(afectado.EmailUsuario))
+                    continue;
+
+                try
+                {
+                    string html = EmailTemplates.CorreoCambioTripulacion(
+                        afectado.NombreUsuario,
+                        afectado.NoReservacion,
+                        afectado.NumeroVuelo,
+                        afectado.OrigenCodigo,
+                        afectado.DestinoCodigo,
+                        tripulacionActual,
+                        tripulantesDTONuevos,
+                        dto.Motivo ?? "");
+
+                    await _emailHelper.Enviar(
+                        afectado.EmailUsuario,
+                        $"Broom AirLine - Actualización Vuelo {afectado.NumeroVuelo}",
+                        html);
+
+                    enviados++;
+                }
+                catch (Exception ex)
+                {
+                    fallidos++;
+                    _logger.LogError(ex,
+                        "Error al notificar cambio de tripulación en vuelo {VueloId} a usuario {Email}",
+                        vueloId, afectado.EmailUsuario);
+                }
+            }
+
+            _logger.LogInformation(
+                "Notificaciones de cambio de tripulación en vuelo {VueloId}: {Enviados} enviadas, {Fallidos} fallidas",
+                vueloId, enviados, fallidos);
         }
 
         public async Task<HashSet<int>> ObtenerAvionesOcupados(

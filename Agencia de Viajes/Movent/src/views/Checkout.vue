@@ -378,8 +378,8 @@ const tipoItem = computed(() => cd.value?.tipoItem || '')
  */
 const subtotal = computed(() => {
   if (!cd.value) return 0
-  const tv = cd.value.detalleVuelo?.total_con_ganancia ?? 0
-  const th = cd.value.detalleHotel?.total_con_ganancia ?? 0
+  const tv = cd.value.detalleVuelo?.total ?? 0
+  const th = cd.value.detalleHotel?.total ?? 0
   return tv + th
 })
 
@@ -400,8 +400,8 @@ const montoDescuento = computed(() => {
  */
 const totalDisplay = computed(() => {
   if (!cd.value) return '--'
-  const tv = cd.value.detalleVuelo?.total_con_ganancia ?? 0
-  const th = cd.value.detalleHotel?.total_con_ganancia ?? 0
+  const tv = cd.value.detalleVuelo?.total ?? 0
+  const th = cd.value.detalleHotel?.total ?? 0
   if (tipoItem.value === 'vuelo')   return tv > 0 ? `$${tv.toFixed(2)}` : '--'
   if (tipoItem.value === 'hotel')   return th > 0 ? `$${th.toFixed(2)}` : '--'
   if (tipoItem.value === 'paquete') {

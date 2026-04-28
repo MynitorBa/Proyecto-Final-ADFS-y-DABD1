@@ -763,6 +763,35 @@ LOCK TABLES `usuarionacionalidad` WRITE;
 INSERT INTO `usuarionacionalidad` VALUES (1,1,1),(2,2,1),(3,2,2),(4,3,1),(5,3,2),(6,4,3),(7,5,3),(8,6,3),(9,7,3),(10,8,3),(11,9,3),(12,10,3),(13,11,3),(14,12,3),(15,13,3);
 /*!40000 ALTER TABLE `usuarionacionalidad` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Procedimientos y funciones
+--
+
+DELIMITER $$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_CREAR_RESERVACION` (IN `p_usuario_id` INT, IN `p_tipo_reserva` INT, OUT `p_id` INT, OUT `p_no_reservacion` VARCHAR(8), OUT `p_fecha_exp` DATETIME)
+BEGIN
+    -- Usar la función para generar el código único
+    SET p_no_reservacion = FN_GENERAR_NO_RESERVACION();
+    -- Calcular expiración: 10 minutos desde ahora
+    SET p_fecha_exp = DATE_ADD(NOW(), INTERVAL 10 MINUTE);
+
+    INSERT INTO Reservacion
+        (No_Reservacion, Total, EstadoID, Usuario_ID, Fecha_Expiracion, Fecha_Creacion, Tipo_Reserva_ID)
+    VALUES
+        (p_no_reservacion, 0, 1, p_usuario_id, p_fecha_exp, NOW(), p_tipo_reserva);
+
+    SET p_id = LAST_INSERT_ID();
+END$$
+
+CREATE DEFINER=`root`@`localhost` FUNCTION `FN_GENERAR_NO_RESERVACION` () RETURNS VARCHAR(8) CHARSET utf8mb4 COLLATE utf8mb4_general_ci DETERMINISTIC
+BEGIN
+    RETURN UPPER(SUBSTRING(REPLACE(UUID(), '-', ''), 1, 8));
+END$$
+
+DELIMITER ;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

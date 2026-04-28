@@ -127,37 +127,11 @@ namespace Aerolinea.API.Services
                 throw;
             }
         }
+        // ObtenerVuelosElegiblesAsync() — REMOVIDO
+        // FUNCIONALIDAD DESHABILITADA: No se permite cambiar de vuelo una vez creada la reserva
 
-        /// <summary>Retorna vuelos elegibles para cambio de la reservacion (admin).</summary>
-        public async Task<List<VueloElegibleDTO>> ObtenerVuelosElegiblesAsync(int reservacionId)
-            => await _repo.ObtenerVuelosElegiblesAdmin(reservacionId);
-
-        /// <summary>Ejecuta el cambio de vuelo (admin) y envia correo al usuario.</summary>
-        public async Task CambiarVueloAsync(int reservacionId, int nuevoVueloId)
-        {
-            var (noRes, noVuelo, fecha, hora, nombre, email, total) =
-                await _repo.EjecutarCambioVueloAdmin(reservacionId, nuevoVueloId);
-
-            if (!string.IsNullOrWhiteSpace(email))
-            {
-                try
-                {
-                    var detalle = await _repo.ObtenerPorIdAsync(reservacionId);
-                    var b = detalle?.Boletos?.FirstOrDefault();
-                    string html = EmailTemplates.CorreoCambioVuelo(
-                        nombre, noRes,
-                        b?.OrigenCodigo ?? "", b?.OrigenCiudad ?? "",
-                        b?.DestinoCodigo ?? "", b?.DestinoCiudad ?? "",
-                        noVuelo, fecha, hora, total);
-                    await _emailHelper.Enviar(email,
-                        $"Broom AirLine — Tu reservación {noRes} fue reprogramada", html);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error al enviar correo de cambio de vuelo (admin) para reservacion {Id}", reservacionId);
-                }
-            }
-        }
+        // CambiarVueloAsync() — REMOVIDO
+        // FUNCIONALIDAD DESHABILITADA: No se permite cambiar de vuelo una vez creada la reserva
 
         private static string ConstruirCorreoCancelacion(
             UsuarioEmailDto usuario, ReservacionResumenDto detalle, string motivo)

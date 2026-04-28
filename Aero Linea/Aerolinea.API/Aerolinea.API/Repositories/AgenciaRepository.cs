@@ -174,6 +174,31 @@ namespace Aerolinea.API.Repositories
         }
 
         /// <summary>
+        /// Obtiene el ID y porcentaje de descuento de una agencia a partir de su URL.
+        /// Retorna null si no existe.
+        /// </summary>
+        public async Task<AgenciaDTO?> ObtenerAgenciaConPorcentajePorURL(string urlAgencia)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand(
+                "SELECT ID, PorcentajeDescuento FROM Agencia WHERE URL_Agencia = @URL", connection);
+            command.Parameters.AddWithValue("@URL", urlAgencia);
+
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new AgenciaDTO
+                {
+                    ID = reader.GetInt32(0),
+                    PorcentajeDescuento = reader.GetDecimal(1)
+                };
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Obtiene la identidad basica de una agencia (ID, nombre y URL) a partir de
         /// su token de autenticacion de entrada. Retorna null si no existe.
         /// </summary>

@@ -3,7 +3,6 @@ package org.example.controllers;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.example.dtos.CambioFechasMultipleRequestDTO;
-import org.example.dtos.CambioFechasRequestDTO;
 import org.example.dtos.ReservacionRequestDTO;
 import org.example.services.ReservacionService;
 
@@ -54,29 +53,6 @@ public class ReservacionController {
         ctx.status(200).json(reservacionService.obtenerReservaciones(usuarioId));
     }
 
-    void handleCambiarFechas(Context ctx) {
-        int usuarioId = ctx.attribute("usuarioId");
-        int detalleId = Integer.parseInt(ctx.pathParam("detalleId"));
-        var body      = ctx.bodyAsClass(CambioFechasRequestDTO.class);
-        try {
-            var resultado = reservacionService.cambiarFechas(
-                    detalleId,
-                    body.getFechaCheckIn(),
-                    body.getFechaCheckOut(),
-                    usuarioId,
-                    ctx.ip(),
-                    ctx.userAgent()
-            );
-            ctx.status(200).json(resultado);
-        } catch (SecurityException e) {
-            ctx.status(403).json(Map.of("mensaje", e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            ctx.status(400).json(Map.of("mensaje", e.getMessage()));
-        } catch (RuntimeException e) {
-            ctx.status(500).json(Map.of("mensaje", e.getMessage()));
-        }
-    }
-
     void handleCambiarFechasMultiple(Context ctx) {
         int usuarioId     = ctx.attribute("usuarioId");
         int reservacionId = Integer.parseInt(ctx.pathParam("id"));
@@ -95,4 +71,5 @@ public class ReservacionController {
             ctx.status(500).json(Map.of("mensaje", e.getMessage()));
         }
     }
+
 }

@@ -72,7 +72,8 @@ public class BusquedaAgenciaService {
                             hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : tiposCumplen) {
-                aplicarDescuento(tipo, porcentajeDescuento);
+                // NO aplicar descuento aquí: los precios se devuelven SIN descuento
+                // El descuento es responsabilidad de Movent (nivel lógico/negocio)
                 tipo.setImagenesIds(repository.buscarImagenesHabitacion(tipo.getTipoHabitacionId()));
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
@@ -85,7 +86,7 @@ public class BusquedaAgenciaService {
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
-                aplicarDescuento(tipo, porcentajeDescuento);
+                // NO aplicar descuento: devolver precios originales
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }
@@ -173,7 +174,8 @@ public class BusquedaAgenciaService {
                             hotel.getId(), request.getCantidadPersonas(), fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : tiposCumplen) {
-                aplicarDescuento(tipo, porcentajeDescuento);
+                // NO aplicar descuento: devolver precios originales SIN modificar
+                // El descuento es responsabilidad de Movent (nivel lógico/negocio)
                 tipo.setImagenesIds(repository.buscarImagenesHabitacion(tipo.getTipoHabitacionId()));
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
@@ -186,7 +188,7 @@ public class BusquedaAgenciaService {
                             hotel.getId(), 1, fechaCheckIn, fechaCheckOut);
 
             for (TipoHabitacionResultadoDTO tipo : todosLosTipos) {
-                aplicarDescuento(tipo, porcentajeDescuento);
+                // NO aplicar descuento: devolver precios originales
                 tipo.setHabitacionesDisponibles(repository.buscarHabitacionesResumenPorTipo(
                         hotel.getId(), tipo.getTipoHabitacionId(), fechaCheckIn, fechaCheckOut));
             }

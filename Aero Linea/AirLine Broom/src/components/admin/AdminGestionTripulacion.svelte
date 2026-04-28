@@ -488,12 +488,12 @@
   .gt-comp-ok  { margin-left: auto; color: #166534; font-size: 0.8rem; }
   .gt-comp-err { margin-left: auto; color: #dc2626; font-size: 0.8rem; }
 
-  /* Seleccionados */
-  .gt-seleccionados { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.75rem; }
-  .gt-sel-pill { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.5rem 0.2rem 0.65rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: #1C1A18; color: #F2EFEA; }
+  /* Seleccionados - Diseño comprimido horizontal */
+  .gt-seleccionados { display: flex; flex-wrap: nowrap; gap: 0.25rem; margin-bottom: 0.75rem; overflow-x: auto; padding: 0.35rem 0; }
+  .gt-sel-pill { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.4rem 0.15rem 0.55rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; background: #1C1A18; color: #F2EFEA; white-space: nowrap; flex-shrink: 0; }
   .gt-sel-pill--piloto   { background: #1e40af; }
   .gt-sel-pill--copiloto { background: #5b21b6; }
-  .gt-sel-rm { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.9rem; opacity: 0.75; padding: 0; line-height: 1; }
+  .gt-sel-rm { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.8rem; opacity: 0.75; padding: 0; line-height: 1; margin-left: 0.1rem; }
   .gt-sel-rm:hover { opacity: 1; }
   .gt-sin-selec { font-size: 0.82rem; color: #9ca3af; font-style: italic; margin-bottom: 0.75rem; }
 

@@ -1103,7 +1103,7 @@ async function verificarReservaActiva() {
     reservaActiva.value = true; reservacionIdActiva.value = cd.reservacionId; noReservacionActiva.value = cd.noReservacion || ''
     const tipo = cd.tipoItem || ''
     tipoReservaActiva.value  = tipo === 'vuelo' ? 'Vuelo' : tipo === 'hotel' ? 'Hospedaje' : tipo === 'paquete' ? 'Paquete completo' : ''
-    const tv = cd.detalleVuelo?.total_con_ganancia ?? 0, th = cd.detalleHotel?.total_con_ganancia ?? 0
+    const tv = cd.detalleVuelo?.total ?? 0, th = cd.detalleHotel?.total ?? 0
     let total = tipo === 'vuelo' ? tv : tipo === 'hotel' ? th : tipo === 'paquete' ? tv + th : 0
     if (tipo === 'paquete' && total > 0) {
       try {
@@ -1136,8 +1136,8 @@ async function _cargarPendienteDeServidor() {
     // det.total es el precio con ganancia guardado en BD — no necesitamos llamar al proveedor
     let detalleVuelo = null, detalleHotel = null, totalVuelo = 0, totalHotel = 0
     for (const det of (pend.detalles || [])) {
-      if (det.tipo_detalle_id === 1) { detalleVuelo = { total_con_ganancia: det.total ?? 0 }; totalVuelo = det.total ?? 0 }
-      if (det.tipo_detalle_id === 2) { detalleHotel = { total_con_ganancia: det.total ?? 0 }; totalHotel = det.total ?? 0 }
+      if (det.tipo_detalle_id === 1) { detalleVuelo = { total: det.total ?? 0 }; totalVuelo = det.total ?? 0 }
+      if (det.tipo_detalle_id === 2) { detalleHotel = { total: det.total ?? 0 }; totalHotel = det.total ?? 0 }
     }
     // Solo persistir checkout_data (para mostrar el carrito en el encabezado).
     // NO escribir _reserva_id ni _reserva_expires_at: esas claves las usa Reserva.vue

@@ -6,12 +6,26 @@ package org.example.dtos;
  */
 public class HabitacionAgenciaResponseDTO {
 
+    private int    detalleId;
     private int    habitacionId;
     private double precioPorNoche;
     private double precioPorPersona;
     private int    personasExtra;
     private int    noches;
     private double total;
+
+    /**
+     * Retorna el ID del detalle de reservacion creado por MIKU para esta habitacion.
+     * Necesario para cambios de fechas posteriores.
+     * @return ID del detalle.
+     */
+    public int getDetalleId() { return detalleId; }
+
+    /**
+     * Asigna el ID del detalle de reservacion creado por MIKU para esta habitacion.
+     * @param detalleId ID del detalle.
+     */
+    public void setDetalleId(int detalleId) { this.detalleId = detalleId; }
 
     /**
      * Retorna el ID de la habitacion cotizada.

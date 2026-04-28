@@ -34,29 +34,27 @@
 
           <div class="mv-panel__body">
 
-            <!-- Hero del panel: código de reserva y total pagado -->
-            <div class="mv-panel__hero">
-              <div>
-                <p class="mv-panel__hero-lbl">Código de reserva</p>
-                <p class="mv-panel__hero-codigo">{{ panelReserva.noReservacion }}</p>
+
+            <!-- DETALLES DE LA RESERVACIÓN -->
+              <!-- Hero del panel: código de reserva y total pagado -->
+              <div class="mv-panel__hero">
+                <div>
+                  <p class="mv-panel__hero-lbl">Código de reserva</p>
+                  <p class="mv-panel__hero-codigo">{{ panelReserva.noReservacion }}</p>
+                </div>
+                <div class="mv-panel__hero-right">
+                  <p class="mv-panel__hero-lbl">Total pagado</p>
+                  <p class="mv-panel__hero-monto">${{ panelReserva.total?.toFixed(2) }}</p>
+                </div>
               </div>
-              <div class="mv-panel__hero-right">
-                <p class="mv-panel__hero-lbl">Total pagado</p>
-                <p class="mv-panel__hero-monto">${{ panelReserva.total?.toFixed(2) }}</p>
-                <p v-if="montoImpuestos > 0" class="mv-panel__hero-sub">
-                  Incluye ${{ montoImpuestos.toFixed(2) }} de impuestos
-                </p>
+
+              <!-- Spinner mientras se carga el detalle del proveedor -->
+              <div v-if="panelLoading" class="mv-panel__center">
+                <div class="mv-spinner mv-spinner--lg"></div>
+                <p>Cargando detalles del proveedor...</p>
               </div>
-            </div>
 
-            <!-- Spinner mientras se carga el detalle del proveedor -->
-            <div v-if="panelLoading" class="mv-panel__center">
-              <div class="mv-spinner mv-spinner--lg"></div>
-              <p>Cargando detalles del proveedor...</p>
-            </div>
-
-            <template v-else-if="!panelError">
-
+              <template v-if="!panelLoading">
               <!-- Información general: fechas, usuario y cancelación -->
               <div class="mv-panel__section">
                 <h4 class="mv-panel__stitle">Información general</h4>
@@ -121,7 +119,6 @@
                       <div class="mv-boleto__cell"><span class="mv-boleto__clbl">Asiento</span><span class="mv-boleto__cval">{{ boleto.noAsiento }}</span></div>
                       <div class="mv-boleto__cell"><span class="mv-boleto__clbl">Clase</span><span class="mv-boleto__cval">{{ boleto.clase }}</span></div>
                       <div class="mv-boleto__cell"><span class="mv-boleto__clbl">Fecha</span><span class="mv-boleto__cval">{{ formatFecha(boleto.fechaVuelo) }}</span></div>
-                      <div class="mv-boleto__cell"><span class="mv-boleto__clbl">Precio</span><span class="mv-boleto__cval mv-boleto__cval--price">${{ boleto.precio?.toFixed(2) }}</span></div>
                     </div>
                     <div v-if="boleto.pasajero" class="mv-boleto__pasajero">
                       <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -132,26 +129,10 @@
                     </div>
                   </div>
 
-<!-- Desglose de precios de vuelos con estado de cada detalle -->
-                  <div v-if="detallesVuelos.length > 0" class="mv-desglose">
-                    <div v-for="d in detallesVuelos" :key="d.id" class="mv-desglose__row">
-                      <span style="display:inline-flex;align-items:center;gap:0.4rem;">
-                        Vuelo
-                        <span :class="['mv-badge', 'mv-badge--sm', estadoClase(estadoDetalleLabel(d.estado_detalle_id, 1))]">
-                          {{ estadoDetalleLabel(d.estado_detalle_id, 1) }}
-                        </span>
-                      </span>
-                      <span>${{ (d.parametros_json?.total ?? d.total ?? 0).toFixed(2) }}</span>
-                    </div>
-                    <div class="mv-desglose__total">
-                      <span>Total vuelos</span>
-                      <strong>${{ detallesVuelos.reduce((s,d)=>s+(d.parametros_json?.total ?? d.total ?? 0),0).toFixed(2) }}</strong>
-                    </div>
-                  </div>
                 </div>
               </template>
 
-              <!-- HABITACIONES: datos reales del proveedor Miku Inn (data_proveedor) -->
+              <!-- HABITACIONES: detalles sin precios individuales -->
               <template v-if="(panelReserva._categoria==='hotel' || panelReserva._categoria==='paquete') && (panelReserva.habitaciones?.length ?? 0) > 0">
                 <div class="mv-panel__section">
                   <h4 class="mv-panel__stitle">
@@ -167,7 +148,6 @@
                           {{ h.tipoCama }}
                         </span>
                       </div>
-                      <span class="mv-hab__precio">${{ h.totalDetalle?.toFixed(2) }}</span>
                     </div>
                     <p class="mv-hab__desc">{{ h.descripcionHabitacion }}</p>
                     <div class="mv-hab__meta">
@@ -176,44 +156,18 @@
                       <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> {{ h.cantidadPersonas }} huésped{{ h.cantidadPersonas !== 1 ? 'es' : '' }}</span>
                     </div>
                   </div>
-<!-- Desglose de costos por habitación con estado de cada detalle -->
-                  <div v-if="detallesHoteles.length > 0" class="mv-desglose">
-                    <div v-for="d in detallesHoteles" :key="d.id" class="mv-desglose__row">
-                      <span style="display:inline-flex;align-items:center;gap:0.4rem;">
-                        {{ etiquetaHabitacion(d) }}
-                        <span :class="['mv-badge', 'mv-badge--sm', estadoClase(estadoDetalleLabel(d.estado_detalle_id, 2))]">
-                          {{ estadoDetalleLabel(d.estado_detalle_id, 2) }}
-                        </span>
-                      </span>
-                      <span>${{ (d.parametros_json?.total ?? d.total ?? 0).toFixed(2) }}</span>
-                    </div>
-                    <div class="mv-desglose__total">
-                      <span>Total hospedaje</span>
-                      <strong>${{ detallesHoteles.reduce((s,d)=>s+(d.parametros_json?.total ?? d.total ?? 0),0).toFixed(2) }}</strong>
-                    </div>
-                  </div>
                 </div>
               </template>
 
-              <!-- Resumen de cobros: subtotal, impuestos (ganancia agencia) y total -->
-              <div v-if="montoImpuestos > 0" class="mv-panel__section">
+
+              <!-- Total de la reservación -->
+              <div class="mv-panel__section">
                 <h4 class="mv-panel__stitle">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                  Resumen de cobros
+                  Total de la Reservación
                 </h4>
-                <div class="mv-desglose">
-                  <div class="mv-desglose__row">
-                    <span>Subtotal</span>
-                    <span>${{ subtotalReserva.toFixed(2) }}</span>
-                  </div>
-                  <div class="mv-desglose__row">
-                    <span>Impuestos</span>
-                    <span>${{ montoImpuestos.toFixed(2) }}</span>
-                  </div>
-                  <div class="mv-desglose__total">
-                    <span>Total pagado</span>
-                    <strong>${{ panelReserva.total?.toFixed(2) }}</strong>
-                  </div>
+                <div style="font-size: 1.3rem; font-weight: bold; color: #2a2520; text-align: center; padding: 1rem;">
+                  ${{ panelReserva.total?.toFixed(2) }}
                 </div>
               </div>
 
@@ -365,6 +319,46 @@
                 </div>
               </div>
 
+              <!-- EDITAR FECHAS HOTEL: solo para reservas hotel/paquete pendientes o confirmadas -->
+              <div v-if="(panelReserva._categoria==='hotel' || panelReserva._categoria==='paquete') && ['confirmada','pendiente'].includes(panelReserva.estadoReserva?.toLowerCase())" class="mv-panel__section">
+                <button v-if="!panelEditandoReservacion" class="mv-btn mv-btn--outline" @click="openEditarReservacion" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="3 12 3 20 12 20 20 12"/><path d="M16 5l-3.086-3.086a2 2 0 0 0-2.828 0L2.914 10.914a2 2 0 0 0 0 2.828l3.086 3.086a2 2 0 0 0 2.828 0l10.172-10.172a2 2 0 0 0 0-2.828z"/></svg>
+                  Cambiar fechas de hospedaje
+                </button>
+                <div v-else class="mv-editar">
+                  <div class="mv-editar__head">
+                    <h4>Cambiar fechas de hospedaje</h4>
+                    <button class="mv-editar__close" @click="closeEditarReservacion" type="button">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                  <div v-if="editOk" class="mv-editar__ok">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <p>Cambio exitoso. Los datos se han actualizado.</p>
+                  </div>
+                  <div v-else class="mv-editar__form">
+                    <div class="mv-editar__row">
+                      <div class="mv-editar__field">
+                        <label class="mv-editar__label">Check-in</label>
+                        <input v-model="editForm.fechaCheckIn" type="date" class="mv-editar__input" />
+                      </div>
+                      <div class="mv-editar__field">
+                        <label class="mv-editar__label">Check-out</label>
+                        <input v-model="editForm.fechaCheckOut" type="date" class="mv-editar__input" />
+                      </div>
+                    </div>
+                    <p v-if="editError" class="mv-form-error">{{ editError }}</p>
+                    <div class="mv-editar__actions">
+                      <button class="mv-btn mv-btn--ghost" @click="closeEditarReservacion" :disabled="editLoading" type="button">Cancelar</button>
+                      <button class="mv-btn mv-btn--primary" @click="confirmarEdicion" :disabled="editLoading" type="button">
+                        <span v-if="editLoading" class="mv-btn__spin mv-btn__spin--light"></span>
+                        {{ editLoading ? 'Guardando...' : 'Guardar cambios' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- CANCELAR: disponible solo para reservas pendientes o confirmadas -->
               <div v-if="['confirmada','pendiente'].includes(panelReserva.estadoReserva?.toLowerCase())" class="mv-panel__section">
                 <button v-if="!cancelAbierto" class="mv-btn mv-btn--danger-ghost" @click="cancelAbierto=true" type="button">
@@ -396,9 +390,9 @@
                 </div>
               </div>
 
-            </template>
+              </template>
 
-            <div v-if="panelError" class="mv-panel__error">{{ panelError }}</div>
+              <div v-if="panelError" class="mv-panel__error">{{ panelError }}</div>
 
             <!-- Footer del panel: cerrar, descargar PDF y enviar al correo -->
             <div class="mv-panel__footer">
@@ -421,6 +415,7 @@
         </div>
       </div>
     </Transition>
+
 
     <!-- PÁGINA PRINCIPAL: listado de reservaciones del usuario -->
     <div class="mv-page">
@@ -715,7 +710,13 @@ function authHeaders() {
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, { headers: authHeaders(), credentials: 'include', ...opts })
   if (!res.ok) {
-    const msg = await res.text().catch(() => `Error ${res.status}`)
+    let msg = `Error ${res.status}`
+    try {
+      const json = await res.json()
+      msg = json.error || json.mensaje || msg
+    } catch {
+      msg = await res.text().catch(() => msg)
+    }
     throw new Error(msg || `Error ${res.status}`)
   }
   return res.json()
@@ -1000,6 +1001,38 @@ const pdfLoading = ref(false)
 /** Indica si el envío del correo de confirmación está en curso. @type {boolean} */
 const correoLoading = ref(false)
 
+/** Indica si está en modo edición dentro del panel. @type {boolean} */
+const panelEditandoReservacion = ref(false)
+
+/** Indica si está guardando la edición. @type {boolean} */
+const editLoading = ref(false)
+
+/** Error al editar. @type {string} */
+const editError = ref('')
+
+/** Indica éxito en la edición. @type {boolean} */
+const editOk = ref(false)
+
+/** Lista de cambios realizados. @type {Array} */
+const editChanges = ref([])
+
+/** Formulario de edición de reservación. @type {Object} */
+const editForm = ref({
+  pasajeros: [],
+  fechaIda: '',
+  fechaRetorno: '',
+  fechaCheckIn: '',
+  fechaCheckOut: ''
+})
+
+/** Fechas originales guardadas cuando se abre el panel. @type {Object} */
+const editFormOriginal = ref({
+  fechaIda: '',
+  fechaRetorno: '',
+  fechaCheckIn: '',
+  fechaCheckOut: ''
+})
+
 /**
  * Estado de expansión de nodos en el árbol de comentarios del panel (modo lectura).
  * Clave: id del comentario, valor: { expandido, mostrandoForm, textoRespuesta, enviando, votoActual }.
@@ -1107,21 +1140,65 @@ const detallesVuelos = computed(() => detallesRaw.value.filter(d => d.tipo_detal
 const detallesHoteles = computed(() => detallesRaw.value.filter(d => d.tipo_detalle_id === 2))
 
 /**
- * Subtotal de la reserva calculado desde los detalles del backend.
- * Es la suma de los campos `total` de cada detalle antes de aplicar impuestos.
- * @type {import('vue').ComputedRef<number>}
+ * Extrae el total del proveedor desde data_proveedor según el tipo de detalle.
+ * Para vuelos: suma los precios de boletos.
+ * Para hoteles: suma el totalDetalle de las habitaciones.
+ * Usado para calcular el subtotal sin mostrar detalles individuales.
+ *
+ * @param {Object} d - Detalle con tipo_detalle_id y data_proveedor
+ * @returns {number} Total extraído del proveedor, o 0 si no disponible
  */
+function extraerTotalProveedor(d) {
+  if (!d.data_proveedor) return 0
+
+  // Vuelo: sumar precios de boletos
+  if (d.tipo_detalle_id === 1) {
+    const dp = d.data_proveedor
+    if (Array.isArray(dp.boletos)) {
+      let total = 0
+      for (const boleto of dp.boletos) {
+        const precio = boleto.precio ?? 0
+        total += precio
+      }
+      return total
+    }
+    return dp.total ?? 0
+  }
+
+  // Hotel: sumar totalDetalle de habitaciones
+  if (d.tipo_detalle_id === 2) {
+    const dp = d.data_proveedor
+    let total = 0
+
+    if (Array.isArray(dp)) {
+      // Array de habitaciones
+      for (const hab of dp) {
+        total += hab.totalDetalle ?? hab.total ?? 0
+      }
+    } else if (Array.isArray(dp.habitaciones)) {
+      // Objeto con array de habitaciones
+      for (const hab of dp.habitaciones) {
+        total += hab.totalDetalle ?? hab.total ?? 0
+      }
+    } else {
+      // Fallback: total directo
+      total = dp.total ?? dp.totalDetalle ?? 0
+    }
+    return total
+  }
+
+  return 0
+}
+
 /**
- * Subtotal de la reserva calculado desde los detalles del backend.
- * Usa el total SIN impuestos guardado en parametros_json.total (el precio real
- * del proveedor antes de aplicar la ganancia de la agencia). Si no existe,
- * usa d.total como fallback.
+ * Subtotal de la reserva calculado desde los totales del proveedor en data_proveedor.
+ * Usa la data del proveedor para calcular, pero NO la muestra individualmente.
  * @type {import('vue').ComputedRef<number>}
  */
 const subtotalReserva = computed(() =>
   detallesRaw.value.reduce((s, d) => {
-    const sinImpuestos = d.parametros_json?.total ?? d.total ?? 0
-    return s + sinImpuestos
+    const totalProveedor = extraerTotalProveedor(d)
+    return s + totalProveedor
   }, 0)
 )
 
@@ -1459,6 +1536,25 @@ async function abrirPanel(reserva) {
     panelLoading.value = false
   }
 
+  // Pre-llenar el formulario de edición con las fechas actuales
+  if (panelReserva.value._categoria === 'vuelo' && panelReserva.value.boletos?.length > 0) {
+    // Para vuelos: usar la fecha del primer boleto como ida, y del último como retorno
+    const fIda = panelReserva.value.boletos[0]?.fechaVuelo || ''
+    const fRetorno = panelReserva.value.boletos[panelReserva.value.boletos.length - 1]?.fechaVuelo || ''
+    editForm.value.fechaIda = fIda
+    editForm.value.fechaRetorno = fRetorno
+    editFormOriginal.value.fechaIda = fIda
+    editFormOriginal.value.fechaRetorno = fRetorno
+  } else if (panelReserva.value._categoria === 'hotel' && panelReserva.value.habitaciones?.length > 0) {
+    const hab = panelReserva.value.habitaciones[0]
+    const fIn = hab.fechaCheckIn || ''
+    const fOut = hab.fechaCheckOut || ''
+    editForm.value.fechaCheckIn = fIn
+    editForm.value.fechaCheckOut = fOut
+    editFormOriginal.value.fechaCheckIn = fIn
+    editFormOriginal.value.fechaCheckOut = fOut
+  }
+
   // Cargar comentarios/reseñas solo si la reserva ya fue completada
   if (panelReserva.value.estadoReserva?.toLowerCase() === 'completada') {
     await cargarComentariosPanel(panelReserva.value)
@@ -1667,6 +1763,83 @@ async function enviarResenaHotel() {
     resError.value = 'Error al enviar la reseña. Intenta de nuevo.'
   } finally {
     resLoading.value = false
+  }
+}
+
+/** Abre modo edición en panel para editar fechas de hospedaje. Solo permite hotel y paquete. */
+function openEditarReservacion() {
+  if (!panelReserva.value) return
+
+  // Solo permitir editar hotel y paquete
+  if (panelReserva.value._categoria !== 'hotel' && panelReserva.value._categoria !== 'paquete') {
+    addToast('Solo se pueden editar fechas de hospedaje', 'error')
+    return
+  }
+
+  // Inicializar formulario con fechas actuales del hotel
+  const hab = panelReserva.value.habitaciones?.[0]
+  editForm.value = {
+    fechaCheckIn: hab?.fechaCheckIn ?? '',
+    fechaCheckOut: hab?.fechaCheckOut ?? ''
+  }
+  editFormOriginal.value = {
+    fechaCheckIn: hab?.fechaCheckIn ?? '',
+    fechaCheckOut: hab?.fechaCheckOut ?? ''
+  }
+
+  editError.value = ''
+  editOk.value = false
+  editChanges.value = []
+  panelEditandoReservacion.value = true
+}
+
+/** Cierra panel de editar reservación. */
+function closeEditarReservacion() {
+  panelEditandoReservacion.value = false
+  editForm.value = {
+    fechaCheckIn: '',
+    fechaCheckOut: ''
+  }
+  editError.value = ''
+  editOk.value = false
+  editChanges.value = []
+}
+
+/** Confirma y guarda los cambios de la reservación. */
+async function confirmarEdicion() {
+  if (!panelReserva.value) return
+
+  editLoading.value = true
+  editError.value = ''
+
+  try {
+    const res = await apiFetch(`${BASE}/api/reservaciones/${panelReserva.value.id}/editar`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        fechaCheckIn: editForm.value.fechaCheckIn,
+        fechaCheckOut: editForm.value.fechaCheckOut,
+        fechaCheckInActual: editFormOriginal.value.fechaCheckIn,
+        fechaCheckOutActual: editFormOriginal.value.fechaCheckOut
+      })
+    })
+
+    if (res && res.cambios) {
+      editChanges.value = res.cambios
+    }
+
+    editOk.value = true
+    addToast('Reservación actualizada exitosamente')
+
+    // Recargar página después de 1.5 segundos
+    // TODO: Comentado para debugueo manual
+    // setTimeout(() => {
+    //   location.reload()
+    // }, 1500)
+  } catch (err) {
+    editError.value = err.message || 'Error al editar la reservación'
+    addToast('Error: ' + (err.message || 'Error al editar'), 'error')
+  } finally {
+    editLoading.value = false
   }
 }
 

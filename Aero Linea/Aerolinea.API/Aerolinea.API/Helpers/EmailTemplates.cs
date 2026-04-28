@@ -1519,5 +1519,217 @@ namespace Aerolinea.API.Helpers
 </body>
 </html>";
         }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  CORREO DE CAMBIO DE AVIÓN — enviado cuando cambia el avión de un vuelo
+        // ══════════════════════════════════════════════════════════════════
+        /// <summary>
+        /// Genera el HTML del correo de aviso que se envia a pasajeros cuando
+        /// el administrador cambia el avión asignado a su vuelo.
+        /// </summary>
+        public static string CorreoCambioAvion(
+            string nombreUsuario,
+            string noReservacion,
+            string numeroVuelo,
+            string origenCodigo,
+            string destinoCodigo,
+            string avionAnterior,
+            string avionNuevo)
+        {
+            var e = EmailHelper.Esc;
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:22px;color:#F2EFEA;font-weight:700;'>Actualización de Vuelo</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Cambio de Aeronave</p>
+    </div>
+    <div style='height:3px;background:#D4AF37;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+        <p style='font-size:15px;color:#1C1A18;margin:0 0 6px;'>Hola, <strong>{e(nombreUsuario)}</strong>:</p>
+        <p style='font-size:14px;color:#3A3531;margin:0 0 24px;line-height:1.6;'>
+            La aeronave asignada a tu vuelo ha sido actualizada para mejorar tu experiencia de viaje.
+            A continuacion encontras los detalles del cambio:
+        </p>
+
+        <!-- DETALLE DE LA ACTUALIZACIÓN -->
+        <div style='background:#F2EFEA;border:1px solid rgba(212,175,55,0.2);border-radius:4px 16px 4px 16px;padding:20px;border-left:4px solid #D4AF37;margin-bottom:20px;'>
+            <table style='width:100%;border-collapse:collapse;table-layout:fixed;'>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;width:140px;vertical-align:top;'>N. Reservacion</td>
+                    <td style='padding:8px 0;font-size:15px;color:#1C1A18;font-weight:700;font-family:monospace;'>{e(noReservacion)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Vuelo</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(numeroVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Ruta</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(origenCodigo)} → {e(destinoCodigo)}</td>
+                </tr>
+                <tr style='background:#fef3c7;'>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'><strong>Aeronave Anterior</strong></td>
+                    <td style='padding:8px 0;font-size:14px;color:#3A3531;font-family:monospace;'>{e(avionAnterior)}</td>
+                </tr>
+                <tr style='background:#d1fae5;'>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'><strong>Nueva Aeronave</strong></td>
+                    <td style='padding:8px 0;font-size:14px;color:#065f46;font-weight:600;font-family:monospace;'>{e(avionNuevo)}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- MENSAJE DE CONTACTO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;'>
+            <p style='margin:0;font-size:13px;color:#3A3531;line-height:1.7;'>
+                Si tienes preguntas sobre tu reservacion o deseas mas informacion,
+                contactanos a <a href='mailto:distribuidorapine@gmail.com' style='color:#8B6B4A;font-weight:600;'>distribuidorapine@gmail.com</a>.
+            </p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
+
+        public static string CorreoCambioTripulacion(
+            string nombreUsuario,
+            string noReservacion,
+            string numeroVuelo,
+            string origenCodigo,
+            string destinoCodigo,
+            List<TripulanteDTO> tripulacionAnterior,
+            List<TripulanteDTO> tripulacionNueva,
+            string motivo)
+        {
+            var e = EmailHelper.Esc;
+
+            // Construir tabla de tripulación anterior
+            var tripulanteAntStr = tripulacionAnterior.Any()
+                ? string.Join("", tripulacionAnterior.Select(t =>
+                    $@"<tr><td style='padding:8px 12px;font-size:13px;color:#3A3531;border-bottom:1px solid rgba(212,175,55,0.1);'>{e(t.NombreCompleto)}</td>" +
+                    $@"<td style='padding:8px 12px;font-size:13px;color:#8B6B4A;border-bottom:1px solid rgba(212,175,55,0.1);'>{e(t.NombreRol)}</td></tr>"))
+                : "<tr><td colspan='2' style='padding:8px 12px;font-size:13px;color:#3A3531;text-align:center;'>Sin tripulación anterior</td></tr>";
+
+            // Construir tabla de tripulación nueva
+            var tripulanteNuevoStr = string.Join("", tripulacionNueva.Select(t =>
+                $@"<tr><td style='padding:8px 12px;font-size:13px;color:#065f46;border-bottom:1px solid rgba(212,175,55,0.1);'>{e(t.NombreCompleto)}</td>" +
+                $@"<td style='padding:8px 12px;font-size:13px;color:#065f46;border-bottom:1px solid rgba(212,175,55,0.1);'>{e(t.NombreRol)}</td></tr>"));
+
+            var mensajeMotivo = string.IsNullOrEmpty(motivo)
+                ? ""
+                : $@"<p style='font-size:14px;color:#3A3531;margin:0 0 20px;line-height:1.6;'><strong>Motivo:</strong> {e(motivo)}</p>";
+
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1.0'></head>
+<body style='margin:0;padding:0;background-color:#F2EFEA;font-family:Segoe UI,Roboto,Arial,sans-serif;'>
+<div style='max-width:600px;margin:0 auto;padding:20px 12px;'>
+<div style='background:#ffffff;border-radius:4px 16px 4px 16px;overflow:hidden;border:1px solid rgba(139,107,74,0.2);box-shadow:0 8px 32px rgba(28,26,24,0.12);'>
+
+    <!-- HEADER -->
+    <div style='background:#1C1A18;padding:28px 20px;text-align:center;'>
+        <h1 style='margin:0;font-size:22px;color:#F2EFEA;font-weight:700;'>Actualización de Vuelo</h1>
+        <p style='margin:8px 0 0;font-size:13px;color:#B89A7A;'>Cambio de Tripulación</p>
+    </div>
+    <div style='height:3px;background:#D4AF37;'></div>
+
+    <!-- CUERPO -->
+    <div style='padding:28px 24px;background:#ffffff;'>
+        <p style='font-size:15px;color:#1C1A18;margin:0 0 6px;'>Hola, <strong>{e(nombreUsuario)}</strong>:</p>
+        <p style='font-size:14px;color:#3A3531;margin:0 0 24px;line-height:1.6;'>
+            La tripulación asignada a tu vuelo ha sido actualizada.
+            A continuacion encontras los detalles del cambio:
+        </p>
+
+        {mensajeMotivo}
+
+        <!-- DETALLE DE LA ACTUALIZACIÓN -->
+        <div style='background:#F2EFEA;border:1px solid rgba(212,175,55,0.2);border-radius:4px 16px 4px 16px;padding:20px;border-left:4px solid #D4AF37;margin-bottom:20px;'>
+            <table style='width:100%;border-collapse:collapse;table-layout:fixed;'>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;width:140px;vertical-align:top;'>N. Reservacion</td>
+                    <td style='padding:8px 0;font-size:15px;color:#1C1A18;font-weight:700;font-family:monospace;'>{e(noReservacion)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Vuelo</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(numeroVuelo)}</td>
+                </tr>
+                <tr>
+                    <td style='padding:8px 0;font-size:13px;color:#8B6B4A;vertical-align:top;'>Ruta</td>
+                    <td style='padding:8px 0;font-size:14px;color:#1C1A18;font-weight:600;'>{e(origenCodigo)} → {e(destinoCodigo)}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- TRIPULACIÓN ANTERIOR -->
+        <div style='margin-bottom:20px;'>
+            <p style='font-size:13px;color:#8B6B4A;font-weight:600;margin:0 0 12px;'>Tripulación Anterior:</p>
+            <table style='width:100%;border-collapse:collapse;background:#fef3c7;border-radius:4px 8px 4px 8px;overflow:hidden;border:1px solid rgba(212,175,55,0.2);'>
+                <thead>
+                    <tr style='background:#f59e0b;'>
+                        <th style='padding:10px 12px;font-size:12px;color:#ffffff;font-weight:700;text-align:left;'>Nombre</th>
+                        <th style='padding:10px 12px;font-size:12px;color:#ffffff;font-weight:700;text-align:left;'>Rol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {tripulanteAntStr}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TRIPULACIÓN NUEVA -->
+        <div style='margin-bottom:20px;'>
+            <p style='font-size:13px;color:#065f46;font-weight:600;margin:0 0 12px;'>Tripulación Nueva:</p>
+            <table style='width:100%;border-collapse:collapse;background:#d1fae5;border-radius:4px 8px 4px 8px;overflow:hidden;border:1px solid rgba(212,175,55,0.2);'>
+                <thead>
+                    <tr style='background:#10b981;'>
+                        <th style='padding:10px 12px;font-size:12px;color:#ffffff;font-weight:700;text-align:left;'>Nombre</th>
+                        <th style='padding:10px 12px;font-size:12px;color:#ffffff;font-weight:700;text-align:left;'>Rol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {tripulanteNuevoStr}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MENSAJE DE CONTACTO -->
+        <div style='background:#F2EFEA;border:1px solid rgba(139,107,74,0.2);border-radius:4px 16px 4px 16px;padding:16px 20px;border-left:4px solid #B89A7A;'>
+            <p style='margin:0;font-size:13px;color:#3A3531;line-height:1.7;'>
+                Si tienes preguntas sobre tu reservacion o deseas mas informacion,
+                contactanos a <a href='mailto:distribuidorapine@gmail.com' style='color:#8B6B4A;font-weight:600;'>distribuidorapine@gmail.com</a>.
+            </p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style='height:3px;background:#8B6B4A;'></div>
+    <div style='padding:16px 20px;background:#1C1A18;text-align:center;'>
+        <p style='margin:0;font-size:11px;color:#B89A7A;'>Broom AirLine · distribuidorapine@gmail.com · Guatemala City, Guatemala</p>
+        <p style='margin:4px 0 0;font-size:10px;color:#3A3531;'>Correo generado automaticamente — No responder</p>
+    </div>
+
+</div>
+</div>
+</body>
+</html>";
+        }
     }
 }

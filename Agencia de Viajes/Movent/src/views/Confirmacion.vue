@@ -387,8 +387,8 @@ const fechaHoy = computed(() => {
 const boletos = computed(() => detalleVuelo.value?.detalle?.boletos || [])
 
 const subtotalPaquete = computed(() => {
-  const tv = detalleVuelo.value?.total_con_ganancia ?? 0
-  const th = detalleHotel.value?.total_con_ganancia ?? 0
+  const tv = detalleVuelo.value?.total ?? 0
+  const th = detalleHotel.value?.total ?? 0
   return tv + th
 })
 
@@ -431,8 +431,8 @@ onMounted(async () => {
       if (!noReservacion.value) noReservacion.value = cd.noReservacion || ''
       const p = cd.pasajero
       if (p) pasajeroNombre.value = `${p.nombre || ''} ${p.apellido || ''}`.trim()
-      const tv = cd.detalleVuelo?.total_con_ganancia ?? 0
-      const th = cd.detalleHotel?.total_con_ganancia ?? 0
+      const tv = cd.detalleVuelo?.total ?? 0
+      const th = cd.detalleHotel?.total ?? 0
       if      (cd.tipoItem === 'vuelo')   totalPagado.value = tv > 0      ? `$${tv.toFixed(2)}`       : '--'
       else if (cd.tipoItem === 'hotel')   totalPagado.value = th > 0      ? `$${th.toFixed(2)}`       : '--'
       else if (cd.tipoItem === 'paquete') {

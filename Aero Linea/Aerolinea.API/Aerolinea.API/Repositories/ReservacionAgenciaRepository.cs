@@ -40,19 +40,18 @@ namespace Aerolinea.API.Repositories
 
             try
             {
-                decimal factor = 1 - (descuento / 100);
+                // NO APLICAR FACTOR AQUÍ: Los precios YA vienen descontados de VueloAgenciaService
+                // Aplicar el factor aquí causaría descuento DOBLE (bug corregido)
                 decimal total = 0;
                 var boletosReservados = new List<BoletoReservadoDTO>();
 
                 foreach (var vuelo in vuelos)
                 {
                     string campoDisponible = vuelo.ClaseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
-                    string campoPrecio = vuelo.ClaseId == 1 ? "PrecioTurista" : "PrecioEjecutivo";
 
-                    string queryVerificar = $"SELECT {campoDisponible}, {campoPrecio} FROM Vuelo WITH (UPDLOCK, ROWLOCK) WHERE ID = @vueloId";
+                    string queryVerificar = $"SELECT {campoDisponible} FROM Vuelo WITH (UPDLOCK, ROWLOCK) WHERE ID = @vueloId";
 
                     int disponibles = 0;
-                    decimal precio = 0;
 
                     using (var cmd = new SqlCommand(queryVerificar, connection, transaction))
                     {
@@ -61,7 +60,6 @@ namespace Aerolinea.API.Repositories
                         if (!await reader.ReadAsync())
                             throw new Exception($"El vuelo {vuelo.VueloId} no existe.");
                         disponibles = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
-                        precio = reader.IsDBNull(1) ? 0 : reader.GetDecimal(1);
                     }
 
                     if (disponibles < vuelo.CantidadPasajeros)
@@ -72,7 +70,8 @@ namespace Aerolinea.API.Repositories
                             $"Disponibles: {disponibles}, solicitados: {vuelo.CantidadPasajeros}.");
                     }
 
-                    decimal precioConDescuento = Math.Round(precio * factor, 2);
+                    // Usar el precio que viene en el DTO (ya incluye descuento aplicado por la agencia)
+                    decimal precioConDescuento = vuelo.Precio;
                     total += precioConDescuento * vuelo.CantidadPasajeros;
                 }
 
@@ -105,7 +104,6 @@ namespace Aerolinea.API.Repositories
                 foreach (var vuelo in vuelos)
                 {
                     string campoDisponible = vuelo.ClaseId == 1 ? "BoletosTurista" : "BoletosEjecutivo";
-                    string campoPrecio = vuelo.ClaseId == 1 ? "PrecioTurista" : "PrecioEjecutivo";
                     string nombreClase = vuelo.ClaseId == 1 ? "Turista" : "Ejecutivo";
 
                     string updateVuelo = $"UPDATE Vuelo SET {campoDisponible} = {campoDisponible} - @cantidad WHERE ID = @vueloId";
@@ -116,14 +114,8 @@ namespace Aerolinea.API.Repositories
                         await cmd.ExecuteNonQueryAsync();
                     }
 
-                    decimal precioClase = 0;
-                    string queryPrecio = $"SELECT {campoPrecio} FROM Vuelo WHERE ID = @vueloId";
-                    using (var cmd = new SqlCommand(queryPrecio, connection, transaction))
-                    {
-                        cmd.Parameters.AddWithValue("@vueloId", vuelo.VueloId);
-                        var result = await cmd.ExecuteScalarAsync();
-                        precioClase = Math.Round(Convert.ToDecimal(result) * factor, 2);
-                    }
+                    // Usar el precio del DTO (ya incluye descuento de la agencia)
+                    decimal precioClase = Math.Round(vuelo.Precio, 2);
 
                     var asientosOcupados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     string queryAsientos = @"

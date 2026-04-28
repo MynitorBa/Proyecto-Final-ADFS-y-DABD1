@@ -372,6 +372,7 @@
     cancelError  = '';
   }
 
+
   async function confirmCancel() {
     if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo para cancelar.'; return; }
     cancelSaving = true; cancelError = '';
@@ -1003,3 +1004,4 @@
     </div>
   </div>
 {/if}
+

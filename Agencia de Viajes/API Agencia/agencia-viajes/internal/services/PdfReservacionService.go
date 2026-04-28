@@ -29,9 +29,11 @@ type reservacionDetallePDF struct {
 // detallePDF
 //
 // Struct interno que representa un detalle individual de una reservacion,
-// con el tipo de detalle y los datos crudos del proveedor en formato JSON.
+// con el tipo de detalle, el total, los parametros y los datos crudos del proveedor en formato JSON.
 type detallePDF struct {
 	TipoDetalleID int             `json:"tipo_detalle_id"`
+	Total         float64         `json:"total"`
+	ParametrosJson interface{}    `json:"parametros_json"`
 	DataProveedor json.RawMessage `json:"data_proveedor"`
 }
 
@@ -182,6 +184,9 @@ func (s *PdfReservacionService) GenerarPDF(reservacionID, usuarioID int) ([]byte
 // segun su tipo: vuelo (tipo 1) extrae boletos y datos del titular, hotel (tipo 2)
 // extrae las habitaciones reservadas.
 //
+// Calcula el Subtotal extrayendo los totales directamente de data_proveedor
+// (sin exponerlos individualmente en el HTML, solo se usa para el cálculo).
+//
 // Parametros:
 //   - raw: datos crudos deserializados de la reservacion
 //
@@ -195,6 +200,19 @@ func mapearAPDFData(raw reservacionDetallePDF) (helpers.ReservacionPDFData, erro
 		FechaCreacion: raw.FechaCreacion,
 		Total:         raw.Total,
 		TipoReserva:   raw.TipoReserva,
+	}
+
+	// Calcular Subtotal extrayendo totales desde data_proveedor
+	// (no se muestran individualmente, solo se usan para el cálculo)
+	var subtotal float64
+	for _, det := range raw.Detalles {
+		totalProveedor := extraerTotalProveedorPDF(det)
+		subtotal += totalProveedor
+	}
+	data.Subtotal = subtotal
+	data.MontoImpuestos = raw.Total - subtotal
+	if data.MontoImpuestos < 0 {
+		data.MontoImpuestos = 0
 	}
 
 	for _, det := range raw.Detalles {
@@ -265,4 +283,80 @@ func mapearAPDFData(raw reservacionDetallePDF) (helpers.ReservacionPDFData, erro
 	}
 
 	return data, nil
+}
+
+// extraerTotalProveedorPDF
+//
+// Extrae el total del proveedor desde data_proveedor segun el tipo de detalle.
+// Para vuelos (tipo 1): suma los precios de los boletos.
+// Para hoteles (tipo 2): suma el totalDetalle de las habitaciones.
+// Usado internamente para calcular subtotales, NO se expone en HTML.
+//
+// Parametros:
+//   - det: detalle con tipo_detalle_id y data_proveedor
+//
+// Retorna:
+//   - float64: total extraido del proveedor, o 0 si no disponible
+func extraerTotalProveedorPDF(det detallePDF) float64 {
+	if det.DataProveedor == nil || len(det.DataProveedor) == 0 {
+		return 0
+	}
+
+	// Unmarshal a map generico para inspeccionar la estructura
+	var dataMap map[string]interface{}
+	if err := json.Unmarshal(det.DataProveedor, &dataMap); err != nil {
+		return 0
+	}
+
+	// Vuelo (tipo_detalle_id = 1): sumar precios de boletos
+	if det.TipoDetalleID == 1 {
+		if boletosList, ok := dataMap["boletos"].([]interface{}); ok {
+			var total float64
+			for _, b := range boletosList {
+				if boleto, ok := b.(map[string]interface{}); ok {
+					if precio, ok := boleto["precio"].(float64); ok {
+						total += precio
+					}
+				}
+			}
+			if total > 0 {
+				return total
+			}
+		}
+		// Fallback: retornar total directo si existe
+		if totalVal, ok := dataMap["total"].(float64); ok {
+			return totalVal
+		}
+		return 0
+	}
+
+	// Hotel (tipo_detalle_id = 2): sumar totalDetalle de habitaciones
+	if det.TipoDetalleID == 2 {
+		// Puede ser array o objeto con habitaciones
+		if habitaciones, ok := dataMap["habitaciones"].([]interface{}); ok {
+			var total float64
+			for _, h := range habitaciones {
+				if hab, ok := h.(map[string]interface{}); ok {
+					if totalDetalle, ok := hab["totalDetalle"].(float64); ok {
+						total += totalDetalle
+					} else if totalVal, ok := hab["total"].(float64); ok {
+						total += totalVal
+					}
+				}
+			}
+			if total > 0 {
+				return total
+			}
+		}
+		// Fallback: total directo
+		if totalVal, ok := dataMap["total"].(float64); ok {
+			return totalVal
+		}
+		if totalDetalle, ok := dataMap["totalDetalle"].(float64); ok {
+			return totalDetalle
+		}
+		return 0
+	}
+
+	return 0
 }

@@ -1,6 +1,7 @@
 package org.example.repositories;
 
 import org.example.data.DatabaseManager;
+import org.example.dtos.HabitacionElegibleDTO;
 import org.example.dtos.ReservacionDetalleDTO;
 
 import java.sql.Date;
@@ -335,5 +336,77 @@ public class ReservacionRepository {
                 }
             }
         });
+    }
+
+    /**
+     * Obtiene todas las habitaciones elegibles para cambio en el mismo hotel.
+     * Busca habitaciones del mismo tipo, mismo precio, disponibles en las mismas fechas.
+     * Limita resultados a las primeras 5 opciones ordenadas por numero de habitacion.
+     * @param detalleId ID del detalle de reservacion actual.
+     * @return lista de habitaciones elegibles para cambio.
+     */
+    public List<HabitacionElegibleDTO> obtenerHabitacionesElegibles(int detalleId) {
+        String sql = "SELECT h.ID, h.NUMEROHABITACION, t.PRECIONOCHE " +
+                "FROM Habitacion h " +
+                "JOIN TipoHabitacion t ON h.TIPOHABITACIONID = t.ID " +
+                "WHERE h.HotelID = (SELECT h2.HotelID FROM Habitacion h2 WHERE h2.ID = (SELECT HabitacionID FROM DetallesReservacion WHERE ID = ?)) " +
+                "AND h.TIPOHABITACIONID = (SELECT h3.TIPOHABITACIONID FROM Habitacion h3 WHERE h3.ID = (SELECT HabitacionID FROM DetallesReservacion WHERE ID = ?)) " +
+                "AND h.ID != (SELECT HabitacionID FROM DetallesReservacion WHERE ID = ?) " +
+                "AND h.ESTADO_ID = 1 " +
+                "AND h.ID NOT IN ( " +
+                "  SELECT dr2.HabitacionID FROM DetallesReservacion dr2 " +
+                "  JOIN Reservacion r2 ON dr2.ReservacionID = r2.ID " +
+                "  JOIN EstadoReserva er2 ON r2.EstadoID = er2.ID " +
+                "  WHERE LOWER(TRIM(er2.Estado)) IN ('pendiente', 'confirmada') " +
+                "  AND dr2.FechaCheckIn < (SELECT FechaCheckOut FROM DetallesReservacion WHERE ID = ?) " +
+                "  AND dr2.FechaCheckOut > (SELECT FechaCheckIn FROM DetallesReservacion WHERE ID = ?) " +
+                ") " +
+                "ORDER BY h.NUMEROHABITACION";
+
+        return DatabaseManager.executeQuery(sql, rs -> new HabitacionElegibleDTO(
+                rs.getInt("ID"),
+                rs.getString("NUMEROHABITACION"),
+                rs.getDouble("PRECIONOCHE")
+        ), detalleId, detalleId, detalleId, detalleId, detalleId);
+    }
+
+    /**
+     * Actualiza la habitacion de un detalle de reservacion.
+     * Realiza la operacion de manera atomica.
+     * @param detalleId ID del detalle a actualizar.
+     * @param nuevaHabitacionId ID de la nueva habitacion.
+     */
+    public void actualizarHabitacionDetalle(int detalleId, int nuevaHabitacionId) {
+        String sql = "UPDATE DetallesReservacion SET HabitacionID = ? WHERE ID = ?";
+        DatabaseManager.executeUpdate(sql, nuevaHabitacionId, detalleId);
+    }
+
+    /**
+     * Obtiene el detalle de una reservacion incluyendo sus fechas.
+     * Util para obtener las fechas del detalle actual cuando se va a cambiar de habitacion.
+     * @param detalleId ID del detalle.
+     * @return arreglo con [detalleId, reservacionId, habitacionId, fechaCheckIn, fechaCheckOut, cantidadPersonas, total, usuarioId, estado]
+     */
+    public Object[] obtenerDetalleConFechas(int detalleId) {
+        String sql = "SELECT dr.ID, dr.ReservacionID, dr.HabitacionID, dr.FechaCheckIn, dr.FechaCheckOut, " +
+                "       dr.CantidadPersonas, dr.Total, r.Usuario_ID, LOWER(TRIM(er.Estado)) AS Estado " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Reservacion r ON dr.ReservacionID = r.ID " +
+                "JOIN EstadoReserva er ON r.EstadoID = er.ID " +
+                "WHERE dr.ID = ?";
+
+        List<Object[]> result = DatabaseManager.executeQuery(sql, rs -> new Object[]{
+                rs.getInt("ID"),
+                rs.getInt("ReservacionID"),
+                rs.getInt("HabitacionID"),
+                rs.getDate("FechaCheckIn"),
+                rs.getDate("FechaCheckOut"),
+                rs.getInt("CantidadPersonas"),
+                rs.getDouble("Total"),
+                rs.getInt("Usuario_ID"),
+                rs.getString("Estado")
+        }, detalleId);
+
+        return result.isEmpty() ? null : result.get(0);
     }
 }

@@ -13,11 +13,13 @@ namespace Aerolinea.API.DTOs
     /// <summary>
     /// DTO que representa la seleccion de un vuelo dentro de una reservacion.
     /// Especifica el vuelo elegido, la clase deseada y la cantidad de pasajeros.
+    /// El precio YA incluye el descuento de ganancia aplicado por la agencia.
     /// </summary>
     public class SeleccionVueloDTO
     {
         public int VueloId { get; set; }
         public int ClaseId { get; set; } // 1: Turista, 2: Ejecutivo
         public int CantidadPasajeros { get; set; }
+        public decimal Precio { get; set; } // Precio con descuento ya aplicado
     }
 }

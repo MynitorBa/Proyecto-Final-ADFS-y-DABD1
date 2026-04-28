@@ -131,3 +131,115 @@ func buildPDFDataFromResult(resultado interface{}) (helpers.ReservacionPDFData, 
 
 	return mapearAPDFData(raw)
 }
+
+// EnviarActualizacionHabitacion
+//
+// Envía un correo notificando que se cambió la habitación de una reservación.
+// Similar a EnviarConfirmacion pero con asunto y HTML que indican actualización.
+//
+// Parametros:
+//   - reservacionID: identificador de la reservacion actualizada
+//   - usuarioID: identificador del usuario propietario de la reservacion
+//
+// Retorna:
+//   - error: error si falla la obtención de datos, generación de PDF o envío del correo
+func (s *EmailReservacionService) EnviarActualizacionHabitacion(reservacionID, usuarioID int) error {
+	// 1. Datos completos del proveedor
+	resultado, err := s.misSvc.ObtenerDetalle(reservacionID, usuarioID)
+	if err != nil {
+		return errors.New("reservación no encontrada")
+	}
+
+	// 2. Mapear a struct PDF
+	pdfData, err := buildPDFDataFromResult(resultado)
+	if err != nil {
+		return fmt.Errorf("error preparando datos: %w", err)
+	}
+
+	// 3. Obtener correo del usuario
+	if nombre, email, err2 := s.usuRepo.ObtenerNombreYEmail(usuarioID); err2 == nil {
+		pdfData.UsuarioEmail = email
+		if pdfData.UsuarioNombre == "" {
+			pdfData.UsuarioNombre = nombre
+		}
+	}
+
+	// 4. Verificar destinatario
+	destinatario := pdfData.UsuarioEmail
+	if destinatario == "" {
+		return fmt.Errorf("no se encontró correo para el usuario %d", usuarioID)
+	}
+
+	// 5. Generar PDF
+	pdfBytes, err := s.pdfSvc.GenerarPDF(reservacionID, usuarioID)
+	if err != nil {
+		return fmt.Errorf("error generando PDF adjunto: %w", err)
+	}
+
+	// 6. Construir HTML y enviar con asunto de actualización
+	htmlBody      := helpers.BuildHTMLEmailActualizacion(pdfData, "habitación")
+	asunto        := fmt.Sprintf("MOVENT · Actualización de habitación %s", pdfData.NoReservacion)
+	nombreArchivo := fmt.Sprintf("MOVENT-%s-actualizado.pdf", pdfData.NoReservacion)
+
+	if err := helpers.EnviarEmailConPDF(destinatario, asunto, htmlBody, pdfBytes, nombreArchivo); err != nil {
+		return fmt.Errorf("error enviando correo a %s: %w", destinatario, err)
+	}
+
+	return nil
+}
+
+// EnviarActualizacionAsiento
+//
+// Envía un correo notificando que se cambió el asiento de vuelo de una reservación.
+// Similar a EnviarConfirmacion pero con asunto y HTML que indican actualización de asiento.
+//
+// Parametros:
+//   - reservacionID: identificador de la reservacion actualizada
+//   - usuarioID: identificador del usuario propietario de la reservacion
+//
+// Retorna:
+//   - error: error si falla la obtención de datos, generación de PDF o envío del correo
+func (s *EmailReservacionService) EnviarActualizacionAsiento(reservacionID, usuarioID int) error {
+	// 1. Datos completos del proveedor
+	resultado, err := s.misSvc.ObtenerDetalle(reservacionID, usuarioID)
+	if err != nil {
+		return errors.New("reservación no encontrada")
+	}
+
+	// 2. Mapear a struct PDF
+	pdfData, err := buildPDFDataFromResult(resultado)
+	if err != nil {
+		return fmt.Errorf("error preparando datos: %w", err)
+	}
+
+	// 3. Obtener correo del usuario
+	if nombre, email, err2 := s.usuRepo.ObtenerNombreYEmail(usuarioID); err2 == nil {
+		pdfData.UsuarioEmail = email
+		if pdfData.UsuarioNombre == "" {
+			pdfData.UsuarioNombre = nombre
+		}
+	}
+
+	// 4. Verificar destinatario
+	destinatario := pdfData.UsuarioEmail
+	if destinatario == "" {
+		return fmt.Errorf("no se encontró correo para el usuario %d", usuarioID)
+	}
+
+	// 5. Generar PDF
+	pdfBytes, err := s.pdfSvc.GenerarPDF(reservacionID, usuarioID)
+	if err != nil {
+		return fmt.Errorf("error generando PDF adjunto: %w", err)
+	}
+
+	// 6. Construir HTML y enviar con asunto de actualización
+	htmlBody      := helpers.BuildHTMLEmailActualizacion(pdfData, "asiento")
+	asunto        := fmt.Sprintf("MOVENT · Actualización de asiento %s", pdfData.NoReservacion)
+	nombreArchivo := fmt.Sprintf("MOVENT-%s-actualizado.pdf", pdfData.NoReservacion)
+
+	if err := helpers.EnviarEmailConPDF(destinatario, asunto, htmlBody, pdfBytes, nombreArchivo); err != nil {
+		return fmt.Errorf("error enviando correo a %s: %w", destinatario, err)
+	}
+
+	return nil
+}

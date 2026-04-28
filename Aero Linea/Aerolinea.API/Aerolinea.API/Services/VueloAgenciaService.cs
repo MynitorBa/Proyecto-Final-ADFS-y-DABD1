@@ -42,9 +42,10 @@ namespace Aerolinea.API.Services
         /// </summary>
         public async Task<ResultadoBusquedaDTO> BuscarVuelos(BuscarVueloAgenciaDTO dto, int agenciaId)
         {
-            // 1. Obtener descuento de la agencia
+            // 1. Obtener descuento de la agencia (solo para registrar, NO aplicar en búsqueda)
             decimal descuento = await _agenciaRepository.ObtenerDescuento(agenciaId);
-            decimal factor = 1 - (descuento / 100);
+            // NO aplicar descuento: devolver precios originales
+            // El descuento es responsabilidad de Movent (nivel lógico/negocio)
 
             // 2. Resolver IDs
             using var connection = _agenciaRepository.CrearConexion();
@@ -92,25 +93,9 @@ namespace Aerolinea.API.Services
                 interno.OrigenId, interno.DestinoId,
                 interno.Fecha, interno.CantidadPasajeros, interno.ClaseId);
 
-            // 5. Aplicar descuento a directos
-            foreach (var vuelo in resultado)
-            {
-                vuelo.PrecioTurista = AplicarDescuento(vuelo.PrecioTurista, factor);
-                vuelo.PrecioEjecutiva = AplicarDescuento(vuelo.PrecioEjecutiva, factor);
-            }
-
-            // 6. Aplicar descuento a vuelos con escala
-            foreach (var escala in conEscala)
-            {
-                escala.PrecioTuristaTotal = AplicarDescuento(escala.PrecioTuristaTotal, factor);
-                escala.PrecioEjecutivaTotal = AplicarDescuento(escala.PrecioEjecutivaTotal, factor);
-
-                foreach (var tramo in escala.Tramos)
-                {
-                    tramo.PrecioTurista = AplicarDescuento(tramo.PrecioTurista, factor);
-                    tramo.PrecioEjecutiva = AplicarDescuento(tramo.PrecioEjecutiva, factor);
-                }
-            }
+            // NO aplicar descuento: devolver precios originales SIN modificar
+            // El descuento es responsabilidad de Movent (nivel lógico/negocio)
+            // Los vuelos se retornan con sus precios originales
 
             return new ResultadoBusquedaDTO
             {
@@ -119,11 +104,5 @@ namespace Aerolinea.API.Services
             };
         }
 
-        /// <summary>
-        /// Aplica el factor de descuento a un precio nullable y retorna el resultado
-        /// redondeado a dos decimales. Retorna null si el precio original es null.
-        /// </summary>
-        private static decimal? AplicarDescuento(decimal? precio, decimal factor)
-            => precio.HasValue ? Math.Round(precio.Value * factor, 2) : null;
     }
 }

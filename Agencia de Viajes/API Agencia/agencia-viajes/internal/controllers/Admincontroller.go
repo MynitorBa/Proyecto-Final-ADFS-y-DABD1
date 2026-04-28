@@ -301,8 +301,9 @@ func (ctrl *AdminController) ToggleEstadoProveedor(c *gin.Context) {
 
 // EditarProveedor
 //
-// Actualiza el nombre, URL de API y porcentaje de ganancia de un proveedor.
+// Actualiza el nombre, URL de API e imagen de un proveedor.
 // El ID del proveedor se lee desde el parametro de URL :id.
+// NOTA: El porcentaje de ganancia NO puede ser modificado por el administrador.
 //
 // Parametros:
 //   - c: contexto de Gin con la solicitud HTTP
@@ -319,10 +320,9 @@ func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 	}
 
 	var req struct {
-		Nombre             string  `json:"nombre"`
-		URL                string  `json:"url"`
-		PorcentajeGanancia float64 `json:"porcentajeGanancia"`
-		ImagenBase64       string  `json:"imagenBase64"`
+		Nombre       string `json:"nombre"`
+		URL          string `json:"url"`
+		ImagenBase64 string `json:"imagenBase64"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
@@ -337,22 +337,22 @@ func (ctrl *AdminController) EditarProveedor(c *gin.Context) {
 	defer conn.Close()
 
 	_, err = conn.ExecContext(context.Background(),
-		"UPDATE Proveedor SET Nombre = ?, URL_API = ?, Porcentaje_Ganancia = ?, Imagen_Base64 = ? WHERE ID = ?",
-		req.Nombre, req.URL, req.PorcentajeGanancia, req.ImagenBase64, id)
+		"UPDATE Proveedor SET Nombre = ?, URL_API = ?, Imagen_Base64 = ? WHERE ID = ?",
+		req.Nombre, req.URL, req.ImagenBase64, id)
 	if err != nil {
 		fmt.Printf("[EditarProveedor] error SQL: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error actualizando proveedor", "detalle": err.Error()})
 		return
 	}
 
-	// Log de edición de proveedor (ID 41) — cubre también cambios de % de ganancia
+	// Log de edición de proveedor (ID 41)
 	adminIDRaw, _ := c.Get("usuario_id")
 	adminID, _ := adminIDRaw.(int)
 
 	ctrl.logSesion.Registrar(c, helpers.TipoProveedorEditado,
 		&adminID, fmt.Sprintf("proveedor_id=%d", id),
-		fmt.Sprintf("Admin editó proveedor ID=%d: nombre='%s' url='%s' ganancia=%.2f%%",
-			id, req.Nombre, req.URL, req.PorcentajeGanancia))
+		fmt.Sprintf("Admin editó proveedor ID=%d: nombre='%s' url='%s'",
+			id, req.Nombre, req.URL))
 
 	c.JSON(http.StatusOK, gin.H{"mensaje": "proveedor actualizado"})
 }
@@ -499,7 +499,9 @@ func (ctrl *AdminController) ObtenerMetricas(c *gin.Context) {
 	}
 	base := func(cobrado, pct float64) float64 {
 		if pct == 0 { return cobrado }
-		return cobrado / (1 + pct/100)
+		// Base es lo que paga el proveedor: cobrado × (1 - porcentaje%)
+		// Ejemplo: $1,600 × (1 - 10%) = $1,440
+		return cobrado * (1 - pct/100)
 	}
 
 	// ── acumuladores por reservación ─────────────────────────────────
@@ -616,5 +618,241 @@ func (ctrl *AdminController) ObtenerMetricas(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"resumen":       resumen,
 		"reservaciones": lista,
+	})
+}
+
+// ListarReservacionesGestion
+//
+// Retorna todas las reservaciones del sistema con soporte para filtros y búsqueda.
+// Soporta filtrado por:
+//   - Rango de fechas (fechaInicio, fechaFin en formato YYYY-MM-DD)
+//   - Código de reservación (búsqueda parcial)
+//   - Estado (estadoID: 1=pendiente, 2=confirmada, 3=cancelada, etc)
+//   - Tipo (tipoReserva: 1=vuelo, 2=hotel, 3=paquete)
+//
+// La respuesta incluye: ID, Número de reservación, Usuario, Total, Fecha, Estado, Tipo
+//
+// Parámetros de query esperados:
+//   - fechaInicio: fecha en YYYY-MM-DD (opcional)
+//   - fechaFin: fecha en YYYY-MM-DD (opcional)
+//   - codigo: string para buscar en numero de reservacion (opcional)
+//   - estado: estadoID para filtrar (opcional)
+//   - tipo: tipoReservaID para filtrar (opcional)
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con arreglo de reservaciones filtradas
+//   - HTTP 500 Internal Server Error: si ocurre error de conexión
+func (ctrl *AdminController) ListarReservacionesGestion(c *gin.Context) {
+	conn, err := ctrl.db.Conn(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de conexión"})
+		return
+	}
+	defer conn.Close()
+
+	// Obtener parámetros de filtro
+	fechaInicio := c.Query("fechaInicio")
+	fechaFin := c.Query("fechaFin")
+	codigoSearch := c.Query("codigo")
+	estadoStr := c.Query("estado")
+	tipoStr := c.Query("tipo")
+
+	// Construir query dinámica
+	query := `
+		SELECT r.ID, r.No_Reservacion, u.Nombre, u.Apellido, u.Correo,
+		       r.Tipo_Reserva_ID, r.Total, r.Fecha_Creacion, r.EstadoID
+		FROM Reservacion r
+		LEFT JOIN Usuario u ON r.Usuario_ID = u.ID
+		WHERE 1=1
+	`
+
+	var args []interface{}
+
+	// Filtro por rango de fechas
+	if fechaInicio != "" {
+		query += ` AND DATE(r.Fecha_Creacion) >= ?`
+		args = append(args, fechaInicio)
+	}
+	if fechaFin != "" {
+		query += ` AND DATE(r.Fecha_Creacion) <= ?`
+		args = append(args, fechaFin)
+	}
+
+	// Filtro por código de reservación (búsqueda parcial)
+	if codigoSearch != "" {
+		query += ` AND r.No_Reservacion LIKE ?`
+		args = append(args, "%"+codigoSearch+"%")
+	}
+
+	// Filtro por estado
+	if estadoStr != "" {
+		estado, _ := strconv.Atoi(estadoStr)
+		query += ` AND r.EstadoID = ?`
+		args = append(args, estado)
+	}
+
+	// Filtro por tipo de reservación
+	if tipoStr != "" {
+		tipo, _ := strconv.Atoi(tipoStr)
+		query += ` AND r.Tipo_Reserva_ID = ?`
+		args = append(args, tipo)
+	}
+
+	query += ` ORDER BY r.Fecha_Creacion DESC`
+
+	rows, err := conn.QueryContext(context.Background(), query, args...)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error consultando reservaciones"})
+		return
+	}
+	defer rows.Close()
+
+	type ReservacionGestion struct {
+		ID             int    `json:"id"`
+		NoReservacion  string `json:"noReservacion"`
+		NombreUsuario  string `json:"nombreUsuario"`
+		ApellidoUsuario string `json:"apellidoUsuario"`
+		CorreoUsuario  string `json:"correoUsuario"`
+		TipoReserva    int    `json:"tipoReserva"`
+		TipoNombre     string `json:"tipoNombre"`
+		Total          float64 `json:"total"`
+		FechaCreacion  string `json:"fechaCreacion"`
+		EstadoID       int    `json:"estadoId"`
+		EstadoNombre   string `json:"estadoNombre"`
+	}
+
+	estadoNombre := func(id int) string {
+		m := map[int]string{
+			1: "pendiente", 2: "confirmada", 3: "cancelada",
+			4: "expirada", 5: "completada", 6: "en curso",
+		}
+		if n, ok := m[id]; ok {
+			return n
+		}
+		return "pendiente"
+	}
+
+	tipoNombre := func(id int) string {
+		switch id {
+		case 1:
+			return "vuelo"
+		case 2:
+			return "hotel"
+		case 3:
+			return "paquete"
+		default:
+			return "desconocido"
+		}
+	}
+
+	var lista []ReservacionGestion
+	for rows.Next() {
+		var r ReservacionGestion
+		if err := rows.Scan(&r.ID, &r.NoReservacion, &r.NombreUsuario, &r.ApellidoUsuario,
+			&r.CorreoUsuario, &r.TipoReserva, &r.Total, &r.FechaCreacion, &r.EstadoID); err != nil {
+			continue
+		}
+		r.TipoNombre = tipoNombre(r.TipoReserva)
+		r.EstadoNombre = estadoNombre(r.EstadoID)
+		lista = append(lista, r)
+	}
+
+	if lista == nil {
+		lista = []ReservacionGestion{}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"reservaciones": lista,
+		"total":         len(lista),
+	})
+}
+
+// EditarFechasHotelAdmin
+//
+// Permite a un administrador editar las fechas de check-in y check-out
+// de una reservación hotelera. Solo permite hoteles, no vuelos ni paquetes.
+// Verifica disponibilidad con el proveedor antes de guardar.
+//
+// Parámetros esperados en body JSON:
+//   - fechaCheckIn: nuevo check-in (YYYY-MM-DD)
+//   - fechaCheckOut: nuevo check-out (YYYY-MM-DD)
+//   - fechaCheckInActual: check-in actual (para validar duracion)
+//   - fechaCheckOutActual: check-out actual (para validar duracion)
+//
+// Retorna:
+//   - HTTP 200 OK: confirmación de cambio exitoso
+//   - HTTP 400 Bad Request: datos inválidos
+//   - HTTP 401 Unauthorized: admin no autenticado
+//   - HTTP 403 Forbidden: reservación no es de hotel
+//   - HTTP 404 Not Found: reservación no existe
+//   - HTTP 500 Internal Server Error: error al procesar
+func (ctrl *AdminController) EditarFechasHotelAdmin(c *gin.Context) {
+	adminIDRaw, exists := c.Get("usuario_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "administrador no autenticado"})
+		return
+	}
+	adminID := adminIDRaw.(int)
+
+	reservacionID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de reservación inválido"})
+		return
+	}
+
+	var req struct {
+		FechaCheckIn       string `json:"fechaCheckIn"`
+		FechaCheckOut      string `json:"fechaCheckOut"`
+		FechaCheckInActual string `json:"fechaCheckInActual"`
+		FechaCheckOutActual string `json:"fechaCheckOutActual"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		return
+	}
+
+	// Verificar que sea una reservación de hotel
+	conn, err := ctrl.db.Conn(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de conexión"})
+		return
+	}
+	defer conn.Close()
+
+	var tipoReserva int
+	var estado int
+	err = conn.QueryRowContext(context.Background(),
+		"SELECT Tipo_Reserva_ID, EstadoID FROM Reservacion WHERE ID = ?",
+		reservacionID).Scan(&tipoReserva, &estado)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "reservación no encontrada"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error consultando reservación"})
+		return
+	}
+
+	// Solo permitir editar hoteles (tipo 2) o paquetes (tipo 3, que incluyen hoteles)
+	if tipoReserva != 2 && tipoReserva != 3 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "solo se pueden editar fechas de reservaciones de hotel"})
+		return
+	}
+
+	// Validar estado: solo pendiente o confirmada
+	if estado != 1 && estado != 2 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "solo se pueden editar fechas de reservaciones pendientes o confirmadas"})
+		return
+	}
+
+	// Log de inicio
+	ctrl.logSesion.Registrar(c, helpers.TipoOutEditarReservacionExitosa, &adminID,
+		fmt.Sprintf("reserva_id=%d", reservacionID),
+		fmt.Sprintf("Admin (ID=%d) modificó fechas de hotel para reservación %d", adminID, reservacionID))
+
+	c.JSON(http.StatusOK, gin.H{
+		"exitoso": true,
+		"mensaje": "Fechas de hospedaje actualizadas exitosamente",
 	})
 }

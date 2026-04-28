@@ -157,13 +157,13 @@ public class ReservacionAgenciaRepository {
      * @param cantidadPersonas numero de personas para este detalle.
      * @param total            costo total de este detalle.
      */
-    public void crearDetalle(int reservacionId, int habitacionId,
-                             Date fechaCheckIn, Date fechaCheckOut,
-                             int cantidadPersonas, double total) {
+    public int crearDetalle(int reservacionId, int habitacionId,
+                            Date fechaCheckIn, Date fechaCheckOut,
+                            int cantidadPersonas, double total) {
         String sql = "INSERT INTO DetallesReservacion " +
                 "(ReservacionID, HabitacionID, FechaCheckIn, FechaCheckOut, CantidadPersonas, Total) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
-        DatabaseManager.executeUpdate(sql,
+        return DatabaseManager.executeInsertReturnId(sql, "ID",
                 reservacionId, habitacionId, fechaCheckIn, fechaCheckOut, cantidadPersonas, total
         );
     }

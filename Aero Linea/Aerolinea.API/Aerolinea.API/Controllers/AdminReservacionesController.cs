@@ -101,31 +101,13 @@ namespace Aerolinea.API.Controllers
             public string Motivo { get; set; } = "";
         }
 
-        // GET /api/admin/reservaciones/{id}/vuelos-elegibles
-        /// <summary>Retorna vuelos elegibles para cambio de la reservacion (admin).</summary>
-        [HttpGet("{id:int}/vuelos-elegibles")]
-        public async Task<IActionResult> ObtenerVuelosElegibles(int id)
-        {
-            try { return Ok(await _svc.ObtenerVuelosElegiblesAsync(id)); }
-            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
-        }
+        // GET /api/admin/reservaciones/{id}/vuelos-elegibles — DESHABILITADO
+        // ENDPOINT REMOVIDO: No se permite cambiar de vuelo una vez creada la reserva
+        // Razón: Integridad del sistema, datos de pasajeros, asientos y facturación
 
-        // POST /api/admin/reservaciones/{id}/cambiar-vuelo
-        /// <summary>Cambia el vuelo de una reservacion (admin). Body: { nuevoVueloId }.</summary>
-        [HttpPost("{id:int}/cambiar-vuelo")]
-        public async Task<IActionResult> CambiarVuelo(int id, [FromBody] CambiarVueloRequestDTO body)
-        {
-            if (body == null || body.NuevoVueloId <= 0)
-                return BadRequest(new { message = "El ID del nuevo vuelo es obligatorio." });
-            try
-            {
-                await _svc.CambiarVueloAsync(id, body.NuevoVueloId);
-                return Ok(new { message = "Vuelo cambiado exitosamente." });
-            }
-            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
-        }
-
-        public class CambiarVueloRequestDTO { public int NuevoVueloId { get; set; } }
+        // POST /api/admin/reservaciones/{id}/cambiar-vuelo — DESHABILITADO
+        // ENDPOINT REMOVIDO: No se permite cambiar de vuelo una vez creada la reserva
+        // Razón: Integridad del sistema, datos de pasajeros, asientos y facturación
 
         // PATCH /api/admin/reservaciones/boleto/{boletoId}/pasajero
         /// <summary>

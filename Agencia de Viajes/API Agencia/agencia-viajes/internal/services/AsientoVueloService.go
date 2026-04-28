@@ -9,7 +9,6 @@ import (
 	"agencia-viajes/internal/dto"
 	"agencia-viajes/internal/helpers"
 	"agencia-viajes/internal/repositories"
-	"bytes"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -77,58 +76,6 @@ func (s *AsientoVueloService) ObtenerAsientosVuelo(
 	return s.llamarGetAsientos(c, &uid, urlAPI, token, idReservaAerolinea)
 }
 
-// CambiarAsientoVuelo
-//
-// Cambia el asiento asignado a un boleto especifico de una reservacion de vuelo.
-// Valida que el boleto pertenezca a la reservacion del usuario antes de enviar
-// la solicitud de cambio al proveedor aerolinea.
-//
-// Parametros:
-//   - usuarioID: identificador del usuario dueno de la reservacion
-//   - req: datos del cambio incluyendo ReservacionID, ProveedorID, BoletoID y NuevoAsiento
-//
-// Retorna:
-//   - error: si el boleto no pertenece a la reservacion o falla la API del proveedor
-func (s *AsientoVueloService) CambiarAsientoVuelo(
-	c *gin.Context,
-	usuarioID int,
-	req dto.CambiarAsientoVueloRequest,
-) error {
-
-	idReservaAerolinea, urlAPI, token, err := s.repo.ObtenerDetalleAerolineaPorProveedor(
-		req.ReservacionID, usuarioID, req.ProveedorID,
-	)
-	if err != nil {
-		return err
-	}
-
-	uid := usuarioID
-	// Llamada interna de validación: no genera evento de Flujo D,
-	// los eventos 56/57 solo se disparan desde ObtenerAsientosVuelo.
-	asientos, err := s.llamarGetAsientosInterno(urlAPI, token, idReservaAerolinea)
-	if err != nil {
-		return err
-	}
-
-	boletoValido := false
-	for _, vuelo := range *asientos {
-		for _, b := range vuelo.BoletosAgencia {
-			if b.BoletoID == req.BoletoID {
-				boletoValido = true
-				break
-			}
-		}
-		if boletoValido {
-			break
-		}
-	}
-
-	if !boletoValido {
-		return errors.New("el boleto no pertenece a esta reservación")
-	}
-
-	return s.llamarCambiarAsiento(c, &uid, urlAPI, token, req.BoletoID, req.NuevoAsiento)
-}
 
 // llamarGetAsientos
 //
@@ -194,58 +141,3 @@ func (s *AsientoVueloService) llamarGetAsientosInterno(
 	return &resultado, nil
 }
 
-// llamarCambiarAsiento
-//
-// Realiza la llamada HTTP PUT al endpoint de cambio de asiento de la aerolinea
-// proveedora, enviando el nuevo asiento deseado para el boleto indicado.
-//
-// Parametros:
-//   - urlAPI: URL base del API del proveedor aerolinea
-//   - token: token de autenticacion de agencia (X-Agencia-Token)
-//   - boletoID: identificador del boleto cuyo asiento se desea cambiar
-//   - nuevoAsiento: codigo del nuevo asiento solicitado
-//
-// Retorna:
-//   - error: si la serializacion falla, la peticion HTTP falla o el proveedor rechaza el cambio
-func (s *AsientoVueloService) llamarCambiarAsiento(
-	c *gin.Context,
-	usuarioID *int,
-	urlAPI, token string,
-	boletoID int,
-	nuevoAsiento string,
-) error {
-	// TODO: agregar timeout al http.DefaultClient (deuda técnica identificada)
-	bodyReq := dto.CambiarAsientoAerolineaBody{NuevoAsiento: nuevoAsiento}
-	bodyBytes, err := json.Marshal(bodyReq)
-	if err != nil {
-		return fmt.Errorf("error serializando request: %w", err)
-	}
-
-	url := fmt.Sprintf("%s/api/asientos-agencia/%d", urlAPI, boletoID)
-
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Agencia-Token", token)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarFallida, usuarioID, "asiento-cambiar",
-			fmt.Sprintf("Broom status=ERR boletoId=%d msg='%s'", boletoID, err.Error()))
-		return fmt.Errorf("error contactando aerolínea: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		msg := fmt.Sprintf("Broom status=%d boletoId=%d msg='%s'", resp.StatusCode, boletoID, helpers.ParseErrorProveedor(resp))
-		s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarFallida, usuarioID, "asiento-cambiar", msg)
-		return fmt.Errorf("aerolínea respondió con status %d", resp.StatusCode)
-	}
-
-	s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarExitosa, usuarioID, "asiento-cambiar",
-		fmt.Sprintf("Broom: asiento cambiado boletoId=%d → %s", boletoID, nuevoAsiento))
-
-	return nil
-}

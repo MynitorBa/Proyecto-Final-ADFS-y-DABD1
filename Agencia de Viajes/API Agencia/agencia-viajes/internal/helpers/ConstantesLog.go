@@ -112,3 +112,9 @@ const (
 const (
 	TipoCancelacionAdmin = 62
 )
+
+// Flujo G: Edición de reservación (63-64)
+const (
+	TipoOutEditarReservacionExitosa = 63
+	TipoOutEditarReservacionFallida = 64
+)

@@ -21,6 +21,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
               Dashboard
             </router-link>
+            <router-link to="/admin/reservaciones" class="adm-nav__item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              Reservaciones
+            </router-link>
             <router-link to="/admin/proveedores" class="adm-nav__item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
               Proveedores
@@ -130,23 +134,10 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                   <span>Ganancia: {{ p.porcentajeGanancia }}%</span>
                 </div>
-                <!-- Estado de la última prueba de conexión, si ya fue probado -->
-                <div class="adm-prov-card__row" v-if="estadoConexion[p.id]">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span :style="{ color: estadoConexion[p.id] === 'ok' ? '#22c55e' : '#D40511' }">
-                    {{ estadoConexion[p.id] === 'ok' ? 'Conexión exitosa' : 'Sin respuesta' }}
-                  </span>
-                </div>
               </div>
 
               <!-- Acciones disponibles para cada proveedor -->
               <div class="adm-prov-card__foot">
-                <button class="adm-btn adm-btn--sm adm-btn--ghost"
-                  @click="probarConexion(p)" :disabled="probando===p.id" type="button">
-                  <div v-if="probando===p.id" class="adm-spinner adm-spinner--sm"></div>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                  Probar
-                </button>
                 <button class="adm-btn adm-btn--sm adm-btn--outline" @click="abrirFormEditar(p)" type="button">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Editar
@@ -214,14 +205,6 @@
               <div class="adm-field">
                 <label class="adm-field__label">URL del servicio REST *</label>
                 <input class="adm-field__input" v-model="form.url" placeholder="http://localhost:7000" type="url" />
-              </div>
-
-              <div class="adm-field">
-                <label class="adm-field__label">% Ganancia</label>
-                <div class="adm-field__prefix">
-                  <span>%</span>
-                  <input class="adm-field__input" v-model.number="form.porcentajeGanancia" type="number" min="0" step="0.01" placeholder="15.50" />
-                </div>
               </div>
             </div>
 
@@ -350,7 +333,7 @@ const estadoConexion = ref({})
  * @returns {{nombre: string, tipoProveedorId: string, usuarioId: string, url: string, porcentajeGanancia: number}}
  */
 const formVacio = () => ({
-  nombre: '', tipoProveedorId: '', usuarioId: '', url: '', porcentajeGanancia: 15.5, imagenBase64: ''
+  nombre: '', tipoProveedorId: '', usuarioId: '', url: '', porcentajeGanancia: 0, imagenBase64: ''
 })
 
 /** Estado reactivo del formulario de creación/edición. @type {import('vue').Ref<Object>} */

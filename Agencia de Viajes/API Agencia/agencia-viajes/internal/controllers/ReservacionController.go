@@ -187,3 +187,73 @@ func (ctrl *ReservacionController) EnviarCorreo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"mensaje": "Correo de confirmación enviado exitosamente"})
 }
+
+// EnviarCorreoActualizacionHabitacion
+//
+// Envia un correo notificando que se cambió la habitación de una reservación.
+// Similar a EnviarCorreo pero con un mensaje de actualización.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de exito
+//   - HTTP 400 Bad Request: si el ID no es valido
+//   - HTTP 401 Unauthorized: si el usuario no esta autenticado
+//   - HTTP 500 Internal Server Error: si ocurre un error al enviar el correo
+func (ctrl *ReservacionController) EnviarCorreoActualizacionHabitacion(c *gin.Context) {
+	usuarioID, exists := c.Get("usuario_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id de reservación inválido"})
+		return
+	}
+
+	if err := ctrl.emailService.EnviarActualizacionHabitacion(id, usuarioID.(int)); err != nil {
+		log.Printf("[CORREO-HAB] Error enviando correo actualización habitación %d: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mensaje": "Correo de actualización de habitación enviado exitosamente"})
+}
+
+// EnviarCorreoActualizacionAsiento
+//
+// Envia un correo notificando que se cambió el asiento de vuelo de una reservación.
+// Similar a EnviarCorreo pero con un mensaje de actualización de asiento.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//
+// Retorna:
+//   - HTTP 200 OK: JSON con mensaje de exito
+//   - HTTP 400 Bad Request: si el ID no es valido
+//   - HTTP 401 Unauthorized: si el usuario no esta autenticado
+//   - HTTP 500 Internal Server Error: si ocurre un error al enviar el correo
+func (ctrl *ReservacionController) EnviarCorreoActualizacionAsiento(c *gin.Context) {
+	usuarioID, exists := c.Get("usuario_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id de reservación inválido"})
+		return
+	}
+
+	if err := ctrl.emailService.EnviarActualizacionAsiento(id, usuarioID.(int)); err != nil {
+		log.Printf("[CORREO-ASIENTO] Error enviando correo actualización asiento %d: %v", id, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mensaje": "Correo de actualización de asiento enviado exitosamente"})
+}

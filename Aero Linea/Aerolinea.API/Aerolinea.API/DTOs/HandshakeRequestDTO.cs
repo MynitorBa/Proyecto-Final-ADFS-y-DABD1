@@ -17,11 +17,15 @@ namespace Aerolinea.API.DTOs
 
     /// <summary>
     /// DTO de respuesta devuelto al completar el handshake con una agencia externa.
-    /// Contiene el token de salida que la agencia debe utilizar en las siguientes peticiones.
+    /// Contiene el token de salida que la agencia debe utilizar en las siguientes peticiones,
+    /// y el porcentaje de ganancia que la agencia tiene configurado.
     /// </summary>
     public class HandshakeResponseDTO
     {
         [JsonPropertyName("token_salida")]
         public string TokenSalida { get; set; } = string.Empty;
+
+        [JsonPropertyName("porcentajeGanancia")]
+        public decimal PorcentajeGanancia { get; set; } = 0;
     }
 }

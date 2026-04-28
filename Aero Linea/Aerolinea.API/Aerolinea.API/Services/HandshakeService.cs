@@ -23,14 +23,14 @@ namespace Aerolinea.API.Services
 
         /// <summary>
         /// Procesa la solicitud de handshake de una agencia externa. Busca la agencia por su URL,
-        /// genera un token de salida y guarda ambos tokens (entrada y salida) en la base de datos.
-        /// Retorna el token de salida que la agencia debe usar en solicitudes posteriores.
+        /// genera un token de salida, guarda ambos tokens y retorna el porcentaje de descuento
+        /// configurado para la agencia.
         /// </summary>
         public async Task<HandshakeResponseDTO> ProcesarHandshake(HandshakeRequestDTO dto)
         {
-            // 1. Buscar agencia por su URL
-            int? agenciaId = await _agenciaRepository.ObtenerAgenciaIdPorURL(dto.UrlAgencia);
-            if (agenciaId == null)
+            // 1. Buscar agencia por su URL, obteniendo ID y porcentaje
+            var agencia = await _agenciaRepository.ObtenerAgenciaConPorcentajePorURL(dto.UrlAgencia);
+            if (agencia == null)
                 throw new Exception("No se encontró ninguna agencia registrada con esa URL.");
 
             // 2. Generar token de salida
@@ -38,7 +38,7 @@ namespace Aerolinea.API.Services
 
             // 3. Guardar ambos tokens
             bool guardado = await _agenciaRepository.GuardarTokens(
-                agenciaId.Value,
+                agencia.ID,
                 dto.TokenEntrada,
                 tokenSalida
             );
@@ -46,7 +46,11 @@ namespace Aerolinea.API.Services
             if (!guardado)
                 throw new Exception("No se pudieron guardar los tokens.");
 
-            return new HandshakeResponseDTO { TokenSalida = tokenSalida };
+            return new HandshakeResponseDTO
+            {
+                TokenSalida = tokenSalida,
+                PorcentajeGanancia = agencia.PorcentajeDescuento
+            };
         }
     }
 }

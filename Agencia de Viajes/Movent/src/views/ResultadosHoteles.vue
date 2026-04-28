@@ -1711,9 +1711,10 @@ function resetFiltros() {
 /**
  * Construye el payload para el endpoint de detalle de reserva de hotel.
  * Soporta reservas normales, combos de habitaciones y habitaciones con persona extra.
+ * Incluye los criterios de búsqueda original para permitir obtener alternativas de habitaciones.
  * @param {number} reservaId - ID de la reservación recién creada
  * @param {object} itemData - Datos de la habitación/combo seleccionado
- * @returns {{reservacionId: number, proveedorId: number, habitaciones: object[]}|null}
+ * @returns {{reservacionId: number, proveedorId: number, habitaciones: object[], criteriosBusqueda: object}|null}
  */
 function buildHotelPayload(reservaId, itemData) {
   const b = itemData.busqueda
@@ -1752,7 +1753,22 @@ function buildHotelPayload(reservaId, itemData) {
   }
 
   if (!habitaciones.length) return null
-  return { reservacionId: reservaId, proveedorId: itemData.proveedorId, habitaciones }
+
+  // Construir criterios de búsqueda para permitir obtener alternativas de habitaciones
+  const criteriosBusqueda = {
+    ciudad: b.ciudad,
+    pais: b.pais,
+    fechaCheckIn: b.checkIn,
+    fechaCheckOut: b.checkOut,
+    cantidadPersonas: b.cantidadPersonas,
+  }
+
+  return {
+    reservacionId: reservaId,
+    proveedorId: itemData.proveedorId,
+    habitaciones,
+    criteriosBusqueda,
+  }
 }
 
 /**

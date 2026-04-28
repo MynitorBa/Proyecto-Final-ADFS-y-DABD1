@@ -131,3 +131,51 @@ func (ctrl *DetalleReservacionController) AgregarPasajerosVuelo(c *gin.Context) 
 
 	c.JSON(http.StatusOK, gin.H{"mensaje": "datos de pasajeros guardados correctamente"})
 }
+
+// EditarReservacion
+//
+// Handler HTTP que edita datos de una reservacion existente.
+// Permite cambiar nombres de pasajeros, datos de pasaporte y fechas.
+// Valida disponibilidad de vuelos y hoteles para las nuevas fechas.
+//
+// Parametros:
+//   - c: contexto de Gin con la solicitud HTTP
+//   - Parametro de ruta: id - ID de la reservacion a editar
+//   - Body: EditarReservacionRequest con los datos a actualizar
+//
+// Retorna:
+//   - HTTP 200: confirmación de cambios realizados
+//   - HTTP 400: error si los datos son inválidos o no hay disponibilidad
+//   - HTTP 401: error si el usuario no está autenticado
+//   - HTTP 403: error si el usuario no es propietario de la reservacion
+func (ctrl *DetalleReservacionController) EditarReservacion(c *gin.Context) {
+	usuarioID, exists := c.Get("usuario_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+
+	reservacionID := c.Param("id")
+	if reservacionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID de reservación requerido"})
+		return
+	}
+
+	var req dto.EditarReservacionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "datos inválidos"})
+		return
+	}
+
+	resp, err := ctrl.service.EditarReservacion(c, usuarioID.(int), reservacionID, req)
+	if err != nil {
+		if err.Error() == "no autorizado" {
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

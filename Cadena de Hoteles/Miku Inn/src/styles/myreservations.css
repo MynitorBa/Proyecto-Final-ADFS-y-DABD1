@@ -498,6 +498,183 @@
 .cancel-modal-confirm:hover:not(:disabled) { background: #dc2626; }
 .cancel-modal-confirm:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ============================================================
+   ESTILOS PARA CAMBIO DE HABITACION
+   ============================================================ */
+
+/* Botón de cambiar habitación dentro de la ficha */
+.panel-room-change-btn {
+  width: 100%; padding: .65rem;
+  margin-top: .75rem;
+  background: #f0f2ff; border: 1.5px solid #667eea;
+  border-radius: 8px; color: #667eea; font-weight: 600;
+  font-size: .85rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: .4rem;
+  transition: all .15s;
+}
+.panel-room-change-btn:hover { background: #667eea; color: white; }
+
+/* Overlay del modal de cambio de habitación */
+.habitacion-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  animation: fadeIn .18s ease;
+}
+
+/* Modal de cambio de habitación */
+.habitacion-modal {
+  background: white; border-radius: 16px;
+  width: 100%; max-width: 500px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  animation: slideUp .22s cubic-bezier(.4,0,.2,1);
+}
+
+/* Encabezado del modal de cambio de habitación */
+.habitacion-modal-header {
+  display: flex; align-items: center; gap: .75rem;
+  padding: 1.75rem; border-bottom: 1.5px solid #e8ecf0;
+  color: #667eea;
+  background: white; flex-shrink: 0;
+}
+.habitacion-modal-header h3 { margin: 0; font-size: 1.15rem; color: #1e293b; }
+
+/* Contenedor sticky para header + search + subtitle */
+.habitacion-modal-sticky {
+  position: sticky; top: 0; z-index: 10; background: white;
+}
+
+/* Subtítulo del modal */
+.habitacion-modal-sub {
+  color: #64748b; font-size: .9rem; padding: 0 1.75rem 1rem;
+  margin: 0;
+}
+
+/* Estado de carga */
+.habitacion-loading {
+  display: flex; align-items: center; gap: .75rem;
+  padding: 2rem 1.75rem;
+  color: #64748b; font-size: .95rem;
+}
+
+/* Error del modal */
+.habitacion-modal-error {
+  margin: 1.25rem 1.75rem;
+  padding: 1rem; background: #fef2f2; border: 1.5px solid #fecaca;
+  border-radius: 10px; color: #b91c1c; font-size: .85rem;
+  display: flex; flex-direction: column; align-items: flex-start; gap: .5rem;
+}
+.habitacion-modal-error strong { font-weight: 700; }
+
+/* Mensaje de éxito */
+.habitacion-success {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 2rem 1.75rem; text-align: center; gap: .5rem;
+  color: #059669;
+}
+.habitacion-success svg { color: #059669; }
+.habitacion-success strong { font-weight: 700; font-size: .95rem; }
+.habitacion-success p { margin: 0; font-size: .85rem; color: #047857; }
+
+/* Campo de búsqueda de habitaciones */
+.habitacion-search {
+  position: relative; margin: 0 1.75rem 1.25rem;
+  padding: .75rem 0 0;
+  display: flex; align-items: center; background: white;
+}
+.habitacion-search svg {
+  position: absolute; left: 1rem; font-size: 1rem;
+  color: #94a3b8; flex-shrink: 0;
+}
+.habitacion-search-input {
+  width: 100%; padding: .65rem 1rem .65rem 2.75rem;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: .9rem; color: #1e293b; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s;
+}
+.habitacion-search-input:focus {
+  outline: none; border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102,126,234,.1);
+}
+.habitacion-search-input::placeholder { color: #94a3b8; }
+
+/* Lista de habitaciones */
+.habitacion-list {
+  padding: 1.25rem 1.75rem;
+  display: flex; flex-direction: column; gap: .5rem;
+  flex: 1; overflow-y: auto;
+}
+
+/* Item de habitación */
+.habitacion-item {
+  position: relative;
+  border: 1.5px solid #e2e8f0; border-radius: 12px;
+  padding: 1rem; cursor: pointer;
+  transition: all .15s;
+}
+.habitacion-item:hover { border-color: #667eea; background: #f0f4ff; }
+.habitacion-item.selected {
+  border-color: #667eea; background: #f0f2ff;
+}
+
+/* Radio button escondido */
+.habitacion-radio {
+  position: absolute; opacity: 0; width: 0; height: 0;
+}
+
+/* Label del radio */
+.habitacion-label {
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; width: 100%;
+}
+
+/* Número de habitación */
+.habitacion-num {
+  font-weight: 700; font-size: 1rem; color: #1e293b;
+}
+
+/* Precio por noche */
+.habitacion-price {
+  font-size: .85rem; color: #667eea; font-weight: 600;
+}
+
+/* Estado vacío de habitaciones */
+.habitacion-empty {
+  padding: 1.5rem 1.75rem; text-align: center;
+  color: #94a3b8; font-size: .9rem;
+}
+
+/* Botones de acción del modal */
+.habitacion-modal-actions {
+  display: flex; gap: .75rem; margin-top: 1rem;
+  padding: 1.75rem; border-top: 1.5px solid #e8ecf0;
+  background: white; justify-content: center;
+  position: sticky; bottom: 0; z-index: 10;
+}
+
+.habitacion-modal-back {
+  padding: .65rem 1.25rem;
+  background: white; border: 1.5px solid #e2e8f0;
+  border-radius: 10px; color: #64748b;
+  font-weight: 600; font-size: .9rem; cursor: pointer;
+  transition: all .15s;
+}
+.habitacion-modal-back:hover:not(:disabled) { border-color: #94a3b8; color: #1e293b; }
+.habitacion-modal-back:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Botón de confirmar cambio */
+.habitacion-modal-confirm {
+  display: flex; align-items: center; justify-content: center; gap: .45rem;
+  padding: .65rem 1.4rem;
+  background: #667eea; color: white; border: none;
+  border-radius: 10px; font-weight: 700; font-size: .9rem;
+  cursor: pointer; transition: all .15s;
+}
+.habitacion-modal-confirm:hover:not(:disabled) { background: #5568d3; }
+.habitacion-modal-confirm:disabled { opacity: .5; cursor: not-allowed; }
+
 /* Badge de número de habitación en el panel */
 .panel-room-number {
   display: inline-flex;

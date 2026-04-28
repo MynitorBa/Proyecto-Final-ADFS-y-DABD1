@@ -225,7 +225,10 @@ func (s *BusquedaService) llamarVuelos(c *gin.Context, usuarioID *int, p dto.Pro
 		return nil, err
 	}
 
-	datos = aplicarGanancia(datos, p.PorcentajeGanancia)
+	// NO APLICAR DESCUENTO: Los precios vienen SIN descuento del proveedor.
+	// El descuento es a nivel lógico/negocio (para calcular ganancia en reservación)
+	// pero el usuario VE SIEMPRE el precio original.
+	// datos = aplicarGanancia(datos, p.PorcentajeGanancia)
 
 	count := 0
 	switch v := datos.(type) {
@@ -363,7 +366,10 @@ func (s *BusquedaService) llamarHoteles(c *gin.Context, usuarioID *int, p dto.Pr
 		return nil, err
 	}
 
-	datos = aplicarGanancia(datos, p.PorcentajeGanancia)
+	// NO APLICAR DESCUENTO: Los precios vienen SIN descuento del proveedor.
+	// El descuento es a nivel lógico/negocio (para calcular ganancia en reservación)
+	// pero el usuario VE SIEMPRE el precio original.
+	// datos = aplicarGanancia(datos, p.PorcentajeGanancia)
 
 	count := 0
 	if arr, ok := datos.([]interface{}); ok {
@@ -384,26 +390,38 @@ func (s *BusquedaService) llamarHoteles(c *gin.Context, usuarioID *int, p dto.Pr
 // aplicarGanancia
 //
 // Recorre recursivamente una estructura de datos JSON (mapas y slices) y
-// multiplica los campos de precio conocidos por el factor de ganancia calculado
-// a partir del porcentaje indicado. Los campos afectados son: precioTurista,
-// precioEjecutiva, precioPorPersona y precioPorNoche.
+// aplica el factor de descuento (porcentaje de ganancia del proveedor) reduciendo
+// los precios. Los campos de precio recibidos del proveedor son multiplicados por
+// (1 - porcentaje) para obtener el precio con descuento que se mostrará al cliente.
+// Los campos afectados son: precioTurista, precioEjecutiva, precioPorPersona y precioPorNoche.
 //
 // Parametros:
 //   - data: estructura de datos generica (map[string]interface{} o []interface{})
-//   - porcentaje: porcentaje de ganancia a aplicar (ej: 15 para 15%)
+//   - porcentaje: porcentaje de descuento del proveedor (ej: 55 para 55% descuento)
 //
 // Retorna:
-//   - interface{}: la misma estructura con los precios ajustados, redondeados a 2 decimales
+//   - interface{}: la misma estructura con los precios reducidos por el descuento, redondeados a 2 decimales
 func aplicarGanancia(data interface{}, porcentaje float64) interface{} {
-	multiplicador := 1 + (porcentaje / 100)
+	// Aplicar descuento: precio_con_descuento = precio_original * (1 - porcentaje%)
+	log.Printf("[aplicarGanancia] DEBUG: Porcentaje_Descuento=%.2f%%, aplicando reducción de precios", porcentaje)
+
+	factor := 1 - (porcentaje / 100)
+	if factor <= 0 {
+		factor = 1 // Evitar factor negativo o cero
+		log.Printf("[aplicarGanancia] WARN: factor <= 0, usando factor=1 (sin descuento)")
+	}
 
 	switch v := data.(type) {
 	case map[string]interface{}:
 		for key, val := range v {
 			switch key {
-			case "precioTurista", "precioEjecutiva", "precioTuristaTotal", "precioEjecutivaTotal", "precioPorPersona", "precioPorNoche":
+			case "precioTurista", "precioEjecutiva", "precioTuristaTotal", "precioEjecutivaTotal", "precioPorPersona", "precioPorNoche", "precio", "total":
 				if precio, ok := val.(float64); ok {
-					v[key] = math.Round(precio*multiplicador*100) / 100
+					precioConDescuento := math.Round((precio*factor)*100) / 100
+					if factor != 1 && (key == "precioPorNoche" || key == "precioPorPersona" || key == "precio") {
+						log.Printf("[aplicarGanancia] %s: %.2f → %.2f (* %.4f)", key, precio, precioConDescuento, factor)
+					}
+					v[key] = precioConDescuento
 				}
 			default:
 				v[key] = aplicarGanancia(val, porcentaje)

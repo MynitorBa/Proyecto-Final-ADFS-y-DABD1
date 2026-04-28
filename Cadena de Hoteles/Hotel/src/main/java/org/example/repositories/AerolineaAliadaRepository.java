@@ -271,6 +271,24 @@ public class AerolineaAliadaRepository {
     }
 
     /**
+     * Busca el ID y porcentaje de descuento de una aerolinea aliada a partir de su URL registrada.
+     * Se usa durante el handshake para obtener el porcentaje de ganancia configurado.
+     *
+     * @param urlAerolinea URL unica asociada a la aerolinea aliada.
+     * @return AerolineaDTO con ID y PorcentajeDescuento, o null si no se encuentra.
+     */
+    public AerolineaDTO obtenerAerolineaConPorcentajePorURL(String urlAerolinea) {
+        String sql = "SELECT ID, PorcentajeDescuento FROM AerolineaAliado WHERE URL = ?";
+        List<AerolineaDTO> result = DatabaseManager.executeQuery(sql, rs -> {
+            AerolineaDTO dto = new AerolineaDTO();
+            dto.setId(rs.getInt("ID"));
+            dto.setPorcentajeDescuento(rs.getDouble("PorcentajeDescuento"));
+            return dto;
+        }, urlAerolinea);
+        return result.isEmpty() ? null : result.get(0);
+    }
+
+    /**
      * Persiste el token de sesion del handshake en el registro de la aerolinea aliada.
      *
      * Se guarda el token de SALIDA (generado por el hotel) y NO el de entrada.
