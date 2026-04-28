@@ -42,19 +42,16 @@
     fecha:                   '',
     horaSalida:              '',
     avionId:                 '',
-    boletosTurista:          '',
-    boletosEjecutivo:        '',
-    precioTurista:           '',
-    precioEjecutiva:         '',
+    motivo:                  '',
     tripulantesSeleccionados: []
   };
 
   // ── Estado de alertas de tiempo ─────────────────────────────────────────────
-  /** true si faltan < 48h para la salida (edicion bloqueada). @type {boolean} */
+  /** true si faltan < 60 dias para la salida (edicion bloqueada). @type {boolean} */
   let bloqueadoPorTiempo = false;
-  /** true si faltan < 72h pero >= 48h (advertencia). @type {boolean} */
-  let advertencia72h = false;
-  /** Horas que faltan para la salida. @type {number} */
+  /** Dias que faltan para la salida. @type {number} */
+  let diasParaSalida = Infinity;
+  /** Horas que faltan para la salida (para mostrar en el banner). @type {number} */
   let horasParaSalida = Infinity;
 
   // ── Disponibilidad ───────────────────────────────────────────────────────────
@@ -94,12 +91,6 @@
   });
 
   $: avionSeleccionado = aviones.find(a => a.id === parseInt(form.avionId));
-  $: totalBoletosAsignados = (parseInt(form.boletosTurista) || 0) + (parseInt(form.boletosEjecutivo) || 0);
-  $: capacidadAvion    = avionSeleccionado?.capacidadPasajeros ?? 0;
-  $: excedeLimite      = capacidadAvion > 0 && totalBoletosAsignados > capacidadAvion;
-  $: porcentajeOcupado = capacidadAvion > 0
-    ? Math.min(100, Math.round(totalBoletosAsignados / capacidadAvion * 100))
-    : 0;
 
   // Composicion de tripulacion
   $: pilotos    = form.tripulantesSeleccionados.filter(t => t.rolID === 1).length;
@@ -117,13 +108,9 @@
   // ── Ciclo de vida ────────────────────────────────────────────────────────────
   onMount(async () => {
     // Prefill form desde el objeto vuelo
-    form.fecha             = vuelo.fecha ?? '';
-    form.horaSalida        = vuelo.horaSalida ?? '';
-    form.avionId           = String(vuelo.avionId ?? '');
-    form.boletosTurista    = String(vuelo.boletosTurista ?? '');
-    form.boletosEjecutivo  = String(vuelo.boletosEjecutivo ?? '');
-    form.precioTurista     = String(vuelo.precioTurista ?? '');
-    form.precioEjecutiva   = String(vuelo.precioEjecutiva ?? '');
+    form.fecha      = vuelo.fecha ?? '';
+    form.horaSalida = vuelo.horaSalida ?? '';
+    form.avionId    = String(vuelo.avionId ?? '');
 
     // Calcular horas hasta la salida
     calcularHorasParaSalida();
@@ -148,13 +135,13 @@
    * Calcula cuantas horas faltan para la salida del vuelo y actualiza las flags de bloqueo/advertencia.
    */
   function calcularHorasParaSalida() {
-    if (!vuelo.fecha || !vuelo.horaSalida) { horasParaSalida = Infinity; return; }
+    if (!vuelo.fecha || !vuelo.horaSalida) { diasParaSalida = Infinity; horasParaSalida = Infinity; return; }
     const salidaStr = `${vuelo.fecha}T${vuelo.horaSalida}:00`;
     const salida = new Date(salidaStr);
     const ahora  = new Date();
     horasParaSalida = (salida - ahora) / (1000 * 60 * 60);
-    bloqueadoPorTiempo = horasParaSalida < 48;
-    advertencia72h     = horasParaSalida >= 48 && horasParaSalida < 72;
+    diasParaSalida  = horasParaSalida / 24;
+    bloqueadoPorTiempo = diasParaSalida < 60;
   }
 
   /**
@@ -246,8 +233,6 @@
     form.avionId = a.id;
     busquedaAvion = a.nombreCompleto;
     mostrarDropdownAvion = false;
-    form.boletosTurista  = '';
-    form.boletosEjecutivo = '';
   }
 
   function agregarTripulante(t) {
@@ -265,14 +250,11 @@
    * @async
    */
   async function handleGuardar() {
-    if (bloqueadoPorTiempo) { mostrarToast('error', 'No se puede editar un vuelo con menos de 48 horas para la salida'); return; }
+    if (bloqueadoPorTiempo) { mostrarToast('error', `No se puede editar: faltan ${Math.round(diasParaSalida)} días. Se requieren mínimo 60 días de anticipación.`); return; }
     if (!form.fecha)         { mostrarToast('error', 'Ingresa la fecha del vuelo'); return; }
     if (!form.horaSalida)    { mostrarToast('error', 'Ingresa la hora de salida'); return; }
     if (!form.avionId)       { mostrarToast('error', 'Selecciona un avion'); return; }
-    if (!form.boletosTurista   || parseInt(form.boletosTurista)   < 0) { mostrarToast('error', 'Ingresa los boletos de clase turista'); return; }
-    if (!form.boletosEjecutivo || parseInt(form.boletosEjecutivo) < 0) { mostrarToast('error', 'Ingresa los boletos de clase ejecutiva'); return; }
-    if (excedeLimite) { mostrarToast('error', `Los boletos (${totalBoletosAsignados}) exceden la capacidad del avion (${capacidadAvion})`); return; }
-    if (!form.precioTurista || !form.precioEjecutiva) { mostrarToast('error', 'Ingresa los precios de ambas clases'); return; }
+    if (!form.motivo?.trim()) { mostrarToast('error', 'El motivo del cambio es obligatorio'); return; }
     if (totalTripulantes !== 5) { mostrarToast('error', 'Debe asignar exactamente 5 tripulantes al vuelo'); return; }
     if (pilotos < 1)    { mostrarToast('error', 'Falta asignar 1 Piloto (Rol 1)'); return; }
     if (copilotos < 1)  { mostrarToast('error', 'Falta asignar 1 Copiloto (Rol 2)'); return; }
@@ -284,18 +266,15 @@
         method: 'PUT', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fecha:            form.fecha,
-          horaSalida:       form.horaSalida,
-          avionId:          parseInt(form.avionId),
-          boletosTurista:   parseInt(form.boletosTurista),
-          boletosEjecutivo: parseInt(form.boletosEjecutivo),
-          precioTurista:    parseFloat(form.precioTurista),
-          precioEjecutiva:  parseFloat(form.precioEjecutiva),
-          tripulantesIds:   form.tripulantesSeleccionados.map(t => t.id)
+          fecha:          form.fecha,
+          horaSalida:     form.horaSalida,
+          avionId:        parseInt(form.avionId),
+          motivo:         form.motivo.trim(),
+          tripulantesIds: form.tripulantesSeleccionados.map(t => t.id)
         })
       });
       if (r.ok) {
-        mostrarToast('success', 'Vuelo actualizado exitosamente');
+        mostrarToast('success', 'Vuelo actualizado exitosamente. Se notificó a los pasajeros.');
         onGuardado();
       } else {
         const err = await r.json();
@@ -366,13 +345,13 @@
     <!-- Banner: bloqueado por tiempo -->
     {#if bloqueadoPorTiempo}
       <div class="editar-banner editar-banner--error">
-        <strong>Edicion bloqueada</strong> — Faltan menos de 48 horas para la salida ({Math.round(horasParaSalida)}h).
-        No es posible modificar este vuelo.
+        <strong>Edicion bloqueada</strong> — Faltan {Math.round(diasParaSalida)} días para la salida.
+        Se requieren mínimo 60 días de anticipación para editar un vuelo.
       </div>
-    {:else if advertencia72h}
+    {:else}
       <div class="editar-banner editar-banner--warn">
-        <strong>Atencion</strong> — Faltan menos de 72 horas para la salida ({Math.round(horasParaSalida)}h).
-        Cualquier cambio notificara a los pasajeros.
+        <strong>Atencion</strong> — Los cambios notificarán por correo a todos los pasajeros con reservacion activa.
+        No se puede modificar el precio ni el código del vuelo.
       </div>
     {/if}
 
@@ -471,54 +450,30 @@
           </div>
         </div>
 
-        <!-- Grupo: Boletos y precios -->
-        <div class="admin-form__group">
-          <h3 class="admin-form__group-title">Distribucion de Asientos y Precios</h3>
-          {#if avionSeleccionado}
-            <div class="capacidad-bar">
-              <div class="capacidad-bar__labels">
-                <span>Capacidad total: <strong>{capacidadAvion} pax</strong></span>
-                <span class="capacidad-bar__count"
-                  class:capacidad-bar__count--ok={totalBoletosAsignados === capacidadAvion && !excedeLimite}
-                  class:capacidad-bar__count--error={excedeLimite}>
-                  {totalBoletosAsignados} asignados
-                  {#if excedeLimite}&nbsp;Excede limite{:else if totalBoletosAsignados === capacidadAvion}&nbsp;✔ Completo{/if}
-                </span>
-              </div>
-              <div class="capacidad-bar__track">
-                <div class="capacidad-bar__fill" class:capacidad-bar__fill--error={excedeLimite} style="width:{porcentajeOcupado}%"></div>
-              </div>
-            </div>
-          {/if}
-          <div class="admin-form__row">
-            <div class="admin-form__field">
-              <label for="ev-turista" class="admin-form__label">Boletos Clase Turista *</label>
-              <input type="number" id="ev-turista" class="admin-form__input" min="0"
-                bind:value={form.boletosTurista}
-                max={capacidadAvion > 0 ? capacidadAvion : undefined}
-                disabled={bloqueadoPorTiempo} required />
-            </div>
-            <div class="admin-form__field">
-              <label for="ev-ejecutivo" class="admin-form__label">Boletos Clase Ejecutiva *</label>
-              <input type="number" id="ev-ejecutivo" class="admin-form__input" min="0"
-                bind:value={form.boletosEjecutivo}
-                max={capacidadAvion > 0 ? capacidadAvion : undefined}
-                disabled={bloqueadoPorTiempo} required />
+        <!-- Grupo: Capacidad del avion (solo informativo) -->
+        {#if avionSeleccionado}
+          <div class="admin-form__group">
+            <h3 class="admin-form__group-title">Capacidad de la Aeronave</h3>
+            <div class="admin-form__field admin-form__field--full">
+              <p style="font-size:.88rem;color:var(--text-muted);margin:0">
+                El avion seleccionado tiene capacidad para <strong>{avionSeleccionado.capacidadPasajeros} pasajeros</strong>.
+                El número de boletos y los precios no pueden modificarse.
+              </p>
             </div>
           </div>
-          <div class="admin-form__row" style="margin-top:1.5rem">
-            <div class="admin-form__field">
-              <label for="ev-precio-turista" class="admin-form__label">Precio Turista (USD) *</label>
-              <input type="number" id="ev-precio-turista" class="admin-form__input" min="0" step="0.01"
-                bind:value={form.precioTurista}
-                disabled={bloqueadoPorTiempo} required />
-            </div>
-            <div class="admin-form__field">
-              <label for="ev-precio-eje" class="admin-form__label">Precio Ejecutiva (USD) *</label>
-              <input type="number" id="ev-precio-eje" class="admin-form__input" min="0" step="0.01"
-                bind:value={form.precioEjecutiva}
-                disabled={bloqueadoPorTiempo} required />
-            </div>
+        {/if}
+
+        <!-- Grupo: Motivo del cambio -->
+        <div class="admin-form__group">
+          <h3 class="admin-form__group-title">Motivo del Cambio *</h3>
+          <div class="admin-form__field admin-form__field--full">
+            <label for="ev-motivo" class="admin-form__label">Motivo (se enviará a todos los pasajeros)</label>
+            <textarea id="ev-motivo" class="admin-form__input" rows="3"
+              bind:value={form.motivo}
+              disabled={bloqueadoPorTiempo}
+              placeholder="Ej: Cambio de aeronave por mantenimiento programado..."
+              required></textarea>
+            <small class="img-hint">Este mensaje se incluirá en el correo de aviso enviado a todos los pasajeros afectados.</small>
           </div>
         </div>
 

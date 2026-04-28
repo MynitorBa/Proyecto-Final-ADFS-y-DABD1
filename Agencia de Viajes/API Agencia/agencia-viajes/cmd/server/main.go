@@ -157,6 +157,7 @@ func main() {
 		api.GET("/comentarios/hotel/:proveedorId/:hotelId", comentarioController.ObtenerComentariosHotel)
 		api.GET("/stats", statsController.ObtenerStats)
 		api.GET("/descubrir", statsController.Descubrir)
+		api.GET("/descubrir/disponibles", statsController.DescubrirDisponibles)
 		api.GET("/configuracion/descuento", configuracionController.ObtenerDescuento)
 
 		api.POST("/contacto", controllers.EnviarContacto)

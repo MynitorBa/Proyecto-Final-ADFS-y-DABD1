@@ -41,7 +41,8 @@ namespace Aerolinea.API.Repositories
                 INNER JOIN Ciudad     co ON co.ID = ao.CiudadID
                 INNER JOIN Ciudad     cd ON cd.ID = ad.CiudadID
                 INNER JOIN Pais       po ON po.ID = co.PaisID
-                INNER JOIN Pais       pd ON pd.ID = cd.PaisID";
+                INNER JOIN Pais       pd ON pd.ID = cd.PaisID
+                WHERE ISNULL(r.Activo, 1) = 1";
 
             using var command = new SqlCommand(query, connection);
             using var reader = await command.ExecuteReaderAsync();

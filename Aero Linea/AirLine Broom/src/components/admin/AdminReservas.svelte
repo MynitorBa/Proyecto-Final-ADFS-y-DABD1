@@ -146,6 +146,203 @@
     cancelarAbierto = false; cancelMotivo = ''; cancelError = '';
   }
 
+  // ── Cambiar vuelo (Admin) ────────────────────────────────────────────────────
+  let cambiarVueloOpen       = false;
+  let cambiarVueloCargando   = false;
+  let cambiarVueloElegibles  = [];
+  let cambiarVueloError      = '';
+  let cambiarVueloSeleccion  = null;
+  let cambiarVueloGuardando  = false;
+  let cambiarVueloReservacionId = null;
+
+  async function abrirCambiarVuelo(reservacionId) {
+    cambiarVueloReservacionId = reservacionId;
+    cambiarVueloElegibles = []; cambiarVueloError = ''; cambiarVueloSeleccion = null;
+    cambiarVueloOpen = true; cambiarVueloCargando = true;
+    try {
+      const r = await fetch(`${API}/api/admin/reservaciones/${reservacionId}/vuelos-elegibles`, { credentials: 'include' });
+      const data = await r.json();
+      if (r.ok) cambiarVueloElegibles = data;
+      else cambiarVueloError = data.message || 'Error al buscar vuelos disponibles.';
+    } catch { cambiarVueloError = 'Error de conexión.'; }
+    finally { cambiarVueloCargando = false; }
+  }
+
+  async function confirmarCambioVuelo() {
+    if (!cambiarVueloSeleccion) { cambiarVueloError = 'Selecciona un vuelo.'; return; }
+    cambiarVueloGuardando = true; cambiarVueloError = '';
+    try {
+      const r = await fetch(`${API}/api/admin/reservaciones/${cambiarVueloReservacionId}/cambiar-vuelo`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevoVueloId: cambiarVueloSeleccion })
+      });
+      const data = await r.json();
+      if (r.ok) {
+        mostrarToast('success', 'Vuelo cambiado correctamente.');
+        cambiarVueloOpen = false;
+        // Recargar lista de reservas del vuelo actual
+        if (vueloActual?.vueloId) {
+          const rv = await fetch(`${API}/api/admin/reservaciones/vuelo/${vueloActual.vueloId}`, { credentials: 'include' });
+          if (rv.ok) reservas = await rv.json();
+        }
+        // Si el detalle estaba abierto, recargarlo también
+        if (reservaDetalle?.reservacionId) await abrirDetalle({ reservacionId: reservaDetalle.reservacionId });
+      } else { cambiarVueloError = data.message || 'Error al cambiar el vuelo.'; }
+    } catch { cambiarVueloError = 'Error de conexión.'; }
+    finally { cambiarVueloGuardando = false; }
+  }
+
+  // ── Teléfono con máscara por país (misma lógica que MisReservas) ─────────
+  const knownDigits = {
+    '+1':10,'+7':10,'+20':10,'+27':9,'+30':10,
+    '+31':9,'+32':9,'+33':9,'+34':9,'+36':9,
+    '+39':10,'+40':9,'+41':9,'+43':10,'+44':10,
+    '+45':8,'+46':9,'+47':8,'+48':9,'+49':10,
+    '+51':9,'+52':10,'+53':8,'+54':10,'+55':11,
+    '+56':9,'+57':10,'+58':10,'+60':9,'+61':9,
+    '+62':9,'+63':10,'+64':9,'+65':8,'+66':9,
+    '+81':10,'+82':10,'+84':9,'+86':11,'+90':10,
+    '+91':10,'+92':10,'+93':9,'+94':9,'+95':8,
+    '+98':10,'+212':9,'+213':9,'+216':8,'+218':9,
+    '+220':7,'+221':9,'+222':8,'+223':8,'+224':9,
+    '+225':8,'+226':8,'+227':8,'+228':8,'+229':8,
+    '+230':8,'+231':8,'+232':8,'+233':9,'+234':10,
+    '+235':8,'+236':8,'+237':9,'+238':7,'+239':7,
+    '+240':9,'+241':8,'+242':9,'+243':9,'+244':9,
+    '+245':7,'+246':7,'+247':4,'+248':7,'+249':9,
+    '+250':9,'+251':9,'+252':8,'+253':8,'+254':9,
+    '+255':9,'+256':9,'+257':8,'+258':9,'+260':9,
+    '+261':9,'+262':9,'+263':9,'+264':9,'+265':9,
+    '+266':8,'+267':8,'+268':8,'+269':7,'+290':4,
+    '+291':7,'+297':7,'+298':6,'+299':6,'+350':8,
+    '+351':9,'+352':9,'+353':9,'+354':7,'+355':9,
+    '+356':8,'+357':8,'+358':9,'+359':9,'+370':8,
+    '+371':8,'+372':8,'+373':8,'+374':8,'+375':9,
+    '+376':6,'+377':8,'+378':10,'+380':9,'+381':9,
+    '+382':8,'+385':9,'+386':8,'+387':8,'+389':8,
+    '+420':9,'+421':9,'+423':7,'+500':5,'+501':7,
+    '+502':8,'+503':8,'+504':8,'+505':8,'+506':8,
+    '+507':8,'+508':6,'+509':8,'+590':9,'+591':8,
+    '+592':7,'+593':9,'+594':9,'+595':9,'+596':9,
+    '+597':7,'+598':8,'+599':7,'+670':8,'+672':6,
+    '+673':7,'+674':7,'+675':8,'+676':7,'+677':7,
+    '+678':7,'+679':7,'+680':7,'+681':6,'+682':5,
+    '+683':4,'+685':7,'+686':8,'+687':6,'+688':5,
+    '+689':8,'+690':4,'+691':7,'+692':7,'+850':10,
+    '+852':8,'+853':8,'+855':9,'+856':10,'+880':10,
+    '+886':9,'+960':7,'+961':8,'+962':9,'+963':9,
+    '+964':10,'+965':8,'+966':9,'+967':9,'+968':8,
+    '+970':9,'+971':9,'+972':9,'+973':8,'+974':8,
+    '+975':8,'+976':8,'+977':10,'+992':9,'+993':8,
+    '+994':9,'+995':9,'+996':9,'+998':9,
+  };
+
+  function formatLocalPhone(digits, total) {
+    if (total <= 7)   return digits.replace(/^(\d{3})(\d{0,4})/, '$1 $2').trim();
+    if (total === 8)  return digits.replace(/^(\d{4})(\d{0,4})/, '$1 $2').trim();
+    if (total === 9)  return digits.replace(/^(\d{3})(\d{0,3})(\d{0,3})/, '$1 $2 $3').trim();
+    if (total === 10) return digits.replace(/^(\d{3})(\d{0,3})(\d{0,4})/, '$1 $2 $3').trim();
+    return digits.replace(/^(\d{2})(\d{0,4})(\d{0,5})/, '$1 $2 $3').trim();
+  }
+
+  function getPhonePlaceholder(digits) {
+    return formatLocalPhone('5'.repeat(digits), digits);
+  }
+
+  // ── Editar pasajero (Admin) ───────────────────────────────────────────────
+  let editarPasajeroOpen        = false;
+  let editarPasajeroBoletoId    = null;
+  let editarPasajeroReservacionId = null;
+  let editarPasajeroEstado      = '';
+  let editarPasajeroForm        = { nombre: '', apellido: '', pasaporte: '', telefono: '' };
+  let editarPasajeroLoading     = false;
+  let editarPasajeroError       = '';
+  let editDialCode              = '';
+  let editPhoneDigitCount       = 8;
+  let editPhoneError            = '';
+
+  function abrirEditarPasajero(boleto) {
+    editarPasajeroBoletoId      = boleto.boletoId;
+    editarPasajeroReservacionId = reservaDetalle?.reservacionId ?? null;
+    editarPasajeroEstado        = reservaDetalle?.estadoReserva ?? '';
+
+    // Extraer prefijo y dígitos del teléfono guardado (formato: "+502 55555555")
+    const storedPhone = boleto.pasajero?.telefono ?? '';
+    const parts = storedPhone.split(' ');
+    const hasPrefix = parts.length >= 2 && parts[0].startsWith('+');
+    if (hasPrefix) {
+      editDialCode = parts[0];
+      editPhoneDigitCount = knownDigits[editDialCode] ?? 8;
+    } else {
+      editDialCode = '';
+      editPhoneDigitCount = 8;
+    }
+    const rawDigits = hasPrefix
+      ? parts.slice(1).join('').replace(/\D/g, '').slice(0, editPhoneDigitCount)
+      : storedPhone.replace(/\D/g, '').slice(0, editPhoneDigitCount);
+
+    editarPasajeroForm = {
+      nombre:    boleto.pasajero?.nombre    ?? '',
+      apellido:  boleto.pasajero?.apellido  ?? '',
+      pasaporte: boleto.pasajero?.pasaporte ?? '',
+      telefono:  editDialCode ? formatLocalPhone(rawDigits, editPhoneDigitCount) : storedPhone
+    };
+    editPhoneError = '';
+    editarPasajeroError = '';
+    editarPasajeroOpen = true;
+  }
+
+  function onEditPhoneInput(e) {
+    const raw = e.target.value.replace(/\D/g, '');
+    const capped = raw.slice(0, editPhoneDigitCount);
+    editarPasajeroForm.telefono = formatLocalPhone(capped, editPhoneDigitCount);
+    editPhoneError = '';
+  }
+
+  async function confirmarEditarPasajero() {
+    if (!editarPasajeroForm.nombre.trim())    { editarPasajeroError = 'El nombre es obligatorio.';    return; }
+    if (!editarPasajeroForm.apellido.trim())  { editarPasajeroError = 'El apellido es obligatorio.';  return; }
+    if (!editarPasajeroForm.pasaporte.trim()) { editarPasajeroError = 'El pasaporte es obligatorio.'; return; }
+    if (!/^[a-zA-Z0-9]+$/.test(editarPasajeroForm.pasaporte)) {
+      editarPasajeroError = 'El pasaporte solo puede contener letras y números.'; return;
+    }
+    if (!editarPasajeroForm.telefono.trim())  { editarPasajeroError = 'El teléfono es obligatorio.';  return; }
+    if (editDialCode) {
+      const digitCount = editarPasajeroForm.telefono.replace(/\D/g, '').length;
+      if (digitCount !== editPhoneDigitCount) {
+        editPhoneError = `Se requieren ${editPhoneDigitCount} dígitos (ingresaste ${digitCount}).`;
+        return;
+      }
+    }
+
+    // Recombinar prefijo + dígitos locales (sin espacios internos) para guardar
+    const localDigits = editarPasajeroForm.telefono.replace(/\s/g, '');
+    const telefonoCompleto = editDialCode ? `${editDialCode} ${localDigits}` : editarPasajeroForm.telefono;
+
+    editarPasajeroLoading = true; editarPasajeroError = ''; editPhoneError = '';
+    try {
+      const r = await fetch(`${API}/api/admin/reservaciones/boleto/${editarPasajeroBoletoId}/pasajero`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...editarPasajeroForm, telefono: telefonoCompleto })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) {
+        mostrarToast('success', 'Datos del pasajero actualizados correctamente.');
+        editarPasajeroOpen = false;
+        // Recargar detalle para reflejar el cambio
+        if (reservaDetalle?.reservacionId) {
+          const rd = await fetch(`${API}/api/admin/reservaciones/${reservaDetalle.reservacionId}`, { credentials: 'include' });
+          if (rd.ok) reservaDetalle = await rd.json();
+        }
+      } else {
+        editarPasajeroError = data.message || 'No se pudo actualizar.';
+      }
+    } catch { editarPasajeroError = 'Error de conexion.'; }
+    finally { editarPasajeroLoading = false; }
+  }
+
   async function confirmarCancelar() {
     if (!cancelMotivo.trim()) { cancelError = 'Escribe un motivo de cancelacion.'; return; }
     const ok = await mostrarConfirm(
@@ -265,12 +462,18 @@
                 <div class="ar-boleto__cell ar-boleto__cell--wide"><span class="ar-boleto__label">No. Boleto</span><span class="ar-boleto__val ar-boleto__val--mono">{boleto.noBoleto}</span></div>
               </div>
               {#if boleto.pasajero}
-                <div class="ar-boleto__pasajero">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" width="14" height="14"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  <div>
-                    <span class="ar-boleto__pasajero-name">{boleto.pasajero.nombre} {boleto.pasajero.apellido}</span>
-                    <span class="ar-boleto__pasajero-info">Pasaporte: {boleto.pasajero.pasaporte} · Tel: {boleto.pasajero.telefono} · {boleto.pasajero.ciudad}</span>
+                <div class="ar-boleto__pasajero" style="justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem">
+                  <div style="display:flex;align-items:flex-start;gap:.5rem">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" width="14" height="14" style="margin-top:2px;flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <div>
+                      <span class="ar-boleto__pasajero-name">{boleto.pasajero.nombre} {boleto.pasajero.apellido}</span>
+                      <span class="ar-boleto__pasajero-info">Pasaporte: {boleto.pasajero.pasaporte} · Tel: {boleto.pasajero.telefono} · {boleto.pasajero.ciudad}</span>
+                    </div>
                   </div>
+                  <button class="ar-btn ar-btn--ghost" style="font-size:.75rem;padding:.25rem .6rem"
+                    on:click|stopPropagation={() => abrirEditarPasajero(boleto)} type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px;margin-right:3px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar
+                  </button>
                 </div>
               {/if}
             </div>
@@ -278,8 +481,14 @@
         </div>
 
         {#if reservaDetalle.estadoReserva?.toLowerCase()==='confirmada' || reservaDetalle.estadoReserva?.toLowerCase()==='pendiente'}
+          <!-- Cambiar vuelo (Admin) -->
           {#if !cancelarAbierto}
-            <div class="ar-cancel-trigger">
+            <div class="ar-cancel-trigger" style="display:flex;gap:.75rem;flex-wrap:wrap">
+              <button class="ar-btn" style="background:#2563eb;color:#fff;display:inline-flex;align-items:center;gap:.4rem"
+                on:click={() => abrirCambiarVuelo(reservaDetalle.reservacionId)} type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Cambiar vuelo
+              </button>
               <button class="ar-btn ar-btn--danger-outline" on:click={() => cancelarAbierto=true} type="button">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                 Cancelar reservacion (Admin)
@@ -316,6 +525,133 @@
           <button class="ar-btn ar-btn--ghost" on:click={cerrarDetalle} type="button">Cerrar</button>
         </div>
       {/if}
+    </div>
+  </div>
+{/if}
+
+<!-- ═══════════════ MODAL EDITAR PASAJERO ═══════════════ -->
+{#if editarPasajeroOpen}
+  <div class="ar-overlay" on:click={() => editarPasajeroOpen = false} role="dialog" aria-modal="true">
+    <div class="ar-modal" on:click|stopPropagation style="max-width:420px">
+      <button class="ar-modal__close" on:click={() => editarPasajeroOpen = false} aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <div class="ar-modal__head">
+        <div class="ar-modal__head-left">
+          <span class="ar-modal__reserva-num">Editar Pasajero</span>
+        </div>
+      </div>
+      <div style="padding:1rem 1.5rem 1.5rem">
+        <div style="display:flex;flex-direction:column;gap:.75rem">
+          <div>
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Nombre</label>
+            <input class="ar-input" type="text" bind:value={editarPasajeroForm.nombre} maxlength="60" placeholder="Nombre"/>
+          </div>
+          <div>
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Apellido</label>
+            <input class="ar-input" type="text" bind:value={editarPasajeroForm.apellido} maxlength="60" placeholder="Apellido"/>
+          </div>
+          <div>
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Pasaporte (solo letras y números)</label>
+            <input class="ar-input" type="text" bind:value={editarPasajeroForm.pasaporte} maxlength="20" placeholder="Ej: A1234567"
+              on:input={(e) => { editarPasajeroForm.pasaporte = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase(); }}/>
+          </div>
+          <div>
+            <label style="font-size:.8rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Teléfono</label>
+            {#if editDialCode}
+              <div style="display:flex;gap:.5rem;align-items:center">
+                <span style="background:#1f2937;color:#fff;padding:.35rem .6rem;border-radius:.375rem;font-size:.75rem;font-weight:600;white-space:nowrap">{editDialCode}</span>
+                <input
+                  class="ar-input"
+                  type="text"
+                  bind:value={editarPasajeroForm.telefono}
+                  on:input={onEditPhoneInput}
+                  maxlength={editPhoneDigitCount <= 7 ? 8 : editPhoneDigitCount === 8 ? 9 : editPhoneDigitCount === 9 ? 11 : editPhoneDigitCount === 10 ? 12 : 13}
+                  placeholder={getPhonePlaceholder(editPhoneDigitCount)}
+                />
+              </div>
+            {:else}
+              <input class="ar-input" type="text" bind:value={editarPasajeroForm.telefono} on:input={onEditPhoneInput} maxlength="20" placeholder="Ej: +502 5555 5555"/>
+            {/if}
+            {#if editPhoneError}
+              <p class="ar-form-error" style="margin-top:.25rem">{editPhoneError}</p>
+            {/if}
+          </div>
+          {#if editarPasajeroError}
+            <p class="ar-form-error">{editarPasajeroError}</p>
+          {/if}
+        </div>
+        <div class="ar-cancel-panel__actions" style="margin-top:1.25rem">
+          <button class="ar-btn ar-btn--ghost" on:click={() => editarPasajeroOpen = false} disabled={editarPasajeroLoading} type="button">Cancelar</button>
+          <button class="ar-btn" style="background:var(--primary-color);color:#fff" on:click={confirmarEditarPasajero} disabled={editarPasajeroLoading} type="button">
+            {#if editarPasajeroLoading}<span class="ar-spinner ar-spinner--sm"></span> Guardando...{:else}Guardar cambios{/if}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal de cambiar vuelo (Admin) -->
+{#if cambiarVueloOpen}
+  <div class="ar-overlay" on:click={() => cambiarVueloOpen = false} role="dialog" aria-modal="true">
+    <div class="ar-modal" on:click|stopPropagation style="max-width:620px;max-height:88vh;overflow-y:auto">
+      <div class="ar-modal__head">
+        <div class="ar-modal__head-left">
+          <span class="ar-modal__reserva-num">Cambiar a otro vuelo</span>
+        </div>
+        <button class="ar-modal__close" on:click={() => cambiarVueloOpen = false}>×</button>
+      </div>
+      <div style="padding:1rem 1.5rem 0">
+        <p style="margin:0 0 1rem;font-size:.85rem;color:#6b7280">Vuelos disponibles con mismo origen (país), destino, precio y clase:</p>
+      </div>
+
+      {#if cambiarVueloCargando}
+        <div style="padding:2rem;text-align:center;color:#8B6B4A">Buscando vuelos disponibles...</div>
+      {:else if cambiarVueloError && cambiarVueloElegibles.length === 0}
+        <div style="padding:1rem 1.5rem">
+          <p style="color:#ef4444;font-size:.85rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.75rem">{cambiarVueloError}</p>
+        </div>
+      {:else if cambiarVueloElegibles.length === 0}
+        <div style="padding:1.5rem;text-align:center;color:#6b7280;font-size:.9rem">
+          No hay vuelos elegibles para cambio (mismo origen, destino y precio).
+        </div>
+      {:else}
+        <div style="padding:0 1.5rem;display:flex;flex-direction:column;gap:.6rem">
+          {#each cambiarVueloElegibles as v}
+            <label style="display:flex;align-items:flex-start;gap:.75rem;padding:.85rem 1rem;border:2px solid {cambiarVueloSeleccion === v.vueloId ? '#2563eb' : '#e5e7eb'};border-radius:10px;cursor:pointer;background:{cambiarVueloSeleccion === v.vueloId ? '#eff6ff' : '#fff'};transition:border-color .15s">
+              <input type="radio" name="ar-vuelo" value={v.vueloId} bind:group={cambiarVueloSeleccion} style="margin-top:.25rem;accent-color:#2563eb;flex-shrink:0" />
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+                  <span style="font-weight:700;font-size:.93rem;color:#1C1A18">{v.numeroVuelo}</span>
+                  <span style="font-size:.78rem;color:#6b7280;background:#f3f4f6;padding:.1rem .45rem;border-radius:999px">{v.origenCodigo} → {v.destinoCodigo}</span>
+                </div>
+                <div style="font-size:.8rem;color:#374151;margin-top:.2rem">{v.fechaSalida} · {v.horaSalida} → {v.horaLlegada}</div>
+                <div style="font-size:.78rem;color:#6b7280;margin-top:.2rem">{v.origenCiudad} ({v.origenPais}) → {v.destinoCiudad}</div>
+                <div style="display:flex;gap:.75rem;margin-top:.25rem;font-size:.8rem">
+                  <span style="color:#059669;font-weight:600">Q{v.precioTotal?.toFixed(2)} total</span>
+                  <span style="color:#6b7280">{v.asientosDisponibles} asiento(s) libre(s)</span>
+                </div>
+              </div>
+            </label>
+          {/each}
+        </div>
+      {/if}
+
+      {#if cambiarVueloError && cambiarVueloElegibles.length > 0}
+        <p style="margin:.5rem 1.5rem 0;color:#ef4444;font-size:.82rem">{cambiarVueloError}</p>
+      {/if}
+
+      <div class="ar-cancel-panel__actions" style="margin:1rem 1.5rem 1.5rem">
+        <button class="ar-btn ar-btn--ghost" on:click={() => cambiarVueloOpen = false} disabled={cambiarVueloGuardando} type="button">Cancelar</button>
+        <button class="ar-btn" style="background:#2563eb;color:#fff;opacity:{cambiarVueloSeleccion && !cambiarVueloGuardando ? 1 : 0.5}"
+          disabled={!cambiarVueloSeleccion || cambiarVueloGuardando}
+          on:click={confirmarCambioVuelo} type="button">
+          {cambiarVueloGuardando ? 'Procesando...' : 'Confirmar cambio'}
+        </button>
+      </div>
     </div>
   </div>
 {/if}

@@ -1,4 +1,5 @@
-﻿using Aerolinea.API.Services;
+﻿using Aerolinea.API.DTOs;
+using Aerolinea.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -98,6 +99,49 @@ namespace Aerolinea.API.Controllers
         public class CancelarRequestDto
         {
             public string Motivo { get; set; } = "";
+        }
+
+        // GET /api/admin/reservaciones/{id}/vuelos-elegibles
+        /// <summary>Retorna vuelos elegibles para cambio de la reservacion (admin).</summary>
+        [HttpGet("{id:int}/vuelos-elegibles")]
+        public async Task<IActionResult> ObtenerVuelosElegibles(int id)
+        {
+            try { return Ok(await _svc.ObtenerVuelosElegiblesAsync(id)); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
+        // POST /api/admin/reservaciones/{id}/cambiar-vuelo
+        /// <summary>Cambia el vuelo de una reservacion (admin). Body: { nuevoVueloId }.</summary>
+        [HttpPost("{id:int}/cambiar-vuelo")]
+        public async Task<IActionResult> CambiarVuelo(int id, [FromBody] CambiarVueloRequestDTO body)
+        {
+            if (body == null || body.NuevoVueloId <= 0)
+                return BadRequest(new { message = "El ID del nuevo vuelo es obligatorio." });
+            try
+            {
+                await _svc.CambiarVueloAsync(id, body.NuevoVueloId);
+                return Ok(new { message = "Vuelo cambiado exitosamente." });
+            }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
+        public class CambiarVueloRequestDTO { public int NuevoVueloId { get; set; } }
+
+        // PATCH /api/admin/reservaciones/boleto/{boletoId}/pasajero
+        /// <summary>
+        /// Edita los datos del pasajero (Nombre, Apellido, Pasaporte, Telefono) de cualquier boleto.
+        /// Solo disponible para administradores; no verifica pertenencia al usuario.
+        /// </summary>
+        [HttpPatch("boleto/{boletoId:int}/pasajero")]
+        public async Task<IActionResult> EditarDatosPasajero(int boletoId, [FromBody] EditarDatosPasajeroDTO dto)
+        {
+            try
+            {
+                await _svc.EditarDatosPasajeroAsync(boletoId, dto);
+                return Ok(new { message = "Datos del pasajero actualizados correctamente." });
+            }
+            catch (ArgumentException ex)   { return BadRequest(new { message = ex.Message }); }
+            catch (Exception)              { return StatusCode(500, new { message = "Error al actualizar datos del pasajero." }); }
         }
     }
 }

@@ -200,22 +200,28 @@ namespace Aerolinea.API.Services
         }
 
         /// <summary>
-        /// Edita un vuelo existente. Solo permitido con mas de 48 horas de anticipacion.
+        /// Edita un vuelo existente. Solo permitido con mas de 60 dias de anticipacion.
         /// Recalcula la hora de llegada, valida tripulacion y capacidad del avion.
+        /// No permite modificar el precio ni el codigo del vuelo.
+        /// Envia correo de aviso a todos los pasajeros afectados con el motivo del cambio.
         /// </summary>
         public async Task<int> EditarVuelo(int vueloId, EditarVueloDTO dto)
         {
+            // Validar motivo obligatorio
+            if (string.IsNullOrWhiteSpace(dto.Motivo))
+                throw new ArgumentException("El motivo del cambio es obligatorio.");
+
             // Obtener vuelo actual
             var vuelo = await _adminVueloRepository.ObtenerVueloPorId(vueloId);
             if (vuelo == null)
                 throw new ArgumentException("Vuelo no encontrado");
 
-            // Validar restricción de 48h
+            // Validar restricción de 60 días
             var fechaSalidaLocal = vuelo.Fecha.Date + vuelo.HoraSalida;
-            var horasRestantes = (fechaSalidaLocal - DateTime.Now).TotalHours;
-            if (horasRestantes < 48)
+            var diasRestantes = (fechaSalidaLocal - DateTime.Now).TotalDays;
+            if (diasRestantes < 60)
                 throw new InvalidOperationException(
-                    $"No se puede editar: el vuelo sale en {horasRestantes:F0}h. Mínimo 48h de anticipación.");
+                    $"No se puede editar: el vuelo sale en {diasRestantes:F0} días. Se requieren mínimo 60 días de anticipación.");
 
             // Validar tripulación
             if (dto.TripulantesIds.Count != 5)
@@ -231,14 +237,19 @@ namespace Aerolinea.API.Services
             if (copilotos < 1)  throw new ArgumentException("Debe asignar al menos 1 Copiloto");
             if (auxiliares < 3) throw new ArgumentException("Debe asignar al menos 3 Auxiliares de vuelo");
 
-            // Validar capacidad del avión
+            // Validar que el nuevo avión tenga capacidad suficiente para boletos ya vendidos
             var avion = await _adminVueloRepository.ObtenerAvionPorId(dto.AvionId);
             if (avion == null)
                 throw new ArgumentException("Avión no encontrado");
 
-            if (dto.BoletosTurista + dto.BoletosEjecutivo > avion.CapacidadPasajeros)
+            var boletosVendidos = await _adminVueloRepository.ObtenerBoletosVendidos(vueloId);
+            if (avion.CapacidadPasajeros < boletosVendidos)
                 throw new ArgumentException(
-                    $"Los boletos ({dto.BoletosTurista + dto.BoletosEjecutivo}) superan la capacidad del avión ({avion.CapacidadPasajeros})");
+                    $"El avión '{avion.Marca} {avion.Modelo}' tiene capacidad para {avion.CapacidadPasajeros} pasajeros, " +
+                    $"pero ya hay {boletosVendidos} boleto(s) vendido(s) en este vuelo.");
+
+            // Obtener pasajeros afectados ANTES de actualizar (mientras las reservaciones siguen activas)
+            var afectados = await _adminVueloRepository.ObtenerAfectadosPorVuelo(vueloId);
 
             // Recalcular hora de llegada usando la ruta del vuelo
             var (duracion, tzOrigen, tzDestino) = await _adminVueloRepository.ObtenerInfoRutaPorId(vuelo.RutaId);
@@ -247,6 +258,48 @@ namespace Aerolinea.API.Services
 
             // Actualizar en BD
             await _adminVueloRepository.ActualizarVuelo(vueloId, dto, horaLlegada, fechaLlegada);
+
+            // Notificar a cada pasajero con correo de disculpa (best-effort)
+            int enviados = 0;
+            int fallidos = 0;
+
+            foreach (var afectado in afectados)
+            {
+                if (string.IsNullOrEmpty(afectado.EmailUsuario))
+                    continue;
+
+                try
+                {
+                    string html = EmailTemplates.CorreoCambioVuelo(
+                        afectado.NombreUsuario,
+                        afectado.NoReservacion,
+                        afectado.NumeroVuelo,
+                        afectado.OrigenCodigo,
+                        afectado.DestinoCodigo,
+                        afectado.FechaVuelo,
+                        dto.Fecha.ToString("yyyy-MM-dd"),
+                        dto.HoraSalida,
+                        dto.Motivo);
+
+                    await _emailHelper.Enviar(
+                        afectado.EmailUsuario,
+                        $"Broom AirLine - Cambio en tu vuelo {afectado.NumeroVuelo}",
+                        html);
+
+                    enviados++;
+                }
+                catch (Exception ex)
+                {
+                    fallidos++;
+                    _logger.LogError(ex,
+                        "Error al notificar cambio de vuelo {VueloId} al usuario {Email} (reservacion {NoReservacion})",
+                        vueloId, afectado.EmailUsuario, afectado.NoReservacion);
+                }
+            }
+
+            _logger.LogInformation(
+                "Notificaciones de cambio de vuelo {VueloId}: {Enviados} enviadas, {Fallidos} fallidas",
+                vueloId, enviados, fallidos);
 
             return vueloId;
         }
@@ -312,5 +365,13 @@ namespace Aerolinea.API.Services
             return await _adminVueloRepository.ObtenerSiguienteNumeroVuelo(prefijo);
         }
 
+        // ─────────────────────────────────────────────────────────────────
+        //  TRIPULANTES DE UN VUELO
+        // ─────────────────────────────────────────────────────────────────
+        /// <summary>
+        /// Retorna la lista de tripulantes asignados a un vuelo concreto.
+        /// </summary>
+        public async Task<List<TripulanteDTO>> ObtenerTripulantesDelVuelo(int vueloId)
+            => await _adminVueloRepository.ObtenerTripulantesDelVuelo(vueloId);
     }
 }

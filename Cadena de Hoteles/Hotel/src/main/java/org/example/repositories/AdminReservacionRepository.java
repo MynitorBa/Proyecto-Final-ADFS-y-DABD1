@@ -185,4 +185,49 @@ public class AdminReservacionRepository {
                 reservacionId
         );
     }
+
+    /**
+     * Retorna los detalles (habitaciones) de una reservacion con su informacion completa.
+     * @param reservacionId ID de la reservacion.
+     * @return lista de mapas con {detalleId, habitacion, tipo, checkIn, checkOut, total}.
+     */
+    public List<Map<String, Object>> obtenerDetalles(int reservacionId) {
+        String sql =
+                "SELECT dr.ID AS DetalleID, h.NUMEROHABITACION AS Habitacion, " +
+                "       th.NOMBRE AS Tipo, " +
+                "       dr.FechaCheckIn, dr.FechaCheckOut, dr.Total " +
+                "FROM DetallesReservacion dr " +
+                "JOIN Habitacion h ON dr.HabitacionID = h.ID " +
+                "JOIN TipoHabitacion th ON h.TIPOHABITACIONID = th.ID " +
+                "WHERE dr.ReservacionID = ? " +
+                "ORDER BY dr.ID";
+
+        return DatabaseManager.executeQuery(sql, rs -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("detalleId",  rs.getInt("DetalleID"));
+            row.put("habitacion", rs.getString("Habitacion"));
+            row.put("tipo",       rs.getString("Tipo"));
+            row.put("checkIn",    rs.getDate("FechaCheckIn")  != null ? rs.getDate("FechaCheckIn").toString()  : null);
+            row.put("checkOut",   rs.getDate("FechaCheckOut") != null ? rs.getDate("FechaCheckOut").toString() : null);
+            row.put("total",      rs.getDouble("Total"));
+            return row;
+        }, reservacionId);
+    }
+
+    /**
+     * Actualiza las fechas de un detalle de reservacion especifico.
+     * @param detalleId    ID del detalle a actualizar.
+     * @param fechaCheckIn nueva fecha de check-in.
+     * @param fechaCheckOut nueva fecha de check-out.
+     */
+    public void actualizarFechaDetalle(int detalleId,
+                                        java.sql.Date fechaCheckIn,
+                                        java.sql.Date fechaCheckOut) {
+        DatabaseManager.executeUpdate(
+                "UPDATE DetallesReservacion " +
+                "SET FechaCheckIn = ?, FechaCheckOut = ? " +
+                "WHERE ID = ?",
+                fechaCheckIn, fechaCheckOut, detalleId
+        );
+    }
 }

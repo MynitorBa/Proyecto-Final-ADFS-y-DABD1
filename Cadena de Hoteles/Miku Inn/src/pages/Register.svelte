@@ -967,14 +967,6 @@
             {/if}
           </button>
 
-          <!-- Enlace al login para usuarios con cuenta existente -->
-          <div class="register__footer-text">
-            ¿Ya tienes una cuenta?
-            <button type="button" class="register__link-btn" on:click={() => navigateTo('login')}>
-              Inicia sesión aquí
-            </button>
-          </div>
-
         </form>
       {/if}
     </div>

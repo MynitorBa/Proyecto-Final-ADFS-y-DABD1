@@ -34,5 +34,9 @@ namespace Aerolinea.API.Models.DTOs
 
         // Boletos realmente vendidos (EstadoBoletoID IN (2,3))
         public int BoletosVendidosReal { get; set; }
+
+        // IDs de aeropuerto para calcular hora de llegada en edición
+        public int AeropuertoOrigenId { get; set; }
+        public int AeropuertoDestinoId { get; set; }
     }
 }

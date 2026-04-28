@@ -26,18 +26,16 @@
   /** Lista de tripulantes registrados actualmente en el sistema. @type {any[]} */
   let tripulantes        = [];
 
-  /** Controla si se muestran tambien los tripulantes inactivos en la tabla. @type {boolean} */
-  let mostrarInactivos = false;
+  /** Lista de tripulantes activos (activo !== false). @type {any[]} */
+  $: tripulantesActivos   = tripulantes.filter(t => t.activo !== false);
 
-  /** Lista filtrada de tripulantes segun el estado mostrarInactivos. @type {any[]} */
-  $: tripulantesFiltrados = mostrarInactivos
-    ? tripulantes.filter(t => t.activo === false)
-    : tripulantes.filter(t => t.activo !== false);
+  /** Lista de tripulantes inactivos (activo === false). @type {any[]} */
+  $: tripulantesInactivos = tripulantes.filter(t => t.activo === false);
 
   /** Conteo de tripulantes activos. @type {number} */
-  $: totalActivos   = tripulantes.filter(t => t.activo !== false).length;
+  $: totalActivos   = tripulantesActivos.length;
   /** Conteo de tripulantes inactivos. @type {number} */
-  $: totalInactivos = tripulantes.filter(t => t.activo === false).length;
+  $: totalInactivos = tripulantesInactivos.length;
 
   /** Roles de tripulacion disponibles obtenidos del backend, mapeados a { id, nombre }. @type {{ id: number, nombre: string }[]} */
   let rolesTripulacion   = [];
@@ -473,87 +471,124 @@
     </button>
   </div>
 
-  <!-- Barra de filtro para alternar entre activos e inactivos -->
-  <div class="admin-filter-bar">
-    <div class="filtro-tabs">
-      <button class="filtro-tab" class:filtro-tab--active={!mostrarInactivos}
-        on:click={() => { mostrarInactivos = false; }}>
-        Activos <span class="filtro-tab__count">{totalActivos}</span>
-      </button>
-      <button class="filtro-tab" class:filtro-tab--active={mostrarInactivos}
-        on:click={() => { mostrarInactivos = true; }}>
-        Inactivos <span class="filtro-tab__count">{totalInactivos}</span>
-      </button>
-    </div>
+  <!-- Resumen de conteos -->
+  <div style="display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap;">
+    <span style="background:#d1fae5;color:#065f46;border-radius:999px;padding:.3rem .85rem;font-size:.82rem;font-weight:700;">
+      Activos: {totalActivos}
+    </span>
+    <span style="background:#fee2e2;color:#991b1b;border-radius:999px;padding:.3rem .85rem;font-size:.82rem;font-weight:700;">
+      Inactivos: {totalInactivos}
+    </span>
   </div>
 
-  <!-- Tabla de tripulantes con foto, nombre, apellido y rol -->
   {#if loadingTripulantes}
     <p class="loading-text">Cargando tripulantes...</p>
+  {:else}
 
-  {:else if tripulantesFiltrados.length === 0}
-    <div class="placeholder-card">
-      <p class="placeholder-card__text">No hay tripulantes registrados.</p>
+    <!-- ── SECCIÓN ACTIVOS ──────────────────────────────────── -->
+    <div style="margin-bottom:2rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:#065f46;margin:0 0 .75rem;display:flex;align-items:center;gap:.5rem;">
+        Activos
+        <span style="background:#d1fae5;color:#065f46;border-radius:999px;padding:.15rem .6rem;font-size:.78rem;">{totalActivos}</span>
+      </h3>
+      {#if tripulantesActivos.length === 0}
+        <div class="placeholder-card"><p class="placeholder-card__text">No hay tripulantes activos.</p></div>
+      {:else}
+        <table class="table">
+          <thead class="table__head">
+            <tr>
+              <th class="table__header">Foto</th>
+              <th class="table__header">ID</th>
+              <th class="table__header">Nombre</th>
+              <th class="table__header">Apellido</th>
+              <th class="table__header">Rol</th>
+              <th class="table__header">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="table__body">
+            {#each tripulantesActivos as t}
+              <tr class="table__row">
+                <td class="table__cell" data-label="Foto">
+                  {#if t.imagenBase64}
+                    <img src={t.imagenBase64} alt={t.nombreCompleto} class="entity-thumb entity-thumb--circle" />
+                  {:else}
+                    <span style="color:#9ca3af">—</span>
+                  {/if}
+                </td>
+                <td class="table__cell" data-label="ID">{t.id}</td>
+                <td class="table__cell" data-label="Nombre">{t.nombre}</td>
+                <td class="table__cell" data-label="Apellido">{t.apellido}</td>
+                <td class="table__cell" data-label="Rol">
+                  <span class="rol-badge--tripulacion">{t.nombreRol}</span>
+                </td>
+                <td class="table__cell" data-label="Acciones">
+                  <div class="table__actions">
+                    <button class="table__action-btn table__action-btn--view" on:click={() => abrirEditar(t)}>Editar</button>
+                    {#if t.imagenBase64}
+                      <button class="table__action-btn table__action-btn--cancel" on:click={() => handleEliminarFoto(t.id)}>Quitar foto</button>
+                    {/if}
+                    <button class="btn-estado btn-desactivar" on:click={() => intentarDesactivarTripulante(t)}>Desactivar</button>
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
     </div>
 
-  {:else}
-    <table class="table">
-      <thead class="table__head">
-        <tr>
-          <th class="table__header">Foto</th>
-          <th class="table__header">ID</th>
-          <th class="table__header">Nombre</th>
-          <th class="table__header">Apellido</th>
-          <th class="table__header">Rol</th>
-          <th class="table__header">Estado</th>
-          <th class="table__header">Acciones</th>
-        </tr>
-      </thead>
-      <tbody class="table__body">
-        {#each tripulantesFiltrados as t}
-          <tr class="table__row">
-            <td class="table__cell" data-label="Foto">
-              {#if t.imagenBase64}
-                <img src={t.imagenBase64} alt={t.nombreCompleto}
-                  class="entity-thumb entity-thumb--circle" />
-              {:else}
-                <span style="color:#9ca3af">—</span>
-              {/if}
-            </td>
-            <td class="table__cell" data-label="ID">{t.id}</td>
-            <td class="table__cell" data-label="Nombre">{t.nombre}</td>
-            <td class="table__cell" data-label="Apellido">{t.apellido}</td>
-            <td class="table__cell" data-label="Rol">
-              <span class="rol-badge--tripulacion">{t.nombreRol}</span>
-            </td>
-            <td class="table__cell" data-label="Estado">
-              {#if t.activo === false}
-                <span class="badge-inactivo">Inactivo</span>
-              {:else}
-                <span style="color:#198754;font-weight:600;font-size:0.8rem;">Activo</span>
-              {/if}
-            </td>
-            <td class="table__cell" data-label="Acciones">
-              <div class="table__actions">
-                <button class="table__action-btn table__action-btn--view"
-                  on:click={() => abrirEditar(t)}>Editar</button>
-                {#if t.imagenBase64}
-                  <button class="table__action-btn table__action-btn--cancel"
-                    on:click={() => handleEliminarFoto(t.id)}>Quitar foto</button>
-                {/if}
-                <button
-                  class="btn-estado"
-                  class:btn-desactivar={t.activo !== false}
-                  class:btn-activar={t.activo === false}
-                  on:click={() => t.activo === false ? reactivarTripulante(t.id) : intentarDesactivarTripulante(t)}>
-                  {t.activo === false ? 'Reactivar' : 'Desactivar'}
-                </button>
-              </div>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+    <!-- ── SECCIÓN INACTIVOS ──────────────────────────────────── -->
+    <div>
+      <h3 style="font-size:1rem;font-weight:700;color:#991b1b;margin:0 0 .75rem;display:flex;align-items:center;gap:.5rem;">
+        Inactivos
+        <span style="background:#fee2e2;color:#991b1b;border-radius:999px;padding:.15rem .6rem;font-size:.78rem;">{totalInactivos}</span>
+      </h3>
+      {#if tripulantesInactivos.length === 0}
+        <div class="placeholder-card"><p class="placeholder-card__text">No hay tripulantes inactivos.</p></div>
+      {:else}
+        <table class="table">
+          <thead class="table__head">
+            <tr>
+              <th class="table__header">Foto</th>
+              <th class="table__header">ID</th>
+              <th class="table__header">Nombre</th>
+              <th class="table__header">Apellido</th>
+              <th class="table__header">Rol</th>
+              <th class="table__header">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="table__body">
+            {#each tripulantesInactivos as t}
+              <tr class="table__row">
+                <td class="table__cell" data-label="Foto">
+                  {#if t.imagenBase64}
+                    <img src={t.imagenBase64} alt={t.nombreCompleto} class="entity-thumb entity-thumb--circle" />
+                  {:else}
+                    <span style="color:#9ca3af">—</span>
+                  {/if}
+                </td>
+                <td class="table__cell" data-label="ID">{t.id}</td>
+                <td class="table__cell" data-label="Nombre">{t.nombre}</td>
+                <td class="table__cell" data-label="Apellido">{t.apellido}</td>
+                <td class="table__cell" data-label="Rol">
+                  <span class="rol-badge--tripulacion">{t.nombreRol}</span>
+                </td>
+                <td class="table__cell" data-label="Acciones">
+                  <div class="table__actions">
+                    <button class="table__action-btn table__action-btn--view" on:click={() => abrirEditar(t)}>Editar</button>
+                    {#if t.imagenBase64}
+                      <button class="table__action-btn table__action-btn--cancel" on:click={() => handleEliminarFoto(t.id)}>Quitar foto</button>
+                    {/if}
+                    <button class="btn-estado btn-activar" on:click={() => reactivarTripulante(t.id)}>Reactivar</button>
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      {/if}
+    </div>
+
   {/if}
 </section>
 

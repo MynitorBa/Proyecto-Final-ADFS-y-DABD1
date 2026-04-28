@@ -49,6 +49,35 @@
   /** Mensaje de error que se muestra dentro del modal de cancelacion. @type {string|null} */
   let mensajeCancelar = null;
 
+  // ── Estado del modal de edición de fechas ─────────────────────────────────
+
+  /** Controla la visibilidad del modal de edición de fechas. @type {boolean} */
+  let showModalEditarReserva = false;
+
+  /** Reserva sobre la que se están editando las fechas. @type {Object|null} */
+  let reservaEditando = null;
+
+  /** Detalles de habitaciones de la reserva en edición (solo lectura, para mostrar la lista). @type {Array<Object>} */
+  let detallesEditar = [];
+
+  /** Indica si los detalles se están cargando desde el backend. @type {boolean} */
+  let cargandoDetalles = false;
+
+  /** Nueva fecha de check-in ÚNICA que se aplica a TODAS las habitaciones. @type {string} */
+  let editCheckIn = '';
+
+  /** Nueva fecha de check-out ÚNICA que se aplica a TODAS las habitaciones. @type {string} */
+  let editCheckOut = '';
+
+  /** Comentario/motivo del administrador para el correo de notificación. @type {string} */
+  let comentarioEdicion = '';
+
+  /** Indica si la petición de guardar edición está en curso. @type {boolean} */
+  let editando = false;
+
+  /** Mensaje de error o éxito dentro del modal de edición. @type {string|null} */
+  let mensajeEditar = null;
+
   // Conteos por estado calculados sobre la lista completa, sin aplicar filtros.
   $: conteoReservas = {
     confirmada: reservas.filter(r => r.estado === 'confirmada').length,
@@ -111,6 +140,93 @@
     motivoCancelacion = '';
     mensajeCancelar = null;
     showModalCancelarReserva = true;
+  }
+
+  /**
+   * Abre el modal de edición cargando los detalles de habitaciones de la reserva.
+   * @param {Object} r - Objeto de la reserva a editar.
+   */
+  async function abrirModalEditar(r) {
+    reservaEditando = r;
+    detallesEditar = [];
+    editCheckIn = '';
+    editCheckOut = '';
+    comentarioEdicion = '';
+    mensajeEditar = null;
+    cargandoDetalles = true;
+    showModalEditarReserva = true;
+    try {
+      const res = await fetch(`${API_BASE}/admin/reservaciones/${r.id}/detalles`, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      detallesEditar = await res.json();
+      // Inicializar con las fechas actuales de la primera habitación
+      if (detallesEditar.length > 0) {
+        editCheckIn  = detallesEditar[0].checkIn  || '';
+        editCheckOut = detallesEditar[0].checkOut || '';
+      }
+    } catch (e) {
+      mensajeEditar = 'No se pudieron cargar los detalles: ' + e.message;
+    } finally {
+      cargandoDetalles = false;
+    }
+  }
+
+  /**
+   * Cierra el modal de edición y limpia todo el estado relacionado.
+   */
+  function cerrarModalEditar() {
+    showModalEditarReserva = false;
+    reservaEditando = null;
+    detallesEditar = [];
+    editCheckIn = '';
+    editCheckOut = '';
+    comentarioEdicion = '';
+    mensajeEditar = null;
+    editando = false;
+  }
+
+  /**
+   * Envía los cambios de fechas al backend y recarga la lista si tiene éxito.
+   * @async
+   * @returns {Promise<void>}
+   */
+  async function guardarEdicion() {
+    if (!reservaEditando) return;
+
+    // Validar la fecha única global
+    if (!editCheckIn || !editCheckOut) {
+      mensajeEditar = 'Debes ingresar el check-in y el check-out.';
+      return;
+    }
+    if (editCheckOut <= editCheckIn) {
+      mensajeEditar = 'El check-out debe ser posterior al check-in.';
+      return;
+    }
+
+    editando = true;
+    mensajeEditar = null;
+    try {
+      // Aplicar la misma fecha a TODAS las habitaciones
+      const cambios = detallesEditar.map(d => ({
+        detalleId:    d.detalleId,
+        fechaCheckIn:  editCheckIn,
+        fechaCheckOut: editCheckOut
+      }));
+      const res = await fetch(`${API_BASE}/admin/reservaciones/${reservaEditando.id}/editar`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cambios, comentario: comentarioEdicion.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || `Error ${res.status}`);
+      await cargarReservas();
+      cerrarModalEditar();
+    } catch (e) {
+      mensajeEditar = e.message;
+    } finally {
+      editando = false;
+    }
   }
 
   /**
@@ -252,11 +368,16 @@
               <td style="font-size:.75rem; color:var(--adm-text-muted)">{r.fechaCreacion ? r.fechaCreacion.substring(0,16) : '—'}</td>
               <td><span class="adm__badge {badge(r.estado)}">{r.estado}</span></td>
               <td>
-                <!-- Solo se puede cancelar si la reserva esta confirmada o pendiente -->
+                <!-- Editar y cancelar solo si la reserva está confirmada o pendiente -->
                 {#if r.estado === 'confirmada' || r.estado === 'pendiente'}
-                  <button class="adm__icon-btn adm__icon-btn--delete" title="Cancelar reservación" on:click={() => abrirModalCancelar(r)}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                  </button>
+                  <div style="display:flex; gap:.35rem; align-items:center">
+                    <button class="adm__icon-btn adm__icon-btn--edit" title="Editar fechas" on:click={() => abrirModalEditar(r)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="adm__icon-btn adm__icon-btn--delete" title="Cancelar reservación" on:click={() => abrirModalCancelar(r)}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    </button>
+                  </div>
                 {:else}
                   <span style="color:var(--adm-text-muted); font-size:.75rem; padding:0 .5rem">—</span>
                 {/if}
@@ -283,6 +404,132 @@
     </div>
   {/if}
 </div>
+
+<!-- Modal de edición de fechas de una reservación -->
+{#if showModalEditarReserva && reservaEditando}
+  <div class="adm__overlay" on:click={cerrarModalEditar} on:keydown={e => e.key === 'Escape' && cerrarModalEditar()} role="button" tabindex="-1" aria-label="Cerrar modal"></div>
+  <div class="adm__rol-modal" style="max-width:560px; border-radius:16px; overflow:hidden">
+
+    <!-- Encabezado del modal -->
+    <div class="adm__edit-modal__header">
+      <div class="adm__edit-modal__icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div>
+        <p class="adm__edit-modal__title">Editar Fechas de Reservación</p>
+        <p class="adm__edit-modal__subtitle">{reservaEditando.noReservacion} · {reservaEditando.hotel ?? 'Sin hotel'}</p>
+      </div>
+      <button class="adm__cancel-modal__close" on:click={cerrarModalEditar} aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="adm__cancel-modal__body">
+
+      <!-- Resumen de la reserva -->
+      <div class="adm__cancel-info-box" style="margin-bottom:1rem">
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Cliente</span>
+          <span class="adm__cancel-info-row__value">@{reservaEditando.usuario} — {reservaEditando.nombreCompleto}</span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Hotel</span>
+          <span class="adm__cancel-info-row__value">{reservaEditando.hotel ?? '—'}</span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Estado</span>
+          <span class="adm__badge {badge(reservaEditando.estado)}">{reservaEditando.estado}</span>
+        </div>
+        <div class="adm__cancel-info-row">
+          <span class="adm__cancel-info-row__label">Total</span>
+          <span class="adm__cancel-info-row__value adm__cancel-info-row__value--money">
+            $ {(reservaEditando.total ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
+
+      <!-- Lista de habitaciones (solo lectura) -->
+      {#if cargandoDetalles}
+        <div style="display:flex; align-items:center; gap:.6rem; padding:.75rem; color:var(--adm-text-muted); font-size:.85rem">
+          <svg class="adm__spinner adm__spinner--sm" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Cargando habitaciones...
+        </div>
+      {:else if detallesEditar.length > 0}
+        <p style="font-size:.8rem; font-weight:600; color:var(--adm-text-muted); margin:0 0 .5rem 0; text-transform:uppercase; letter-spacing:.04em">
+          Habitaciones afectadas
+        </p>
+        <div class="adm__edit-detalles" style="margin-bottom:.75rem">
+          {#each detallesEditar as det}
+            <div class="adm__edit-detalle-row" style="flex-direction:row; align-items:center; justify-content:space-between">
+              <div class="adm__edit-detalle-info">
+                <span class="adm__edit-detalle-num">Hab. {det.habitacion}</span>
+                <span class="adm__edit-detalle-tipo">{det.tipo}</span>
+              </div>
+              <span style="font-size:.75rem; color:var(--adm-text-muted); font-family:'Fira Code',monospace">
+                {det.checkIn} → {det.checkOut}
+              </span>
+            </div>
+          {/each}
+        </div>
+
+        <!-- Un solo par de fechas que aplica a TODAS las habitaciones -->
+        <p style="font-size:.8rem; font-weight:600; color:var(--adm-text-muted); margin:0 0 .5rem 0; text-transform:uppercase; letter-spacing:.04em">
+          Nuevas fechas — aplica a todas las habitaciones
+        </p>
+        <div class="adm__edit-detalle-fechas" style="margin-bottom:.5rem">
+          <label class="adm__edit-fecha-label">
+            Check-in
+            <input class="adm__edit-fecha-input" type="date" bind:value={editCheckIn} />
+          </label>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; color:var(--adm-text-muted); margin-top:1.4rem"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <label class="adm__edit-fecha-label">
+            Check-out
+            <input class="adm__edit-fecha-input" type="date" bind:value={editCheckOut} />
+          </label>
+        </div>
+      {/if}
+
+      <!-- Comentario del admin para el correo -->
+      <label class="adm__cancel-motivo-label" for="comentario-edicion" style="margin-top:1rem; display:block">
+        Comentario para el cliente
+        <span style="font-size:.72rem; font-weight:400; color:var(--adm-text-muted); margin-left:.3rem">(opcional, se incluirá en el correo)</span>
+      </label>
+      <textarea
+        id="comentario-edicion"
+        class="adm__cancel-motivo-textarea"
+        bind:value={comentarioEdicion}
+        rows="2"
+        placeholder="Ej: Se ajustaron las fechas según su solicitud por teléfono..."
+      ></textarea>
+
+      {#if mensajeEditar}
+        <div class="adm__feedback adm__feedback--error" style="margin-top:.75rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          {mensajeEditar}
+        </div>
+      {/if}
+
+      <!-- Aviso de notificación -->
+      <div class="adm__cancel-warning" style="margin-top:.75rem; background:rgba(59,130,246,.08); border-color:rgba(59,130,246,.25); color:#3b82f6">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0; margin-top:.1rem"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Se enviará un correo al cliente con las nuevas fechas y tu comentario.</span>
+      </div>
+    </div>
+
+    <div class="adm__cancel-modal__footer">
+      <button class="adm__btn adm__btn--ghost" on:click={cerrarModalEditar} disabled={editando}>Cancelar</button>
+      <button class="adm__btn adm__btn--primary" on:click={guardarEdicion} disabled={editando || cargandoDetalles}>
+        {#if editando}
+          <svg class="adm__spinner adm__spinner--sm" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Guardando...
+        {:else}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Guardar cambios
+        {/if}
+      </button>
+    </div>
+  </div>
+{/if}
 
 <!-- Modal de confirmacion para cancelar una reservacion -->
 {#if showModalCancelarReserva && reservaCancelando}

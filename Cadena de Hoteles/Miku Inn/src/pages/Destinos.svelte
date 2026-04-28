@@ -99,10 +99,15 @@
         }
       }
 
-      // 3. POST /busqueda por cada ciudad
-      const promesas = Array.from(ciudades.values()).map(async ({ ciudad, pais }) => {
+      // 3. POST /busqueda por cada ciudad.
+      //    Registrar UNA sola entrada para trazar la accion del usuario (primera ciudad),
+      //    el resto se consulta con ?registrar=false para no inflar las metricas.
+      const ciudadesArr = Array.from(ciudades.values());
+      const promesas = ciudadesArr.map(async ({ ciudad, pais }, idx) => {
+        const registrar = idx === 0; // solo la primera ciudad registra la busqueda
         try {
-          const r = await fetch(`${API}/busqueda`, {
+          const url = registrar ? `${API}/busqueda` : `${API}/busqueda?registrar=false`;
+          const r = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

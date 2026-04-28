@@ -27,15 +27,15 @@ namespace Aerolinea.API.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Servicio de ofertas semanales iniciado.");
+            _logger.LogInformation("Servicio de ofertas por hora iniciado.");
 
             // Esperar 2 minutos al inicio para que el resto de la app cargue
             await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                // Ejecutar si han pasado 7 dias desde el ultimo envio
-                if (DateTime.UtcNow - _ultimoEnvio >= TimeSpan.FromDays(7))
+                // Ejecutar si ha pasado 1 hora desde el ultimo envio
+                if (DateTime.UtcNow - _ultimoEnvio >= TimeSpan.FromHours(1))
                 {
                     try
                     {
@@ -44,11 +44,11 @@ namespace Aerolinea.API.Services
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error al enviar ofertas semanales.");
+                        _logger.LogError(ex, "Error al enviar ofertas por hora.");
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
             }
         }
 
@@ -62,11 +62,11 @@ namespace Aerolinea.API.Services
             var usuarios = await usuarioRepo.ObtenerUsuariosParaOfertas();
             if (usuarios.Count == 0)
             {
-                _logger.LogInformation("No hay usuarios suscritos a ofertas semanales.");
+                _logger.LogInformation("No hay usuarios suscritos a ofertas por hora.");
                 return;
             }
 
-            _logger.LogInformation("Enviando ofertas semanales a {Count} usuario(s).", usuarios.Count);
+            _logger.LogInformation("Enviando ofertas por hora a {Count} usuario(s).", usuarios.Count);
 
             foreach (var (id, nombre, correo, pais) in usuarios)
             {
@@ -82,8 +82,8 @@ namespace Aerolinea.API.Services
                     }
 
                     string html = EmailTemplates.CorreoOfertaSemanal(nombre, pais, directo, conEscala);
-                    await emailHelper.Enviar(correo, "Broom AirLine — Tu oferta de vuelo de esta semana", html);
-                    _logger.LogInformation("Oferta semanal enviada a {Correo}.", correo);
+                    await emailHelper.Enviar(correo, "Broom AirLine — Tu oferta de vuelo de esta hora", html);
+                    _logger.LogInformation("Oferta por hora enviada a {Correo}.", correo);
                 }
                 catch (Exception ex)
                 {

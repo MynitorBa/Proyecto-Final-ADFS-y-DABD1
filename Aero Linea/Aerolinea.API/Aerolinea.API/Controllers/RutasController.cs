@@ -121,5 +121,38 @@ namespace Aerolinea.API.Controllers
             var existe = await _service.ExisteRuta(origenId, destinoId);
             return Ok(new { existe });
         }
+
+        // PUT /api/rutas/{id}/desactivar
+        /// <summary>
+        /// Desactiva una ruta solo si no tiene reservaciones activas. Una ruta desactivada
+        /// no acepta nuevos vuelos. Requiere rol Administrador y la columna Activo en la
+        /// tabla Ruta (ALTER TABLE Ruta ADD Activo BIT NOT NULL DEFAULT 1).
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("{id}/desactivar")]
+        public async Task<IActionResult> DesactivarRuta(int id)
+        {
+            var (ok, mensaje) = await _service.DesactivarRuta(id);
+            if (!ok)
+                return BadRequest(new { message = mensaje });
+
+            return Ok(new { message = mensaje });
+        }
+
+        // PUT /api/rutas/{id}/activar
+        /// <summary>
+        /// Reactiva una ruta previamente desactivada, permitiendo que vuelva a aceptar nuevos vuelos.
+        /// Requiere rol Administrador.
+        /// </summary>
+        [Authorize(Roles = "Administrador")]
+        [HttpPut("{id}/activar")]
+        public async Task<IActionResult> ActivarRuta(int id)
+        {
+            var (ok, mensaje) = await _service.ActivarRuta(id);
+            if (!ok)
+                return BadRequest(new { message = mensaje });
+
+            return Ok(new { message = mensaje });
+        }
     }
 }

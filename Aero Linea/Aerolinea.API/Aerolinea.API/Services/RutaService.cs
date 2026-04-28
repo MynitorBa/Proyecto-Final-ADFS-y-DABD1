@@ -1,3 +1,4 @@
+using Aerolinea.API.Helpers;
 using Aerolinea.API.Models.DTOs;
 using Aerolinea.API.Repositories;
 
@@ -11,13 +12,17 @@ namespace Aerolinea.API.Services
     public class RutaService : IRutaService
     {
         private readonly IRutaRepository _repository;
+        private readonly EmailHelper _emailHelper;
+        private readonly ILogger<RutaService> _logger;
 
         /// <summary>
-        /// Inicializa el servicio con el repositorio de rutas.
+        /// Inicializa el servicio con el repositorio de rutas, el helper de correo y el logger.
         /// </summary>
-        public RutaService(IRutaRepository repository)
+        public RutaService(IRutaRepository repository, EmailHelper emailHelper, ILogger<RutaService> logger)
         {
-            _repository = repository;
+            _repository  = repository;
+            _emailHelper = emailHelper;
+            _logger      = logger;
         }
 
         /// <summary>
@@ -176,6 +181,118 @@ namespace Aerolinea.API.Services
 
             var rutaId = await _repository.CrearRuta(origenId, destinoId, duracionEstimada);
             return (true, rutaId, "Ruta creada correctamente.");
+        }
+
+        /// <summary>
+        /// Reactiva una ruta que fue desactivada previamente, permitiendo que vuelva a aceptar vuelos.
+        /// Tras activar, notifica a las agencias registradas si la ruta tiene vuelos futuros (best-effort).
+        /// </summary>
+        public async Task<(bool ok, string mensaje)> ActivarRuta(int id)
+        {
+            bool activada = await _repository.ActivarRuta(id);
+            if (!activada)
+                return (false, "Ruta no encontrada.");
+
+            // Notificar agencias (best-effort: si falla no se revierte la activacion)
+            try
+            {
+                var (origenCodigo, origenCiudad, destinoCodigo, destinoCiudad) =
+                    await _repository.ObtenerDescripcionRuta(id);
+
+                var vuelosFuturos = await _repository.ObtenerVuelosFuturosPorRuta(id);
+                var agencias = await _repository.ObtenerEmailsAgencias();
+
+                foreach (var (email, nombreContacto, nombreAgencia) in agencias)
+                {
+                    try
+                    {
+                        string html = EmailTemplates.CorreoRutaActivada(
+                            nombreContacto, nombreAgencia,
+                            origenCodigo, origenCiudad,
+                            destinoCodigo, destinoCiudad,
+                            vuelosFuturos);
+
+                        await _emailHelper.Enviar(
+                            email,
+                            $"Broom AirLine — Ruta {origenCodigo} → {destinoCodigo} reactivada",
+                            html);
+
+                        _logger.LogInformation(
+                            "Notificacion de ruta activada enviada a agencia {Agencia} ({Email})",
+                            nombreAgencia, email);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Error al notificar ruta activada a agencia {Agencia} ({Email})",
+                            nombreAgencia, email);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos para notificar ruta activada {RutaId}", id);
+            }
+
+            return (true, "Ruta activada correctamente.");
+        }
+
+        /// <summary>
+        /// Desactiva una ruta solo si no tiene reservaciones activas (Pendiente o Confirmada)
+        /// en ninguno de sus vuelos. Una ruta desactivada no acepta nuevos vuelos.
+        /// Tras desactivar, notifica a todas las agencias registradas por correo (best-effort).
+        /// Requiere que la columna Activo exista en la tabla Ruta.
+        /// </summary>
+        public async Task<(bool ok, string mensaje)> DesactivarRuta(int id)
+        {
+            bool tieneActivas = await _repository.TieneReservacionesActivas(id);
+            if (tieneActivas)
+                return (false, "No se puede desactivar: la ruta tiene reservaciones activas (Pendiente o Confirmada). Cancélalas primero.");
+
+            // Obtener descripcion de la ruta ANTES de desactivar (para incluirla en el correo)
+            var (origenCodigo, origenCiudad, destinoCodigo, destinoCiudad) =
+                await _repository.ObtenerDescripcionRuta(id);
+
+            bool desactivada = await _repository.DesactivarRuta(id);
+            if (!desactivada)
+                return (false, "Ruta no encontrada.");
+
+            // Notificar a todas las agencias (best-effort: si falla el envio no se revierte la desactivacion)
+            try
+            {
+                var agencias = await _repository.ObtenerEmailsAgencias();
+                foreach (var (email, nombreContacto, nombreAgencia) in agencias)
+                {
+                    try
+                    {
+                        string html = EmailTemplates.CorreoRutaDesactivada(
+                            nombreContacto, nombreAgencia,
+                            origenCodigo, origenCiudad,
+                            destinoCodigo, destinoCiudad);
+
+                        await _emailHelper.Enviar(
+                            email,
+                            $"Broom AirLine — Ruta {origenCodigo} → {destinoCodigo} desactivada",
+                            html);
+
+                        _logger.LogInformation(
+                            "Notificacion de ruta desactivada enviada a agencia {Agencia} ({Email})",
+                            nombreAgencia, email);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Error al notificar ruta desactivada a agencia {Agencia} ({Email})",
+                            nombreAgencia, email);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener agencias para notificar ruta desactivada {RutaId}", id);
+            }
+
+            return (true, "Ruta desactivada correctamente.");
         }
     }
 }

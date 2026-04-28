@@ -586,26 +586,30 @@ func (ctrl *AdminController) ObtenerMetricas(c *gin.Context) {
 	for _, id := range resOrder {
 		r := resMap[id]
 		lista = append(lista, r)
-		resumen.TotalCobrado  += r.TotalCobrado
-		resumen.TotalBase     += r.TotalBase
-		resumen.TotalGanancia += r.TotalGanancia
 
-		switch r.TipoReserva {
-		case 1:
-			resumen.Vuelos.Cobrado  += r.TotalCobrado
-			resumen.Vuelos.Base     += r.TotalBase
-			resumen.Vuelos.Ganancia += r.TotalGanancia
-			resumen.Vuelos.Cantidad++
-		case 2:
-			resumen.Hoteles.Cobrado  += r.TotalCobrado
-			resumen.Hoteles.Base     += r.TotalBase
-			resumen.Hoteles.Ganancia += r.TotalGanancia
-			resumen.Hoteles.Cantidad++
-		case 3:
-			resumen.Paquetes.Cobrado  += r.TotalCobrado
-			resumen.Paquetes.Base     += r.TotalBase
-			resumen.Paquetes.Ganancia += r.TotalGanancia
-			resumen.Paquetes.Cantidad++
+		// Solo acumular ingresos de reservaciones confirmadas, completadas o en curso
+		if r.Estado == "confirmada" || r.Estado == "completada" || r.Estado == "en curso" {
+			resumen.TotalCobrado  += r.TotalCobrado
+			resumen.TotalBase     += r.TotalBase
+			resumen.TotalGanancia += r.TotalGanancia
+
+			switch r.TipoReserva {
+			case 1:
+				resumen.Vuelos.Cobrado  += r.TotalCobrado
+				resumen.Vuelos.Base     += r.TotalBase
+				resumen.Vuelos.Ganancia += r.TotalGanancia
+				resumen.Vuelos.Cantidad++
+			case 2:
+				resumen.Hoteles.Cobrado  += r.TotalCobrado
+				resumen.Hoteles.Base     += r.TotalBase
+				resumen.Hoteles.Ganancia += r.TotalGanancia
+				resumen.Hoteles.Cantidad++
+			case 3:
+				resumen.Paquetes.Cobrado  += r.TotalCobrado
+				resumen.Paquetes.Base     += r.TotalBase
+				resumen.Paquetes.Ganancia += r.TotalGanancia
+				resumen.Paquetes.Cantidad++
+			}
 		}
 	}
 

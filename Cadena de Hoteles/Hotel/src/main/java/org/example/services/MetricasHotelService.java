@@ -2,6 +2,7 @@ package org.example.services;
 
 import org.example.helpers.EmailHelper;
 import org.example.helpers.MetricasExcelHelper;
+import org.example.helpers.MetricasPdfHelper;
 import org.example.repositories.AdminBusquedaRepository;
 import org.example.repositories.MetricasHotelRepository;
 
@@ -41,6 +42,7 @@ public class MetricasHotelService {
         result.put("ingresosKpi",         metRepo.obtenerIngresosKpi(desde, hasta));
         result.put("reservacionesPorDia", metRepo.reservacionesPorDia(desde, hasta));
         result.put("canalSplit",          metRepo.canalSplit(desde, hasta));
+        result.put("busquedasPorCanal",   metRepo.busquedasPorCanal(desde, hasta));
         return result;
     }
 
@@ -130,6 +132,18 @@ public class MetricasHotelService {
         String hasta = normDate(fechaHasta, "hoy");
         Map<String, Object> data = recopilarDatos(desde, hasta, tipo, usuario, secciones);
         return MetricasExcelHelper.generarCsvZip(data, secciones, desde, hasta);
+    }
+
+    /**
+     * Genera un archivo PDF con las secciones indicadas.
+     */
+    public byte[] exportarPdf(String fechaDesde, String fechaHasta,
+                               String tipo, String usuario,
+                               Map<String, Boolean> secciones) {
+        String desde = normDate(fechaDesde, "-30d");
+        String hasta = normDate(fechaHasta, "hoy");
+        Map<String, Object> data = recopilarDatos(desde, hasta, tipo, usuario, secciones);
+        return MetricasPdfHelper.generarPdf(data, secciones, desde, hasta);
     }
 
     // ─── EXPORTAR POR CORREO ─────────────────────────────────────────────────

@@ -1,6 +1,22 @@
 package org.example.helpers;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xddf.usermodel.chart.AxisPosition;
+import org.apache.poi.xddf.usermodel.chart.BarDirection;
+import org.apache.poi.xddf.usermodel.chart.ChartTypes;
+import org.apache.poi.xddf.usermodel.chart.LegendPosition;
+import org.apache.poi.xddf.usermodel.chart.XDDFBarChartData;
+import org.apache.poi.xddf.usermodel.chart.XDDFCategoryAxis;
+import org.apache.poi.xddf.usermodel.chart.XDDFChartLegend;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSourcesFactory;
+import org.apache.poi.xddf.usermodel.chart.XDDFNumericalDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFValueAxis;
+import org.apache.poi.xssf.usermodel.XSSFChart;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.ByteArrayInputStream;
@@ -37,14 +53,6 @@ public class MetricasExcelHelper {
             CellStyle headerStyle = crearEstiloEncabezado(wb);
             CellStyle numStyle    = crearEstiloNumero(wb);
 
-            // Hoja 1: Portada / Resumen
-            Sheet portada = wb.createSheet("Resumen");
-            Row r0 = portada.createRow(0);
-            Cell c0 = r0.createCell(0);
-            c0.setCellValue("Métricas Miku Inn — " + desde + " al " + hasta);
-            c0.setCellStyle(crearEstiloTitulo(wb));
-            portada.setColumnWidth(0, 60 * 256);
-
             // Hoja: KPI
             if (isTrue(secciones, "kpi") && data.containsKey("ingresosKpi")) {
                 Map<String, Object> kpi = (Map<String, Object>) data.get("ingresosKpi");
@@ -55,8 +63,9 @@ public class MetricasExcelHelper {
                 fila = escribirKpiRow(sh, fila, numStyle, "Ingresos Directo (Q)", num(kpi.get("ingresosDirecto")));
                 fila = escribirKpiRow(sh, fila, numStyle, "Ingresos Agencia (Q)", num(kpi.get("ingresosAgencia")));
                 fila = escribirKpiRow(sh, fila, numStyle, "Ticket Promedio (Q)",  num(kpi.get("ticketPromedio")));
-                escribirKpiRow(sh, fila, numStyle, "Total Reservaciones",  num(kpi.get("totalReservaciones")));
+                fila = escribirKpiRow(sh, fila, numStyle, "Total Reservaciones",  num(kpi.get("totalReservaciones")));
                 autosize(sh, 2);
+                agregarGraficaBarras((XSSFSheet) sh, 1, fila - 1, 0, 1, 3, "KPI de Ingresos");
             }
 
             // Hoja: Reservaciones por Día
@@ -71,6 +80,7 @@ public class MetricasExcelHelper {
                     row.createCell(1).setCellValue(((Number) d.get("total")).intValue());
                 }
                 autosize(sh, 2);
+                agregarGraficaBarras((XSSFSheet) sh, 1, fila - 1, 0, 1, 3, "Reservaciones por Día");
             }
 
             // Hoja: Canal
@@ -85,6 +95,7 @@ public class MetricasExcelHelper {
                     row.createCell(1).setCellValue(((Number) c.get("total")).intValue());
                 }
                 autosize(sh, 2);
+                agregarGraficaBarras((XSSFSheet) sh, 1, fila - 1, 0, 1, 3, "Canal");
             }
 
             // Hoja: Embudo
@@ -99,6 +110,7 @@ public class MetricasExcelHelper {
                     row.createCell(1).setCellValue(((Number) e.getValue()).intValue());
                 }
                 autosize(sh, 2);
+                agregarGraficaBarras((XSSFSheet) sh, 1, fila - 1, 0, 1, 3, "Embudo de Conversión");
             }
 
             // Hoja: Top Hoteles
@@ -118,6 +130,7 @@ public class MetricasExcelHelper {
                     ingrCell.setCellStyle(numStyle);
                 }
                 autosize(sh, 4);
+                agregarGraficaBarras((XSSFSheet) sh, 1, rank - 1, 1, 3, 5, "Top Hoteles por Ingresos");
             }
 
             // Hoja: Cancelaciones
@@ -132,6 +145,7 @@ public class MetricasExcelHelper {
                     row.createCell(1).setCellValue(((Number) c.get("total")).intValue());
                 }
                 autosize(sh, 2);
+                agregarGraficaBarras((XSSFSheet) sh, 1, fila - 1, 0, 1, 3, "Cancelaciones por Tipo");
             }
 
             // Hoja: Tendencia Ingresos
@@ -196,6 +210,34 @@ public class MetricasExcelHelper {
         } catch (Exception e) {
             throw new RuntimeException("Error generando Excel: " + e.getMessage(), e);
         }
+    }
+
+    // ─── GRÁFICAS ────────────────────────────────────────────────────────────
+
+    private static void agregarGraficaBarras(XSSFSheet sh, int filaInicio, int filaFin,
+                                             int colCat, int colVal, int chartStartCol, String titulo) {
+        try {
+            XSSFDrawing drawing = sh.createDrawingPatriarch();
+            XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0,
+                    chartStartCol, 0, chartStartCol + 12, Math.max(filaFin + 6, 22));
+            XSSFChart chart = drawing.createChart(anchor);
+            chart.setTitleText(titulo);
+            chart.setTitleOverlay(false);
+            XDDFChartLegend legend = chart.getOrAddLegend();
+            legend.setPosition(LegendPosition.BOTTOM);
+            XDDFCategoryAxis bottomAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
+            XDDFValueAxis leftAxis = chart.createValueAxis(AxisPosition.LEFT);
+            XDDFDataSource<String> cats = XDDFDataSourcesFactory.fromStringCellRange(sh,
+                    new CellRangeAddress(filaInicio, filaFin, colCat, colCat));
+            XDDFNumericalDataSource<Double> vals = XDDFDataSourcesFactory.fromNumericCellRange(sh,
+                    new CellRangeAddress(filaInicio, filaFin, colVal, colVal));
+            XDDFBarChartData data = (XDDFBarChartData) chart.createData(ChartTypes.BAR, bottomAxis, leftAxis);
+            data.setBarDirection(BarDirection.COL);
+            XDDFBarChartData.Series series = (XDDFBarChartData.Series) data.addSeries(cats, vals);
+            series.setTitle("Total", null);
+            series.setShowLeaderLines(false);
+            chart.plot(data);
+        } catch (Exception ignored) {}
     }
 
     // ─── CSV ZIP ─────────────────────────────────────────────────────────────

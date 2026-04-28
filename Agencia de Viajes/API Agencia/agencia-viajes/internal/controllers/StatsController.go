@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -327,5 +328,187 @@ func (ctrl *StatsController) Descubrir(c *gin.Context) {
 		"origen":          gin.H{"ciudad": ciudad, "pais": pais},
 		"paneles":         paneles,
 		"tieneAerolineas": tieneAerolineas,
+	})
+}
+
+// DestinoVuelo — parámetros exactos de búsqueda para una card de vuelo disponible.
+type DestinoVuelo struct {
+	Origen            string `json:"origen"`
+	OrigenPais        string `json:"origenPais"`
+	Destino           string `json:"destino"`
+	DestinoPais       string `json:"destinoPais"`
+	Fecha             string `json:"fecha"`
+	CantidadPasajeros int    `json:"cantidadPasajeros"`
+	Popularidad       int    `json:"popularidad"`
+}
+
+// DestinoHotel — parámetros exactos de búsqueda para una card de hotel disponible.
+type DestinoHotel struct {
+	Ciudad           string `json:"ciudad"`
+	Pais             string `json:"pais"`
+	FechaCheckIn     string `json:"fechaCheckIn"`
+	FechaCheckOut    string `json:"fechaCheckOut"`
+	CantidadPersonas int    `json:"cantidadPersonas"`
+	Popularidad      int    `json:"popularidad"`
+}
+
+// DescubrirDisponibles
+//
+// Devuelve hasta 4 destinos de vuelo y 4 de hotel con los parámetros exactos
+// de búsqueda, derivados de reservaciones reales (pendientes o confirmadas).
+// Las ciudades provienen de catalogo_proveedor, por lo que están garantizadas
+// en el catálogo y no generarán errores 400 al buscar. Fecha = hoy+7.
+// Los paquetes reutilizan los destinos de vuelo. Es público, no requiere auth.
+//
+// Retorna:
+//   - HTTP 200: JSON con { vuelos: [], hoteles: [], paquetes: [] }
+func (ctrl *StatsController) DescubrirDisponibles(c *gin.Context) {
+	ctx := context.Background()
+	conn, err := ctrl.db.Conn(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error de conexión"})
+		return
+	}
+	defer conn.Close()
+
+	f7  := time.Now().AddDate(0, 6, 0).Format("2006-01-02")
+	f10 := time.Now().AddDate(0, 6, 3).Format("2006-01-02")
+
+	// ── Vuelos ──────────────────────────────────────────────────────────────────
+	// Reservaciones pendientes/confirmadas/en curso/completadas con detalle de vuelo (Tipo_Detalle_ID=1).
+	// JOIN con catalogo_proveedor garantiza que origen y destino existen en catálogo.
+	vuelos := func() []DestinoVuelo {
+		rows, err := conn.QueryContext(ctx, `
+			SELECT
+				co.Nombre AS origen,  po.Nombre AS origenPais,
+				cd.Nombre AS destino, pd.Nombre AS destinoPais,
+				COUNT(*)  AS popularidad
+			FROM reservacion r
+			JOIN detalles_reservacion dr
+			     ON dr.Reservacion_ID = r.ID AND dr.Tipo_Detalle_ID = 1
+			JOIN catalogo_proveedor cp
+			     ON cp.Proveedor_ID = dr.Proveedor_ID AND cp.Tipo_Catalogo_ID = 1
+			JOIN ciudad co ON co.ID = cp.Ciudad_Origen_ID
+			JOIN pais   po ON po.ID = co.PaisID
+			JOIN ciudad cd ON cd.ID = cp.Ciudad_Destino_ID
+			JOIN pais   pd ON pd.ID = cd.PaisID
+			WHERE r.EstadoID IN (1, 2, 3, 4)
+			GROUP BY cp.Ciudad_Origen_ID, cp.Ciudad_Destino_ID
+			ORDER BY popularidad DESC
+			LIMIT 4
+		`)
+		if err != nil {
+			return nil
+		}
+		defer rows.Close()
+		var out []DestinoVuelo
+		for rows.Next() {
+			var d DestinoVuelo
+			if rows.Scan(&d.Origen, &d.OrigenPais, &d.Destino, &d.DestinoPais, &d.Popularidad) == nil {
+				d.Fecha = f7
+				d.CantidadPasajeros = 1
+				out = append(out, d)
+			}
+		}
+		return out
+	}()
+
+	// ── Hoteles ─────────────────────────────────────────────────────────────────
+	// Reservaciones pendientes/confirmadas/en curso/completadas con detalle de hotel (Tipo_Detalle_ID=2).
+	hoteles := func() []DestinoHotel {
+		rows, err := conn.QueryContext(ctx, `
+			SELECT
+				c.Nombre AS ciudad, p.Nombre AS pais,
+				COUNT(*) AS popularidad
+			FROM reservacion r
+			JOIN detalles_reservacion dr
+			     ON dr.Reservacion_ID = r.ID AND dr.Tipo_Detalle_ID = 2
+			JOIN catalogo_proveedor cp
+			     ON cp.Proveedor_ID = dr.Proveedor_ID AND cp.Tipo_Catalogo_ID = 2
+			JOIN ciudad c ON c.ID = cp.Ciudad_Origen_ID
+			JOIN pais   p ON p.ID = c.PaisID
+			WHERE r.EstadoID IN (1, 2, 3, 4)
+			GROUP BY cp.Ciudad_Origen_ID
+			ORDER BY popularidad DESC
+			LIMIT 4
+		`)
+		if err != nil {
+			return nil
+		}
+		defer rows.Close()
+		var out []DestinoHotel
+		for rows.Next() {
+			var d DestinoHotel
+			if rows.Scan(&d.Ciudad, &d.Pais, &d.Popularidad) == nil {
+				d.FechaCheckIn = f7
+				d.FechaCheckOut = f10
+				d.CantidadPersonas = 1
+				out = append(out, d)
+			}
+		}
+		return out
+	}()
+
+	// ── Fallback: sin reservaciones pendientes/confirmadas ───────────────────────
+	// Consulta el catálogo directamente (proveedores activos) para garantizar
+	// que los destinos sean buscables sin errores 400.
+	if len(vuelos) == 0 {
+		rows, _ := conn.QueryContext(ctx, `
+			SELECT DISTINCT co.Nombre, po.Nombre, cd.Nombre, pd.Nombre
+			FROM catalogo_proveedor cp
+			JOIN proveedor pr ON pr.ID = cp.Proveedor_ID AND pr.EstadoID = 1
+			JOIN ciudad co ON co.ID = cp.Ciudad_Origen_ID
+			JOIN pais   po ON po.ID = co.PaisID
+			JOIN ciudad cd ON cd.ID = cp.Ciudad_Destino_ID
+			JOIN pais   pd ON pd.ID = cd.PaisID
+			WHERE cp.Tipo_Catalogo_ID = 1
+			LIMIT 4
+		`)
+		if rows != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var d DestinoVuelo
+				if rows.Scan(&d.Origen, &d.OrigenPais, &d.Destino, &d.DestinoPais) == nil {
+					d.Fecha = f7
+					d.CantidadPasajeros = 1
+					vuelos = append(vuelos, d)
+				}
+			}
+		}
+	}
+	if len(hoteles) == 0 {
+		rows, _ := conn.QueryContext(ctx, `
+			SELECT DISTINCT c.Nombre, p.Nombre
+			FROM catalogo_proveedor cp
+			JOIN proveedor pr ON pr.ID = cp.Proveedor_ID AND pr.EstadoID = 1
+			JOIN ciudad c ON c.ID = cp.Ciudad_Origen_ID
+			JOIN pais   p ON p.ID = c.PaisID
+			WHERE cp.Tipo_Catalogo_ID = 2
+			LIMIT 4
+		`)
+		if rows != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var d DestinoHotel
+				if rows.Scan(&d.Ciudad, &d.Pais) == nil {
+					d.FechaCheckIn = f7
+					d.FechaCheckOut = f10
+					d.CantidadPersonas = 1
+					hoteles = append(hoteles, d)
+				}
+			}
+		}
+	}
+
+	// Paquetes usan los mismos destinos de vuelo
+	paquetes := vuelos
+	if len(paquetes) > 4 {
+		paquetes = paquetes[:4]
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"vuelos":   vuelos,
+		"hoteles":  hoteles,
+		"paquetes": paquetes,
 	})
 }

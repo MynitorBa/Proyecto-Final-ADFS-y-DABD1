@@ -237,6 +237,25 @@ namespace Aerolinea.API.Controllers
             return Ok(ids);
         }
 
+        // ── GET /api/admin/vuelos/{id}/tripulantes ───────────────────────────
+        /// <summary>
+        /// Retorna la lista de tripulantes actualmente asignados a un vuelo especifico.
+        /// Se usa en el modal de edicion de vuelo para precargar la tripulacion existente.
+        /// </summary>
+        [HttpGet("{id}/tripulantes")]
+        public async Task<IActionResult> ObtenerTripulantesDelVuelo(int id)
+        {
+            try
+            {
+                var tripulantes = await _adminVueloService.ObtenerTripulantesDelVuelo(id);
+                return Ok(tripulantes);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { message = "Error al obtener tripulantes del vuelo." });
+            }
+        }
+
         // ── GET /api/admin/vuelos/tripulantes-ocupados ───────────────────────
         // horaSalida es opcional — si no viene se usa 00:00
         /// <summary>

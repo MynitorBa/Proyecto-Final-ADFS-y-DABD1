@@ -226,6 +226,7 @@
   cursor: pointer; transition: all 0.15s; color: var(--adm-text-muted);
 }
 .adm__icon-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--adm-text); }
+.adm__icon-btn--edit         { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.25); color: var(--adm-blue); border-radius: 6px; width: 28px; height: 28px; }
 .adm__icon-btn--edit:hover   { background: rgba(88,166,255,0.15);  color: var(--adm-blue); border-color: rgba(88,166,255,0.3); }
 .adm__icon-btn--delete       { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.25); color: #f85149; border-radius: 6px; width: 28px; height: 28px; }
 .adm__icon-btn--delete:hover { background: rgba(248,81,73,0.2); border-color: rgba(248,81,73,0.4); }
@@ -603,6 +604,30 @@
 }
 .adm__btn--cancel-confirm:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
 .adm__btn--cancel-confirm:disabled { opacity: .55; cursor: not-allowed; }
+
+/* Modal de edición de fechas de reservación con tema azul */
+.adm__edit-modal__header { display: flex; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; background: linear-gradient(135deg, #1d4ed8, #1e3a8a); border-radius: 16px 16px 0 0; position: relative; }
+.adm__edit-modal__icon { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+.adm__edit-modal__title { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 2px; }
+.adm__edit-modal__subtitle { font-size: .78rem; color: rgba(255,255,255,.7); margin: 0; font-family: 'Fira Code', monospace; }
+
+.adm__edit-detalles { display: flex; flex-direction: column; gap: .6rem; margin-bottom: .5rem; }
+.adm__edit-detalle-row {
+  background: #252b3b; border: 1px solid #363d52; border-radius: .75rem;
+  padding: .75rem 1rem; display: flex; flex-direction: column; gap: .6rem;
+}
+.adm__edit-detalle-info { display: flex; align-items: center; gap: .5rem; }
+.adm__edit-detalle-num  { font-size: .82rem; font-weight: 700; color: #93c5fd; font-family: 'Fira Code', monospace; }
+.adm__edit-detalle-tipo { font-size: .78rem; color: #8b95b0; background: rgba(139,149,176,.12); padding: .15rem .55rem; border-radius: 20px; border: 1px solid rgba(139,149,176,.2); }
+.adm__edit-detalle-fechas { display: flex; align-items: flex-end; gap: .6rem; flex-wrap: wrap; }
+.adm__edit-fecha-label { display: flex; flex-direction: column; gap: .25rem; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #8b95b0; }
+.adm__edit-fecha-input {
+  background: #1a1f2e; border: 1px solid #363d52; border-radius: .5rem;
+  padding: .45rem .65rem; color: #e8eeff; font-size: .85rem; font-family: 'Fira Code', monospace;
+  outline: none; transition: border-color .15s; cursor: pointer;
+}
+.adm__edit-fecha-input:focus { border-color: #3b82f6; }
+.adm__edit-fecha-input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
 
 /* Modal de confirmación genérico con icono de peligro */
 .adm__confirm {

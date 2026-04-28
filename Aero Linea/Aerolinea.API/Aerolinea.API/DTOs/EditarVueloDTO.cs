@@ -1,7 +1,8 @@
 namespace Aerolinea.API.DTOs
 {
     /// <summary>
-    /// DTO para editar un vuelo existente. Solo permitido con mas de 48h de anticipacion.
+    /// DTO para editar un vuelo existente. Solo permitido con mas de 60 dias de anticipacion.
+    /// No se permite modificar el precio ni el codigo del vuelo (prefijo de 4 letras).
     /// </summary>
     public class EditarVueloDTO
     {
@@ -9,9 +10,6 @@ namespace Aerolinea.API.DTOs
         public string HoraSalida { get; set; } = string.Empty;
         public int AvionId { get; set; }
         public List<int> TripulantesIds { get; set; } = new();
-        public decimal PrecioTurista { get; set; }
-        public decimal PrecioEjecutiva { get; set; }
-        public int BoletosTurista { get; set; }
-        public int BoletosEjecutivo { get; set; }
+        public string Motivo { get; set; } = string.Empty;
     }
 }

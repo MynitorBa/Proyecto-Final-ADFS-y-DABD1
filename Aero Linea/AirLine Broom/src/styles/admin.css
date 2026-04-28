@@ -1238,6 +1238,23 @@ body:has(.modal-overlay) { overflow:hidden; }
   border-top: 1px solid rgba(235,230,224,.6);
 }
 
+/* ── Input de formulario (modal editar pasajero) ────────────────────── */
+.ar-input {
+  width: 100%;
+  padding: .55rem .75rem;
+  border: 1px solid rgba(0,0,0,.15);
+  border-radius: 8px;
+  font-size: .88rem;
+  color: var(--text-primary);
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color .15s;
+}
+.ar-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
 /* ── Error de formulario ─────────────────────────────────────────────── */
 .ar-form-error {
   margin-top: .5rem;

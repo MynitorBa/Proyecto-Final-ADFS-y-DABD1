@@ -109,7 +109,9 @@
     fetchingAvail = true;
     bookError = '';
     try {
-      const res = await fetch(`${API}/busqueda`, {
+      // ?registrar=false: refrescar disponibilidad no es una nueva busqueda del usuario,
+      // es solo una recarga interna de fechas en el detalle del hotel.
+      const res = await fetch(`${API}/busqueda?registrar=false`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
