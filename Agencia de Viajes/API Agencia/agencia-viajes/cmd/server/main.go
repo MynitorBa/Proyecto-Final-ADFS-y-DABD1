@@ -178,6 +178,7 @@ func main() {
 			protegido.POST("/reservaciones/detalle/hotel", detalleReservacionController.AgregarDetalleHotel)
 			protegido.POST("/reservaciones/detalle/pasajeros-vuelo", detalleReservacionController.AgregarPasajerosVuelo)
 			protegido.POST("/reservaciones/asientos-vuelo", asientoVueloController.ObtenerAsientos)
+			protegido.PUT("/reservaciones/asientos-vuelo", asientoVueloController.CambiarAsiento)
 			protegido.PUT("/reservaciones/:id/editar", detalleReservacionController.EditarReservacion)
 			protegido.POST("/reservaciones/pagar", pagoController.Pagar)
 			protegido.GET("/reservaciones/mias", misReservacionesController.Listar)

@@ -69,3 +69,25 @@ func (ctrl *AsientoVueloController) ObtenerAsientos(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// CambiarAsiento — pegar después de ObtenerAsientos
+func (ctrl *AsientoVueloController) CambiarAsiento(c *gin.Context) {
+	val, exists := c.Get("usuario_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
+		return
+	}
+	usuarioID := val.(int)
+
+	var req dto.CambiarAsientoVueloRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "formato de petición inválido"})
+		return
+	}
+
+	if err := ctrl.service.CambiarAsientoVuelo(c, usuarioID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"mensaje": "asiento actualizado correctamente"})
+}

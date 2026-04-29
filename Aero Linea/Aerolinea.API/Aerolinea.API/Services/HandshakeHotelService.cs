@@ -1,6 +1,7 @@
 ﻿using Aerolinea.API.Helpers;
 using Aerolinea.API.Repositories;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Aerolinea.API.Services
 {
@@ -193,10 +194,16 @@ namespace Aerolinea.API.Services
                     $"Respuesta: {errorBody}");
             }
 
-            var resultado = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
-            if (resultado == null
-                || !resultado.TryGetValue("token_salida", out string? tokenSalida)
-                || string.IsNullOrEmpty(tokenSalida))
+            var resultado = await response.Content.ReadFromJsonAsync<Dictionary<string, JsonElement>>();
+            if (resultado == null || !resultado.TryGetValue("token_salida", out JsonElement tokenElement))
+            {
+                throw new Exception(
+                    "El hotel no devolvio un token_salida valido en la respuesta. " +
+                    "Verifica que el endpoint /api/aerolineas/handshake este implementado.");
+            }
+
+            string? tokenSalida = tokenElement.GetString();
+            if (string.IsNullOrEmpty(tokenSalida))
             {
                 throw new Exception(
                     "El hotel no devolvio un token_salida valido en la respuesta. " +

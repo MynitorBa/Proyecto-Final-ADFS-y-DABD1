@@ -347,7 +347,7 @@
           </div>
 
           <!-- Lista principal de tarjetas de vuelo, cambia entre ida y regreso según el paso activo -->
-          <div v-if="!loading && (paso === 1 ? vuelosFiltrados.length > 0 : vuelosRegreso.length > 0)" class="rv-lista">
+          <div v-if="!loading && (paso === 1 ? vuelosFiltrados.length > 0 : vuelosRegresoFiltrados.length > 0)" class="rv-lista">
 
             <div v-if="esIdaVuelta && paso === 2" class="rv-regreso-header">
               <svg viewBox="0 0 24 24" fill="none" stroke="#FFCC00" stroke-width="2" width="16" height="16"><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
@@ -356,7 +356,7 @@
 
             <!-- Cada card envuelta con su sección de comentarios -->
             <div
-              v-for="vuelo in (paso === 1 ? vuelosFiltrados : vuelosRegreso)"
+              v-for="vuelo in (paso === 1 ? vuelosFiltrados : vuelosRegresoFiltrados)"
               :key="vuelo.id"
               :data-vuelo-key="getVueloKey(vuelo)"
               class="rv-card-wrap"
@@ -965,6 +965,15 @@ const vuelosFiltrados = computed(() => {
       default: return 0
     }
   })
+})
+
+/**
+ * Vuelos de regreso filtrados para mostrar solo la misma aerolínea que el vuelo de ida.
+ * Aplica únicamente en el paso 2 del flujo idaVuelta.
+ */
+const vuelosRegresoFiltrados = computed(() => {
+  if (!vueloIdaTemp.value) return vuelosRegreso.value
+  return vuelosRegreso.value.filter(v => v.aerolinea === vueloIdaTemp.value.aerolinea)
 })
 
 /**

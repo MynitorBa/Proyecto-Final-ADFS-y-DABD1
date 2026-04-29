@@ -107,32 +107,34 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(c *gin.Context, usuarioI
 		return nil, fmt.Errorf("error al reservar en aerolínea: %w", err)
 	}
 
-	// La aerolinea devuelve precios SIN descuento
-	// Movent calcula la ganancia basada en el porcentaje de descuento
-	totalVuelos := respAerolinea["total"].(float64)
+	// La aerolínea devuelve el precio CON descuento ya aplicado (ej. $3,520)
+	totalConDescuento := respAerolinea["total"].(float64)
 
-	// Calcular ganancia/impuestos de Movent
-	// Ganancia = total × porcentajeDescuento / 100
-	gananciaMovent := math.Round((totalVuelos * porcentajeDescuento / 100) * 100) / 100
+	// Reconstruir el precio original revirtiendo el descuento
+	// Ejemplo: $3,520 / (1 - 0.12) = $4,000
+	totalOriginal := totalConDescuento
+	if porcentajeDescuento > 0 && porcentajeDescuento < 100 {
+		totalOriginal = math.Round((totalConDescuento/(1-porcentajeDescuento/100))*100) / 100
+	}
 
-	// Total final = siempre el precio original de vuelos
-	var totalConGanancia float64 = totalVuelos
+	// La ganancia de Movent es la diferencia entre precio original y precio con descuento
+	gananciaMovent := math.Round((totalOriginal-totalConDescuento)*100) / 100
 
 	idReservaProveedor := fmt.Sprintf("%v", respAerolinea["reservacionId"])
 
-	// Envolver respAerolinea en parametrosCompletos incluyendo detalles de cálculo
 	parametrosCompletos := map[string]interface{}{
-		"totalVuelos": totalVuelos,      // Precio de vuelos (sin descuento)
-		"impuestos":   gananciaMovent,   // Impuestos/ganancia de Movent
+		"totalVuelos":    totalOriginal,  // Precio original reconstruido (lo que paga el usuario)
+		"impuestos":      gananciaMovent, // Ganancia de Movent (diferencia)
 		"respuestaAerea": respAerolinea,
 	}
 
+	// Guardar el precio original reconstruido en BD
 	err = s.repo.InsertarDetalle(
 		req.ReservacionID,
 		req.ProveedorID,
 		TipoDetalleVuelo,
 		idReservaProveedor,
-		totalConGanancia,
+		totalOriginal,
 		parametrosCompletos,
 	)
 	if err != nil {
@@ -147,9 +149,9 @@ func (s *DetalleReservacionService) AgregarDetalleVuelo(c *gin.Context, usuarioI
 	return map[string]interface{}{
 		"mensaje":        "detalle de vuelo agregado exitosamente",
 		"reservacion_id": req.ReservacionID,
-		"vuelos":         totalVuelos,      // Precio de vuelos
-		"impuestos":      gananciaMovent,   // Impuestos y servicios (ganancia agencia)
-		"total":          totalConGanancia, // Total a pagar
+		"vuelos":         totalOriginal,  // Precio original que ve el usuario ($4,000)
+		"impuestos":      gananciaMovent, // Ganancia de Movent ($480)
+		"total":          totalOriginal,  // Total a pagar
 		"detalle":        respAerolinea,
 	}, nil
 }
@@ -207,7 +209,7 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(c *gin.Context, usuarioI
 	// Calcular ganancia/impuestos de Movent
 	// Ganancia = total × porcentajeDescuento / 100
 	// Ejemplo: $1,600 × 10% = $160
-	gananciaMovent := math.Round((totalHabitaciones * porcentajeDescuento / 100) * 100) / 100
+	gananciaMovent := math.Round((totalHabitaciones*porcentajeDescuento/100)*100) / 100
 
 	// Total final = siempre el precio original de habitaciones
 	totalConGanancia := totalHabitaciones
@@ -241,12 +243,12 @@ func (s *DetalleReservacionService) AgregarDetalleHotel(c *gin.Context, usuarioI
 	}
 
 	return map[string]interface{}{
-		"mensaje":           "detalle de hotel agregado exitosamente",
-		"reservacion_id":    req.ReservacionID,
-		"habitaciones":      totalHabitaciones, // Precio de habitaciones
-		"impuestos":         gananciaMovent,    // Impuestos y servicios (ganancia agencia)
-		"total":             totalConGanancia,  // Total a pagar
-		"detalle":           respHotel,
+		"mensaje":        "detalle de hotel agregado exitosamente",
+		"reservacion_id": req.ReservacionID,
+		"habitaciones":   totalHabitaciones, // Precio de habitaciones
+		"impuestos":      gananciaMovent,    // Impuestos y servicios (ganancia agencia)
+		"total":          totalConGanancia,  // Total a pagar
+		"detalle":        respHotel,
 	}, nil
 }
 
@@ -777,9 +779,9 @@ func (s *DetalleReservacionService) notificarCambioFechasAlProveedor(
 	// Construir el body del request con los cambios
 	cambios := []map[string]interface{}{
 		{
-			"detalleId":      detalleID,
-			"fechaCheckIn":   fechaCheckIn,
-			"fechaCheckOut":  fechaCheckOut,
+			"detalleId":     detalleID,
+			"fechaCheckIn":  fechaCheckIn,
+			"fechaCheckOut": fechaCheckOut,
 		},
 	}
 

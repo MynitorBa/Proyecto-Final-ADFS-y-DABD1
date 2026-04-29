@@ -28,6 +28,123 @@ function Get-EnvValue {
     return $null
 }
 
+# ---------------------------------------------------------------
+# NUEVA FUNCION: Verifica que Oracle este OPEN antes de continuar
+# Si la BD esta MOUNTED pero no abierta, la abre automaticamente.
+# Se llama al inicio de Test-Deps, antes de cualquier operacion.
+# ---------------------------------------------------------------
+# Ejecuta sqlplus con timeout (segundos). Retorna el output o $null si timeout.
+function Invoke-SqlplusTimeout {
+    param([string]$ConnStr, [string]$SqlFile, [int]$TimeoutSec = 10)
+    $job = Start-Job -ScriptBlock {
+        param($c, $f)
+        & sqlplus -S -L $c "@$f" 2>&1
+    } -ArgumentList $ConnStr, $SqlFile
+    $done = Wait-Job $job -Timeout $TimeoutSec
+    if ($done) {
+        $out = Receive-Job $job
+        Remove-Job $job -Force
+        return $out
+    } else {
+        Stop-Job $job; Remove-Job $job -Force
+        return $null   # indica timeout
+    }
+}
+
+function Ensure-OracleOpen {
+    if (-not (Get-Command sqlplus -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    Write-Info "Verificando estado de Oracle (timeout 10s)..."
+
+    $sysConn = "${ORACLE_SYSDBA_USER}/${ORACLE_SYSDBA_PASS}@${ORACLE_HOST}:${ORACLE_PORT}/${ORACLE_SERVICE}"
+    $tmp = "$env:TEMP\check_oracle_open.sql"
+    "SELECT STATUS FROM V`$INSTANCE;`nEXIT;" | Set-Content -Path $tmp -Encoding ASCII
+    $result = Invoke-SqlplusTimeout $sysConn $tmp 10
+    Remove-Item $tmp -ErrorAction SilentlyContinue
+
+    # Timeout: el listener no responde
+    if ($null -eq $result) {
+        Write-Warn "sqlplus no respondio en 10s. Oracle puede estar iniciando o el listener caido."
+        Write-Warn "Intentando abrir via SYSDBA local (sin red)..."
+
+        $tmpOpen = "$env:TEMP\open_oracle_db.sql"
+        "ALTER DATABASE OPEN;`nEXIT;" | Set-Content -Path $tmpOpen -Encoding ASCII
+        $openResult = Invoke-SqlplusTimeout "/ as sysdba" $tmpOpen 15
+        Remove-Item $tmpOpen -ErrorAction SilentlyContinue
+
+        if ($null -eq $openResult) {
+            Write-Err "SYSDBA local tampoco respondio. El servicio OracleServiceXE puede estar detenido."
+            Write-Err "Abrilo manualmente: services.msc -> OracleServiceXE -> Iniciar"
+            exit 1
+        }
+        # ORA-01531 = ya estaba abierta, todo bien
+        if ($openResult -match "ORA-01531") {
+            Write-Ok "Oracle ya estaba abierto - OK"
+            return
+        }
+        if ($openResult -match "ORA-") {
+            Write-Warn "ALTER DATABASE OPEN retorno error. Intentando STARTUP..."
+            $tmpStart = "$env:TEMP\startup_oracle.sql"
+            "STARTUP;`nEXIT;" | Set-Content -Path $tmpStart -Encoding ASCII
+            $startResult = Invoke-SqlplusTimeout "/ as sysdba" $tmpStart 30
+            Remove-Item $tmpStart -ErrorAction SilentlyContinue
+            if ($null -eq $startResult -or $startResult -match "ORA-") {
+                Write-Err "STARTUP fallo. Revisa OracleServiceXE en services.msc."
+                exit 1
+            }
+            Write-Ok "Oracle iniciado via STARTUP"
+        } else {
+            Write-Ok "Oracle abierto via ALTER DATABASE OPEN"
+        }
+        return
+    }
+
+    # Caso 1: BD abierta y funcionando
+    if ($result -match "\bOPEN\b") {
+        Write-Ok "Oracle esta OPEN - OK"
+        return
+    }
+
+    # Caso 2: BD en MOUNTED (instancia arriba pero BD cerrada)
+    if ($result -match "ORA-01109|MOUNTED") {
+        Write-Warn "Oracle en estado MOUNTED (no abierto). Abriendo..."
+        $tmpOpen = "$env:TEMP\open_oracle_db.sql"
+        "ALTER DATABASE OPEN;`nEXIT;" | Set-Content -Path $tmpOpen -Encoding ASCII
+        $openResult = Invoke-SqlplusTimeout "/ as sysdba" $tmpOpen 15
+        Remove-Item $tmpOpen -ErrorAction SilentlyContinue
+
+        # ORA-01531 = "ya hay una base de datos abierta" -> en realidad ya estaba OK
+        if ($openResult -match "ORA-01531") {
+            Write-Ok "Oracle ya estaba abierto (verificacion TCP era falso negativo) - OK"
+            return
+        }
+        if ($null -eq $openResult -or $openResult -match "ORA-") {
+            Write-Err "No se pudo abrir Oracle. Revisa OracleServiceXE en services.msc."
+            if ($openResult) {
+                $openResult | Where-Object { $_ -match "ORA-" } |
+                    ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
+            }
+            exit 1
+        }
+        Write-Ok "Oracle abierto correctamente"
+        return
+    }
+
+    # Caso 3: Listener caido o servicio detenido
+    if ($result -match "ORA-12541|ORA-12560|ORA-01034|TNS-") {
+        Write-Err "No se puede conectar a Oracle (listener caido o servicio detenido)."
+        Write-Warn "Reinicia OracleServiceXE desde services.msc y vuelve a correr el script."
+        exit 1
+    }
+
+    # Caso desconocido: mostrar y continuar
+    Write-Warn "Estado de Oracle desconocido. Continuando de todas formas..."
+    $result | Where-Object { $_.Trim() -ne "" } |
+        ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+}
+
 function Test-Deps {
     if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
         Write-Err "Docker no esta instalado"
@@ -37,6 +154,9 @@ function Test-Deps {
     if (-not $script:HasSqlplus) {
         Write-Warn "sqlplus no encontrado - se omitira Oracle"
     }
+
+    # Verificar y abrir Oracle antes de cualquier operacion
+    Ensure-OracleOpen
 }
 
 function Test-DockerRunning {
@@ -61,7 +181,8 @@ function Test-OracleUser {
     $tmp  = "$env:TEMP\chk_$n.sql"
     "SELECT COUNT(*) FROM dba_users WHERE username=UPPER('$user');`nEXIT;" |
         Set-Content -Path $tmp -Encoding ASCII
-    $result = & sqlplus -S $conn "@$tmp" 2>&1
+    $result = Invoke-SqlplusTimeout $conn $tmp 10
+    if ($null -eq $result) { Write-Warn "Test-OracleUser timeout hotel$n"; return $false }
     Remove-Item $tmp -ErrorAction SilentlyContinue
     $cnt = $result | Where-Object { $_ -match "^\s*\d+\s*$" } | Select-Object -First 1
     if ($cnt) { return ($cnt.Trim() -ne "0") }
@@ -113,7 +234,7 @@ GRANT UNLIMITED TABLESPACE TO $user;
 EXIT;
 "@ | Set-Content -Path $tmp1 -Encoding ASCII
     Write-Info "  Paso 1: Creando usuario..."
-    $o1 = & sqlplus -S $sysConn "@$tmp1" 2>&1
+    $o1 = & sqlplus -S -L $sysConn "@$tmp1" 2>&1
     $o1 | Add-Content $log
     $o1 | Where-Object { $_ -match "(ORA-|granted|created)" } | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
 
@@ -122,45 +243,136 @@ SET SERVEROUTPUT ON SIZE UNLIMITED;
 DECLARE
     v_ddl   CLOB;
     v_nuevo CLOB;
+    PROCEDURE fix_ddl(p_ddl IN OUT CLOB, p_destino VARCHAR2) IS
+    BEGIN
+        p_ddl := REPLACE(p_ddl, '"SYSTEM".', '"'||UPPER(p_destino)||'".');
+        p_ddl := REPLACE(p_ddl, ' SYSTEM.',  ' '||UPPER(p_destino)||'.');
+    END fix_ddl;
     PROCEDURE copiar_schema(p_destino VARCHAR2) IS
     BEGIN
+        -- 1. TABLAS
+        DBMS_OUTPUT.PUT_LINE('-- TABLAS --');
         FOR t IN (SELECT table_name FROM user_tables WHERE table_name NOT LIKE 'BIN`$%' ORDER BY table_name) LOOP
             BEGIN
                 EXECUTE IMMEDIATE 'CREATE TABLE '||p_destino||'.'||t.table_name||' AS SELECT * FROM $ORACLE_BASE_SCHEMA.'||t.table_name;
                 DBMS_OUTPUT.PUT_LINE('  OK tabla: '||t.table_name);
             EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR tabla '||t.table_name||': '||SQLERRM); END;
         END LOOP;
+        -- 2. SECUENCIAS
+        DBMS_OUTPUT.PUT_LINE('-- SECUENCIAS --');
         FOR s IN (SELECT sequence_name,min_value,max_value,increment_by,cycle_flag,order_flag,cache_size,last_number FROM user_sequences) LOOP
             BEGIN
                 EXECUTE IMMEDIATE 'CREATE SEQUENCE '||p_destino||'.'||s.sequence_name||' START WITH '||s.last_number||' INCREMENT BY '||s.increment_by||' MINVALUE '||s.min_value||' MAXVALUE '||s.max_value||CASE WHEN s.cycle_flag='Y' THEN ' CYCLE' ELSE ' NOCYCLE' END||CASE WHEN s.order_flag='Y' THEN ' ORDER' ELSE ' NOORDER' END||' CACHE '||s.cache_size;
                 DBMS_OUTPUT.PUT_LINE('  OK seq: '||s.sequence_name);
             EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR seq '||s.sequence_name||': '||SQLERRM); END;
         END LOOP;
+        -- 3. PRIMARY KEYS
+        DBMS_OUTPUT.PUT_LINE('-- PRIMARY KEYS --');
         FOR c IN (SELECT c.constraint_name,c.table_name,LISTAGG(cc.column_name,', ')WITHIN GROUP(ORDER BY cc.position) AS cols FROM user_constraints c JOIN user_cons_columns cc ON c.constraint_name=cc.constraint_name WHERE c.constraint_type='P' AND c.table_name NOT LIKE 'BIN`$%' GROUP BY c.constraint_name,c.table_name) LOOP
             BEGIN
                 EXECUTE IMMEDIATE 'ALTER TABLE '||p_destino||'.'||c.table_name||' ADD CONSTRAINT '||c.constraint_name||' PRIMARY KEY ('||c.cols||')';
                 DBMS_OUTPUT.PUT_LINE('  OK PK: '||c.constraint_name);
             EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR PK '||c.constraint_name||': '||SQLERRM); END;
         END LOOP;
+        -- 4. UNIQUE KEYS
+        DBMS_OUTPUT.PUT_LINE('-- UNIQUE KEYS --');
         FOR c IN (SELECT c.constraint_name,c.table_name,LISTAGG(cc.column_name,', ')WITHIN GROUP(ORDER BY cc.position) AS cols FROM user_constraints c JOIN user_cons_columns cc ON c.constraint_name=cc.constraint_name WHERE c.constraint_type='U' AND c.table_name NOT LIKE 'BIN`$%' GROUP BY c.constraint_name,c.table_name) LOOP
             BEGIN
                 EXECUTE IMMEDIATE 'ALTER TABLE '||p_destino||'.'||c.table_name||' ADD CONSTRAINT '||c.constraint_name||' UNIQUE ('||c.cols||')';
                 DBMS_OUTPUT.PUT_LINE('  OK UK: '||c.constraint_name);
             EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR UK '||c.constraint_name||': '||SQLERRM); END;
         END LOOP;
+        -- 5. FOREIGN KEYS
+        DBMS_OUTPUT.PUT_LINE('-- FOREIGN KEYS --');
         FOR c IN (SELECT c.constraint_name,c.table_name,LISTAGG(cc.column_name,', ')WITHIN GROUP(ORDER BY cc.position) AS sc,r.table_name AS rt,LISTAGG(rc.column_name,', ')WITHIN GROUP(ORDER BY rc.position) AS rc2,c.delete_rule AS dr FROM user_constraints c JOIN user_cons_columns cc ON c.constraint_name=cc.constraint_name JOIN user_constraints r ON c.r_constraint_name=r.constraint_name JOIN user_cons_columns rc ON r.constraint_name=rc.constraint_name WHERE c.constraint_type='R' AND c.table_name NOT LIKE 'BIN`$%' GROUP BY c.constraint_name,c.table_name,r.table_name,c.delete_rule) LOOP
             BEGIN
                 EXECUTE IMMEDIATE 'ALTER TABLE '||p_destino||'.'||c.table_name||' ADD CONSTRAINT '||c.constraint_name||' FOREIGN KEY ('||c.sc||') REFERENCES '||p_destino||'.'||c.rt||' ('||c.rc2||')'||CASE c.dr WHEN 'CASCADE' THEN ' ON DELETE CASCADE' WHEN 'SET NULL' THEN ' ON DELETE SET NULL' ELSE '' END;
                 DBMS_OUTPUT.PUT_LINE('  OK FK: '||c.constraint_name);
             EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR FK '||c.constraint_name||': '||SQLERRM); END;
         END LOOP;
-        FOR tr IN (SELECT trigger_name FROM user_triggers WHERE table_name NOT LIKE 'BIN`$%') LOOP
+        -- 6. INDICES (excluye PK/UK ya creados)
+        DBMS_OUTPUT.PUT_LINE('-- INDICES --');
+        FOR i IN (SELECT i.index_name,i.table_name,i.uniqueness,LISTAGG(ic.column_name||CASE ic.descend WHEN 'DESC' THEN ' DESC' ELSE '' END,', ')WITHIN GROUP(ORDER BY ic.column_position) AS cols FROM user_indexes i JOIN user_ind_columns ic ON i.index_name=ic.index_name WHERE i.table_name NOT LIKE 'BIN`$%' AND i.index_name NOT IN (SELECT constraint_name FROM user_constraints WHERE constraint_type IN ('P','U')) AND i.index_type NOT IN ('LOB','DOMAIN') GROUP BY i.index_name,i.table_name,i.uniqueness) LOOP
+            BEGIN
+                EXECUTE IMMEDIATE 'CREATE '||CASE i.uniqueness WHEN 'UNIQUE' THEN 'UNIQUE ' ELSE '' END||'INDEX '||p_destino||'.'||i.index_name||' ON '||p_destino||'.'||i.table_name||' ('||i.cols||')';
+                DBMS_OUTPUT.PUT_LINE('  OK idx: '||i.index_name);
+            EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR idx '||i.index_name||': '||SQLERRM); END;
+        END LOOP;
+        -- 7. VISTAS
+        DBMS_OUTPUT.PUT_LINE('-- VISTAS --');
+        FOR v IN (SELECT view_name FROM user_views ORDER BY view_name) LOOP
+            BEGIN
+                v_ddl := DBMS_METADATA.GET_DDL('VIEW',v.view_name,'SYSTEM');
+                fix_ddl(v_ddl,p_destino);
+                EXECUTE IMMEDIATE v_ddl;
+                DBMS_OUTPUT.PUT_LINE('  OK vista: '||v.view_name);
+            EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR vista '||v.view_name||': '||SQLERRM); END;
+        END LOOP;
+        -- 8. FUNCIONES
+        DBMS_OUTPUT.PUT_LINE('-- FUNCIONES --');
+        FOR f IN (SELECT object_name FROM user_objects WHERE object_type='FUNCTION' ORDER BY object_name) LOOP
+            BEGIN
+                v_ddl := DBMS_METADATA.GET_DDL('FUNCTION',f.object_name,'SYSTEM');
+                fix_ddl(v_ddl,p_destino);
+                EXECUTE IMMEDIATE v_ddl;
+                DBMS_OUTPUT.PUT_LINE('  OK func: '||f.object_name);
+            EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR func '||f.object_name||': '||SQLERRM); END;
+        END LOOP;
+        -- 9. PROCEDIMIENTOS
+        DBMS_OUTPUT.PUT_LINE('-- PROCEDIMIENTOS --');
+        FOR p IN (SELECT object_name FROM user_objects WHERE object_type='PROCEDURE' ORDER BY object_name) LOOP
+            BEGIN
+                v_ddl := DBMS_METADATA.GET_DDL('PROCEDURE',p.object_name,'SYSTEM');
+                fix_ddl(v_ddl,p_destino);
+                EXECUTE IMMEDIATE v_ddl;
+                DBMS_OUTPUT.PUT_LINE('  OK proc: '||p.object_name);
+            EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR proc '||p.object_name||': '||SQLERRM); END;
+        END LOOP;
+        -- 10. PACKAGES
+        DBMS_OUTPUT.PUT_LINE('-- PACKAGES --');
+        FOR pk IN (SELECT DISTINCT object_name FROM user_objects WHERE object_type='PACKAGE' ORDER BY object_name) LOOP
+            BEGIN
+                v_ddl := DBMS_METADATA.GET_DDL('PACKAGE',pk.object_name,'SYSTEM');
+                fix_ddl(v_ddl,p_destino);
+                EXECUTE IMMEDIATE v_ddl;
+                BEGIN
+                    v_ddl := DBMS_METADATA.GET_DDL('PACKAGE_BODY',pk.object_name,'SYSTEM');
+                    fix_ddl(v_ddl,p_destino);
+                    EXECUTE IMMEDIATE v_ddl;
+                EXCEPTION WHEN OTHERS THEN NULL; END;
+                DBMS_OUTPUT.PUT_LINE('  OK pkg: '||pk.object_name);
+            EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR pkg '||pk.object_name||': '||SQLERRM); END;
+        END LOOP;
+        -- 11. TRIGGERS
+        DBMS_OUTPUT.PUT_LINE('-- TRIGGERS --');
+        FOR tr IN (SELECT trigger_name FROM user_triggers WHERE table_name NOT LIKE 'BIN`$%' ORDER BY trigger_name) LOOP
             BEGIN
                 v_ddl := DBMS_METADATA.GET_DDL('TRIGGER',tr.trigger_name,'SYSTEM');
-                v_nuevo := REPLACE(v_ddl,'"SYSTEM".','"'||UPPER(p_destino)||'".');
-                EXECUTE IMMEDIATE v_nuevo;
+                fix_ddl(v_ddl,p_destino);
+                EXECUTE IMMEDIATE v_ddl;
                 DBMS_OUTPUT.PUT_LINE('  OK trigger: '||tr.trigger_name);
             EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR trigger '||tr.trigger_name||': '||SQLERRM); END;
+        END LOOP;
+        -- 12. SCHEDULER JOBS
+        DBMS_OUTPUT.PUT_LINE('-- SCHEDULER JOBS --');
+        FOR j IN (SELECT job_name,job_type,job_action,start_date,repeat_interval,enabled,comments FROM user_scheduler_jobs WHERE job_name NOT LIKE 'SYS_%') LOOP
+            BEGIN
+                -- Crear siempre deshabilitado (enabled es VARCHAR2, no BOOLEAN)
+                DBMS_SCHEDULER.CREATE_JOB(
+                    job_name        => p_destino||'.'||j.job_name,
+                    job_type        => j.job_type,
+                    job_action      => REPLACE(REPLACE(j.job_action,'"SYSTEM".', '"'||UPPER(p_destino)||'".'), 'SYSTEM.',UPPER(p_destino)||'.'),
+                    start_date      => j.start_date,
+                    repeat_interval => j.repeat_interval,
+                    enabled         => FALSE,
+                    comments        => j.comments
+                );
+                -- Habilitar solo si estaba habilitado en el original
+                IF j.enabled = 'TRUE' THEN
+                    DBMS_SCHEDULER.ENABLE(p_destino||'.'||j.job_name);
+                END IF;
+                DBMS_OUTPUT.PUT_LINE('  OK job: '||j.job_name);
+            EXCEPTION WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('  ERR job '||j.job_name||': '||SQLERRM); END;
         END LOOP;
         DBMS_OUTPUT.PUT_LINE('Listo: '||p_destino);
     END copiar_schema;
@@ -168,10 +380,10 @@ BEGIN copiar_schema('$user'); END;
 /
 EXIT;
 "@ | Set-Content -Path $tmp2 -Encoding ASCII
-    Write-Info "  Paso 2: Copiando schema..."
-    $o2 = & sqlplus -S $sysConn "@$tmp2" 2>&1
+    Write-Info "  Paso 2: Copiando schema (tablas, seqs, constraints, indices, vistas, funcs, procs, pkgs, triggers, jobs)..."
+    $o2 = & sqlplus -S -L $sysConn "@$tmp2" 2>&1
     $o2 | Add-Content $log
-    $o2 | Where-Object { $_ -match "(OK|ERR|Listo)" } | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
+    $o2 | Where-Object { $_ -match "(OK|ERR|Listo|^-- )" } | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
 
     @"
 SET SERVEROUTPUT ON SIZE UNLIMITED;
@@ -194,7 +406,7 @@ END;
 EXIT;
 "@ | Set-Content -Path $tmp3 -Encoding ASCII
     Write-Info "  Paso 3: Creando SEQ_ y TRG_..."
-    $o3 = & sqlplus -S $userConn "@$tmp3" 2>&1
+    $o3 = & sqlplus -S -L $userConn "@$tmp3" 2>&1
     $o3 | Add-Content $log
     $o3 | Where-Object { $_ -match "(OK|ERR|YA EXISTE)" } | ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
     Remove-Item $tmp1,$tmp2,$tmp3 -ErrorAction SilentlyContinue
@@ -328,7 +540,7 @@ function Unlock-OracleAccounts {
     }
     $sql += "END;`n/`nEXIT;"
     $sql | Set-Content -Path $tmp -Encoding ASCII
-    $out = & sqlplus -S $conn "@$tmp" 2>&1
+    $out = & sqlplus -S -L $conn "@$tmp" 2>&1
     $out | Where-Object { $_ -match "(OK|UNLOCK|SKIP)" } |
         ForEach-Object { Write-Host "    $_" -ForegroundColor Gray }
     Remove-Item $tmp -ErrorAction SilentlyContinue
@@ -391,7 +603,7 @@ END;
 /
 EXIT;
 "@ | Set-Content -Path $tmp -Encoding ASCII
-            & sqlplus -S $conn "@$tmp" 2>&1 | Out-Null
+            & sqlplus -S -L $conn "@$tmp" 2>&1 | Out-Null
             Remove-Item $tmp -ErrorAction SilentlyContinue
             Write-Ok "Oracle '$user' eliminado"
         }
@@ -575,7 +787,6 @@ switch ($Action) {
             $user = "hotel$i"
             Write-Info "Eliminando usuario Oracle '$user'..."
             $dropTmp = "$env:TEMP\drop_${user}.sql"
-            # El / DEBE estar en su propia linea para que sqlplus lo ejecute
             @"
 BEGIN
     EXECUTE IMMEDIATE 'DROP USER $user CASCADE';
@@ -585,7 +796,7 @@ END;
 /
 EXIT;
 "@ | Set-Content -Path $dropTmp -Encoding ASCII
-            & sqlplus -S $conn "@$dropTmp" 2>&1 | Out-Null
+            & sqlplus -S -L $conn "@$dropTmp" 2>&1 | Out-Null
             Remove-Item $dropTmp -ErrorAction SilentlyContinue
             Write-Ok "Usuario Oracle '$user' eliminado"
         }

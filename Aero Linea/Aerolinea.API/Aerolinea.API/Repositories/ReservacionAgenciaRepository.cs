@@ -70,8 +70,19 @@ namespace Aerolinea.API.Repositories
                             $"Disponibles: {disponibles}, solicitados: {vuelo.CantidadPasajeros}.");
                     }
 
-                    // Usar el precio que viene en el DTO (ya incluye descuento aplicado por la agencia)
-                    decimal precioConDescuento = vuelo.Precio;
+                    // Obtener precio directamente de la BD de la aerolínea
+                    string queryPrecio = vuelo.ClaseId == 1
+                        ? "SELECT PrecioTurista FROM Vuelo WHERE ID = @vueloId"
+                        : "SELECT PrecioEjecutivo FROM Vuelo WHERE ID = @vueloId";
+
+                    decimal precioClase;
+                    using (var cmd = new SqlCommand(queryPrecio, connection, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@vueloId", vuelo.VueloId);
+                        precioClase = Convert.ToDecimal(await cmd.ExecuteScalarAsync());
+                    }
+
+                    decimal precioConDescuento = Math.Round(precioClase * (1 - descuento / 100), 2);
                     total += precioConDescuento * vuelo.CantidadPasajeros;
                 }
 
@@ -114,8 +125,20 @@ namespace Aerolinea.API.Repositories
                         await cmd.ExecuteNonQueryAsync();
                     }
 
-                    // Usar el precio del DTO (ya incluye descuento de la agencia)
-                    decimal precioClase = Math.Round(vuelo.Precio, 2);
+                    // ── Recalcular precio en este loop también ──
+                    string queryPrecio2 = vuelo.ClaseId == 1
+                        ? "SELECT PrecioTurista FROM Vuelo WHERE ID = @vueloId"
+                        : "SELECT PrecioEjecutivo FROM Vuelo WHERE ID = @vueloId";
+
+                    decimal precioBase;
+                    using (var cmd = new SqlCommand(queryPrecio2, connection, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@vueloId", vuelo.VueloId);
+                        precioBase = Convert.ToDecimal(await cmd.ExecuteScalarAsync());
+                    }
+
+                    decimal precioClase = Math.Round(precioBase * (1 - descuento / 100), 2);
+
 
                     var asientosOcupados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                     string queryAsientos = @"

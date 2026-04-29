@@ -16,6 +16,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"bytes"
 )
 
 // AsientoVueloService
@@ -76,7 +78,6 @@ func (s *AsientoVueloService) ObtenerAsientosVuelo(
 	return s.llamarGetAsientos(c, &uid, urlAPI, token, idReservaAerolinea)
 }
 
-
 // llamarGetAsientos
 //
 // Realiza la llamada HTTP GET al endpoint de asientos de la aerolinea proveedora,
@@ -91,6 +92,7 @@ func (s *AsientoVueloService) ObtenerAsientosVuelo(
 // Retorna:
 //   - *dto.AsientosVueloResponse: respuesta con la lista de vuelos y sus asientos
 //   - error: si la peticion HTTP falla o la respuesta tiene formato incompatible
+//
 // llamarGetAsientos realiza el GET al proveedor y registra eventos 56/57 (Flujo D).
 // Solo debe llamarse desde ObtenerAsientosVuelo.
 func (s *AsientoVueloService) llamarGetAsientos(
@@ -141,3 +143,85 @@ func (s *AsientoVueloService) llamarGetAsientosInterno(
 	return &resultado, nil
 }
 
+// CambiarAsientoVuelo — pegar después de ObtenerAsientosVuelo
+func (s *AsientoVueloService) CambiarAsientoVuelo(
+	c *gin.Context,
+	usuarioID int,
+	req dto.CambiarAsientoVueloRequest,
+) error {
+
+	idReservaAerolinea, urlAPI, token, err := s.repo.ObtenerDetalleAerolineaPorProveedor(
+		req.ReservacionID, usuarioID, req.ProveedorID,
+	)
+	if err != nil {
+		return err
+	}
+
+	uid := usuarioID
+	asientos, err := s.llamarGetAsientosInterno(urlAPI, token, idReservaAerolinea)
+	if err != nil {
+		return err
+	}
+
+	boletoValido := false
+	for _, vuelo := range *asientos {
+		for _, b := range vuelo.BoletosAgencia {
+			if b.BoletoID == req.BoletoID {
+				boletoValido = true
+				break
+			}
+		}
+		if boletoValido {
+			break
+		}
+	}
+
+	if !boletoValido {
+		return errors.New("el boleto no pertenece a esta reservación")
+	}
+
+	return s.llamarCambiarAsiento(c, &uid, urlAPI, token, req.BoletoID, req.NuevoAsiento)
+}
+
+// llamarCambiarAsiento
+func (s *AsientoVueloService) llamarCambiarAsiento(
+	c *gin.Context,
+	usuarioID *int,
+	urlAPI, token string,
+	boletoID int,
+	nuevoAsiento string,
+) error {
+	bodyReq := dto.CambiarAsientoAerolineaBody{NuevoAsiento: nuevoAsiento}
+	bodyBytes, err := json.Marshal(bodyReq)
+	if err != nil {
+		return fmt.Errorf("error serializando request: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/api/asientos-agencia/%d", urlAPI, boletoID)
+
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Agencia-Token", token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarFallida, usuarioID, "asiento-cambiar",
+			fmt.Sprintf("Broom status=ERR boletoId=%d msg='%s'", boletoID, err.Error()))
+		return fmt.Errorf("error contactando aerolínea: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		msg := fmt.Sprintf("Broom status=%d boletoId=%d msg='%s'", resp.StatusCode, boletoID, helpers.ParseErrorProveedor(resp))
+		s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarFallida, usuarioID, "asiento-cambiar", msg)
+		return fmt.Errorf("aerolínea respondió con status %d", resp.StatusCode)
+	}
+
+	s.logSesion.Registrar(c, helpers.TipoOutAsientoCambiarExitosa, usuarioID, "asiento-cambiar",
+		fmt.Sprintf("Broom: asiento cambiado boletoId=%d → %s", boletoID, nuevoAsiento))
+
+	return nil
+}
